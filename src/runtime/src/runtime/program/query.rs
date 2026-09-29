@@ -12,7 +12,8 @@ use mech_core::{MResult, MechError, OutputId};
 use mech_engine::resident::StateMigrationMapping;
 #[cfg(feature = "resident-routing-source")]
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, SlotRole,
+    ArtifactSource, BindingDeclaration, InitializerReference, ProducerReference, ProgramArtifact,
+    SlotDeclaration, SlotRole,
 };
 
 impl MechRuntime {
@@ -397,6 +398,7 @@ fn compatible_state_mappings(
 
     let source_named = source
         .interactive_symbol_bindings()
+        .filter(|binding| binding.lexical_name != "ans")
         .filter_map(|binding| match binding.artifact_source {
             ArtifactSource::Slot(slot)
                 if source
@@ -413,7 +415,9 @@ fn compatible_state_mappings(
     let mut mapped_targets = BTreeSet::new();
     let excluded_targets = target
         .interactive_symbol_bindings()
-        .filter(|binding| changed_state_names.contains(&binding.lexical_name))
+        .filter(|binding| {
+            binding.lexical_name != "ans" && changed_state_names.contains(&binding.lexical_name)
+        })
         .filter_map(|binding| match binding.artifact_source {
             ArtifactSource::Slot(slot) => Some(slot),
             ArtifactSource::Constant(_) => None,
@@ -424,43 +428,83 @@ fn compatible_state_mappings(
     let mut compatible_state_pairs = BTreeSet::new();
     let mut mappings = Vec::new();
 
-    for binding in target.interactive_symbol_bindings() {
-        if changed_state_names.contains(&binding.lexical_name) {
-            continue;
-        }
-        let ArtifactSource::Slot(target_slot) = binding.artifact_source else {
-            continue;
-        };
-        // Several lexical projections can name the same state cell (`ans`
-        // and the source variable are the common case). Once an explicitly
-        // mutated name excludes that cell, none of its aliases may migrate it
-        // back from the retired runtime.
-        if excluded_targets.contains(&target_slot) {
-            continue;
-        }
-        let Some(source_slot) = source_named.get(binding.lexical_name.as_str()).copied() else {
-            continue;
-        };
-        if target
-            .slots()
-            .get(target_slot.get() as usize)
-            .zip(source.slots().get(source_slot.get() as usize))
-            .is_some_and(|(target_declaration, source_declaration)| {
-                target_declaration.role == SlotRole::State
-                    && source_declaration.role == SlotRole::State
-                    && target.schemas().get(target_declaration.schema)
-                        == source.schemas().get(source_declaration.schema)
-            })
-            && mapped_sources.insert(source_slot)
-            && mapped_targets.insert(target_slot)
-        {
-            compatible_state_pairs.insert((source_slot, target_slot));
-            mappings.push(StateMigrationMapping {
-                source: source_slot,
-                target: target_slot,
-            });
+    let mut named_candidates = target
+        .interactive_symbol_bindings()
+        // `ans` is a synthetic projection of the document result, not a
+        // declaration identity. Letting it participate can pair the previous
+        // final state with an unrelated target state before that state's real
+        // lexical name is considered.
+        .filter(|binding| {
+            binding.lexical_name != "ans" && !changed_state_names.contains(&binding.lexical_name)
+        })
+        .filter_map(|binding| {
+            let ArtifactSource::Slot(target_slot) = binding.artifact_source else {
+                return None;
+            };
+            // Several lexical projections can name the same state cell (`ans`
+            // and the source variable are the common case). Once an explicitly
+            // mutated name excludes that cell, none of its aliases may migrate it
+            // back from the retired runtime.
+            if excluded_targets.contains(&target_slot) {
+                return None;
+            }
+            source_named
+                .get(binding.lexical_name.as_str())
+                .copied()
+                .map(|source_slot| (source_slot, target_slot))
+        })
+        .collect::<Vec<_>>();
+
+    // Interactive symbols are published in lexical-name order, while state
+    // initializers follow source dependency order. Resolve named states to a
+    // fixed point so a state such as `a := z` can wait for the compatible `z`
+    // pair even though `a` is visited first. Clear cached negative comparisons
+    // between passes because an unresolved state boundary can become valid as
+    // compatible dependency pairs are added.
+    loop {
+        semantic_equivalence.clear();
+        let mut progress = false;
+        named_candidates.retain(|&(source_slot, target_slot)| {
+            if mapped_sources.contains(&source_slot) || mapped_targets.contains(&target_slot) {
+                return false;
+            }
+            let compatible = target
+                .slots()
+                .get(target_slot.get() as usize)
+                .zip(source.slots().get(source_slot.get() as usize))
+                .is_some_and(|(target_declaration, source_declaration)| {
+                    target_declaration.role == SlotRole::State
+                        && source_declaration.role == SlotRole::State
+                        && target.schemas().get(target_declaration.schema)
+                            == source.schemas().get(source_declaration.schema)
+                        && state_initializers_semantically_equal(
+                            source,
+                            source_declaration,
+                            target,
+                            target_declaration,
+                            &compatible_state_pairs,
+                            &mut semantic_equivalence,
+                        )
+                });
+            if compatible {
+                mapped_sources.insert(source_slot);
+                mapped_targets.insert(target_slot);
+                compatible_state_pairs.insert((source_slot, target_slot));
+                mappings.push(StateMigrationMapping {
+                    source: source_slot,
+                    target: target_slot,
+                });
+                progress = true;
+                false
+            } else {
+                true
+            }
+        });
+        if !progress {
+            break;
         }
     }
+    semantic_equivalence.clear();
 
     // Preserve non-exported state when its producer remains structurally
     // identical. This intentionally requires producer identity as well as slot
@@ -481,6 +525,14 @@ fn compatible_state_mappings(
                 && source_slot.producer == target_slot.producer
                 && source.schemas().get(source_slot.schema)
                     == target.schemas().get(target_slot.schema)
+                && state_initializers_semantically_equal(
+                    source,
+                    source_slot,
+                    target,
+                    target_slot,
+                    &compatible_state_pairs,
+                    &mut semantic_equivalence,
+                )
                 && !mapped_sources.contains(&source_slot.slot)
         }) else {
             continue;
@@ -580,6 +632,38 @@ fn compatible_state_mappings(
         });
     }
     mappings
+}
+
+#[cfg(feature = "resident-routing-source")]
+fn state_initializers_semantically_equal(
+    source_artifact: &ProgramArtifact,
+    source: &SlotDeclaration,
+    target_artifact: &ProgramArtifact,
+    target: &SlotDeclaration,
+    compatible_state_pairs: &std::collections::BTreeSet<(
+        mech_core::CellSlotId,
+        mech_core::CellSlotId,
+    )>,
+    cache: &mut std::collections::BTreeMap<(ArtifactSource, ArtifactSource), bool>,
+) -> bool {
+    let source = match source.initializer {
+        Some(InitializerReference::Constant(constant)) => ArtifactSource::Constant(constant),
+        Some(InitializerReference::Activation(slot)) => ArtifactSource::Slot(slot),
+        None => return target.initializer.is_none(),
+    };
+    let target = match target.initializer {
+        Some(InitializerReference::Constant(constant)) => ArtifactSource::Constant(constant),
+        Some(InitializerReference::Activation(slot)) => ArtifactSource::Slot(slot),
+        None => return false,
+    };
+    artifact_sources_semantically_equal(
+        source_artifact,
+        source,
+        target_artifact,
+        target,
+        compatible_state_pairs,
+        cache,
+    )
 }
 
 #[cfg(feature = "resident-routing-source")]
@@ -821,4 +905,125 @@ fn missing_resident_symbol(operation: &'static str, name: &str) -> MechError {
         },
         None,
     )
+}
+
+#[cfg(all(test, feature = "resident-routing-source"))]
+mod tests {
+    use super::*;
+
+    fn artifact(source: &str) -> ProgramArtifact {
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()
+            .unwrap();
+        let document = crate::SourceDocument::parse_resolved(
+            "test:state-migration",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        compiler
+            .compile_interactive_document(&document)
+            .unwrap()
+            .into_parts()
+            .0
+    }
+
+    fn named_state(artifact: &ProgramArtifact, name: &str) -> mech_core::CellSlotId {
+        artifact
+            .interactive_symbol_bindings()
+            .find_map(|binding| (binding.lexical_name == name).then_some(binding.artifact_source))
+            .and_then(|source| match source {
+                ArtifactSource::Slot(slot)
+                    if artifact
+                        .slots()
+                        .get(slot.get() as usize)
+                        .is_some_and(|declaration| declaration.role == SlotRole::State) =>
+                {
+                    Some(slot)
+                }
+                ArtifactSource::Slot(_) | ArtifactSource::Constant(_) => None,
+            })
+            .unwrap_or_else(|| panic!("state binding {name}"))
+    }
+
+    #[test]
+    fn named_state_initializer_dependencies_survive_shifted_producers() {
+        let previous = artifact("~z := 0\n~a := z\nz += 1\na += 1\na\n");
+        let shifted = artifact("~prefix := 1\nprefix += 1\n~z := 0\n~a := z\nz += 1\na += 1\na\n");
+        let previous_z = named_state(&previous, "z");
+        let previous_a = named_state(&previous, "a");
+        let shifted_z = named_state(&shifted, "z");
+        let shifted_a = named_state(&shifted, "a");
+        assert_ne!(
+            previous.slots()[previous_a.get() as usize].producer,
+            shifted.slots()[shifted_a.get() as usize].producer,
+            "the witness must not be recoverable through producer identity",
+        );
+
+        let mappings = compatible_state_mappings(&previous, &shifted, &Default::default());
+        assert!(
+            mappings
+                .iter()
+                .any(|mapping| { mapping.source == previous_z && mapping.target == shifted_z })
+        );
+        assert!(
+            mappings
+                .iter()
+                .any(|mapping| { mapping.source == previous_a && mapping.target == shifted_a })
+        );
+    }
+
+    #[test]
+    fn state_migration_requires_a_semantically_equal_initializer() {
+        let previous = artifact("~counter := 0\ncounter += 1\ncounter\n");
+        let compatible = artifact("~counter := 0\ncounter += 2\ncounter\n");
+        let redefined =
+            artifact("~prefix := 1\nprefix += 1\n~counter := 11\ncounter += 2\ncounter\n");
+        let previous_state = named_state(&previous, "counter");
+        let compatible_state = named_state(&compatible, "counter");
+        let redefined_state = named_state(&redefined, "counter");
+        assert_ne!(
+            previous.slots()[previous_state.get() as usize].producer,
+            redefined.slots()[redefined_state.get() as usize].producer,
+            "the negative witness must also cover shifted producer identities",
+        );
+
+        let compatible_mappings =
+            compatible_state_mappings(&previous, &compatible, &Default::default());
+        assert!(compatible_mappings.iter().any(|mapping| {
+            mapping.source == previous_state && mapping.target == compatible_state
+        }));
+
+        let redefined_mappings =
+            compatible_state_mappings(&previous, &redefined, &Default::default());
+        assert!(
+            !redefined_mappings
+                .iter()
+                .any(|mapping| mapping.target == redefined_state)
+        );
+    }
+
+    #[test]
+    fn synthetic_ans_never_claims_an_unrelated_state_migration_pair() {
+        let previous = artifact("~a := 0\n~b := 11\na += 7\nb += 5\nb\n");
+        let replacement = artifact("~a := 11\n~b := 11\na\n");
+        let previous_b = named_state(&previous, "b");
+        let replacement_a = named_state(&replacement, "a");
+        let replacement_b = named_state(&replacement, "b");
+
+        let mappings = compatible_state_mappings(&previous, &replacement, &Default::default());
+        assert!(
+            mappings
+                .iter()
+                .any(|mapping| { mapping.source == previous_b && mapping.target == replacement_b })
+        );
+        assert!(
+            mappings
+                .iter()
+                .all(|mapping| mapping.target != replacement_a),
+            "the replacement's redefined `a` state must keep its new initializer",
+        );
+    }
 }

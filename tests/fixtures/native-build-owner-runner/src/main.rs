@@ -25,6 +25,8 @@ use serde::Serialize;
 
 type AppResult<T> = Result<T, Box<dyn Error>>;
 
+const GENERATED_PROJECTS_ROOT_ENV: &str = "MECH_NATIVE_GENERATED_PROJECTS_ROOT";
+
 #[derive(Serialize)]
 struct RunnerResult {
     plan: NativeBuildPlan,
@@ -51,6 +53,8 @@ fn main() -> AppResult<()> {
         return Err(format!("unknown seed mode `{poison}`").into());
     }
 
+    eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=initialize");
+
     let workspace = workspace_root()?;
     let mut bytecode = fs::read(bytecode_path)?;
     let poisoned_output_seed = poison == "poison";
@@ -70,6 +74,7 @@ fn main() -> AppResult<()> {
             root: workspace.clone(),
         },
     });
+    eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=plan");
     let plan = builder
         .plan(&request)
         .map_err(|error| mech_error("native plan", error))?;
@@ -87,9 +92,16 @@ fn main() -> AppResult<()> {
         poisoned_output_seed_count,
     };
     if action == "generate" || action == "build" || action == "build-only" {
-        let project = builder
-            .generate(&request, &result.plan)
-            .map_err(|error| mech_error("native project generation", error))?;
+        eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=generate");
+        let project = match (action.as_str(), env::var_os(GENERATED_PROJECTS_ROOT_ENV)) {
+            ("generate", Some(projects_root)) => builder.generate_at(
+                &request,
+                &result.plan,
+                PathBuf::from(projects_root).join(&result.plan.plan_sha256),
+            ),
+            _ => builder.generate(&request, &result.plan),
+        }
+        .map_err(|error| mech_error("native project generation", error))?;
         result.project_root = Some(project.root.clone());
         result.cargo_manifest = Some(project.cargo_manifest.clone());
         result.build_plan_json = Some(project.build_plan_json.clone());
@@ -97,14 +109,17 @@ fn main() -> AppResult<()> {
         result.runtime_source = project.sources.get("src/runtime.rs").cloned();
     }
     if action == "build" || action == "build-only" {
+        eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=build");
         let artifact = builder
             .build(&request, &result.plan)
             .map_err(|error| mech_error("native project build", error))?;
         result.executable = Some(artifact.executable().to_owned());
         if action == "build-only" {
+            eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=serialize");
             serde_json::to_writer(std::io::stdout(), &result)?;
             return Ok(());
         }
+        eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=execute");
         let mut command = Command::new(artifact.executable());
         if case.ends_with("-once") {
             command.arg("--once");
@@ -121,6 +136,7 @@ fn main() -> AppResult<()> {
         }
         result.stdout = Some(String::from_utf8(output.stdout)?);
     }
+    eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=serialize");
     serde_json::to_writer(std::io::stdout(), &result)?;
     Ok(())
 }

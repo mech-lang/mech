@@ -143,6 +143,9 @@ harness = r'''<script>
     const terminalSubmitProbe =
       new URLSearchParams(location.search).has("mech-terminal-submit-probe");
     const completionUrl = new URLSearchParams(location.search).get("mech-canary-callback");
+    const progressMessage = terminalSubmitProbe
+      ? "ekf-terminal-progress"
+      : "ekf-progress";
     const signalCompletion = name => {
       if (completionUrl) {
         const url = `${completionUrl}/${name}`;
@@ -157,16 +160,55 @@ harness = r'''<script>
         }).catch(() => navigator.sendBeacon(url, payload));
       }
     };
+    const reportedMilestones = new Set();
+    const signalMilestone = (stage, detail = {}) => {
+      if (!completionUrl || reportedMilestones.has(stage)) return;
+      reportedMilestones.add(stage);
+      const payload = JSON.stringify({
+        stage,
+        ...detail,
+        documentStatus: root.dataset.mechDocumentStatus || "",
+        documentError: root.dataset.mechDocumentError || "",
+        adapterStatus: root.dataset.mechComputeAdapterStatus || "",
+        deviceStatus: root.dataset.mechComputeDeviceStatus || "",
+        computeLifecycle: root.dataset.mechComputeLifecycle || "",
+        computeBackend: root.dataset.mechComputeBackend || "",
+        computeDispatches: root.dataset.mechComputeDispatches || "0",
+        consoleError: root.dataset.mechConsoleError || "",
+        pageError: root.dataset.mechPageError || "",
+      });
+      const url = `${completionUrl}/${progressMessage}`;
+      if (!navigator.sendBeacon(url, payload)) {
+        void fetch(url, {
+          method: "POST",
+          body: payload,
+          headers: {"Content-Type": "text/plain;charset=UTF-8"},
+        }).catch(() => {});
+      }
+    };
+    const parityComputeTurn = 376;
+    const continuityEditTurn = 120;
+    const busyReplacementTurn = 40;
+    const computeCheckpointInterval = 25;
+    const semanticComputeCheckpoints = new Map([
+      [1, "first-compute-completion"],
+      [busyReplacementTurn, "busy-replacement-turn-complete"],
+      [continuityEditTurn, "continuity-edit-turn-complete"],
+      [continuityEditTurn + 1, "continuity-post-edit-turn-complete"],
+      [parityComputeTurn, "parity-turn-complete"],
+    ]);
     let lastReportedComputeTurn = 0;
     const signalProgress = completedTurns => {
       if (
-        completionUrl &&
-        Number.isFinite(completedTurns) &&
-        completedTurns - lastReportedComputeTurn >= 25
-      ) {
-        lastReportedComputeTurn = completedTurns;
-        navigator.sendBeacon(`${completionUrl}/ekf-progress`, String(completedTurns));
-      }
+        !Number.isFinite(completedTurns) || completedTurns <= lastReportedComputeTurn
+      ) return;
+      const semanticStage = semanticComputeCheckpoints.get(completedTurns);
+      if (!semanticStage && completedTurns % computeCheckpointInterval !== 0) return;
+      lastReportedComputeTurn = completedTurns;
+      signalMilestone(
+        semanticStage || `compute-checkpoint-${completedTurns}`,
+        {completedTurns},
+      );
     };
     const originalConsoleError = console.error;
     const diagnosticText = (value) => value?.stack || value?.message || String(value);
@@ -180,10 +222,37 @@ harness = r'''<script>
     window.addEventListener("unhandledrejection", (event) => {
       root.dataset.mechPageError = diagnosticText(event.reason);
     });
+    const lifecycleAttributes = new Map([
+      ["data-mech-document-status", "document"],
+      ["data-mech-compute-adapter-status", "adapter"],
+      ["data-mech-compute-device-status", "device"],
+      ["data-mech-compute-lifecycle", "lifecycle"],
+    ]);
+    const publishLifecycleMilestone = attribute => {
+      const value = root.getAttribute(attribute);
+      if (value) {
+        const category = lifecycleAttributes.get(attribute);
+        signalMilestone(`${category}-${value}`, {category, value});
+        if (category === "document" && value === "error") {
+          signalCompletion(
+            terminalSubmitProbe ? "ekf-terminal-finished" : "ekf-finished",
+          );
+        }
+      }
+    };
+    new MutationObserver(records => {
+      for (const record of records) publishLifecycleMilestone(record.attributeName);
+    }).observe(root, {
+      attributes: true,
+      attributeFilter: [...lifecycleAttributes.keys()],
+    });
+    for (const attribute of lifecycleAttributes.keys()) {
+      publishLifecycleMilestone(attribute);
+    }
+    window.addEventListener("mech:document-ready", () => {
+      signalMilestone("document-ready");
+    });
 
-    const parityComputeTurn = 376;
-    const continuityEditTurn = 120;
-    const busyReplacementTurn = 40;
     let computeParitySample;
     let continuityNextSample;
     let continuityEditRequested = false;
@@ -259,7 +328,14 @@ harness = r'''<script>
       const values = renderedDocumentNumbers("last-filter-turn");
       return values.length === 1 && Number.isFinite(values[0]) ? values[0] : undefined;
     };
-    window.addEventListener("mech:compute-submit", () => {
+    let firstComputeSubmitObserved = false;
+    window.addEventListener("mech:compute-submit", (event) => {
+      if (!firstComputeSubmitObserved) {
+        firstComputeSubmitObserved = true;
+        signalMilestone("first-compute-submit", {
+          dispatchToken: event.detail?.dispatchToken || "missing",
+        });
+      }
       if (terminalSubmitProbe) {
         const rendersBeforeDispose = documentRenderEvents;
         root.dataset.mechTerminalSubmitObserved = "true";
@@ -269,6 +345,9 @@ harness = r'''<script>
             documentRenderEvents === rendersBeforeDispose
           );
           root.dataset.mechDone = "true";
+          signalMilestone("shutdown-completed", {
+            renderSuppressed: root.dataset.mechTerminalSubmitRenderSuppressed,
+          });
           signalCompletion("ekf-terminal-finished");
         }, 50);
         return;
@@ -303,6 +382,9 @@ harness = r'''<script>
           '[data-mech-diagnostic-code="ComputeSourceReplacementBusy"]',
         )
       );
+      if (busyReplacementRejected) {
+        signalMilestone("busy-replacement-rejected");
+      }
     });
     window.addEventListener("mech:compute-state-reset", (event) => {
       computeStateResetEvents += 1;
@@ -333,6 +415,9 @@ harness = r'''<script>
           '[data-mech-diagnostic-code="ComputeStateReset"]',
         ).length === 1
       );
+      signalMilestone("incompatible-replacement-reset", {
+        resetCount: event.detail?.resetCount ?? "missing",
+      });
     });
     window.addEventListener("mech:compute-complete", (event) => {
       const completedTurns = event.detail?.completedTurns;
@@ -402,6 +487,9 @@ harness = r'''<script>
         incompatibleBefore = computeIdentity();
         const accepted = globalThis.MechDocumentController?.replaceSource(nextSource);
         incompatibleEditRequested = accepted === nextSource;
+        if (incompatibleEditRequested) {
+          signalMilestone("incompatible-replacement-accepted");
+        }
       }
     });
 
@@ -564,6 +652,9 @@ harness = r'''<script>
             continuityActiveBufferPreserved =
               after.activeBuffer === continuityBefore.activeBuffer;
           }
+          signalMilestone("continuity-replacement-accepted", {
+            generation: after.generation,
+          });
         }
       }
       if (
@@ -1150,6 +1241,9 @@ harness = r'''<script>
         root.dataset.mechTerminalSubmitObserved = "true";
         root.dataset.mechTerminalSubmitRenderSuppressed = "true";
         root.dataset.mechDone = "true";
+        signalMilestone("semantic-oracles-qualified", {
+          completedTurns: Number(root.dataset.mechComputeDispatches || 0),
+        });
         signalCompletion("ekf-finished");
         return;
       }
@@ -1235,7 +1329,7 @@ with BrowserCompletionServer() as completion:
             probe_data = json.loads(completion.wait_for(
                 "ekf-terminal-finished",
                 timeout=300,
-                progress=("ekf-progress",),
+                progress=("ekf-terminal-progress",),
                 max_timeout=600,
             ))
             probe = {
@@ -1257,6 +1351,7 @@ with BrowserCompletionServer() as completion:
                     f"terminal compute submission proof failed: {probe!r}"
                 )
 
+        completion.last_progress = None
         query = urllib.parse.urlencode({"mech-canary-callback": callback})
         browser.navigate(f"{page_url}?{query}")
         browser.wait_for(
@@ -1286,6 +1381,18 @@ with BrowserCompletionServer() as completion:
         milestones = snapshot
         write_dataset_snapshot(dom_file, dataset)
     finally:
+        if not milestones and completion.last_progress is not None:
+            message, body, _observed_at = completion.last_progress
+            try:
+                progress_data = json.loads(body)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                progress_data = {"body": body.decode("utf-8", errors="replace")}
+            milestones = {
+                "lastProgressMessage": message,
+                "lastProgress": progress_data,
+            }
+            if isinstance(progress_data, dict):
+                write_dataset_snapshot(dom_file, progress_data)
         browser.close()
         with Path(chrome_log).open("ab") as log:
             log.write((

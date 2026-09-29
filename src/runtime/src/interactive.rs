@@ -2076,6 +2076,78 @@ display := b + 10
     }
 
     #[test]
+    fn accepted_source_uses_explicit_mutable_redefinition_instead_of_migrated_state() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("~counter := 0").unwrap();
+        session.submit("counter += 7").unwrap();
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "7");
+
+        session
+            .replace_source("~counter := 11".to_string())
+            .unwrap();
+
+        assert_eq!(
+            session.symbol("counter").unwrap().unwrap().to_string(),
+            "11",
+            "an explicit mutable definition must win over compatible prior state",
+        );
+    }
+
+    #[test]
+    fn accepted_source_never_uses_ans_as_a_state_migration_identity() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session
+            .replace_source("~a := 0\n~b := 11\na += 7\nb += 5\nb\n".to_string())
+            .unwrap();
+        assert_eq!(session.symbol("a").unwrap().unwrap().to_string(), "7");
+        assert_eq!(session.symbol("b").unwrap().unwrap().to_string(), "16");
+
+        session
+            .replace_source("~a := 11\n~b := 11\na\n".to_string())
+            .unwrap();
+
+        assert_eq!(
+            session.symbol("a").unwrap().unwrap().to_string(),
+            "11",
+            "synthetic ans must not migrate the old final state into redefined a",
+        );
+        assert_eq!(
+            session.symbol("b").unwrap().unwrap().to_string(),
+            "16",
+            "the ordinary b declaration must retain its own compatible live state",
+        );
+    }
+
+    #[test]
+    fn accepted_source_replacement_uses_new_tuple_destructure_values() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session
+            .replace_source("(left, right) := (1, 2)".to_string())
+            .unwrap();
+
+        session
+            .replace_source("(left, right) := (7, 9)".to_string())
+            .unwrap();
+
+        assert_eq!(session.symbol("left").unwrap().unwrap().to_string(), "7");
+        assert_eq!(session.symbol("right").unwrap().unwrap().to_string(), "9");
+    }
+
+    #[test]
+    fn accepted_source_tuple_destructure_overlay_preserves_unrelated_state() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("~counter := 0").unwrap();
+        session.submit("counter += 1").unwrap();
+        session.step(2).unwrap();
+
+        session.submit("(left, right) := (7, 9)").unwrap();
+
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "3");
+        assert_eq!(session.symbol("left").unwrap().unwrap().to_string(), "7");
+        assert_eq!(session.symbol("right").unwrap().unwrap().to_string(), "9");
+    }
+
+    #[test]
     fn accepted_source_recomputes_state_explicitly_mutated_by_the_submission() {
         let mut session = ResidentReplSession::new(SourceRuntimeFactory);
         session.submit("~answer := 0").unwrap();

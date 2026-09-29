@@ -9,6 +9,10 @@ use mech_build::{
     standard_native_host_catalog,
 };
 use mech_core::{ApplicationRequirement, ParsedProgram, ResourceIntent};
+use mech_engine::{
+    BindingDeclaration, ProducerReference, ProgramArtifactDraft,
+    encode_program_artifact_bytecode_v1,
+};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, ProgramCompiler, RunResourceGrantConfig, RuntimeBuilder,
     RuntimeConfig,
@@ -282,6 +286,179 @@ fn canonical_resource_effect_survives_a_later_program_result() {
             if request.base_uri == "cli://stdout"
                 && request.path == "line"
                 && request.intent == ResourceIntent::Send)
+    }));
+}
+
+#[test]
+fn canonical_native_plan_preflights_a_dormant_effect() {
+    let source = "@out := cli://writer/stdout{:write(line)}\n~trigger := false\n~payload := \"waiting\"\n~> trigger\n  | true => { payload = \"ready\" }\n  | false => { payload = \"waiting\" }\n@out/line <- \"active\"\n\"done\"\n";
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .host_factory(selected_planning_host_factory("cli").unwrap())
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "reader".to_owned(),
+            provider: "cli".to_owned(),
+            settings: ConfigValue::Map(BTreeMap::new()),
+        })
+        .host_instance(HostInstanceConfig {
+            name: "writer".to_owned(),
+            provider: "cli".to_owned(),
+            settings: ConfigValue::Map(BTreeMap::new()),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "reader/env".to_owned(),
+            operations: vec!["read".to_owned()],
+            paths: vec!["HOME".to_owned()],
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "writer/stdout".to_owned(),
+            operations: vec!["write".to_owned()],
+            paths: vec!["line".to_owned()],
+        })
+        .build_compiler()
+        .unwrap();
+    let product = compiler.compile_canonical_source(source).unwrap();
+    let artifact = product.artifact();
+    let payload_state = artifact
+        .slots()
+        .iter()
+        .find_map(|slot| {
+            (slot.role == mech_engine::SlotRole::State
+                && artifact
+                    .schemas()
+                    .get(slot.schema)
+                    .is_some_and(|schema| matches!(schema.body(), mech_core::SchemaBody::String)))
+            .then_some(slot.slot)
+        })
+        .expect("payload is the fixture's String state slot");
+    let ProducerReference::NodeOutput {
+        node: payload_writer,
+        ..
+    } = artifact.slots()[payload_state.get() as usize].producer
+    else {
+        panic!("payload state has one resident writer")
+    };
+    let writer = &artifact.nodes()[payload_writer.get() as usize];
+    let BindingDeclaration::Input {
+        source: dormant_payload,
+        ..
+    } = artifact.bindings()[writer.input_bindings.start as usize]
+    else {
+        panic!("payload writer reads the activation-selected value")
+    };
+    let effect = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation()
+                .and_then(|operation| operation.requirement)
+                .and_then(|requirement| artifact.requirements().get(requirement))
+                .is_some_and(|requirement| {
+                    matches!(requirement, ApplicationRequirement::Resource(request)
+                        if request.intent == ResourceIntent::Send)
+                })
+        })
+        .expect("fixture has one resource effect");
+    let mut bindings = artifact.bindings().to_vec();
+    let effect_input = bindings
+        [effect.input_bindings.start as usize..effect.input_bindings.end as usize]
+        .iter_mut()
+        .find(|binding| matches!(binding, BindingDeclaration::Input { .. }))
+        .expect("resource effect has a payload input");
+    let BindingDeclaration::Input { source, .. } = effect_input else {
+        unreachable!()
+    };
+    *source = dormant_payload;
+    let artifact = ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().to_vec().into_boxed_slice(),
+        slots: artifact.slots().to_vec().into_boxed_slice(),
+        nodes: artifact.nodes().to_vec().into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: artifact.outputs().to_vec().into_boxed_slice(),
+        constraints: artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let request = NativeBuildRequest {
+        bytecode: encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![
+                HostInstanceConfig {
+                    name: "reader".to_owned(),
+                    provider: "cli".to_owned(),
+                    settings: ConfigValue::Map(BTreeMap::new()),
+                },
+                HostInstanceConfig {
+                    name: "writer".to_owned(),
+                    provider: "cli".to_owned(),
+                    settings: ConfigValue::Map(BTreeMap::new()),
+                },
+            ],
+            run_grants: vec![
+                RunResourceGrantConfig {
+                    target: "reader/env".to_owned(),
+                    operations: vec!["read".to_owned()],
+                    paths: vec!["HOME".to_owned()],
+                },
+                RunResourceGrantConfig {
+                    target: "writer/stdout".to_owned(),
+                    operations: vec!["write".to_owned()],
+                    paths: vec!["line".to_owned()],
+                },
+            ],
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "canonical-dormant-resource-effect".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+    assert_eq!(
+        plan.hosts
+            .iter()
+            .map(|host| (host.name.as_str(), host.provider.as_str()))
+            .collect::<Vec<_>>(),
+        [("writer", "cli")]
+    );
+    assert_eq!(
+        plan.run_grants,
+        [mech_build::PlannedResourceGrantKey {
+            host_instance: "writer".to_owned(),
+            host_context: "stdout".to_owned(),
+            operation: "write".to_owned(),
+            path: "line".to_owned(),
+        }]
+    );
+    assert!(plan.application_requirements.iter().any(|requirement| {
+        matches!(requirement, mech_build::PlannedApplicationRequirement::Resource { request, owner }
+            if request.base_uri == "cli://writer/stdout"
+                && request.path == "line"
+                && request.intent == ResourceIntent::Send
+                && owner.host_instance == "writer"
+                && owner.provider == "cli"
+                && owner.host_context == "stdout"
+                && owner.canonical_base_uri == "cli://writer/stdout")
     }));
 }
 

@@ -35,6 +35,7 @@ class BrowserCompletionServer:
     def __init__(self) -> None:
         self.token = secrets.token_urlsafe(18)
         self.messages: queue.Queue[tuple[str, bytes]] = queue.Queue()
+        self.last_progress: tuple[str, bytes, float] | None = None
         messages = self.messages
         prefix = f"/{self.token}/"
 
@@ -75,6 +76,8 @@ class BrowserCompletionServer:
         started = time.monotonic()
         idle_deadline = started + timeout
         max_deadline = started + max_timeout if max_timeout is not None else None
+        last_progress: tuple[str, bytes, float] | None = None
+        self.last_progress = None
         while True:
             deadline = idle_deadline
             if max_deadline is not None:
@@ -90,9 +93,30 @@ class BrowserCompletionServer:
             if message == expected:
                 return body
             if message in progress:
-                idle_deadline = time.monotonic() + timeout
+                observed_at = time.monotonic()
+                last_progress = (message, body, observed_at)
+                self.last_progress = last_progress
+                idle_deadline = observed_at + timeout
+        elapsed = time.monotonic() - started
+        deadline_kind = (
+            "absolute"
+            if max_deadline is not None and max_deadline <= idle_deadline
+            else "idle"
+        )
+        if last_progress is None:
+            progress_detail = "no progress beacon was received"
+        else:
+            message, body, observed_at = last_progress
+            summary = body.decode("utf-8", errors="replace")
+            if len(summary) > 2_000:
+                summary = summary[:2_000] + "..."
+            progress_detail = (
+                f"last progress {message!r} at +{observed_at - started:.3f}s: "
+                f"{summary}"
+            )
         raise BrowserFailure(
-            f"timed out waiting for browser completion beacon {expected!r}"
+            f"timed out waiting for browser completion beacon {expected!r} after "
+            f"{elapsed:.3f}s ({deadline_kind} deadline); {progress_detail}"
         )
 
     def close(self) -> None:

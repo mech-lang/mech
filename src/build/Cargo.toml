@@ -41,4 +41,8 @@ mech-stdlib = { version = "0.3.5", path = "../stdlib", default-features = false,
 tempfile = "3"
 
 [target.'cfg(windows)'.dev-dependencies]
-windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
+windows-sys = { version = "0.61", features = [
+  "Win32_Security",
+  "Win32_System_JobObjects",
+  "Win32_System_Threading",
+] }

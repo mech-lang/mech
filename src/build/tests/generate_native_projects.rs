@@ -1,4 +1,5 @@
 #![cfg(feature = "full-hosts")]
+#![cfg_attr(windows, feature(windows_process_extensions_main_thread_handle))]
 
 pub mod support;
 
@@ -16,6 +17,10 @@ fn materialize_every_generated_project() {
             .is_none_or(|selected| selected == generated.case)
     }) {
         matched = true;
+        eprintln!(
+            "MECH_NATIVE_GENERATION_PROGRESS case={} profile={:?} progress=start",
+            generated.case, generated.profile
+        );
         let fixture = temporary.path().join(format!("{}.mecb", generated.case));
         std::fs::write(&fixture, generated.bytecode).unwrap();
         let result = run_owner(
@@ -52,7 +57,17 @@ fn materialize_every_generated_project() {
             assert!(runtime.contains("log_level: LogLevel::Debug"));
         }
 
+        println!(
+            "MECH_NATIVE_PROJECT_CASE={}\t{}\t{}",
+            generated.case,
+            generated.binary_name,
+            project_root.display()
+        );
         println!("MECH_NATIVE_PROJECT={}", project_root.display());
+        eprintln!(
+            "MECH_NATIVE_GENERATION_PROGRESS case={} profile={:?} progress=complete",
+            generated.case, generated.profile
+        );
     }
     assert!(
         selected_case.is_none() || matched,

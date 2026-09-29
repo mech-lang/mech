@@ -25,6 +25,27 @@ pub(crate) struct ArtifactNativeFeatureAnalysis {
     pub engine_features: Vec<String>,
 }
 
+pub(crate) fn validate_artifact_requirement_reachability(
+    artifact: &ProgramArtifact,
+) -> MResult<()> {
+    let referenced = artifact
+        .nodes()
+        .iter()
+        .filter_map(|node| node.as_operation()?.requirement)
+        .collect::<BTreeSet<_>>();
+    if let Some((requirement, _)) = artifact
+        .requirements()
+        .iter()
+        .find(|(requirement, _)| !referenced.contains(requirement))
+    {
+        return Err(artifact_error(format!(
+            "application requirement {} is not owned by an artifact operation node",
+            requirement.get()
+        )));
+    }
+    Ok(())
+}
+
 pub(crate) fn analyze_artifact_native_features(
     artifact: &ProgramArtifact,
 ) -> ArtifactNativeFeatureAnalysis {
@@ -77,7 +98,7 @@ pub(crate) fn plan_artifact_external_contracts(
 ) -> MResult<()> {
     let mut observation_values = BTreeMap::new();
     let mut facts = ActivationFacts::default();
-    let mut requires_effect_turn = false;
+    let mut effect_requirements = BTreeMap::new();
 
     for node in artifact.nodes() {
         let Some(operation) = node.as_operation() else {
@@ -86,14 +107,21 @@ pub(crate) fn plan_artifact_external_contracts(
         let Some(requirement_id) = operation.requirement else {
             continue;
         };
-        let Some(ApplicationRequirement::Resource(request)) =
-            artifact.requirements().get(requirement_id)
-        else {
-            requires_effect_turn = true;
-            continue;
+        let Some(requirement) = artifact.requirements().get(requirement_id) else {
+            return Err(artifact_error(format!(
+                "external node {} references missing requirement {}",
+                node.node.get(),
+                requirement_id.get(),
+            )));
+        };
+        let ApplicationRequirement::Resource(request) = requirement else {
+            return Err(artifact_error(format!(
+                "external node {} has a non-resource requirement",
+                node.node.get(),
+            )));
         };
         if request.intent != ResourceIntent::Read {
-            requires_effect_turn = true;
+            effect_requirements.insert(node.node, (requirement_id, request));
             continue;
         }
 
@@ -136,7 +164,7 @@ pub(crate) fn plan_artifact_external_contracts(
     )
     .map_err(|error| artifact_error(format!("resident activation failed: {error:?}")))?;
 
-    if !requires_effect_turn {
+    if effect_requirements.is_empty() {
         return Ok(());
     }
 
@@ -174,22 +202,35 @@ pub(crate) fn plan_artifact_external_contracts(
         .map(|(slot, value)| CapturedValueInput { slot: *slot, value })
         .collect::<Vec<_>>();
     let prepared = instance
-        .prepare_turn_values(&inputs)
+        .prepare_initial_turn_values(&inputs)
         .map_err(|error| artifact_error(format!("resident planning turn failed: {error:?}")))?;
 
     let effects = prepared
         .effect_intents()
         .map(|effect| (effect.artifact_node, effect.requirement, effect.ordinal))
         .collect::<Vec<_>>();
+    let mut materialized_effects = BTreeSet::new();
     for (node, requirement_id, ordinal) in effects {
-        let Some(ApplicationRequirement::Resource(request)) =
-            artifact.requirements().get(requirement_id)
-        else {
+        let Some((expected_requirement, request)) = effect_requirements.get(&node) else {
             return Err(artifact_error(format!(
-                "external node {} has a non-resource requirement",
+                "resident planning materialized undeclared external effect node {}",
                 node.get()
             )));
         };
+        if *expected_requirement != requirement_id {
+            return Err(artifact_error(format!(
+                "external node {} materialized requirement {}, expected {}",
+                node.get(),
+                requirement_id.get(),
+                expected_requirement.get(),
+            )));
+        }
+        if !materialized_effects.insert(node) {
+            return Err(artifact_error(format!(
+                "external node {} materialized more than one planning effect",
+                node.get(),
+            )));
+        }
         let payload = prepared
             .materialize_effect_payload(ordinal)
             .map_err(|error| {
@@ -200,6 +241,15 @@ pub(crate) fn plan_artifact_external_contracts(
                 ))
             })?;
         resolver.plan_artifact_resource_write(node, request, &payload)?;
+    }
+    // Initial publication intentionally leaves activation-gated effects
+    // dormant. They still belong to the native application's authority and
+    // must resolve an owner, grant, operation and path before generation. An
+    // active effect additionally receives payload-specific planning above.
+    for (node, (_, request)) in effect_requirements {
+        if !materialized_effects.contains(&node) {
+            resolver.preflight_artifact_resource_write(node, request)?;
+        }
     }
     prepared.abort();
     Ok(())

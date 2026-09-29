@@ -13,11 +13,28 @@ jobs:
     name: Native plan
     runs-on: ubuntu-latest
     env:
+      CARGO_BUILD_JOBS: "2"
       CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ inputs.validation_ref }}
+      - name: Record exact native-plan checkout
+        timeout-minutes: 2
+        env:
+          VALIDATION_REF: ${{ inputs.validation_ref }}
+        run: |
+          mkdir -p target/native-plan-logs
+          actual=$(git rev-parse HEAD)
+          expected=$(git rev-parse "$VALIDATION_REF^{commit}")
+          {
+            echo "requested_ref=$VALIDATION_REF"
+            echo "expected_sha=$expected"
+            echo "checkout_sha=$actual"
+          } | tee target/native-plan-logs/00-checkout.log
+          test "$actual" = "$expected"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -25,13 +42,166 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Verify registry projects and live shutdown first
-        run: cargo +nightly-2026-03-03 test -p mech-build --all-features --test registry_generated_project
-      - name: Verify bounded native planning and generation
+        timeout-minutes: 20
         run: |
-          cargo +nightly-2026-03-03 test -p mech-build --all-features --test native_host_pruning
-          cargo +nightly-2026-03-03 test -p mech-build --all-features \
+          log=target/native-plan-logs/00-registry-live.log
+          echo "stage=registry-live fixture=registry_generated_project profile=all-features" | tee "$log"
+          set +e
+          /usr/bin/time -p timeout --verbose --signal=TERM --kill-after=30s 18m \
+            cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test registry_generated_project 2>&1 | tee -a "$log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          command_status=${pipeline_status[0]}
+          tee_status=${pipeline_status[1]}
+          printf 'command_exit_status=%s tee_exit_status=%s\n' "$command_status" "$tee_status" | tee -a "$log"
+          summary_status=("${PIPESTATUS[@]}")
+          set -e
+          if [ "${summary_status[0]}" -ne 0 ]; then exit "${summary_status[0]}"; fi
+          if [ "${summary_status[1]}" -ne 0 ]; then exit "${summary_status[1]}"; fi
+          if [ "$tee_status" -ne 0 ]; then exit "$tee_status"; fi
+          exit "$command_status"
+      - name: Verify native owner subprocess wrapper
+        timeout-minutes: 8
+        run: |
+          log=target/native-plan-logs/01-owner-wrapper-contract.log
+          echo "stage=owner-wrapper-contract fixture=isolated_process cases=hang,parent-death,failed-parent-tree,nonzero,malformed-json" | tee "$log"
+          set +e
+          /usr/bin/time -p timeout --verbose --signal=TERM --kill-after=30s 6m \
+            cargo +nightly-2026-03-03 test --locked -p mech-build --test isolated_process -- --nocapture 2>&1 | tee -a "$log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          command_status=${pipeline_status[0]}
+          tee_status=${pipeline_status[1]}
+          printf 'command_exit_status=%s tee_exit_status=%s\n' "$command_status" "$tee_status" | tee -a "$log"
+          summary_status=("${PIPESTATUS[@]}")
+          set -e
+          if [ "${summary_status[0]}" -ne 0 ]; then exit "${summary_status[0]}"; fi
+          if [ "${summary_status[1]}" -ne 0 ]; then exit "${summary_status[1]}"; fi
+          if [ "$tee_status" -ne 0 ]; then exit "$tee_status"; fi
+          exit "$command_status"
+      - name: Verify native build planning contracts
+        timeout-minutes: 15
+        run: |
+          log=target/native-plan-logs/02-native-build-planning.log
+          echo "stage=native-build-planning fixture=planning profile=all-features witness=actor-retirement,artifact-closure" | tee "$log"
+          set +e
+          /usr/bin/time -p timeout --verbose --signal=TERM --kill-after=30s 13m \
+            cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test planning -- --nocapture 2>&1 | tee -a "$log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          command_status=${pipeline_status[0]}
+          tee_status=${pipeline_status[1]}
+          printf 'command_exit_status=%s tee_exit_status=%s\n' "$command_status" "$tee_status" | tee -a "$log"
+          summary_status=("${PIPESTATUS[@]}")
+          set -e
+          if [ "${summary_status[0]}" -ne 0 ]; then exit "${summary_status[0]}"; fi
+          if [ "${summary_status[1]}" -ne 0 ]; then exit "${summary_status[1]}"; fi
+          if [ "$tee_status" -ne 0 ]; then exit "$tee_status"; fi
+          exit "$command_status"
+      - name: Verify native host pruning
+        timeout-minutes: 10
+        run: |
+          log=target/native-plan-logs/03-native-host-pruning.log
+          echo "stage=native-host-pruning fixture=native_host_pruning profile=all-features" | tee "$log"
+          set +e
+          /usr/bin/time -p timeout --verbose --signal=TERM --kill-after=30s 8m \
+            cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test native_host_pruning 2>&1 | tee -a "$log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          command_status=${pipeline_status[0]}
+          tee_status=${pipeline_status[1]}
+          printf 'command_exit_status=%s tee_exit_status=%s\n' "$command_status" "$tee_status" | tee -a "$log"
+          summary_status=("${PIPESTATUS[@]}")
+          set -e
+          if [ "${summary_status[0]}" -ne 0 ]; then exit "${summary_status[0]}"; fi
+          if [ "${summary_status[1]}" -ne 0 ]; then exit "${summary_status[1]}"; fi
+          if [ "$tee_status" -ne 0 ]; then exit "$tee_status"; fi
+          exit "$command_status"
+      - name: Verify standard host source planning
+        timeout-minutes: 15
+        run: |
+          log=target/native-plan-logs/04-standard-host-source-planning.log
+          echo "stage=standard-host-source-planning fixture=standard_host_source_planning profile=all-features" | tee "$log"
+          set +e
+          /usr/bin/time -p timeout --verbose --signal=TERM --kill-after=30s 13m \
+            cargo +nightly-2026-03-03 test --locked -p mech-build --all-features \
             --lib \
-            --test standard_host_source_planning
-          python3 scripts/check-native-host-catalog.py
-          python3 scripts/check-generated-project-determinism.py
-          python3 scripts/check-native-application-graphs.py
+            --test standard_host_source_planning 2>&1 | tee -a "$log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          command_status=${pipeline_status[0]}
+          tee_status=${pipeline_status[1]}
+          printf 'command_exit_status=%s tee_exit_status=%s\n' "$command_status" "$tee_status" | tee -a "$log"
+          summary_status=("${PIPESTATUS[@]}")
+          set -e
+          if [ "${summary_status[0]}" -ne 0 ]; then exit "${summary_status[0]}"; fi
+          if [ "${summary_status[1]}" -ne 0 ]; then exit "${summary_status[1]}"; fi
+          if [ "$tee_status" -ne 0 ]; then exit "$tee_status"; fi
+          exit "$command_status"
+      - name: Verify native host catalog
+        timeout-minutes: 10
+        run: |
+          log=target/native-plan-logs/05-native-host-catalog.log
+          echo "stage=native-host-catalog fixture=closed-provider-catalog profiles=standard,full" | tee "$log"
+          set +e
+          /usr/bin/time -p timeout --verbose --signal=TERM --kill-after=30s 8m \
+            python3 scripts/check-native-host-catalog.py 2>&1 | tee -a "$log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          command_status=${pipeline_status[0]}
+          tee_status=${pipeline_status[1]}
+          printf 'command_exit_status=%s tee_exit_status=%s\n' "$command_status" "$tee_status" | tee -a "$log"
+          summary_status=("${PIPESTATUS[@]}")
+          set -e
+          if [ "${summary_status[0]}" -ne 0 ]; then exit "${summary_status[0]}"; fi
+          if [ "${summary_status[1]}" -ne 0 ]; then exit "${summary_status[1]}"; fi
+          if [ "$tee_status" -ne 0 ]; then exit "$tee_status"; fi
+          exit "$command_status"
+      - name: Verify generated project determinism
+        timeout-minutes: 55
+        env:
+          MECH_NATIVE_DETERMINISM_GENERATOR_TIMEOUT_SECS: "1440"
+          MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "900"
+          MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS: "540"
+        run: |
+          log=target/native-plan-logs/06-generated-project-determinism.log
+          echo "stage=generated-project-determinism fixture=all-16 profiles=standard,fixed,full passes=2" | tee "$log"
+          set +e
+          /usr/bin/time -p timeout --verbose --signal=TERM --kill-after=30s 50m \
+            python3 scripts/check-generated-project-determinism.py 2>&1 | tee -a "$log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          command_status=${pipeline_status[0]}
+          tee_status=${pipeline_status[1]}
+          printf 'command_exit_status=%s tee_exit_status=%s\n' "$command_status" "$tee_status" | tee -a "$log"
+          summary_status=("${PIPESTATUS[@]}")
+          set -e
+          if [ "${summary_status[0]}" -ne 0 ]; then exit "${summary_status[0]}"; fi
+          if [ "${summary_status[1]}" -ne 0 ]; then exit "${summary_status[1]}"; fi
+          if [ "$tee_status" -ne 0 ]; then exit "$tee_status"; fi
+          exit "$command_status"
+      - name: Verify native application graphs
+        timeout-minutes: 30
+        env:
+          MECH_NATIVE_APPLICATION_GENERATOR_TIMEOUT_SECS: "1320"
+          MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "900"
+          MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS: "540"
+        run: |
+          log=target/native-plan-logs/07-native-application-graphs.log
+          echo "stage=native-application-graphs fixture=generated-project-matrix profiles=standard,fixed,full" | tee "$log"
+          set +e
+          /usr/bin/time -p timeout --verbose --signal=TERM --kill-after=30s 27m \
+            python3 scripts/check-native-application-graphs.py 2>&1 | tee -a "$log"
+          pipeline_status=("${PIPESTATUS[@]}")
+          command_status=${pipeline_status[0]}
+          tee_status=${pipeline_status[1]}
+          printf 'command_exit_status=%s tee_exit_status=%s\n' "$command_status" "$tee_status" | tee -a "$log"
+          summary_status=("${PIPESTATUS[@]}")
+          set -e
+          if [ "${summary_status[0]}" -ne 0 ]; then exit "${summary_status[0]}"; fi
+          if [ "${summary_status[1]}" -ne 0 ]; then exit "${summary_status[1]}"; fi
+          if [ "$tee_status" -ne 0 ]; then exit "$tee_status"; fi
+          exit "$command_status"
+      - name: Retain native-plan diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-plan-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            target/bytecode-v1-fixtures/owner-runner/logs
+          if-no-files-found: error
+          retention-days: 14
