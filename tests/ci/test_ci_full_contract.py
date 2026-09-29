@@ -103,6 +103,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertEqual(re.findall(r"--skip ([a-z_]+)", native), [
             "registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch",
             "live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure",
+            "materialize_every_generated_project",
         ])
         for script in ("check-native-host-catalog.py", "check-generated-project-determinism.py", "check-native-application-graphs.py"):
             self.assertIn(f"python3 scripts/{script}", native)

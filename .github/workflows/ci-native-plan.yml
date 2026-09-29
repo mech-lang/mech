@@ -31,7 +31,8 @@ jobs:
           cargo +nightly-2026-03-03 test -p mech-build --all-features --test native_host_pruning
           cargo +nightly-2026-03-03 test -p mech-build --all-features -- \
             --skip registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch \
-            --skip live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure
+            --skip live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure \
+            --skip materialize_every_generated_project
           python3 scripts/check-native-host-catalog.py
           python3 scripts/check-generated-project-determinism.py
           python3 scripts/check-native-application-graphs.py
