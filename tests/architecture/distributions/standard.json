@@ -193,6 +193,6 @@
     "web_host"
   ],
   "source_specializer_count": 70,
-  "surface_digest": "6cf61ab52a217b8bcbee7b1950909be46bd0ea43f95d00c3cd663365c9862781",
+  "surface_digest": "a0a16153e715f2aaf4bf12a053c3a3b81c6da52481b25d6b014efc75666421e8",
   "surface_digest_algorithm": "sha256-canonical-selected-cargo-surface-v1"
 }

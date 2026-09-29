@@ -445,7 +445,8 @@ fn renderer_rejects_active_script_hyperlinks() {
 
 #[test]
 fn retained_images_render_with_safe_escaped_attributes_and_captions() {
-    let document = document("![A ' & B](image'file.png?x=1&y=2)\n");
+    let document =
+        document("![A ' & B](image'file.png?x=1&y=2)\n![x'onerror='alert(1)](missing.png)\n");
     let html = CanonicalDocumentRenderer
         .render_html(&document, &[])
         .unwrap();
@@ -459,6 +460,8 @@ fn retained_images_render_with_safe_escaped_attributes_and_captions() {
         html.contains("<figcaption class='mech-figure-caption'>A ' &amp; B</figcaption>"),
         "{html}"
     );
+    assert!(html.contains("alt='x&#39;onerror=&#39;alert(1)'"), "{html}");
+    assert!(!html.contains("alt='x'onerror='"), "{html}");
 }
 
 #[test]
@@ -992,10 +995,10 @@ fn browser_source_omits_mounts_for_declaration_only_root_fences() {
 }
 
 #[test]
-fn browser_source_omits_program_mounts_for_effect_and_activation_roots() {
+fn browser_source_omits_program_mounts_for_effect_only_roots() {
     for source in [
         "@view := scene://view/root{:write(replace)}\n@view/replace <- 42\n",
-        "~state := 0\n~> true { state = state + 1 }\n",
+        "~> @trigger/EVENT { value := @env/HOME }\n",
         "@out/line <- 1\nf() => <f64>\n  | * => 2.\n",
     ] {
         let html = CanonicalDocumentRenderer
@@ -1006,12 +1009,28 @@ fn browser_source_omits_program_mounts_for_effect_and_activation_roots() {
 }
 
 #[test]
-fn browser_source_preserves_program_mount_before_trailing_context_send() {
-    let source = "answer := 42\n@out/line <- answer\n";
-    let html = CanonicalDocumentRenderer
-        .format_browser_html(&document(source))
+fn browser_source_preserves_program_mount_before_trailing_effects() {
+    for source in [
+        "answer := 42\n@out/line <- answer\n",
+        "answer := 42\n~> answer {}\n",
+    ] {
+        let document = document(source);
+        let html = CanonicalDocumentRenderer
+            .format_browser_html(&document)
+            .unwrap();
+        assert!(html.contains("mech-program-output"), "{html}");
+    }
+
+    let activation = document("answer := 42\n~> answer {}\n");
+    let program = CanonicalSourceFrontend
+        .compile_document(&activation)
         .unwrap();
-    assert!(html.contains("class='mech-program-output'"), "{html}");
+    assert!(
+        program
+            .document_outputs()
+            .iter()
+            .any(|output| output.kind == SourceDocumentOutputKind::Program && output.visible)
+    );
 }
 
 #[test]

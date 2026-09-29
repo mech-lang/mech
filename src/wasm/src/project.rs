@@ -50,7 +50,7 @@ use mech_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
 use mech_time::BrowserTimeHostFactory;
 #[cfg(feature = "browser_host_timer")]
 use mech_timer::BrowserTimerHostFactory;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -664,6 +664,7 @@ impl WasmDocumentBootstrap {
         }
     }
 
+    #[cfg(test)]
     fn program_output_id(&self) -> MResult<Option<OutputId>> {
         runtime_document(self, &self.document_base()).map(|(_, output)| output)
     }
@@ -1114,80 +1115,20 @@ fn runtime_document(
     Ok((document, Some(output)))
 }
 
-fn retained_document_fragment_addresses(
-    bindings: &[document::DocumentOutputBinding],
-    fragment_start: usize,
-    fragment_len: usize,
-) -> MResult<Vec<(mech_syntax::document::TextRange, u64)>> {
-    use mech_syntax::document::{TextRange, TextSize};
-
-    let fragment_end = fragment_start.checked_add(fragment_len).ok_or_else(|| {
-        document_runtime_error("accepted documentation fragment range overflowed")
-    })?;
-    bindings
-        .iter()
-        .filter_map(|binding| {
-            let (start, end) = binding.source_span?;
-            (start >= fragment_start && end <= fragment_end).then_some((binding, start, end))
-        })
-        .map(|(binding, start, end)| {
-            let start = u32::try_from(start - fragment_start).map_err(|_| {
-                document_runtime_error("documentation output start exceeds renderer limits")
-            })?;
-            let end = u32::try_from(end - fragment_start).map_err(|_| {
-                document_runtime_error("documentation output end exceeds renderer limits")
-            })?;
-            Ok((
-                TextRange::new(TextSize(start), TextSize(end)),
-                binding.output_id,
-            ))
-        })
-        .collect()
-}
-
-#[cfg(test)]
 fn live_document_fragment_addresses(
-    bootstrap: &WasmDocumentBootstrap,
     accepted: &SourceDocument,
+    runtime: &MechRuntime,
     fragment: &str,
     accepted_before: usize,
 ) -> MResult<Vec<(mech_syntax::document::TextRange, u64)>> {
-    use mech_syntax::document::{TextRange, TextSize};
-
-    let (runtime_source, _) = runtime_document(bootstrap, accepted)?;
-    let executable = runtime_source.source().to_contiguous_string();
-    let fragment_start = executable
+    let retained = accepted.source().to_contiguous_string();
+    let fragment_start = retained
         .rfind(fragment)
         .filter(|start| *start >= accepted_before)
         .ok_or_else(|| {
             document_runtime_error("accepted documentation fragment was not retained")
         })?;
-    let fragment_end = fragment_start + fragment.len();
-    let program = CanonicalSourceFrontend
-        .compile_interactive_document_with_catalog(
-            &runtime_source.document(),
-            mech_stdlib::source_catalog(),
-        )
-        .map_err(|error| document_runtime_error(error.to_string()))?;
-    Ok(program
-        .document_outputs()
-        .iter()
-        .filter(|output| output.visible && output.kind != SourceDocumentOutputKind::Program)
-        .filter_map(|output| {
-            let anchor = program.source_map().outputs.get(output.output as usize)?;
-            let start = anchor.range.start.0 as usize;
-            let end = anchor.range.end.0 as usize;
-            (start >= fragment_start && end <= fragment_end).then(|| {
-                (
-                    TextRange::new(
-                        TextSize((start - fragment_start) as u32),
-                        TextSize((end - fragment_start) as u32),
-                    ),
-                    u64::from(output.output),
-                )
-            })
-        })
-        .collect())
+    document::document_fragment_output_addresses(runtime, accepted, fragment_start, fragment.len())
 }
 
 fn document_runtime_error(message: impl Into<String>) -> MechError {
@@ -1223,107 +1164,168 @@ fn internal_repl_console_instance(hosts: &[HostInstanceConfig]) -> String {
 mod document {
     use super::*;
 
-    pub(super) fn document_output_ordinals(
-        bootstrap: &WasmDocumentBootstrap,
-    ) -> MResult<HashMap<u64, u64>> {
-        document_output_ordinals_for_source(bootstrap, bootstrap.document.document(), true)
+    fn document_presentation_output_identity(
+        name: &str,
+    ) -> Option<(SourceDocumentOutputKind, u32)> {
+        let decoded = mech_engine::decode_interactive_symbol_output_name(name);
+        let suffix = decoded
+            .as_deref()
+            .unwrap_or(name)
+            .strip_prefix("document:")?;
+        let (owner, offset) = suffix.rsplit_once(':')?;
+        let role = owner.rsplit(':').next().unwrap_or(owner);
+        let kind = match role {
+            "inline" => SourceDocumentOutputKind::Inline,
+            "fence" => SourceDocumentOutputKind::Fence,
+            _ => return None,
+        };
+        Some((kind, offset.parse::<u32>().ok()?))
     }
 
-    pub(super) fn document_output_ordinals_for_source(
+    fn runtime_presentation_outputs(
+        runtime: &MechRuntime,
+    ) -> Vec<(SourceDocumentOutputKind, u32, u64)> {
+        let mut outputs = runtime
+            .published_outputs()
+            .into_iter()
+            .filter_map(|(output, name)| {
+                document_presentation_output_identity(&name)
+                    .map(|(kind, offset)| (kind, offset, u64::from(output.0)))
+            })
+            .collect::<Vec<_>>();
+        outputs.sort_by_key(|(_, offset, _)| *offset);
+        outputs
+    }
+
+    struct ActiveDocumentOutputs {
+        presentation: Vec<(mech_syntax::document::TextRange, u64)>,
+        program: Option<u64>,
+    }
+
+    fn capture_output_index(
+        source: &[mech_runtime::CanonicalDocumentPresentationOutput],
+        runtime: &[(SourceDocumentOutputKind, u32, u64)],
+    ) -> Option<usize> {
+        (0..runtime.len()).find(|&index| {
+            let prefix_matches =
+                source[..index]
+                    .iter()
+                    .zip(&runtime[..index])
+                    .all(|(source, (kind, offset, _))| {
+                        source.kind == *kind && source.range.start.0 == *offset
+                    });
+            if !prefix_matches {
+                return false;
+            }
+            let source_suffix = &source[index..];
+            let runtime_suffix = &runtime[index + 1..];
+            let Some((first_source, (first_kind, first_offset, _))) =
+                source_suffix.first().zip(runtime_suffix.first())
+            else {
+                return source_suffix.is_empty() && runtime_suffix.is_empty();
+            };
+            let Some(shift) = first_offset.checked_sub(first_source.range.start.0) else {
+                return false;
+            };
+            first_source.kind == *first_kind
+                && shift > 0
+                && source_suffix
+                    .iter()
+                    .zip(runtime_suffix)
+                    .all(|(source, (kind, offset, _))| {
+                        source.kind == *kind
+                            && offset.checked_sub(source.range.start.0) == Some(shift)
+                    })
+        })
+    }
+
+    fn active_document_outputs(
+        candidate: &SourceDocument,
+        runtime: &MechRuntime,
+    ) -> MResult<ActiveDocumentOutputs> {
+        let source = mech_runtime::canonical_document_presentation_outputs(&candidate.document())
+            .map_err(|error| document_runtime_error(error.to_string()))?;
+        let mut active = runtime_presentation_outputs(runtime);
+        let program = if active.len() == source.len() {
+            if !source
+                .iter()
+                .zip(&active)
+                .all(|(source, (kind, offset, _))| {
+                    source.kind == *kind && source.range.start.0 == *offset
+                })
+            {
+                return Err(document_runtime_error(
+                    "active runtime presentation offsets do not match the accepted document",
+                ));
+            }
+            runtime
+                .program_output_id()
+                .map(|output| u64::from(output.0))
+        } else if active.len() == source.len() + 1 {
+            let index = capture_output_index(&source, &active).ok_or_else(|| {
+                document_runtime_error(
+                    "active runtime program capture does not align with the accepted document",
+                )
+            })?;
+            Some(active.remove(index).2)
+        } else {
+            return Err(document_runtime_error(format!(
+                "accepted document has {} presentation outputs for {} active runtime outputs",
+                source.len(),
+                active.len()
+            )));
+        };
+        Ok(ActiveDocumentOutputs {
+            presentation: source
+                .into_iter()
+                .zip(active)
+                .map(|(source, (_, _, output))| (source.range, output))
+                .collect(),
+            program,
+        })
+    }
+
+    pub(super) fn document_fragment_output_addresses(
+        runtime: &MechRuntime,
+        candidate: &SourceDocument,
+        fragment_start: usize,
+        fragment_len: usize,
+    ) -> MResult<Vec<(mech_syntax::document::TextRange, u64)>> {
+        use mech_syntax::document::{TextRange, TextSize};
+
+        let fragment_end = fragment_start.checked_add(fragment_len).ok_or_else(|| {
+            document_runtime_error("accepted documentation fragment range overflowed")
+        })?;
+        Ok(active_document_outputs(candidate, runtime)?
+            .presentation
+            .into_iter()
+            .filter_map(|(range, output)| {
+                let start = range.start.0 as usize;
+                let end = range.end.0 as usize;
+                (start >= fragment_start && end <= fragment_end).then(|| {
+                    (
+                        TextRange::new(
+                            TextSize((start - fragment_start) as u32),
+                            TextSize((end - fragment_start) as u32),
+                        ),
+                        output,
+                    )
+                })
+            })
+            .collect())
+    }
+
+    pub(super) fn document_output_ordinals_for_runtime(
         bootstrap: &WasmDocumentBootstrap,
         candidate: &SourceDocument,
+        runtime: &MechRuntime,
         require_all: bool,
     ) -> MResult<HashMap<u64, u64>> {
-        let bundled_initial = bootstrap
-            .initial_bundle
-            .as_ref()
-            .is_some_and(|bundle| bundle.source == candidate.source().to_contiguous_string());
-        if bundled_initial {
-            return bundled_output_ordinals(
-                bootstrap,
-                bootstrap.initial_bundle.as_ref().expect("checked above"),
-                require_all,
-            );
-        }
-        let (runtime_source, program_output) = runtime_document(bootstrap, candidate)?;
-        let nominal_origin = runtime_source.nominal_origin().cloned().or_else(|| {
-            bootstrap
-                .provenance
-                .get(&bootstrap.root_specifier)
-                .map(|provenance| provenance.nominal_origin.clone())
-        });
-        let frontend = nominal_origin.map_or(CanonicalSourceFrontend, |origin| {
-            CanonicalSourceFrontend.with_nominal_origin(origin)
-        });
-        let program = match frontend.compile_interactive_document_with_catalog(
-            &runtime_source.document(),
-            mech_stdlib::source_catalog(),
-        ) {
-            Ok(program) => program,
-            Err(_) if bootstrap.presentation_output_ids.is_empty() => return Ok(HashMap::new()),
-            Err(error) => return Err(document_runtime_error(error.to_string())),
-        };
-        let outputs = program
-            .document_outputs()
-            .iter()
-            .filter(|output| {
-                output.visible
-                    && output.kind != SourceDocumentOutputKind::Program
-                    && Some(output.output) != program_output.map(|id| id.get())
-            })
-            .collect::<Vec<_>>();
-        if require_all && outputs.len() < bootstrap.presentation_output_ids.len() {
+        let active = active_document_outputs(candidate, runtime)?;
+        if require_all && active.presentation.len() < bootstrap.presentation_output_ids.len() {
             return Err(document_runtime_error(format!(
-                "browser presentation payload has {} addresses for {} canonical outputs",
-                bootstrap.presentation_output_ids.len(),
-                outputs.len(),
-            )));
-        }
-        let mut ordinals = bootstrap
-            .presentation_output_ids
-            .iter()
-            .copied()
-            .zip(outputs.into_iter().map(|output| u64::from(output.output)))
-            .collect::<HashMap<_, _>>();
-        if let Some(output) = program_output {
-            ordinals.insert(root_document_program_output_id(), u64::from(output.0));
-        }
-        Ok(ordinals)
-    }
-
-    fn bundled_output_ordinals(
-        bootstrap: &WasmDocumentBootstrap,
-        bundle: &CanonicalProgramBundle,
-        require_all: bool,
-    ) -> MResult<HashMap<u64, u64>> {
-        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bundle.bytecode).map_err(
-            |error| document_runtime_error(format!("invalid bundled artifact: {error:?}")),
-        )?;
-        let document_prefix = format!("{}:", bundle.document_id);
-        let mut presentation = artifact
-            .outputs()
-            .iter()
-            .filter_map(|output| {
-                let name = mech_engine::decode_interactive_symbol_output_name(&output.name)
-                    .unwrap_or_else(|| output.name.clone());
-                let suffix = name.strip_prefix("document:")?;
-                let suffix = suffix.strip_prefix(&document_prefix).unwrap_or(suffix);
-                let (role, offset) = suffix.split_once(':')?;
-                matches!(role, "inline" | "fence")
-                    .then(|| {
-                        offset
-                            .parse::<u32>()
-                            .ok()
-                            .map(|offset| (offset, u64::from(output.output.0)))
-                    })
-                    .flatten()
-            })
-            .collect::<Vec<_>>();
-        presentation.sort_by_key(|(offset, _)| *offset);
-        if require_all && presentation.len() != bootstrap.presentation_output_ids.len() {
-            return Err(document_runtime_error(format!(
-                "bundled artifact has {} presentation outputs for {} browser addresses",
-                presentation.len(),
+                "active runtime has {} presentation outputs for {} browser addresses",
+                active.presentation.len(),
                 bootstrap.presentation_output_ids.len()
             )));
         }
@@ -1331,17 +1333,10 @@ mod document {
             .presentation_output_ids
             .iter()
             .copied()
-            .zip(presentation.into_iter().map(|(_, ordinal)| ordinal))
+            .zip(active.presentation.into_iter().map(|(_, ordinal)| ordinal))
             .collect::<HashMap<_, _>>();
-        if let Some(output) = artifact.outputs().first() {
-            let name = mech_engine::decode_interactive_symbol_output_name(&output.name)
-                .unwrap_or_else(|| output.name.clone());
-            if !name.starts_with("document:") {
-                ordinals.insert(
-                    root_document_program_output_id(),
-                    u64::from(output.output.0),
-                );
-            }
+        if let Some(output) = active.program {
+            ordinals.insert(root_document_program_output_id(), output);
         }
         Ok(ordinals)
     }
@@ -1404,16 +1399,14 @@ mod document {
             let Some(runtime) = repl.session.runtime() else {
                 return Ok(None);
             };
-            let bundle_output = bootstrap.initial_bundle.as_ref().is_some_and(|bundle| {
-                repl.session.source_document().is_some_and(|document| {
-                    document.source().to_contiguous_string() == bundle.source
-                })
-            });
-            let output_id = if bundle_output {
-                runtime.program_output_id()
-            } else {
-                bootstrap.program_output_id()?
+            let Some(document) = repl.session.source_document() else {
+                return Ok(None);
             };
+            let output_id =
+                document_output_ordinals_for_runtime(bootstrap, document, runtime, false)?
+                    .get(&root_document_program_output_id())
+                    .and_then(|output| u32::try_from(*output).ok())
+                    .map(OutputId::new);
             let Some(output_id) = output_id else {
                 return Ok(None);
             };
@@ -1556,9 +1549,18 @@ mod document {
         pub(super) fn try_from_bootstrap(
             bootstrap: WasmDocumentBootstrap,
         ) -> MResult<WasmDocument> {
-            let document_output_ordinals = document_output_ordinals(&bootstrap)?;
             let mut repl = crate::repl::WasmRepl::from_document(bootstrap.clone())?;
             let program_output = capture_program_output(&mut repl, &bootstrap)?;
+            let document_output_ordinals = {
+                let document = repl.session.source_document().ok_or_else(|| {
+                    document_runtime_error("document session has no retained source")
+                })?;
+                let runtime = repl
+                    .session
+                    .runtime()
+                    .ok_or_else(|| document_runtime_error("document runtime is not active"))?;
+                document_output_ordinals_for_runtime(&bootstrap, document, runtime, true)?
+            };
             Ok(Self {
                 repl,
                 bootstrap,
@@ -2346,9 +2348,14 @@ mod document {
                     retained_source.get(accepted_before..).ok_or_else(|| {
                         js_error("accepted documentation range is outside the retained source")
                     })?;
+                let runtime = self
+                    .repl
+                    .session
+                    .runtime()
+                    .ok_or_else(|| js_error("document runtime is not active"))?;
                 let addresses = live_document_fragment_addresses(
-                    &self.bootstrap,
                     current,
+                    runtime,
                     accepted_fragment,
                     accepted_before,
                 )
@@ -2399,7 +2406,13 @@ mod document {
                 self.repl.session.source_document().ok_or_else(|| {
                     document_runtime_error("document session has no retained source")
                 })?;
-            let ordinals = document_output_ordinals_for_source(&self.bootstrap, current, false)?;
+            let runtime = self
+                .repl
+                .session
+                .runtime()
+                .ok_or_else(|| document_runtime_error("document runtime is not active"))?;
+            let ordinals =
+                document_output_ordinals_for_runtime(&self.bootstrap, current, runtime, false)?;
             let output_id = ordinals
                 .get(&root_document_program_output_id())
                 .and_then(|ordinal| u32::try_from(*ordinal).ok())
@@ -3614,7 +3627,17 @@ mod tests {
             include_str!("../../../tests/fixtures/shims/all-slots.mec"),
         ] {
             let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
-            let outputs = document::document_output_ordinals(&bootstrap).unwrap();
+            let candidate = bootstrap.initial_document();
+            let (runtime, _) = activate_document_repl_runtime_document(
+                &bootstrap,
+                MechEventBuffer::default(),
+                &candidate,
+            )
+            .unwrap();
+            let outputs = document::document_output_ordinals_for_runtime(
+                &bootstrap, &candidate, &runtime, true,
+            )
+            .unwrap();
             for output_id in &bootstrap.presentation_output_ids {
                 assert!(outputs.contains_key(output_id));
             }
@@ -3662,10 +3685,41 @@ mod tests {
         assert!(!bootstrap.presentation_output_ids.is_empty());
         bootstrap.initial_bundle = Some(bundle);
 
-        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
+        let initial = bootstrap.initial_document();
+        let (runtime, _) = activate_document_repl_runtime_document(
+            &bootstrap,
+            MechEventBuffer::default(),
+            &initial,
+        )
+        .unwrap();
+        let ordinals =
+            document::document_output_ordinals_for_runtime(&bootstrap, &initial, &runtime, true)
+                .unwrap();
         assert!(ordinals.contains_key(&root_document_program_output_id()));
         for output_id in &bootstrap.presentation_output_ids {
             assert!(ordinals.contains_key(output_id));
+        }
+
+        let candidate_source = format!("{source}\nnext := answer + 1.0\nnext\n");
+        let candidate = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            candidate_source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let (runtime, _) = activate_document_repl_runtime_document(
+            &bootstrap,
+            MechEventBuffer::default(),
+            &candidate,
+        )
+        .unwrap();
+        let refreshed =
+            document::document_output_ordinals_for_runtime(&bootstrap, &candidate, &runtime, false)
+                .unwrap();
+        assert!(refreshed.contains_key(&root_document_program_output_id()));
+        for output_id in &bootstrap.presentation_output_ids {
+            assert!(refreshed.contains_key(output_id));
         }
     }
 
@@ -3674,7 +3728,16 @@ mod tests {
         let original = "value := 42\n\nResult {value}.\n";
         let replacement = "value := 42\n<+ value\n\nResult {value}.\n";
         let bootstrap = document_bootstrap("document.mec", original, HashMap::new(), Vec::new());
-        let before = document::document_output_ordinals(&bootstrap).unwrap();
+        let initial = bootstrap.initial_document();
+        let (runtime, _) = activate_document_repl_runtime_document(
+            &bootstrap,
+            MechEventBuffer::default(),
+            &initial,
+        )
+        .unwrap();
+        let before =
+            document::document_output_ordinals_for_runtime(&bootstrap, &initial, &runtime, true)
+                .unwrap();
         let candidate = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(1),
@@ -3684,36 +3747,41 @@ mod tests {
         .unwrap();
         bootstrap.stage_document_base(candidate.clone());
         bootstrap.commit();
+        let (runtime, _) = activate_document_repl_runtime_document(
+            &bootstrap,
+            MechEventBuffer::default(),
+            &candidate,
+        )
+        .unwrap();
         let after =
-            document::document_output_ordinals_for_source(&bootstrap, &candidate, false).unwrap();
+            document::document_output_ordinals_for_runtime(&bootstrap, &candidate, &runtime, false)
+                .unwrap();
         let address = bootstrap.presentation_output_ids[0];
         assert_ne!(before[&address], after[&address]);
-        let (runtime_source, _) = runtime_document(&bootstrap, &candidate).unwrap();
-        let interactive = CanonicalSourceFrontend
-            .compile_interactive_document_with_catalog(
-                &runtime_source.document(),
-                mech_stdlib::source_catalog(),
-            )
-            .unwrap();
-        let inline = interactive
-            .document_outputs()
-            .iter()
-            .find(|output| output.kind == SourceDocumentOutputKind::Inline)
-            .unwrap();
-        assert_eq!(after[&address], u64::from(inline.output));
+        let mapped_name = runtime.output_name(OutputId::new(after[&address] as u32));
+        assert!(
+            mapped_name
+                .as_deref()
+                .is_some_and(|name| name.starts_with("document:inline:")),
+            "mapped presentation output: {mapped_name:?}; active outputs: {:?}",
+            runtime.published_outputs(),
+        );
     }
 
     #[test]
     fn interactive_presentation_skips_integrity_constraint_outputs() {
         let source = include_str!("../../../examples/working/fizzbuzz.mec");
         let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
-        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
+        let initial = bootstrap.initial_document();
         let (runtime, _) = activate_document_repl_runtime_document(
             &bootstrap,
             MechEventBuffer::default(),
-            &bootstrap.initial_document(),
+            &initial,
         )
         .unwrap();
+        let ordinals =
+            document::document_output_ordinals_for_runtime(&bootstrap, &initial, &runtime, true)
+                .unwrap();
         let address = bootstrap.presentation_output_ids[0];
         let value = runtime
             .output_value(OutputId::new(ordinals[&address] as u32))
@@ -4798,8 +4866,14 @@ phase"#;
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
+        let (runtime, _) = activate_document_repl_runtime_document(
+            &bootstrap,
+            MechEventBuffer::default(),
+            &candidate,
+        )
+        .unwrap();
         let addresses =
-            live_document_fragment_addresses(&bootstrap, &candidate, fragment, baseline.len())
+            live_document_fragment_addresses(&candidate, &runtime, fragment, baseline.len())
                 .unwrap();
         assert_eq!(addresses.len(), 2);
         let parsed = SourceDocument::parse_resolved(

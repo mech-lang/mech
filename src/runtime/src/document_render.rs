@@ -2673,14 +2673,13 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
             }
             return;
         }
-        if node.kind() == SyntaxKind::ContextSend {
+        if matches!(
+            node.kind(),
+            SyntaxKind::ContextSend | SyntaxKind::ActivationScope
+        ) {
             if latest.is_none() {
                 retain_latest(latest, node.range(), false);
             }
-            return;
-        }
-        if node.kind() == SyntaxKind::ActivationScope {
-            retain_latest(latest, node.range(), false);
             return;
         }
         if matches!(
@@ -2740,15 +2739,32 @@ pub fn canonical_document_output_id(kind: SourceDocumentOutputKind, range: TextR
 pub fn canonical_document_presentation_output_ids(
     document: &DocumentSyntax,
 ) -> Result<Vec<u64>, CanonicalDocumentRenderError> {
+    Ok(canonical_document_presentation_outputs(document)?
+        .into_iter()
+        .map(|output| output.output_id)
+        .collect())
+}
+
+/// One source-visible presentation output in renderer order.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CanonicalDocumentPresentationOutput {
+    pub kind: SourceDocumentOutputKind,
+    pub range: TextRange,
+    pub output_id: u64,
+}
+
+pub fn canonical_document_presentation_outputs(
+    document: &DocumentSyntax,
+) -> Result<Vec<CanonicalDocumentPresentationOutput>, CanonicalDocumentRenderError> {
     let mut outputs = Vec::new();
     collect_root_presentation_outputs(document.syntax(), &mut outputs)?;
-    outputs.sort_by_key(|(range, _)| range.start);
-    Ok(outputs.into_iter().map(|(_, output)| output).collect())
+    outputs.sort_by_key(|output| output.range.start);
+    Ok(outputs)
 }
 
 fn collect_root_presentation_outputs(
     node: &SyntaxNode,
-    outputs: &mut Vec<(TextRange, u64)>,
+    outputs: &mut Vec<CanonicalDocumentPresentationOutput>,
 ) -> Result<(), CanonicalDocumentRenderError> {
     if matches!(
         node.kind(),
@@ -2758,10 +2774,11 @@ fn collect_root_presentation_outputs(
     }
     if EvalInlineMechCodeSyntax::cast(node.clone()).is_some() {
         let range = node.range();
-        outputs.push((
+        outputs.push(CanonicalDocumentPresentationOutput {
+            kind: SourceDocumentOutputKind::Inline,
             range,
-            canonical_document_output_id(SourceDocumentOutputKind::Inline, range),
-        ));
+            output_id: canonical_document_output_id(SourceDocumentOutputKind::Inline, range),
+        });
         return Ok(());
     }
     if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
@@ -2780,10 +2797,11 @@ fn collect_root_presentation_outputs(
             .ok_or_else(|| range_error(fence.syntax().range()))?;
         if presentation.show_output && scope_has_compiled_value(code.syntax()) {
             let range = fence.syntax().range();
-            outputs.push((
+            outputs.push(CanonicalDocumentPresentationOutput {
+                kind: SourceDocumentOutputKind::Fence,
                 range,
-                canonical_document_output_id(SourceDocumentOutputKind::Fence, range),
-            ));
+                output_id: canonical_document_output_id(SourceDocumentOutputKind::Fence, range),
+            });
         }
         return Ok(());
     }

@@ -130,7 +130,7 @@ build = [
       "cli_core", "compiler",
       "dep:mech-build",
       "mech-stdlib/native-plan",
-      "mech-runtime", "mech-runtime/compiler", "mech-runtime/compute", "mech-runtime/native-link", "mech-runtime/serde",
+      "mech-runtime", "mech-runtime/compiler", "mech-runtime/native-link", "mech-runtime/serde",
       ]
 # `mech run` is a complete source-to-resident product surface: it compiles the
 # standard language, admits the resulting resident program, and installs the
