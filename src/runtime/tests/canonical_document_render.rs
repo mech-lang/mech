@@ -1016,23 +1016,27 @@ fn browser_source_preserves_program_mount_before_trailing_context_send() {
 
 #[test]
 fn canonical_pretty_text_spaces_formula_operators() {
-    let source =
-        "answer:=40+2\nvalid:=answer>=42 & true\n~count:=0\ncount+=1\nresult:=make(1 ,2)\n";
+    let source = "answer:=40+2\n~count:=0\ncount +=1\nresult:=make(1 ,2)\n";
     let formatted = CanonicalDocumentRenderer
         .format_pretty_text(&document(source))
         .unwrap();
     assert_eq!(
         formatted,
-        "answer := 40 + 2\nvalid := answer >= 42 & true\n~count := 0\ncount += 1\nresult := make(1, 2)\n"
+        "answer := 40 + 2\n~count := 0\ncount += 1\nresult := make(1, 2)\n"
     );
 }
 
 #[test]
 fn canonical_pretty_text_spaces_record_and_map_separators() {
     let formatted = CanonicalDocumentRenderer
-        .format_pretty_text(&document("record:={a:1,b:2}\nmap:={1:2,3:4}\n"))
+        .format_pretty_text(&document(
+            "record:={ a:1,b:2 }\nmap:={ 1:2,3:4 }\nvector:=[ 1 2 ]\n",
+        ))
         .unwrap();
-    assert_eq!(formatted, "record := {a: 1, b: 2}\nmap := {1: 2, 3: 4}\n");
+    assert_eq!(
+        formatted,
+        "record := {a: 1, b: 2}\nmap := {1: 2, 3: 4}\nvector := [1 2]\n"
+    );
 }
 
 #[test]

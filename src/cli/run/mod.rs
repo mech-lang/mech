@@ -89,12 +89,36 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
 
 fn parses_as_executable_run_source(input: &str) -> bool {
     use mech_runtime::resolver::SourceDocument;
-    use mech_syntax::document::{DocumentId, ParseConfig, Revision, TextSnapshot};
+    use mech_syntax::document::{
+        AstNode, DocumentId, ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSnapshot,
+    };
+
+    fn contains_run_source_metadata(root: &SyntaxNode) -> bool {
+        let mut pending = vec![root.clone()];
+        while let Some(node) = pending.pop() {
+            if matches!(
+                node.kind(),
+                SyntaxKind::ContextDeclaration
+                    | SyntaxKind::ExportDeclaration
+                    | SyntaxKind::ImportDeclaration
+                    | SyntaxKind::ModuleImport
+            ) {
+                return true;
+            }
+            pending.extend(node.children());
+        }
+        false
+    }
+
     let Ok(source) = TextSnapshot::new(DocumentId(0), Revision(0), input) else {
         return false;
     };
     let document = SourceDocument::parse(source, ParseConfig::default());
-    document.is_strictly_clean() && document.document().contains_executable_source()
+    if !document.is_strictly_clean() {
+        return false;
+    }
+    let syntax = document.document();
+    syntax.contains_executable_source() || contains_run_source_metadata(syntax.syntax())
 }
 
 pub fn new_cli_runtime(
@@ -331,6 +355,18 @@ mod tests {
     #[test]
     fn classifies_single_plain_inline_expression_as_inline_source() {
         let mode = classify_run_inputs(vec!["x := 1".to_string()]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_single_source_import_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec!["+> ./dep.mec".to_string()]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_split_source_import_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec!["+>".to_string(), "./dep.mec".to_string()]);
         assert!(matches!(mode, RunInputMode::InlineSource(_)));
     }
 

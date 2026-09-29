@@ -189,14 +189,13 @@ pub fn section_element(
             let code_id = block.config.namespace;
             if code_id == 0 {
                 out = eval_fenced_code_block(&block.code, p, false)?;
-                // Save the output of the last code block in the parent interpreter
-                // so we can reference it later.
-                let out_id = crate::program::fenced_document_output_id(block)
-                    .expect("an executable fenced block has an output identity");
-                p.out_values.borrow_mut().insert(
-                    out_id,
-                    crate::interpreter::retained_source_cell(out.clone())?,
-                );
+                // Declaration-only fences execute without publishing a value.
+                if let Some(out_id) = crate::program::fenced_document_output_id(block) {
+                    p.out_values.borrow_mut().insert(
+                        out_id,
+                        crate::interpreter::retained_source_cell(out.clone())?,
+                    );
+                }
             } else {
                 let mut sub_interpreters = p.sub_interpreters.borrow_mut();
 
@@ -211,14 +210,13 @@ pub fn section_element(
                 out = p.with_interpreter(pp.as_ref(), |execution| {
                     eval_fenced_code_block(&block.code, execution, true)
                 })?;
-                // Save the output of the last code block in the parent interpreter
-                // so we can reference it later.
-                let out_id = crate::program::fenced_document_output_id(block)
-                    .expect("an executable fenced block has an output identity");
-                pp.out_values.borrow_mut().insert(
-                    out_id,
-                    crate::interpreter::retained_source_cell(out.clone())?,
-                );
+                // Declaration-only fences execute without publishing a value.
+                if let Some(out_id) = crate::program::fenced_document_output_id(block) {
+                    pp.out_values.borrow_mut().insert(
+                        out_id,
+                        crate::interpreter::retained_source_cell(out.clone())?,
+                    );
+                }
                 // A named fence is a scoped evaluator, but its returned value is
                 // still the latest document result. Mirror it into the parent
                 // `ans` projection so the document-boundary capture observes the
@@ -410,6 +408,40 @@ mod section_annotation_tests {
                 section_compute_placement(&section).unwrap_err().kind_name(),
                 expected
             );
+        }
+    }
+}
+
+#[cfg(all(test, feature = "functions"))]
+mod fenced_output_tests {
+    use super::*;
+
+    #[test]
+    fn fences_without_result_identity_execute_without_publishing() {
+        let interpreter = Interpreter::new(0, 100);
+        let mut services = NoMechExecutionServices;
+        let execution = InterpreterExecution::new(&interpreter, &mut services);
+
+        for (namespace_str, namespace) in [("", 0), ("worker", 1)] {
+            let block = FencedMechCode {
+                source: Token::default(),
+                code: Vec::new(),
+                imports: Vec::new(),
+                exports: Vec::new(),
+                config: BlockConfig {
+                    namespace_str: namespace_str.to_owned(),
+                    namespace,
+                    disabled: false,
+                    hidden: false,
+                    output: false,
+                },
+                options: None,
+            };
+
+            assert!(matches!(
+                section_element(&SectionElement::FencedMechCode(block), &execution).unwrap(),
+                SpecializationInput::Absent
+            ));
         }
     }
 }

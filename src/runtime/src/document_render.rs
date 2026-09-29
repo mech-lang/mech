@@ -3059,11 +3059,19 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
                 .iter()
                 .any(|range| token.range().start >= range.start && token.range().end <= range.end))
             || (kind == SyntaxKind::Colon && binding_colon_ranges.contains(&token.range()));
+        let closes_delimiter = matches!(
+            kind,
+            SyntaxKind::RightParen | SyntaxKind::RightBracket | SyntaxKind::RightBrace
+        );
+        let follows_open_delimiter = matches!(
+            previous,
+            Some(SyntaxKind::LeftParen | SyntaxKind::LeftBracket | SyntaxKind::LeftBrace)
+        );
         if gap.contains(['\r', '\n']) {
             output.push_str(&gap);
-        } else if separator {
-            // Canonical argument and binding separators never retain
-            // horizontal space before the token.
+        } else if separator || closes_delimiter || follows_open_delimiter {
+            // Canonical separators and delimiter interiors never retain
+            // horizontal padding.
         } else if previous.is_some() {
             if previous_was_separator
                 || !gap.is_empty()
