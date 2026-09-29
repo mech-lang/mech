@@ -1,5 +1,5 @@
 {
-  "dependency_count": 402,
+  "dependency_count": 403,
   "distribution": "standard",
   "native_planning_owner_count": 6,
   "runtime_factory_count": 1699,
@@ -96,6 +96,7 @@
     "mech-bytecode",
     "mech-combinatorics",
     "mech-compare",
+    "mech-compute",
     "mech-console",
     "mech-core",
     "mech-engine",
@@ -193,6 +194,6 @@
     "web_host"
   ],
   "source_specializer_count": 70,
-  "surface_digest": "da0a1b26cd29092198efb78521250faa13cb64dc069878cb23a7ad845c745ce2",
+  "surface_digest": "3fc9c3d49e5a584d089643dac13ecd0d99975bcebb06ea55862cbaa9416ad5f4",
   "surface_digest_algorithm": "sha256-canonical-selected-cargo-surface-v1"
 }

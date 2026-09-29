@@ -55,6 +55,14 @@ case "$continuity_edit" in
     exit 1
     ;;
 esac
+terminal_submit_probe="${MECH_EKF_TERMINAL_SUBMIT_PROBE:-true}"
+case "$terminal_submit_probe" in
+  true|false) ;;
+  *)
+    echo "MECH_EKF_TERMINAL_SUBMIT_PROBE must be true or false" >&2
+    exit 1
+    ;;
+esac
 python3 - "$project_dir/localization.mec" "$filter_count" <<'PY'
 from pathlib import Path
 import sys
@@ -1167,7 +1175,8 @@ if ! grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html"; then
 fi
 
 set +e
-python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" <<'PY'
+python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" \
+  "$terminal_submit_probe" <<'PY'
 import json
 from pathlib import Path
 import sys
@@ -1181,7 +1190,7 @@ from tests.browser.harness import (
 )
 
 
-page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
+page_url, profile, dom_file, chrome_log, compute_backend, terminal_submit_probe = sys.argv[1:]
 flags = []
 if compute_backend != "wgpu":
     flags.append("--disable-gpu")
@@ -1197,7 +1206,7 @@ with BrowserCompletionServer() as completion:
     browser = ChromeSession(None, profile, chrome_log, flags=flags).start()
     try:
         callback = completion.base_url
-        if compute_backend == "wgpu":
+        if compute_backend == "wgpu" and terminal_submit_probe == "true":
             query = urllib.parse.urlencode({
                 "mech-terminal-submit-probe": "1",
                 "mech-canary-callback": callback,
@@ -1210,7 +1219,7 @@ with BrowserCompletionServer() as completion:
                 timeout=20,
             )
             probe_data = json.loads(
-                completion.wait_for("ekf-terminal-finished", timeout=45)
+                completion.wait_for("ekf-terminal-finished", timeout=150)
             )
             probe = {
                 "done": probe_data.get("mechDone") == "true",

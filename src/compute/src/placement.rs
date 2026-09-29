@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(feature = "runtime-values")]
 use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, CellSlotId, ComputePlacement, DeliveryMode, ExternalInteraction, FloatWidth,
@@ -473,17 +474,27 @@ fn classify_node(
             BindingDeclaration::Input {
                 source: ArtifactSource::Constant(constant),
                 ..
-            } => match artifact
-                .constants()
-                .get(*constant)
-                .map(|value| value.data())
-            {
-                Some(mech_core::ValueData::F32(_)) => true,
-                Some(mech_core::ValueData::Matrix(matrix)) => {
-                    matches!(matrix.elements(), SequenceView::F32(_))
+            } => {
+                #[cfg(feature = "runtime-values")]
+                {
+                    match artifact
+                        .constants()
+                        .get(*constant)
+                        .map(|value| value.data())
+                    {
+                        Some(mech_core::ValueData::F32(_)) => true,
+                        Some(mech_core::ValueData::Matrix(matrix)) => {
+                            matches!(matrix.elements(), SequenceView::F32(_))
+                        }
+                        _ => false,
+                    }
                 }
-                _ => false,
-            },
+                #[cfg(not(feature = "runtime-values"))]
+                {
+                    let _ = constant;
+                    false
+                }
+            }
             BindingDeclaration::Output { target, .. } => schema_elements(
                 artifact,
                 artifact.slots()[target.get() as usize].schema,

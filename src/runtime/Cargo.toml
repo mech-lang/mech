@@ -25,7 +25,7 @@ resident-external = ["runtime", "string", "mech-engine/resident-artifact"]
 resident_external_test_support = ["resident-routing-source", "compiler_default"]
 resident-routing = ["resident-external"]
 resident-routing-source = ["resident-routing", "semantic-compiler", "mech-syntax/formatter"]
-compute = ["resident-routing-source", "f32", "f64", "string", "matrixd", "dep:mech-compute"]
+compute = ["resident-routing-source", "f64", "string", "matrixd", "dep:mech-compute"]
 native-link = ["runtime", "string"]
 source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
 semantic-compiler = ["source", "mech-engine/semantic-compiler"]
@@ -216,7 +216,7 @@ trybuild = "1.0.118"
 blake3 = "1.8.5"
 mech-engine = { version = "0.3.5", path = "../engine", default-features = false }
 mech-core = { version = "0.3.5", path = "../core", default-features = false }
-mech-compute = { version = "0.3.5", path = "../compute", optional = true }
+mech-compute = { version = "0.3.5", path = "../compute", optional = true, default-features = false }
 mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false, optional = true }
 serde = { version = "1.0.228", optional = true }
 serde_derive = { version = "1.0.228", optional = true }

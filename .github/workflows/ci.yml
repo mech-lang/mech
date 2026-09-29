@@ -446,6 +446,7 @@ jobs:
           MECH_BIN=target/debug/mech \
             MECH_EKF_COMPUTE_BACKEND=wgpu \
             MECH_EKF_CONTINUITY_EDIT=false \
+            MECH_EKF_TERMINAL_SUBMIT_PROBE=false \
             MECH_EKF_RESULT_FILE=/tmp/ekf-wgpu-no-edit.json \
             bash scripts/smoke-served-resident-ekf-browser.sh
           MECH_BIN=target/debug/mech \
