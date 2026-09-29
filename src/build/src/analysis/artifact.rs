@@ -146,28 +146,32 @@ pub(crate) fn plan_artifact_external_contracts(
         .iter()
         .filter_map(|input| match input.source {
             mech_engine::__resident::ActivatedInputSource::Observation { node, .. } => {
-                Some((input.slot, node))
+                Some((input, node))
             }
             mech_engine::__resident::ActivatedInputSource::DeclaredInput { .. } => None,
         })
-        .map(|(slot, node)| {
-            observation_values
-                .get(&node)
-                .map(|value| (slot, value))
-                .ok_or_else(|| {
+        .map(|(input, node)| {
+            let value = observation_values.get(&node).ok_or_else(|| {
+                artifact_error(format!(
+                    "resource observation node {} has no planned provider value",
+                    node.get()
+                ))
+            })?;
+            let value = value
+                .rebind(input.schema, &input.shape, artifact.schemas())
+                .map_err(|error| {
                     artifact_error(format!(
-                        "resource observation node {} has no planned provider value",
-                        node.get()
+                        "resource observation node {} does not match artifact input {}: {error:?}",
+                        node.get(),
+                        input.slot.get(),
                     ))
-                })
+                })?;
+            Ok((input.slot, value))
         })
         .collect::<MResult<Vec<_>>>()?;
     let inputs = captured
         .iter()
-        .map(|(slot, value)| CapturedValueInput {
-            slot: *slot,
-            value: *value,
-        })
+        .map(|(slot, value)| CapturedValueInput { slot: *slot, value })
         .collect::<Vec<_>>();
     let prepared = instance
         .prepare_turn_values(&inputs)

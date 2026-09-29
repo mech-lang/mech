@@ -134,6 +134,15 @@ harness = r'''<script>
     const performContinuityEdit = "__MECH_PERFORM_CONTINUITY_EDIT__" === "true";
     const terminalSubmitProbe =
       new URLSearchParams(location.search).has("mech-terminal-submit-probe");
+    const completionUrl = new URLSearchParams(location.search).get("mech-canary-callback");
+    const signalCompletion = name => {
+      if (completionUrl) {
+        navigator.sendBeacon(
+          `${completionUrl}/${name}`,
+          JSON.stringify(Object.fromEntries(Object.entries(root.dataset))),
+        );
+      }
+    };
     const originalConsoleError = console.error;
     const diagnosticText = (value) => value?.stack || value?.message || String(value);
     console.error = (...args) => {
@@ -235,6 +244,7 @@ harness = r'''<script>
             documentRenderEvents === rendersBeforeDispose
           );
           root.dataset.mechDone = "true";
+          signalCompletion("ekf-terminal-finished");
         }, 50);
         return;
       }
@@ -1107,15 +1117,18 @@ harness = r'''<script>
         root.dataset.mechTerminalSubmitObserved = "true";
         root.dataset.mechTerminalSubmitRenderSuppressed = "true";
         root.dataset.mechDone = "true";
+        signalCompletion("ekf-finished");
         return;
       }
       if (updates >= 450 && !cameraToggleDisabled) {
         root.dataset.mechTimedOut = "true";
+        signalCompletion("ekf-finished");
         globalThis.MechDocumentController?.dispose();
         return;
       }
       if (harnessFrames >= 5000) {
         root.dataset.mechTimedOut = "true";
+        signalCompletion("ekf-finished");
         globalThis.MechDocumentController?.dispose();
       }
     }, 16);
@@ -1145,10 +1158,14 @@ python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_back
 import json
 from pathlib import Path
 import sys
-import time
+import urllib.parse
 
 from scripts.browser_webgpu_flags import chrome_webgpu_test_flags
-from tests.browser.harness import ChromeSession
+from tests.browser.harness import (
+    BrowserCompletionServer,
+    ChromeSession,
+    write_dataset_snapshot,
+)
 
 
 page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
@@ -1163,100 +1180,75 @@ else:
     ))
 
 milestones = {}
-browser = ChromeSession(None, profile, chrome_log, flags=flags).start()
-try:
-    if compute_backend == "wgpu":
-        separator = "&" if "?" in page_url else "?"
-        browser.navigate(page_url + separator + "mech-terminal-submit-probe=1")
+with BrowserCompletionServer() as completion:
+    browser = ChromeSession(None, profile, chrome_log, flags=flags).start()
+    try:
+        callback = completion.base_url
+        if compute_backend == "wgpu":
+            query = urllib.parse.urlencode({
+                "mech-terminal-submit-probe": "1",
+                "mech-canary-callback": callback,
+            })
+            browser.navigate(f"{page_url}?{query}")
+            browser.wait_for(
+                "new URLSearchParams(location.search).has('mech-terminal-submit-probe') "
+                "&& document.readyState !== 'loading'",
+                "the terminal-submit probe document to commit",
+                timeout=20,
+            )
+            probe_data = json.loads(
+                completion.wait_for("ekf-terminal-finished", timeout=45)
+            )
+            probe = {
+                "done": probe_data.get("mechDone") == "true",
+                "observed": probe_data.get("mechTerminalSubmitObserved") == "true",
+                "renderSuppressed": (
+                    probe_data.get("mechTerminalSubmitRenderSuppressed") == "true"
+                ),
+                "consoleError": probe_data.get("mechConsoleError", ""),
+                "pageError": probe_data.get("mechPageError", ""),
+            }
+            if not all((
+                probe.get("done"),
+                probe.get("observed"),
+                probe.get("renderSuppressed"),
+            )) or probe.get("consoleError") or probe.get("pageError"):
+                write_dataset_snapshot(dom_file, probe_data)
+                raise RuntimeError(
+                    f"terminal compute submission proof failed: {probe!r}"
+                )
+
+        query = urllib.parse.urlencode({"mech-canary-callback": callback})
+        browser.navigate(f"{page_url}?{query}")
         browser.wait_for(
-            "new URLSearchParams(location.search).has('mech-terminal-submit-probe') "
+            "!new URLSearchParams(location.search).has('mech-terminal-submit-probe') "
             "&& document.readyState !== 'loading'",
-            "the terminal-submit probe document to commit",
+            "the fresh numeric EKF document to commit",
             timeout=20,
         )
-        probe_deadline = time.monotonic() + 45
-        probe = {}
-        while time.monotonic() < probe_deadline:
-            if browser.process.poll() is not None:
-                raise RuntimeError(
-                    "Chrome exited while proving terminal compute submission"
-                )
-            probe = browser.evaluate(r'''(() => {
-              const data = document.documentElement?.dataset || {};
-              return {
-                done: data.mechDone === "true",
-                observed: data.mechTerminalSubmitObserved === "true",
-                renderSuppressed:
-                  data.mechTerminalSubmitRenderSuppressed === "true",
-                consoleError: data.mechConsoleError || "",
-                pageError: data.mechPageError || "",
-              };
-            })()''', timeout=max(0.01, probe_deadline - time.monotonic())) or {}
-            if any((
-                probe.get("done"),
-                probe.get("consoleError"),
-                probe.get("pageError"),
-            )):
-                break
-            time.sleep(0.1)
-        if not all((
-            probe.get("done"),
-            probe.get("observed"),
-            probe.get("renderSuppressed"),
-        )) or probe.get("consoleError") or probe.get("pageError"):
-            browser.write_dom(dom_file)
-            raise RuntimeError(
-                f"terminal compute submission proof failed: {probe!r}"
-            )
-
-    browser.navigate(page_url)
-    browser.wait_for(
-        "!new URLSearchParams(location.search).has('mech-terminal-submit-probe') "
-        "&& document.readyState !== 'loading'",
-        "the fresh numeric EKF document to commit",
-        timeout=20,
-    )
-    deadline = time.monotonic() + 90
-    while time.monotonic() < deadline:
-        if browser.process.poll() is not None:
-            raise RuntimeError(
-                f"Chrome exited while running the canary ({browser.process.returncode})"
-            )
-        snapshot = browser.evaluate(r'''(() => {
-          const root = document.documentElement;
-          const data = root?.dataset || {};
-          return {
-            readyState: document.readyState,
-            documentStatus: data.mechDocumentStatus || "",
-            adapterStatus: data.mechComputeAdapterStatus || "",
-            deviceStatus: data.mechComputeDeviceStatus || "",
-            computeLifecycle: data.mechComputeLifecycle || "",
-            computeBackend: data.mechComputeBackend || "",
-            computeDispatches: data.mechComputeDispatches || "0",
-            done: data.mechDone === "true",
-            timedOut: data.mechTimedOut === "true",
-            consoleError: data.mechConsoleError || "",
-            pageError: data.mechPageError || "",
-          };
-        })()''', timeout=max(0.01, deadline - time.monotonic())) or {}
+        dataset = json.loads(completion.wait_for("ekf-finished", timeout=90))
+        snapshot = {
+            "documentStatus": dataset.get("mechDocumentStatus", ""),
+            "adapterStatus": dataset.get("mechComputeAdapterStatus", ""),
+            "deviceStatus": dataset.get("mechComputeDeviceStatus", ""),
+            "computeLifecycle": dataset.get("mechComputeLifecycle", ""),
+            "computeBackend": dataset.get("mechComputeBackend", ""),
+            "computeDispatches": dataset.get("mechComputeDispatches", "0"),
+            "done": dataset.get("mechDone") == "true",
+            "timedOut": dataset.get("mechTimedOut") == "true",
+            "consoleError": dataset.get("mechConsoleError", ""),
+            "pageError": dataset.get("mechPageError", ""),
+        }
         milestones = snapshot
-        if any((
-            snapshot.get("done"),
-            snapshot.get("timedOut"),
-            snapshot.get("consoleError"),
-            snapshot.get("pageError"),
-        )):
-            break
-        time.sleep(0.1)
-    browser.write_dom(dom_file)
-finally:
-    browser.close()
-    with Path(chrome_log).open("ab") as log:
-        log.write((
-            "\nMech browser milestones: "
-            + json.dumps(milestones, sort_keys=True)
-            + "\n"
-        ).encode())
+        write_dataset_snapshot(dom_file, dataset)
+    finally:
+        browser.close()
+        with Path(chrome_log).open("ab") as log:
+            log.write((
+                "\nMech browser milestones: "
+                + json.dumps(milestones, sort_keys=True)
+                + "\n"
+            ).encode())
 raise SystemExit(124)
 PY
 chrome_status="$?"

@@ -112,7 +112,7 @@ fn live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure() {
         offline: true,
     };
     let builder = NativeApplicationBuilder::new(NativeBuildEnvironment {
-        function_catalog: mech_stdlib::native_plan_catalog(),
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
         host_catalog: synthetic_live_host_catalog(),
         dependency_source: NativeDependencySource::Registry {
             version: MECH_COMPONENT_VERSION.to_owned(),

@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import html
+import http.server
 import json
 import os
 from pathlib import Path
 import queue
+import re
 import secrets
 import shutil
 import signal
@@ -24,6 +27,77 @@ from typing import Any
 
 class BrowserFailure(AssertionError):
     """A browser scenario or its infrastructure failed."""
+
+
+class BrowserCompletionServer:
+    """Receive explicit completion beacons without polling a busy renderer."""
+
+    def __init__(self) -> None:
+        self.token = secrets.token_urlsafe(18)
+        self.messages: queue.Queue[tuple[str, bytes]] = queue.Queue()
+        messages = self.messages
+        prefix = f"/{self.token}/"
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
+                length = int(self.headers.get("Content-Length", "0"))
+                body = self.rfile.read(length) if length else b""
+                path = urllib.parse.urlparse(self.path).path
+                if path.startswith(prefix):
+                    messages.put((urllib.parse.unquote(path[len(prefix):]), body))
+                    self.send_response(204)
+                else:
+                    self.send_response(404)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+
+            def log_message(self, _format: str, *_args: object) -> None:
+                pass
+
+        self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+
+    @property
+    def base_url(self) -> str:
+        host, port = self.server.server_address[:2]
+        return f"http://{host}:{port}/{self.token}"
+
+    def wait_for(self, expected: str, *, timeout: float = 30) -> bytes:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                message, body = self.messages.get(
+                    timeout=max(0.01, deadline - time.monotonic())
+                )
+            except queue.Empty:
+                break
+            if message == expected:
+                return body
+        raise BrowserFailure(f"timed out waiting for browser completion beacon {expected!r}")
+
+    def close(self) -> None:
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+
+    def __enter__(self) -> "BrowserCompletionServer":
+        return self
+
+    def __exit__(self, _type: object, _value: object, _traceback: object) -> None:
+        self.close()
+
+
+def write_dataset_snapshot(path: str | os.PathLike[str], dataset: dict[str, Any]) -> None:
+    """Write a deterministic HTML shell containing a captured DOMStringMap."""
+
+    attributes = []
+    for name, value in sorted(dataset.items()):
+        attribute = "data-" + re.sub(
+            r"[A-Z]", lambda match: "-" + match.group(0).lower(), name
+        )
+        attributes.append(f'{attribute}="{html.escape(str(value), quote=True)}"')
+    Path(path).write_text(f"<html {' '.join(attributes)}><head></head><body></body></html>\n")
 
 
 def free_port() -> int:
