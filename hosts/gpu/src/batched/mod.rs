@@ -1914,7 +1914,7 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_concatenate(output, &inputs, false)
             } else if operation == "matrix/transpose" {
                 self.lower_transpose(output, &inputs)
-            } else if operation == "matrix/multiply" {
+            } else if matches!(operation.as_str(), "matrix/multiply" | "matrix/matmul") {
                 self.lower_matmul(output, &inputs)
             } else if operation == "matrix/solve" {
                 self.lower_solve(output, &inputs)
@@ -1924,6 +1924,8 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_negate(output, &inputs)
             } else if operation == "math/abs" {
                 self.lower_absolute(output, &inputs)
+            } else if operation == "convert/kind" {
+                self.lower_copy(output, &inputs)
             } else if let Some(comparison) = comparison_operation(&operation) {
                 self.lower_compare(output, &inputs, comparison)
             } else if let Some(logic) = logic_operation(&operation) {
@@ -2085,12 +2087,37 @@ impl<'a> BatchCompiler<'a> {
                 inputs.len()
             ));
         }
-        let source = self.source_shape(inputs[0])?;
         let result = self.shape(output)?;
         let operation_name = display_operation(operation);
         let mode = operation
             .resolved_selection_mode(inputs.len() - 1)
             .ok_or_else(|| format!("{operation_name} has no canonical selection mode"))?;
+        if inputs.len() == 2
+            && mode == ResolvedSelectionMode::LinearScalar
+            && let Some(members) = self.composite_pack_inputs(inputs[0])?
+        {
+            let selected = self.constant_indices(inputs[1], members.len(), "composite")?;
+            let [selected] = selected.as_slice() else {
+                return Err("composite access requires exactly one static selector".to_owned());
+            };
+            let source = members[*selected];
+            let source_shape = self.source_shape(source)?;
+            if source_shape != result {
+                return Err(format!(
+                    "composite member shape {source_shape:?} does not match access result {result:?}"
+                ));
+            }
+            self.reserve_scalar_instructions(result.elements(), 1, 1)?;
+            for component in 0..result.elements() {
+                self.emit(
+                    output,
+                    component,
+                    ScalarComputation::Copy(self.operand(source, component)?),
+                );
+            }
+            return Ok(());
+        }
+        let source = self.source_shape(inputs[0])?;
         if inputs.len() == 2
             && matches!(
                 mode,
@@ -2151,6 +2178,71 @@ impl<'a> BatchCompiler<'a> {
                     ),
                 );
             }
+        }
+        Ok(())
+    }
+
+    fn composite_pack_inputs(
+        &self,
+        source: ArtifactSource,
+    ) -> Result<Option<Vec<ArtifactSource>>, String> {
+        let ArtifactSource::Slot(slot) = source else {
+            return Ok(None);
+        };
+        let declaration = self
+            .artifact
+            .slots()
+            .get(slot.get() as usize)
+            .ok_or_else(|| format!("slot {} does not exist", slot.get()))?;
+        let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+            return Ok(None);
+        };
+        let producer = self
+            .artifact
+            .nodes()
+            .get(node.get() as usize)
+            .and_then(mech_engine::NodeDeclaration::as_operation)
+            .ok_or_else(|| format!("slot {} has no operation producer", slot.get()))?;
+        if display_operation(&producer.operation) != "core/composite-pack" {
+            return Ok(None);
+        }
+        producer
+            .input_bindings
+            .clone()
+            .map(
+                |binding| match self.artifact.bindings().get(binding as usize) {
+                    Some(BindingDeclaration::Input { source, .. }) => Ok(*source),
+                    _ => Err(format!(
+                        "composite producer node {} has an invalid input binding",
+                        node.get()
+                    )),
+                },
+            )
+            .collect::<Result<Vec<_>, _>>()
+            .map(Some)
+    }
+
+    fn lower_copy(&mut self, output: CellSlotId, inputs: &[ArtifactSource]) -> Result<(), String> {
+        let [input] = inputs else {
+            return Err(format!(
+                "fixed-shape conversion requires one input, found {}",
+                inputs.len()
+            ));
+        };
+        let source = self.source_shape(*input)?;
+        let result = self.shape(output)?;
+        if source != result {
+            return Err(format!(
+                "fixed-shape conversion cannot change shape from {source:?} to {result:?}"
+            ));
+        }
+        self.reserve_scalar_instructions(result.elements(), 1, 1)?;
+        for component in 0..result.elements() {
+            self.emit(
+                output,
+                component,
+                ScalarComputation::Copy(self.operand(*input, component)?),
+            );
         }
         Ok(())
     }
@@ -2771,7 +2863,7 @@ impl<'a> BatchCompiler<'a> {
                         })
                         .collect::<Vec<_>>();
                     match display_operation(&node.operation).as_str() {
-                        "access/index" => {
+                        "access/index" | "convert/kind" => {
                             let [input] = inputs.as_slice() else {
                                 return Err("static index conversion must have exactly one input"
                                     .to_owned());
@@ -2908,7 +3000,10 @@ impl<'a> BatchCompiler<'a> {
                     let Some(node) = node.as_operation() else {
                         return Ok(None);
                     };
-                    if display_operation(&node.operation) != "access/index" {
+                    if !matches!(
+                        display_operation(&node.operation).as_str(),
+                        "access/index" | "convert/kind"
+                    ) {
                         return Ok(None);
                     }
                     let inputs = node
@@ -2952,7 +3047,10 @@ impl<'a> BatchCompiler<'a> {
         let Some(producer) = producer.as_operation() else {
             return false;
         };
-        if display_operation(&producer.operation) == "access/index" {
+        if matches!(
+            display_operation(&producer.operation).as_str(),
+            "access/index" | "convert/kind"
+        ) {
             return true;
         }
         let consumers = self
@@ -2962,19 +3060,23 @@ impl<'a> BatchCompiler<'a> {
             .filter_map(|binding| match binding {
                 BindingDeclaration::Input {
                     node,
+                    port_ordinal,
                     source: ArtifactSource::Slot(source),
                     ..
-                } if *source == slot => Some(*node),
+                } if *source == slot => Some((*node, *port_ordinal)),
                 _ => None,
             })
             .collect::<Vec<_>>();
         !consumers.is_empty()
-            && consumers.iter().all(|consumer| {
+            && consumers.iter().all(|(consumer, port_ordinal)| {
                 self.artifact
                     .nodes()
                     .get(consumer.get() as usize)
                     .and_then(mech_engine::NodeDeclaration::as_operation)
-                    .is_some_and(|node| display_operation(&node.operation) == "access/index")
+                    .is_some_and(|node| {
+                        (*port_ordinal > 0 && node.operation.module_path.as_ref() == ["access"])
+                            || display_operation(&node.operation) == "convert/kind"
+                    })
             })
     }
 

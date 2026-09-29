@@ -4,10 +4,7 @@ use mech_compute::{
     BackendRequest, ComputeDispatchRequest, ComputeElementType, ComputeInitializerSet,
     ComputeOutputSelection, ComputePlatform, ComputeValue, TensorLayout,
 };
-use mech_core::{
-    Body, ComputePlacement, MechCode, ParsedProgram, Program, ResolvedOperationContract, Section,
-    SectionElement, ValueData,
-};
+use mech_core::{ComputePlacement, ResolvedOperationContract, ValueData};
 use mech_engine::{SlotRole, decode_program_artifact_sections, encode_program_artifact_sections};
 use mech_gpu::{
     ComputeHostFactory, ComputeLowerer, ElementwiseKernel, ExecutionTarget, GpuBindingRole,
@@ -23,18 +20,20 @@ use mech_runtime::{
 use std::num::NonZeroU32;
 
 const PARTICLE_SOURCE: &str = r#"
-~positions := host-positions
-~velocities := host-velocities
+positions := host-positions
+velocities := host-velocities
+~position-state := positions
+~velocity-state := velocities
 origin := host-origin
 attraction := host-attraction
 drag := host-drag
 dt := host-dt
-acceleration := (origin - positions) * attraction
-next-velocities := (velocities + acceleration * dt) * drag
-next-positions := positions + next-velocities * dt
-velocities = next-velocities
-positions = next-positions
-(positions, velocities)
+acceleration := (origin - position-state) * attraction
+next-velocities := (velocity-state + acceleration * dt) * drag
+next-positions := position-state + next-velocities * dt
+velocity-state = next-velocities
+position-state = next-positions
+(position-state, velocity-state)
 "#;
 
 const STANDALONE_PARTICLE_SOURCE: &str = r#"
@@ -58,7 +57,13 @@ fn compile_source(
     source: &str,
     inputs: impl IntoIterator<Item = (&'static str, RuntimeHostInputValue)>,
 ) -> mech_engine::ProgramArtifact {
-    let tree = mech_syntax::parse(source).expect("source must parse");
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://particle-source",
+        mech_syntax::document::Revision(0),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .expect("source must parse");
     let inputs = inputs
         .into_iter()
         .map(|(name, value)| (name.to_owned(), value))
@@ -68,7 +73,7 @@ fn compile_source(
         .map(|name| name.strip_prefix("host-").unwrap_or(name).to_owned())
         .collect();
     compiler()
-        .compile_tree_artifact_with_inputs(&tree, &inputs, &external_input_names)
+        .compile_document_artifact_with_inputs(&document, &inputs, &external_input_names)
         .expect("source must compile")
         .into_artifact()
 }
@@ -80,60 +85,12 @@ fn compiler() -> ProgramCompiler {
         .expect("source compiler must build")
 }
 
-fn isolated_gpu_tree(source: &str) -> Program {
-    let tree = mech_syntax::parse(source).expect("complete mixed source must parse");
-    let imports = tree
-        .body
-        .sections
-        .iter()
-        .flat_map(|section| &section.elements)
-        .filter_map(|element| {
-            let SectionElement::MechCode(code) = element else {
-                return None;
-            };
-            let imports = code
-                .iter()
-                .filter(|(code, _)| matches!(code, MechCode::Import(_)))
-                .cloned()
-                .collect::<Vec<_>>();
-            (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
-        })
-        .collect::<Vec<_>>();
-    let region = tree
-        .body
-        .sections
-        .iter()
-        .find(|section| !section.annotations.is_empty())
-        .expect("mixed source must contain a compute region")
-        .clone();
-    Program {
-        title: None,
-        body: Body {
-            sections: vec![
-                Section {
-                    subtitle: None,
-                    annotations: Vec::new(),
-                    elements: imports,
-                },
-                region,
-            ],
-        },
-    }
-}
-
 fn compile_isolated_gpu_source(source: &str) -> mech_engine::ProgramArtifact {
-    let external_input_names = ["force-point", "force-strength", "dt"]
-        .into_iter()
-        .map(str::to_owned)
-        .collect();
     compiler()
-        .compile_tree_artifact_with_inputs(
-            &isolated_gpu_tree(source),
-            &Default::default(),
-            &external_input_names,
-        )
+        .compile_mixed_source(source)
         .expect("isolated GPU source must compile")
-        .into_artifact()
+        .compute
+        .artifact
 }
 
 fn particle_inputs() -> Vec<(&'static str, RuntimeHostInputValue)> {
@@ -359,20 +316,18 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
             .iter()
             .any(|section| section.annotations.is_empty())
     );
-    let product = compiler()
-        .compile_tree(&isolated_gpu_tree(&source))
-        .expect("named source must compile");
+    let artifact = compile_isolated_gpu_source(&source);
 
-    assert_eq!(product.artifact().compute_regions().len(), 1);
-    let region = &product.artifact().compute_regions()[0];
+    assert_eq!(artifact.compute_regions().len(), 1);
+    let region = &artifact.compute_regions()[0];
     assert_eq!(region.name.as_ref(), "particle-field");
     assert_eq!(region.placement, ComputePlacement::Compute);
     assert!(!region.nodes.is_empty());
-    let bytecode = ParsedProgram::from_bytes(product.bytecode()).unwrap();
-    let bytecode_artifact = decode_program_artifact_sections(&bytecode.artifact).unwrap();
+    let bytecode = encode_program_artifact_sections(&artifact).unwrap();
+    let bytecode_artifact = decode_program_artifact_sections(&bytecode).unwrap();
     assert_eq!(
         bytecode_artifact.compute_regions(),
-        product.artifact().compute_regions()
+        artifact.compute_regions()
     );
 
     let lowering_artifact = compile_isolated_gpu_source(&source);
@@ -590,8 +545,8 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
 #[test]
 fn particle_execution_plan_groups_logical_output_aliases_once() {
     let source = PARTICLE_SOURCE.replacen(
-        "(positions, velocities)",
-        "(positions, positions, velocities)",
+        "(position-state, velocity-state)",
+        "(position-state, position-state, velocity-state)",
         1,
     );
     let artifact = compile_source(&source, particle_inputs());

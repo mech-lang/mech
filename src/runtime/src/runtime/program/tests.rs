@@ -8125,6 +8125,7 @@ fn canonical_mixed_shipped_ekf_region_compiles() {
         document.snapshot().diagnostics
     );
     let mixed = compiler.compile_mixed_document(&document).unwrap();
+    assert_eq!(mixed.compute.declaration.name.as_ref(), "ekf-batch");
     for input in ["control", "camera", "measurement"] {
         assert!(
             mixed.compute.interface.input_named(input).is_some(),

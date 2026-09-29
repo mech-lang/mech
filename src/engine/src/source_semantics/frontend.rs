@@ -914,6 +914,17 @@ impl CanonicalSourceFrontend {
         )
     }
 
+    /// Whether a retained document declares at least one executable compute
+    /// section. This performs the same structured heading validation used by
+    /// mixed compilation without compiling either program partition.
+    pub fn has_mixed_document_region(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<bool, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::has_mixed_document_region(document)
+    }
+
     /// Partition one retained mixed document into coordinator, compute, and
     /// initializer semantic programs. All three projections share the same
     /// canonical source owner and source coordinates.

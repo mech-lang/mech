@@ -95,6 +95,10 @@ pub struct DynamicFunctionModuleFragment {
     pub module: String,
     pub entries: Vec<FunctionExtensionEntry>,
     pub exports: Vec<DynamicFunctionExport>,
+    #[cfg(feature = "dynamic-modules")]
+    source_declarations: BTreeMap<ExtensionFunctionId, FunctionTypeDeclaration>,
+    #[cfg(feature = "dynamic-modules")]
+    source_contracts: BTreeMap<ExtensionFunctionId, Box<[OperationContractDeclaration]>>,
 }
 
 impl DynamicFunctionModuleFragment {
@@ -116,7 +120,7 @@ pub trait ModuleLoader {
 }
 
 #[cfg(feature = "dynamic-modules")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum ValidatedDynamicKernelKind {
     UnaryF64ToF64,
     BinaryF64F64ToF64,
@@ -273,6 +277,7 @@ impl ModuleLoader for DynamicModuleLoader {
         let mut canonical_order = Vec::<String>::new();
         let mut dynamic_specializers =
             HashMap::<String, Vec<Arc<dyn CanonicalFunctionSpecializer>>>::new();
+        let mut dynamic_kinds = HashMap::<String, BTreeSet<ValidatedDynamicKernelKind>>::new();
 
         for index in 0..export_count {
             let mut export = mech_abi::MechExportV1 {
@@ -312,7 +317,12 @@ impl ModuleLoader for DynamicModuleLoader {
 
             let item = item.to_string();
 
-            match Self::validate_dynamic_kernel_kind(export.kind)? {
+            let kernel_kind = Self::validate_dynamic_kernel_kind(export.kind)?;
+            dynamic_kinds
+                .entry(export_name.clone())
+                .or_default()
+                .insert(kernel_kind);
+            match kernel_kind {
                 ValidatedDynamicKernelKind::BinaryF64F64ToF64 => {
                     let kernel = unsafe { export.function.binary_f64_f64_to_f64 };
                     let specializer_name = export_name.clone();
@@ -381,6 +391,8 @@ impl ModuleLoader for DynamicModuleLoader {
 
         let mut entries = Vec::with_capacity(canonical_order.len());
         let mut exports = Vec::with_capacity(canonical_order.len());
+        let mut source_declarations = BTreeMap::new();
+        let mut source_contracts = BTreeMap::new();
         for canonical_name in canonical_order {
             let mut specializers = dynamic_specializers
                 .remove(&canonical_name)
@@ -402,6 +414,39 @@ impl ModuleLoader for DynamicModuleLoader {
                 item,
                 extension: entry.id,
             });
+            let kinds = dynamic_kinds
+                .remove(&canonical_name)
+                .expect("every ordered dynamic function has ABI kinds");
+            let mut schemes = Vec::new();
+            if kinds.contains(&ValidatedDynamicKernelKind::UnaryF64ToF64)
+                || kinds.contains(&ValidatedDynamicKernelKind::UnaryF64ViewToF64View)
+            {
+                schemes.extend(
+                    mech_core::type_system::predicate_unary_same(
+                        mech_core::BuiltinKindPredicate::FloatingPoint,
+                    )
+                    .map_err(|error| MechError::new(error, None).with_compiler_loc())?,
+                );
+            }
+            if kinds.contains(&ValidatedDynamicKernelKind::BinaryF64F64ToF64) {
+                schemes.extend(
+                    mech_core::type_system::promoted_binary_elementwise()
+                        .map_err(|error| MechError::new(error, None).with_compiler_loc())?,
+                );
+            }
+            source_declarations.insert(entry.id, FunctionTypeDeclaration::from_schemes(schemes));
+            let mut contracts = Vec::new();
+            if kinds.contains(&ValidatedDynamicKernelKind::UnaryF64ToF64) {
+                contracts.push(DYNAMIC_UNARY_SCALAR_CONTRACT.clone());
+            }
+            if kinds.contains(&ValidatedDynamicKernelKind::UnaryF64ViewToF64View) {
+                contracts.push(DYNAMIC_UNARY_VIEW_CONTRACT.clone());
+            }
+            if kinds.contains(&ValidatedDynamicKernelKind::BinaryF64F64ToF64) {
+                contracts.push(DYNAMIC_BINARY_SCALAR_CONTRACT.clone());
+                contracts.push(DYNAMIC_BINARY_BROADCAST_CONTRACT.clone());
+            }
+            source_contracts.insert(entry.id, contracts.into_boxed_slice());
             entries.push(entry);
         }
 
@@ -409,6 +454,8 @@ impl ModuleLoader for DynamicModuleLoader {
             module: module.to_string(),
             entries,
             exports,
+            source_declarations,
+            source_contracts,
         })
     }
 }
@@ -483,6 +530,7 @@ enum DynamicResidentKernelKind {
 #[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
 struct DynamicResidentKernelState {
     _library: Arc<libloading::Library>,
+    operation: Box<str>,
     kernel: DynamicResidentKernelKind,
 }
 
@@ -656,8 +704,21 @@ fn load_dynamic_resident_kernel(
     })?;
     Ok(Arc::new(DynamicResidentKernelState {
         _library: library,
+        operation: canonical_name.into(),
         kernel,
     }))
+}
+
+#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
+fn dynamic_resident_status_error(
+    operation: &str,
+    status: mech_abi::MechStatusV1,
+) -> ResidentKernelError {
+    ResidentKernelError::ProviderStatus {
+        operation: operation.into(),
+        status: dynamic_status_name(status).into(),
+        code: status.0,
+    }
 }
 
 #[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
@@ -735,7 +796,7 @@ fn dynamic_resident_execute(
             let previous = candidate[0].to_bits();
             let status = unsafe { kernel(input[0], candidate.as_mut_ptr()) };
             if status != mech_abi::MechStatusV1::OK {
-                return Err(ResidentKernelError::Arithmetic);
+                return Err(dynamic_resident_status_error(&state.operation, status));
             }
             candidate[0].to_bits() != previous
         }
@@ -758,7 +819,7 @@ fn dynamic_resident_execute(
                     )
                 };
                 if status != mech_abi::MechStatusV1::OK {
-                    return Err(ResidentKernelError::Arithmetic);
+                    return Err(dynamic_resident_status_error(&state.operation, status));
                 }
                 changed |= target.to_bits() != previous;
             }
@@ -795,7 +856,7 @@ fn dynamic_resident_execute(
                 )
             };
             if status != mech_abi::MechStatusV1::OK {
-                return Err(ResidentKernelError::Arithmetic);
+                return Err(dynamic_resident_status_error(&state.operation, status));
             }
             // The ABI owns the whole candidate view and does not expose a
             // per-element write callback. Conservatively report a successful
@@ -1763,6 +1824,66 @@ impl ModuleRegistry {
     }
 }
 
+/// Load one validated dynamic ABI module into the immutable source catalog.
+/// Resident activation binds the same operation names directly from the ABI,
+/// so no interpreter extension store participates in compilation or turns.
+#[cfg(feature = "dynamic-modules")]
+pub fn install_dynamic_source_module(
+    builder: &mut FunctionCatalogBuilder,
+    module: &str,
+) -> MResult<ModuleManifest> {
+    let fragment = ModuleRegistry::available().load(module)?;
+    validate_dynamic_fragment(&fragment)?;
+    let manifest = fragment.manifest();
+    let entries = fragment
+        .entries
+        .iter()
+        .map(|entry| (entry.id, entry))
+        .collect::<BTreeMap<_, _>>();
+    for export in &fragment.exports {
+        let entry = entries.get(&export.extension).ok_or_else(|| {
+            invalid_dynamic_fragment(
+                &fragment,
+                format!("export `{}` has no source entry", export.item),
+            )
+        })?;
+        let declaration = fragment
+            .source_declarations
+            .get(&export.extension)
+            .cloned()
+            .ok_or_else(|| {
+                invalid_dynamic_fragment(
+                    &fragment,
+                    format!("export `{}` has no source type declaration", export.item),
+                )
+            })?;
+        let contracts = fragment
+            .source_contracts
+            .get(&export.extension)
+            .cloned()
+            .ok_or_else(|| {
+                invalid_dynamic_fragment(
+                    &fragment,
+                    format!("export `{}` has no source operation contracts", export.item),
+                )
+            })?;
+        let operation = builder.insert_canonical_specializer_with_contracts(
+            entry.canonical_name.clone(),
+            declaration,
+            contracts.into_vec(),
+            Arc::clone(&entry.specializer),
+        )?;
+        builder.insert_export(FunctionExport {
+            operation,
+            canonical_name: entry.canonical_name.clone(),
+            module: Some(fragment.module.clone()),
+            item: Some(export.item.clone()),
+            exposure: FunctionExposure::ModuleOnly,
+        })?;
+    }
+    Ok(manifest)
+}
+
 fn missing_module(module: &str) -> MechError {
     MechError::new(MissingFunctionError::named(module), None).with_compiler_loc()
 }
@@ -2238,6 +2359,10 @@ mod static_catalog_module_tests {
             module: module.to_string(),
             entries,
             exports,
+            #[cfg(feature = "dynamic-modules")]
+            source_declarations: BTreeMap::new(),
+            #[cfg(feature = "dynamic-modules")]
+            source_contracts: BTreeMap::new(),
         }
     }
 

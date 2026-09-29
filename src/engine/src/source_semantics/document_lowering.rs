@@ -720,6 +720,16 @@ fn mixed_section_identity(
         )
     })?;
     let heading = text.lines().next().unwrap_or_default().trim();
+    let prefix_length = heading
+        .as_bytes()
+        .iter()
+        .take_while(|byte| byte.is_ascii_digit())
+        .count();
+    let heading = if prefix_length > 0 && heading.as_bytes().get(prefix_length) == Some(&b'.') {
+        heading[prefix_length + 1..].trim_start()
+    } else {
+        heading
+    };
     let mut name_parts = Vec::new();
     let mut selected = None;
     for part in heading.split_whitespace() {
@@ -775,6 +785,21 @@ fn mixed_section_identity(
         });
     }
     Ok(Some((name, placement)))
+}
+
+pub(super) fn has_mixed_document_region(
+    document: &DocumentSyntax,
+) -> Result<bool, SourceSemanticError> {
+    for section in document
+        .body()
+        .map(|body| body.sections())
+        .unwrap_or_default()
+    {
+        if mixed_section_identity(&section)?.is_some() {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 fn collect_document_units(

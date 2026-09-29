@@ -974,6 +974,25 @@ impl<'a> ProgramCompilerView<'a> {
                 )?)
             })
             .collect::<MResult<Vec<_>>>()?;
+        #[cfg(feature = "compute")]
+        if resolved.len() == 1 {
+            let is_mixed = {
+                let document = resolved[0].source_document().ok_or_else(|| {
+                    canonical_compilation_error("ordered root has no retained document")
+                })?;
+                canonical_frontend(document)
+                    .has_mixed_document_region(&document.document())
+                    .map_err(|error| canonical_compilation_error(error.to_string()))?
+            };
+            if is_mixed {
+                let mixed = self.compile_canonical_mixed_resolved_root(
+                    resolved.pop().expect("one resolved root checked"),
+                    options,
+                )?;
+                return ProgramCompilationProduct::from_canonical_artifact(mixed.compute.artifact)
+                    .map(|product| product.with_source_dependencies(mixed.source_dependencies));
+            }
+        }
         let mut identities = BTreeMap::new();
         for (ordinal, root) in resolved.iter().enumerate() {
             if identities

@@ -3089,13 +3089,13 @@ fn bind_snapshot_whole_numeric_assign(
 fn bind_semantic_add_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_add_assign(request).or_else(|_| bind_add_indexed_rows(request))
+    bind_add_indexed_rows(request).or_else(|_| bind_add_assign(request))
 }
 
 fn bind_semantic_sub_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_sub_assign(request).or_else(|_| bind_sub_indexed_rows(request))
+    bind_sub_indexed_rows(request).or_else(|_| bind_sub_assign(request))
 }
 
 fn bind_transpose(
@@ -3554,6 +3554,16 @@ fn bind_compound_selection<const MODE: u8, const OPERATION: u64>(
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let arithmetic = SemanticArithmetic::from_parameter(OPERATION)
         .ok_or(ResidentKernelBindError::InvalidParameters)?;
+    if MODE == 1 {
+        let specialized = match arithmetic {
+            SemanticArithmetic::Add => bind_add_indexed_rows(request),
+            SemanticArithmetic::Subtract => bind_sub_indexed_rows(request),
+            _ => Err(ResidentKernelBindError::UnsupportedLayout),
+        };
+        if let Ok(kernel) = specialized {
+            return Ok(kernel);
+        }
+    }
     let schema = request
         .schemas
         .get(request.output.schema_id)

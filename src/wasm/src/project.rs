@@ -3393,6 +3393,34 @@ fn to_js_error(
 }
 
 #[cfg(test)]
+fn test_document_payload(root_specifier: &str, source: &str) -> BrowserDocumentPayload {
+    let document = SourceDocument::parse_resolved(
+        "runtime:test-presentation",
+        mech_syntax::document::Revision(0),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .unwrap();
+    let presentation_output_ids = CanonicalSourceFrontend
+        .compile_document(&document.document())
+        .ok()
+        .into_iter()
+        .flat_map(|program| {
+            program
+                .document_outputs()
+                .iter()
+                .filter(|output| output.visible && output.kind != SourceDocumentOutputKind::Program)
+                .map(|output| {
+                    mech_core::hash_str(&format!("browser-test-output:{}", output.output))
+                })
+                .collect::<Vec<_>>()
+        });
+    BrowserDocumentPayload::new(root_specifier, source)
+        .unwrap()
+        .with_presentation_output_ids(presentation_output_ids)
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -3427,32 +3455,7 @@ mod tests {
 }"#;
 
     fn document_payload(root_specifier: &str, source: &str) -> BrowserDocumentPayload {
-        let document = SourceDocument::parse_resolved(
-            "runtime:test-presentation",
-            mech_syntax::document::Revision(0),
-            source,
-            mech_syntax::document::ParseConfig::default(),
-        )
-        .unwrap();
-        let presentation_output_ids = CanonicalSourceFrontend
-            .compile_document(&document.document())
-            .ok()
-            .into_iter()
-            .flat_map(|program| {
-                program
-                    .document_outputs()
-                    .iter()
-                    .filter(|output| {
-                        output.visible && output.kind != SourceDocumentOutputKind::Program
-                    })
-                    .map(|output| {
-                        mech_core::hash_str(&format!("browser-test-output:{}", output.output))
-                    })
-                    .collect::<Vec<_>>()
-            });
-        BrowserDocumentPayload::new(root_specifier, source)
-            .unwrap()
-            .with_presentation_output_ids(presentation_output_ids)
+        test_document_payload(root_specifier, source)
     }
 
     fn document_bootstrap(
@@ -3462,7 +3465,7 @@ mod tests {
         resolutions: Vec<SourceResolutionEntry>,
     ) -> WasmDocumentBootstrap {
         source_map.insert(root_specifier.to_owned(), source.to_owned());
-        let payload = document_payload(root_specifier, source);
+        let payload = test_document_payload(root_specifier, source);
         let document = CanonicalWasmDocument::retain(
             "runtime:interactive",
             mech_syntax::document::Revision(0),
@@ -4062,7 +4065,7 @@ mod tests {
 
     #[test]
     fn encoded_document_controller_loads_residently_without_legacy_execution() {
-        let encoded = document_payload("document.mec", "~answer := 0\nanswer += 42\nanswer")
+        let encoded = test_document_payload("document.mec", "~answer := 0\nanswer += 42\nanswer")
             .encode()
             .unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
@@ -6354,7 +6357,7 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn encoded_document_executes_and_exposes_detached_render_queries() {
-        let encoded = document_payload("document.mec", "~answer := 0\nanswer += 42\nanswer")
+        let encoded = test_document_payload("document.mec", "~answer := 0\nanswer += 42\nanswer")
             .encode()
             .unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();

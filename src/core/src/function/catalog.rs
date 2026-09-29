@@ -1767,15 +1767,37 @@ impl FunctionCatalogBuilder {
         contract: OperationContractDeclaration,
         specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> MResult<OperationId> {
+        self.insert_canonical_specializer_with_contracts(
+            canonical_name,
+            type_declaration,
+            vec![contract],
+            specializer,
+        )
+    }
+
+    pub fn insert_canonical_specializer_with_contracts(
+        &mut self,
+        canonical_name: impl Into<String>,
+        type_declaration: FunctionTypeDeclaration,
+        contracts: Vec<OperationContractDeclaration>,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
+    ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
+        let first = contracts.first().cloned().ok_or_else(|| {
+            MechError::new(
+                FunctionCatalogInvalidTypeDeclaration {
+                    canonical_name: canonical_name.clone(),
+                    reason: "a canonical specializer must declare at least one operation contract"
+                        .into(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
         self.insert_specializer_entry(FunctionSpecializerEntry {
-            operation: crate::ResolvedOperationDescriptor::new(
-                operation,
-                canonical_name,
-                contract.clone(),
-            )?,
-            operation_contracts: vec![contract].into_boxed_slice(),
+            operation: crate::ResolvedOperationDescriptor::new(operation, canonical_name, first)?,
+            operation_contracts: contracts.into_boxed_slice(),
             type_authority: SourceTypeAuthority::Schemes(type_declaration),
             specializer,
         })

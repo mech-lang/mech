@@ -137,10 +137,16 @@ harness = r'''<script>
     const completionUrl = new URLSearchParams(location.search).get("mech-canary-callback");
     const signalCompletion = name => {
       if (completionUrl) {
-        navigator.sendBeacon(
-          `${completionUrl}/${name}`,
-          JSON.stringify(Object.fromEntries(Object.entries(root.dataset))),
-        );
+        const url = `${completionUrl}/${name}`;
+        const payload = JSON.stringify(Object.fromEntries(Object.entries(root.dataset)));
+        // EKF diagnostics can exceed the implementation-defined sendBeacon
+        // quota. Keep the page alive while the harness receives an ordinary
+        // POST, and retain a beacon fallback for an abrupt browser shutdown.
+        void fetch(url, {
+          method: "POST",
+          body: payload,
+          headers: {"Content-Type": "text/plain;charset=UTF-8"},
+        }).catch(() => navigator.sendBeacon(url, payload));
       }
     };
     const originalConsoleError = console.error;
