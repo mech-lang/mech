@@ -35,6 +35,9 @@ jobs:
             echo "checkout_sha=$actual"
           } | tee target/native-plan-logs/00-checkout.log
           test "$actual" = "$expected"
+      - name: Verify native metadata subprocess contracts
+        timeout-minutes: 2
+        run: python3 -B scripts/tests/test_native_application_graphs.py
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies

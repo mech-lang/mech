@@ -19,6 +19,12 @@ use isolated::{CommandContext, ProcessBoundary, run_json_command, run_json_comma
 const FIXTURE_ROOT: &str = "MECH_NATIVE_PROCESS_FIXTURE_ROOT";
 const FIXTURE_MODE: &str = "MECH_NATIVE_PROCESS_FIXTURE_MODE";
 const WRAPPER_SCENARIO: &str = "MECH_NATIVE_WRAPPER_SCENARIO";
+const FIXTURE_FAILURE_PREFIX: &str = "fixture-failure-";
+#[cfg(unix)]
+const DISABLE_PARENT_DEATH: &str = "MECH_NATIVE_TEST_DISABLE_PARENT_DEATH";
+#[cfg(unix)]
+const ORACLE_ROOT: &str = "MECH_NATIVE_PARENT_DEATH_ORACLE_ROOT";
+const FIXTURE_EXPIRY_MS: &str = "MECH_NATIVE_FIXTURE_EXPIRY_MS";
 const SAFETY_DEADLINE: Duration = Duration::from_secs(60);
 
 fn context(stage: &'static str) -> CommandContext<'static> {
@@ -30,18 +36,65 @@ fn context(stage: &'static str) -> CommandContext<'static> {
 }
 
 fn wait_until(description: &str, mut condition: impl FnMut() -> bool) {
-    let deadline = Instant::now() + SAFETY_DEADLINE;
+    wait_with_deadline(description, SAFETY_DEADLINE, &mut condition)
+        .unwrap_or_else(|error| panic!("{error}"));
+}
+
+fn wait_with_deadline(
+    description: &str,
+    timeout: Duration,
+    mut condition: impl FnMut() -> bool,
+) -> Result<(), String> {
+    let deadline = Instant::now() + timeout;
     while !condition() {
-        assert!(
-            Instant::now() < deadline,
-            "timed out waiting for {description}"
-        );
+        if Instant::now() >= deadline {
+            return Err(format!(
+                "timed out after {timeout:?} waiting for {description}"
+            ));
+        }
         thread::sleep(Duration::from_millis(20));
     }
+    Ok(())
 }
 
 fn wait_file(path: &Path) {
     wait_until(&path.display().to_string(), || path.is_file());
+}
+
+fn fixture_failure(root: &Path, reason: &str) -> ! {
+    std::fs::write(
+        root.join(format!("{FIXTURE_FAILURE_PREFIX}{}", std::process::id())),
+        reason,
+    )
+    .expect("record fixture failure before exiting");
+    panic!("fixture safety failure: {reason}");
+}
+
+fn wait_fixture_file(root: &Path, name: &str) {
+    wait_fixture_file_with_deadline(root, name, SAFETY_DEADLINE);
+}
+
+fn wait_fixture_file_with_deadline(root: &Path, name: &str, timeout: Duration) {
+    let path = root.join(name);
+    if let Err(error) = wait_with_deadline(&path.display().to_string(), timeout, || path.is_file())
+    {
+        fixture_failure(root, &format!("fixture deadline expired: {error}"));
+    }
+}
+
+fn assert_no_fixture_failures(root: &Path) {
+    let failures = std::fs::read_dir(root)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .filter(|path| {
+            path.file_name()
+                .unwrap()
+                .to_string_lossy()
+                .starts_with(FIXTURE_FAILURE_PREFIX)
+        })
+        .map(|path| std::fs::read_to_string(path).unwrap())
+        .collect::<Vec<_>>();
+    assert!(failures.is_empty(), "fixture safety failure: {failures:?}");
 }
 
 fn scheduling_delay() {
@@ -79,6 +132,10 @@ impl ObservedProcess {
     fn from_pid_file(path: &Path) -> Self {
         wait_file(path);
         let pid = std::fs::read_to_string(path).unwrap().parse().unwrap();
+        Self::from_pid(pid)
+    }
+
+    fn from_pid(pid: u32) -> Self {
         #[cfg(unix)]
         let started = unix_process_identity(pid)
             .unwrap_or_else(|| panic!("process {pid} exited before its identity was captured"))
@@ -195,6 +252,7 @@ fn timed_out_child_tree_is_terminated_and_reaped() {
     }
     target.assert_exited();
     descendant.assert_exited();
+    assert_no_fixture_failures(&root);
     std::fs::write(root.join("descendant-release"), b"release").unwrap();
     assert!(!root.join("descendant-leaked").exists());
 }
@@ -224,6 +282,7 @@ fn failed_leader_cannot_leave_a_pipe_inheriting_descendant() {
     assert!(error.contains("exited unsuccessfully"), "{error}");
     target.assert_exited();
     descendant.assert_exited();
+    assert_no_fixture_failures(&root);
     assert!(!root.join("descendant-leaked").exists());
 }
 
@@ -266,6 +325,7 @@ fn wrapper_death_before_supervision_registration_is_fail_closed() {
     scheduling_delay();
     wrapper.kill_and_reap();
     launcher.assert_exited();
+    assert_no_fixture_failures(root);
     assert!(!root.join("target-ready").exists());
     assert!(!root.join("descendant-ready").exists());
 }
@@ -280,6 +340,7 @@ fn wrapper_death_after_supervision_registration_before_release_is_contained() {
     scheduling_delay();
     wrapper.kill_and_reap();
     launcher.assert_exited();
+    assert_no_fixture_failures(root);
     assert!(!root.join("target-ready").exists());
     assert!(!root.join("descendant-ready").exists());
 }
@@ -287,15 +348,146 @@ fn wrapper_death_after_supervision_registration_before_release_is_contained() {
 #[test]
 fn parent_death_watchdog_kills_the_owned_child_group() {
     let temporary = tempfile::tempdir().unwrap();
-    let root = temporary.path();
-    let mut wrapper = wrapper(root, "application-ready");
+    #[cfg(unix)]
+    let root = std::env::var_os(ORACLE_ROOT)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| temporary.path().to_owned());
+    #[cfg(not(unix))]
+    let root = temporary.path().to_owned();
+    let mut wrapper = wrapper(&root, "application-ready");
     wait_file(&root.join("supervision-armed"));
-    let (target, descendant) = observe_target_tree(root);
+    let (target, descendant) = observe_target_tree(&root);
+    #[cfg(unix)]
+    if std::env::var_os(DISABLE_PARENT_DEATH).is_some() {
+        wait_file(&root.join("parent-death-disabled"));
+        // The negative self-check captures both process identities before the
+        // coordinator can kill the wrapper or start fixture self-expiry.
+        wait_file(&root.join("oracle-observation-armed"));
+    }
     scheduling_delay();
     wrapper.kill_and_reap();
+    std::fs::write(root.join("wrapper-terminated"), b"terminated").unwrap();
     target.assert_exited();
     descendant.assert_exited();
+    assert_no_fixture_failures(&root);
     assert!(!root.join("descendant-leaked").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn parent_death_oracle_rejects_fixture_self_expiry() {
+    for delay_ms in [0, 5000] {
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path().to_owned();
+        let worker_root = root.clone();
+        let (send, receive) = mpsc::channel();
+        let worker = thread::spawn(move || {
+            let mut command = Command::new(std::env::current_exe().unwrap());
+            command
+                .args([
+                    "--exact",
+                    "parent_death_watchdog_kills_the_owned_child_group",
+                    "--nocapture",
+                ])
+                .env(DISABLE_PARENT_DEATH, "1")
+                .env(ORACLE_ROOT, &worker_root)
+                .env(FIXTURE_EXPIRY_MS, "1000")
+                .env(
+                    "MECH_NATIVE_PROCESS_TEST_COORDINATOR_DELAY_MS",
+                    delay_ms.to_string(),
+                );
+            send.send(run_json_command::<serde_json::Value>(
+                command,
+                context("parent-death-negative-oracle"),
+                SAFETY_DEADLINE,
+                &worker_root,
+            ))
+            .unwrap();
+        });
+        let (target, descendant) = observe_target_tree(&root);
+        wait_file(&root.join("parent-death-disabled"));
+        std::fs::write(root.join("oracle-observation-armed"), b"armed").unwrap();
+        let error = receive.recv_timeout(SAFETY_DEADLINE).unwrap().unwrap_err();
+        worker.join().unwrap();
+        assert!(error.contains("exited unsuccessfully"), "{error}");
+        let stderr_logs = std::fs::read_dir(&root)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| {
+                let name = path.file_name().unwrap().to_string_lossy();
+                name.contains("parent-death-negative-oracle") && name.ends_with(".stderr.log")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(stderr_logs.len(), 1);
+        let diagnostics = std::fs::read_to_string(&stderr_logs[0]).unwrap();
+        assert!(
+            diagnostics.contains("fixture safety failure"),
+            "{diagnostics}"
+        );
+        assert!(
+            diagnostics.contains("fixture deadline expired"),
+            "{diagnostics}"
+        );
+        let descendant_failure = std::fs::read_to_string(
+            root.join(format!("{FIXTURE_FAILURE_PREFIX}{}", descendant.pid)),
+        )
+        .unwrap();
+        assert!(descendant_failure.contains("fixture deadline expired"));
+        assert!(descendant_failure.contains("descendant-release"));
+        assert!(root.join("wrapper-terminated").is_file());
+        target.assert_exited();
+        descendant.assert_exited();
+        assert!(!root.join("descendant-leaked").exists());
+    }
+}
+
+#[cfg(unix)]
+fn disable_parent_death_after_release(target_pid: u32, root: &Path) {
+    // Test-only mutation: stop the already-armed watchdog only after the real
+    // startup protocol releases the application. No wrapper implementation or
+    // startup behavior is replaced by this negative validation.
+    let output = Command::new("ps")
+        .args(["-ax", "-o", "pid=", "-o", "ppid=", "-o", "pgid="])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let own_pid = std::process::id();
+    let watchdogs = String::from_utf8(output.stdout)
+        .unwrap()
+        .lines()
+        .filter_map(|line| {
+            let fields = line
+                .split_whitespace()
+                .map(str::parse::<u32>)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap();
+            assert_eq!(fields.len(), 3);
+            let [pid, parent, group] = fields[..] else {
+                unreachable!()
+            };
+            // At this startup boundary the wrapper owns exactly two grouped
+            // children: the target and its separately grouped watchdog. The
+            // observing ps process inherits our group and cannot match.
+            (parent == own_pid && pid == group && pid != target_pid).then_some(pid)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        watchdogs.len(),
+        1,
+        "expected the wrapper's one owned watchdog"
+    );
+    let watchdog = ObservedProcess::from_pid(watchdogs[0]);
+    let status = Command::new("/bin/kill")
+        .args(["-KILL", "--", &watchdog.pid.to_string()])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    watchdog.assert_exited();
+    std::fs::write(
+        root.join("parent-death-disabled"),
+        b"disabled after release",
+    )
+    .unwrap();
 }
 
 #[test]
@@ -313,21 +505,26 @@ fn parent_death_helper_process() {
                 ProcessBoundary::StartupBlocked => {
                     record_pid(&root.join("startup-blocked"), pid)?;
                     if scenario == "before-registration" {
-                        wait_file(&root.join("startup-release"));
+                        wait_fixture_file(&root, "startup-release");
                     }
                 }
                 ProcessBoundary::SupervisionArmed => {
                     record_pid(&root.join("supervision-armed"), pid)?;
                     if scenario == "after-registration" {
-                        wait_file(&root.join("startup-release"));
+                        wait_fixture_file(&root, "startup-release");
                     }
                 }
-                ProcessBoundary::ApplicationReleased => {}
+                ProcessBoundary::ApplicationReleased => {
+                    #[cfg(unix)]
+                    if std::env::var_os(DISABLE_PARENT_DEATH).is_some() {
+                        disable_parent_death_after_release(pid, &root);
+                    }
+                }
             }
             Ok(())
         },
     )
-    .unwrap();
+    .unwrap_or_else(|error| fixture_failure(&root, &format!("wrapper fixture failed: {error}")));
 }
 
 #[test]
@@ -358,12 +555,20 @@ fn controlled_target_process() {
     #[cfg(windows)]
     let mut command = fixture_command(&root, "controlled_descendant_process", "descendant");
     let mut descendant = command.spawn().unwrap();
-    wait_file(&root.join("descendant-ready"));
+    wait_fixture_file(&root, "descendant-ready");
     if mode == "failed-leader" {
-        wait_file(&root.join("leader-exit"));
+        wait_fixture_file(&root, "leader-exit");
         std::process::exit(7);
     }
-    descendant.wait().unwrap();
+    let status = descendant.wait().unwrap_or_else(|error| {
+        fixture_failure(&root, &format!("descendant wait failed: {error}"))
+    });
+    if !status.success() {
+        fixture_failure(
+            &root,
+            &format!("descendant exited unsuccessfully: {status}"),
+        );
+    }
 }
 
 #[test]
@@ -371,7 +576,18 @@ fn controlled_target_process() {
 fn controlled_descendant_process() {
     let root = PathBuf::from(std::env::var_os(FIXTURE_ROOT).unwrap());
     record_pid(&root.join("descendant-ready"), std::process::id()).unwrap();
-    wait_file(&root.join("descendant-release"));
+    let timeout = match std::env::var(FIXTURE_EXPIRY_MS) {
+        Ok(timeout) => {
+            // The negative oracle exercises ordinary fixture self-expiry, but
+            // starts its shortened clock only after observed wrapper death.
+            // A delayed coordinator cannot cause an earlier fixture exit.
+            wait_fixture_file(&root, "wrapper-terminated");
+            Duration::from_millis(timeout.parse().unwrap())
+        }
+        Err(std::env::VarError::NotPresent) => SAFETY_DEADLINE,
+        Err(error) => fixture_failure(&root, &format!("fixture deadline configuration: {error}")),
+    };
+    wait_fixture_file_with_deadline(&root, "descendant-release", timeout);
     std::fs::write(root.join("descendant-leaked"), b"leaked").unwrap();
 }
 

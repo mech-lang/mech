@@ -239,6 +239,30 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("if: always()", native)
         self.assertIn("retention-days: 14", native)
 
+    def test_native_metadata_subprocess_contracts_run_before_generation(self):
+        steps = job_steps(NATIVE, "native-plan")
+        name = "Verify native metadata subprocess contracts"
+        metadata_steps = [step for step in steps if f"- name: {name}\n" in step]
+        self.assertEqual(len(metadata_steps), 1)
+        metadata = metadata_steps[0]
+        self.assertRegex(metadata, r"(?m)^        timeout-minutes: 2$")
+        self.assertRegex(
+            metadata,
+            r"(?m)^        run: python3 -B scripts/tests/test_native_application_graphs\.py$",
+        )
+        self.assertNotIn("continue-on-error", metadata)
+        self.assertNotRegex(metadata, r"(?m)^        if:")
+        position = steps.index(metadata)
+        for generation_name in (
+            "Verify registry projects and live shutdown first",
+            "Verify generated project determinism",
+            "Verify native application graphs",
+        ):
+            generation = next(
+                step for step in steps if f"- name: {generation_name}\n" in step
+            )
+            self.assertLess(position, steps.index(generation))
+
     def test_native_generated_contracts_share_all_exact_case_identities(self):
         cases = literal_assignment(NATIVE_DETERMINISM, "EXPECTED_CASES")
         features = literal_assignment(NATIVE_APPLICATION_GRAPHS, "EXPECTED_FEATURES")
