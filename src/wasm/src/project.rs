@@ -1705,14 +1705,8 @@ mod document {
             // Construct before touching the live project. A malformed replacement
             // must leave the current document usable.
             let mut replacement_bootstrap = self.bootstrap.clone();
-            let payload = decode_document_payload(
-                encoded,
-                &replacement_bootstrap.root_specifier,
-                replacement_bootstrap
-                    .source_map
-                    .get(&replacement_bootstrap.root_specifier)
-                    .map(String::as_str),
-            )?;
+            let payload =
+                decode_document_payload(encoded, &replacement_bootstrap.root_specifier, None)?;
             if payload.root_specifier() != replacement_bootstrap.root_specifier {
                 return Err(js_error(
                     "replacement document changes the retained root specifier",
@@ -3438,6 +3432,42 @@ mod tests {
         let payload = decode_document_payload(&encoded, "main.mec", Some(source)).unwrap();
         assert_eq!(payload.root_specifier(), "main.mec");
         assert_eq!(payload.source(), source);
+    }
+
+    #[test]
+    fn legacy_document_reset_executes_each_replacement_source() {
+        let mut document = WasmDocument::from_encoded(
+            &document_payload("document.mec", "x := 1\nx")
+                .encode()
+                .unwrap(),
+        )
+        .unwrap();
+        for (source, expected) in [("x := 2\nx", "2"), ("x := 3\nx\nx + 10", "3")] {
+            let tree = mech_syntax::parser::parse(source).unwrap();
+            let retained = mech_syntax::Formatter::new().format(&tree);
+            document
+                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
+                .unwrap();
+            assert_eq!(
+                document.bootstrap.source_map[&document.bootstrap.root_specifier],
+                retained
+            );
+            assert_eq!(document.bootstrap.document.initial_repl_source(), retained);
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("x")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                expected
+            );
+            assert_eq!(
+                document.bootstrap.presentation_output_ids,
+                root_document_output_ids(&tree)
+            );
+        }
     }
 
     #[test]
@@ -6523,6 +6553,91 @@ mod browser_tests {
                 .as_string()
                 .as_deref(),
             Some("7"),
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_legacy_replacements_keep_source_symbols_and_outputs_together() {
+        let mut document = WasmDocument::from_encoded(&encoded_document("x := 1\nx")).unwrap();
+        for (source, value) in [
+            ("x := 2\n\nValue {x}.\n", "2"),
+            ("x := 3\n\nValue {x}; plus {x + 10}.\n", "3"),
+        ] {
+            let tree = mech_syntax::parser::parse(source).unwrap();
+            let retained = mech_syntax::Formatter::new().format(&tree);
+            let ids = root_document_output_ids(&tree);
+            assert_eq!(ids.len(), if value == "3" { 2 } else { 1 });
+            document
+                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
+                .unwrap();
+            assert_eq!(
+                document.bootstrap.source_map[&document.bootstrap.root_specifier],
+                retained
+            );
+            assert_eq!(document.bootstrap.document.initial_repl_source(), retained);
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("x")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                value
+            );
+            assert_eq!(document.bootstrap.presentation_output_ids, ids);
+            let rendered = document.rendered_output(*ids.last().unwrap()).unwrap();
+            let expected = if value == "3" { "13" } else { "2" };
+            assert_eq!(
+                Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                    .unwrap()
+                    .as_string()
+                    .as_deref(),
+                Some(expected)
+            );
+        }
+        let retained = document.bootstrap.source_map.clone();
+        let revision = document.bootstrap.document.document().source().revision();
+        assert!(document.reset("malformed replacement").is_err());
+        assert_eq!(document.bootstrap.source_map, retained);
+        assert_eq!(
+            document.bootstrap.document.document().source().revision(),
+            revision
+        );
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("x")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "3"
+        );
+        let rendered = document
+            .rendered_output(*document.bootstrap.presentation_output_ids.last().unwrap())
+            .unwrap();
+        assert_eq!(
+            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("13")
+        );
+        document.reset(&encoded_document("x := 4\nx")).unwrap();
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("x")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "4"
+        );
+        assert_eq!(
+            document.bootstrap.source_map[&document.bootstrap.root_specifier],
+            "x := 4\nx"
         );
     }
 

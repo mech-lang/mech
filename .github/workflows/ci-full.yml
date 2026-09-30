@@ -1441,6 +1441,9 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-runtime \
             --no-default-features --features full_compiler,watcher,compute \
             --lib mixed_ -- --nocapture
+          cargo +nightly-2026-03-03 test --locked -p mech-gpu \
+            --features runtime-host --lib \
+            alphabetic_section_ordinals_bind_the_configured_compute_host -- --nocapture
 
       - name: Verify canonical replacement corrections
         run: >-

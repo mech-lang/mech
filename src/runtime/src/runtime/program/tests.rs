@@ -1522,6 +1522,62 @@ fn canonical_mixed_document_owns_partitioning_and_typed_initializers() {
 
 #[cfg(feature = "compute")]
 #[test]
+fn canonical_mixed_section_ordinals_preserve_region_identity_and_artifacts() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for (annotation, placement) in [
+        ("compute", mech_core::ComputePlacement::Compute),
+        ("cpu", mech_core::ComputePlacement::Cpu),
+        ("gpu", mech_core::ComputePlacement::Gpu),
+    ] {
+        for ordinal in ["", "1. ", "A. ", "A1. ", "12B. ", "É2. ", "E\u{301}2. "] {
+            let source = MIXED_COMPUTE_SOURCE.replace(
+                "calculation @compute",
+                &format!("{ordinal}kernel @{annotation}"),
+            );
+            let mixed = compiler.compile_mixed_source(&source).unwrap();
+            let decoded = decode_program_artifact_bytecode_v1(
+                &encode_program_artifact_bytecode_v1(&mixed.compute.artifact).unwrap(),
+            )
+            .unwrap();
+            for artifact in [&mixed.compute.artifact, &decoded] {
+                assert_eq!(artifact.compute_regions().len(), 1, "{source}");
+                let region = &artifact.compute_regions()[0];
+                assert_eq!(region.name.as_ref(), "kernel", "{source}");
+                assert_eq!(region.placement, placement, "{source}");
+                let interface =
+                    mech_compute::build_compute_region_interface(artifact, Some(region)).unwrap();
+                assert_eq!(interface.inputs[0].name.as_ref(), "x");
+                assert_eq!(interface.outputs[0].name.as_ref(), "result");
+            }
+        }
+    }
+}
+
+#[cfg(feature = "compute")]
+#[test]
+fn canonical_mixed_section_ordinals_preserve_annotation_rejections() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for (heading, code) in [
+        ("A1. kernel @compute @cpu", "duplicate-section-placement"),
+        ("A1. kernel @unknown", "unsupported-section-annotation"),
+        ("A1. @compute", "empty-compute-region-name"),
+        ("A1. kernel @compute tail", "section-annotation-order"),
+        ("A1. kernel @compute(:cpu)", "section-placement-arguments"),
+    ] {
+        let source = MIXED_COMPUTE_SOURCE.replace("calculation @compute", heading);
+        let error = compiler.compile_mixed_source(&source).unwrap_err();
+        assert!(format!("{error:?}").contains(code), "{heading}: {error:?}");
+    }
+}
+
+#[cfg(feature = "compute")]
+#[test]
 fn canonical_rooted_mixed_compilation_shares_transitive_imports_and_initializers() {
     let root = r#"+> ./dep.mec
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}
