@@ -120,3 +120,64 @@ fn dynamic_glob_alias_import_is_rejected() {
 fn dynamic_grouped_item_alias_import_is_rejected() {
     run_err("+> math/{s := sin}\nx := s(0.0)\n");
 }
+
+#[test]
+fn production_catalog_discovers_dynamic_imports_without_test_preinstallation() {
+    use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
+    let catalog = mech_stdlib::source_catalog();
+    assert!(!catalog.has_module("status-test"));
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(std::sync::Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    for source in [
+        "+> status-test\nstatus-test/unary(3.0)",
+        "+> status-test/unary\nunary(3.0)",
+        "+> f := status-test/unary\nf(3.0)",
+        "+> status-test/*\nunary(3.0)",
+        "+> status-test/{unary, binary}\nunary(3.0)",
+        "~~~mech\n+> status-test/unary\nunary(3.0)\n~~~\n",
+    ] {
+        let product = compiler
+            .compile_source(source)
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        let mut runtime = RuntimeBuilder::new()
+            .function_catalog(std::sync::Arc::clone(&catalog))
+            .build()
+            .unwrap();
+        let result = runtime
+            .load_bytecode_program(product.bytecode(), ResidentDurabilityPolicy::Volatile)
+            .unwrap();
+        assert_eq!(result.initial_value.format_canonical_inline(), "30");
+    }
+    for source in [
+        "+> absent-dynamic-module\n1.0",
+        "+> status-test/absent\n1.0",
+    ] {
+        assert!(compiler.compile_source(source).is_err(), "{source}");
+    }
+    // Compilation extends its own immutable catalog; no imported names leak
+    // into the caller's catalog or the next retained document.
+    assert!(!catalog.has_module("status-test"));
+    assert!(compiler.compile_source("unary(3.0)").is_err());
+    assert!(compiler.compile_source("answer := 42.0\nanswer").is_ok());
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn production_cli_loads_an_abi_import_from_the_module_path() {
+    let directory = tempfile::tempdir().unwrap();
+    std::fs::write(
+        directory.path().join("main.mec"),
+        "+> status-test/unary\nunary(3.0)\n",
+    )
+    .unwrap();
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .current_dir(directory.path())
+        .args(["--no-config", "run", "main.mec"])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.lines().any(|line| line.trim() == "30"), "{stdout}");
+}

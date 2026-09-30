@@ -9,12 +9,6 @@ pub fn source_catalog() -> Arc<FunctionCatalog> {
         .expect("engine intrinsic runtime catalog must be valid");
     mech::engine::install_intrinsic_source(&mut builder)
         .expect("engine intrinsic source catalog must be valid");
-    #[cfg(feature = "dynamic-modules")]
-    for module in ["math", "combinatorics", "status-test"] {
-        mech::engine::install_dynamic_source_module(&mut builder, module).unwrap_or_else(|error| {
-            panic!("dynamic source module `{module}` must load: {error:?}")
-        });
-    }
     Arc::new(
         builder
             .build()
