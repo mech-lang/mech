@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[2]
 CI = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 FULL = (ROOT / ".github/workflows/ci-full.yml").read_text(encoding="utf-8")
 NATIVE = (ROOT / ".github/workflows/ci-native-plan.yml").read_text(encoding="utf-8")
+NATIVE_APPLICATIONS = (ROOT / ".github/actions/native-applications/action.yml").read_text(encoding="utf-8")
+NATIVE_STABILIZATION = (ROOT / ".github/workflows/ci-native-stabilization.yml").read_text(encoding="utf-8")
 NATIVE_DETERMINISM = (
     ROOT / "scripts/check-generated-project-determinism.py"
 ).read_text(encoding="utf-8")
@@ -234,7 +236,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn(
             "cases=hang,parent-death,failed-parent-tree,nonzero,malformed-json", native
         )
-        self.assertEqual(native.count("python3 scripts/run-native-plan-stage.py"), 10)
+        self.assertEqual(native.count("python3 scripts/run-native-plan-stage.py"), 12)
         self.assertNotIn("pipeline_status", native)
         self.assertIn("Retain native-plan diagnostics", native)
         self.assertIn("target/native-plan-logs", native)
@@ -268,9 +270,9 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertGreater(prepare_timeout, 2 * build_timeout + 2 * (30 + 10))
         for step in steps:
             if "python3 scripts/run-native-plan-stage.py" in step:
-                command_timeout = int(re.search(r"--timeout-secs (\d+)", step).group(1))
+                command_timeouts = [int(value) for value in re.findall(r"--timeout-secs (\d+)", step)]
                 actions_timeout = int(re.search(r"timeout-minutes: (\d+)", step).group(1)) * 60
-                self.assertGreater(actions_timeout, command_timeout + 30 + 5 + 15)
+                self.assertGreater(actions_timeout, sum(value + 30 + 5 + 15 for value in command_timeouts))
         for stage, checkpoint in (
             (compile_step, "Retain native planning compilation evidence"),
             (prepare_step, "Retain native planning preparation evidence"),
@@ -367,7 +369,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             r"cargo \+nightly-2026-03-03 test --locked --offline "
             r"-p mech-build --features full-hosts\s*(?:\\\s*)?"
             r"--test native_generated_end_to_end",
-            FULL,
+            FULL + NATIVE_APPLICATIONS,
         )
         self.assertEqual(len(generated_commands), 5)
 
@@ -401,11 +403,14 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--stage 02-planning-execution", native)
 
         engine = job_block(FULL, "native-engine")
+        self.assertIn("uses: ./.github/actions/native-applications", engine)
+        self.assertIn("suite: engine", engine)
         grouped = (
             "cargo +nightly-2026-03-03 test --locked --offline "
             "-p mech-build --features full-hosts"
         )
-        self.assertEqual(engine.count(grouped), 2)
+        application_commands = " ".join(NATIVE_APPLICATIONS.replace("\\\n", " ").split())
+        self.assertEqual(application_commands.count(grouped), 4)
         for target in (
             "native_literal",
             "native_scalar",
@@ -413,19 +418,50 @@ class FullWorkflowContractTests(unittest.TestCase):
             "native_output_seed_arities",
             "native_generated_arguments",
         ):
-            self.assertIn(f"--test {target}", engine)
+            self.assertIn(f"--test {target}", application_commands)
 
         hosted = job_block(FULL, "native-hosted")
+        self.assertIn("uses: ./.github/actions/native-applications", hosted)
+        self.assertIn("suite: hosted", hosted)
         self.assertIn(
             f"{grouped} --test native_cli_hosted",
-            " ".join(hosted.split()),
+            application_commands,
         )
         self.assertIn(
-            "MECH_NATIVE_GENERATED_CASE=console "
             "cargo +nightly-2026-03-03 test --locked --offline "
             "-p mech-build --features full-hosts --test native_generated_end_to_end",
-            " ".join(hosted.split()),
+            application_commands,
         )
+        self.assertIn("MECH_NATIVE_GENERATED_CASE: console", NATIVE_APPLICATIONS)
+        self.assertIn("--lib cli::app::tests::build_", NATIVE_APPLICATIONS)
+        self.assertIn("--test mech_build", NATIVE_APPLICATIONS)
+
+    def test_affected_native_commands_retain_each_stage_and_reuse_same_recipe(self):
+        stages = re.split(r"(?m)^    - name: ", NATIVE_APPLICATIONS)[1:]
+        bounded = [stage for stage in stages if "python3 scripts/run-native-plan-stage.py" in stage]
+        self.assertEqual(len(bounded), 6)
+        for stage in bounded:
+            following = stages[stages.index(stage) + 1]
+            self.assertIn("if: always()", following)
+            self.assertIn("uses: actions/upload-artifact@v4", following)
+            self.assertIn("target/native-plan-logs", following)
+            self.assertIn("target/bytecode-v1-fixtures/owner-runner/logs", following)
+        self.assertNotIn("--skip", NATIVE_APPLICATIONS)
+        self.assertNotIn("continue-on-error", NATIVE_APPLICATIONS)
+        self.assertIn("branches: [codex/r21-native-stabilization]", NATIVE_STABILIZATION)
+        self.assertIn("suite: [engine, hosted]", NATIVE_STABILIZATION)
+        self.assertEqual(NATIVE_STABILIZATION.count("uses: ./.github/actions/native-applications"), 2)
+        self.assertIn("phase: cold", NATIVE_STABILIZATION)
+        self.assertIn("phase: reuse", NATIVE_STABILIZATION)
+        self.assertIn("verify_reuse: true", NATIVE_STABILIZATION)
+        for job in ("native-plan", "applications"):
+            self.assertIn("needs: harness", job_block(NATIVE_STABILIZATION, job))
+        self.assertIn("python3 scripts/probe-unix-kill-targeting.py", NATIVE_STABILIZATION)
+        reuse = next(step for step in job_steps(NATIVE, "native-plan")
+                     if "- name: Verify fresh-process owner reuse and planning execution" in step)
+        self.assertIn("if: inputs.verify_reuse", reuse)
+        self.assertIn('MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"', reuse)
+        self.assertIn("--stage 02-planning-reuse-execution", reuse)
 
     def test_native_plan_handoff_gates_fail_closed(self):
         def accepts(block, **overrides):

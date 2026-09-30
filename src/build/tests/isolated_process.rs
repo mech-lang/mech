@@ -125,6 +125,21 @@ fn fixture_command(root: &Path, test: &str, mode: &str) -> Command {
 }
 
 #[test]
+#[cfg(unix)]
+fn process_group_signals_preserve_complete_multidigit_targets() {
+    for process_group in [12, 103, 997, 10_001, 1_443_247] {
+        for (force, signal) in [(false, "-TERM"), (true, "-KILL")] {
+            let command = isolated::process_group_signal_command(process_group, force);
+            assert_eq!(command.get_program(), "kill");
+            assert_eq!(
+                command.get_args().collect::<Vec<_>>(),
+                [signal, "--", &format!("-{process_group}")].map(std::ffi::OsStr::new),
+            );
+        }
+    }
+}
+
+#[test]
 fn cold_profile_builds_share_one_budget_and_keep_separate_cached_outputs() {
     let temporary = tempfile::tempdir().unwrap();
     let preparation = OwnerRunnerPreparation::new();

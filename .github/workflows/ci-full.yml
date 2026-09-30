@@ -1012,6 +1012,14 @@ jobs:
   native-engine:
     name: Native engine applications
     runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "900"
+      MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS: "540"
+      MECH_NATIVE_HOST_TARGET_TIMEOUT_SECS: "30"
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -1032,20 +1040,22 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Build and execute the full generated fixture matrix
-        run: |
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
-            --test native_literal \
-            --test native_scalar \
-            --test native_representative_families \
-            --test native_output_seed_arities \
-            --test native_generated_arguments \
-            -- --nocapture
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
-            --test native_generated_end_to_end -- --nocapture
+        timeout-minutes: 150
+        uses: ./.github/actions/native-applications
+        with:
+          suite: engine
 
   native-hosted:
     name: Native hosted applications
     runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "900"
+      MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS: "540"
+      MECH_NATIVE_HOST_TARGET_TIMEOUT_SECS: "30"
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -1066,11 +1076,10 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Build hosted applications and CLI integration
-        run: |
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_cli_hosted
-          MECH_NATIVE_GENERATED_CASE=console cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end
-          cargo +nightly-2026-03-03 test -p mech --features build --lib cli::app::tests::build_
-          cargo +nightly-2026-03-03 test -p mech --features build --test mech_build
+        timeout-minutes: 150
+        uses: ./.github/actions/native-applications
+        with:
+          suite: hosted
 
   native-live:
     name: Native live applications

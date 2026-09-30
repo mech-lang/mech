@@ -1025,14 +1025,21 @@ fn configure_process_group(command: &mut Command) {
 fn configure_process_group(_command: &mut Command) {}
 
 #[cfg(unix)]
-fn terminate_process_tree(process_id: u32, force: bool) {
+pub fn process_group_signal_command(process_id: u32, force: bool) -> Command {
     let signal = if force { "-KILL" } else { "-TERM" };
-    let _ = Command::new("kill")
+    let mut command = Command::new("kill");
+    command
         .arg(signal)
+        .arg("--")
         .arg(format!("-{process_id}"))
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status();
+        .stderr(Stdio::null());
+    command
+}
+
+#[cfg(unix)]
+fn terminate_process_tree(process_id: u32, force: bool) {
+    let _ = process_group_signal_command(process_id, force).status();
 }
 
 #[cfg(windows)]

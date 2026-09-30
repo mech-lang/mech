@@ -114,6 +114,33 @@ def record_test_executable(log: Path, target: str, destination: Path) -> None:
     destination.write_text(str(executable.resolve()) + "\n", encoding="utf-8")
 
 
+def cleanup_owned_group(process: subprocess.Popen) -> None:
+    """Finish the owned group even after its leader has exited."""
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        process.wait(timeout=5)
+        return
+    process.wait(timeout=5)
+    deadline = time.monotonic() + 5
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired("owned process-group cleanup", 5)
+        members = subprocess.run(
+            ["ps", "-axo", "pgid=,stat="], capture_output=True, text=True,
+            timeout=min(1, remaining), check=True,
+        )
+        live = any(
+            fields[0] == str(process.pid) and fields[1][0] not in "ZXx"
+            for line in members.stdout.splitlines()
+            if len(fields := line.split()) == 2
+        )
+        if not live:
+            return
+        time.sleep(min(0.05, max(0, deadline - time.monotonic())))
+
+
 def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> int:
     log_dir.mkdir(parents=True, exist_ok=True)
     log = log_dir / f"{stage}.log"
@@ -124,6 +151,7 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
     resource_snapshot(resources, stage, "before")
     reason = "exit"
     process = None
+    cleaned = False
     received_signal = None
 
     def interrupted(signum, _frame):
@@ -168,17 +196,10 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
                         process.wait(timeout=CLEANUP_SECONDS)
                     except subprocess.TimeoutExpired:
                         pass
-                    # Reap descendants even when their group leader exited on TERM.
-                    try:
-                        os.killpg(process.pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                    try:
-                        process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        output.write(f"stage={stage} diagnostic=process-reap-timeout pid={process.pid}\n".encode())
                     break
                 time.sleep(0.1)
+            cleanup_owned_group(process)
+            cleaned = True
             # Display a bounded tail if output arrived faster than the console
             # mirror consumed it. The retained disk log remains complete.
             reader.seek(max(reader.tell(), os.fstat(reader.fileno()).st_size - CONSOLE_WRITE_LIMIT_BYTES))
@@ -191,6 +212,7 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
                 status = 128 - status
             elapsed = time.monotonic() - started
             summary = {"stage": stage, "reason": reason, "command_exit_status": status,
+                       "owned_group_cleanup": "complete",
                        "elapsed_seconds": elapsed, "timeout_seconds": timeout,
                        "cleanup_seconds": CLEANUP_SECONDS}
             output.write((json.dumps(summary) + "\n").encode())
@@ -210,15 +232,12 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
         mirror_console(diagnostic, error=True)
         return 1
     finally:
-        if process is not None and process.poll() is None:
+        if process is not None and not cleaned:
             try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                pass
+                cleanup_owned_group(process)
+            except (OSError, subprocess.SubprocessError) as error:
+                with log.open("ab", buffering=0) as output:
+                    output.write(f"stage={stage} diagnostic=cleanup-error error={error}\n".encode())
         for signum, handler in previous_handlers.items():
             signal.signal(signum, handler)
         resource_snapshot(resources, stage, "after")

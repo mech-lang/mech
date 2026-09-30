@@ -7,6 +7,11 @@ on:
         description: Exact commit or ref to validate
         required: true
         type: string
+      verify_reuse:
+        description: Verify fresh-process reuse after cold owner preparation
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   native-plan:
@@ -135,6 +140,30 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-plan-planning-execution-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            target/bytecode-v1-fixtures/owner-runner/logs
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify fresh-process owner reuse and planning execution
+        if: inputs.verify_reuse
+        timeout-minutes: 18
+        env:
+          MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"
+          MECH_NATIVE_HOST_TARGET_TIMEOUT_SECS: "30"
+          MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS: "540"
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage 02-planning-reuse-prepare --timeout-secs 120 \
+            --test-executable-file target/native-plan-logs/planning-executable -- \
+            --ignored --exact prepare_planning_owner_runners --test-threads=1 --nocapture
+          python3 scripts/run-native-plan-stage.py --stage 02-planning-reuse-execution --timeout-secs 780 \
+            --test-executable-file target/native-plan-logs/planning-executable -- \
+            --test-threads=1 --nocapture
+      - name: Retain fresh-process reuse evidence
+        if: always() && inputs.verify_reuse
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-plan-reuse-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             target/native-plan-logs
             target/bytecode-v1-fixtures/owner-runner/logs
