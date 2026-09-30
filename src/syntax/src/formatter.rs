@@ -346,7 +346,7 @@ impl Formatter {
     }
 
     pub fn works_cited(&mut self) -> String {
-        if self.citations.is_empty() {
+        if !self.html || self.citations.is_empty() {
             return "".to_string();
         }
         let mut src = format!(r#"<section id="67320967384727436" class="mech-works-cited">"#);
@@ -862,10 +862,31 @@ impl Formatter {
                 level
             )
         } else {
-            format!(
-                "{}\n-------------------------------------------------------------------------------\n",
-                node.to_string()
-            )
+            let annotations = annotations
+                .map(|text| format!(" {text}"))
+                .unwrap_or_default();
+            if level == 2 {
+                format!(
+                    "{}. {}{}\n-------------------------------------------------------------------------------\n\n",
+                    self.h2_num,
+                    node.to_string(),
+                    annotations
+                )
+            } else {
+                let counters = [
+                    self.h2_num,
+                    self.h3_num,
+                    self.h4_num,
+                    self.h5_num,
+                    self.h6_num,
+                ];
+                let ordinal = counters[..usize::from(level.saturating_sub(1)).min(counters.len())]
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(".");
+                format!("({ordinal}) {}{annotations}\n\n", node.to_string())
+            }
         }
     }
 
@@ -890,11 +911,6 @@ impl Formatter {
             .collect::<Vec<_>>()
             .join(" ");
         let mut src = match (&node.subtitle, node.annotations.is_empty()) {
-            (Some(title), false) if !self.html => format!(
-                "{} {}\n-------------------------------------------------------------------------------\n",
-                title.to_string(),
-                annotations,
-            ),
             (Some(title), false) => self.subtitle_with_annotations(title, Some(&annotations)),
             (Some(title), true) => self.subtitle(title),
             (None, _) => "".to_string(),
@@ -902,6 +918,9 @@ impl Formatter {
         for el in node.elements.iter() {
             let el_str = self.section_element(el);
             src = format!("{}{}", src, el_str);
+            if !self.html && !src.ends_with("\n\n") {
+                src.push('\n');
+            }
         }
         let toc = if self.toc { "toc" } else { "" };
         let section_id = hash_str(&format!("section-{}", self.h2_num + 1));
@@ -1075,6 +1094,8 @@ impl Formatter {
                         "<a href=\"{}\" class=\"mech-hyperlink\">{}</a>",
                         url_str, text_str
                     )
+                } else if text_str == url_str {
+                    url_str
                 } else {
                     format!("[{}]({})", text_str, url_str)
                 }
@@ -1138,6 +1159,48 @@ impl Formatter {
     }
 
     pub fn fenced_mech_code(&mut self, block: &FencedMechCode) -> String {
+        if !self.html {
+            let qualifier = if block.config.disabled {
+                "disabled"
+            } else if block.config.hidden {
+                "hidden"
+            } else {
+                &block.config.namespace_str
+            };
+            let qualifier = if qualifier.is_empty() {
+                String::new()
+            } else {
+                format!(":{qualifier}")
+            };
+            let options = block
+                .options
+                .as_ref()
+                .map(|options| {
+                    let entries = options
+                        .elements
+                        .iter()
+                        .map(|(key, value)| format!("{}: {}", key.to_string(), value.to_string()))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    format!("{{{entries}}}")
+                })
+                .unwrap_or_default();
+            // The legacy tree retains the fence body, including its imports and
+            // exports. Keep it as source rather than rebuilding only code nodes.
+            let source = block.source.to_string();
+            let delimiter = if source
+                .lines()
+                .any(|line| line.trim_start().starts_with("~~~"))
+            {
+                "```"
+            } else {
+                "~~~"
+            };
+            return format!(
+                "{delimiter}mech{qualifier}{options}\n{}\n{delimiter}\n\n",
+                source.trim_end_matches(['\r', '\n'])
+            );
+        }
         let parent_interpreter_id = self.interpreter_id;
         if block.config.namespace != 0 {
             self.interpreter_id = block.config.namespace;
@@ -1172,10 +1235,7 @@ impl Formatter {
         }
         let intrp_id = self.interpreter_id;
         self.interpreter_id = parent_interpreter_id;
-        let disabled_tag = match block.config.disabled {
-            true => "disabled".to_string(),
-            false => "".to_string(),
-        };
+
         if self.html {
             let (out_node, _) = block.code.last().unwrap();
             let output_id = hash_str(&format!("{:?}", out_node));
@@ -1242,7 +1302,7 @@ impl Formatter {
                 )
             }
         } else {
-            format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))
+            unreachable!("source fences return before HTML rendering")
         }
     }
 
@@ -1251,7 +1311,8 @@ impl Formatter {
 
         let src = node.src.to_string();
         let caption_p = match &node.caption {
-            Some(caption) => self.paragraph(caption),
+            Some(caption) if self.html => self.paragraph(caption),
+            Some(caption) => self.inline_paragraph(caption),
             None => "".to_string(),
         };
 
@@ -1399,7 +1460,9 @@ impl Formatter {
                 abstract_paragraph
             )
         } else {
-            format!("{}\n", abstract_paragraph)
+            node.iter()
+                .map(|paragraph| format!("%% {}\n\n", self.inline_paragraph(paragraph)))
+                .collect()
         }
     }
 
@@ -1430,6 +1493,13 @@ impl Formatter {
     }
 
     pub fn citation(&mut self, node: &Citation) -> String {
+        if !self.html {
+            return format!(
+                "[{}]: {}\n\n",
+                node.id.to_string(),
+                self.inline_paragraph(&node.text)
+            );
+        }
         let id = hash_str(&format!("{}", node.id.to_string()));
         let parsed_citation = self.citation_paragraph_with_optional_link(&node.text);
         let citation_num = match self.citation_map.get(&id) {

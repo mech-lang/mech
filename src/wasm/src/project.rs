@@ -3471,6 +3471,48 @@ mod tests {
     }
 
     #[test]
+    fn legacy_rich_payload_reconstruction_parses_and_indexes_the_document_contract() {
+        let source = include_str!("../../../tests/fixtures/shims/all-slots.mec");
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let payload = decode_document_payload(&encoded, "rich.mec", None).unwrap();
+        let retained = CanonicalWasmDocument::retain(
+            "rich.mec",
+            mech_syntax::document::Revision(0),
+            payload.source(),
+        )
+        .unwrap();
+        let index = retained.document().index().unwrap();
+        assert!(
+            index
+                .root
+                .scopes
+                .iter()
+                .any(|scope| matches!(scope, mech_runtime::resolver::SourceScope::Program))
+        );
+        assert!(index.root.scopes.iter().any(|scope| matches!(scope, mech_runtime::resolver::SourceScope::Interpreter(owner) if owner.namespace_str == "foo")));
+        assert_eq!(payload.presentation_output_ids().len(), 2);
+        assert!(payload.source().contains("~~~mech\nanswer\n~~~"));
+        assert!(
+            payload
+                .source()
+                .contains("~~~mech:foo\nfoo-value := 7\n~~~")
+        );
+        assert!(payload.source().contains("{answer + 1}"));
+        assert!(
+            payload
+                .source()
+                .contains("[^fixture]: Fixture footnote body.")
+        );
+        assert!(
+            payload
+                .source()
+                .contains("[MECH]: Mech Programming Language. https://mech-lang.org")
+        );
+        assert!(!payload.source().contains("<section"));
+    }
+
+    #[test]
     fn browser_documentation_fixture_has_canonical_syntax() {
         let source = "Accepted Documentation\n===============================================================================\nAccepted documentation evaluates {answer}.\n\n";
         let document = CanonicalWasmDocument::retain(
@@ -6639,6 +6681,99 @@ mod browser_tests {
             document.bootstrap.source_map[&document.bootstrap.root_specifier],
             "x := 4\nx"
         );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_legacy_rich_replacements_keep_visible_and_local_owners() {
+        let original = include_str!("../../../tests/fixtures/shims/all-slots.mec");
+        let mut document =
+            WasmDocument::from_encoded(&encoded_document("sentinel := 1\nsentinel")).unwrap();
+        for (value, inline) in [(41, "42"), (7, "8"), (12, "13")] {
+            let source = original.replacen("~answer := 41", &format!("~answer := {value}"), 1);
+            let tree = mech_syntax::parser::parse(&source).unwrap();
+            let output_ids = root_document_output_ids(&tree);
+            assert_eq!(output_ids.len(), 2);
+            document
+                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
+                .unwrap();
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("answer")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                value.to_string()
+            );
+            assert!(document.repl.session.symbol("foo-value").unwrap().is_none());
+            assert!(document.repl.session.symbol("sentinel").unwrap().is_none());
+            for (id, expected) in output_ids
+                .iter()
+                .zip([inline.to_owned(), value.to_string()])
+            {
+                let rendered = document.rendered_output(*id).unwrap();
+                assert_eq!(
+                    Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some(expected.as_str())
+                );
+            }
+            assert_eq!(
+                document.bootstrap.source_map[&document.bootstrap.root_specifier],
+                mech_syntax::Formatter::new().format(&tree)
+            );
+            document.bootstrap.document.document().index().unwrap();
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_legacy_fences_preserve_execution_and_publication() {
+        let mut document = WasmDocument::from_encoded(&encoded_document("root := 0")).unwrap();
+        for (header, executes, publishes) in [
+            ("", true, true),
+            (":hidden", true, false),
+            (":disabled", false, false),
+            (":worker", false, false),
+            ("{output: false}", true, false),
+        ] {
+            let source =
+                format!("root := 5\n\n~~~mech{header}\nfence-value := 6\nfence-value\n~~~\n");
+            let tree = mech_syntax::parser::parse(&source).unwrap();
+            let output_ids = root_document_output_ids(&tree);
+            assert_eq!(output_ids.len(), usize::from(publishes), "{header}");
+            document
+                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
+                .unwrap();
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("root")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "5"
+            );
+            let value = document.repl.session.symbol("fence-value").unwrap();
+            assert_eq!(value.is_some(), executes, "{header}");
+            if let Some(value) = value {
+                assert_eq!(value.format_canonical_inline(), "6");
+            }
+            if publishes {
+                let rendered = document.rendered_output(output_ids[0]).unwrap();
+                assert_eq!(
+                    Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some("6")
+                );
+            }
+            document.bootstrap.document.document().index().unwrap();
+        }
     }
 
     #[wasm_bindgen_test]

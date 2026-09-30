@@ -167,7 +167,7 @@ fn collect_fenced_output_ids(
     if block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE {
         return;
     }
-    if !block.config.output {
+    if block.config.hidden || !block.config.output {
         return;
     }
     if let Some(output_id) = fenced_document_output_id(block) {
