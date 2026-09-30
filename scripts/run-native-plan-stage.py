@@ -16,6 +16,32 @@ from pathlib import Path
 
 CLEANUP_SECONDS = 30
 RESOURCE_INTERVAL_SECONDS = 15
+CONSOLE_WRITE_LIMIT_BYTES = 16 * 1024
+
+
+def mirror_console(message: str | bytes, *, error: bool = False) -> None:
+    """Best-effort display must never stop deadline polling on a full pipe.
+
+    Disk logs retain complete output. Limit each console attempt and discard
+    bytes that cannot be written immediately rather than buffering a backlog.
+    Restore the inherited descriptor mode for the invoking shell afterward.
+    """
+    descriptor = 2 if error else 1
+    data = message.encode("utf-8") if isinstance(message, str) else message
+    try:
+        was_blocking = os.get_blocking(descriptor)
+        os.set_blocking(descriptor, False)
+    except OSError:
+        return
+    try:
+        os.write(descriptor, data[:CONSOLE_WRITE_LIMIT_BYTES])
+    except OSError:
+        pass
+    finally:
+        try:
+            os.set_blocking(descriptor, was_blocking)
+        except OSError:
+            pass
 
 
 def resource_snapshot(destination: Path, stage: str, event: str) -> None:
@@ -115,21 +141,21 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
                 f"command={command!r}\n"
             )
             output.write(header.encode())
-            print(header, end="", flush=True)
+            mirror_console(header)
             reader.seek(len(header.encode()))
             process = subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT,
                                        start_new_session=True)
             while process.poll() is None:
-                pending = reader.read()
+                pending = reader.read(CONSOLE_WRITE_LIMIT_BYTES)
                 if pending:
-                    sys.stdout.buffer.write(pending)
-                    sys.stdout.buffer.flush()
+                    mirror_console(pending)
                 now = time.monotonic()
                 if now >= next_snapshot:
                     resource_snapshot(resources, stage, "running")
                     next_snapshot = now + RESOURCE_INTERVAL_SECONDS
-                    print(f"MECH_NATIVE_CI_PROGRESS stage={stage} elapsed_seconds={now-started:.1f}",
-                          flush=True)
+                    mirror_console(
+                        f"MECH_NATIVE_CI_PROGRESS stage={stage} elapsed_seconds={now-started:.1f}\n"
+                    )
                 if received_signal is not None or now >= deadline:
                     reason = "interrupted" if received_signal is not None else "timeout"
                     output.write(f"stage={stage} diagnostic={reason} pid={process.pid}\n".encode())
@@ -153,10 +179,12 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
                         output.write(f"stage={stage} diagnostic=process-reap-timeout pid={process.pid}\n".encode())
                     break
                 time.sleep(0.1)
-            pending = reader.read()
+            # Display a bounded tail if output arrived faster than the console
+            # mirror consumed it. The retained disk log remains complete.
+            reader.seek(max(reader.tell(), os.fstat(reader.fileno()).st_size - CONSOLE_WRITE_LIMIT_BYTES))
+            pending = reader.read(CONSOLE_WRITE_LIMIT_BYTES)
             if pending:
-                sys.stdout.buffer.write(pending)
-                sys.stdout.buffer.flush()
+                mirror_console(pending)
             status = (128 + received_signal if received_signal is not None else 124) \
                 if reason != "exit" else process.returncode
             if status < 0:
@@ -168,7 +196,7 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
             output.write((json.dumps(summary) + "\n").encode())
             (log_dir / f"{stage}.summary.json").write_text(json.dumps(summary, indent=2) + "\n",
                                                         encoding="utf-8")
-            print(json.dumps(summary), flush=True)
+            mirror_console(json.dumps(summary) + "\n")
             return status
     except (OSError, subprocess.SubprocessError) as error:
         diagnostic = f"stage={stage} diagnostic=stage-error error={error}\n"
@@ -179,7 +207,7 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
                    "cleanup_seconds": CLEANUP_SECONDS}
         (log_dir / f"{stage}.summary.json").write_text(json.dumps(summary, indent=2) + "\n",
                                                     encoding="utf-8")
-        print(diagnostic, end="", file=sys.stderr, flush=True)
+        mirror_console(diagnostic, error=True)
         return 1
     finally:
         if process is not None and process.poll() is None:
@@ -227,7 +255,7 @@ def main() -> int:
             summary = json.loads(summary_path.read_text(encoding="utf-8"))
             summary.update(reason="test-executable-selection", command_exit_status=1)
             summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-            print(diagnostic, end="", file=sys.stderr, flush=True)
+            mirror_console(diagnostic, error=True)
             return 1
     return status
 

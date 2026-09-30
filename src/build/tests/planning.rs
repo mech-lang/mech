@@ -548,7 +548,6 @@ fn canonical_native_plan_checks_index_constants_against_the_target_pointer_width
 }
 
 #[cfg(target_pointer_width = "64")]
-#[cfg(target_pointer_width = "64")]
 fn nested_canonical_index_cases(
     value: u64,
 ) -> Vec<(

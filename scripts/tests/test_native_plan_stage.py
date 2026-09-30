@@ -5,6 +5,7 @@ import importlib.util
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -67,6 +68,56 @@ class NativePlanStageTests(unittest.TestCase):
             # An unreaped zombie has already exited and consumes no runnable CPU.
             self.assertTrue(not status.stdout.strip() or status.stdout.strip().startswith("Z"),
                             f"fixture descendant still running: {status.stdout}")
+
+    @unittest.skipUnless(os.name == "posix", "CI stage runner is used on Unix")
+    def test_undrained_console_cannot_prevent_timeout_or_complete_disk_retention(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pid_file = root / "child.pid"
+            payload = b"BEGIN-BLOCKED-CONSOLE\n" + b"x" * 1048576 + b"\nEND-BLOCKED-CONSOLE\n"
+            source = (
+                "import os,sys,time; from pathlib import Path; "
+                f"Path({str(pid_file)!r}).write_text(str(os.getpid())); "
+                "sys.stdout.buffer.write(b'BEGIN-BLOCKED-CONSOLE\\n' + b'x'*1048576 + "
+                "b'\\nEND-BLOCKED-CONSOLE\\n'); sys.stdout.buffer.flush(); time.sleep(60)"
+            )
+            process = subprocess.Popen(
+                [sys.executable, str(SCRIPT), "--stage", "blocked-console",
+                 "--timeout-secs", "0.5", "--log-dir", str(root), "--",
+                 sys.executable, "-c", source],
+                # Neither console pipe is drained until supervision completes.
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True,
+            )
+            completed = False
+            try:
+                status = process.wait(timeout=10)
+                completed = True
+                self.assertEqual(status, 124)
+                log = (root / "blocked-console.log").read_bytes()
+                self.assertIn(payload, log)
+                self.assertIn(b"diagnostic=timeout", log)
+                summary = json.loads((root / "blocked-console.summary.json").read_text())
+                self.assertEqual(summary["reason"], "timeout")
+                self.assertLess(summary["elapsed_seconds"], 10)
+                child = int(pid_file.read_text())
+                observed = subprocess.run(["ps", "-p", str(child), "-o", "stat="],
+                                          capture_output=True, text=True, timeout=3)
+                self.assertIn(observed.returncode, (0, 1), observed.stderr)
+                self.assertFalse(observed.stderr.strip(), observed.stderr)
+                self.assertTrue(not observed.stdout.strip() or observed.stdout.strip().startswith("Z"),
+                                f"fixture child still running: {observed.stdout}")
+            finally:
+                if not completed:
+                    # The regression's own safety coordinator cleans both
+                    # sessions even when the stage deadline is defeated.
+                    for pid in ([int(pid_file.read_text())] if pid_file.exists() else []) + [process.pid]:
+                        try:
+                            os.killpg(pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                    process.wait(timeout=5)
+                process.stdout.close()
+                process.stderr.close()
 
     def test_compiled_test_executable_requires_the_selected_target_and_one_output(self):
         with tempfile.TemporaryDirectory() as directory:
