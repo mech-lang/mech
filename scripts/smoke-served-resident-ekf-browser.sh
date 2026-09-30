@@ -25,17 +25,78 @@ project_dir="$(mktemp -d "$target_dir/served-resident-ekf.XXXXXX")"
 browser_dir="$(mktemp -d "$target_dir/served-resident-ekf-browser.XXXXXX")"
 server_log="$browser_dir/server.log"
 chrome_log="$browser_dir/chrome.stderr"
+harness_log="$browser_dir/harness.stderr"
 dom_file="$browser_dir/chrome.dom"
 chrome_profile="$browser_dir/chrome-profile"
 server_pid=""
 
 cleanup() {
+  exit_status="$?"
+  # Bash can expose internal parse status 258 to EXIT; the process returns 2.
+  exit_status="$((exit_status % 256))"
   if [[ -n "$server_pid" ]]; then
     kill "$server_pid" 2>/dev/null || true
     wait "$server_pid" 2>/dev/null || true
   fi
   rm -rf "$project_dir"
-  rm -rf "$browser_dir"
+  if [[ "$exit_status" -eq 0 ]]; then
+    rm -rf "$browser_dir"
+  else
+    # Keep failure diagnostics separate from the successful numerical result.
+    # Do not retain the browser profile, which is large and unrelated evidence.
+    rm -rf "$chrome_profile"
+    if ! python3 - "$browser_dir" "$exit_status" "${compute_backend:-}" \
+      "${filter_count:-}" "${continuity_edit:-}" "${terminal_submit_probe:-}" <<'PY'
+from html.parser import HTMLParser
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+
+class DatasetParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.dataset = {}
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "html":
+            self.dataset.update({
+                name: value for name, value in attrs if name.startswith("data-")
+            })
+
+
+directory, status, backend, filters, continuity, terminal_probe = sys.argv[1:]
+directory = Path(directory)
+parser = DatasetParser()
+dom = directory / "chrome.dom"
+if dom.exists():
+    parser.feed(dom.read_text(errors="replace"))
+revision = subprocess.run(
+    ["git", "rev-parse", "HEAD"], text=True, capture_output=True, timeout=10,
+)
+dirty = subprocess.run(
+    ["git", "status", "--porcelain"], text=True, capture_output=True, timeout=10,
+)
+(directory / "failure.json").write_text(json.dumps({
+    "outcome": "failed",
+    "exit_status": int(status),
+    "revision": revision.stdout.strip(),
+    "worktree_dirty": bool(dirty.stdout.strip()),
+    "requested_backend": backend,
+    "filter_count": filters,
+    "continuity_edit": continuity,
+    "terminal_submit_probe": terminal_probe,
+    "dataset": parser.dataset,
+    "artifacts": ["server.log", "chrome.stderr", "harness.stderr", "chrome.dom"],
+}, indent=2, sort_keys=True) + "\n")
+PY
+    then
+      echo "Could not write structured EKF failure diagnostics" >&2
+    fi
+    echo "Retained EKF failure diagnostics: $browser_dir" >&2
+  fi
+  return "$exit_status"
 }
 trap cleanup EXIT
 
@@ -143,6 +204,9 @@ harness = r'''<script>
     const terminalSubmitProbe =
       new URLSearchParams(location.search).has("mech-terminal-submit-probe");
     const completionUrl = new URLSearchParams(location.search).get("mech-canary-callback");
+    const progressMessage = terminalSubmitProbe
+      ? "ekf-terminal-progress"
+      : "ekf-progress";
     const signalCompletion = name => {
       if (completionUrl) {
         const url = `${completionUrl}/${name}`;
@@ -157,16 +221,59 @@ harness = r'''<script>
         }).catch(() => navigator.sendBeacon(url, payload));
       }
     };
+    const reportedMilestones = new Set();
+    const signalMilestone = (stage, detail = {}) => {
+      if (!completionUrl || reportedMilestones.has(stage)) return;
+      reportedMilestones.add(stage);
+      const payload = JSON.stringify({
+        stage,
+        ...detail,
+        documentStatus: root.dataset.mechDocumentStatus || "",
+        documentError: root.dataset.mechDocumentError || "",
+        adapterStatus: root.dataset.mechComputeAdapterStatus || "",
+        deviceStatus: root.dataset.mechComputeDeviceStatus || "",
+        computeLifecycle: root.dataset.mechComputeLifecycle || "",
+        computeBackend: root.dataset.mechComputeBackend || "",
+        computeDispatches: root.dataset.mechComputeDispatches || "0",
+        gpuBindingInventory: root.dataset.mechGpuBindingInventory || "",
+        gpuRequiredStorageBindings: root.dataset.mechGpuRequiredStorageBindings || "",
+        gpuSupportedStorageBindings: root.dataset.mechGpuSupportedStorageBindings || "",
+        gpuBridgeError: root.dataset.mechGpuBridgeError || "",
+        consoleError: root.dataset.mechConsoleError || "",
+        pageError: root.dataset.mechPageError || "",
+      });
+      const url = `${completionUrl}/${progressMessage}`;
+      if (!navigator.sendBeacon(url, payload)) {
+        void fetch(url, {
+          method: "POST",
+          body: payload,
+          headers: {"Content-Type": "text/plain;charset=UTF-8"},
+        }).catch(() => {});
+      }
+    };
+    const parityComputeTurn = 376;
+    const continuityEditTurn = 120;
+    const busyReplacementTurn = 40;
+    const computeCheckpointInterval = 25;
+    const semanticComputeCheckpoints = new Map([
+      [1, "first-compute-completion"],
+      [busyReplacementTurn, "busy-replacement-turn-complete"],
+      [continuityEditTurn, "continuity-edit-turn-complete"],
+      [continuityEditTurn + 1, "continuity-post-edit-turn-complete"],
+      [parityComputeTurn, "parity-turn-complete"],
+    ]);
     let lastReportedComputeTurn = 0;
     const signalProgress = completedTurns => {
       if (
-        completionUrl &&
-        Number.isFinite(completedTurns) &&
-        completedTurns - lastReportedComputeTurn >= 25
-      ) {
-        lastReportedComputeTurn = completedTurns;
-        navigator.sendBeacon(`${completionUrl}/ekf-progress`, String(completedTurns));
-      }
+        !Number.isFinite(completedTurns) || completedTurns <= lastReportedComputeTurn
+      ) return;
+      const semanticStage = semanticComputeCheckpoints.get(completedTurns);
+      if (!semanticStage && completedTurns % computeCheckpointInterval !== 0) return;
+      lastReportedComputeTurn = completedTurns;
+      signalMilestone(
+        semanticStage || `compute-checkpoint-${completedTurns}`,
+        {completedTurns},
+      );
     };
     const originalConsoleError = console.error;
     const diagnosticText = (value) => value?.stack || value?.message || String(value);
@@ -180,10 +287,37 @@ harness = r'''<script>
     window.addEventListener("unhandledrejection", (event) => {
       root.dataset.mechPageError = diagnosticText(event.reason);
     });
+    const lifecycleAttributes = new Map([
+      ["data-mech-document-status", "document"],
+      ["data-mech-compute-adapter-status", "adapter"],
+      ["data-mech-compute-device-status", "device"],
+      ["data-mech-compute-lifecycle", "lifecycle"],
+    ]);
+    const publishLifecycleMilestone = attribute => {
+      const value = root.getAttribute(attribute);
+      if (value) {
+        const category = lifecycleAttributes.get(attribute);
+        signalMilestone(`${category}-${value}`, {category, value});
+        if (category === "document" && value === "error") {
+          signalCompletion(
+            terminalSubmitProbe ? "ekf-terminal-finished" : "ekf-finished",
+          );
+        }
+      }
+    };
+    new MutationObserver(records => {
+      for (const record of records) publishLifecycleMilestone(record.attributeName);
+    }).observe(root, {
+      attributes: true,
+      attributeFilter: [...lifecycleAttributes.keys()],
+    });
+    for (const attribute of lifecycleAttributes.keys()) {
+      publishLifecycleMilestone(attribute);
+    }
+    window.addEventListener("mech:document-ready", () => {
+      signalMilestone("document-ready");
+    });
 
-    const parityComputeTurn = 376;
-    const continuityEditTurn = 120;
-    const busyReplacementTurn = 40;
     let computeParitySample;
     let continuityNextSample;
     let continuityEditRequested = false;
@@ -259,7 +393,14 @@ harness = r'''<script>
       const values = renderedDocumentNumbers("last-filter-turn");
       return values.length === 1 && Number.isFinite(values[0]) ? values[0] : undefined;
     };
-    window.addEventListener("mech:compute-submit", () => {
+    let firstComputeSubmitObserved = false;
+    window.addEventListener("mech:compute-submit", (event) => {
+      if (!firstComputeSubmitObserved) {
+        firstComputeSubmitObserved = true;
+        signalMilestone("first-compute-submit", {
+          dispatchToken: event.detail?.dispatchToken || "missing",
+        });
+      }
       if (terminalSubmitProbe) {
         const rendersBeforeDispose = documentRenderEvents;
         root.dataset.mechTerminalSubmitObserved = "true";
@@ -269,6 +410,9 @@ harness = r'''<script>
             documentRenderEvents === rendersBeforeDispose
           );
           root.dataset.mechDone = "true";
+          signalMilestone("shutdown-completed", {
+            renderSuppressed: root.dataset.mechTerminalSubmitRenderSuppressed,
+          });
           signalCompletion("ekf-terminal-finished");
         }, 50);
         return;
@@ -303,6 +447,9 @@ harness = r'''<script>
           '[data-mech-diagnostic-code="ComputeSourceReplacementBusy"]',
         )
       );
+      if (busyReplacementRejected) {
+        signalMilestone("busy-replacement-rejected");
+      }
     });
     window.addEventListener("mech:compute-state-reset", (event) => {
       computeStateResetEvents += 1;
@@ -333,6 +480,9 @@ harness = r'''<script>
           '[data-mech-diagnostic-code="ComputeStateReset"]',
         ).length === 1
       );
+      signalMilestone("incompatible-replacement-reset", {
+        resetCount: event.detail?.resetCount ?? "missing",
+      });
     });
     window.addEventListener("mech:compute-complete", (event) => {
       const completedTurns = event.detail?.completedTurns;
@@ -402,6 +552,9 @@ harness = r'''<script>
         incompatibleBefore = computeIdentity();
         const accepted = globalThis.MechDocumentController?.replaceSource(nextSource);
         incompatibleEditRequested = accepted === nextSource;
+        if (incompatibleEditRequested) {
+          signalMilestone("incompatible-replacement-accepted");
+        }
       }
     });
 
@@ -564,6 +717,9 @@ harness = r'''<script>
             continuityActiveBufferPreserved =
               after.activeBuffer === continuityBefore.activeBuffer;
           }
+          signalMilestone("continuity-replacement-accepted", {
+            generation: after.generation,
+          });
         }
       }
       if (
@@ -1150,6 +1306,9 @@ harness = r'''<script>
         root.dataset.mechTerminalSubmitObserved = "true";
         root.dataset.mechTerminalSubmitRenderSuppressed = "true";
         root.dataset.mechDone = "true";
+        signalMilestone("semantic-oracles-qualified", {
+          completedTurns: Number(root.dataset.mechComputeDispatches || 0),
+        });
         signalCompletion("ekf-finished");
         return;
       }
@@ -1190,7 +1349,7 @@ set +e
 : >"$dom_file"
 : >"$chrome_log"
 python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" \
-  "$terminal_submit_probe" <<'PY'
+  "$terminal_submit_probe" <<'PY' 2>"$harness_log"
 import json
 from pathlib import Path
 import sys
@@ -1235,7 +1394,7 @@ with BrowserCompletionServer() as completion:
             probe_data = json.loads(completion.wait_for(
                 "ekf-terminal-finished",
                 timeout=300,
-                progress=("ekf-progress",),
+                progress=("ekf-terminal-progress",),
                 max_timeout=600,
             ))
             probe = {
@@ -1256,7 +1415,18 @@ with BrowserCompletionServer() as completion:
                 raise RuntimeError(
                     f"terminal compute submission proof failed: {probe!r}"
                 )
+            (Path(chrome_log).parent / "terminal-probe.json").write_text(
+                json.dumps(probe, sort_keys=True) + "\n"
+            )
+            print("EKF_TERMINAL_SUBMIT", json.dumps(probe, sort_keys=True), flush=True)
+            # The disposed document can still have accepted GPU work settling.
+            # Reap its browser before launching the independent numerical run;
+            # a second navigation in that target can wait on its renderer.
+            browser.close()
+            Path(chrome_log).rename(Path(chrome_log).parent / "terminal.chrome.stderr")
+            browser = ChromeSession(None, profile, chrome_log, flags=flags).start()
 
+        completion.last_progress = None
         query = urllib.parse.urlencode({"mech-canary-callback": callback})
         browser.navigate(f"{page_url}?{query}")
         browser.wait_for(
@@ -1273,11 +1443,16 @@ with BrowserCompletionServer() as completion:
         ))
         snapshot = {
             "documentStatus": dataset.get("mechDocumentStatus", ""),
+            "documentError": dataset.get("mechDocumentError", ""),
             "adapterStatus": dataset.get("mechComputeAdapterStatus", ""),
             "deviceStatus": dataset.get("mechComputeDeviceStatus", ""),
             "computeLifecycle": dataset.get("mechComputeLifecycle", ""),
             "computeBackend": dataset.get("mechComputeBackend", ""),
             "computeDispatches": dataset.get("mechComputeDispatches", "0"),
+            "gpuBindingInventory": dataset.get("mechGpuBindingInventory", ""),
+            "gpuRequiredStorageBindings": dataset.get("mechGpuRequiredStorageBindings", ""),
+            "gpuSupportedStorageBindings": dataset.get("mechGpuSupportedStorageBindings", ""),
+            "gpuBridgeError": dataset.get("mechGpuBridgeError", ""),
             "done": dataset.get("mechDone") == "true",
             "timedOut": dataset.get("mechTimedOut") == "true",
             "consoleError": dataset.get("mechConsoleError", ""),
@@ -1285,7 +1460,21 @@ with BrowserCompletionServer() as completion:
         }
         milestones = snapshot
         write_dataset_snapshot(dom_file, dataset)
+        if snapshot["gpuBindingInventory"]:
+            print("EKF_GPU_BINDINGS", snapshot["gpuBindingInventory"], flush=True)
     finally:
+        if not milestones and completion.last_progress is not None:
+            message, body, _observed_at = completion.last_progress
+            try:
+                progress_data = json.loads(body)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                progress_data = {"body": body.decode("utf-8", errors="replace")}
+            milestones = {
+                "lastProgressMessage": message,
+                "lastProgress": progress_data,
+            }
+            if isinstance(progress_data, dict):
+                write_dataset_snapshot(dom_file, progress_data)
         browser.close()
         with Path(chrome_log).open("ab") as log:
             log.write((
@@ -1297,6 +1486,7 @@ raise SystemExit(124)
 PY
 chrome_status="$?"
 set -e
+cat "$harness_log" >&2
 
 updates="$(sed -n 's/.*data-mech-updates="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
 expected_continuity_generation_changed="$continuity_edit"

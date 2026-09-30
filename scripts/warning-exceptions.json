@@ -2,6 +2,18 @@
   "deprecated_apis": [],
   "lint_exceptions": [
     {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Remove when the owner-process wrapper support is split into per-target modules with no unused helpers.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Native owner process containment tests",
+      "path": "src/build/tests/isolated_process.rs",
+      "production_or_test": "test",
+      "reason": "shared owner-process support exposes helpers selected by the native integration targets"
+    },
+    {
       "directive": "expect",
       "expires_release": "1.0.0",
       "expiry_condition": "Remove only in a versioned ABI migration after downstream V1 source-compatibility tests are retired.",

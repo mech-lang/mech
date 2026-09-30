@@ -167,6 +167,14 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
         self.plan_resource_write(request, source, NativeContractSite::ArtifactNode(node))
     }
 
+    pub(crate) fn preflight_artifact_resource_write(
+        &mut self,
+        node: NodeId,
+        request: &mech_core::ExecutionResourceRequest,
+    ) -> MResult<()> {
+        self.plan_resource_write_contract(request, None, NativeContractSite::ArtifactNode(node))
+    }
+
     fn plan_resource_read(
         &mut self,
         request: &mech_core::ExecutionResourceRequest,
@@ -228,6 +236,15 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
         source: &Value,
         site: NativeContractSite,
     ) -> MResult<()> {
+        self.plan_resource_write_contract(request, Some(source), site)
+    }
+
+    fn plan_resource_write_contract(
+        &mut self,
+        request: &mech_core::ExecutionResourceRequest,
+        source: Option<&Value>,
+        site: NativeContractSite,
+    ) -> MResult<()> {
         let intent = match request.intent {
             ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
             ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
@@ -270,25 +287,27 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
                     )
                     .with_source(error)
                 })?;
-            owner
-                .provider
-                .plan_write(RuntimeResourceWriteCommand {
-                    base_uri: request.base_uri.clone(),
-                    path: request.path.clone(),
-                    context_name: owner.context.name.clone(),
-                    operation,
-                    value: source.clone(),
-                    intent,
-                })
-                .map_err(|error| {
-                    site.invalid(format!(
-                        "resource write/send `{}/{}` rejected its payload: {}",
-                        request.base_uri,
-                        request.path,
-                        error.display_message(),
-                    ))
-                    .with_source(error)
-                })?;
+            if let Some(source) = source {
+                owner
+                    .provider
+                    .plan_write(RuntimeResourceWriteCommand {
+                        base_uri: request.base_uri.clone(),
+                        path: request.path.clone(),
+                        context_name: owner.context.name.clone(),
+                        operation,
+                        value: source.clone(),
+                        intent,
+                    })
+                    .map_err(|error| {
+                        site.invalid(format!(
+                            "resource write/send `{}/{}` rejected its payload: {}",
+                            request.base_uri,
+                            request.path,
+                            error.display_message(),
+                        ))
+                        .with_source(error)
+                    })?;
+            }
             (owner.planned_owner(), grant)
         };
         self.record_resource_requirement(request, owner, grant);

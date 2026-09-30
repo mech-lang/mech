@@ -629,14 +629,15 @@ fn compile_collected_document(
         document_exports.push(SourceDocumentExport { output, name });
     }
     for output_name in published_bindings {
-        if builder
-            .outputs
-            .iter()
-            .any(|output| output.name == *output_name)
+        let decoded = crate::decode_interactive_symbol_output_name(output_name);
+        if decoded.is_none()
+            && builder
+                .outputs
+                .iter()
+                .any(|output| output.name == *output_name)
         {
             continue;
         }
-        let decoded = crate::decode_interactive_symbol_output_name(output_name);
         let name = decoded.as_ref().unwrap_or(output_name);
         let value = if let Some(binding) = builder.bindings.get(name).copied() {
             builder.read_document_binding(binding, &last.syntax)?
@@ -652,6 +653,15 @@ fn compile_collected_document(
             });
             builder.input_by_name.insert(name.clone(), ordinal);
             PendingValue::Input(ordinal)
+        } else if decoded.is_some()
+            && name == "result"
+            && builder.outputs.iter().any(|output| output.name == *name)
+        {
+            // Encoded publication requests prefer a lexical binding so a
+            // binding named `result` cannot be confused with the document's
+            // aggregate result. When no such binding exists, however, the
+            // ordinary result is the compute region's canonical publication.
+            continue;
         } else {
             return Err(SourceSemanticError {
                 code: "source-semantics/unknown-published-binding",
@@ -659,7 +669,11 @@ fn compile_collected_document(
                 anchor,
             });
         };
-        builder.publish(output_name, None, value, &last.syntax);
+        if decoded.is_some() {
+            builder.publish_interactive_binding(name, value, &last.syntax);
+        } else {
+            builder.publish(output_name, None, value, &last.syntax);
+        }
     }
     presentation.sort_by_key(|(_, _, owner)| owner.range().start);
     for (kind, value, owner) in presentation {
@@ -691,12 +705,7 @@ fn compile_collected_document(
                 PendingBinding::MutableState(state) => PendingValue::State(state),
                 PendingBinding::Value(_) => builder.read_document_binding(binding, &last.syntax)?,
             };
-            builder.publish(
-                &crate::encode_interactive_symbol_output_name(&name),
-                Some(name),
-                value,
-                &last.syntax,
-            );
+            builder.publish_interactive_binding(&name, value, &last.syntax);
         }
     }
     builder.order_document_state_writers();

@@ -1288,6 +1288,7 @@ mod tests {
         let mut execution = test_execution_plan(2);
         execution.states.push(crate::GpuPlanState {
             slot: 2,
+            recurrence: true,
             elements: 2,
             elements_per_instance: 2,
             initial_values: vec![1.0, 2.0],
@@ -1326,6 +1327,32 @@ mod tests {
                 .writable_device_objects()
                 .iter()
                 .any(|(object, _)| *object == current || *object == next)
+        );
+
+        // Publication storage has no recurrence read, but still stages writes
+        // into the same alternating allocation identities.
+        let mut publication = planned.execution.clone();
+        publication.states[0].recurrence = false;
+        publication
+            .bindings
+            .retain(|binding| binding.role != crate::GpuExecutionBindingRole::StateRead);
+        let publication = PlannedGpuExecution::from_execution(publication, limits(1024)).unwrap();
+        assert_eq!(publication.memory.allocations, planned.memory.allocations);
+        assert_eq!(
+            publication.state_objects(mech_core::CellSlotId::new(2)),
+            Some([current, next])
+        );
+        assert_eq!(
+            publication.writable_state_objects(0),
+            Some(&[(next, 8)][..])
+        );
+        assert_eq!(
+            publication.writable_state_objects(1),
+            Some(&[(current, 8)][..])
+        );
+        assert_eq!(
+            publication.memory.demand.storage_bindings,
+            planned.memory.demand.storage_bindings - 1
         );
     }
 

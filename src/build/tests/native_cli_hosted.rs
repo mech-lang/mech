@@ -1,4 +1,5 @@
 #![cfg(feature = "full-hosts")]
+#![cfg_attr(windows, feature(windows_process_extensions_main_thread_handle))]
 
 pub mod support;
 

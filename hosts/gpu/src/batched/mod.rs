@@ -494,7 +494,7 @@ struct BatchedState {
     shape: FixedShape,
     initializer: Vec<f32>,
     update: Vec<ScalarOperand>,
-    read_binding: u32,
+    read_binding: Option<u32>,
     write_binding: u32,
 }
 
@@ -547,7 +547,9 @@ pub struct FixedShapeInputBuffer {
 #[derive(Clone, Debug, PartialEq)]
 pub struct FixedShapeStateBuffer {
     pub slot: CellSlotId,
-    pub read_binding: u32,
+    /// Publication storage retains two physical buffers, but only recurrence
+    /// state exposes the current buffer to the shader.
+    pub read_binding: Option<u32>,
     pub write_binding: u32,
     pub elements_per_instance: usize,
     pub elements: usize,
@@ -749,7 +751,7 @@ impl FixedShapeKernel {
                     shape: state.shape,
                     initializer: state.initializer.to_vec(),
                     update: state.update.to_vec(),
-                    read_binding: binding,
+                    read_binding: Some(binding),
                     write_binding: binding + 1,
                 };
                 binding += 2;
@@ -768,10 +770,10 @@ impl FixedShapeKernel {
                 shape: publication.shape,
                 initializer: vec![0.0; publication.shape.elements()],
                 update: publication.value.to_vec(),
-                read_binding: binding,
-                write_binding: binding + 1,
+                read_binding: None,
+                write_binding: binding,
             });
-            binding += 2;
+            binding += 1;
         }
         let constraints = storage
             .constraints
@@ -896,7 +898,7 @@ impl FixedShapeKernel {
 
     pub fn integrity_buffer(&self) -> Option<FixedShapeIntegrityBuffer> {
         (!self.constraints.is_empty()).then_some(FixedShapeIntegrityBuffer {
-            binding: (self.inputs.len() + self.states.len() * 2) as u32,
+            binding: shader_binding_count(&self.inputs, &self.states),
             words: FIXED_SHAPE_INTEGRITY_WORDS,
         })
     }
@@ -1664,7 +1666,7 @@ impl<'a> BatchCompiler<'a> {
                     shape: state.shape,
                     initializer: state.initializer,
                     update: state.update.unwrap(),
-                    read_binding,
+                    read_binding: Some(read_binding),
                     write_binding,
                 }
             })
@@ -3352,11 +3354,12 @@ fn generate_wgsl(
         ));
     }
     for state in states {
-        shader.push_str(&format!(
-            "@group(0) @binding({}) var<storage, read> state_read_{}: array<f32>;\n",
-            state.read_binding,
-            state.slot.get()
-        ));
+        if let Some(read_binding) = state.read_binding {
+            shader.push_str(&format!(
+                "@group(0) @binding({read_binding}) var<storage, read> state_read_{}: array<f32>;\n",
+                state.slot.get()
+            ));
+        }
         shader.push_str(&format!(
             "@group(0) @binding({}) var<storage, read_write> state_write_{}: array<f32>;\n",
             state.write_binding,
@@ -3364,7 +3367,7 @@ fn generate_wgsl(
         ));
     }
     if !constraints.is_empty() {
-        let binding = inputs.len() as u32 + states.len() as u32 * 2;
+        let binding = shader_binding_count(inputs, states);
         shader.push_str(&format!(
             "@group(0) @binding({binding}) var<storage, read_write> integrity_fault: array<atomic<u32>>;\n\n\
              fn record_integrity_fault(code: u32, instance: u32) {{\n\
@@ -3433,6 +3436,16 @@ fn generate_wgsl(
     }
     shader.push_str("}\n");
     shader
+}
+
+/// Physical ownership includes both halves of every ping-pong allocation.
+/// Shader visibility includes only the halves used by the compute entry point.
+fn shader_binding_count(inputs: &[BatchedInput], states: &[BatchedState]) -> u32 {
+    inputs.len() as u32
+        + states
+            .iter()
+            .map(|state| 1 + u32::from(state.read_binding.is_some()))
+            .sum::<u32>()
 }
 
 #[cfg(test)]
@@ -3902,7 +3915,13 @@ mod axis_tests {
                       ~result := [7f32; 8f32]\n\
                       result = coefficients \\ rhs\n\
                       result\n";
-        let tree = mech_syntax::parse(source).unwrap();
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "test://gpu-singular-solve",
+            mech_syntax::document::Revision(0),
+            Arc::<str>::from(source),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
         let planning_inputs = BTreeMap::from([
             (
                 "source-coefficients".to_owned(),
@@ -3921,17 +3940,49 @@ mod axis_tests {
                 },
             ),
         ]);
-        let artifact = mech_runtime::RuntimeBuilder::new()
-            .function_catalog(mech_stdlib::source_native_plan_catalog())
-            .build_compiler()
-            .unwrap()
-            .compile_tree_artifact_with_inputs(
-                &tree,
-                &planning_inputs,
-                &BTreeSet::from(["coefficients".to_owned(), "rhs".to_owned()]),
+        let values = planning_inputs
+            .iter()
+            .map(|(name, value)| (name.clone(), value.clone().into_value().unwrap()))
+            .collect::<BTreeMap<_, _>>();
+        let schemas = values
+            .iter()
+            .map(|(name, value)| {
+                (
+                    name.clone(),
+                    mech_core::ValueCell::from_snapshot(value.clone())
+                        .unwrap()
+                        .closed_schema_body()
+                        .unwrap(),
+                )
+            })
+            .collect();
+        let external = BTreeSet::from(["coefficients".to_owned(), "rhs".to_owned()]);
+        let prepared = mech_engine::CanonicalSourceFrontend
+            .prepare_mixed_document_with_planning_contract(
+                &document.document(),
+                mech_stdlib::source_native_plan_catalog(),
+                schemas,
+                BTreeMap::new(),
+                &external,
+                &BTreeSet::new(),
+                &BTreeSet::new(),
             )
+            .unwrap();
+        let constants = prepared
+            .compute
+            .program()
+            .inputs
+            .iter()
+            .enumerate()
+            .filter(|(_, input)| !external.contains(&input.name))
+            .map(|(ordinal, input)| (ordinal as u32, values[&input.name].clone()))
+            .collect::<Vec<_>>();
+        let artifact = prepared
+            .compute
+            .bind_input_constants(&constants)
             .unwrap()
-            .into_artifact();
+            .compile_artifact()
+            .unwrap();
         let activation_inputs = BTreeMap::from([
             ("coefficients".to_owned(), vec![1.0, 2.0, 2.0, 4.0]),
             ("rhs".to_owned(), vec![1.0, 2.0]),

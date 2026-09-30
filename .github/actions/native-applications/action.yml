@@ -1,0 +1,121 @@
+name: Native application command sets
+description: Run the existing native engine or hosted targets with retained stage diagnostics
+inputs:
+  suite:
+    description: engine or hosted
+    required: true
+  phase:
+    description: Diagnostic identity for qualification, cold, or fresh-process reuse
+    default: qualification
+runs:
+  using: composite
+  steps:
+    - name: Validate command-set identity
+      shell: bash
+      env:
+        SUITE: ${{ inputs.suite }}
+        PHASE: ${{ inputs.phase }}
+      run: |
+        case "$SUITE" in engine|hosted) ;; *) exit 64 ;; esac
+        case "$PHASE" in qualification|cold|reuse) ;; *) exit 64 ;; esac
+    - name: Engine literal, scalar, representative, output-seed, and argument targets
+      if: inputs.suite == 'engine'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage engine-${{ inputs.phase }}-01 --timeout-secs 3600 -- \
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
+          --test native_literal --test native_scalar --test native_representative_families \
+          --test native_output_seed_arities --test native_generated_arguments -- --nocapture
+    - name: Retain engine matrix evidence
+      if: always() && inputs.suite == 'engine'
+      uses: actions/upload-artifact@v4
+      with:
+        name: native-engine-${{ inputs.phase }}-01-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          target/native-plan-logs
+          target/bytecode-v1-fixtures/owner-runner/logs
+        if-no-files-found: error
+        retention-days: 14
+    - name: Engine generated end-to-end targets
+      if: inputs.suite == 'engine'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage engine-${{ inputs.phase }}-02 --timeout-secs 3600 -- \
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
+          --test native_generated_end_to_end -- --nocapture
+    - name: Retain engine end-to-end evidence
+      if: always() && inputs.suite == 'engine'
+      uses: actions/upload-artifact@v4
+      with:
+        name: native-engine-${{ inputs.phase }}-02-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          target/native-plan-logs
+          target/bytecode-v1-fixtures/owner-runner/logs
+        if-no-files-found: error
+        retention-days: 14
+    - name: Hosted CLI targets
+      if: inputs.suite == 'hosted'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage hosted-${{ inputs.phase }}-01 --timeout-secs 2700 -- \
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_cli_hosted
+    - name: Retain hosted CLI evidence
+      if: always() && inputs.suite == 'hosted'
+      uses: actions/upload-artifact@v4
+      with:
+        name: native-hosted-${{ inputs.phase }}-01-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          target/native-plan-logs
+          target/bytecode-v1-fixtures/owner-runner/logs
+        if-no-files-found: error
+        retention-days: 14
+    - name: Hosted console generated case
+      if: inputs.suite == 'hosted'
+      shell: bash
+      env:
+        MECH_NATIVE_GENERATED_CASE: console
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage hosted-${{ inputs.phase }}-02 --timeout-secs 2700 -- \
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end
+    - name: Retain hosted console evidence
+      if: always() && inputs.suite == 'hosted'
+      uses: actions/upload-artifact@v4
+      with:
+        name: native-hosted-${{ inputs.phase }}-02-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          target/native-plan-logs
+          target/bytecode-v1-fixtures/owner-runner/logs
+        if-no-files-found: error
+        retention-days: 14
+    - name: CLI build library integration
+      if: inputs.suite == 'hosted'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage hosted-${{ inputs.phase }}-03 --timeout-secs 1500 -- \
+          cargo +nightly-2026-03-03 test -p mech --features build --lib cli::app::tests::build_
+    - name: Retain CLI build library evidence
+      if: always() && inputs.suite == 'hosted'
+      uses: actions/upload-artifact@v4
+      with:
+        name: native-hosted-${{ inputs.phase }}-03-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          target/native-plan-logs
+          target/bytecode-v1-fixtures/owner-runner/logs
+        if-no-files-found: error
+        retention-days: 14
+    - name: CLI build integration target
+      if: inputs.suite == 'hosted'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage hosted-${{ inputs.phase }}-04 --timeout-secs 1500 -- \
+          cargo +nightly-2026-03-03 test -p mech --features build --test mech_build
+    - name: Retain CLI build integration evidence
+      if: always() && inputs.suite == 'hosted'
+      uses: actions/upload-artifact@v4
+      with:
+        name: native-hosted-${{ inputs.phase }}-04-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          target/native-plan-logs
+          target/bytecode-v1-fixtures/owner-runner/logs
+        if-no-files-found: error
+        retention-days: 14

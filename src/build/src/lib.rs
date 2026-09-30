@@ -55,20 +55,10 @@ impl NativeApplicationBuilder {
         }
 
         let program = ParsedProgram::from_bytes(&request.bytecode)?;
-        plan::validate_target_index_constants(&program, request.target.as_deref())?;
-        let mut native_resolver = analysis::NativeBytecodeContractResolver::new(
-            &program.requirements,
-            request.runtime_config.as_ref(),
-            &self.environment.host_catalog,
-            request.target.as_deref(),
-        )?;
-        let artifact_features = if program.artifact.is_empty() {
-            program.validate_runtime_contracts_with(
-                &self.environment.function_catalog,
-                &mut native_resolver,
-            )?;
+        let artifact = if program.artifact.is_empty() {
             None
         } else {
+            validate_artifact_execution_authority(&program)?;
             let artifact = mech_engine::decode_program_artifact_bytecode_v1(&request.bytecode)
                 .map_err(|error| {
                     error::native_build_error(
@@ -78,14 +68,35 @@ impl NativeApplicationBuilder {
                         None,
                     )
                 })?;
+            analysis::artifact::validate_artifact_requirement_reachability(&artifact)?;
+            Some(artifact)
+        };
+        plan::validate_target_index_constants(
+            &program,
+            artifact.as_ref(),
+            request.target.as_deref(),
+        )?;
+        let mut native_resolver = analysis::NativeBytecodeContractResolver::new(
+            &program.requirements,
+            request.runtime_config.as_ref(),
+            &self.environment.host_catalog,
+            request.target.as_deref(),
+        )?;
+        let artifact_features = if let Some(artifact) = artifact.as_ref() {
             analysis::artifact::plan_artifact_external_contracts(
-                &artifact,
+                artifact,
                 &self.environment.function_catalog,
                 &mut native_resolver,
             )?;
             Some(analysis::artifact::analyze_artifact_native_features(
-                &artifact,
+                artifact,
             ))
+        } else {
+            program.validate_runtime_contracts_with(
+                &self.environment.function_catalog,
+                &mut native_resolver,
+            )?;
+            None
         };
         let runtime_functions = if artifact_features.is_some() {
             Vec::new()
@@ -398,6 +409,49 @@ impl NativeApplicationBuilder {
             request.offline,
         )
     }
+}
+
+fn validate_artifact_execution_authority(program: &ParsedProgram) -> MResult<()> {
+    let mut legacy_sections = Vec::new();
+    if program.header.register_count != 0 {
+        legacy_sections.push("registers");
+    }
+    if program.header.instruction_count != 0 {
+        legacy_sections.push("instruction header");
+    }
+    if !program.types.is_empty() {
+        legacy_sections.push("types");
+    }
+    if !program.constants.is_empty() {
+        legacy_sections.push("constants");
+    }
+    if !program.constant_blob.is_empty() {
+        legacy_sections.push("constant blob");
+    }
+    if !program.symbols.is_empty() {
+        legacy_sections.push("symbols");
+    }
+    if !program.mutable_symbols.is_empty() {
+        legacy_sections.push("mutable symbols");
+    }
+    if !program.instructions.is_empty() {
+        legacy_sections.push("instructions");
+    }
+    if !program.dictionary.is_empty() {
+        legacy_sections.push("dictionary");
+    }
+    if legacy_sections.is_empty() {
+        return Ok(());
+    }
+    Err(error::native_build_error(
+        error::NativeBuildErrorKind::NativeProgramArtifactInvalid {
+            reason: format!(
+                "canonical artifact bytecode contains parallel legacy execution authority: {}",
+                legacy_sections.join(", ")
+            ),
+        },
+        None,
+    ))
 }
 
 pub(crate) fn validate_production_native_runtime_config(

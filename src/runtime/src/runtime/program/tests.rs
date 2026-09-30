@@ -1692,6 +1692,83 @@ unused := x + 3f32
 
 #[cfg(feature = "compute")]
 #[test]
+fn mixed_source_prefers_interactive_identity_over_an_encoded_name_collision() {
+    let source = r#"
+@compute := compute://worker/kernel{:read(sample/result), :write(input/x), :write(turn)}
+@compute/input/x <- 1f32
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+x := 1f32
+mech-repl-symbol-726573756c74 := [9f32 10f32]
+<+ mech-repl-symbol-726573756c74
+result := x + 2f32
+(result, mech-repl-symbol-726573756c74)
+"#;
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler.compile_mixed_source(source).unwrap();
+
+    assert_eq!(mixed.compute.interface.outputs.len(), 1);
+    assert_eq!(mixed.compute.interface.outputs[0].name.as_ref(), "result");
+    assert!(
+        mixed.compute.interface.outputs[0].dimensions.is_empty(),
+        "the sampled lexical result is scalar; the colliding ordinary output is a matrix",
+    );
+}
+
+#[cfg(feature = "compute")]
+#[test]
+fn mixed_source_uses_aggregate_result_when_no_lexical_result_exists() {
+    let source = r#"
+@compute := compute://worker/kernel{:read(sample/result.0), :read(sample/result.2), :write(input/x), :write(turn)}
+@compute/input/x <- 1f32
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+x := 0f32
+mech-repl-symbol-726573756c74 := [9f32 10f32]
+<+ mech-repl-symbol-726573756c74
+(x + 1f32, x + 2f32, x + 3f32)
+"#;
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler.compile_mixed_source(source).unwrap();
+
+    assert_eq!(
+        mixed.retained_outputs,
+        BTreeSet::from(["result.0".to_owned(), "result.2".to_owned()]),
+    );
+    assert_eq!(
+        mixed
+            .compute
+            .interface
+            .outputs
+            .iter()
+            .map(|output| output.name.as_ref())
+            .collect::<Vec<_>>(),
+        ["result.0", "result.2"],
+    );
+    assert!(
+        mixed
+            .compute
+            .interface
+            .outputs
+            .iter()
+            .all(|output| output.dimensions.is_empty()),
+    );
+}
+
+#[cfg(feature = "compute")]
+#[test]
 fn mixed_source_coordinator_retains_interactive_root_symbols() {
     let source = r#"
 visible := 41
@@ -1862,21 +1939,17 @@ result
         )
         .unwrap();
 
+    let coordinator_bindings = mixed
+        .coordinator
+        .artifact()
+        .outputs()
+        .iter()
+        .filter_map(|output| output.interactive_binding.as_ref())
+        .map(|binding| binding.lexical_name.as_str())
+        .collect::<BTreeSet<_>>();
+    assert!(coordinator_bindings.contains("coordinator-value"));
     assert!(
-        mixed
-            .coordinator
-            .artifact()
-            .outputs()
-            .iter()
-            .any(|output| output.name == "coordinator-value")
-    );
-    assert!(
-        mixed
-            .coordinator
-            .artifact()
-            .outputs()
-            .iter()
-            .all(|output| output.name != "result"),
+        !coordinator_bindings.contains("result"),
         "the coordinator must execute its generated partition, not the cached full source tree",
     );
     assert!(
@@ -4266,16 +4339,22 @@ fn resident_loaders_enforce_source_limits_before_planning_or_decoding() {
     let mut config = crate::RuntimeConfig::default();
     config.limits.max_source_bytes = Some(3);
 
-    let mut source_runtime = crate::MechRuntime::new(config.clone()).unwrap();
-    let source_error = source_runtime
-        .load_source_program("1234", crate::ResidentDurabilityPolicy::Volatile)
+    for interactive in [false, true] {
+        let mut source_runtime = crate::MechRuntime::new(config.clone()).unwrap();
+        let source_error = if interactive {
+            source_runtime
+                .load_interactive_source_program("1234", crate::ResidentDurabilityPolicy::Volatile)
+        } else {
+            source_runtime.load_source_program("1234", crate::ResidentDurabilityPolicy::Volatile)
+        }
         .unwrap_err();
-    let source_budget = source_error
-        .kind_as::<crate::ResourceBudgetExceededError>()
-        .unwrap();
-    assert_eq!(source_budget.resource, "source_bytes");
-    assert_eq!(source_budget.requested, 4);
-    assert_eq!(source_runtime.program_route(), RuntimeProgramRoute::None);
+        let source_budget = source_error
+            .kind_as::<crate::ResourceBudgetExceededError>()
+            .unwrap();
+        assert_eq!(source_budget.resource, "source_bytes");
+        assert_eq!(source_budget.requested, 4);
+        assert_eq!(source_runtime.program_route(), RuntimeProgramRoute::None);
+    }
 
     let mut bytecode_runtime = crate::MechRuntime::new(config).unwrap();
     let bytecode_error = bytecode_runtime
@@ -8107,7 +8186,7 @@ fn canonical_mixed_shipped_ekf_region_compiles() {
     let start = shipped.find("5. ekf-batch @compute\n").unwrap();
     let end = shipped.find("6. Live Tracking Field\n").unwrap();
     let source = format!(
-        "+> math/*\n@filters := compute://filters/kernel{{:write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}}\n\
+        "+> math/*\n@filters := compute://filters/kernel{{:read(sample/result.0), :read(sample/result.2), :write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}}\n\
          @filters/input/control <- [0.05<f32>; 1f32; 0f32]\n\
          @filters/input/camera <- [1f32; 1f32]\n\
          @filters/input/measurement <- [1f32; 0f32; 0f32]\n\
@@ -8132,6 +8211,16 @@ fn canonical_mixed_shipped_ekf_region_compiles() {
             "{input}"
         );
     }
+    assert_eq!(
+        mixed
+            .compute
+            .interface
+            .outputs
+            .iter()
+            .map(|output| output.name.as_ref())
+            .collect::<Vec<_>>(),
+        ["result.0", "result.2"],
+    );
     assert!(!mixed.compute.artifact.nodes().is_empty());
 }
 

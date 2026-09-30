@@ -2111,13 +2111,21 @@ fn execute_named_canonical_outputs(
                 .outputs()
                 .iter()
                 .position(|output| {
-                    output.name == mech_engine::encode_interactive_symbol_output_name(name)
+                    output
+                        .interactive_binding
+                        .as_ref()
+                        .is_some_and(|binding| binding.lexical_name == *name)
                 })
                 .or_else(|| {
                     artifact
                         .outputs()
                         .iter()
                         .position(|output| output.name == *name)
+                })
+                .or_else(|| {
+                    artifact.outputs().iter().position(|output| {
+                        output.name == mech_engine::encode_interactive_symbol_output_name(name)
+                    })
                 })
                 .ok_or_else(|| {
                     canonical_compilation_error(format!(

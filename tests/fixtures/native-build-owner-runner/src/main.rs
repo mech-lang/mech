@@ -4,23 +4,28 @@ use std::error::Error;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Output, Stdio};
 use std::sync::Arc;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use mech_build::{
     NativeActorBootstrap, NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildPlan,
-    NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit, NativeRuntimeConfig,
+    NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit,
+    NativeRuntimeConfig,
 };
+#[cfg(feature = "fixed")]
+use mech_core::FunctionCatalogBuilder;
 use mech_core::{
     BytecodeInstruction, BytecodeProgram, EncodedConstant, FunctionCatalog, ParsedProgram,
     RuntimeType, write_bytecode_with_artifact,
 };
-#[cfg(feature = "fixed")]
-use mech_core::FunctionCatalogBuilder;
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use serde::Serialize;
 
 type AppResult<T> = Result<T, Box<dyn Error>>;
+
+const GENERATED_PROJECTS_ROOT_ENV: &str = "MECH_NATIVE_GENERATED_PROJECTS_ROOT";
 
 #[derive(Serialize)]
 struct RunnerResult {
@@ -48,6 +53,8 @@ fn main() -> AppResult<()> {
         return Err(format!("unknown seed mode `{poison}`").into());
     }
 
+    eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=initialize");
+
     let workspace = workspace_root()?;
     let mut bytecode = fs::read(bytecode_path)?;
     let poisoned_output_seed = poison == "poison";
@@ -67,6 +74,7 @@ fn main() -> AppResult<()> {
             root: workspace.clone(),
         },
     });
+    eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=plan");
     let plan = builder
         .plan(&request)
         .map_err(|error| mech_error("native plan", error))?;
@@ -84,9 +92,16 @@ fn main() -> AppResult<()> {
         poisoned_output_seed_count,
     };
     if action == "generate" || action == "build" || action == "build-only" {
-        let project = builder
-            .generate(&request, &result.plan)
-            .map_err(|error| mech_error("native project generation", error))?;
+        eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=generate");
+        let project = match (action.as_str(), env::var_os(GENERATED_PROJECTS_ROOT_ENV)) {
+            ("generate", Some(projects_root)) => builder.generate_at(
+                &request,
+                &result.plan,
+                PathBuf::from(projects_root).join(&result.plan.plan_sha256),
+            ),
+            _ => builder.generate(&request, &result.plan),
+        }
+        .map_err(|error| mech_error("native project generation", error))?;
         result.project_root = Some(project.root.clone());
         result.cargo_manifest = Some(project.cargo_manifest.clone());
         result.build_plan_json = Some(project.build_plan_json.clone());
@@ -94,19 +109,22 @@ fn main() -> AppResult<()> {
         result.runtime_source = project.sources.get("src/runtime.rs").cloned();
     }
     if action == "build" || action == "build-only" {
+        eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=build");
         let artifact = builder
             .build(&request, &result.plan)
             .map_err(|error| mech_error("native project build", error))?;
         result.executable = Some(artifact.executable().to_owned());
         if action == "build-only" {
+            eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=serialize");
             serde_json::to_writer(std::io::stdout(), &result)?;
             return Ok(());
         }
+        eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=execute");
         let mut command = Command::new(artifact.executable());
         if case.ends_with("-once") {
             command.arg("--once");
         }
-        let output = command.output()?;
+        let output = output_with_timeout(command, Duration::from_secs(30))?;
         if !output.status.success() {
             return Err(format!(
                 "generated binary failed with {}: stdout={} stderr={}",
@@ -118,8 +136,33 @@ fn main() -> AppResult<()> {
         }
         result.stdout = Some(String::from_utf8(output.stdout)?);
     }
+    eprintln!("MECH_NATIVE_RUNNER_PROGRESS case={case} action={action} progress=serialize");
     serde_json::to_writer(std::io::stdout(), &result)?;
     Ok(())
+}
+
+fn output_with_timeout(mut command: Command, timeout: Duration) -> io::Result<Output> {
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+    let mut child = command.spawn()?;
+    let started = Instant::now();
+    loop {
+        if child.try_wait()?.is_some() {
+            return child.wait_with_output();
+        }
+        if started.elapsed() >= timeout {
+            child.kill()?;
+            let output = child.wait_with_output()?;
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                format!(
+                    "generated binary exceeded {timeout:?}: stdout={} stderr={}",
+                    String::from_utf8_lossy(&output.stdout),
+                    String::from_utf8_lossy(&output.stderr),
+                ),
+            ));
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
 }
 
 #[cfg(feature = "full")]
@@ -298,11 +341,9 @@ fn owner_catalog() -> AppResult<Arc<FunctionCatalog>> {
         .map_err(|error| mech_error("engine resident owner catalog", error))?;
     mech_math::install_runtime(&mut builder)
         .map_err(|error| mech_error("math owner catalog", error))?;
-    Ok(Arc::new(
-        builder
-            .build()
-            .map_err(|error| mech_error("fixed owner catalog", error))?,
-    ))
+    Ok(Arc::new(builder.build().map_err(|error| {
+        mech_error("fixed owner catalog", error)
+    })?))
 }
 
 #[cfg(any(
@@ -402,7 +443,9 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
             }
             RuntimeType::F64 if output.bytes.len() == 8 => {
                 if output.bytes.iter().all(|byte| *byte == 0) {
-                    return Err(format!("compiler output seed {constant_id} was already zero").into());
+                    return Err(
+                        format!("compiler output seed {constant_id} was already zero").into(),
+                    );
                 }
                 output.bytes.fill(0);
             }
@@ -426,9 +469,10 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
                     continue;
                 }
                 if output.bytes[8..].iter().all(|byte| *byte == 0) {
-                    return Err(
-                        format!("compiler matrix output seed {constant_id} was already zero").into(),
-                    );
+                    return Err(format!(
+                        "compiler matrix output seed {constant_id} was already zero"
+                    )
+                    .into());
                 }
                 output.bytes[8..].fill(0);
             }
@@ -468,9 +512,7 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
                 }
             }
             runtime_type => {
-                return Err(
-                    format!("cannot poison output seed of type {runtime_type:?}").into(),
-                );
+                return Err(format!("cannot poison output seed of type {runtime_type:?}").into());
             }
         }
     }
