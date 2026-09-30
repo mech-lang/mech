@@ -240,6 +240,15 @@ mutable state: allocated at process startup
 
 Bytecode cannot name arbitrary crates, Cargo features, installer paths, or
 host factories. Only trusted catalogs compiled into the build tool cross from
-program requirements into Rust dependencies. Generated applications contain
-no dynamic-library discovery, third-party package discovery, source parser,
-compiler, build tool, appended archive, or self-reading executable payload.
+program requirements into Rust dependencies. When resident activation resolves
+an operation through the dynamic ABI loader rather than a catalog factory,
+planning retains the engine's `dynamic-modules` feature in the generated
+application. The executable resolves that module through `MECH_MODULE_PATH`
+or `target/mech-modules` and validates its ABI, operation, and layout at
+activation, without a source parser or compiler. Native generation does not
+copy module libraries; they must also be available when the executable runs.
+Static resident operations do not enable this loader.
+
+Generated applications contain no third-party Cargo package discovery, source
+parser, compiler, build tool, appended archive, or self-reading executable
+payload.

@@ -281,6 +281,12 @@ fn canonical_resource_effect_survives_a_later_program_result() {
     .plan(&request)
     .unwrap();
     assert_eq!(plan.hosts.len(), 1);
+    assert!(
+        !plan
+            .engine_features
+            .iter()
+            .any(|feature| feature == "dynamic-modules")
+    );
     assert!(plan.application_requirements.iter().any(|requirement| {
         matches!(requirement, mech_build::PlannedApplicationRequirement::Resource { request, .. }
             if request.base_uri == "cli://stdout"
@@ -582,6 +588,12 @@ fn integrity_constraints_are_explicit_native_linkage_requirements() {
     .plan(&request)
     .unwrap();
     assert!(plan.runtime_functions.is_empty());
+    assert!(
+        !plan
+            .engine_features
+            .iter()
+            .any(|feature| feature == "dynamic-modules")
+    );
 }
 
 #[test]

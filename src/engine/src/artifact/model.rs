@@ -613,6 +613,25 @@ impl ProgramArtifact {
         references
     }
 
+    /// Returns operations bound through resident kernel factories, including
+    /// nested control bodies. External resource nodes use providers instead,
+    /// and integrity constraints are evaluated directly by the resident plan.
+    pub fn kernel_operation_references(&self) -> Vec<OperationReference> {
+        let mut references = Vec::new();
+        for node in &self.nodes {
+            if node
+                .as_operation()
+                .is_some_and(|operation| operation.requirement.is_some())
+            {
+                continue;
+            }
+            node_operation_references(&node.body, &mut references);
+        }
+        references.sort();
+        references.dedup();
+        references
+    }
+
     pub const fn compute_regions(&self) -> &[ComputeRegionDeclaration] {
         &self.compute_regions
     }

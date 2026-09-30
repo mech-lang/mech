@@ -181,3 +181,135 @@ fn production_cli_loads_an_abi_import_from_the_module_path() {
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.lines().any(|line| line.trim() == "30"), "{stdout}");
 }
+
+#[cfg(feature = "build")]
+#[test]
+fn production_native_build_retains_dynamic_binding_without_compiler_features() {
+    use std::process::Command;
+    let directory = tempfile::tempdir().unwrap();
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = directory.path().join("main.mec");
+    let executable = directory.path().join(if cfg!(windows) {
+        "dynamic-native.exe"
+    } else {
+        "dynamic-native"
+    });
+    std::fs::write(&source, "+> status-test/unary\nunary(3.0)\n").unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_mech"))
+        .current_dir(directory.path())
+        .args([
+            "--no-config",
+            "build",
+            "main.mec",
+            "--profile",
+            "debug",
+            "--name",
+            "dynamic-native",
+            "--keep-project",
+            "--offline",
+            "--workspace-root",
+        ])
+        .arg(root)
+        .arg("--out")
+        .arg(&executable)
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    let project = directory.path().join(format!(
+        "{}.project",
+        executable.file_name().unwrap().to_string_lossy()
+    ));
+    let plan: mech_build::NativeBuildPlan =
+        serde_json::from_slice(&std::fs::read(project.join("build-plan.json")).unwrap()).unwrap();
+    assert!(
+        plan.engine_features
+            .iter()
+            .any(|feature| feature == "dynamic-modules")
+    );
+    assert!(plan.runtime_functions.is_empty());
+    assert!(plan.packages.iter().all(|package| {
+        !["mech-syntax", "mech-stdlib", "mech-build"].contains(&package.package.as_str())
+    }));
+    let manifest = std::fs::read_to_string(project.join("Cargo.toml")).unwrap();
+    let engine = manifest
+        .lines()
+        .find(|line| line.starts_with("mech_engine = "))
+        .unwrap();
+    assert!(engine.contains("default-features = false"), "{engine}");
+    assert!(engine.contains("\"dynamic-modules\""), "{engine}");
+    for forbidden in ["source", "compiler", "native-plan"] {
+        assert!(!engine.contains(&format!("\"{forbidden}\"")), "{engine}");
+    }
+    // Execution is a separate process with only generated dependencies, so the
+    // compiler's feature unification cannot mask a missing resident loader.
+    for _ in 0..2 {
+        let output = Command::new(&executable)
+            .current_dir(directory.path())
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{output:?}");
+        assert_eq!(String::from_utf8(output.stdout).unwrap().trim(), "30");
+    }
+    let output = Command::new(&executable)
+        .current_dir(directory.path())
+        .env("MECH_MODULE_PATH", directory.path().join("absent-modules"))
+        .output()
+        .unwrap();
+    assert!(
+        !output.status.success(),
+        "missing ABI module was accepted: {output:?}"
+    );
+
+    std::fs::write(&source, "+> status-test/unary\n(3.0 ? | * => unary(3.0))\n").unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_mech"))
+        .current_dir(directory.path())
+        .args([
+            "--no-config",
+            "build",
+            "main.mec",
+            "--emit",
+            "plan",
+            "--offline",
+            "--workspace-root",
+        ])
+        .arg(root)
+        .args(["--out", "nested-plan.json"])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    let plan: mech_build::NativeBuildPlan =
+        serde_json::from_slice(&std::fs::read(directory.path().join("nested-plan.json")).unwrap())
+            .unwrap();
+    assert!(
+        plan.engine_features
+            .iter()
+            .any(|feature| feature == "dynamic-modules")
+    );
+
+    std::fs::write(&source, "left := 1.0\nright := 2.0\nleft + right\n").unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_mech"))
+        .current_dir(directory.path())
+        .args([
+            "--no-config",
+            "build",
+            "main.mec",
+            "--emit",
+            "plan",
+            "--offline",
+            "--workspace-root",
+        ])
+        .arg(root)
+        .args(["--out", "static-plan.json"])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    let plan: mech_build::NativeBuildPlan =
+        serde_json::from_slice(&std::fs::read(directory.path().join("static-plan.json")).unwrap())
+            .unwrap();
+    assert!(
+        !plan
+            .engine_features
+            .iter()
+            .any(|feature| feature == "dynamic-modules")
+    );
+}

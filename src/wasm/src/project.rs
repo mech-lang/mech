@@ -2443,9 +2443,19 @@ fn decode_document_payload(
             ))
         })?;
     let output_ids = root_document_output_ids(&tree);
-    let source = legacy_source
-        .map(str::to_owned)
-        .unwrap_or_else(|| mech_syntax::Formatter::new().format(&tree));
+    let source = if let Some(source) = legacy_source {
+        // Legacy presentation identities belong to the encoded tree. Only
+        // retain accompanying source when it describes that same tree; this
+        // check is shared by ordinary and served/bundled constructors.
+        if mech_syntax::parser::parse(source.trim()).ok().as_ref() != Some(&tree) {
+            return Err(js_error(format!(
+                "legacy browser document tree does not match source-map root `{legacy_root_specifier}`"
+            )));
+        }
+        source.to_owned()
+    } else {
+        mech_syntax::Formatter::new().format(&tree)
+    };
     BrowserDocumentPayload::new(legacy_root_specifier, source)
         .map(|payload| payload.with_presentation_output_ids(output_ids))
         .map_err(to_js_error)
@@ -6578,6 +6588,82 @@ mod browser_tests {
         document.start().unwrap();
         assert!(document.frame(1).is_ok());
         document.stop().unwrap();
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_legacy_sources_require_matching_tree_and_output_identities() {
+        let source = "answer := 41\n\nValue {answer + 1}.\n";
+        let tree = mech_syntax::parser::parse(source.trim()).unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let ids = root_document_output_ids(&tree);
+        assert_eq!(ids.len(), 1);
+        let exact_source = format!("  {source}\r\n");
+        for bundled in [false, true] {
+            let construct = |root_source: &str| {
+                let sources = Object::new();
+                Reflect::set(
+                    &sources,
+                    &JsValue::from_str("docs/main.mec"),
+                    &JsValue::from_str(root_source),
+                )
+                .unwrap();
+                if bundled {
+                    WasmDocument::from_encoded_with_bundle(
+                        &encoded,
+                        "docs/main.mec",
+                        sources.into(),
+                        Array::new().into(),
+                        JsValue::NULL,
+                    )
+                } else {
+                    WasmDocument::from_encoded_with_sources(
+                        &encoded,
+                        "docs/main.mec",
+                        sources.into(),
+                    )
+                }
+            };
+            for stale in [
+                "answer := 7\n\nValue {answer + 1}.\n",
+                "answer := 41\n\nValue {answer}; also {answer + 1}.\n",
+                "answer := (",
+            ] {
+                let error = construct(stale)
+                    .err()
+                    .expect("mismatched legacy source accepted");
+                assert!(
+                    error
+                        .as_string()
+                        .unwrap()
+                        .contains("does not match source-map root")
+                );
+            }
+            let document = construct(&exact_source).unwrap();
+            assert_eq!(document.bootstrap.source_map["docs/main.mec"], exact_source);
+            assert_eq!(
+                document.bootstrap.document.initial_repl_source(),
+                exact_source
+            );
+            assert_eq!(document.bootstrap.presentation_output_ids, ids);
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("answer")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "41"
+            );
+            let rendered = document.rendered_output(ids[0]).unwrap();
+            assert_eq!(
+                Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                    .unwrap()
+                    .as_string()
+                    .as_deref(),
+                Some("42")
+            );
+        }
     }
 
     #[wasm_bindgen_test]

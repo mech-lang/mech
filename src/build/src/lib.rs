@@ -90,6 +90,7 @@ impl NativeApplicationBuilder {
             )?;
             Some(analysis::artifact::analyze_artifact_native_features(
                 artifact,
+                &self.environment.function_catalog,
             ))
         } else {
             program.validate_runtime_contracts_with(
