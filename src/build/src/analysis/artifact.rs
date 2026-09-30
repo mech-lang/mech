@@ -164,10 +164,6 @@ pub(crate) fn plan_artifact_external_contracts(
     )
     .map_err(|error| artifact_error(format!("resident activation failed: {error:?}")))?;
 
-    if effect_requirements.is_empty() {
-        return Ok(());
-    }
-
     let captured = instance
         .plan
         .inputs
@@ -197,6 +193,11 @@ pub(crate) fn plan_artifact_external_contracts(
             Ok((input.slot, value))
         })
         .collect::<MResult<Vec<_>>>()?;
+    // Shape facts admit storage, but only rebinding validates the provider's
+    // value type against the retained input schema, including read-only plans.
+    if effect_requirements.is_empty() {
+        return Ok(());
+    }
     let inputs = captured
         .iter()
         .map(|(slot, value)| CapturedValueInput { slot: *slot, value })

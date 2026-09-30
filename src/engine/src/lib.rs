@@ -96,6 +96,7 @@ pub mod __resident {
         FrozenEkfStateUpdate, FrozenLiveBinding, compile_frozen_ekf_source,
     };
     pub use crate::efficacy::ekf::operation::{EkfKernel, EkfPredicate};
+    pub use crate::resident::budget::with_planning_step_limit;
     pub use crate::resident::general::{
         ActivatedConstraint, ActivatedExternalNode, ActivatedInput, ActivatedInputSource,
         ActivatedKernelNode, ActivatedNodeIndex, ActivatedOutput, ActivatedPlan, ActivatedTurnStep,

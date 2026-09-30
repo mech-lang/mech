@@ -7921,6 +7921,135 @@ fn canonical_initializer_projection_obeys_the_planning_step_limit() {
 }
 
 #[test]
+fn canonical_comprehension_planning_counts_executed_iterations() {
+    let document = canonical_planning_test_document("port := [sample | sample <- seed]\nport\n");
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(8);
+    let mut compiler = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let inputs = |columns| {
+        BTreeMap::from([(
+            "seed".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 1,
+                columns,
+                values: vec![1.0; columns],
+            },
+        )])
+    };
+    for columns in [1, 16, 1] {
+        let result = compiler.evaluate_static_document_symbols_with_inputs(
+            &document,
+            &inputs(columns),
+            &["port"],
+        );
+        if columns == 16 {
+            let error = result.unwrap_err();
+            assert!(
+                error
+                    .display_message()
+                    .contains("canonical planning exceeds the configured 8 step limit"),
+                "{error:?}"
+            );
+        } else {
+            assert_eq!(result.unwrap()["port"], inputs(columns)["seed"]);
+        }
+    }
+}
+
+#[test]
+fn canonical_comprehension_initializer_counts_nested_operations() {
+    let document =
+        canonical_planning_test_document("port := [sample + 1f32 + 2f32 | sample <- seed]\nport\n");
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(8);
+    let mut compiler = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for columns in [1, 3] {
+        let inputs = BTreeMap::from([(
+            "seed".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 1,
+                columns,
+                values: vec![1.0; columns],
+            },
+        )]);
+        let result = compiler.compile_document_artifact_with_input_initializers(
+            &document,
+            &inputs,
+            &BTreeSet::from(["port".to_owned()]),
+        );
+        if columns == 3 {
+            let error = result.unwrap_err();
+            assert!(
+                error
+                    .display_message()
+                    .contains("canonical planning exceeds the configured 8 step limit"),
+                "{error:?}"
+            );
+        } else {
+            assert_eq!(
+                result.unwrap().1["port"],
+                RuntimeHostInputValue::F32Matrix {
+                    rows: 1,
+                    columns: 1,
+                    values: vec![4.0],
+                }
+            );
+        }
+    }
+}
+
+#[test]
+fn canonical_comprehension_planning_counts_nested_generators() {
+    let document =
+        canonical_planning_test_document("port := [x + y | x <- seed, y <- seed]\nport\n");
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(16);
+    let mut compiler = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for columns in [1, 4] {
+        let inputs = BTreeMap::from([(
+            "seed".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 1,
+                columns,
+                values: vec![1.0; columns],
+            },
+        )]);
+        let result =
+            compiler.evaluate_static_document_symbols_with_inputs(&document, &inputs, &["port"]);
+        if columns == 4 {
+            let error = result.unwrap_err();
+            assert!(
+                error
+                    .display_message()
+                    .contains("canonical planning exceeds the configured 16 step limit"),
+                "{error:?}"
+            );
+        } else {
+            assert_eq!(
+                result.unwrap()["port"],
+                RuntimeHostInputValue::F32Matrix {
+                    rows: 1,
+                    columns: 1,
+                    values: vec![2.0],
+                }
+            );
+        }
+    }
+}
+
+#[test]
 fn canonical_static_symbols_filter_and_detach_matrix_values() {
     let document = canonical_planning_test_document(
         "matrix := [1f32 2f32; 3f32 4f32]\nanswer := supplied + 2f32\n",

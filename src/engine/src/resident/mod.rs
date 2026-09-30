@@ -3,7 +3,7 @@ mod arena;
 mod artifact;
 pub(crate) mod bench;
 #[cfg(feature = "resident-artifact")]
-mod budget;
+pub(crate) mod budget;
 mod candidate;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod composite;

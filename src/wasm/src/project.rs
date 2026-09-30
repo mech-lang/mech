@@ -1,6 +1,4 @@
-use std::cell::Cell;
-#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap};
 #[cfg(feature = "served_project_authority")]
 use std::path::Path;
@@ -1155,8 +1153,16 @@ fn retained_submission_fragment<'a>(
     let suffix = retained_source.get(accepted_before..).ok_or_else(|| {
         document_runtime_error("accepted documentation range is outside the retained source")
     })?;
+    let mut submitted = submitted.to_owned();
+    if let Some(terminal) = mech_syntax::submission_terminal(&submitted)
+        && terminal.suppresses_value
+    {
+        // Match the executable source accepted by submit_host_source. Only
+        // the terminal suppressor is removed; semicolons in prose remain.
+        submitted.remove(terminal.byte_offset);
+    }
     let relative_start = suffix
-        .rfind(submitted)
+        .rfind(&submitted)
         .ok_or_else(|| document_runtime_error("accepted documentation source was not retained"))?;
     let relative_end = relative_start + submitted.len();
     if !suffix[relative_end..]
@@ -4700,6 +4706,44 @@ phase"#;
             .format_html_body_live(&parsed.document(), &addresses)
             .unwrap();
         assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+    }
+
+    #[test]
+    fn documentation_fragment_uses_the_accepted_semicolon_normalization() {
+        let baseline = "answer := 1\nanswer";
+        let submitted = "Result {answer + 1}.\n\nanswer + 2;\r\n";
+        let mut session = mech_runtime::ResidentReplSession::from_source(
+            crate::repl::WasmReplRuntimeFactory::Standalone,
+            baseline.to_owned(),
+        )
+        .unwrap();
+        let accepted_before = session.source().len();
+        session.submit_host_source(submitted).unwrap();
+        let retained = session.source();
+        let (fragment, fragment_start) =
+            retained_submission_fragment(retained, accepted_before, submitted).unwrap();
+        assert_eq!(fragment, "Result {answer + 1}.\n\nanswer + 2\r\n");
+        assert_eq!(fragment_start, accepted_before + 1);
+        let bootstrap = document_bootstrap("document.mec", baseline, HashMap::new(), Vec::new());
+        let addresses = live_document_fragment_addresses(
+            &bootstrap,
+            session.source_document().unwrap(),
+            fragment,
+            fragment_start,
+        )
+        .unwrap();
+        let parsed = CanonicalWasmDocument::retain(
+            "browser:documentation:test",
+            mech_syntax::document::Revision(0),
+            submitted,
+        )
+        .unwrap();
+        let html = mech_runtime::CanonicalDocumentRenderer
+            .format_html_body_live(&parsed.document().document(), &addresses)
+            .unwrap();
+        assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+        assert!(!addresses.is_empty());
+        session.shutdown().unwrap();
     }
 
     #[test]
