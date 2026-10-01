@@ -425,6 +425,40 @@ impl Formatter {
         shim: String,
         extra_slots: &HtmlShimExtraSlots,
     ) -> HtmlShimRender {
+        self.render_document_html(tree, styles, shim, extra_slots, None)
+            .unwrap_or_else(|error| panic!("failed to encode browser document: {error:?}"))
+    }
+
+    /// Render a presentation tree with the exact source that produced it.
+    /// Parsing stays with the source owner, without a runtime or compiler here.
+    /// Tree-only entry points normalize source from their presentation tree.
+    #[cfg(feature = "serde")]
+    pub fn format_source_html_with_style_sheets_and_slots(
+        &mut self,
+        tree: &Program,
+        root_specifier: &str,
+        source: &str,
+        styles: HtmlStyleSheets,
+        shim: String,
+        extra_slots: &HtmlShimExtraSlots,
+    ) -> MResult<HtmlShimRender> {
+        self.render_document_html(
+            tree,
+            styles,
+            shim,
+            extra_slots,
+            Some((root_specifier, source)),
+        )
+    }
+
+    fn render_document_html(
+        &mut self,
+        tree: &Program,
+        styles: HtmlStyleSheets,
+        shim: String,
+        extra_slots: &HtmlShimExtraSlots,
+        retained_source: Option<(&str, &str)>,
+    ) -> MResult<HtmlShimRender> {
         self.reset_document_state();
         self.html = true;
 
@@ -448,12 +482,20 @@ impl Formatter {
         };
 
         #[cfg(feature = "serde")]
-        let encoded_tree = match compress_and_encode(&tree) {
-            Ok(encoded) => encoded,
-            Err(error) => panic!("failed to encode syntax tree: {error:?}"),
+        let encoded_document = {
+            let root = retained_source.map_or("document.mec", |(root, _)| root);
+            let source = retained_source
+                .map(|(_, source)| source.to_owned())
+                .unwrap_or_else(|| Formatter::new().format(tree));
+            mech_core::browser_document::BrowserDocumentPayload::new(root, source)?
+                .with_presentation_output_ids(self.root_presentation_output_ids.iter().copied())
+                .encode()?
         };
         #[cfg(not(feature = "serde"))]
-        let encoded_tree = String::new();
+        let encoded_document = {
+            let _ = retained_source;
+            String::new()
+        };
         let repl_html = r#"<div
   class="console-scroll mech-repl hidden"
   id="mech-output"
@@ -486,7 +528,7 @@ impl Formatter {
         slots.insert("CONTENT".to_string(), formatted_src);
         slots.insert("CITED".to_string(), formatted_cited);
         slots.insert("FOOTNOTES".to_string(), formatted_footnotes);
-        slots.insert("CODE".to_string(), encoded_tree);
+        slots.insert("CODE".to_string(), encoded_document);
         slots.insert("REPL".to_string(), repl_html.to_string());
         slots.insert("PRESENTATION".to_string(), "document".to_string());
 
@@ -498,7 +540,7 @@ impl Formatter {
             slots.insert(name.clone(), value.clone());
         }
 
-        render_html_shim(&shim, &slots)
+        Ok(render_html_shim(&shim, &slots))
     }
 
     fn render_title_field(&mut self, field: &TitleField, slots: &mut TitleSlots) {

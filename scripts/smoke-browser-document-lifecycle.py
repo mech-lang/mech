@@ -54,9 +54,14 @@ def main() -> None:
                   let rejected = false;
                   try { controller.applyEdit(body, body + 2, '['); } catch (_) { rejected = true; }
                   if (!rejected || controller.source() !== accepted) throw new Error('Malformed suppressed edit changed accepted source');
-                  controller.applyEdit(7, 22, '');
+                  controller.applyEdit(0, 0, 'Prose before the fence.\\n\\n');
+                  const end = controller.source().length;
+                  controller.applyEdit(end, end, '\\nProse after the fence.\\n');
+                  const suppressor = controller.source().indexOf('{output: false}');
+                  controller.applyEdit(suppressor, suppressor + 15, '');
                   check('22');
-                  controller.applyEdit(7, 7, '{output: false}');
+                  const fenceStart = controller.source().indexOf('~~~mech');
+                  controller.applyEdit(fenceStart + 7, fenceStart + 7, '{output: false}');
                   controller.applyEdit(0, controller.source().length, '');
                   controller.applyEdit(0, 0, '~~~mech\\n33\\n~~~\\n\\n~~~mech\\n33\\n~~~\\n');
                   if (original.textContent.trim() === '33') throw new Error('Deleted placeholder adopted an unrelated duplicate');

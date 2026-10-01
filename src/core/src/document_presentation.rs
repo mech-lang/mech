@@ -7,7 +7,7 @@ use crate::{
     TitleField, hash_str, inline_document_output_id,
 };
 #[cfg(feature = "no_std")]
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
 /// One namespace-aware address sequence for every slot of a document render.
 #[derive(Clone, Debug, Default, PartialEq)]

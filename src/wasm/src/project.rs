@@ -1732,8 +1732,20 @@ mod document {
             })
     }
 
-    fn offset_after_edit(offset: usize, edit: SourceEditAnchors) -> usize {
-        if offset <= edit.old_start {
+    #[derive(Clone, Copy)]
+    enum OffsetAffinity {
+        BeforeInsertion,
+        AfterInsertion,
+    }
+
+    fn offset_after_edit(
+        offset: usize,
+        edit: SourceEditAnchors,
+        affinity: OffsetAffinity,
+    ) -> usize {
+        if offset < edit.old_start
+            || (offset == edit.old_start && matches!(affinity, OffsetAffinity::BeforeInsertion))
+        {
             offset
         } else if offset >= edit.old_end {
             edit.new_end.saturating_add(offset - edit.old_end)
@@ -1767,7 +1779,15 @@ mod document {
                         Some(CodeFenceScope::Root)
                     )
                 {
-                    spans.push((node.range().start.0 as usize, node.range().end.0 as usize));
+                    // Syntax-node ranges can include neighboring newline trivia.
+                    // The occurrence owns its delimiters, independently of prose
+                    // inserted immediately before or after the fence.
+                    let delimiters = fence.delimiters();
+                    if delimiters.len() >= 2 {
+                        let first = &delimiters[0];
+                        let last = &delimiters[delimiters.len() - 1];
+                        spans.push((first.range().start.0 as usize, last.range().end.0 as usize));
+                    }
                 }
             }
             nodes.extend(node.children());
@@ -1787,8 +1807,10 @@ mod document {
             return None;
         }
         let mapped = (
-            offset_after_edit(span.0, edit),
-            offset_after_edit(span.1, edit),
+            // Insertions at the opening boundary precede the occurrence;
+            // insertions at its closing boundary belong after it.
+            offset_after_edit(span.0, edit, OffsetAffinity::AfterInsertion),
+            offset_after_edit(span.1, edit, OffsetAffinity::BeforeInsertion),
         );
         next.iter().copied().find(|candidate| *candidate == mapped)
     }
@@ -1981,7 +2003,8 @@ mod document {
             let previous_fences = root_fence_occurrences(previous_source);
             let next_fences = root_fence_occurrences(next_source);
             for tombstone in retired.iter_mut() {
-                tombstone.anchor = offset_after_edit(tombstone.anchor, edit);
+                tombstone.anchor =
+                    offset_after_edit(tombstone.anchor, edit, OffsetAffinity::BeforeInsertion);
                 tombstone.unpublished_span = tombstone
                     .unpublished_span
                     .and_then(|span| continuing_fence_occurrence(span, edit, &next_fences));
@@ -2003,7 +2026,7 @@ mod document {
                                 && tombstone.kind == binding.kind
                                 && (tombstone.unpublished_span.is_some_and(|span| {
                                     binding.source_span.is_some_and(|binding_span| {
-                                        span.0 <= binding_span.0 && span.1 >= binding_span.1
+                                        source_spans_overlap(span, binding_span)
                                     })
                                 }) || (binding_intersects_edit(
                                     binding,
@@ -2044,7 +2067,9 @@ mod document {
                 } else {
                     binding
                         .source_span
-                        .map(|(start, _)| offset_after_edit(start, edit))
+                        .map(|(start, _)| {
+                            offset_after_edit(start, edit, OffsetAffinity::BeforeInsertion)
+                        })
                         .unwrap_or(edit.new_start)
                 };
                 retired.push(RetiredDocumentOutput {
@@ -2059,7 +2084,9 @@ mod document {
                             let fence = previous_fences
                                 .iter()
                                 .copied()
-                                .find(|fence| fence.0 <= span.0 && fence.1 >= span.1)?;
+                                // Canonical output ranges can include newline
+                                // trivia outside the owned delimiter span.
+                                .find(|fence| source_spans_overlap(*fence, span))?;
                             continuing_fence_occurrence(fence, edit, &next_fences)
                         })
                         .flatten(),
@@ -2142,6 +2169,39 @@ mod document {
 
         fn fence(output_id: u64, ordinal: u64, start: usize) -> DocumentOutputBinding {
             fence_with_semantic(output_id, 17, ordinal, start)
+        }
+
+        #[test]
+        fn fence_occurrence_affinity_excludes_inserted_neighbors() {
+            for prefix in ["Prose before the fence.\n\n", "~~~mech\n22\n~~~\n\n"] {
+                let source = "~~~mech{output: false}\n22\n~~~\n";
+                let span = root_fence_occurrences(source)[0];
+                let prefixed = format!("{prefix}{source}");
+                let after_prefix = root_fence_occurrences(&prefixed);
+                let edit = SourceEditAnchors {
+                    old_start: 0,
+                    old_end: 0,
+                    new_start: 0,
+                    new_end: prefix.len(),
+                };
+                let shifted = continuing_fence_occurrence(span, edit, &after_prefix)
+                    .unwrap_or_else(|| {
+                        panic!("prefix={prefix:?}, span={span:?}, next={after_prefix:?}")
+                    });
+                let appended = format!("{prefixed}\nProse after the fence.\n");
+                let after_suffix = root_fence_occurrences(&appended);
+                let edit = SourceEditAnchors {
+                    old_start: prefixed.len(),
+                    old_end: prefixed.len(),
+                    new_start: prefixed.len(),
+                    new_end: appended.len(),
+                };
+                assert_eq!(
+                    continuing_fence_occurrence(shifted, edit, &after_suffix),
+                    Some(shifted),
+                    "prefix={prefix:?}, next={after_suffix:?}"
+                );
+            }
         }
 
         #[test]
@@ -7997,6 +8057,89 @@ mod browser_tests {
                 "42"
             );
         }
+    }
+
+    #[wasm_bindgen_test]
+    fn suppressed_fence_keeps_its_address_across_boundary_insertions() {
+        for prefix in ["Prose before the fence.\n\n", "~~~mech\n22\n~~~\n\n"] {
+            let original = "~~~mech\n11\n~~~\n";
+            let mut document = WasmDocument::from_encoded(&encoded_document(original)).unwrap();
+            let id = document.bootstrap.presentation_output_ids[0];
+            document.repl_apply_edit(7, 7, "{output: false}").unwrap();
+            let body = document.repl_source().find("11").unwrap() as u32;
+            document.repl_apply_edit(body, body + 2, "22").unwrap();
+            document.repl_apply_edit(0, 0, prefix).unwrap();
+            let end = document.repl_source().len() as u32;
+            document
+                .repl_apply_edit(end, end, "\nProse after the fence.\n")
+                .unwrap();
+            let accepted = document.repl_source();
+            assert!(document.repl_apply_edit(0, 0, "[\n").is_err());
+            assert_eq!(document.repl_source(), accepted);
+            assert!(document.rendered_output(id).unwrap().is_null());
+            let start = accepted.find("{output: false}").unwrap() as u32;
+            document.repl_apply_edit(start, start + 15, "").unwrap();
+            assert_eq!(rendered_text(&document.rendered_output(id).unwrap()), "22");
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn public_html_formatter_payload_constructs_an_interactive_document() {
+        let source = "~~~mech\nvalue := 11\n~~~\n\nVisible {value + 1}.\n";
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let mut formatter = mech_syntax::Formatter::new();
+        let html = formatter.format_html(&tree, String::new(), "{{CODE}}".to_string());
+        let document = WasmDocument::from_encoded(&html).unwrap();
+        let addresses = formatter.root_presentation_output_ids();
+        assert_eq!(addresses.len(), 2);
+        assert_eq!(
+            rendered_text(&document.rendered_output(addresses[0]).unwrap()),
+            "11"
+        );
+        assert_eq!(
+            rendered_text(&document.rendered_output(addresses[1]).unwrap()),
+            "12"
+        );
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("value")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "11"
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn public_source_html_formatter_retains_exact_source_and_logical_root() {
+        let source = "-- e\u{301} and \u{1f642}\r\n~~~mech\r\nvalue := 11\r\n~~~\r\n\r\nVisible {value + 1}.\r\n";
+        let tree = mech_syntax::parser::parse(source.trim()).unwrap();
+        let mut formatter = mech_syntax::Formatter::new();
+        let render = formatter
+            .format_source_html_with_style_sheets_and_slots(
+                &tree,
+                "docs/nested/main.mec",
+                source,
+                mech_syntax::HtmlStyleSheets::default(),
+                "{{CODE}}".to_string(),
+                &mech_syntax::HtmlShimExtraSlots::default(),
+            )
+            .unwrap();
+        let document = WasmDocument::from_encoded(&render.html).unwrap();
+        assert_eq!(document.repl_source(), source);
+        assert_eq!(document.bootstrap.root_specifier, "docs/nested/main.mec");
+        let addresses = formatter.root_presentation_output_ids();
+        assert_eq!(addresses.len(), 2);
+        assert_eq!(
+            rendered_text(&document.rendered_output(addresses[0]).unwrap()),
+            "11"
+        );
+        assert_eq!(
+            rendered_text(&document.rendered_output(addresses[1]).unwrap()),
+            "12"
+        );
     }
 
     #[wasm_bindgen_test]

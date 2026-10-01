@@ -111,6 +111,7 @@ use num_rational::Rational64;
 ))]
 use tabled::{builder::Builder, settings::Style};
 
+pub mod browser_document;
 pub mod cell_binding;
 pub mod document_presentation;
 pub mod element;

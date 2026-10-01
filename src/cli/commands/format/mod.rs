@@ -6,8 +6,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
 use mech_runtime::{
-    BrowserDocumentPayload, DefaultIdGenerator, FS_READ, HostFilesystemAuthority,
-    MECH_TOOL_SUBJECT, SharedCapabilityKernel,
+    DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel,
 };
 use mech_syntax::formatter::*;
 use mech_syntax::parser;
@@ -910,7 +909,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         .map(|(js, _)| relative_asset_url(&output_file, js))
                         .transpose()?
                         .unwrap_or_default();
-                    let mut document_slots = document_controller_slots(
+                    let document_slots = document_controller_slots(
                         &shim_str,
                         options.resources.document_js,
                         "",
@@ -918,28 +917,19 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         &document_sources,
                     )?;
                     let tree = parser::parse(authoritative_source.trim())?;
-                    let mut presentation = Formatter::new();
-                    drop(presentation.format_html(&tree, String::new(), String::new()));
                     let root_specifier = resolved_document
                         .as_ref()
                         .map(|bundle| bundle.root_specifier.as_str())
                         .unwrap_or("document.mec");
-                    document_slots.insert(
-                        "CODE",
-                        BrowserDocumentPayload::new(root_specifier, authoritative_source)?
-                            .with_presentation_output_ids(
-                                presentation.root_presentation_output_ids().iter().copied(),
-                            )
-                            .encode()?,
-                    );
-
                     let mut formatter = Formatter::new();
-                    let render = formatter.format_html_with_style_sheets_and_slots(
+                    let render = formatter.format_source_html_with_style_sheets_and_slots(
                         &tree,
+                        root_specifier,
+                        authoritative_source,
                         html_style_sheets(stylesheet_str.clone()),
                         shim_str.clone(),
                         &document_slots,
-                    );
+                    )?;
                     if let Some(shim_name) = shipped_shim {
                         validate_shipped_shim_render(shim_name, &render)?;
                     }

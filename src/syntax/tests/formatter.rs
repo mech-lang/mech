@@ -916,6 +916,73 @@ fn shipped_shim(name: &str) -> String {
     })
 }
 
+#[cfg(feature = "serde")]
+#[test]
+fn public_html_formatter_emits_retained_source_for_every_shipped_shim() {
+    use mech_core::browser_document::BrowserDocumentPayload;
+    let source = "~~~mech\nvalue := 11\n~~~\n\nVisible {value + 1}.\n";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    for name in ["index", "blog", "docs"] {
+        let mut formatter = Formatter::new();
+        let html = formatter.format_html(&tree, String::new(), shipped_shim(name));
+        let encoded = html
+            .split("data-mech-document-code>")
+            .nth(1)
+            .unwrap()
+            .split("</script>")
+            .next()
+            .unwrap()
+            .trim();
+        let payload = BrowserDocumentPayload::decode(encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "document.mec");
+        assert_eq!(payload.source(), Formatter::new().format(&tree));
+        assert_eq!(
+            payload.presentation_output_ids(),
+            formatter.root_presentation_output_ids()
+        );
+        assert_eq!(payload.presentation_output_ids().len(), 2);
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn source_html_formatter_preserves_exact_bytes_root_and_presentation_ids() {
+    use mech_core::browser_document::BrowserDocumentPayload;
+    let source = "-- e\u{301} and \u{1f642}\r\n~~~mech\r\nvalue := 11\r\n~~~\r\n\r\nVisible {value + 1}.\r\n";
+    let tree = mech_syntax::parser::parse(source.trim()).unwrap();
+    let mut formatter = Formatter::new();
+    let render = formatter
+        .format_source_html_with_style_sheets_and_slots(
+            &tree,
+            "docs/nested/main.mec",
+            source,
+            HtmlStyleSheets::default(),
+            "{{CODE}}".to_string(),
+            &HtmlShimExtraSlots::default(),
+        )
+        .unwrap();
+    let payload = BrowserDocumentPayload::decode(&render.html).unwrap();
+    assert_eq!(payload.source(), source);
+    assert_eq!(payload.root_specifier(), "docs/nested/main.mec");
+    assert_eq!(
+        payload.presentation_output_ids(),
+        formatter.root_presentation_output_ids()
+    );
+    assert_eq!(payload.presentation_output_ids().len(), 2);
+    assert!(
+        formatter
+            .format_source_html_with_style_sheets_and_slots(
+                &tree,
+                "",
+                source,
+                HtmlStyleSheets::default(),
+                String::new(),
+                &HtmlShimExtraSlots::default(),
+            )
+            .is_err()
+    );
+}
+
 #[test]
 fn shipped_document_shims_consume_required_slots() {
     let tree = html_fixture(&[("Fixture section", "Fixture content")]);
