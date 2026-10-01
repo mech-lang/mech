@@ -1284,7 +1284,7 @@ mod document {
                     && Some(output.output) != program_output.map(|id| id.get())
             })
             .collect::<Vec<_>>();
-        if require_all && outputs.len() < bootstrap.presentation_output_ids.len() {
+        if require_all && outputs.len() != bootstrap.presentation_output_ids.len() {
             return Err(document_runtime_error(format!(
                 "browser presentation payload has {} addresses for {} canonical outputs",
                 bootstrap.presentation_output_ids.len(),
@@ -6766,6 +6766,89 @@ mod browser_tests {
         assert_eq!(
             document.bootstrap.source_map[&document.bootstrap.root_specifier],
             "x := 4\nx"
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn legacy_nested_inline_output_does_not_redirect_the_following_fence() {
+        for source in [
+            "> Quoted value {11}.\n\n~~~mech\n22\n~~~\n",
+            "%% Abstract value {11}.\n\n~~~mech\n22\n~~~\n",
+        ] {
+            let tree = mech_syntax::parser::parse(source).unwrap();
+            let fence = tree
+                .body
+                .sections
+                .iter()
+                .flat_map(|section| &section.elements)
+                .find_map(|element| match element {
+                    mech_core::SectionElement::FencedMechCode(block) => Some(block),
+                    _ => None,
+                })
+                .unwrap();
+            let (last_code, _) = fence.code.last().unwrap();
+            let fence_address = mech_core::hash_str(&format!("{last_code:?}"));
+            let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+            let assert_fence = |document: &WasmDocument| {
+                let inline_address = mech_core::hash_str("inline-eval:0:0");
+                let inline = document.rendered_output(inline_address).unwrap();
+                assert_eq!(
+                    Reflect::get(&inline, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some("11"),
+                );
+                let output = document.rendered_output(fence_address).unwrap();
+                assert_eq!(
+                    Reflect::get(&output, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some("22"),
+                );
+            };
+            let document = WasmDocument::from_encoded(&encoded)
+                .unwrap_or_else(|error| panic!("{source:?}: {error:?}"));
+            assert_fence(&document);
+            let mut replacement =
+                WasmDocument::from_encoded(&encoded_document("answer := 7\nanswer")).unwrap();
+            replacement.reset(&encoded).unwrap();
+            assert_fence(&replacement);
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn incomplete_presentation_addresses_reject_without_replacing_the_document() {
+        let source = "> Quoted value {11}.\n\n~~~mech\n22\n~~~\n";
+        let encoded = BrowserDocumentPayload::new("document.mec", source)
+            .unwrap()
+            .with_presentation_output_ids([41])
+            .encode()
+            .unwrap();
+        assert!(WasmDocument::from_encoded(&encoded).is_err());
+        let mut document =
+            WasmDocument::from_encoded(&encoded_document("answer := 7\nanswer")).unwrap();
+        assert!(document.reset(&encoded).is_err());
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("answer")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "7"
+        );
+        let output = document
+            .rendered_output(root_document_program_output_id())
+            .unwrap();
+        assert_eq!(
+            Reflect::get(&output, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("7")
         );
     }
 

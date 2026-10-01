@@ -917,11 +917,14 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/function/module.rs",
+            CHECKER.DYNAMIC_RESIDENT_OWNER,
             "let changed = match state.kernel {",
             "let next = vec![0.0; candidate.len()];\n    let changed = match state.kernel {",
         )
-        self.assert_failure(root, "module allocates private output-sized scratch")
+        self.assertEqual(
+            CHECKER.failures(root),
+            ["dynamic Resident module allocates private output-sized scratch"],
+        )
 
     def test_84_conversion_footprint_must_include_target_payload(self):
         root = self.fixture()

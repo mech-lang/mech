@@ -1,5 +1,5 @@
 use mech_core::{
-    BlockConfig, Comment, FencedMechCode, MechCode, Paragraph, ParagraphElement, Program,
+    BlockConfig, Comment, FencedMechCode, MDList, MechCode, Paragraph, ParagraphElement, Program,
     SectionAnnotation, SectionElement, Statement, hash_str,
 };
 
@@ -118,7 +118,7 @@ fn collect_section_output_ids(
     output_ids: &mut Vec<u64>,
 ) {
     match element {
-        SectionElement::Float((element, _)) => {
+        SectionElement::Float((element, _)) | SectionElement::Prompt(element) => {
             collect_section_output_ids(element, inline_index, output_ids);
         }
         SectionElement::MechCode(code) => {
@@ -130,10 +130,40 @@ fn collect_section_output_ids(
         SectionElement::Comment(comment) => {
             collect_comment_output_ids(comment, inline_index, output_ids);
         }
+        SectionElement::Abstract(paragraphs)
+        | SectionElement::QuoteBlock(paragraphs)
+        | SectionElement::InfoBlock(paragraphs)
+        | SectionElement::SuccessBlock(paragraphs)
+        | SectionElement::IdeaBlock(paragraphs)
+        | SectionElement::WarningBlock(paragraphs)
+        | SectionElement::ErrorBlock(paragraphs)
+        | SectionElement::QuestionBlock(paragraphs)
+        | SectionElement::Footnote((_, paragraphs)) => {
+            for paragraph in paragraphs {
+                collect_paragraph_output_ids(paragraph, inline_index, output_ids);
+            }
+        }
+        SectionElement::Citation(citation) => {
+            collect_paragraph_output_ids(&citation.text, inline_index, output_ids);
+        }
         SectionElement::Paragraph(paragraph) => {
             collect_paragraph_output_ids(paragraph, inline_index, output_ids);
         }
+        SectionElement::Subtitle(subtitle) => {
+            collect_paragraph_output_ids(&subtitle.text, inline_index, output_ids);
+        }
+        SectionElement::Image(image) => {
+            if let Some(caption) = &image.caption {
+                collect_paragraph_output_ids(caption, inline_index, output_ids);
+            }
+        }
+        SectionElement::List(list) => {
+            collect_list_output_ids(list, inline_index, output_ids);
+        }
         SectionElement::Table(table) => {
+            for cell in &table.header {
+                collect_paragraph_output_ids(cell, inline_index, output_ids);
+            }
             for row in &table.rows {
                 for cell in row {
                     collect_paragraph_output_ids(cell, inline_index, output_ids);
@@ -300,6 +330,35 @@ fn collect_paragraph_output_ids(
             let output_id = hash_str(&format!("inline-eval:0:{inline_index}"));
             *inline_index += 1;
             push_unique(output_ids, output_id);
+        }
+    }
+}
+
+fn collect_list_output_ids(list: &MDList, inline_index: &mut u64, output_ids: &mut Vec<u64>) {
+    match list {
+        MDList::Unordered(items) => {
+            for ((_, paragraph), nested) in items {
+                collect_paragraph_output_ids(paragraph, inline_index, output_ids);
+                if let Some(nested) = nested {
+                    collect_list_output_ids(nested, inline_index, output_ids);
+                }
+            }
+        }
+        MDList::Ordered(list) => {
+            for ((_, paragraph), nested) in &list.items {
+                collect_paragraph_output_ids(paragraph, inline_index, output_ids);
+                if let Some(nested) = nested {
+                    collect_list_output_ids(nested, inline_index, output_ids);
+                }
+            }
+        }
+        MDList::Check(items) => {
+            for ((_, paragraph), nested) in items {
+                collect_paragraph_output_ids(paragraph, inline_index, output_ids);
+                if let Some(nested) = nested {
+                    collect_list_output_ids(nested, inline_index, output_ids);
+                }
+            }
         }
     }
 }

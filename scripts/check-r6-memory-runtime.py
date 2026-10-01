@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DYNAMIC_RESIDENT_OWNER = "src/engine/src/function/dynamic.rs"
 REQUIRED = (
     "src/core/src/memory_runtime/mod.rs",
     "src/core/src/memory_runtime/identity.rs",
@@ -50,6 +51,7 @@ REQUIRED = (
     "src/engine/src/function/external/resource_read.rs",
     "src/engine/src/function/external/host_call.rs",
     "src/engine/src/function/module.rs",
+    DYNAMIC_RESIDENT_OWNER,
     "src/core/src/cell_binding.rs",
     "src/core/src/function/argument.rs",
     "src/core/src/function/mod.rs",
@@ -1261,8 +1263,8 @@ def failures(root: Path) -> list[str]:
     ) or "try_finish_preallocated_with" not in table_ops or table_ops.count("try_vec_with_capacity") < 5:
         found.append("table join constructs a detached logical cell during execution")
 
-    module = rust_code(sources.get("src/engine/src/function/module.rs", ""))
-    dynamic_resident = list(function_bodies(module, "dynamic_resident_execute"))
+    dynamic = rust_code(sources.get(DYNAMIC_RESIDENT_OWNER, ""))
+    dynamic_resident = list(function_bodies(dynamic, "dynamic_resident_execute"))
     if (
         not dynamic_resident
         or "candidate.as_mut_ptr()" not in dynamic_resident[0]
