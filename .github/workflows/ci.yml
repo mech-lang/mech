@@ -375,11 +375,17 @@ jobs:
     needs: impact
     if: needs.impact.outputs.windows_canary_required == 'true'
     runs-on: windows-latest
-    timeout-minutes: 45
+    # A cold optimized WASM + native product build already took 44m13s.
+    # Leave cold-build headroom; unchanged Rust compilations are reused below.
+    timeout-minutes: 75
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: "0"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_VERSION: mech-standard-windows-v1
+      SCCACHE_IGNORE_SERVER_IO_ERROR: "1"
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -398,6 +404,20 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
           rustup target add wasm32-unknown-unknown
+      - name: Install compiler cache
+        uses: Mozilla-Actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        with:
+          version: v0.16.0
+      - name: Restore Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: standard-windows-product-v1
+          cache-on-failure: "true"
+          cache-workspace-crates: "false"
+        # Dependency artifacts avoid repeated downloads/builds. sccache also
+        # reuses unchanged workspace compilations by their compiler inputs,
+        # even when a fresh checkout gives the source files new timestamps.
+        # The product build below always regenerates and embeds this head's WASM.
       - name: Install wasm-pack v0.15.0
         shell: pwsh
         run: |
