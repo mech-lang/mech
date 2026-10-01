@@ -6875,6 +6875,79 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
+    fn title_and_split_document_slots_bind_distinct_visible_values() {
+        let source = include_str!("../../../tests/fixtures/shims/output-addresses.mec");
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let ids = root_document_output_ids(&tree);
+        assert_eq!(ids.len(), 8);
+        let legacy = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let modern = BrowserDocumentPayload::new("document.mec", source)
+            .unwrap()
+            .with_presentation_output_ids(ids.clone())
+            .encode()
+            .unwrap();
+        let assert_outputs = |document: &WasmDocument| {
+            for (id, expected) in ids
+                .iter()
+                .zip(["11", "12", "13", "21", "22", "31", "1", "1"])
+            {
+                let rendered = document.rendered_output(*id).unwrap();
+                assert_eq!(
+                    Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some(expected)
+                );
+            }
+        };
+        for encoded in [&modern, &legacy] {
+            let mut document = WasmDocument::from_encoded(encoded).unwrap();
+            assert_outputs(&document);
+            document
+                .reset(&encoded_document("answer := 7\nanswer"))
+                .unwrap();
+            document.reset(encoded).unwrap();
+            assert_outputs(&document);
+        }
+        let html = mech_syntax::Formatter::new().format_html(
+            &tree,
+            String::new(),
+            "{{SUMMARY}}{{AUTHOR}}{{HERO}}{{ABSTRACT}}{{INTRO}}{{CONTENTS}}".to_owned(),
+        );
+        for id in &ids {
+            assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1);
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn identical_legacy_fence_nodes_keep_distinct_browser_addresses() {
+        let mut tree = mech_syntax::parser::parse("~~~mech\n1\n~~~\n").unwrap();
+        let fence = tree.body.sections[0].elements[0].clone();
+        tree.body.sections[0].elements.push(fence);
+        let ids = root_document_output_ids(&tree);
+        assert_eq!(ids.len(), 2);
+        assert_ne!(ids[0], ids[1]);
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        for reset in [false, true] {
+            if reset {
+                document.reset(&encoded).unwrap();
+            }
+            for id in &ids {
+                let rendered = document.rendered_output(*id).unwrap();
+                assert_eq!(
+                    Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some("1")
+                );
+            }
+        }
+    }
+
+    #[wasm_bindgen_test]
     fn incomplete_presentation_addresses_reject_without_replacing_the_document() {
         let source = "> Quoted value {11}.\n\n~~~mech\n22\n~~~\n";
         let encoded = BrowserDocumentPayload::new("document.mec", source)

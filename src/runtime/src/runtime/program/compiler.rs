@@ -176,6 +176,7 @@ pub struct ProgramCompiler {
     host_interfaces: HostInterfaceCatalog,
     module_manifests: ModuleManifestCatalog,
     program_config: CompilerPlanningConfig,
+    max_source_bytes: Option<u64>,
 }
 
 #[cfg(feature = "compute")]
@@ -215,6 +216,7 @@ impl std::fmt::Debug for ProgramCompiler {
             .field("host_interfaces", &self.host_interfaces)
             .field("module_manifests", &self.module_manifests)
             .field("program_config", &self.program_config)
+            .field("max_source_bytes", &self.max_source_bytes)
             .finish()
     }
 }
@@ -228,6 +230,7 @@ impl ProgramCompiler {
         host_interfaces: HostInterfaceCatalog,
         module_manifests: ModuleManifestCatalog,
         program_config: CompilerPlanningConfig,
+        max_source_bytes: Option<u64>,
     ) -> Self {
         Self {
             function_catalog,
@@ -237,6 +240,7 @@ impl ProgramCompiler {
             host_interfaces,
             module_manifests,
             program_config,
+            max_source_bytes,
         }
     }
 
@@ -354,8 +358,9 @@ impl ProgramCompiler {
         &mut self,
         resolved: ResolvedSource,
     ) -> MResult<CanonicalSourceProgram> {
-        let resolved = admit_resolved_canonical_source(resolved)?;
-        self.view().compile_canonical_graph_document(
+        let view = self.view();
+        let resolved = view.admit_resolved_source(resolved)?;
+        view.compile_canonical_graph_document(
             &resolved,
             &mut CanonicalGraphCompilation::new(None),
             false,
@@ -367,6 +372,10 @@ impl ProgramCompiler {
     /// B keeps the shipping source route unchanged while proving this product
     /// boundary against retained documents and real activation.
     pub fn compile_canonical_source(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::try_from(source.len()).unwrap_or(u64::MAX),
+        )?;
         let document = retained_compiler_document(source)?;
         self.compile_document(&document)
     }
@@ -377,6 +386,10 @@ impl ProgramCompiler {
         &mut self,
         source: &str,
     ) -> MResult<ProgramArtifactCompilationProduct> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::try_from(source.len()).unwrap_or(u64::MAX),
+        )?;
         let document = retained_compiler_document(source)?;
         self.compile_document_artifact(&document)
     }
@@ -512,6 +525,7 @@ impl ProgramCompiler {
             &self.host_interfaces,
             &self.module_manifests,
             self.program_config.limits.max_planning_steps,
+            self.max_source_bytes,
         )
     }
 }
@@ -526,6 +540,7 @@ pub(crate) struct ProgramCompilerView<'a> {
     host_interfaces: &'a HostInterfaceCatalog,
     module_manifests: &'a ModuleManifestCatalog,
     max_planning_steps: usize,
+    max_source_bytes: Option<u64>,
 }
 
 /// One resolution/planning session. Module versions use the same ModuleBuilder
@@ -588,6 +603,7 @@ impl<'a> ProgramCompilerView<'a> {
         host_interfaces: &'a HostInterfaceCatalog,
         module_manifests: &'a ModuleManifestCatalog,
         max_planning_steps: usize,
+        max_source_bytes: Option<u64>,
     ) -> Self {
         Self {
             function_catalog,
@@ -597,10 +613,33 @@ impl<'a> ProgramCompilerView<'a> {
             host_interfaces,
             module_manifests,
             max_planning_steps,
+            max_source_bytes,
         }
     }
 
+    fn admit_resolved_source(&self, resolved: ResolvedSource) -> MResult<ResolvedSource> {
+        if self.max_source_bytes.is_some() {
+            let bytes = resolved
+                .source
+                .byte_len()
+                .or_else(|| {
+                    resolved
+                        .source_document()
+                        .map(|document| u64::from(document.source().byte_len().0))
+                })
+                .ok_or_else(|| {
+                    canonical_compilation_error("resolved source has no known byte length")
+                })?;
+            super::super::limits::enforce_source_byte_limit(self.max_source_bytes, bytes)?;
+        }
+        admit_resolved_canonical_source(resolved)
+    }
+
     pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::try_from(source.len()).unwrap_or(u64::MAX),
+        )?;
         let document = retained_compiler_document(source)?;
         self.compile_document(&document)
     }
@@ -609,6 +648,10 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         source: &str,
     ) -> MResult<ProgramCompilationProduct> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::try_from(source.len()).unwrap_or(u64::MAX),
+        )?;
         let document = retained_compiler_document(source)?;
         self.compile_interactive_document(&document)
     }
@@ -635,6 +678,10 @@ impl<'a> ProgramCompilerView<'a> {
         document: &SourceDocument,
         resolved_source_modules: &BTreeSet<String>,
     ) -> MResult<CanonicalSourceProgram> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::from(document.source().byte_len().0),
+        )?;
         let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;
@@ -671,6 +718,10 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         document: &SourceDocument,
     ) -> MResult<ProgramArtifactCompilationProduct> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::from(document.source().byte_len().0),
+        )?;
         self.canonical_document_artifact(document)
             .map(ProgramArtifactCompilationProduct::from_artifact)
     }
@@ -792,6 +843,10 @@ impl<'a> ProgramCompilerView<'a> {
         ProgramArtifactCompilationProduct,
         BTreeMap<String, RuntimeHostInputValue>,
     )> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::from(document.source().byte_len().0),
+        )?;
         let context = self.canonical_planning_context(document, inputs)?;
         let program = self.canonical_planning_projection(
             document,
@@ -925,6 +980,10 @@ impl<'a> ProgramCompilerView<'a> {
         document: &SourceDocument,
         interactive: bool,
     ) -> MResult<mech_engine::ProgramArtifact> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::from(document.source().byte_len().0),
+        )?;
         let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;
@@ -985,7 +1044,7 @@ impl<'a> ProgramCompilerView<'a> {
             .iter()
             .map(|request| {
                 request.validate()?;
-                admit_resolved_canonical_source(self.source_resolver.resolve(request)?.ok_or_else(
+                self.admit_resolved_source(self.source_resolver.resolve(request)?.ok_or_else(
                     || {
                         canonical_compilation_error(format!(
                             "missing canonical root {}",
@@ -1050,7 +1109,7 @@ impl<'a> ProgramCompilerView<'a> {
                 let Some(dependency) = self.source_resolver.resolve(&request)? else {
                     continue;
                 };
-                let dependency = admit_resolved_canonical_source(dependency)?;
+                let dependency = self.admit_resolved_source(dependency)?;
                 let dependency_id = if let Some(identity) =
                     identities.get(&dependency.canonical_uri).copied()
                 {
@@ -1287,7 +1346,7 @@ impl<'a> ProgramCompilerView<'a> {
         interactive: bool,
         options: Option<ModuleBuildOptions<'_>>,
     ) -> MResult<ProgramCompilationProduct> {
-        let resolved = admit_resolved_canonical_source(resolved)?;
+        let resolved = self.admit_resolved_source(resolved)?;
         let mut context = CanonicalGraphCompilation::new(options);
         let program =
             self.compile_canonical_graph_document(&resolved, &mut context, false, interactive)?;
@@ -1524,7 +1583,7 @@ impl<'a> ProgramCompilerView<'a> {
                 }
                 continue;
             };
-            let dependency = admit_resolved_canonical_source(dependency)?;
+            let dependency = self.admit_resolved_source(dependency)?;
             let dependency_document = dependency.source_document().ok_or_else(|| {
                 canonical_compilation_error("canonical dependency has no retained document")
             })?;
@@ -1769,7 +1828,7 @@ impl<'a> ProgramCompilerView<'a> {
         resolved: ResolvedSource,
         options: ModuleBuildOptions<'_>,
     ) -> MResult<MixedProgramCompilation> {
-        let resolved = admit_resolved_canonical_source(resolved)?;
+        let resolved = self.admit_resolved_source(resolved)?;
         let document = resolved
             .source_document()
             .ok_or_else(|| canonical_compilation_error("mixed root has no retained document"))?;
@@ -1806,6 +1865,10 @@ impl<'a> ProgramCompilerView<'a> {
         imports: &[crate::resolver::CanonicalResolvedImport],
         imported_enum_qualifiers: BTreeMap<mech_core::NominalKey, String>,
     ) -> MResult<MixedProgramCompilation> {
+        super::super::limits::enforce_source_byte_limit(
+            self.max_source_bytes,
+            u64::from(document.source().byte_len().0),
+        )?;
         let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;

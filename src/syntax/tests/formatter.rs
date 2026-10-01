@@ -851,3 +851,56 @@ fn nested_evaluations_preserve_source_and_emit_distinct_placeholders() {
         assert_eq!(html.matches("class=\"mech-inline-mech-code\"").count(), 2);
     }
 }
+
+#[test]
+fn document_slots_share_addresses_and_keep_title_source_order() {
+    let source = include_str!("../../../tests/fixtures/shims/output-addresses.mec");
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let (ids, inline_count) =
+        mech_core::document_presentation::root_document_presentation_addresses(&tree);
+    assert_eq!(inline_count, 6);
+    assert_eq!(ids.len(), 8);
+    assert_eq!(
+        ids.iter().collect::<std::collections::BTreeSet<_>>().len(),
+        8
+    );
+    let formatted = Formatter::new().format(&tree);
+    assert!(formatted.find("summary:").unwrap() < formatted.find("author:").unwrap());
+    assert!(formatted.contains("Summary {11}."));
+    assert!(formatted.contains("Hero {13}."));
+    mech_syntax::parser::parse(&formatted).unwrap();
+    for (index, shim) in [
+        include_str!("../../../include/docs.html"),
+        include_str!("../../../include/index.html"),
+        "{{SUMMARY}}{{AUTHOR}}{{HERO}}{{ABSTRACT}}{{INTRO}}{{CONTENTS}}",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let html = Formatter::new().format_html(&tree, String::new(), shim.to_owned());
+        let required = if index == 2 { &ids[..] } else { &ids[3..] };
+        for id in required {
+            assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1, "{id}");
+        }
+    }
+    let sections = Formatter::new().format_html(&tree, String::new(), "{{SECTION1}}".to_owned());
+    for id in &ids[5..] {
+        assert_eq!(sections.matches(&format!("id=\"{id}:0\"")).count(), 1);
+    }
+}
+
+#[test]
+fn cloned_fences_receive_distinct_occurrence_addresses() {
+    let mut tree = mech_syntax::parser::parse("~~~mech\n1\n~~~\n").unwrap();
+    let fence = tree.body.sections[0].elements[0].clone();
+    tree.body.sections[0].elements.push(fence);
+    let (ids, count) =
+        mech_core::document_presentation::root_document_presentation_addresses(&tree);
+    assert_eq!(count, 0);
+    assert_eq!(ids.len(), 2);
+    assert_ne!(ids[0], ids[1]);
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_owned());
+    for id in &ids {
+        assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1);
+    }
+}

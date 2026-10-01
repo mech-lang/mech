@@ -1,6 +1,9 @@
 use crate::*;
 #[cfg(feature = "no_std")]
 use alloc::collections::{BTreeMap, BTreeSet};
+use mech_core::document_presentation::{
+    DocumentPresentationAddresses, TitlePresentationField, title_presentation_fields,
+};
 use mech_core::nodes::{Kind, Matrix};
 #[cfg(not(feature = "no_std"))]
 use std::collections::{BTreeMap, BTreeSet};
@@ -240,7 +243,7 @@ pub struct Formatter {
     footnote_map: BTreeMap<u64, usize>,
     footnotes: Vec<String>,
     interpreter_id: u64,
-    inline_eval_counters: BTreeMap<u64, u64>,
+    presentation_addresses: DocumentPresentationAddresses,
 }
 
 impl Formatter {
@@ -273,16 +276,7 @@ impl Formatter {
     }
 
     fn inline_eval_id(&mut self) -> u64 {
-        let next_ix = {
-            let counter = self
-                .inline_eval_counters
-                .entry(self.interpreter_id)
-                .or_insert(0);
-            let current = *counter;
-            *counter += 1;
-            current
-        };
-        hash_str(&format!("inline-eval:{}:{}", self.interpreter_id, next_ix))
+        self.presentation_addresses.inline(self.interpreter_id)
     }
 
     pub fn new() -> Formatter {
@@ -307,19 +301,19 @@ impl Formatter {
             nested: false,
             toc: false,
             interpreter_id: 0,
-            inline_eval_counters: BTreeMap::new(),
+            presentation_addresses: DocumentPresentationAddresses::default(),
         }
     }
 
     /// Continue the root document's inline-evaluation address sequence when
     /// formatting a fragment that will be appended to an existing document.
     pub fn set_root_inline_eval_offset(&mut self, offset: u64) {
-        self.inline_eval_counters.insert(0, offset);
+        self.presentation_addresses.set_inline_offset(0, offset);
     }
 
     pub fn format(&mut self, tree: &Program) -> String {
         self.html = false;
-        self.inline_eval_counters.clear();
+        self.presentation_addresses = DocumentPresentationAddresses::default();
         self.program(tree)
     }
 
@@ -403,7 +397,7 @@ impl Formatter {
         extra_slots: &HtmlShimExtraSlots,
     ) -> HtmlShimRender {
         self.html = true;
-        self.inline_eval_counters.clear();
+        self.presentation_addresses = DocumentPresentationAddresses::default();
 
         let title_slots = self.title_slots(&tree.title);
         let (
@@ -412,6 +406,7 @@ impl Formatter {
             formatted_contents,
             formatted_cited,
             formatted_footnotes,
+            formatted_sections,
         ) = self.document_slots(tree);
         let formatted_src = formatted_contents.clone();
         self.reset_numbering();
@@ -466,7 +461,7 @@ impl Formatter {
         slots.insert("REPL".to_string(), repl_html.to_string());
         slots.insert("PRESENTATION".to_string(), "document".to_string());
 
-        for (ix, section_html) in self.section_slots(tree).into_iter().enumerate() {
+        for (ix, section_html) in formatted_sections.into_iter().enumerate() {
             slots.insert(format!("SECTION{}", ix + 1), section_html);
         }
 
@@ -478,54 +473,53 @@ impl Formatter {
     }
 
     fn title_slots(&mut self, title: &Option<Title>) -> TitleSlots {
-        match title {
-            Some(title) => TitleSlots {
-                author: title
-                    .author
-                    .as_ref()
-                    .map(|p| self.inline_para_el(p, "mech-author"))
-                    .unwrap_or_default(),
-                date: title
-                    .date
-                    .as_ref()
-                    .map(|p| self.inline_para_el(p, "mech-date"))
-                    .unwrap_or_default(),
-                hero: title
-                    .hero
-                    .as_ref()
-                    .map(|h| self.hero_el(h))
-                    .unwrap_or_default(),
-                kicker: title
-                    .kicker
-                    .as_ref()
-                    .map(|p| self.inline_para_el(p, "hero-kicker"))
-                    .unwrap_or_default(),
-                section: title
-                    .section
-                    .as_ref()
-                    .map(|p| self.inline_para_el(p, "mech-section"))
-                    .unwrap_or_default(),
-                summary: title
-                    .summary
-                    .as_ref()
-                    .map(|p| self.synopsis_el(p))
-                    .unwrap_or_default(),
-                next: title
-                    .next
-                    .as_ref()
-                    .map(|p| self.inline_para_el(p, "mech-next"))
-                    .unwrap_or_default(),
-                previous: title
-                    .previous
-                    .as_ref()
-                    .map(|p| self.inline_para_el(p, "mech-previous"))
-                    .unwrap_or_default(),
-            },
-            None => TitleSlots::default(),
+        let mut slots = TitleSlots::default();
+        if let Some(title) = title {
+            for field in title_presentation_fields(title) {
+                match field {
+                    TitlePresentationField::Paragraph(name, paragraph) => {
+                        let rendered = if name == "summary" {
+                            self.synopsis_el(paragraph)
+                        } else {
+                            self.inline_para_el(
+                                paragraph,
+                                match name {
+                                    "author" => "mech-author",
+                                    "date" => "mech-date",
+                                    "kicker" => "hero-kicker",
+                                    "section" => "mech-section",
+                                    "next" => "mech-next",
+                                    "previous" => "mech-previous",
+                                    _ => unreachable!(),
+                                },
+                            )
+                        };
+                        *match name {
+                            "author" => &mut slots.author,
+                            "date" => &mut slots.date,
+                            "kicker" => &mut slots.kicker,
+                            "section" => &mut slots.section,
+                            "summary" => &mut slots.summary,
+                            "next" => &mut slots.next,
+                            "previous" => &mut slots.previous,
+                            _ => unreachable!(),
+                        } = rendered;
+                    }
+                    TitlePresentationField::Hero(hero) => slots.hero = self.hero_el(hero),
+                    TitlePresentationField::Import(_, Some(comment)) => {
+                        drop(self.comment(comment));
+                    }
+                    TitlePresentationField::Import(_, None) => {}
+                }
+            }
         }
+        slots
     }
 
-    fn document_slots(&self, tree: &Program) -> (String, String, String, String, String) {
+    fn document_slots(
+        &mut self,
+        tree: &Program,
+    ) -> (String, String, String, String, String, Vec<String>) {
         let first_section_ix = tree
             .body
             .sections
@@ -535,40 +529,36 @@ impl Formatter {
         let intro_sections = &tree.body.sections[..first_section_ix];
         let content_sections = &tree.body.sections[first_section_ix..];
 
-        let mut abstract_formatter = Formatter::new();
-        abstract_formatter.html = true;
-        let mut intro_formatter = Formatter::new();
-        intro_formatter.html = true;
-        let mut contents_formatter = Formatter::new();
-        contents_formatter.html = true;
-
         let mut abstract_src = String::new();
         let mut intro_src = String::new();
         let mut contents_src = String::new();
+        let mut section_src = Vec::new();
 
         for section in intro_sections {
             for el in &section.elements {
                 match el {
                     SectionElement::Abstract(paragraphs) => {
-                        abstract_src.push_str(&abstract_formatter.abstract_el(paragraphs));
+                        abstract_src.push_str(&self.abstract_el(paragraphs));
                     }
                     _ => {
-                        intro_src.push_str(&intro_formatter.section_element(el));
+                        intro_src.push_str(&self.section_element(el));
                     }
                 }
             }
         }
 
         for section in content_sections {
-            contents_src.push_str(&contents_formatter.section(section));
+            let rendered = self.section(section);
+            contents_src.push_str(&rendered);
+            section_src.push(rendered);
         }
 
         if !intro_src.is_empty() {
             intro_src = format!("<section class=\"mech-intro\">{}</section>", intro_src);
         }
 
-        let cited_src = contents_formatter.works_cited();
-        let footnotes_src = contents_formatter.footnotes();
+        let cited_src = self.works_cited();
+        let footnotes_src = self.footnotes();
 
         (
             abstract_src,
@@ -576,23 +566,8 @@ impl Formatter {
             contents_src,
             cited_src,
             footnotes_src,
+            section_src,
         )
-    }
-
-    fn section_slots(&self, tree: &Program) -> Vec<String> {
-        let first_section_ix = tree
-            .body
-            .sections
-            .iter()
-            .position(|s| s.subtitle.is_some())
-            .unwrap_or(tree.body.sections.len());
-        let content_sections = &tree.body.sections[first_section_ix..];
-        let mut section_formatter = Formatter::new();
-        section_formatter.html = true;
-        content_sections
-            .iter()
-            .map(|section| section_formatter.section(section))
-            .collect()
     }
 
     pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
@@ -726,34 +701,30 @@ impl Formatter {
             format!("<h1 class=\"mech-program-title\">{}</h1>", title)
         } else {
             let mut front_matter = Vec::new();
-            for (name, value) in [
-                ("author", &node.author),
-                ("date", &node.date),
-                ("kicker", &node.kicker),
-                ("section", &node.section),
-                ("summary", &node.summary),
-                ("next", &node.next),
-                ("previous", &node.previous),
-            ] {
-                if let Some(value) = value {
-                    front_matter.push(format!("{name}: {}", value.to_string()));
+            for field in title_presentation_fields(node) {
+                match field {
+                    TitlePresentationField::Paragraph(name, paragraph) => {
+                        let content = self.inline_paragraph(paragraph);
+                        front_matter.push(format!("{name}: {content}"));
+                    }
+                    TitlePresentationField::Hero(hero) => {
+                        let hero = match hero {
+                            SectionElement::FigureTable(table) => self.figure_table_source(table),
+                            _ => self.section_element(hero).trim().to_string(),
+                        };
+                        front_matter.push(format!("hero: {hero}"));
+                    }
+                    TitlePresentationField::Import(import, comment) => {
+                        front_matter.push(
+                            self.mech_code(&vec![(
+                                MechCode::Import(import.clone()),
+                                comment.cloned(),
+                            )])
+                            .trim_end()
+                            .to_string(),
+                        );
+                    }
                 }
-            }
-            if let Some(hero) = &node.hero {
-                let hero = match hero {
-                    SectionElement::FigureTable(table) => self.figure_table_source(table),
-                    _ => self.section_element(hero).trim().to_string(),
-                };
-                front_matter.push(format!("hero: {hero}"));
-            }
-            if !node.imports.is_empty() {
-                let imports = node
-                    .imports
-                    .iter()
-                    .cloned()
-                    .map(|(import, comment)| (MechCode::Import(import), comment))
-                    .collect::<Vec<_>>();
-                front_matter.push(self.mech_code(&imports).trim_end().to_string());
             }
 
             let opening = format!(
@@ -836,6 +807,17 @@ impl Formatter {
             "".to_string()
         };
 
+        let content = if self.html
+            && node
+                .text
+                .elements
+                .iter()
+                .all(|element| matches!(element, ParagraphElement::Text(_)))
+        {
+            node.to_string()
+        } else {
+            self.inline_paragraph(&node.text)
+        };
         if self.html {
             let annotation_attribute = annotations
                 .map(|annotations| format!(" data-mech-annotations=\"{}\"", annotations))
@@ -857,7 +839,7 @@ impl Formatter {
                 annotation_attribute,
                 toc,
                 link_id,
-                node.to_string(),
+                content,
                 annotation_label,
                 level
             )
@@ -868,9 +850,7 @@ impl Formatter {
             if level == 2 {
                 format!(
                     "{}. {}{}\n-------------------------------------------------------------------------------\n\n",
-                    self.h2_num,
-                    node.to_string(),
-                    annotations
+                    self.h2_num, content, annotations
                 )
             } else {
                 let counters = [
@@ -885,7 +865,7 @@ impl Formatter {
                     .map(ToString::to_string)
                     .collect::<Vec<_>>()
                     .join(".");
-                format!("({ordinal}) {}{annotations}\n\n", node.to_string())
+                format!("({ordinal}) {}{annotations}\n\n", content)
             }
         }
     }
@@ -1241,8 +1221,12 @@ impl Formatter {
         self.interpreter_id = parent_interpreter_id;
 
         if self.html {
-            let (out_node, _) = block.code.last().unwrap();
-            let output_id = hash_str(&format!("{:?}", out_node));
+            let output_id = if !block.config.disabled && !block.config.hidden && block.config.output
+            {
+                self.presentation_addresses.fence(block, intrp_id)
+            } else {
+                None
+            };
             let style_attr = match &block.options {
                 Some(option_map) if !option_map.elements.is_empty() => {
                     let style_str = option_map
@@ -1283,7 +1267,7 @@ impl Formatter {
                         block_id, namespace_str
                     )
                 };
-                let output_node = if block.config.output {
+                let output_node = if let Some(output_id) = output_id {
                     format!(
                         "<div class=\"mech-block-output\" id=\"{}:{}\"></div>",
                         output_id, intrp_id
