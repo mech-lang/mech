@@ -65,6 +65,31 @@ pub(super) fn routed_parser_consumers() -> std::collections::BTreeSet<String> {
     .collect()
 }
 
+// The census is historical. Open routes name the current exact caller so a
+// relocated check stays counted until its canonical-only replacement ships.
+pub(super) fn unrouted_parser_consumer_callers() -> BTreeMap<String, (String, String)> {
+    rows(
+        &fs::read_to_string(
+            repository_root().join("docs/design/grammar-audit/s8-removal-manifest.tsv"),
+        )
+        .unwrap(),
+        REMOVAL_HEADER,
+    )
+    .into_iter()
+    .filter_map(|row| {
+        if row[1] == "route" && row[9] == "inventoried" {
+            assert_eq!(row[12], "replace-surface");
+            Some((
+                row[0].strip_prefix("route:").unwrap().to_owned(),
+                (row[2].clone(), row[3].clone()),
+            ))
+        } else {
+            None
+        }
+    })
+    .collect()
+}
+
 #[test]
 fn routed_consumers_do_not_claim_deletion_qualification() {
     assert_eq!(
@@ -159,7 +184,11 @@ fn cutover_readiness_and_removal_routes_extend_the_frozen_census() {
         if let Some(id) = row[0].strip_prefix("route:") {
             assert_eq!(row[1], "route");
             assert_eq!(row[2], census[id].source_path);
-            assert_eq!(row[3], census[id].caller);
+            // Open routes may explicitly relocate a retained parser check.
+            // The production census verifies its current caller and exact count.
+            if row[9] != "inventoried" {
+                assert_eq!(row[3], census[id].caller);
+            }
             routes.insert(id.to_owned(), row[4].clone());
         }
     }
@@ -167,6 +196,7 @@ fn cutover_readiness_and_removal_routes_extend_the_frozen_census() {
     for id in [
         "prototype-fragment",
         "prototype-fragment-exports",
+        "legacy-document-presentation",
         "module-store-cache",
         "module-store-transfer",
         "test:src/syntax/tests/document_fragments.rs",
@@ -409,6 +439,9 @@ fn readiness_includes_cross_boundary_payload_and_cache_handoffs() {
             .map(str::trim)
             .collect::<std::collections::BTreeSet<_>>();
         let mut required = vec!["root-parser-exports"];
+        if dependencies.contains("old-formatter") {
+            required.push("legacy-document-presentation");
+        }
         if id == "bundle-web.project" || id.starts_with("wasm.") {
             required.extend(["bundle-payload", "browser-loader", "browser-features"]);
         }

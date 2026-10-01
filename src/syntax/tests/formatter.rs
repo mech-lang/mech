@@ -1062,3 +1062,154 @@ fn legacy_source_fences_preserve_execution_ownership_and_options() {
         assert_eq!(before.exports.len(), after.exports.len());
     }
 }
+
+#[test]
+fn nested_evaluations_preserve_source_and_emit_distinct_placeholders() {
+    for nested in [
+        "**{11}**",
+        "[value {11}](https://example.test)",
+        "*{11}*",
+        "_{11}_",
+        "~{11}~",
+        "!!{11}!!",
+        "**[value !!{11}!!](https://example.test)**",
+    ] {
+        let source = format!("> Nested {nested}, direct {{33}}.\n");
+        let tree = mech_syntax::parser::parse(&source).unwrap();
+        let formatted = Formatter::new().format(&tree);
+        assert!(formatted.contains(nested), "{formatted}");
+        assert_eq!(mech_syntax::parser::parse(&formatted).unwrap(), tree);
+        let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_owned());
+        let (ids, count) =
+            mech_core::document_presentation::root_document_presentation_addresses(&tree);
+        assert_eq!(count, 2);
+        assert_ne!(ids[0], ids[1]);
+        for id in ids {
+            assert_eq!(
+                html.matches(&format!("id=\"{id}:0\"")).count(),
+                1,
+                "{source}"
+            );
+        }
+        assert_eq!(html.matches("class=\"mech-inline-mech-code\"").count(), 2);
+    }
+}
+
+#[test]
+fn document_slots_share_addresses_and_keep_title_source_order() {
+    let source = include_str!("../../../tests/fixtures/shims/output-addresses.mec");
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let (ids, inline_count) =
+        mech_core::document_presentation::root_document_presentation_addresses(&tree);
+    assert_eq!(inline_count, 6);
+    assert_eq!(ids.len(), 8);
+    assert_eq!(
+        ids.iter().collect::<std::collections::BTreeSet<_>>().len(),
+        8
+    );
+    let formatted = Formatter::new().format(&tree);
+    assert!(formatted.find("summary:").unwrap() < formatted.find("author:").unwrap());
+    assert!(formatted.contains("Summary {11}."));
+    assert!(formatted.contains("Hero {13}."));
+    mech_syntax::parser::parse(&formatted).unwrap();
+    for (index, shim) in [
+        include_str!("../../../include/docs.html"),
+        include_str!("../../../include/index.html"),
+        "{{SUMMARY}}{{AUTHOR}}{{HERO}}{{ABSTRACT}}{{INTRO}}{{CONTENTS}}",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let html = Formatter::new().format_html(&tree, String::new(), shim.to_owned());
+        let required = if index == 2 { &ids[..] } else { &ids[3..] };
+        for id in required {
+            assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1, "{id}");
+        }
+    }
+    let sections = Formatter::new().format_html(&tree, String::new(), "{{SECTION1}}".to_owned());
+    for id in &ids[5..] {
+        assert_eq!(sections.matches(&format!("id=\"{id}:0\"")).count(), 1);
+    }
+}
+
+#[test]
+fn cloned_fences_receive_distinct_occurrence_addresses() {
+    let mut tree = mech_syntax::parser::parse("~~~mech\n1\n~~~\n").unwrap();
+    let fence = tree.body.sections[0].elements[0].clone();
+    tree.body.sections[0].elements.push(fence);
+    let (ids, count) =
+        mech_core::document_presentation::root_document_presentation_addresses(&tree);
+    assert_eq!(count, 0);
+    assert_eq!(ids.len(), 2);
+    assert_ne!(ids[0], ids[1]);
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_owned());
+    for id in &ids {
+        assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1);
+    }
+}
+
+#[test]
+fn title_import_comments_have_no_live_presentation_slots() {
+    let source = "Document\n========\nauthor: {40 + 2}\n+> math -- Import {41 + 1}\ndate: {42 + 0}\n========\n";
+    let tree = mech_syntax::parse(source).unwrap();
+    let (ids, count) =
+        mech_core::document_presentation::root_document_presentation_addresses(&tree);
+    assert_eq!(count, 2);
+    assert_eq!(ids.len(), 2);
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, String::new(), "{{AUTHOR}}{{DATE}}".to_owned());
+    assert_eq!(formatter.root_presentation_output_ids(), ids);
+    for id in ids {
+        assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1);
+    }
+}
+
+#[test]
+fn reused_formatter_starts_each_document_with_its_own_backmatter_and_addresses() {
+    let make = |name: &str, entries: bool| {
+        let backmatter = if entries {
+            format!(
+                "Refs[BOOK] and note[^note].\n\n[^note]: {name} footnote.\n\n[BOOK]: {name} citation.\n"
+            )
+        } else {
+            String::new()
+        };
+        mech_syntax::parser::parse(&format!("{name}\n========\nauthor: {{11}}\n========\n\n1. Section\n--------\n\nLive {{22}}.\n\n{backmatter}")).unwrap()
+    };
+    let a = make("Alpha", true);
+    let b = make("Beta", false);
+    let c = make("Gamma", true);
+    let shim = "{{STYLESHEET}}{{AUTHOR}}{{INTRO}}{{CONTENTS}}{{CITED}}{{FOOTNOTES}}";
+    let mut reused = Formatter::new();
+    for tree in [&a, &b, &c, &b] {
+        let mut fresh = Formatter::new();
+        let expected = fresh.format_html(tree, "persistent-style".to_string(), shim.to_string());
+        let actual = reused.format_html(tree, "persistent-style".to_string(), shim.to_string());
+        assert_eq!(actual, expected);
+        assert_eq!(
+            reused.root_presentation_output_ids(),
+            fresh.root_presentation_output_ids()
+        );
+        assert_eq!(reused.root_presentation_output_ids().len(), 2);
+        if tree == &b {
+            assert!(
+                !actual.contains("Alpha footnote")
+                    && !actual.contains("mech-works-cited")
+                    && !actual.contains("mech-footnotes")
+            );
+        }
+        if tree == &c {
+            assert!(actual.contains("Gamma citation") && actual.contains("Gamma footnote"));
+            assert!(!actual.contains("Alpha citation"));
+        }
+    }
+    let source = reused.format(&a);
+    assert_eq!(source, Formatter::new().format(&a));
+    assert!(reused.works_cited().is_empty());
+    assert!(reused.footnotes().is_empty());
+    assert_eq!(
+        reused.format_html(&c, String::new(), shim.to_string()),
+        Formatter::new().format_html(&c, String::new(), shim.to_string())
+    );
+    assert_eq!(reused.format(&b), Formatter::new().format(&b));
+}

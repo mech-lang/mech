@@ -402,6 +402,7 @@ impl MechRuntime {
             &self.host_interfaces,
             &self.module_manifests,
             self.config.limits.max_steps_per_turn_as_usize()?,
+            self.config.limits.max_source_bytes,
         ))
     }
 

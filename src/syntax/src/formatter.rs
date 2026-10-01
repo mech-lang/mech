@@ -1,6 +1,7 @@
 use crate::*;
 #[cfg(feature = "no_std")]
 use alloc::collections::{BTreeMap, BTreeSet};
+use mech_core::document_presentation::{DocumentPresentationAddresses, fenced_document_output_id};
 use mech_core::nodes::{Kind, Matrix};
 #[cfg(not(feature = "no_std"))]
 use std::collections::{BTreeMap, BTreeSet};
@@ -15,42 +16,6 @@ struct TitleSlots {
     summary: String,
     next: String,
     previous: String,
-}
-
-fn fenced_document_output_id(block: &FencedMechCode) -> Option<u64> {
-    if !block.code.iter().any(|(code, _)| match code {
-        MechCode::ActivationScope(_) | MechCode::Expression(_) => true,
-        MechCode::Statement(statement) => matches!(
-            statement,
-            Statement::OpAssign(_)
-                | Statement::VariableAssign(_)
-                | Statement::VariableDefine(_)
-                | Statement::ContextSend(_)
-                | Statement::TupleDestructure(_)
-        ),
-        _ => false,
-    }) {
-        return None;
-    }
-    let mut identity = String::from("mech/fenced-document-output/v2");
-    for (code, _) in &block.code {
-        identity.push_str(match code {
-            MechCode::Comment(_) => "/comment",
-            MechCode::ActivationScope(_) => "/activation",
-            MechCode::Expression(_) => "/expression",
-            MechCode::FsmImplementation(_) => "/fsm-implementation",
-            MechCode::FsmSpecification(_) => "/fsm-specification",
-            MechCode::FunctionDefine(_) => "/function",
-            MechCode::Import(_) => "/import",
-            MechCode::Statement(_) => "/statement",
-            MechCode::Error(_, _) => "/error",
-        });
-        for token in code.tokens() {
-            identity.push('/');
-            identity.push_str(&format!("{:?}:{}", token.kind, token.to_string()));
-        }
-    }
-    Some(hash_str(&identity))
 }
 
 #[derive(Clone, Debug, Default)]
@@ -276,8 +241,7 @@ pub struct Formatter {
     footnote_map: BTreeMap<u64, usize>,
     footnotes: Vec<String>,
     interpreter_id: u64,
-    inline_eval_counters: BTreeMap<(u64, u64), u64>,
-    fenced_output_counters: BTreeMap<(u64, u64), u64>,
+    presentation_addresses: DocumentPresentationAddresses,
     presentation_outputs_enabled: bool,
     root_presentation_output_ids: Vec<u64>,
 }
@@ -312,13 +276,9 @@ impl Formatter {
     }
 
     fn inline_eval_id(&mut self, expression: &Expression) -> u64 {
-        let base = inline_document_output_id(self.interpreter_id, expression, 0);
-        let occurrence = self
-            .inline_eval_counters
-            .entry((self.interpreter_id, base))
-            .or_insert(0);
-        let output_id = inline_document_output_id(self.interpreter_id, expression, *occurrence);
-        *occurrence = occurrence.saturating_add(1);
+        let output_id = self
+            .presentation_addresses
+            .inline_expression(self.interpreter_id, expression);
         if self.interpreter_id == 0 {
             self.root_presentation_output_ids.push(output_id);
         }
@@ -353,18 +313,36 @@ impl Formatter {
             nested: false,
             toc: false,
             interpreter_id: 0,
-            inline_eval_counters: BTreeMap::new(),
-            fenced_output_counters: BTreeMap::new(),
+            presentation_addresses: DocumentPresentationAddresses::default(),
             presentation_outputs_enabled: true,
             root_presentation_output_ids: Vec::new(),
         }
     }
 
-    pub fn format(&mut self, tree: &Program) -> String {
-        self.html = false;
-        self.inline_eval_counters.clear();
-        self.fenced_output_counters.clear();
+    /// Reset one document's mutable render state while retaining configuration.
+    fn reset_document_state(&mut self) {
+        self.identifiers.clear();
+        self.rows = 0;
+        self.cols = 0;
+        self.indent = 0;
+        self.nested = false;
+        self.toc = false;
+        self.interpreter_id = 0;
+        self.reset_numbering();
+        self.citation_num = 0;
+        self.citation_map.clear();
+        self.citations.clear();
+        self.footnote_num = 0;
+        self.footnote_map.clear();
+        self.footnotes.clear();
+        self.presentation_addresses = DocumentPresentationAddresses::default();
+        self.presentation_outputs_enabled = true;
         self.root_presentation_output_ids.clear();
+    }
+
+    pub fn format(&mut self, tree: &Program) -> String {
+        self.reset_document_state();
+        self.html = false;
         self.program(tree)
     }
 
@@ -447,19 +425,17 @@ impl Formatter {
         shim: String,
         extra_slots: &HtmlShimExtraSlots,
     ) -> HtmlShimRender {
+        self.reset_document_state();
         self.html = true;
-        self.inline_eval_counters.clear();
-        self.fenced_output_counters.clear();
-        self.root_presentation_output_ids.clear();
 
         let title_slots = self.title_slots(&tree.title);
-        let section_seed = self.clone();
         let (
             formatted_abstract,
             formatted_intro,
             formatted_contents,
             formatted_cited,
             formatted_footnotes,
+            formatted_sections,
         ) = self.document_slots(tree);
         let formatted_src = formatted_contents.clone();
         self.reset_numbering();
@@ -514,7 +490,7 @@ impl Formatter {
         slots.insert("REPL".to_string(), repl_html.to_string());
         slots.insert("PRESENTATION".to_string(), "document".to_string());
 
-        for (ix, section_html) in section_seed.section_slots(tree).into_iter().enumerate() {
+        for (ix, section_html) in formatted_sections.into_iter().enumerate() {
             slots.insert(format!("SECTION{}", ix + 1), section_html);
         }
 
@@ -553,8 +529,7 @@ impl Formatter {
         // figure, or other formatter state into the visible document.
         let mut isolated = self.clone();
         isolated.render_title_field(field, &mut TitleSlots::default());
-        self.inline_eval_counters = isolated.inline_eval_counters;
-        self.fenced_output_counters = isolated.fenced_output_counters;
+        self.presentation_addresses = isolated.presentation_addresses;
     }
 
     fn title_slots(&mut self, title: &Option<Title>) -> TitleSlots {
@@ -619,7 +594,10 @@ impl Formatter {
         }
     }
 
-    fn document_slots(&mut self, tree: &Program) -> (String, String, String, String, String) {
+    fn document_slots(
+        &mut self,
+        tree: &Program,
+    ) -> (String, String, String, String, String, Vec<String>) {
         let first_section_ix = tree
             .body
             .sections
@@ -632,6 +610,7 @@ impl Formatter {
         let mut abstract_src = String::new();
         let mut intro_src = String::new();
         let mut contents_src = String::new();
+        let mut section_src = Vec::new();
 
         for section in intro_sections {
             for el in &section.elements {
@@ -647,7 +626,9 @@ impl Formatter {
         }
 
         for section in content_sections {
-            contents_src.push_str(&self.section(section));
+            let rendered = self.section(section);
+            contents_src.push_str(&rendered);
+            section_src.push(rendered);
         }
 
         if !intro_src.is_empty() {
@@ -663,27 +644,8 @@ impl Formatter {
             contents_src,
             cited_src,
             footnotes_src,
+            section_src,
         )
-    }
-
-    fn section_slots(&self, tree: &Program) -> Vec<String> {
-        let first_section_ix = tree
-            .body
-            .sections
-            .iter()
-            .position(|s| s.subtitle.is_some())
-            .unwrap_or(tree.body.sections.len());
-        let content_sections = &tree.body.sections[first_section_ix..];
-        let mut section_formatter = self.clone();
-        for section in &tree.body.sections[..first_section_ix] {
-            for element in &section.elements {
-                let _ = section_formatter.section_element(element);
-            }
-        }
-        content_sections
-            .iter()
-            .map(|section| section_formatter.section(section))
-            .collect()
     }
 
     pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
@@ -841,13 +803,13 @@ impl Formatter {
             } else {
                 for field in &node.fields {
                     let (name, value) = match field {
-                        TitleField::Author(value) => ("author", value.to_string()),
-                        TitleField::Date(value) => ("date", value.to_string()),
-                        TitleField::Kicker(value) => ("kicker", value.to_string()),
-                        TitleField::Section(value) => ("section", value.to_string()),
-                        TitleField::Summary(value) => ("summary", value.to_string()),
-                        TitleField::Next(value) => ("next", value.to_string()),
-                        TitleField::Previous(value) => ("previous", value.to_string()),
+                        TitleField::Author(value) => ("author", self.inline_paragraph(value)),
+                        TitleField::Date(value) => ("date", self.inline_paragraph(value)),
+                        TitleField::Kicker(value) => ("kicker", self.inline_paragraph(value)),
+                        TitleField::Section(value) => ("section", self.inline_paragraph(value)),
+                        TitleField::Summary(value) => ("summary", self.inline_paragraph(value)),
+                        TitleField::Next(value) => ("next", self.inline_paragraph(value)),
+                        TitleField::Previous(value) => ("previous", self.inline_paragraph(value)),
                         TitleField::Hero(hero) => {
                             let value = match hero {
                                 SectionElement::FigureTable(table) => {
@@ -951,6 +913,17 @@ impl Formatter {
             "".to_string()
         };
 
+        let content = if self.html
+            && node
+                .text
+                .elements
+                .iter()
+                .all(|element| matches!(element, ParagraphElement::Text(_)))
+        {
+            node.to_string()
+        } else {
+            self.inline_paragraph(&node.text)
+        };
         if self.html {
             let annotation_attribute = annotations
                 .map(|annotations| format!(" data-mech-annotations=\"{}\"", annotations))
@@ -972,7 +945,7 @@ impl Formatter {
                 annotation_attribute,
                 toc,
                 link_id,
-                node.to_string(),
+                content,
                 annotation_label,
                 level
             )
@@ -983,9 +956,7 @@ impl Formatter {
             if level == 2 {
                 format!(
                     "{}. {}{}\n-------------------------------------------------------------------------------\n\n",
-                    self.h2_num,
-                    node.to_string(),
-                    annotations
+                    self.h2_num, content, annotations
                 )
             } else {
                 let counters = [
@@ -1000,7 +971,7 @@ impl Formatter {
                     .map(ToString::to_string)
                     .collect::<Vec<_>>()
                     .join(".");
-                format!("({ordinal}) {}{annotations}\n\n", node.to_string())
+                format!("({ordinal}) {}{annotations}\n\n", content)
             }
         }
     }
@@ -1409,20 +1380,10 @@ impl Formatter {
                     )
                 };
                 let output_node = if block.config.output && base_output_id.is_some() {
-                    let base_output_id = base_output_id.expect("checked fenced output identity");
-                    let occurrence = self
-                        .fenced_output_counters
-                        .entry((intrp_id, base_output_id))
-                        .or_insert(0);
-                    let output_id = if *occurrence == 0 {
-                        base_output_id
-                    } else {
-                        hash_str(&format!(
-                            "mech/fenced-document-output/{base_output_id}/{}",
-                            *occurrence
-                        ))
-                    };
-                    *occurrence = occurrence.saturating_add(1);
+                    let output_id = self
+                        .presentation_addresses
+                        .fence(block, intrp_id)
+                        .expect("checked fenced output identity");
                     if intrp_id == 0 {
                         self.root_presentation_output_ids.push(output_id);
                     }

@@ -1881,6 +1881,10 @@ jobs:
           MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-served-rich-document-browser.sh
 
+      - name: Check browser document lifecycle sequences
+        if: ${{ !inputs.rich_browser_smoke_in_caller }}
+        run: python3 -B scripts/smoke-browser-document-lifecycle.py --mech-bin "$CARGO_TARGET_DIR/embedded-browser-mech"
+
       - name: Smoke test served analog clock in Chrome
         run: |
           MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \

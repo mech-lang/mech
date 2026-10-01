@@ -465,6 +465,9 @@ jobs:
       - name: Smoke test rich served documents before full validation
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-rich-document-browser.sh
 
+      - name: Check browser document lifecycle sequences
+        run: python3 -B scripts/smoke-browser-document-lifecycle.py --mech-bin target/debug/mech
+
       - name: Remove generated browser package
         if: always()
         run: rm -rf src/wasm/pkg

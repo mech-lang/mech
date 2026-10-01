@@ -9288,3 +9288,229 @@ fn canonical_fizzbuzz_preserves_constraints_and_presentation_through_bytecode() 
         );
     }
 }
+
+#[derive(Clone, Debug)]
+struct SourceLimitGraphResolver(BTreeMap<String, String>);
+
+impl crate::SourceResolver for SourceLimitGraphResolver {
+    fn resolve(&self, request: &SourceRequest) -> MResult<Option<crate::ResolvedSource>> {
+        let name = request.specifier.trim_start_matches("./");
+        Ok(self.0.get(name).map(|source| {
+            crate::ResolvedSource::new(
+                name,
+                format!("memory:{name}"),
+                mech_core::MechSourceCode::String(source.clone()),
+            )
+            .with_kind(crate::SourceKind::Mech)
+        }))
+    }
+}
+
+fn source_limit_graph_builder(sources: &[(&str, &str)], max: u64) -> RuntimeBuilder {
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_source_bytes = Some(max);
+    RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(SourceLimitGraphResolver(
+            sources
+                .iter()
+                .map(|(name, source)| (name.to_string(), source.to_string()))
+                .collect(),
+        ))
+}
+
+fn assert_source_limit(error: mech_core::MechError, bytes: usize, max: u64) {
+    let budget = error
+        .kind_as::<crate::ResourceBudgetExceededError>()
+        .unwrap_or_else(|| panic!("expected source limit before admission: {error:?}"));
+    assert_eq!(budget.resource, "source_bytes");
+    assert_eq!(budget.requested, bytes as u64);
+    assert_eq!(budget.max, Some(max));
+}
+
+#[test]
+fn canonical_graph_source_limits_precede_dependency_admission_and_allow_reuse() {
+    let root = "+> ./dep.mec\nanswer := dep/value\nanswer\n";
+    // This dependency would fail parsing if admission happened before the
+    // limit. The required error must instead report its complete byte count.
+    let dependency = format!("{}[", "💥".repeat(80));
+    let max = 128;
+    let mut compiler =
+        source_limit_graph_builder(&[("main.mec", root), ("dep.mec", &dependency)], max)
+            .build_compiler()
+            .unwrap();
+    let options = ModuleBuildOptions::new("source-limit", "v0.4", "native", &[], &[]);
+    for mode in 0..4 {
+        let result = match mode {
+            0 => compiler.compile_canonical_root(SourceRequest::new("main.mec")),
+            1 => compiler.compile_canonical_interactive_root(SourceRequest::new("main.mec")),
+            2 => compiler
+                .compile_canonical_root_with_options(SourceRequest::new("main.mec"), options),
+            _ => compiler.compile_canonical_roots(&[SourceRequest::new("main.mec")], options),
+        };
+        assert_source_limit(result.err().unwrap(), dependency.len(), max);
+        let product = compiler
+            .compile_canonical_source("answer := 7\nanswer\n")
+            .unwrap();
+        let mut accepted = runtime();
+        accepted
+            .load_bytecode_program(
+                product.bytecode(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .unwrap();
+        assert_eq!(
+            canonical_f64(
+                accepted
+                    .output_value(mech_core::OutputId::new(0))
+                    .unwrap()
+                    .unwrap()
+                    .value()
+            ),
+            7.0
+        );
+    }
+}
+
+#[test]
+fn canonical_graph_source_limits_cover_transitive_members_and_exact_boundaries() {
+    let dependency = format!("-- {}\nvalue := 42\n<+ value\n", "é".repeat(90));
+    let root = "+> ./middle.mec\nanswer := middle/value\nanswer\n";
+    let middle = "+> ./dep.mec\nvalue := dep/value\n<+ value\n";
+    let sources = [
+        ("main.mec", root),
+        ("middle.mec", middle),
+        ("dep.mec", dependency.as_str()),
+    ];
+    for ordered in [false, true] {
+        for max in [dependency.len() as u64 - 1, dependency.len() as u64] {
+            let mut compiler = source_limit_graph_builder(&sources, max)
+                .build_compiler()
+                .unwrap();
+            let result = if ordered {
+                compiler.compile_canonical_roots(
+                    &[SourceRequest::new("main.mec")],
+                    ModuleBuildOptions::new("source-limit", "v0.4", "native", &[], &[]),
+                )
+            } else {
+                compiler.compile_canonical_root(SourceRequest::new("main.mec"))
+            };
+            if max < dependency.len() as u64 {
+                assert_source_limit(result.err().unwrap(), dependency.len(), max);
+            } else {
+                let product = result.unwrap();
+                let mut accepted = runtime();
+                accepted
+                    .load_bytecode_program(
+                        product.bytecode(),
+                        crate::ResidentDurabilityPolicy::Volatile,
+                    )
+                    .unwrap();
+                assert_eq!(
+                    canonical_f64(
+                        accepted
+                            .output_value(mech_core::OutputId::new(0))
+                            .unwrap()
+                            .unwrap()
+                            .value()
+                    ),
+                    42.0
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn canonical_source_limits_cover_all_ordered_roots_and_direct_compiler_input() {
+    let large = format!("{}[", "💥".repeat(80));
+    let max = 128;
+    let mut compiler =
+        source_limit_graph_builder(&[("first.mec", "seed := 1\n"), ("second.mec", &large)], max)
+            .build_compiler()
+            .unwrap();
+    let error = compiler
+        .compile_canonical_roots(
+            &[
+                SourceRequest::new("first.mec"),
+                SourceRequest::new("second.mec"),
+            ],
+            ModuleBuildOptions::new("source-limit", "v0.4", "native", &[], &[]),
+        )
+        .err()
+        .unwrap();
+    assert_source_limit(error, large.len(), max);
+    assert_source_limit(
+        compiler.compile_canonical_source(&large).err().unwrap(),
+        large.len(),
+        max,
+    );
+    assert_source_limit(
+        compiler.compile_source(&large).err().unwrap(),
+        large.len(),
+        max,
+    );
+    assert_source_limit(
+        compiler.compile_source_artifact(&large).err().unwrap(),
+        large.len(),
+        max,
+    );
+}
+
+#[test]
+fn rooted_runtime_source_limit_rejection_leaves_the_runtime_usable() {
+    let root = "+> ./dep.mec\nanswer := dep/value\nanswer\n";
+    let large = format!("{}[", "💥".repeat(80));
+    let max = 128;
+    for mode in 0..3 {
+        let mut accepted =
+            source_limit_graph_builder(&[("main.mec", root), ("dep.mec", &large)], max)
+                .build()
+                .unwrap();
+        let load = |accepted: &mut crate::MechRuntime| {
+            let request = SourceRequest::new("main.mec");
+            let options = ModuleBuildOptions::new("source-limit", "v0.4", "native", &[], &[]);
+            match mode {
+                0 => accepted.load_root_program(
+                    request,
+                    options,
+                    crate::ResidentDurabilityPolicy::Volatile,
+                ),
+                1 => accepted.load_canonical_root_program(
+                    request,
+                    options,
+                    crate::ResidentDurabilityPolicy::Volatile,
+                ),
+                _ => accepted.load_interactive_root_program(
+                    request,
+                    options,
+                    crate::ResidentDurabilityPolicy::Volatile,
+                ),
+            }
+        };
+        assert_source_limit(load(&mut accepted).err().unwrap(), large.len(), max);
+        assert_eq!(accepted.program_route(), RuntimeProgramRoute::None);
+        accepted
+            .load_interactive_source_program(
+                "answer := 7\nanswer\n",
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .unwrap();
+        let prior = accepted.program_execution_info().program_revision;
+        // Loading another program is deliberately forbidden while this owner
+        // is active; the source-policy fix must preserve that boundary too.
+        let error = load(&mut accepted).err().unwrap();
+        assert!(
+            error
+                .kind_message()
+                .contains("one runtime may own only one resident program")
+        );
+        assert_eq!(accepted.program_execution_info().program_revision, prior);
+        let id = accepted.root_symbol_output_id("answer").unwrap();
+        assert_eq!(
+            canonical_f64(accepted.output_value(id).unwrap().unwrap().value()),
+            7.0
+        );
+    }
+}

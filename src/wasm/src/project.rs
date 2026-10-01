@@ -23,8 +23,7 @@ use mech_core::{
 #[cfg(test)]
 use mech_engine::{CanonicalSourceFrontend, root_document_output_ids};
 use mech_engine::{
-    SourceDocumentOutputKind, root_document_has_program_value, root_document_output_identities,
-    root_document_program_output_id,
+    SourceDocumentOutputKind, root_document_output_identities, root_document_program_output_id,
 };
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
@@ -503,6 +502,7 @@ pub(crate) struct WasmDocumentBootstrap {
     provenance: HashMap<String, ServedSourceProvenance>,
     document: CanonicalWasmDocument,
     document_base: Rc<RefCell<Staged<SourceDocument>>>,
+    presentation_state: Rc<RefCell<Staged<document::DocumentOutputState>>>,
     presentation_output_ids: Vec<u64>,
     console_instance: String,
     lifecycle: DocumentRuntimeLifecycle,
@@ -652,56 +652,44 @@ impl WasmDocumentBootstrap {
         self.document_base.borrow_mut().stage(document);
     }
 
-    fn rebase_document_boundary_if_needed(
-        &self,
-        accepted_before: &str,
-        accepted: &SourceDocument,
-    ) -> MResult<()> {
-        let previous_base = self.initial_repl_source();
-        let accepted_source = accepted.source().to_contiguous_string();
-        if accepted_source.starts_with(&previous_base) {
+    fn stage_repl_document_boundary(&self, request: &str) -> MResult<()> {
+        use mech_runtime::{ReplCommand, ReplRequest, parse_repl_request};
+        if request.trim() == ":reset" {
+            self.stage_document_base(self.document.document().clone());
             return Ok(());
         }
-        let console_suffix = accepted_before
-            .strip_prefix(&previous_base)
-            .ok_or_else(|| {
-                document_runtime_error(
-                    "accepted browser source no longer contains its retained document boundary",
-                )
-            })?;
-        let rebased_source = if accepted_source.is_empty() {
-            ""
-        } else {
-            accepted_source
-                .strip_suffix(console_suffix)
-                .ok_or_else(|| {
-                    document_runtime_error(
-                        "accepted browser source changed the retained console suffix while rebasing",
-                    )
-                })?
+        let Ok(ReplRequest::InvokeCommand {
+            command: ReplCommand::Clear(names),
+            ..
+        }) = parse_repl_request(request)
+        else {
+            return Ok(());
         };
-        let mut rebased = SourceDocument::parse_resolved(
+        let base = self.document_base();
+        let source = if names.is_empty() {
+            String::new()
+        } else {
+            let names = names.into_iter().collect();
+            mech_runtime::remove_canonical_definitions(&base, &names)?.0
+        };
+        let mut document = SourceDocument::parse_resolved(
             "runtime:interactive",
-            accepted.source().revision(),
-            rebased_source,
+            base.source().revision(),
+            source,
             mech_syntax::document::ParseConfig::default(),
         )
-        .map_err(|error| {
-            document_runtime_error(format!("invalid rebased browser document: {error:?}"))
-        })?;
-        if let Some(origin) = accepted.nominal_origin() {
-            rebased = rebased.with_nominal_origin(origin.clone());
+        .map_err(|error| document_runtime_error(format!("invalid browser boundary: {error:?}")))?;
+        if let Some(origin) = base.nominal_origin() {
+            document = document.with_nominal_origin(origin.clone());
         }
-        if let Some(package_id) = accepted.nominal_package_id() {
-            rebased = rebased.with_nominal_package_id(package_id);
+        if let Some(package) = base.nominal_package_id() {
+            document = document.with_nominal_package_id(package);
         }
-        // Commands such as :clear replace source inside the former base. Keep
-        // already accepted console entries beyond that boundary as overlays.
-        self.stage_document_base(rebased);
-        self.document_base.borrow_mut().commit();
+        self.stage_document_base(document);
         Ok(())
     }
 
+    #[cfg(test)]
     fn program_output_id(&self) -> MResult<Option<OutputId>> {
         runtime_document(self, &self.document_base()).map(|(_, output)| output)
     }
@@ -711,6 +699,16 @@ impl WasmDocumentBootstrap {
     }
 
     pub(crate) fn prepare_commit(&self, runtime: &mut MechRuntime) -> MResult<()> {
+        let mut presentation = self.presentation_state.borrow_mut();
+        if let Some(state) = presentation.pending.as_mut() {
+            state.program_snapshot = match state.program_output {
+                Some(output) => runtime
+                    .output_value(OutputId::new(output as u32))?
+                    .filter(|value| !value.is_empty()),
+                None => None,
+            };
+        }
+        drop(presentation);
         #[cfg(feature = "browser_compute")]
         if let Some(compute) = self.source().lifecycle.compute() {
             compute.ensure_source_replacement_ready()?;
@@ -723,6 +721,7 @@ impl WasmDocumentBootstrap {
 
     pub(crate) fn commit(&self) {
         self.document_base.borrow_mut().commit();
+        self.presentation_state.borrow_mut().commit();
         #[cfg(feature = "browser_host_scene")]
         self.source().lifecycle.commit_scenes();
         #[cfg(feature = "browser_compute")]
@@ -731,6 +730,7 @@ impl WasmDocumentBootstrap {
 
     pub(crate) fn abort(&self) {
         self.document_base.borrow_mut().abort();
+        self.presentation_state.borrow_mut().abort();
         #[cfg(feature = "browser_host_scene")]
         self.source().lifecycle.abort_scenes();
         #[cfg(feature = "browser_compute")]
@@ -762,6 +762,22 @@ pub(crate) fn activate_document_repl_runtime(
 }
 
 pub(crate) fn activate_document_repl_runtime_document(
+    bootstrap: &WasmDocumentBootstrap,
+    events: MechEventBuffer,
+    document: &SourceDocument,
+) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+    let prepared =
+        document::document_output_state_for_source(bootstrap, document, false).and_then(|state| {
+            bootstrap.presentation_state.borrow_mut().stage(state);
+            activate_prepared_document_repl_runtime(bootstrap, events, document)
+        });
+    if prepared.is_err() {
+        bootstrap.abort();
+    }
+    prepared
+}
+
+fn activate_prepared_document_repl_runtime(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
     document: &SourceDocument,
@@ -1114,6 +1130,11 @@ fn runtime_document_with_capture(
 
     let original = source.initial_repl_source();
     let candidate_source = candidate.source().to_contiguous_string();
+    if source.document_base.borrow().pending.is_some() && !candidate_source.starts_with(&original) {
+        return Err(document_runtime_error(
+            "browser candidate does not contain its prepared document boundary",
+        ));
+    }
     let (base, suffix) = candidate_source
         .strip_prefix(&original)
         .map(|suffix| (original.as_str(), suffix))
@@ -1125,16 +1146,22 @@ fn runtime_document_with_capture(
         ParseConfig::default(),
     )
     .map_err(|error| document_runtime_error(format!("invalid browser source: {error:?}")))?;
+    if mech_engine::CanonicalSourceFrontend
+        .root_statement_nodes(&base_document.document())
+        .map_err(|error| document_runtime_error(error.to_string()))?
+        .is_empty()
+    {
+        // Inline presentation alone does not create an ordinary document pane.
+        return Ok((candidate.clone(), None, None));
+    }
     let original_program = match compile_browser_interactive_document(source, &base_document) {
         Ok(program) => program,
         Err(_) => return Ok((candidate.clone(), None, None)),
     };
-    let presentation = mech_syntax::parser::parse(base.trim()).map_err(|error| {
-        document_runtime_error(format!(
-            "browser presentation identity parsing failed: {error:?}"
-        ))
-    })?;
-    let program_boundary = root_document_has_program_value(&presentation)
+    let program_boundary = original_program
+        .document_outputs()
+        .iter()
+        .any(|output| output.kind == SourceDocumentOutputKind::Program)
         .then(|| {
             original_program
                 .document_outputs()
@@ -1402,12 +1429,17 @@ mod document {
         kind: SourceDocumentOutputKind,
         source: String,
         anchor: usize,
+        // A suppressed occurrence still owns its original DOM address. None
+        // denotes actual deletion, whose restoration requires exact identity.
+        unpublished_span: Option<(usize, usize)>,
     }
 
-    #[derive(Default)]
+    #[derive(Clone, Default)]
     pub(super) struct DocumentOutputState {
         pub(super) bindings: Vec<DocumentOutputBinding>,
-        program_output: Option<u64>,
+        pub(super) program_output: Option<u64>,
+        pub(super) source: String,
+        pub(super) program_snapshot: Option<mech_runtime::RuntimeValueSnapshot>,
     }
 
     impl DocumentOutputState {
@@ -1510,12 +1542,18 @@ mod document {
             .trim()
             .is_empty()
         {
-            return Ok(DocumentOutputState::default());
+            return Ok(DocumentOutputState {
+                source: candidate.source().to_contiguous_string(),
+                ..DocumentOutputState::default()
+            });
         }
         let program = match compile_browser_interactive_document(bootstrap, &runtime_source) {
             Ok(program) => program,
             Err(_) if bootstrap.presentation_output_ids.is_empty() => {
-                return Ok(DocumentOutputState::default());
+                return Ok(DocumentOutputState {
+                    source: candidate.source().to_contiguous_string(),
+                    ..DocumentOutputState::default()
+                });
             }
             Err(error) => return Err(error),
         };
@@ -1620,6 +1658,8 @@ mod document {
         Ok(DocumentOutputState {
             bindings,
             program_output: program_output.map(|output| u64::from(output.0)),
+            source,
+            program_snapshot: None,
         })
     }
 
@@ -1705,6 +1745,52 @@ mod document {
     fn binding_source<'a>(binding: &DocumentOutputBinding, source: &'a str) -> Option<&'a str> {
         let (start, end) = binding.source_span?;
         source.get(start..end)
+    }
+
+    fn root_fence_occurrences(source: &str) -> Vec<(usize, usize)> {
+        use mech_syntax::document::{AstNode, CodeBlockSyntax, CodeFenceScope};
+        let Ok(document) = SourceDocument::parse_resolved(
+            "browser:occurrence",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        ) else {
+            return Vec::new();
+        };
+        let mut nodes = vec![document.document().syntax().clone()];
+        let mut spans = Vec::new();
+        while let Some(node) = nodes.pop() {
+            if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+                if fence.mech_code().is_some()
+                    && matches!(
+                        fence.info().map(|info| info.scope),
+                        Some(CodeFenceScope::Root)
+                    )
+                {
+                    spans.push((node.range().start.0 as usize, node.range().end.0 as usize));
+                }
+            }
+            nodes.extend(node.children());
+        }
+        spans.sort_unstable();
+        spans
+    }
+
+    fn continuing_fence_occurrence(
+        span: (usize, usize),
+        edit: SourceEditAnchors,
+        next: &[(usize, usize)],
+    ) -> Option<(usize, usize)> {
+        // Replacing/deleting a whole fence ends its occurrence even when an
+        // unrelated fence is inserted at the same location in the same edit.
+        if edit.old_start <= span.0 && edit.old_end >= span.1 && edit.old_start != edit.old_end {
+            return None;
+        }
+        let mapped = (
+            offset_after_edit(span.0, edit),
+            offset_after_edit(span.1, edit),
+        );
+        next.iter().copied().find(|candidate| *candidate == mapped)
     }
 
     fn retain_output_identities(
@@ -1892,14 +1978,17 @@ mod document {
         // edit restores the same output at the removal site. Other outputs
         // continue to skip every retired address through `reserved`.
         if let Some(edit) = edit {
+            let previous_fences = root_fence_occurrences(previous_source);
+            let next_fences = root_fence_occurrences(next_source);
             for tombstone in retired.iter_mut() {
                 tombstone.anchor = offset_after_edit(tombstone.anchor, edit);
+                tombstone.unpublished_span = tombstone
+                    .unpublished_span
+                    .and_then(|span| continuing_fence_occurrence(span, edit, &next_fences));
             }
             let mut restored_tombstones = Vec::new();
             for (index, binding) in next.iter_mut().enumerate() {
-                if assigned[index]
-                    || !binding_intersects_edit(binding, edit.new_start, edit.new_end)
-                {
+                if assigned[index] {
                     continue;
                 }
                 let Some(source) = binding_source(binding, next_source) else {
@@ -1911,10 +2000,18 @@ mod document {
                         .enumerate()
                         .find_map(|(tombstone_index, tombstone)| {
                             (!restored_tombstones.contains(&tombstone_index)
-                                && tombstone.anchor == edit.new_start
                                 && tombstone.kind == binding.kind
-                                && tombstone.semantic_id == binding.semantic_id
-                                && tombstone.source == source)
+                                && (tombstone.unpublished_span.is_some_and(|span| {
+                                    binding.source_span.is_some_and(|binding_span| {
+                                        span.0 <= binding_span.0 && span.1 >= binding_span.1
+                                    })
+                                }) || (binding_intersects_edit(
+                                    binding,
+                                    edit.new_start,
+                                    edit.new_end,
+                                ) && tombstone.anchor == edit.new_start
+                                    && tombstone.semantic_id == binding.semantic_id
+                                    && tombstone.source == source)))
                                 .then_some(tombstone_index)
                         })
                 else {
@@ -1956,6 +2053,16 @@ mod document {
                     kind: binding.kind,
                     source: source.to_owned(),
                     anchor,
+                    unpublished_span: (binding.kind == SourceDocumentOutputKind::Fence)
+                        .then(|| {
+                            let span = binding.source_span?;
+                            let fence = previous_fences
+                                .iter()
+                                .copied()
+                                .find(|fence| fence.0 <= span.0 && fence.1 >= span.1)?;
+                            continuing_fence_occurrence(fence, edit, &next_fences)
+                        })
+                        .flatten(),
                 });
             }
         }
@@ -2363,25 +2470,46 @@ mod document {
     fn capture_program_output(
         repl: &mut crate::repl::WasmRepl,
         bootstrap: &WasmDocumentBootstrap,
+        previous: Option<&DocumentProgramOutput>,
+        prepared_token: Option<&str>,
     ) -> MResult<Option<DocumentProgramOutput>> {
-        let (output_id, captured) = {
-            let Some(runtime) = repl.session.runtime() else {
-                return Ok(None);
-            };
-            let Some(output_id) = bootstrap.program_output_id()? else {
-                return Ok(None);
-            };
-            (output_id, runtime.output_value(output_id)?)
-        };
-        let Some(snapshot) = captured.filter(|snapshot| !snapshot.is_empty()) else {
+        let output_id = bootstrap
+            .presentation_state
+            .borrow()
+            .active
+            .program_output
+            .and_then(|ordinal| u32::try_from(ordinal).ok())
+            .map(OutputId::new);
+        let captured = bootstrap
+            .presentation_state
+            .borrow()
+            .active
+            .program_snapshot
+            .clone();
+        let Some(snapshot) = captured.filter(|value| !value.is_empty()) else {
+            if let Some(token) = previous
+                .map(|previous| previous.selection_token.as_str())
+                .or(prepared_token)
+            {
+                repl.session.release_retained_selection(token);
+            }
             return Ok(None);
         };
-        let selection_token = repl
-            .session
-            .retain_selection("ans", snapshot.clone(), None)?;
+        let selection_token = if let Some(previous) = previous {
+            repl.session
+                .refresh_retained_selection(&previous.selection_token, "ans", snapshot)?;
+            previous.selection_token.clone()
+        } else if let Some(token) = prepared_token {
+            repl.session
+                .refresh_retained_selection(token, "ans", snapshot)?;
+            token.to_string()
+        } else {
+            // Construction has no previously accepted runtime to preserve.
+            repl.session.retain_selection("ans", snapshot, None)?
+        };
         Ok(Some(DocumentProgramOutput {
             selection_token,
-            output_id,
+            output_id: output_id.unwrap(),
         }))
     }
 
@@ -2484,6 +2612,7 @@ mod document {
                 provenance,
                 document,
                 document_base,
+                presentation_state: Rc::new(RefCell::new(Staged::default())),
                 presentation_output_ids: payload.presentation_output_ids().to_vec(),
                 console_instance: "repl".to_string(),
                 lifecycle: DocumentRuntimeLifecycle::default(),
@@ -2508,7 +2637,7 @@ mod document {
                 .map(|binding| binding.output_id)
                 .collect();
             let mut repl = crate::repl::WasmRepl::from_document(bootstrap.clone())?;
-            let program_output = capture_program_output(&mut repl, &bootstrap)?;
+            let program_output = capture_program_output(&mut repl, &bootstrap, None, None)?;
             let document_output_source = bootstrap
                 .document
                 .document()
@@ -2616,6 +2745,7 @@ mod document {
                 provenance,
                 document: retained,
                 document_base,
+                presentation_state: Rc::new(RefCell::new(Staged::default())),
                 presentation_output_ids: payload.presentation_output_ids().to_vec(),
                 console_instance: internal_repl_console_instance(&document.hosts),
                 lifecycle: DocumentRuntimeLifecycle::default(),
@@ -2744,6 +2874,7 @@ mod document {
                 active: replacement_bootstrap.document.document().clone(),
                 pending: None,
             }));
+            replacement_bootstrap.presentation_state = Rc::new(RefCell::new(Staged::default()));
             replacement_bootstrap.presentation_output_ids =
                 payload.presentation_output_ids().to_vec();
             let mut replacement = Self::from_bootstrap(replacement_bootstrap)?;
@@ -3027,16 +3158,29 @@ mod document {
         #[wasm_bindgen(js_name = replInvoke)]
         pub fn repl_invoke(&mut self, source: &str) -> Result<JsValue, JsValue> {
             let accepted_before = self.repl.session.source().to_string();
-            let response = self.repl.invoke(source)?;
+            self.bootstrap
+                .stage_repl_document_boundary(source)
+                .map_err(to_js_error)?;
+            let prepared_token = self.prepare_program_selection().map_err(|error| {
+                self.bootstrap.abort();
+                to_js_error(error)
+            })?;
+            // Reset is an existing browser resident operation; keep its alias
+            // at the document boundary instead of inventing portable commands.
+            let response = if source.trim() == ":reset" {
+                self.repl.reset()
+            } else {
+                self.repl.invoke(source)
+            };
+            let response = match response {
+                Ok(response) => response,
+                Err(error) => {
+                    self.bootstrap.abort();
+                    self.discard_program_selection(prepared_token.as_deref());
+                    return Err(error);
+                }
+            };
             if self.repl.session.source() != accepted_before {
-                let accepted = self
-                    .repl
-                    .session
-                    .source_document()
-                    .ok_or_else(|| js_error("document session has no retained source"))?;
-                self.bootstrap
-                    .rebase_document_boundary_if_needed(&accepted_before, accepted)
-                    .map_err(to_js_error)?;
                 let edit = self
                     .repl
                     .session
@@ -3050,6 +3194,16 @@ mod document {
                     });
                 self.refresh_document_output_ordinals(edit)
                     .map_err(to_js_error)?;
+                self.program_output = capture_program_output(
+                    &mut self.repl,
+                    &self.bootstrap,
+                    self.program_output.as_ref(),
+                    prepared_token.as_deref(),
+                )
+                .map_err(to_js_error)?;
+            } else {
+                self.bootstrap.abort();
+                self.discard_program_selection(prepared_token.as_deref());
             }
             Ok(response)
         }
@@ -3129,17 +3283,24 @@ mod document {
                     "invalid browser source: {error:?}"
                 )))
             })?;
+            let prepared_token = self.prepare_program_selection().map_err(to_js_error)?;
             self.bootstrap.stage_document_base(candidate);
             let response = match self.repl.replace_source(source) {
                 Ok(response) => response,
                 Err(error) => {
                     self.bootstrap.abort();
+                    self.discard_program_selection(prepared_token.as_deref());
                     return Err(error);
                 }
             };
             if self.repl.session.source() != accepted_before {
-                self.program_output =
-                    capture_program_output(&mut self.repl, &self.bootstrap).map_err(to_js_error)?;
+                self.program_output = capture_program_output(
+                    &mut self.repl,
+                    &self.bootstrap,
+                    self.program_output.as_ref(),
+                    prepared_token.as_deref(),
+                )
+                .map_err(to_js_error)?;
                 let accepted_edit = if self.repl.session.source() == source {
                     pending_edit
                 } else {
@@ -3149,6 +3310,7 @@ mod document {
                     .map_err(to_js_error)?;
             } else {
                 self.bootstrap.abort();
+                self.discard_program_selection(prepared_token.as_deref());
             }
             Ok(response)
         }
@@ -3424,6 +3586,22 @@ mod document {
     }
 
     impl WasmDocument {
+        fn prepare_program_selection(&mut self) -> MResult<Option<String>> {
+            if self.program_output.is_some() {
+                return Ok(None);
+            }
+            self.repl
+                .session
+                .retain_selection("ans", mech_runtime::RuntimeValueSnapshot::empty(), None)
+                .map(Some)
+        }
+
+        fn discard_program_selection(&mut self, token: Option<&str>) {
+            if let Some(token) = token {
+                self.repl.session.release_retained_selection(token);
+            }
+        }
+
         pub(super) fn runtime(&self) -> Result<&MechRuntime, JsValue> {
             self.repl
                 .session
@@ -3435,12 +3613,8 @@ mod document {
             &mut self,
             edit: Option<PendingSourceEdit>,
         ) -> MResult<()> {
-            let current =
-                self.repl.session.source_document().ok_or_else(|| {
-                    document_runtime_error("document session has no retained source")
-                })?;
-            let mut state = document_output_state_for_source(&self.bootstrap, current, false)?;
-            let current_source = current.source().to_contiguous_string();
+            let mut state = self.bootstrap.presentation_state.borrow().active.clone();
+            let current_source = state.source.clone();
             let edit = edit.map(|edit| SourceEditAnchors {
                 old_start: edit.old_start,
                 old_end: edit.old_end,
@@ -3468,18 +3642,12 @@ mod document {
                 (self.program_output.as_mut(), output_id)
             {
                 program_output.output_id = output_id;
-            } else if output_id.is_none() {
-                self.program_output = None;
             }
             Ok(())
         }
 
         fn runtime_output_id(&self, output_id: u64) -> Option<OutputId> {
-            let output_id = self
-                .document_output_ordinals
-                .get(&output_id)
-                .copied()
-                .unwrap_or(output_id);
+            let output_id = self.document_output_ordinals.get(&output_id).copied()?;
             u32::try_from(output_id).ok().map(OutputId::new)
         }
     }
@@ -4815,6 +4983,7 @@ mod tests {
             provenance: HashMap::new(),
             document,
             document_base,
+            presentation_state: Rc::new(RefCell::new(Staged::default())),
             presentation_output_ids: payload.presentation_output_ids().to_vec(),
             console_instance: "repl".to_owned(),
             lifecycle: DocumentRuntimeLifecycle::default(),
@@ -4974,7 +5143,7 @@ mod tests {
         let bootstrap = document_bootstrap("document.mec", original, HashMap::new(), Vec::new());
         #[cfg(feature = "browser_compute")]
         let compute_generation = bootstrap.source().lifecycle.compute_generation();
-        let cleared = SourceDocument::parse_resolved(
+        let _cleared = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(1),
             retained,
@@ -4982,8 +5151,9 @@ mod tests {
         )
         .unwrap();
         bootstrap
-            .rebase_document_boundary_if_needed(original, &cleared)
+            .stage_repl_document_boundary(":clear first")
             .unwrap();
+        bootstrap.document_base.borrow_mut().commit();
         assert_eq!(bootstrap.initial_repl_source(), retained);
         #[cfg(feature = "browser_compute")]
         assert_eq!(
@@ -5023,10 +5193,10 @@ mod tests {
         let original = "first := 1\nsecond := 2\nsecond\n";
         let retained = "second := 2\nsecond\n";
         let console_suffix = "40 + 2\n";
-        let accepted_before = format!("{original}{console_suffix}");
+        let _accepted_before = format!("{original}{console_suffix}");
         let accepted_after = format!("{retained}{console_suffix}");
         let bootstrap = document_bootstrap("document.mec", original, HashMap::new(), Vec::new());
-        let cleared = SourceDocument::parse_resolved(
+        let _cleared = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(1),
             accepted_after,
@@ -5034,8 +5204,9 @@ mod tests {
         )
         .unwrap();
         bootstrap
-            .rebase_document_boundary_if_needed(&accepted_before, &cleared)
+            .stage_repl_document_boundary(":clear first")
             .unwrap();
+        bootstrap.document_base.borrow_mut().commit();
         assert_eq!(bootstrap.initial_repl_source(), retained);
     }
 
@@ -7697,6 +7868,219 @@ mod browser_tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
+    fn rendered_text(value: &JsValue) -> String {
+        Reflect::get(value, &JsValue::from_str("inlineHtml"))
+            .unwrap()
+            .as_string()
+            .unwrap()
+    }
+
+    fn program_selection(document: &mut WasmDocument) -> String {
+        Reflect::get(
+            &document.rendered_program_output().unwrap(),
+            &JsValue::from_str("selectionToken"),
+        )
+        .unwrap()
+        .as_string()
+        .unwrap()
+    }
+
+    fn edit_all(document: &mut WasmDocument, source: &str) {
+        let end = document.repl_source().encode_utf16().count() as u32;
+        document.repl_apply_edit(0, end, source).unwrap();
+        assert_eq!(document.repl_source(), source);
+    }
+
+    #[wasm_bindgen_test]
+    fn editor_result_snapshots_are_owned_and_bounded_without_releasing_user_selections() {
+        let original = "value := [1 2; 3 4]\nvalue\n";
+        let mut document = WasmDocument::from_encoded(&encoded_document(original)).unwrap();
+        let selected = document.repl_select_symbol("value", false).unwrap();
+        let user_token = Reflect::get(&selected, &JsValue::from_str("identity"))
+            .unwrap()
+            .as_string()
+            .unwrap();
+        let user_value = document
+            .repl
+            .session
+            .retained_selection(&user_token)
+            .unwrap()
+            .1
+            .format_canonical_inline();
+        let mut internal_tokens = Vec::new();
+        for cycle in 0..3 {
+            let owned = program_selection(&mut document);
+            internal_tokens.push(owned.clone());
+            for index in 2..12 {
+                let source = format!(
+                    "value := [{index} {}; {} {}]\nvalue\n",
+                    index + 1,
+                    index + 2,
+                    index + 3
+                );
+                edit_all(&mut document, &source);
+                assert_eq!(program_selection(&mut document), owned);
+                assert_eq!(document.repl.session.retained_selection_count(), 2);
+                assert_eq!(
+                    internal_tokens
+                        .iter()
+                        .filter(|token| document.repl.session.retained_selection(token).is_some())
+                        .count(),
+                    1
+                );
+                assert_eq!(
+                    document
+                        .repl
+                        .session
+                        .retained_selection(&user_token)
+                        .unwrap()
+                        .1
+                        .format_canonical_inline(),
+                    user_value
+                );
+            }
+            let accepted = document.repl_source();
+            assert!(document.repl_apply_edit(0, 0, "[\n").is_err());
+            assert_eq!(document.repl_source(), accepted);
+            assert_eq!(program_selection(&mut document), owned);
+            edit_all(&mut document, "");
+            assert!(document.rendered_program_output().unwrap().is_null());
+            assert!(document.repl.session.retained_selection(&owned).is_none());
+            assert_eq!(document.repl.session.retained_selection_count(), 1);
+            assert_eq!(
+                internal_tokens
+                    .iter()
+                    .filter(|token| document.repl.session.retained_selection(token).is_some())
+                    .count(),
+                0
+            );
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .retained_selection(&user_token)
+                    .unwrap()
+                    .1
+                    .format_canonical_inline(),
+                user_value
+            );
+            edit_all(
+                &mut document,
+                &format!("value := [{} 2; 3 4]\nvalue\n", cycle + 20),
+            );
+            assert_ne!(program_selection(&mut document), owned);
+        }
+        document.repl_select_retained(&user_token, false).unwrap();
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("ans")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            user_value
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn title_only_document_binds_shared_presentation_addresses() {
+        let source = "Document\n========\nauthor: {40 + 2}\nhero: | ![Result {41 + 1}](hero.svg) |\n========\n";
+        let tree = mech_syntax::parse(source).unwrap();
+        assert!(tree.body.sections.is_empty());
+        let ids = root_document_output_ids(&tree);
+        assert_eq!(ids.len(), 2);
+        let document = WasmDocument::from_encoded(&encoded_document(source)).unwrap();
+        for address in ids {
+            assert_eq!(
+                rendered_text(&document.rendered_output(address).unwrap()),
+                "42"
+            );
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn unpublished_fence_occurrence_keeps_its_original_address_through_body_edits() {
+        let original = "~~~mech\n11\n~~~\n";
+        let mut document = WasmDocument::from_encoded(&encoded_document(original)).unwrap();
+        let id = document.bootstrap.presentation_output_ids[0];
+        assert_eq!(rendered_text(&document.rendered_output(id).unwrap()), "11");
+        document.repl_apply_edit(7, 7, "{output: false}").unwrap();
+        assert!(document.rendered_output(id).unwrap().is_null());
+        let suppressed = document.repl_source();
+        let body = suppressed.find("11").unwrap() as u32;
+        document.repl_apply_edit(body, body + 2, "22").unwrap();
+        assert!(document.repl_apply_edit(body, body + 2, "[").is_err());
+        assert!(document.rendered_output(id).unwrap().is_null());
+        assert!(document.repl_source().contains("22"));
+        document.repl_apply_edit(7, 22, "").unwrap();
+        assert_eq!(rendered_text(&document.rendered_output(id).unwrap()), "22");
+        // A full occurrence replacement while unpublished must not redirect its old placeholder.
+        document.repl_apply_edit(7, 7, "{output: false}").unwrap();
+        edit_all(&mut document, "~~~mech\n33\n~~~\n");
+        assert!(document.rendered_output(id).unwrap().is_null());
+        let changed = document.repl_source();
+        document
+            .repl_apply_edit(
+                changed.len() as u32,
+                changed.len() as u32,
+                "\n~~~mech\n22\n~~~\n\n~~~mech\n22\n~~~\n",
+            )
+            .unwrap();
+        assert!(document.rendered_output(id).unwrap().is_null());
+    }
+
+    #[wasm_bindgen_test]
+    fn console_clear_and_reset_commit_one_document_boundary_with_the_runtime() {
+        let original = "first := 1\nsecond := 2\nsecond\n\nVisible {second}.\n";
+        let mut document = WasmDocument::from_encoded(&encoded_document(original)).unwrap();
+        let address = document.bootstrap.presentation_output_ids[0];
+        let check = |document: &mut WasmDocument, first: bool, extra: bool| {
+            assert_eq!(
+                document.repl.session.symbol("first").unwrap().is_some(),
+                first
+            );
+            assert_eq!(
+                document.repl.session.symbol("extra").unwrap().is_some(),
+                extra
+            );
+            assert_eq!(
+                rendered_text(&document.rendered_program_output().unwrap()),
+                "2"
+            );
+            assert_eq!(
+                rendered_text(&document.rendered_output(address).unwrap()),
+                "2"
+            );
+            assert_eq!(
+                document.bootstrap.presentation_state.borrow().active.source,
+                document.repl_source()
+            );
+        };
+        check(&mut document, true, false);
+        document.repl_invoke("extra := 99").unwrap();
+        check(&mut document, true, true);
+        document.repl_invoke(":clear first").unwrap();
+        check(&mut document, false, true);
+        assert!(document.repl_source().trim_end().ends_with("extra := 99"));
+        assert!(!document.bootstrap.initial_repl_source().contains("extra"));
+        let accepted = document.repl_source();
+        let boundary = document.bootstrap.initial_repl_source();
+        document.repl_invoke(":clear second").unwrap();
+        assert_eq!(document.repl_source(), accepted);
+        assert_eq!(document.bootstrap.initial_repl_source(), boundary);
+        check(&mut document, false, true);
+        document.repl_invoke(":reset").unwrap();
+        check(&mut document, true, false);
+        assert_eq!(document.repl_source(), original);
+        assert_eq!(document.bootstrap.initial_repl_source(), original);
+        document.repl_invoke("extra := 99").unwrap();
+        document.repl_invoke(":clear extra").unwrap();
+        check(&mut document, true, false);
+        document.repl_invoke("extra := 99").unwrap();
+        check(&mut document, true, true);
+    }
+
     #[cfg(all(
         feature = "browser_host_timer",
         feature = "browser_host_scene",
@@ -8309,6 +8693,142 @@ mod browser_tests {
                 WasmDocument::from_encoded(&encoded_document("answer := 7\nanswer")).unwrap();
             replacement.reset(&encoded).unwrap();
             assert_fence(&replacement);
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn nested_paragraph_evaluations_keep_formatter_and_browser_addresses_aligned() {
+        for nested in [
+            "**{11}**",
+            "[value {11}](https://example.test)",
+            "*{11}*",
+            "_{11}_",
+            "~{11}~",
+            "!!{11}!!",
+            "**[value !!{11}!!](https://example.test)**",
+        ] {
+            let source = format!("> Nested {nested}, direct {{33}}.\n\n~~~mech\n22\n~~~\n");
+            let tree = mech_syntax::parser::parse(&source).unwrap();
+            let ids = root_document_output_ids(&tree);
+            let legacy = mech_core::nodes::compress_and_encode(&tree).unwrap();
+            let modern = BrowserDocumentPayload::new("document.mec", &source)
+                .unwrap()
+                .with_presentation_output_ids(ids.clone())
+                .encode()
+                .unwrap();
+            let assert_outputs = |document: &WasmDocument| {
+                assert_eq!(ids.len(), 3, "{source}");
+                for (id, expected) in ids.iter().zip(["11", "33", "22"]) {
+                    let rendered = document.rendered_output(*id).unwrap();
+                    assert_eq!(
+                        Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                            .unwrap()
+                            .as_string()
+                            .as_deref(),
+                        Some(expected),
+                        "{source}: {id}",
+                    );
+                }
+            };
+            assert!(WasmDocument::from_encoded(&legacy).is_err());
+            for encoded in [&modern] {
+                let document = WasmDocument::from_encoded(encoded)
+                    .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+                assert_outputs(&document);
+                let mut replacement =
+                    WasmDocument::from_encoded(&encoded_document("answer := 7\nanswer")).unwrap();
+                replacement.reset(encoded).unwrap();
+                assert_outputs(&replacement);
+            }
+            let mut formatter = mech_syntax::Formatter::new();
+            let html = formatter.format_html(&tree, String::new(), "{{INTRO}}".to_owned());
+            for id in &ids {
+                assert_eq!(
+                    html.matches(&format!("id=\"{id}:0\"")).count(),
+                    1,
+                    "{source}"
+                );
+            }
+            assert_eq!(html.matches("class=\"mech-inline-mech-code\"").count(), 2);
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn title_and_split_document_slots_bind_distinct_visible_values() {
+        let source = include_str!("../../../tests/fixtures/shims/output-addresses.mec");
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let ids = root_document_output_ids(&tree);
+        assert_eq!(ids.len(), 8);
+        let legacy = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let modern = BrowserDocumentPayload::new("document.mec", source)
+            .unwrap()
+            .with_presentation_output_ids(ids.clone())
+            .encode()
+            .unwrap();
+        let assert_outputs = |document: &WasmDocument| {
+            for (id, expected) in ids
+                .iter()
+                .zip(["11", "12", "13", "21", "22", "31", "1", "1"])
+            {
+                let rendered = document.rendered_output(*id).unwrap();
+                assert_eq!(
+                    Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some(expected)
+                );
+            }
+        };
+        assert!(WasmDocument::from_encoded(&legacy).is_err());
+        for encoded in [&modern] {
+            let mut document = WasmDocument::from_encoded(encoded).unwrap();
+            assert_outputs(&document);
+            document
+                .reset(&encoded_document("answer := 7\nanswer"))
+                .unwrap();
+            document.reset(encoded).unwrap();
+            assert_outputs(&document);
+        }
+        let html = mech_syntax::Formatter::new().format_html(
+            &tree,
+            String::new(),
+            "{{SUMMARY}}{{AUTHOR}}{{HERO}}{{ABSTRACT}}{{INTRO}}{{CONTENTS}}".to_owned(),
+        );
+        for id in &ids {
+            assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1);
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn cloned_presentation_fence_nodes_keep_distinct_modern_browser_addresses() {
+        let mut tree = mech_syntax::parser::parse("~~~mech\n1\n~~~\n").unwrap();
+        let fence = tree.body.sections[0].elements[0].clone();
+        tree.body.sections[0].elements.push(fence);
+        let ids = root_document_output_ids(&tree);
+        assert_eq!(ids.len(), 2);
+        assert_ne!(ids[0], ids[1]);
+        let encoded =
+            BrowserDocumentPayload::new("document.mec", "~~~mech\n1\n~~~\n\n~~~mech\n1\n~~~\n")
+                .unwrap()
+                .with_presentation_output_ids(ids.clone())
+                .encode()
+                .unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        for reset in [false, true] {
+            if reset {
+                document.reset(&encoded).unwrap();
+            }
+            for id in &ids {
+                let rendered = document.rendered_output(*id).unwrap();
+                assert_eq!(
+                    Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some("1")
+                );
+            }
         }
     }
 

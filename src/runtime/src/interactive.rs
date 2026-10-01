@@ -870,6 +870,18 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         Ok(())
     }
 
+    /// Release one host-owned snapshot without affecting historical user selections.
+    pub fn release_retained_selection(&mut self, token: &str) -> bool {
+        self.reusable_selection_tokens
+            .retain(|_, retained| retained != token);
+        self.retained_selections.remove(token).is_some()
+    }
+
+    /// Number of explicitly retained snapshot roots (including host-owned panes).
+    pub fn retained_selection_count(&self) -> usize {
+        self.retained_selections.len()
+    }
+
     pub fn retained_selection(&self, token: &str) -> Option<(String, RuntimeValueSnapshot)> {
         self.retained_selections
             .get(token)
@@ -999,7 +1011,9 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     }
 }
 
-fn remove_canonical_definitions(
+/// Project definition removal through the same canonical rules as `:clear`.
+/// Hosts use this to stage a document/console boundary before runtime handoff.
+pub fn remove_canonical_definitions(
     document: &crate::SourceDocument,
     requested: &std::collections::BTreeSet<String>,
 ) -> MResult<(String, std::collections::BTreeSet<String>)> {
