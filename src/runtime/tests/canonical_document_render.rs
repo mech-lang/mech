@@ -297,7 +297,7 @@ fn renderer_preserves_title_subtitle_and_plain_document_structure() {
     assert!(html.contains("Grammar Conformance"));
     assert!(!html.contains("==================="), "{html}");
     assert!(
-        html.contains("<h2 class='mech-subtitle' id='section-1'>Overview</h2>"),
+        html.contains("<h2 class='mech-subtitle' id='1'>Overview</h2>"),
         "{html}"
     );
     assert!(html.contains("<p>Body A &amp; B.</p>"));
@@ -330,9 +330,7 @@ fn visible_executable_fences_require_their_owner_result() {
 
 #[test]
 fn declaration_only_fences_do_not_require_completed_text_results() {
-    let document = document(
-        "```mech\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n```\nanswer := 42u64\nanswer\n",
-    );
+    let document = document("```mech\n<count> := <u64>\n```\nanswer := 42u64\nanswer\n");
     let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
     let results = [execute(
         document.scope_id(),
@@ -344,7 +342,7 @@ fn declaration_only_fences_do_not_require_completed_text_results() {
     let text = CanonicalDocumentRenderer
         .render_text(&document, &results)
         .unwrap();
-    assert!(text.contains("#Deferred() => <u64>"), "{text}");
+    assert!(text.contains("<count> := <u64>"), "{text}");
     assert!(text.contains("=> 42"), "{text}");
 }
 
@@ -401,7 +399,10 @@ fn hidden_and_output_suppressed_fences_do_not_leak_the_program_result() {
     ] {
         let document = document(source);
         let source_html = CanonicalDocumentRenderer.format_html(&document).unwrap();
-        assert!(source_html.contains("<code>42\n</code>"), "{source_html}");
+        assert!(
+            source_html.contains("<code><span class='mech-number'>42</span>\n</code>"),
+            "{source_html}"
+        );
         assert_eq!(
             source_html.contains("class='mech-code-block hidden'"),
             !source_is_visible
@@ -538,7 +539,7 @@ fn title_front_matter_is_semantic_and_uses_completed_inline_results() {
 #[test]
 fn shim_reference_numbers_start_at_the_final_front_matter_value() {
     let document = document(
-        "Report\n======\nauthor: Hidden[^hidden] [hidden]\nauthor: Visible[^visible] [visible]\n======\n\n[^hidden]: Hidden note.\n[^visible]: Visible note.\n[hidden]: Hidden citation.\n[visible]: Visible citation.\n",
+        "Report\n======\nauthor: Hidden[^hidden] [hidden]\nauthor: Visible[^visible] [visible]\n======\n\n[^hidden]: Hidden note.\n\n[^visible]: Visible note.\n\n[hidden]: Hidden citation.\n\n[visible]: Visible citation.\n",
     );
     for slots in [
         CanonicalDocumentRenderer
@@ -560,7 +561,9 @@ fn shim_reference_numbers_start_at_the_final_front_matter_value() {
         );
         assert!(
             slots["FOOTNOTES"]
-                .contains("id='footnote-visible'><span class='mech-footnote-id'>1:</span>")
+                .contains("id='footnote-visible'><span class='mech-footnote-id'>1:</span>"),
+            "{:?}",
+            slots["FOOTNOTES"]
         );
     }
 }
@@ -599,8 +602,8 @@ fn retained_inline_markup_uses_semantic_elements_without_delimiters() {
         "<span class='mech-inline-equation'>x+1</span>",
         "<span class='mech-reference'>[<a class='mech-reference-link' href='#reference-ref'>1</a>]</span>",
         "<a class='mech-footnote-reference' href='#footnote-note'>1</a>",
-        "<a class='mech-section-reference-link' href='#section-1.2'>§1.2</a>",
-        "<h3 class='mech-subtitle' id='section-1.2'>Details</h3>",
+        "<a class='mech-section-reference-link' href='#1.2'>§1.2</a>",
+        "<h3 class='mech-subtitle' id='1.2'>Details</h3>",
     ] {
         assert!(html.contains(expected), "missing {expected:?}: {html}");
     }
@@ -865,8 +868,8 @@ fn shared_mixed_document_fixture_is_rendered_without_dropping_nodes() {
         "<strong class='mech-strong'>strong</strong>",
         "<a class='mech-hyperlink' href='https://example.com'>a link</a>",
         "<code class='mech-inline'>x + 1</code>",
-        "x := 1",
-        "y := x + 1",
+        "x := <span class='mech-number'>1</span>",
+        "y := x + <span class='mech-number'>1</span>",
         "Parsed as an information block.",
     ] {
         assert!(html.contains(expected), "missing {expected:?}: {html}");
@@ -1089,6 +1092,44 @@ fn canonical_pretty_text_spaces_record_and_map_separators() {
 }
 
 #[test]
+fn canonical_pretty_text_preserves_prefix_not_and_normalizes_tuple_destructuring() {
+    let source = "answer:=!true\nother:=¬false\nnested:=!!true\n(x,y):=pair\n";
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document(source))
+        .unwrap();
+    assert_eq!(
+        formatted,
+        "answer := !true\nother := ¬false\nnested := !!true\n(x, y) := pair\n"
+    );
+    let reparsed = document(&formatted);
+    assert_eq!(
+        CanonicalDocumentRenderer
+            .format_pretty_text(&reparsed)
+            .unwrap(),
+        formatted
+    );
+}
+
+#[test]
+fn canonical_pretty_text_formats_inline_code_without_changing_prose() {
+    let source = "Result  {40+2}, literal {{x:=1}} and `40+2`.\n";
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document(source))
+        .unwrap();
+    assert_eq!(
+        formatted,
+        "Result  {40 + 2}, literal {{x := 1}} and `40+2`.\n"
+    );
+    let reparsed = document(&formatted);
+    assert_eq!(
+        CanonicalDocumentRenderer
+            .format_pretty_text(&reparsed)
+            .unwrap(),
+        formatted
+    );
+}
+
+#[test]
 fn inert_diagram_fences_render_as_mermaid_containers() {
     let html = CanonicalDocumentRenderer
         .format_browser_html(&document("```diagram\ngraph LR\n  A --> B\n```\n"))
@@ -1118,8 +1159,8 @@ fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
         ("PREVIOUS", "previous.html"),
         ("ABSTRACT", "deliberately separate"),
         ("INTRO", "unsectioned introduction"),
-        ("TOC", "href='#section-1'"),
-        ("TOC", "href='#section-1.1'"),
+        ("TOC", "href='#1'"),
+        ("TOC", "href='#1.1'"),
         ("SECTION1", "own distinct content"),
         ("SECTION2", "must not appear"),
         ("FOOTNOTES", "Fixture footnote body"),
@@ -1130,12 +1171,27 @@ fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
             "{name}: {slots:#?}"
         );
     }
+    assert!(slots["TOC"].contains("class='toc mech-toc'"));
+    assert!(slots["TOC"].contains("</a><ul class='toc-sub'><li><a href='#1.1'"));
+    assert!(slots["SECTION1"].contains("class='mechdown-section mechdown-titled-section'"));
+    assert!(slots["FOOTNOTES"].contains("class='mech-footnotes'"));
+    assert!(slots["FOOTNOTES"].contains("class='mech-backmatter-heading'>Footnotes</h3>"));
+    assert!(slots["CONTENT"].contains("id='1'"));
+    assert!(slots["CONTENT"].contains("id='1.1'"));
+    assert_eq!(
+        slots["CONTENT"]
+            .matches("class='mechdown-section mechdown-titled-section'")
+            .count(),
+        2
+    );
     assert!(!slots["SECTION1"].contains("must not appear"));
     assert!(!slots["CONTENT"].contains("unsectioned introduction"));
     assert!(!slots["INTRO"].contains("deliberately separate"));
     assert_eq!(slots["CONTENT"], slots["CONTENTS"]);
     assert!(slots["INTRO"].contains("{{TITLE}}"));
     assert!(slots["INTRO"].contains("mech-inline-mech-code"));
+    assert!(slots["INTRO"].contains("data-mech-source"));
+    assert!(slots["INTRO"].contains("class='mech-number'>41</span>"));
 }
 
 #[test]
@@ -1190,7 +1246,7 @@ fn browser_titles_preserve_lf_and_crlf_source() {
 }
 
 #[test]
-fn rich_comments_render_markup_and_line_local_ans_in_each_scope() {
+fn canonical_comments_preserve_literal_markup_in_each_scope() {
     let body = "answer := 40 + 2 -- **Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}.\nanswer + 2 // __Next__: {ans}, {ans + 10}.\n";
     for (source, named) in [
         (body.to_owned(), false),
@@ -1219,32 +1275,21 @@ fn rich_comments_render_markup_and_line_local_ans_in_each_scope() {
             }
             let renderer = CanonicalDocumentRenderer;
             let html = renderer.render_html(&document, &results).unwrap();
+            // The canonical comment production owns literal tokens through
+            // the end of the line, including Mechdown-looking punctuation.
+            assert!(html.contains("**Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}."), "{html}");
+            assert!(html.contains("__Next__: {ans}, {ans + 10}."), "{html}");
             assert!(
-                html.contains("<strong class='mech-strong'>Result</strong>"),
+                !html.contains("mech-strong") && !html.contains(">141</span>"),
                 "{html}"
-            );
-            assert!(html.contains("href='https://mech-lang.org'"), "{html}");
-            assert!(
-                html.contains("<u class='mech-underline'>Next</u>"),
-                "{html}"
-            );
-            for value in [42, 43, 44, 54] {
-                assert!(
-                    html.contains(&format!(">{value}</span>")),
-                    "missing {value}: {html}"
-                );
-            }
-            assert!(
-                !html.contains(">141</span>"),
-                "double braces must not execute: {html}"
             );
             let text = renderer.render_text(&document, &results).unwrap();
-            assert!(text.contains(": 42, 43."), "{text}");
-            assert!(text.contains(": 44, 54."), "{text}");
+            assert!(text.contains(": {ans}, {ans + 1}."), "{text}");
+            assert!(text.contains(": {ans}, {ans + 10}."), "{text}");
             let browser = renderer.format_browser_html(&document).unwrap();
             assert_eq!(
                 browser.matches("class='mech-inline-mech-code'").count(),
-                4,
+                0,
                 "{browser}"
             );
         }
@@ -1252,7 +1297,7 @@ fn rich_comments_render_markup_and_line_local_ans_in_each_scope() {
 }
 
 #[test]
-fn inline_ans_in_comments_tracks_live_state_through_source_and_bytecode() {
+fn literal_comments_do_not_capture_ans_through_source_and_bytecode() {
     let document = document("~counter := 0\ncounter += 1 -- **Counter** {ans}\ncounter\n");
     let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
     let artifact = program.compile_artifact().unwrap();
@@ -1289,7 +1334,9 @@ fn inline_ans_in_comments_tracks_live_state_through_source_and_bytecode() {
             let html = CanonicalDocumentRenderer
                 .render_html(&document, &results)
                 .unwrap();
-            assert!(html.contains(&format!("<strong class='mech-strong'>Counter</strong> <span class='mech-value'>{value}</span>")), "{html}");
+            assert!(html.contains("-- **Counter** {ans}"), "{html}");
+            assert!(!html.contains("mech-inline-mech-code"), "{html}");
+            assert!(html.contains(&format!("<output class='mech-program-output'><span class='mech-value'>{value}</span></output>")), "{html}");
         }
     }
 }

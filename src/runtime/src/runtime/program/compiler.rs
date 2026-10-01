@@ -198,6 +198,15 @@ pub struct MixedProgramCompilation {
 }
 
 #[cfg(feature = "compute")]
+struct MixedProgramPlan {
+    coordinator: CanonicalSourceProgram,
+    compute: ComputeRegionCompilation,
+    activation_inputs: BTreeMap<String, ComputeValue>,
+    retained_outputs: BTreeSet<String>,
+    source_dependencies: BTreeMap<String, u64>,
+}
+
+#[cfg(feature = "compute")]
 #[derive(Debug)]
 pub struct ComputeRegionCompilation {
     pub declaration: ComputeRegionDeclaration,
@@ -514,6 +523,20 @@ impl ProgramCompiler {
     ) -> MResult<MixedProgramCompilation> {
         self.view()
             .compile_canonical_mixed_resolved_root(resolved, options)
+    }
+
+    /// Plan a mixed root's coordinator with the same compute interfaces and
+    /// resolved imports used by artifact compilation. Presentation callers can
+    /// inspect retained output anchors without requiring a live compute host.
+    #[cfg(feature = "compute")]
+    pub fn plan_canonical_mixed_resolved_root(
+        &mut self,
+        resolved: ResolvedSource,
+    ) -> MResult<CanonicalSourceProgram> {
+        Ok(self
+            .view()
+            .plan_canonical_mixed_resolved_root(resolved, None)?
+            .coordinator)
     }
 
     fn view(&self) -> ProgramCompilerView<'_> {
@@ -1828,6 +1851,16 @@ impl<'a> ProgramCompilerView<'a> {
         resolved: ResolvedSource,
         options: ModuleBuildOptions<'_>,
     ) -> MResult<MixedProgramCompilation> {
+        let plan = self.plan_canonical_mixed_resolved_root(resolved, Some(options))?;
+        self.compile_mixed_plan(plan)
+    }
+
+    #[cfg(feature = "compute")]
+    fn plan_canonical_mixed_resolved_root(
+        &self,
+        resolved: ResolvedSource,
+        options: Option<ModuleBuildOptions<'_>>,
+    ) -> MResult<MixedProgramPlan> {
         let resolved = self.admit_resolved_source(resolved)?;
         let document = resolved
             .source_document()
@@ -1835,17 +1868,14 @@ impl<'a> ProgramCompilerView<'a> {
         let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;
-        let mut context = CanonicalGraphCompilation::new(Some(options));
+        let mut context = CanonicalGraphCompilation::new(options);
         self.register_nominal_declarations(document, &mut context)?;
         context.active.push(resolved.canonical_uri.clone());
         let imports =
             self.canonical_graph_imports(&index.root, &resolved.canonical_uri, &mut context)?;
         self.canonical_graph_module_identity(&resolved, &imports, &mut context)?;
-        let mut mixed = self.compile_mixed_document_with_imports(
-            document,
-            &imports,
-            context.enum_qualifiers()?,
-        )?;
+        let mut mixed =
+            self.plan_mixed_document_with_imports(document, &imports, context.enum_qualifiers()?)?;
         mixed.source_dependencies = context.source_dependencies;
         Ok(mixed)
     }
@@ -1855,16 +1885,17 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         document: &SourceDocument,
     ) -> MResult<MixedProgramCompilation> {
-        self.compile_mixed_document_with_imports(document, &[], BTreeMap::new())
+        let plan = self.plan_mixed_document_with_imports(document, &[], BTreeMap::new())?;
+        self.compile_mixed_plan(plan)
     }
 
     #[cfg(feature = "compute")]
-    fn compile_mixed_document_with_imports(
+    fn plan_mixed_document_with_imports(
         &self,
         document: &SourceDocument,
         imports: &[crate::resolver::CanonicalResolvedImport],
         imported_enum_qualifiers: BTreeMap<mech_core::NominalKey, String>,
-    ) -> MResult<MixedProgramCompilation> {
+    ) -> MResult<MixedProgramPlan> {
         super::super::limits::enforce_source_byte_limit(
             self.max_source_bytes,
             u64::from(document.source().byte_len().0),
@@ -2073,14 +2104,30 @@ impl<'a> ProgramCompilerView<'a> {
                     .map_err(|error| canonical_compilation_error(error.to_string()))?;
             }
         }
-        let coordinator =
-            coordinator.compile_artifact_with_external_contracts(&compute_contracts)?;
-        Ok(MixedProgramCompilation {
-            coordinator: ProgramArtifactCompilationProduct::from_artifact(coordinator),
+        Ok(MixedProgramPlan {
+            coordinator,
             compute,
             activation_inputs,
             retained_outputs,
             source_dependencies: BTreeMap::new(),
+        })
+    }
+
+    #[cfg(feature = "compute")]
+    fn compile_mixed_plan(&self, plan: MixedProgramPlan) -> MResult<MixedProgramCompilation> {
+        let contracts = CompilerExternalContractResolver {
+            providers: ResidentExternalContractResolver::new(self.resources),
+            compute: true,
+        };
+        let coordinator = plan
+            .coordinator
+            .compile_artifact_with_external_contracts(&contracts)?;
+        Ok(MixedProgramCompilation {
+            coordinator: ProgramArtifactCompilationProduct::from_artifact(coordinator),
+            compute: plan.compute,
+            activation_inputs: plan.activation_inputs,
+            retained_outputs: plan.retained_outputs,
+            source_dependencies: plan.source_dependencies,
         })
     }
 

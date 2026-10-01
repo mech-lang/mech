@@ -657,7 +657,10 @@ impl ServerSourceRegistry {
             // Custom inline bootstraps own their CODE payload. Preserve the
             // retained-source transport used by the public fromEncoded API.
             // The shipped controller obtains its compiled bundle from /code.
-            if !shim.contains("{{DOCUMENT_SCRIPT}}") && shim.contains("{{CODE}}") {
+            if document_error.is_none()
+                && !shim.contains("{{DOCUMENT_SCRIPT}}")
+                && shim.contains("{{CODE}}")
+            {
                 let output_ids =
                     mech_runtime::canonical_document_presentation_output_ids(&document.document())
                         .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?;
@@ -3133,6 +3136,71 @@ result\n";
             payload.presentation_output_ids(),
             mech_runtime::canonical_document_presentation_output_ids(&retained.document()).unwrap()
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn custom_inline_shim_renders_invalid_documents_without_aborting_workspace_sync() {
+        let root = temp_root("custom-inline-invalid-source");
+        std::fs::write(root.join("main.mec"), "answer := 42\n").unwrap();
+        let broken_source = "```mech\nbroken := (\n";
+        std::fs::write(root.join("broken.mec"), broken_source).unwrap();
+        // Invalid run targets are absent from compiled workspace snapshots.
+        // A served source inventory still retains their diagnostic revision.
+        let mut snapshot = snapshot(&root, "main.mec");
+        let path = root.join("broken.mec").canonicalize().unwrap();
+        let uri = format!("file://{}", path.to_string_lossy());
+        let broken = mech_runtime::SourceDocument::parse_resolved(
+            &uri,
+            mech_syntax::document::Revision(0),
+            broken_source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(broken.index().is_err());
+        assert!(
+            mech_runtime::canonical_document_presentation_output_ids(&broken.document()).is_err()
+        );
+        snapshot.sources.insert(
+            uri.clone(),
+            mech_runtime::RuntimeWorkspaceSourceSnapshot {
+                canonical_uri: uri,
+                path: Some(path),
+                source: Some(MechSourceCode::String(broken_source.to_owned())),
+                source_document: Some(broken),
+                module_version: None,
+                content_hash: mech_core::hash_str(broken_source),
+                modified_time: None,
+            },
+        );
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                "<script data-code>{{CODE}}</script>",
+                &[],
+            )
+            .unwrap();
+        let valid = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        let encoded = valid
+            .strip_prefix("<script data-code>")
+            .unwrap()
+            .strip_suffix("</script>")
+            .unwrap();
+        assert_eq!(
+            mech_runtime::BrowserDocumentPayload::decode(encoded)
+                .unwrap()
+                .source(),
+            "answer := 42\n"
+        );
+        let broken = String::from_utf8(registry.get_route("/broken.mec").unwrap().bytes).unwrap();
+        assert!(
+            broken.contains("cannot index an invalid retained source document"),
+            "{broken}"
+        );
+        assert!(registry.get_route("/source/broken.mec").is_some());
         std::fs::remove_dir_all(root).unwrap();
     }
 

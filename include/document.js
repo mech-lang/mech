@@ -272,7 +272,9 @@ function savePagePosition(position = currentPagePosition()) {
 }
 
 function schedulePagePositionSave() {
-  if (state.pagePositionRestore) {
+  // Startup layout changes and browser navigation can scroll before WASM is
+  // ready. Preserve the saved coordinate until restoration owns that mapping.
+  if (state.pagePositionRestore || ["new", "starting"].includes(state.runtimeLifecycle)) {
     return;
   }
   state.pendingPagePosition = currentPagePosition();

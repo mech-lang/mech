@@ -217,6 +217,7 @@ run_browser_case() {
     "$label" <<'PY'
 import json
 from pathlib import Path
+import re
 import sys
 import time
 
@@ -4352,6 +4353,20 @@ def assert_repl_termination():
             f"before={terminated_state['frameRequests']!r}, after={frame_requests_after!r}"
         )
     assert_terminal_runtime_mutations_retired("stopped")
+    # /code now publishes a compiled canonical program bundle. The direct
+    # reset API accepts retained source; use the actual formatter producer's
+    # payload so this still proves reset retires both request generations.
+    reset_payload = None
+    if label != "configured":
+        formatted = Path(profile).parent.parent / "formatted-blog" / "index.html"
+        match = re.search(
+            r"<script\b[^>]*\bdata-mech-document-code[^>]*>(.*?)</script>",
+            formatted.read_text(),
+            re.DOTALL,
+        )
+        reset_payload = match.group(1).strip() if match else ""
+        if not reset_payload.startswith("mech-source-document-v1:"):
+            fail("formatter reset fixture did not publish retained source")
     direct_exports = evaluate("""
 (async () => {
   const { WasmDocument, WasmRepl } = await import('/_mech/pkg/mech_wasm.js');
@@ -4384,9 +4399,7 @@ def assert_repl_termination():
     const sourceKey =
       document.querySelector('.mech-root')?.dataset.mechSourceUrlKey ||
       document.documentElement.dataset.mechSourceUrlKey || '';
-    const encoded = sourceKey
-      ? await (await fetch(`/code/${sourceKey}`)).text()
-      : document.querySelector('[data-mech-document-code]')?.textContent?.trim();
+    const encoded = __MECH_RETAINED_RESET_PAYLOAD__;
     if (!encoded) throw new Error('direct reset smoke could not locate the encoded document');
     const embeddedBundle = document.querySelector(
       'script[data-mech-document-sources]'
@@ -4495,7 +4508,7 @@ def assert_repl_termination():
     ),
   };
 })()
-""")
+""".replace("__MECH_RETAINED_RESET_PAYLOAD__", json.dumps(reset_payload)))
     busy_state = direct_exports.get("busyState", {}) if direct_exports else {}
     failed_busy_checks = sorted(name for name, value in busy_state.items() if not value)
     if failed_busy_checks or len(busy_state) != 7:

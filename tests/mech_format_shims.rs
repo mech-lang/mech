@@ -75,12 +75,17 @@ fn assert_retained_execution_payload(html: &str) {
     let encoded = tail.split("</script>").next().unwrap().trim();
     let payload = mech_runtime::BrowserDocumentPayload::decode(encoded)
         .expect("formatter execution payload must retain source, never a detached tree");
-    let tree = mech_syntax::parser::parse(payload.source().trim()).unwrap();
-    let mut presentation = mech_syntax::Formatter::new();
-    drop(presentation.format_html(&tree, String::new(), String::new()));
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        payload.root_specifier(),
+        mech_syntax::document::Revision(0),
+        payload.source(),
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .unwrap();
+    document.index().unwrap();
     assert_eq!(
         payload.presentation_output_ids(),
-        presentation.root_presentation_output_ids()
+        mech_runtime::canonical_document_presentation_output_ids(&document.document()).unwrap()
     );
     if let Some(bundle) = html.split("data-mech-document-sources>").nth(1) {
         use base64::Engine as _;

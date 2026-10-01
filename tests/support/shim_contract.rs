@@ -57,7 +57,7 @@ pub fn assert_complete_slot_contract(html: &str, source_key: &str) {
 
     assert!(html.contains("<img"), "hero slot did not render an image");
     assert!(
-        html.contains("href=\"#"),
+        html.contains("href=\"#") || html.contains("href='#"),
         "TOC did not render document anchors"
     );
     assert!(

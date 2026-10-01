@@ -878,8 +878,19 @@ fn compile_browser_interactive_document(
         &SourceRequest::new(&bootstrap.root_specifier),
     )?
     .ok_or_else(|| document_runtime_error("browser document root did not resolve"))?;
-    document_planning_compiler(bootstrap, document)?
-        .plan_canonical_interactive_resolved_root(resolved_root)
+    let mut compiler = document_planning_compiler(bootstrap, document)?;
+    #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
+    if let Some(served) = bootstrap.served.as_ref() {
+        let config = parse_config_document(
+            "mech.mcfg",
+            &served.config_source,
+            ConfigProfileOptions::default(),
+        )?;
+        if config.hosts.iter().any(|host| host.provider == "compute") {
+            return compiler.plan_canonical_mixed_resolved_root(resolved_root);
+        }
+    }
+    compiler.plan_canonical_interactive_resolved_root(resolved_root)
 }
 
 fn document_planning_compiler(
@@ -895,6 +906,10 @@ fn document_planning_compiler(
         planning_scenes,
     )
     .map_err(js_value_to_mech_error)?;
+    #[cfg(feature = "browser_compute")]
+    {
+        builder = builder.function_catalog(mech_stdlib::source_native_plan_catalog());
+    }
     let resolver = document_source_resolver(document, source)?;
 
     #[cfg(feature = "served_project_authority")]
@@ -1665,10 +1680,11 @@ mod document {
                     let text = child.source().text(child.range()).map_err(|error| {
                         document_runtime_error(format!("invalid title field: {error:?}"))
                     })?;
+                    let text = text.trim().to_uppercase();
                     field = TITLE_FIELDS
                         .iter()
                         .copied()
-                        .find(|name| *name == text.trim());
+                        .find(|name| name.to_uppercase() == text);
                 } else if matches!(
                     child.kind(),
                     SyntaxKind::InlineParagraph | SyntaxKind::Img | SyntaxKind::Figures
@@ -3214,7 +3230,7 @@ mod document {
                 .session
                 .rebuild_runtime_preserving_state()
                 .map_err(to_js_error)?;
-            self.refresh_document_output_ordinals()
+            self.refresh_document_output_ordinals(None)
                 .map_err(to_js_error)?;
             if self.compute_backend() == mech_compute::WGPU_BACKEND {
                 return Err(js_error(
@@ -7891,11 +7907,12 @@ mod browser_tests {
     #[wasm_bindgen_test]
     fn repeated_title_fields_transfer_the_existing_slot_on_public_source_edits() {
         for name in [
-            "author", "date", "kicker", "section", "summary", "next", "previous", "hero",
+            "author", "date", "kicker", "section", "summary", "next", "previous", "hero", "Author",
+            "DATE", "Kicker", "Section", "SUMMARY", "Next", "Previous", "Hero",
         ] {
             let field = |value: &str| {
-                if name == "hero" {
-                    format!("hero: | ![Result {value}](hero.svg) |\n")
+                if name.eq_ignore_ascii_case("hero") {
+                    format!("{name}: | ![Result {value}](hero.svg) |\n")
                 } else {
                     format!("{name}: {value}\n")
                 }
@@ -8140,6 +8157,68 @@ mod browser_tests {
             rendered_text(&document.rendered_output(address).unwrap()),
             "43"
         );
+    }
+
+    #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
+    #[wasm_bindgen_test]
+    fn served_compute_sample_document_constructs_and_accepts_editor_changes() {
+        let config = r#"config := {
+  hosts: [{ name: "filters" provider: "compute" settings: { region: "calculation" backend: "cpu" } }]
+  run: { paths: ["main.mec"] grants: [{ target: "filters/kernel" operations: ["read", "write"] paths: ["sample/result", "turn"] }] }
+}"#;
+        let source = "@compute := compute://filters/kernel{:write(turn), :read(sample/result)}\n@compute/turn <- 1\nanswer := @compute/sample/result\nanswer\n\nResult {answer}.\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\ncounter\n";
+        let config_document =
+            parse_config_document("mech.mcfg", config, ConfigProfileOptions::default()).unwrap();
+        let authority = BrowserRuntimeInjectionConfig {
+            runtime: mech_browser::BrowserHostRuntimeConfig::from(
+                &mech_runtime::RuntimeConfig::default(),
+            ),
+            hosts: config_document.hosts.clone(),
+            run_grants: config_document.run.as_ref().unwrap().grants.clone(),
+        };
+        install_served_authority(&authority);
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str(source),
+        )
+        .unwrap();
+        let mut document = WasmDocument::from_served_encoded(
+            &encoded_document_at("main.mec", source),
+            "main.mec",
+            config,
+            sources.into(),
+        )
+        .unwrap();
+        let address = document.bootstrap.presentation_output_ids[0];
+        assert_eq!(document.compute_backend(), "cpu-scalar");
+        assert!(!document.rendered_output(address).unwrap().is_null());
+        assert!(!document.rendered_program_output().unwrap().is_null());
+        let generation = document.compute_generation();
+        let updated = source.replace(
+            "answer := @compute/sample/result",
+            "answer := @compute/sample/result + 1",
+        );
+        document.repl_replace_source(&updated).unwrap();
+        assert_ne!(document.compute_generation(), generation);
+        assert!(!document.rendered_output(address).unwrap().is_null());
+        let start = updated.find("+ 1\n").unwrap();
+        document
+            .repl_apply_edit(start as u32, (start + 3) as u32, "+ 2")
+            .unwrap();
+        assert!(
+            document
+                .repl_source()
+                .contains("@compute/sample/result + 2")
+        );
+        assert!(!document.rendered_program_output().unwrap().is_null());
+        document.stop().unwrap();
+        Reflect::delete_property(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__MECH_HOST_CONFIG"),
+        )
+        .unwrap();
     }
 
     #[wasm_bindgen_test]
