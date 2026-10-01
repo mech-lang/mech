@@ -189,8 +189,7 @@ pub fn section_element(
             let code_id = block.config.namespace;
             if code_id == 0 {
                 out = eval_fenced_code_block(&block.code, p, false)?;
-                // Declaration-only fences execute without publishing a value.
-                if let Some(out_id) = crate::program::fenced_document_output_id(block) {
+                if let Some(out_id) = next_fenced_document_output_id(block, p) {
                     p.out_values.borrow_mut().insert(
                         out_id,
                         crate::interpreter::retained_source_cell(out.clone())?,
@@ -210,8 +209,7 @@ pub fn section_element(
                 out = p.with_interpreter(pp.as_ref(), |execution| {
                     eval_fenced_code_block(&block.code, execution, true)
                 })?;
-                // Declaration-only fences execute without publishing a value.
-                if let Some(out_id) = crate::program::fenced_document_output_id(block) {
+                if let Some(out_id) = next_fenced_document_output_id(block, pp.as_ref()) {
                     pp.out_values.borrow_mut().insert(
                         out_id,
                         crate::interpreter::retained_source_cell(out.clone())?,
@@ -336,6 +334,35 @@ pub fn section_element(
         .map(SpecializationInput::Cell)
 }
 
+#[cfg(feature = "functions")]
+fn next_fenced_document_output_id(
+    block: &FencedMechCode,
+    interpreter: &Interpreter,
+) -> Option<u64> {
+    // Declaration-only fences have no output. The private program capture is
+    // hidden deliberately and always publishes at its fixed boundary address.
+    let base_id = crate::program::fenced_document_output_id(block)?;
+    if base_id == crate::program::root_document_program_output_id() {
+        return Some(base_id);
+    }
+    if block.config.hidden || !block.config.output {
+        return None;
+    }
+    let outputs = interpreter.out_values.borrow();
+    let mut occurrence = 0_u64;
+    loop {
+        let output_id = mech_core::document_presentation::fenced_document_output_occurrence_id(
+            block, occurrence,
+        )?;
+        if !outputs.contains_key(&output_id) {
+            return Some(output_id);
+        }
+        occurrence = occurrence
+            .checked_add(1)
+            .expect("fenced document output occurrence space is exhausted");
+    }
+}
+
 #[cfg(test)]
 mod section_annotation_tests {
     use super::*;
@@ -422,7 +449,12 @@ mod fenced_output_tests {
         let mut services = NoMechExecutionServices;
         let execution = InterpreterExecution::new(&interpreter, &mut services);
 
-        for (namespace_str, namespace) in [("", 0), ("worker", 1)] {
+        for (namespace_str, namespace, output) in [
+            ("", 0, false),
+            ("", 0, true),
+            ("worker", 1, false),
+            ("worker", 1, true),
+        ] {
             let block = FencedMechCode {
                 source: Token::default(),
                 code: Vec::new(),
@@ -433,7 +465,7 @@ mod fenced_output_tests {
                     namespace,
                     disabled: false,
                     hidden: false,
-                    output: false,
+                    output,
                 },
                 options: None,
             };
@@ -443,6 +475,100 @@ mod fenced_output_tests {
                 SpecializationInput::Absent
             ));
         }
+        assert!(interpreter.out_values.borrow().is_empty());
+        assert!(
+            interpreter.sub_interpreters.borrow()[&1]
+                .borrow()
+                .out_values
+                .borrow()
+                .is_empty()
+        );
+    }
+
+    #[cfg(feature = "f64")]
+    fn value_fence(namespace_str: &str, namespace: u64) -> FencedMechCode {
+        FencedMechCode {
+            source: Token::default(),
+            code: vec![(
+                MechCode::Expression(Expression::Literal(Literal::Number(Number::from_integer(
+                    12,
+                )))),
+                None,
+            )],
+            imports: Vec::new(),
+            exports: Vec::new(),
+            config: BlockConfig {
+                namespace_str: namespace_str.to_owned(),
+                namespace,
+                disabled: false,
+                hidden: false,
+                output: true,
+            },
+            options: None,
+        }
+    }
+
+    #[cfg(feature = "f64")]
+    #[test]
+    fn hidden_fences_preserve_visible_outputs_and_occurrences_in_each_scope() {
+        for (namespace_str, namespace) in [("", 0), ("worker", 1)] {
+            let interpreter = Interpreter::new(0, 100);
+            let mut services = NoMechExecutionServices;
+            let execution = InterpreterExecution::new(&interpreter, &mut services);
+            let block = value_fence(namespace_str, namespace);
+            let visible = SectionElement::FencedMechCode(block.clone());
+            section_element(&visible, &execution).unwrap();
+            let outputs = if namespace == 0 {
+                interpreter.out_values.clone()
+            } else {
+                interpreter.sub_interpreters.borrow()[&namespace]
+                    .borrow()
+                    .out_values
+                    .clone()
+            };
+            let mut addresses =
+                mech_core::document_presentation::DocumentPresentationAddresses::default();
+            let first_id = addresses.fence(&block, namespace).unwrap();
+            let first = outputs.borrow()[&first_id].clone().unwrap();
+            for (hidden, output) in [(true, true), (false, false)] {
+                let mut hidden_block = block.clone();
+                hidden_block.config.hidden = hidden;
+                hidden_block.config.output = output;
+                assert!(matches!(
+                    section_element(&SectionElement::FencedMechCode(hidden_block), &execution)
+                        .unwrap(),
+                    SpecializationInput::Cell(_)
+                ));
+                assert_eq!(outputs.borrow().len(), 1);
+                assert!(
+                    outputs.borrow()[&first_id]
+                        .as_ref()
+                        .unwrap()
+                        .same_cell(&first)
+                );
+            }
+            section_element(&visible, &execution).unwrap();
+            let second_id = addresses.fence(&block, namespace).unwrap();
+            assert_ne!(first_id, second_id);
+            let outputs = outputs.borrow();
+            assert_eq!(outputs.len(), 2);
+            assert!(outputs[&first_id].as_ref().unwrap().same_cell(&first));
+            assert!(!outputs[&second_id].as_ref().unwrap().same_cell(&first));
+        }
+    }
+
+    #[cfg(feature = "f64")]
+    #[test]
+    fn hidden_program_capture_keeps_its_fixed_output_address() {
+        let interpreter = Interpreter::new(0, 100);
+        let mut services = NoMechExecutionServices;
+        let execution = InterpreterExecution::new(&interpreter, &mut services);
+        let mut block = value_fence("", 0);
+        crate::program::configure_root_document_program_output_capture(&mut block);
+        section_element(&SectionElement::FencedMechCode(block), &execution).unwrap();
+        let outputs = interpreter.out_values.borrow();
+        assert_eq!(outputs.len(), 1);
+        assert!(outputs[&crate::program::root_document_program_output_id()].is_some());
     }
 }
 
