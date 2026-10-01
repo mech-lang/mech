@@ -279,6 +279,7 @@ pub struct Formatter {
     inline_eval_counters: BTreeMap<(u64, u64), u64>,
     fenced_output_counters: BTreeMap<(u64, u64), u64>,
     presentation_outputs_enabled: bool,
+    root_presentation_output_ids: Vec<u64>,
 }
 
 impl Formatter {
@@ -318,7 +319,16 @@ impl Formatter {
             .or_insert(0);
         let output_id = inline_document_output_id(self.interpreter_id, expression, *occurrence);
         *occurrence = occurrence.saturating_add(1);
+        if self.interpreter_id == 0 {
+            self.root_presentation_output_ids.push(output_id);
+        }
         output_id
+    }
+
+    /// Addresses emitted by the last root-document render. Payload producers
+    /// use the same rendering path without requiring an execution compiler.
+    pub fn root_presentation_output_ids(&self) -> &[u64] {
+        &self.root_presentation_output_ids
     }
 
     pub fn new() -> Formatter {
@@ -346,6 +356,7 @@ impl Formatter {
             inline_eval_counters: BTreeMap::new(),
             fenced_output_counters: BTreeMap::new(),
             presentation_outputs_enabled: true,
+            root_presentation_output_ids: Vec::new(),
         }
     }
 
@@ -353,6 +364,7 @@ impl Formatter {
         self.html = false;
         self.inline_eval_counters.clear();
         self.fenced_output_counters.clear();
+        self.root_presentation_output_ids.clear();
         self.program(tree)
     }
 
@@ -438,6 +450,7 @@ impl Formatter {
         self.html = true;
         self.inline_eval_counters.clear();
         self.fenced_output_counters.clear();
+        self.root_presentation_output_ids.clear();
 
         let title_slots = self.title_slots(&tree.title);
         let section_seed = self.clone();
@@ -1410,6 +1423,9 @@ impl Formatter {
                         ))
                     };
                     *occurrence = occurrence.saturating_add(1);
+                    if intrp_id == 0 {
+                        self.root_presentation_output_ids.push(output_id);
+                    }
                     format!(
                         "<div class=\"mech-block-output\" id=\"{}:{}\"></div>",
                         output_id, intrp_id

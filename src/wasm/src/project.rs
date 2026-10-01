@@ -21,10 +21,10 @@ use mech_core::{
     GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId, hash_str,
 };
 #[cfg(test)]
-use mech_engine::CanonicalSourceFrontend;
+use mech_engine::{CanonicalSourceFrontend, root_document_output_ids};
 use mech_engine::{
     SourceDocumentOutputKind, root_document_has_program_value, root_document_output_identities,
-    root_document_output_ids, root_document_program_output_id,
+    root_document_program_output_id,
 };
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
@@ -50,7 +50,9 @@ use mech_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
 use mech_time::BrowserTimeHostFactory;
 #[cfg(feature = "browser_host_timer")]
 use mech_timer::BrowserTimerHostFactory;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+#[cfg(test)]
+use serde::Serialize;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -2401,7 +2403,7 @@ mod document {
     impl WasmDocument {
         #[wasm_bindgen(js_name = fromEncoded)]
         pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
-            let payload = decode_document_payload(encoded, "document.mec", None)?;
+            let payload = decode_document_payload(encoded)?;
             let root_specifier = payload.root_specifier().to_owned();
             let source_map = HashMap::from([(root_specifier.clone(), payload.source().to_owned())]);
             Self::from_payload_with_sources(payload, &root_specifier, source_map, Vec::new())
@@ -2417,11 +2419,7 @@ mod document {
             sources: JsValue,
         ) -> Result<WasmDocument, JsValue> {
             let source_map = source_map_from_js(sources)?;
-            let payload = decode_document_payload(
-                encoded,
-                root_specifier,
-                source_map.get(root_specifier).map(String::as_str),
-            )?;
+            let payload = decode_document_payload(encoded)?;
             Self::from_payload_with_sources(payload, root_specifier, source_map, Vec::new())
         }
 
@@ -2434,11 +2432,7 @@ mod document {
             provenance: JsValue,
         ) -> Result<WasmDocument, JsValue> {
             let source_map = source_map_from_js(sources)?;
-            let payload = decode_document_payload(
-                encoded,
-                root_specifier,
-                source_map.get(root_specifier).map(String::as_str),
-            )?;
+            let payload = decode_document_payload(encoded)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
             let provenance = served_provenance_from_js(provenance, &source_map)?;
             Self::from_payload_with_sources_and_provenance(
@@ -2546,11 +2540,7 @@ mod document {
         ) -> Result<WasmDocument, JsValue> {
             let document = parse_project_config(config_source)?;
             let source_map = source_map_from_js(sources)?;
-            let payload = decode_document_payload(
-                encoded,
-                root_specifier,
-                source_map.get(root_specifier).map(String::as_str),
-            )?;
+            let payload = decode_document_payload(encoded)?;
             let authority = served_browser_authority()?;
             Self::from_served_payload(
                 payload,
@@ -2579,11 +2569,7 @@ mod document {
         ) -> Result<WasmDocument, JsValue> {
             let document = parse_project_config(config_source)?;
             let source_map = source_map_from_js(sources)?;
-            let payload = decode_document_payload(
-                encoded,
-                root_specifier,
-                source_map.get(root_specifier).map(String::as_str),
-            )?;
+            let payload = decode_document_payload(encoded)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
             let provenance = served_provenance_from_js(provenance, &source_map)?;
             let authority = served_browser_authority()?;
@@ -2730,8 +2716,7 @@ mod document {
             // Construct before touching the live project. A malformed replacement
             // must leave the current document usable.
             let mut replacement_bootstrap = self.bootstrap.clone();
-            let payload =
-                decode_document_payload(encoded, &replacement_bootstrap.root_specifier, None)?;
+            let payload = decode_document_payload(encoded)?;
             if payload.root_specifier() != replacement_bootstrap.root_specifier {
                 return Err(js_error(
                     "replacement document changes the retained root specifier",
@@ -3560,15 +3545,15 @@ fn parse_project_config(source: &str) -> Result<MechConfigDocument, JsValue> {
     .map_err(to_js_error)
 }
 
-/// The positional title layout emitted before authored title fields were
-/// retained. Bincode cannot apply `serde(default)` to a missing middle field,
-/// so browser payload fallback decodes this exact historical representation.
+/// Historical transport layout retained only to prove execution rejects it.
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 struct PreTitleFieldsProgram {
     title: Option<PreTitleFieldsTitle>,
     body: mech_core::Body,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 struct PreTitleFieldsTitle {
     text: mech_core::Token,
@@ -3583,64 +3568,12 @@ struct PreTitleFieldsTitle {
     previous: Option<mech_core::Paragraph>,
 }
 
-impl From<PreTitleFieldsProgram> for mech_core::Program {
-    fn from(program: PreTitleFieldsProgram) -> Self {
-        Self {
-            title: program.title.map(|title| mech_core::Title {
-                text: title.text,
-                imports: title.imports,
-                fields: Vec::new(),
-                author: title.author,
-                date: title.date,
-                hero: title.hero,
-                kicker: title.kicker,
-                section: title.section,
-                summary: title.summary,
-                next: title.next,
-                previous: title.previous,
-            }),
-            body: program.body,
-        }
-    }
-}
-
-fn decode_document_payload(
-    encoded: &str,
-    legacy_root_specifier: &str,
-    legacy_source: Option<&str>,
-) -> Result<BrowserDocumentPayload, JsValue> {
-    if let Ok(payload) = BrowserDocumentPayload::decode(encoded) {
-        return Ok(payload);
-    }
-    let tree: mech_core::Program = match mech_core::nodes::decode_and_decompress(encoded) {
-        Ok(tree) => tree,
-        Err(current_error) => {
-            let historical: PreTitleFieldsProgram =
-                mech_core::nodes::decode_and_decompress(encoded).map_err(|historical_error| {
-                    js_error(format!(
-                        "failed to decode browser document payload, current syntax tree ({current_error}), or pre-title-fields syntax tree ({historical_error})"
-                    ))
-                })?;
-            historical.into()
-        }
-    };
-    let output_ids = root_document_output_ids(&tree);
-    let source = if let Some(source) = legacy_source {
-        // Legacy presentation identities belong to the encoded tree. Only
-        // retain accompanying source when it describes that same tree; this
-        // check is shared by ordinary and served/bundled constructors.
-        if mech_syntax::parser::parse(source.trim()).ok().as_ref() != Some(&tree) {
-            return Err(js_error(format!(
-                "legacy browser document tree does not match source-map root `{legacy_root_specifier}`"
-            )));
-        }
-        source.to_owned()
-    } else {
-        mech_syntax::Formatter::new().format(&tree)
-    };
-    BrowserDocumentPayload::new(legacy_root_specifier, source)
-        .map(|payload| payload.with_presentation_output_ids(output_ids))
-        .map_err(to_js_error)
+fn decode_document_payload(encoded: &str) -> Result<BrowserDocumentPayload, JsValue> {
+    BrowserDocumentPayload::decode(encoded).map_err(|error| {
+        js_error(format!(
+            "browser execution requires a retained-source document payload; detached syntax-tree payloads are retired, regenerate the document: {error:?}"
+        ))
+    })
 }
 
 fn validate_document_payload(
@@ -4617,17 +4550,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn legacy_tree_payload_uses_the_exact_served_source() {
+    fn retained_payload_uses_the_exact_served_source() {
         let source = "  answer := 1\r\nanswer\r\n";
-        let tree = mech_syntax::parser::parse(source.trim()).unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let payload = decode_document_payload(&encoded, "main.mec", Some(source)).unwrap();
+        let encoded = document_payload("main.mec", source).encode().unwrap();
+        let payload = decode_document_payload(&encoded).unwrap();
         assert_eq!(payload.root_specifier(), "main.mec");
         assert_eq!(payload.source(), source);
     }
 
     #[test]
-    fn legacy_document_reset_executes_each_replacement_source() {
+    fn retained_document_reset_executes_each_replacement_source() {
         let mut document = WasmDocument::from_encoded(
             &document_payload("document.mec", "x := 1\nx")
                 .encode()
@@ -4636,9 +4568,9 @@ mod tests {
         .unwrap();
         for (source, expected) in [("x := 2\nx", "2"), ("x := 3\nx\nx + 10", "3")] {
             let tree = mech_syntax::parser::parse(source).unwrap();
-            let retained = mech_syntax::Formatter::new().format(&tree);
+            let retained = source;
             document
-                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
+                .reset(&document_payload("document.mec", source).encode().unwrap())
                 .unwrap();
             assert_eq!(
                 document.bootstrap.source_map[&document.bootstrap.root_specifier],
@@ -4663,11 +4595,10 @@ mod tests {
     }
 
     #[test]
-    fn legacy_rich_payload_reconstruction_parses_and_indexes_the_document_contract() {
+    fn retained_rich_payload_parses_and_indexes_the_document_contract() {
         let source = include_str!("../../../tests/fixtures/shims/all-slots.mec");
-        let tree = mech_syntax::parser::parse(source).unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let payload = decode_document_payload(&encoded, "rich.mec", None).unwrap();
+        let encoded = document_payload("rich.mec", source).encode().unwrap();
+        let payload = decode_document_payload(&encoded).unwrap();
         let retained = CanonicalWasmDocument::retain(
             "rich.mec",
             mech_syntax::document::Revision(0),
@@ -4733,29 +4664,19 @@ mod tests {
     }
 
     #[test]
-    fn formatter_legacy_code_payload_remains_decodable() {
+    fn detached_program_payload_is_rejected() {
         let tree = mech_syntax::parser::parse("value := 41\nResult {value + 1}.\n").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let payload = decode_document_payload(&encoded, "document.mec", None).unwrap();
-        assert_eq!(payload.root_specifier(), "document.mec");
-        assert_eq!(
-            payload.presentation_output_ids(),
-            root_document_output_ids(&tree)
-        );
-        assert!(payload.source().contains("value := 41"));
+        assert!(decode_document_payload(&encoded).is_err());
     }
 
     #[test]
-    fn legacy_title_payload_retains_repeated_field_output_addresses() {
-        let tree = mech_syntax::parser::parse(
-            "Document\n========\nauthor: {40 + 2}\nauthor: {40 + 2}\n========\n",
-        )
-        .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let decoded: mech_core::Program =
-            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
-        assert_eq!(decoded.title.as_ref().unwrap().fields.len(), 2);
-        let payload = decode_document_payload(&encoded, "document.mec", None).unwrap();
+    fn retained_title_payload_retains_repeated_field_output_addresses() {
+        let source = "Document\n========\nauthor: {40 + 2}\nauthor: {40 + 2}\n========\n";
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let encoded = document_payload("document.mec", &source).encode().unwrap();
+        assert_eq!(tree.title.as_ref().unwrap().fields.len(), 2);
+        let payload = decode_document_payload(&encoded).unwrap();
         assert_eq!(
             payload.source().matches("author:").count(),
             2,
@@ -4769,7 +4690,7 @@ mod tests {
     }
 
     #[test]
-    fn pre_title_fields_payload_remains_decodable() {
+    fn historical_title_payload_is_rejected() {
         let tree = mech_syntax::parser::parse(
             "Document\n========\nauthor: Result {40 + 2}\n========\n\nBody.\n",
         )
@@ -4793,16 +4714,7 @@ mod tests {
         let encoded = mech_core::nodes::compress_and_encode(&historical).unwrap();
         assert!(mech_core::nodes::decode_and_decompress::<mech_core::Program>(&encoded).is_err());
 
-        let payload = decode_document_payload(&encoded, "document.mec", None).unwrap();
-        assert!(
-            payload.source().contains("author: Result"),
-            "{}",
-            payload.source()
-        );
-        assert_eq!(
-            payload.presentation_output_ids(),
-            root_document_output_ids(&tree)
-        );
+        assert!(decode_document_payload(&encoded).is_err());
     }
 
     #[test]
@@ -8123,13 +8035,13 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn wasm_document_legacy_sources_require_matching_tree_and_output_identities() {
+    fn wasm_document_retained_sources_require_matching_output_identities() {
         let source = "answer := 41\n\nValue {answer + 1}.\n";
         let tree = mech_syntax::parser::parse(source.trim()).unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
         let ids = root_document_output_ids(&tree);
         assert_eq!(ids.len(), 1);
         let exact_source = format!("  {source}\r\n");
+        let encoded = encoded_document_at("docs/main.mec", &exact_source);
         for bundled in [false, true] {
             let construct = |root_source: &str| {
                 let sources = Object::new();
@@ -8162,12 +8074,12 @@ mod browser_tests {
             ] {
                 let error = construct(stale)
                     .err()
-                    .expect("mismatched legacy source accepted");
+                    .expect("mismatched retained source accepted");
                 assert!(
                     error
                         .as_string()
                         .unwrap()
-                        .contains("does not match source-map root")
+                        .contains("stale for source-map root")
                 );
             }
             let document = construct(&exact_source).unwrap();
@@ -8199,6 +8111,67 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
+    fn detached_payloads_reject_at_public_constructors_and_reset() {
+        let source = "answer := 7\nanswer";
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let historical = PreTitleFieldsProgram {
+            title: None,
+            body: tree.body.clone(),
+        };
+        for encoded in [
+            mech_core::nodes::compress_and_encode(&tree).unwrap(),
+            mech_core::nodes::compress_and_encode(&historical).unwrap(),
+        ] {
+            let sources = Object::new();
+            Reflect::set(
+                &sources,
+                &JsValue::from_str("document.mec"),
+                &JsValue::from_str(source),
+            )
+            .unwrap();
+            for error in [
+                WasmDocument::from_encoded(&encoded).err().unwrap(),
+                WasmDocument::from_encoded_with_sources(
+                    &encoded,
+                    "document.mec",
+                    sources.clone().into(),
+                )
+                .err()
+                .unwrap(),
+                WasmDocument::from_encoded_with_bundle(
+                    &encoded,
+                    "document.mec",
+                    sources.into(),
+                    Array::new().into(),
+                    JsValue::NULL,
+                )
+                .err()
+                .unwrap(),
+            ] {
+                assert!(
+                    error
+                        .as_string()
+                        .unwrap()
+                        .contains("regenerate the document")
+                );
+            }
+            let mut document = WasmDocument::from_encoded(&encoded_document(source)).unwrap();
+            assert!(document.reset(&encoded).is_err());
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("answer")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "7"
+            );
+            assert_eq!(document.bootstrap.source_map["document.mec"], source);
+        }
+    }
+
+    #[wasm_bindgen_test]
     fn wasm_document_reset_restores_initial_program() {
         let initial = encoded_document("~answer := 0\nanswer += 1\nanswer");
         let mut document = WasmDocument::from_encoded(&initial).unwrap();
@@ -8217,19 +8190,17 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn wasm_document_reset_legacy_replacements_keep_source_symbols_and_outputs_together() {
+    fn wasm_document_reset_retained_replacements_keep_source_symbols_and_outputs_together() {
         let mut document = WasmDocument::from_encoded(&encoded_document("x := 1\nx")).unwrap();
         for (source, value) in [
             ("x := 2\n\nValue {x}.\n", "2"),
             ("x := 3\n\nValue {x}; plus {x + 10}.\n", "3"),
         ] {
             let tree = mech_syntax::parser::parse(source).unwrap();
-            let retained = mech_syntax::Formatter::new().format(&tree);
+            let retained = source;
             let ids = root_document_output_ids(&tree);
             assert_eq!(ids.len(), if value == "3" { 2 } else { 1 });
-            document
-                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
-                .unwrap();
+            document.reset(&encoded_document(&source)).unwrap();
             assert_eq!(
                 document.bootstrap.source_map[&document.bootstrap.root_specifier],
                 retained
@@ -8302,27 +8273,18 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn legacy_nested_inline_output_does_not_redirect_the_following_fence() {
+    fn retained_nested_inline_output_does_not_redirect_the_following_fence() {
         for source in [
             "> Quoted value {11}.\n\n~~~mech\n22\n~~~\n",
             "%% Abstract value {11}.\n\n~~~mech\n22\n~~~\n",
         ] {
             let tree = mech_syntax::parser::parse(source).unwrap();
-            let fence = tree
-                .body
-                .sections
-                .iter()
-                .flat_map(|section| &section.elements)
-                .find_map(|element| match element {
-                    mech_core::SectionElement::FencedMechCode(block) => Some(block),
-                    _ => None,
-                })
-                .unwrap();
-            let (last_code, _) = fence.code.last().unwrap();
-            let fence_address = mech_core::hash_str(&format!("{last_code:?}"));
-            let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+            let ids = root_document_output_ids(&tree);
+            assert_eq!(ids.len(), 2);
+            let fence_address = ids[1];
+            let encoded = encoded_document(source);
             let assert_fence = |document: &WasmDocument| {
-                let inline_address = mech_core::hash_str("inline-eval:0:0");
+                let inline_address = ids[0];
                 let inline = document.rendered_output(inline_address).unwrap();
                 assert_eq!(
                     Reflect::get(&inline, &JsValue::from_str("inlineHtml"))
@@ -8385,7 +8347,7 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn wasm_document_reset_legacy_rich_replacements_keep_visible_and_local_owners() {
+    fn wasm_document_reset_retained_rich_replacements_keep_visible_and_local_owners() {
         let original = include_str!("../../../tests/fixtures/shims/all-slots.mec");
         let mut document =
             WasmDocument::from_encoded(&encoded_document("sentinel := 1\nsentinel")).unwrap();
@@ -8394,9 +8356,7 @@ mod browser_tests {
             let tree = mech_syntax::parser::parse(&source).unwrap();
             let output_ids = root_document_output_ids(&tree);
             assert_eq!(output_ids.len(), 2);
-            document
-                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
-                .unwrap();
+            document.reset(&encoded_document(&source)).unwrap();
             assert_eq!(
                 document
                     .repl
@@ -8424,14 +8384,14 @@ mod browser_tests {
             }
             assert_eq!(
                 document.bootstrap.source_map[&document.bootstrap.root_specifier],
-                mech_syntax::Formatter::new().format(&tree)
+                source
             );
             document.bootstrap.document.document().index().unwrap();
         }
     }
 
     #[wasm_bindgen_test]
-    fn wasm_document_reset_legacy_fences_preserve_execution_and_publication() {
+    fn wasm_document_reset_retained_fences_preserve_execution_and_publication() {
         let mut document = WasmDocument::from_encoded(&encoded_document("root := 0")).unwrap();
         for (header, executes, publishes) in [
             ("", true, true),
@@ -8445,9 +8405,7 @@ mod browser_tests {
             let tree = mech_syntax::parser::parse(&source).unwrap();
             let output_ids = root_document_output_ids(&tree);
             assert_eq!(output_ids.len(), usize::from(publishes), "{header}");
-            document
-                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
-                .unwrap();
+            document.reset(&encoded_document(&source)).unwrap();
             assert_eq!(
                 document
                     .repl
@@ -8607,10 +8565,24 @@ mod browser_tests {
     #[wasm_bindgen_test]
     fn encoded_fizzbuzz_document_executes_in_the_resident_browser_product() {
         let source = include_str!("../../../examples/working/fizzbuzz.mec");
-        let output_id = 29_884_140_763_677_669;
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let html = mech_syntax::Formatter::new().format_html(
+            &tree,
+            String::new(),
+            "{{INTRO}}{{CONTENT}}".to_owned(),
+        );
+        let address = html
+            .split("class=\"mech-block-output\" id=\"")
+            .nth(1)
+            .unwrap()
+            .split('"')
+            .next()
+            .unwrap();
+        let output_id = address.strip_suffix(":0").unwrap().parse::<u64>().unwrap();
         assert_eq!(
-            output_id, 29_884_140_763_677_669,
-            "the WASM output key must match the native formatter key",
+            root_document_output_ids(&tree),
+            [output_id],
+            "the browser address must match the actual formatter placeholder"
         );
 
         let encoded = BrowserDocumentPayload::new("document.mec", source)
@@ -8638,7 +8610,7 @@ mod browser_tests {
                 .unwrap()
                 .as_string()
                 .as_deref(),
-            Some("29884140763677669"),
+            Some(output_id.to_string().as_str()),
             "u64 output identities must cross JavaScript losslessly",
         );
         let block_html = Reflect::get(&output, &JsValue::from_str("blockHtml"))
