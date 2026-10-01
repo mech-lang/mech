@@ -41,6 +41,7 @@
     "title": {
       "author": null,
       "date": null,
+      "fields": [],
       "hero": null,
       "imports": [],
       "kicker": null,
