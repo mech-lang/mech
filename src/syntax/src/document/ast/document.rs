@@ -471,6 +471,17 @@ impl ParagraphSyntax {
 }
 
 impl CodeBlockSyntax {
+    /// The fence's delimiters and contents, excluding neighboring whitespace.
+    pub fn delimiter_range(&self) -> Option<TextRange> {
+        let delimiters = self.delimiters();
+        (delimiters.len() >= 2).then(|| {
+            TextRange::new(
+                delimiters.first().unwrap().range().start,
+                delimiters.last().unwrap().range().end,
+            )
+        })
+    }
+
     pub fn info_range(&self) -> Option<TextRange> {
         let start = self.delimiters().first()?.range().end;
         let end = self

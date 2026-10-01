@@ -3,6 +3,7 @@
 #[cfg(feature = "no_std")]
 extern crate alloc;
 
+mod browser_document;
 pub mod config;
 pub mod effect;
 mod extension;
@@ -34,7 +35,6 @@ mod snapshot;
 
 #[cfg(feature = "runtime")]
 pub mod actor;
-mod browser_document;
 #[cfg(feature = "runtime")]
 pub mod capability;
 #[cfg(feature = "runtime")]
@@ -78,6 +78,7 @@ mod turn_record;
 #[cfg(all(feature = "watcher", feature = "source"))]
 mod workspace;
 
+pub use self::browser_document::*;
 pub use self::config::*;
 pub use self::effect::*;
 pub use self::extension::{RuntimeExtensionPanicked, RuntimeStoreCommitIndeterminate};
@@ -93,7 +94,6 @@ pub use self::snapshot::*;
 
 #[cfg(feature = "runtime")]
 pub use self::actor::*;
-pub use self::browser_document::*;
 #[cfg(feature = "runtime")]
 pub use self::capability::*;
 #[cfg(feature = "runtime")]

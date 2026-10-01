@@ -39,6 +39,11 @@ mkdir -p "$target_dir"
 work_dir="$(mktemp -d "$target_dir/served-rich-document.XXXXXX")"
 server_pid=""
 
+report_case_progress() {
+  printf 'Rich document: %s %s (elapsed %ss)\n' "$1" "$2" "$SECONDS" \
+    | tee -a "$work_dir/progress.log"
+}
+
 stop_server() {
   if [[ -z "$server_pid" ]]; then
     return
@@ -5090,6 +5095,7 @@ PY
 run_case() {
   local label="$1"
   shift
+  report_case_progress "$label" started
   local case_dir="$work_dir/$label"
   mkdir -p "$case_dir"
   local server_log="$case_dir/server.log"
@@ -5130,10 +5136,12 @@ run_case() {
   fi
 
   stop_server
+  report_case_progress "$label" passed
 }
 
 run_configured_case() {
   local label="configured"
+  report_case_progress "$label" started
   local case_dir="$work_dir/$label"
   local server_log="$case_dir/server.log"
   local port
@@ -5167,6 +5175,7 @@ run_configured_case() {
   done
 
   stop_server
+  report_case_progress "$label" passed
 }
 
 if [[ "${MECH_RICH_CASE:-}" == "configured" ]]; then

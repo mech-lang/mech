@@ -11,19 +11,13 @@ use mech_syntax::document::{
 };
 
 use crate::{
-    DiagnosticEvent, DiagnosticId, DiagnosticNote, DiagnosticOwner, DiagnosticPhase, MechEvent,
-    MechEventBus, MechEventEnvelope, MechRuntime, OutputArtifact, OutputContent, OutputSource,
-    ReplEvent, ReplResponse, ReplResponseKind, ReplResponseStatus, ResidentDurabilityPolicy,
-    RuntimeProgramLoadOutcome, RuntimeValueSnapshot, Severity, SourcePosition, SourceSpan,
-    ValueOutput,
+    DiagnosticEvent, DiagnosticId, DiagnosticNote, DiagnosticOwner, DiagnosticPhase,
+    MAX_RESIDENT_STEP_COUNT, MechEvent, MechEventBus, MechEventEnvelope, MechRuntime,
+    OutputArtifact, OutputContent, OutputSource, ReplEvent, ReplResponse, ReplResponseKind,
+    ReplResponseStatus, ResidentDurabilityPolicy, RuntimeProgramLoadOutcome, RuntimeValueSnapshot,
+    Severity, SourcePosition, SourceSpan, ValueOutput,
 };
 
-/// Shared upper bound for one synchronous resident-REPL step request.
-///
-/// Platform hosts may reject this earlier for a better interaction, but every
-/// call is checked here before the runtime loop so an adapter cannot block its
-/// event loop with an effectively unbounded request.
-pub const MAX_RESIDENT_STEP_COUNT: u64 = 1_000_000;
 static NEXT_SELECTION_TOKEN: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone)]
@@ -876,6 +870,18 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         Ok(())
     }
 
+    /// Release one host-owned snapshot without affecting historical user selections.
+    pub fn release_retained_selection(&mut self, token: &str) -> bool {
+        self.reusable_selection_tokens
+            .retain(|_, retained| retained != token);
+        self.retained_selections.remove(token).is_some()
+    }
+
+    /// Number of explicitly retained snapshot roots (including host-owned panes).
+    pub fn retained_selection_count(&self) -> usize {
+        self.retained_selections.len()
+    }
+
     pub fn retained_selection(&self, token: &str) -> Option<(String, RuntimeValueSnapshot)> {
         self.retained_selections
             .get(token)
@@ -1005,7 +1011,9 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     }
 }
 
-fn remove_canonical_definitions(
+/// Project definition removal through the same canonical rules as `:clear`.
+/// Hosts use this to stage a document/console boundary before runtime handoff.
+pub fn remove_canonical_definitions(
     document: &crate::SourceDocument,
     requested: &std::collections::BTreeSet<String>,
 ) -> MResult<(String, std::collections::BTreeSet<String>)> {

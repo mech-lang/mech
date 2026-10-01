@@ -48,6 +48,12 @@ impl Display for ReplInputAction {
     }
 }
 
+/// Shared upper bound for one synchronous resident REPL step request.
+///
+/// The limit is part of the portable host protocol, so reduced browser builds
+/// can validate input without enabling the resident source runtime.
+pub const MAX_RESIDENT_STEP_COUNT: u64 = 1_000_000;
+
 /// A renderer-neutral keyboard gesture from a REPL editor.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]

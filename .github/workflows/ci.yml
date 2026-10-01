@@ -443,12 +443,18 @@ jobs:
     needs: impact
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The last green cold run took 28m02s before R22's lifecycle checks.
+    # Cache compilation separately and leave room for all browser suites.
+    timeout-minutes: 45
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: "0"
       CARGO_PROFILE_TEST_DEBUG: "0"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_VERSION: mech-browser-standard-v1
+      SCCACHE_IGNORE_SERVER_IO_ERROR: "1"
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
@@ -474,6 +480,18 @@ jobs:
             -o /tmp/wasm-pack.tar.gz
           tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
           sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
+      - name: Install compiler cache
+        uses: Mozilla-Actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        with:
+          version: v0.16.0
+      - name: Restore Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: browser-standard-product-v1
+          cache-on-failure: "true"
+          cache-workspace-crates: "false"
+        # Reuse compiler inputs, not a previously embedded server or WASM package.
+        # The build and every browser assertion still run on the current checkout.
       - name: Build standard WASM and the standard server
         run: |
           python3 scripts/build-wasm.py --profile browser
@@ -484,6 +502,27 @@ jobs:
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
       - name: Smoke test rich served documents before full validation
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-rich-document-browser.sh
+
+      - name: Check browser document lifecycle sequences
+        run: python3 -B scripts/smoke-browser-document-lifecycle.py --mech-bin target/debug/mech
+
+      - name: Upload standard browser failure diagnostics
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-standard-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/served-rich-document.*/progress.log
+            target/served-rich-document.*/**/server.log
+            target/served-rich-document.*/**/format.log
+            target/served-rich-document.*/**/chrome.dom
+            target/served-rich-document.*/**/chrome.stderr
+            target/served-rich-document.*/**/chrome.png
+            target/browser-document-lifecycle/*.log
+            target/browser-document-lifecycle/*.json
+            target/browser-document-lifecycle/*.html
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Remove generated browser package
         if: always()

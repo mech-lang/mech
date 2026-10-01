@@ -68,6 +68,43 @@ fn format_fixture_output(shim: Option<&Path>, stylesheet: Option<&Path>, output:
         .expect("Cargo-built mech formatter must start")
 }
 
+fn assert_retained_execution_payload(html: &str) {
+    let Some(tail) = html.split("data-mech-document-code>").nth(1) else {
+        return;
+    };
+    let encoded = tail.split("</script>").next().unwrap().trim();
+    let payload = mech_runtime::BrowserDocumentPayload::decode(encoded)
+        .expect("formatter execution payload must retain source, never a detached tree");
+    let tree = mech_syntax::parser::parse(payload.source().trim()).unwrap();
+    let mut presentation = mech_syntax::Formatter::new();
+    drop(presentation.format_html(&tree, String::new(), String::new()));
+    assert_eq!(
+        payload.presentation_output_ids(),
+        presentation.root_presentation_output_ids()
+    );
+    if let Some(bundle) = html.split("data-mech-document-sources>").nth(1) {
+        use base64::Engine as _;
+        let encoded = bundle.split("</script>").next().unwrap().trim();
+        let bundle: serde_json::Value = serde_json::from_slice(
+            &base64::engine::general_purpose::STANDARD
+                .decode(encoded)
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            payload.root_specifier(),
+            bundle["rootSpecifier"].as_str().unwrap()
+        );
+        let root = bundle["sources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|entry| entry["specifier"] == payload.root_specifier())
+            .unwrap();
+        assert_eq!(payload.source(), root["source"].as_str().unwrap());
+    }
+}
+
 fn format_fixture(shim: Option<&Path>, stylesheet: Option<&Path>, output: &Path) -> String {
     let output_result = format_fixture_output(shim, stylesheet, output);
     assert!(
@@ -76,7 +113,10 @@ fn format_fixture(shim: Option<&Path>, stylesheet: Option<&Path>, output: &Path)
         String::from_utf8_lossy(&output_result.stdout),
         String::from_utf8_lossy(&output_result.stderr),
     );
-    std::fs::read_to_string(output).expect("formatter must write the requested HTML file")
+    let html =
+        std::fs::read_to_string(output).expect("formatter must write the requested HTML file");
+    assert_retained_execution_payload(&html);
+    html
 }
 
 #[test]
@@ -295,6 +335,7 @@ fn mech_format_bundles_relative_import_sources() {
     );
 
     let html = std::fs::read_to_string(&output).expect("formatted page must exist");
+    assert_retained_execution_payload(&html);
     let mount = html
         .split("data-mech-document-sources>")
         .nth(1)

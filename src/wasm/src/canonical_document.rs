@@ -100,9 +100,12 @@ fn browser_source_error(message: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "mika")]
     use mech_engine::CanonicalSourceFrontend;
+    #[cfg(feature = "mika")]
     use mech_runtime::{CanonicalRenderScope, RuntimeValueSnapshot};
 
+    #[cfg(feature = "mika")]
     fn results(
         owner: mech_syntax::document::DocumentScopeId,
         scope: CanonicalRenderScope,

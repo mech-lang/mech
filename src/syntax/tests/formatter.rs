@@ -1,6 +1,6 @@
 #![cfg(feature = "formatter")]
 
-use mech_core::{hash_str, nodes::*};
+use mech_core::{inline_document_output_id, nodes::*};
 use mech_syntax::{Formatter, HtmlShimExtraSlots, HtmlStyleSheets};
 
 fn token(kind: TokenKind, text: &str) -> Token {
@@ -172,15 +172,240 @@ fn formatter_uses_the_stable_root_namespace_for_inline_output_addresses() {
         mech_syntax::parser::parse("The document evaluates {answer + 1} inline.\n\nanswer := 41")
             .unwrap();
     let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+    let expression = tree
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .find_map(|element| match element {
+            SectionElement::Paragraph(paragraph) => {
+                paragraph.elements.iter().find_map(|element| match element {
+                    ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
+                    _ => None,
+                })
+            }
+            _ => None,
+        })
+        .unwrap();
     let expected = format!(
         "id=\"{}:0\" class=\"mech-inline-mech-code\" data-mech-source",
-        hash_str("inline-eval:0:0"),
+        inline_document_output_id(0, expression, 0),
     );
 
     assert!(
         html.contains(&expected),
         "missing formatter inline address: {html}"
     );
+}
+
+#[test]
+fn hidden_inline_evaluations_do_not_consume_visible_occurrences() {
+    let tree = mech_syntax::parser::parse(
+        "```mech:hidden\n42 -- Hidden {answer + 1}\n```\n\nVisible {answer + 1}.\n\nanswer := 41\n",
+    )
+    .unwrap();
+    let visible_expression = tree
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .find_map(|element| match element {
+            SectionElement::Paragraph(paragraph) => {
+                paragraph.elements.iter().find_map(|element| match element {
+                    ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
+                    _ => None,
+                })
+            }
+            _ => None,
+        })
+        .unwrap();
+    let output_id = inline_document_output_id(0, visible_expression, 0);
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+    assert_eq!(html.matches(&format!("id=\"{output_id}:0\"")).count(), 1);
+}
+
+#[test]
+fn repeated_title_fields_advance_authored_inline_occurrences() {
+    let tree = mech_syntax::parser::parse(
+        "Document\n========\nauthor: {40 + 2}\nauthor: {40 + 2}\n========\n",
+    )
+    .unwrap();
+    let expression = tree
+        .title
+        .as_ref()
+        .and_then(|title| title.author.as_ref())
+        .and_then(|paragraph| paragraph.elements.first())
+        .and_then(|element| match element {
+            ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
+            _ => None,
+        })
+        .unwrap();
+    let first = inline_document_output_id(0, expression, 0);
+    let second = inline_document_output_id(0, expression, 1);
+    let html = Formatter::new().format_html(&tree, String::new(), "{{AUTHOR}}".to_string());
+
+    assert!(!html.contains(&format!("id=\"{first}:0\"")), "{html}");
+    assert!(html.contains(&format!("id=\"{second}:0\"")), "{html}");
+}
+
+#[test]
+fn discarded_title_fields_do_not_advance_visible_footnote_numbering() {
+    let tree = mech_syntax::parser::parse(
+        "Document\n========\nauthor: Discarded[^discarded]\nauthor: Visible[^visible]\n========\n",
+    )
+    .unwrap();
+    let html = Formatter::new().format_html(&tree, String::new(), "{{AUTHOR}}".to_string());
+
+    assert!(
+        html.contains("class=\"mech-footnote-reference\">1</a>"),
+        "{html}"
+    );
+    assert!(
+        !html.contains("class=\"mech-footnote-reference\">2</a>"),
+        "{html}"
+    );
+}
+
+#[test]
+fn styled_inline_evaluations_render_live_placeholders() {
+    for (source, wrapper) in [
+        ("*{1 + 1}*\n", "mech-em"),
+        ("!!{1 + 1}!!\n", "mech-highlight"),
+        ("_{1 + 1}_\n", "mech-u"),
+        ("~{1 + 1}~\n", "mech-del"),
+    ] {
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+        assert!(html.contains(wrapper), "{source}: {html}");
+        assert!(
+            html.contains("class=\"mech-inline-mech-code\""),
+            "{source}: {html}"
+        );
+    }
+}
+
+#[test]
+fn body_inline_occurrences_continue_after_title_fields() {
+    let tree = mech_syntax::parser::parse(
+        "Document\n========\nauthor: {40 + 2}\n========\n\nBody {40 + 2}.\n",
+    )
+    .unwrap();
+    let expression = tree
+        .title
+        .as_ref()
+        .unwrap()
+        .author
+        .as_ref()
+        .unwrap()
+        .elements
+        .iter()
+        .find_map(|element| match element {
+            ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
+            _ => None,
+        })
+        .unwrap();
+    let title_id = inline_document_output_id(0, expression, 0);
+    let body_id = inline_document_output_id(0, expression, 1);
+    let html =
+        Formatter::new().format_html(&tree, String::new(), "{{AUTHOR}}{{INTRO}}".to_string());
+    assert!(html.contains(&format!("id=\"{title_id}:0\"")), "{html}");
+    assert!(html.contains(&format!("id=\"{body_id}:0\"")), "{html}");
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn serialized_title_retains_repeated_field_occurrences() {
+    let tree = mech_syntax::parser::parse(
+        "Document\n========\nauthor: {40 + 2}\nauthor: {40 + 2}\n========\n",
+    )
+    .unwrap();
+    let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+    let decoded: Program = mech_core::nodes::decode_and_decompress(&encoded).unwrap();
+    assert_eq!(decoded.title.unwrap().fields.len(), 2);
+}
+
+#[test]
+fn outputless_fences_do_not_consume_visible_occurrences() {
+    let tree = mech_syntax::parser::parse("```mech{output: false}\n42\n```\n\n```mech\n42\n```\n")
+        .unwrap();
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+    assert_eq!(fence_output_addresses(&html).len(), 1, "{html}");
+}
+
+#[test]
+fn visible_fence_comments_do_not_consume_root_inline_occurrences() {
+    let tree = mech_syntax::parser::parse(
+        "```mech\n42 -- Result {answer + 1}\n```\n\nVisible {answer + 1}.\n\nanswer := 41\n",
+    )
+    .unwrap();
+    let visible_expression = tree
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .find_map(|element| match element {
+            SectionElement::Paragraph(paragraph) => {
+                paragraph.elements.iter().find_map(|element| match element {
+                    ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
+                    _ => None,
+                })
+            }
+            _ => None,
+        })
+        .unwrap();
+    let first = inline_document_output_id(0, visible_expression, 0);
+    let second = inline_document_output_id(0, visible_expression, 1);
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+
+    assert!(html.contains(&format!("id=\"{first}:0\"")), "{html}");
+    assert!(!html.contains(&format!("id=\"{second}:0\"")), "{html}");
+}
+
+fn fence_output_addresses(html: &str) -> Vec<&str> {
+    html.split("class=\"mech-block-output\" id=\"")
+        .skip(1)
+        .map(|suffix| suffix.split('"').next().unwrap())
+        .collect()
+}
+
+#[test]
+fn document_slots_share_fence_occurrences_across_intro_and_content() {
+    let parsed = mech_syntax::parser::parse("```mech\n42\n```\n").unwrap();
+    let block = parsed
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .find_map(|element| match element {
+            SectionElement::FencedMechCode(block) => Some(block),
+            _ => None,
+        })
+        .unwrap();
+    let tree = Program {
+        title: None,
+        body: Body {
+            sections: vec![
+                Section {
+                    subtitle: None,
+                    annotations: Vec::new(),
+                    elements: vec![SectionElement::FencedMechCode(block.clone())],
+                },
+                Section {
+                    subtitle: Some(Subtitle {
+                        text: plain_paragraph("Section"),
+                        level: 2,
+                    }),
+                    annotations: Vec::new(),
+                    elements: vec![SectionElement::FencedMechCode(block.clone())],
+                },
+            ],
+        },
+    };
+    let html =
+        Formatter::new().format_html(&tree, String::new(), "{{INTRO}}{{CONTENTS}}".to_string());
+    let addresses = fence_output_addresses(&html);
+    assert_eq!(addresses.len(), 2, "{html}");
+    assert_ne!(addresses[0], addresses[1], "{html}");
 }
 
 fn first_statement(src: &str) -> Statement {
@@ -229,6 +454,20 @@ fn formatter_keeps_figure_table_hero_frontmatter_parseable() {
         reparsed.title.and_then(|title| title.hero),
         Some(SectionElement::FigureTable(_))
     ));
+}
+
+#[test]
+fn formatter_renders_live_outputs_in_figure_table_hero_captions() {
+    let source = "Gallery\n===============================================================================\nhero: | ![Result {40 + 2}](first.svg) |\n===============================================================================\n";
+    let program = mech_syntax::parser::parse(source).unwrap();
+    let html = Formatter::new().format_html(&program, String::new(), "{{HERO}}".to_string());
+
+    assert_eq!(
+        html.matches("class=\"mech-inline-mech-code\"").count(),
+        1,
+        "{html}"
+    );
+    assert!(html.contains("mech-figure-caption-text"), "{html}");
 }
 
 #[test]
@@ -417,6 +656,7 @@ fn html_fixture(sections: &[(&str, &str)]) -> Program {
         title: Some(Title {
             text: token(TokenKind::Title, "Slot Fixture"),
             imports: Vec::new(),
+            fields: Vec::new(),
             author: Some(plain_paragraph("Fixture Author")),
             date: Some(plain_paragraph("Fixture Date")),
             hero: None,
@@ -676,6 +916,73 @@ fn shipped_shim(name: &str) -> String {
     })
 }
 
+#[cfg(feature = "serde")]
+#[test]
+fn public_html_formatter_emits_retained_source_for_every_shipped_shim() {
+    use mech_core::browser_document::BrowserDocumentPayload;
+    let source = "~~~mech\nvalue := 11\n~~~\n\nVisible {value + 1}.\n";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    for name in ["index", "blog", "docs"] {
+        let mut formatter = Formatter::new();
+        let html = formatter.format_html(&tree, String::new(), shipped_shim(name));
+        let encoded = html
+            .split("data-mech-document-code>")
+            .nth(1)
+            .unwrap()
+            .split("</script>")
+            .next()
+            .unwrap()
+            .trim();
+        let payload = BrowserDocumentPayload::decode(encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "document.mec");
+        assert_eq!(payload.source(), Formatter::new().format(&tree));
+        assert_eq!(
+            payload.presentation_output_ids(),
+            formatter.root_presentation_output_ids()
+        );
+        assert_eq!(payload.presentation_output_ids().len(), 2);
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn source_html_formatter_preserves_exact_bytes_root_and_presentation_ids() {
+    use mech_core::browser_document::BrowserDocumentPayload;
+    let source = "-- e\u{301} and \u{1f642}\r\n~~~mech\r\nvalue := 11\r\n~~~\r\n\r\nVisible {value + 1}.\r\n";
+    let tree = mech_syntax::parser::parse(source.trim()).unwrap();
+    let mut formatter = Formatter::new();
+    let render = formatter
+        .format_source_html_with_style_sheets_and_slots(
+            &tree,
+            "docs/nested/main.mec",
+            source,
+            HtmlStyleSheets::default(),
+            "{{CODE}}".to_string(),
+            &HtmlShimExtraSlots::default(),
+        )
+        .unwrap();
+    let payload = BrowserDocumentPayload::decode(&render.html).unwrap();
+    assert_eq!(payload.source(), source);
+    assert_eq!(payload.root_specifier(), "docs/nested/main.mec");
+    assert_eq!(
+        payload.presentation_output_ids(),
+        formatter.root_presentation_output_ids()
+    );
+    assert_eq!(payload.presentation_output_ids().len(), 2);
+    assert!(
+        formatter
+            .format_source_html_with_style_sheets_and_slots(
+                &tree,
+                "",
+                source,
+                HtmlStyleSheets::default(),
+                String::new(),
+                &HtmlShimExtraSlots::default(),
+            )
+            .is_err()
+    );
+}
+
 #[test]
 fn shipped_document_shims_consume_required_slots() {
     let tree = html_fixture(&[("Fixture section", "Fixture content")]);
@@ -840,8 +1147,11 @@ fn nested_evaluations_preserve_source_and_emit_distinct_placeholders() {
         assert!(formatted.contains(nested), "{formatted}");
         assert_eq!(mech_syntax::parser::parse(&formatted).unwrap(), tree);
         let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_owned());
-        for index in 0..2 {
-            let id = hash_str(&format!("inline-eval:0:{index}"));
+        let (ids, count) =
+            mech_core::document_presentation::root_document_presentation_addresses(&tree);
+        assert_eq!(count, 2);
+        assert_ne!(ids[0], ids[1]);
+        for id in ids {
             assert_eq!(
                 html.matches(&format!("id=\"{id}:0\"")).count(),
                 1,
@@ -903,4 +1213,145 @@ fn cloned_fences_receive_distinct_occurrence_addresses() {
     for id in &ids {
         assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1);
     }
+}
+
+#[test]
+fn source_formatting_preserves_interleaved_title_imports_and_fields() {
+    for lines in [
+        vec!["+> math", "author: Before {1}", "date: After {math/value}"],
+        vec!["author: Before {1}", "+> math", "date: After {math/value}"],
+        vec!["author: Before {1}", "date: After {2}", "+> math"],
+        vec![
+            "author: Before {1}",
+            "+> math -- Import {99}",
+            "date: After {math/value}",
+            "+> extra -- second",
+            "author: Again {extra/value}",
+            "summary: Summary {3}",
+        ],
+    ] {
+        let source = format!("Document\n========\n{}\n========\n", lines.join("\n"));
+        let tree = mech_syntax::parser::parse(&source).unwrap();
+        assert_eq!(
+            tree.title.as_ref().unwrap().imports.len(),
+            lines.iter().filter(|line| line.starts_with("+>")).count()
+        );
+        let formatted = Formatter::new().format(&tree);
+        let actual = formatted
+            .lines()
+            .filter(|line| {
+                line.starts_with("author:")
+                    || line.starts_with("date:")
+                    || line.starts_with("summary:")
+                    || line.starts_with("+>")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(actual, lines, "{formatted}");
+        assert_eq!(mech_syntax::parser::parse(&formatted).unwrap(), tree);
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn tree_only_html_payload_preserves_title_import_execution_order() {
+    use mech_core::browser_document::BrowserDocumentPayload;
+    let source = "Document\n========\nauthor: Before {1}\n+> math -- Import {99}\ndate: After {math/value}\n========\n";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, String::new(), "{{CODE}}".to_owned());
+    let payload = BrowserDocumentPayload::decode(&html).unwrap();
+    let retained = payload.source();
+    assert!(
+        retained.find("author:").unwrap() < retained.find("+>").unwrap(),
+        "{retained}"
+    );
+    assert!(
+        retained.find("+>").unwrap() < retained.find("date:").unwrap(),
+        "{retained}"
+    );
+    assert_eq!(mech_syntax::parser::parse(retained).unwrap(), tree);
+    assert_eq!(
+        payload.presentation_output_ids(),
+        formatter.root_presentation_output_ids()
+    );
+    assert_eq!(payload.presentation_output_ids().len(), 2);
+}
+
+#[test]
+fn grouped_title_metadata_keeps_retained_import_positions() {
+    let source =
+        "Document\n========\nauthor: Before {1}\n+> math\ndate: After {math/value}\n========\n";
+    let original = mech_syntax::parser::parse(source).unwrap();
+    let mut grouped = original.clone();
+    grouped.title.as_mut().unwrap().fields.clear();
+    let formatted = Formatter::new().format(&grouped);
+    assert!(formatted.find("author:").unwrap() < formatted.find("+>").unwrap());
+    assert!(formatted.find("+>").unwrap() < formatted.find("date:").unwrap());
+    assert_eq!(mech_syntax::parser::parse(&formatted).unwrap(), original);
+}
+
+#[test]
+fn title_import_comments_have_no_live_presentation_slots() {
+    let source = "Document\n========\nauthor: {40 + 2}\n+> math -- Import {41 + 1}\ndate: {42 + 0}\n========\n";
+    let tree = mech_syntax::parse(source).unwrap();
+    let (ids, count) =
+        mech_core::document_presentation::root_document_presentation_addresses(&tree);
+    assert_eq!(count, 2);
+    assert_eq!(ids.len(), 2);
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, String::new(), "{{AUTHOR}}{{DATE}}".to_owned());
+    assert_eq!(formatter.root_presentation_output_ids(), ids);
+    for id in ids {
+        assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1);
+    }
+}
+
+#[test]
+fn reused_formatter_starts_each_document_with_its_own_backmatter_and_addresses() {
+    let make = |name: &str, entries: bool| {
+        let backmatter = if entries {
+            format!(
+                "Refs[BOOK] and note[^note].\n\n[^note]: {name} footnote.\n\n[BOOK]: {name} citation.\n"
+            )
+        } else {
+            String::new()
+        };
+        mech_syntax::parser::parse(&format!("{name}\n========\nauthor: {{11}}\n========\n\n1. Section\n--------\n\nLive {{22}}.\n\n{backmatter}")).unwrap()
+    };
+    let a = make("Alpha", true);
+    let b = make("Beta", false);
+    let c = make("Gamma", true);
+    let shim = "{{STYLESHEET}}{{AUTHOR}}{{INTRO}}{{CONTENTS}}{{CITED}}{{FOOTNOTES}}";
+    let mut reused = Formatter::new();
+    for tree in [&a, &b, &c, &b] {
+        let mut fresh = Formatter::new();
+        let expected = fresh.format_html(tree, "persistent-style".to_string(), shim.to_string());
+        let actual = reused.format_html(tree, "persistent-style".to_string(), shim.to_string());
+        assert_eq!(actual, expected);
+        assert_eq!(
+            reused.root_presentation_output_ids(),
+            fresh.root_presentation_output_ids()
+        );
+        assert_eq!(reused.root_presentation_output_ids().len(), 2);
+        if tree == &b {
+            assert!(
+                !actual.contains("Alpha footnote")
+                    && !actual.contains("mech-works-cited")
+                    && !actual.contains("mech-footnotes")
+            );
+        }
+        if tree == &c {
+            assert!(actual.contains("Gamma citation") && actual.contains("Gamma footnote"));
+            assert!(!actual.contains("Alpha citation"));
+        }
+    }
+    let source = reused.format(&a);
+    assert_eq!(source, Formatter::new().format(&a));
+    assert!(reused.works_cited().is_empty());
+    assert!(reused.footnotes().is_empty());
+    assert_eq!(
+        reused.format_html(&c, String::new(), shim.to_string()),
+        Formatter::new().format_html(&c, String::new(), shim.to_string())
+    );
+    assert_eq!(reused.format(&b), Formatter::new().format(&b));
 }

@@ -2093,8 +2093,14 @@ fn render_fence_html(
         && presentation.show_output
         && scope.is_some()
     {
-        let range = fence.syntax().range();
-        if let Some(address) = lookup.output_addresses.get(&range) {
+        let range = fence
+            .delimiter_range()
+            .unwrap_or_else(|| fence.syntax().range());
+        if let Some(address) = lookup
+            .output_addresses
+            .get(&range)
+            .or_else(|| lookup.output_addresses.get(&fence.syntax().range()))
+        {
             output.push_str(&format!(
                 "<div class='mech-block-output' id='{address}:0'></div>"
             ));

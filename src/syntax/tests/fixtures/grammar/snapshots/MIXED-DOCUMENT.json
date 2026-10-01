@@ -399,6 +399,41 @@
           }
         ]
       },
+      "fields": [
+        {
+          "Author": {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "A",
+                    "d",
+                    "a"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "Date": {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "2",
+                    "0",
+                    "2",
+                    "6"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        }
+      ],
       "hero": null,
       "imports": [],
       "kicker": null,

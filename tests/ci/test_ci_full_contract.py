@@ -809,6 +809,63 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('cache-workspace-crates: "false"', dependencies)
         self.assertNotIn("continue-on-error", block)
 
+    def test_standard_browser_cache_keeps_current_build_and_every_smoke(self):
+        block = job_block(CI, "browser-standard-canary")
+        steps = job_steps(CI, "browser-standard-canary")
+        toolchain = next(index for index, step in enumerate(steps)
+                         if "rustup default nightly-2026-03-03" in step)
+        cache = next(index for index, step in enumerate(steps)
+                     if "Mozilla-Actions/sccache-action@" in step)
+        build = next(index for index, step in enumerate(steps)
+                     if "Build standard WASM and the standard server" in step)
+        self.assertLess(toolchain, cache)
+        self.assertLess(cache, build)
+        self.assertIn("RUSTC_WRAPPER: sccache", block)
+        self.assertIn('SCCACHE_GHA_ENABLED: "true"', block)
+        self.assertIn('SCCACHE_IGNORE_SERVER_IO_ERROR: "1"', block)
+        dependencies = next(step for step in steps if "Swatinem/rust-cache@" in step)
+        self.assertIn('cache-on-failure: "true"', dependencies)
+        self.assertIn('cache-workspace-crates: "false"', dependencies)
+        for command in (
+            "python3 scripts/build-wasm.py --profile browser",
+            "cargo build --locked --bin mech",
+            "bash scripts/smoke-served-resident-nbody-browser.sh",
+            "bash scripts/smoke-served-rich-document-browser.sh",
+            "python3 -B scripts/smoke-browser-document-lifecycle.py",
+        ):
+            step = next(step for step in steps if command in step)
+            # A cache hit may reuse compiler work, never skip product verification.
+            self.assertNotRegex(step, r"(?m)^\s+if:")
+        self.assertNotIn("continue-on-error", block)
+        build_step = steps[build]
+        self.assertLess(build_step.index("scripts/build-wasm.py"),
+                        build_step.index("cargo build --locked --bin mech"))
+        # 30 minutes cancelled a healthy cold build before lifecycle validation.
+        timeout = int(re.search(r"timeout-minutes: (\d+)", block).group(1))
+        self.assertGreater(timeout, 30)
+        self.assertLessEqual(timeout, 60)
+
+    def test_standard_browser_keeps_failure_progress_without_profile_uploads(self):
+        steps = job_steps(CI, "browser-standard-canary")
+        evidence = next(step for step in steps
+                        if "Upload standard browser failure diagnostics" in step)
+        self.assertIn("failure() || cancelled()", evidence)
+        self.assertIn("target/served-rich-document.*/progress.log", evidence)
+        self.assertIn("target/served-rich-document.*/**/chrome.dom", evidence)
+        self.assertIn("target/served-rich-document.*/**/server.log", evidence)
+        self.assertIn("target/browser-document-lifecycle/*.json", evidence)
+        self.assertNotIn("chrome-profile", evidence)
+        cleanup = next(step for step in steps if "Remove generated browser package" in step)
+        self.assertLess(steps.index(evidence), steps.index(cleanup))
+        smoke = (ROOT / "scripts/smoke-served-rich-document-browser.sh").read_text()
+        self.assertIn('tee -a "$work_dir/progress.log"', smoke)
+        for function in ("run_case", "run_configured_case"):
+            body = smoke.split(f"{function}() {{", 1)[1].split("\n}", 1)[0]
+            self.assertIn('report_case_progress "$label" started', body)
+            self.assertIn('report_case_progress "$label" passed', body)
+            self.assertLess(body.index("run_browser_case"),
+                            body.index('report_case_progress "$label" passed'))
+
     def test_full_validation_stops_on_cancellation_and_keeps_selected_dependency_gates(self):
         block = job_block(CI, "full-validation")
         condition = re.search(r"(?s)    if: >-\n\s*\$\{\{(.*?)\}\}", block).group(1)

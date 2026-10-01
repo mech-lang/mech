@@ -1972,18 +1972,19 @@ function setReflectiveValueAvailability(element, available, interactive = true) 
 }
 
 function bindOutputClick(element, address) {
+  setReflectiveValueAvailability(element, true);
   if (element.dataset.mechReplBound === "true") {
     return;
   }
   element.dataset.mechReplBound = "true";
-  element.classList.add("mech-clickable");
-  element.tabIndex = 0;
-  element.setAttribute("role", "button");
   const fallbackIdentity = reflectiveElementIdentity(element, "output");
   const select = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    if (!reflectiveSelectionAllowed()) {
+    if (
+      element.dataset.mechValueAvailable === "false" ||
+      !reflectiveSelectionAllowed()
+    ) {
       return;
     }
     try {
@@ -2008,6 +2009,13 @@ function bindOutputClick(element, address) {
       select(event);
     }
   });
+}
+
+function clearUnavailableOutput(output) {
+  // Keep the presentation address and node for an occurrence that may return.
+  delete output.dataset.mechSource;
+  output.replaceChildren();
+  setReflectiveValueAvailability(output, false, false);
 }
 
 function renderInlineValue(output, address, rendered) {
@@ -2072,6 +2080,8 @@ function renderValues() {
         output.dataset.mechSource = "";
         output.innerHTML = rendered.blockHtml;
         bindOutputClick(output, address);
+      } else {
+        clearUnavailableOutput(output);
       }
     } catch (error) {
       appendError(error);
@@ -2083,6 +2093,8 @@ function renderValues() {
       const rendered = state.document.renderedOutput(address.outputId);
       if (rendered !== null) {
         renderInlineValue(output, address, rendered);
+      } else {
+        clearUnavailableOutput(output);
       }
     } catch (error) {
       appendError(error);
@@ -2165,6 +2177,17 @@ globalThis.MechDocumentController = Object.freeze({
       "replReplaceSource",
     );
     const response = controller.replReplaceSource(String(source));
+    consumeReplResponse(response);
+    renderValues();
+    return controller.replSource();
+  },
+  applyEdit(start, end, inserted) {
+    const controller = activeDocumentController("apply an edit", "replApplyEdit");
+    if (!Number.isInteger(start) || !Number.isInteger(end) ||
+        start < 0 || end < start || end > 0xffffffff) {
+      throw documentControllerError("MECH_DOCUMENT_INVALID_EDIT", "invalid UTF-16 edit range");
+    }
+    const response = controller.replApplyEdit(start, end, String(inserted));
     consumeReplResponse(response);
     renderValues();
     return controller.replSource();

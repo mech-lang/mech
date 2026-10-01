@@ -1,7 +1,24 @@
 use mech_core::{
-    BlockConfig, FencedMechCode, MechCode, Program, SectionAnnotation, SectionElement, Statement,
-    hash_str,
+    BlockConfig, FencedMechCode, MechCode, Program, SectionAnnotation, SectionElement,
+    SourceLocation, Statement, hash_str,
 };
+
+use crate::source_semantics::SourceDocumentOutputKind;
+
+/// One stable browser presentation address and its content-derived identity.
+/// The semantic identity intentionally omits positional occurrence so a
+/// retained browser document can match unchanged duplicate outputs across an
+/// accepted source edit.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RootDocumentOutputIdentity {
+    pub output_id: u64,
+    pub semantic_id: u64,
+    pub kind: SourceDocumentOutputKind,
+    /// Source coordinates for the expression or fence that owns this rendered
+    /// output. Browser adapters use the range to join presentation identities
+    /// to canonical outputs without depending on equal list lengths.
+    pub source_range: Option<(SourceLocation, SourceLocation)>,
+}
 
 /// Runtime-only namespace used by the browser document adapter to capture the
 /// last ordinary source result before interactive console overlays begin.
@@ -81,28 +98,56 @@ pub fn insert_root_document_program_output_capture(
 /// compact artifact-output ordinal. Keep this traversal aligned with
 /// `mechdown::section_element` and the formatter's root presentation namespace.
 pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
-    let mut ids = Vec::new();
-    let mut addresses = mech_core::document_presentation::DocumentPresentationAddresses::default();
+    root_document_output_identities(program)
+        .into_iter()
+        .map(|identity| identity.output_id)
+        .collect()
+}
+
+/// Returns root-document presentation identities in canonical publication
+/// order, retaining both the public occurrence address and its semantic base.
+pub fn root_document_output_identities(program: &Program) -> Vec<RootDocumentOutputIdentity> {
+    use mech_core::document_presentation::{
+        DocumentPresentationAddresses, DocumentPresentationOutputIdentity,
+        DocumentPresentationOutputKind,
+    };
+    let identity = |output: DocumentPresentationOutputIdentity| RootDocumentOutputIdentity {
+        output_id: output.output_id,
+        semantic_id: output.semantic_id,
+        source_range: output.source_range,
+        kind: match output.kind {
+            DocumentPresentationOutputKind::Inline => SourceDocumentOutputKind::Inline,
+            DocumentPresentationOutputKind::Fence => SourceDocumentOutputKind::Fence,
+        },
+    };
+    let mut addresses = DocumentPresentationAddresses::default();
+    let mut outputs = Vec::new();
     if let Some(title) = &program.title {
-        addresses.collect_title_outputs(title, &mut ids);
+        addresses.collect_title_outputs(title, &mut outputs);
     }
+    let mut identities = outputs.drain(..).map(identity).collect::<Vec<_>>();
     for section in &program.body.sections {
-        addresses.collect_section_outputs(section, &mut ids);
+        addresses.collect_section_outputs(section, &mut outputs);
+        identities.extend(outputs.drain(..).map(identity));
         if section
             .annotations
             .iter()
             .any(|annotation| annotation.name.as_ref() == PROGRAM_OUTPUT_PUBLICATION_ANNOTATION)
         {
             let id = root_document_program_output_id();
-            if !ids.contains(&id) {
-                ids.push(id);
+            if !identities.iter().any(|output| output.output_id == id) {
+                identities.push(RootDocumentOutputIdentity {
+                    output_id: id,
+                    semantic_id: id,
+                    kind: SourceDocumentOutputKind::Program,
+                    source_range: None,
+                });
             }
         }
     }
-    ids
+    identities
 }
 
-/// Root inline count uses exactly the same complete presentation traversal.
 pub fn root_document_inline_eval_count(program: &Program) -> u64 {
     mech_core::document_presentation::root_document_presentation_addresses(program).1
 }
@@ -111,14 +156,31 @@ pub(crate) fn fenced_document_output_id(block: &FencedMechCode) -> Option<u64> {
     if block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE {
         return Some(root_document_program_output_id());
     }
-    block
-        .code
-        .last()
-        .map(|(last_code, _)| hash_str(&format!("{last_code:?}")))
+    mech_core::document_presentation::fenced_document_output_id(block)
+}
+
+pub(crate) fn fenced_document_output_occurrence_id(
+    block: &FencedMechCode,
+    occurrence: u64,
+) -> Option<u64> {
+    if block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE {
+        return Some(root_document_program_output_id());
+    }
+    mech_core::document_presentation::fenced_document_output_occurrence_id(block, occurrence)
 }
 
 fn section_contains_program_value(elements: &[SectionElement]) -> bool {
     elements.iter().any(element_contains_program_value)
+}
+
+/// Whether a root document contains an ordinary value eligible for the
+/// implicit program-result presentation.
+pub fn root_document_has_program_value(program: &Program) -> bool {
+    program
+        .body
+        .sections
+        .iter()
+        .any(|section| section_contains_program_value(&section.elements))
 }
 
 fn element_contains_program_value(element: &SectionElement) -> bool {
@@ -131,7 +193,9 @@ fn element_contains_program_value(element: &SectionElement) -> bool {
                     .iter()
                     .any(|(code, _)| code_is_program_value(code))
         }
-        SectionElement::Float((element, _)) => element_contains_program_value(element),
+        SectionElement::Float((element, _)) | SectionElement::Prompt(element) => {
+            element_contains_program_value(element)
+        }
         _ => false,
     }
 }
@@ -222,5 +286,118 @@ mod tests {
             MechCode::Statement(Statement::ContextSend(_))
         ));
         assert!(!code_is_program_value(code));
+    }
+
+    #[test]
+    fn hidden_fences_have_no_presentation_addresses() {
+        let tree = mech_syntax::parse("```mech:hidden\n42 -- Result {1 + 1}\n```\n").unwrap();
+        assert!(root_document_output_ids(&tree).is_empty());
+    }
+
+    #[test]
+    fn repeated_fences_receive_distinct_presentation_addresses() {
+        let tree = mech_syntax::parse("```mech\n42\n```\n\n```mech\n42\n```\n").unwrap();
+        let output_ids = root_document_output_ids(&tree);
+        assert_eq!(output_ids.len(), 2);
+        assert_ne!(output_ids[0], output_ids[1]);
+    }
+
+    #[test]
+    fn title_front_matter_uses_the_root_inline_identity_namespace() {
+        let tree = mech_syntax::parse(
+            "Document\n========\nauthor: Ada {40 + 2}\nhero: ![Result {41 + 1}](hero.svg)\n========\n",
+        )
+        .unwrap();
+        let output_ids = root_document_output_ids(&tree);
+        assert_eq!(output_ids.len(), 2);
+        assert_eq!(root_document_inline_eval_count(&tree), 2);
+    }
+
+    #[test]
+    fn title_outputs_publish_without_a_body_section() {
+        let tree = mech_syntax::parse(
+            "Document\n========\nauthor: {40 + 2}\nhero: | ![Result {41 + 1}](hero.svg) |\n========\n",
+        )
+        .unwrap();
+        assert!(tree.body.sections.is_empty());
+        let outputs = root_document_output_identities(&tree);
+        let (shared, _) =
+            mech_core::document_presentation::root_document_presentation_identities(&tree);
+        assert_eq!(outputs.len(), 2);
+        assert_eq!(
+            outputs
+                .iter()
+                .map(|output| output.output_id)
+                .collect::<Vec<_>>(),
+            shared
+                .iter()
+                .map(|output| output.output_id)
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn styled_inline_outputs_are_published_in_formatter_order() {
+        let tree = mech_syntax::parse("*{1 + 1}* !!{2 + 2}!! _{3 + 3}_ ~{4 + 4}~\n").unwrap();
+        assert_eq!(root_document_output_ids(&tree).len(), 4);
+        assert_eq!(root_document_inline_eval_count(&tree), 4);
+    }
+
+    #[test]
+    fn title_front_matter_preserves_authored_output_order_and_duplicates() {
+        let tree = mech_syntax::parse(
+            "Document\n========\ndate: {40 + 2}\nauthor: {41 + 1}\nauthor: {42 + 0}\n========\n",
+        )
+        .unwrap();
+        let output_ids = root_document_output_ids(&tree);
+        let expected = [
+            "Document\n========\ndate: {40 + 2}\n========\n",
+            "Document\n========\nauthor: {41 + 1}\n========\n",
+            "Document\n========\nauthor: {42 + 0}\n========\n",
+        ]
+        .map(|source| {
+            let field = mech_syntax::parse(source).unwrap();
+            root_document_output_ids(&field)[0]
+        });
+
+        assert_eq!(output_ids, expected);
+        assert_eq!(root_document_inline_eval_count(&tree), 3);
+    }
+
+    #[test]
+    fn prompt_wrapped_fences_remain_program_values() {
+        let tree = mech_syntax::parse(">: ```mech\n42\n```\n").unwrap();
+        assert!(root_document_has_program_value(&tree));
+    }
+
+    #[test]
+    fn declaration_only_fences_have_no_presentation_address() {
+        let tree = mech_syntax::parse(
+            "```mech\nidentity(value<f32>) = result<f32> :=\n  result := value.\n```\n",
+        )
+        .unwrap();
+        assert!(root_document_output_ids(&tree).is_empty());
+    }
+
+    #[test]
+    fn primary_subtitle_inline_outputs_precede_section_body_outputs() {
+        let tree = mech_syntax::parse("1. Result {40 + 2}\n--------\nBody {41 + 1}.\n").unwrap();
+        assert_eq!(root_document_output_ids(&tree).len(), 2);
+        assert_eq!(root_document_inline_eval_count(&tree), 2);
+    }
+
+    #[test]
+    fn fences_with_the_same_final_expression_keep_semantic_identities() {
+        let original =
+            mech_syntax::parse("```mech\nx := 1\nx\n```\n\n```mech\nx := 2\nx\n```\n").unwrap();
+        let inserted = mech_syntax::parse(
+            "```mech\nx := 0\nx\n```\n\n```mech\nx := 1\nx\n```\n\n```mech\nx := 2\nx\n```\n",
+        )
+        .unwrap();
+        let original_ids = root_document_output_ids(&original);
+        let inserted_ids = root_document_output_ids(&inserted);
+        assert_eq!(original_ids.len(), 2);
+        assert_eq!(inserted_ids.len(), 3);
+        assert!(original_ids.iter().all(|id| inserted_ids.contains(id)));
     }
 }

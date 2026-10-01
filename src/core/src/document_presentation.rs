@@ -2,20 +2,57 @@
 //! This is presentation metadata only; it does not compile or execute syntax.
 
 use crate::{
-    Comment, FencedMechCode, MDList, MechCode, ModuleImport, Paragraph, ParagraphElement, Program,
-    Section, SectionElement, Title, hash_str,
+    Comment, Expression, FencedMechCode, MDList, MechCode, ModuleImport, Paragraph,
+    ParagraphElement, Program, Section, SectionElement, SourceLocation, Statement, Title,
+    TitleField, hash_str, inline_document_output_id,
 };
 #[cfg(feature = "no_std")]
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 
 /// One namespace-aware address sequence for every slot of a document render.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct DocumentPresentationAddresses {
     inline_counts: Vec<(u64, u64)>,
     fence_counts: Vec<((u64, u64), u64)>,
+    inline_occurrences: Vec<((u64, u64), u64)>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DocumentPresentationOutputKind {
+    Inline,
+    Fence,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DocumentPresentationOutputIdentity {
+    pub output_id: u64,
+    pub semantic_id: u64,
+    pub kind: DocumentPresentationOutputKind,
+    pub source_range: Option<(SourceLocation, SourceLocation)>,
+    /// The rendered title field and output position within its final occurrence.
+    pub title_slot: Option<(&'static str, usize)>,
 }
 
 impl DocumentPresentationAddresses {
+    pub fn inline_expression(&mut self, namespace: u64, expression: &Expression) -> u64 {
+        self.inline(namespace);
+        let base = inline_document_output_id(namespace, expression, 0);
+        let count = match self
+            .inline_occurrences
+            .iter_mut()
+            .find(|(key, _)| *key == (namespace, base))
+        {
+            Some((_, count)) => count,
+            None => {
+                self.inline_occurrences.push(((namespace, base), 0));
+                &mut self.inline_occurrences.last_mut().unwrap().1
+            }
+        };
+        let id = inline_document_output_id(namespace, expression, *count);
+        *count += 1;
+        id
+    }
+
     pub fn inline(&mut self, namespace: u64) -> u64 {
         let count = match self
             .inline_counts
@@ -54,8 +91,7 @@ impl DocumentPresentationAddresses {
     /// Preserve the first historical fence address and distinguish repetitions.
     /// The producer and HTML renderer must advance this same occurrence rule.
     pub fn fence(&mut self, block: &FencedMechCode, namespace: u64) -> Option<u64> {
-        let (last, _) = block.code.last()?;
-        let base = hash_str(&format!("{last:?}"));
+        let base = fenced_document_output_id(block)?;
         let count = match self
             .fence_counts
             .iter_mut()
@@ -70,7 +106,7 @@ impl DocumentPresentationAddresses {
         let id = if *count == 0 {
             base
         } else {
-            hash_str(&format!("fence-output:{namespace}:{base}:{count}"))
+            fenced_document_output_occurrence_id(block, *count)?
         };
         *count += 1;
         Some(id)
@@ -88,23 +124,38 @@ pub enum TitlePresentationField<'a> {
 
 pub fn title_presentation_fields(title: &Title) -> Vec<TitlePresentationField<'_>> {
     let mut fields = Vec::new();
-    for (name, paragraph) in [("author", &title.author), ("date", &title.date)] {
-        if let Some(paragraph) = paragraph {
-            fields.push(TitlePresentationField::Paragraph(name, paragraph));
+    if !title.fields.is_empty() {
+        for field in &title.fields {
+            fields.push(match field {
+                TitleField::Author(p) => TitlePresentationField::Paragraph("author", p),
+                TitleField::Date(p) => TitlePresentationField::Paragraph("date", p),
+                TitleField::Kicker(p) => TitlePresentationField::Paragraph("kicker", p),
+                TitleField::Section(p) => TitlePresentationField::Paragraph("section", p),
+                TitleField::Summary(p) => TitlePresentationField::Paragraph("summary", p),
+                TitleField::Next(p) => TitlePresentationField::Paragraph("next", p),
+                TitleField::Previous(p) => TitlePresentationField::Paragraph("previous", p),
+                TitleField::Hero(p) => TitlePresentationField::Hero(p),
+            });
         }
-    }
-    if let Some(hero) = &title.hero {
-        fields.push(TitlePresentationField::Hero(hero));
-    }
-    for (name, paragraph) in [
-        ("kicker", &title.kicker),
-        ("section", &title.section),
-        ("summary", &title.summary),
-        ("next", &title.next),
-        ("previous", &title.previous),
-    ] {
-        if let Some(paragraph) = paragraph {
-            fields.push(TitlePresentationField::Paragraph(name, paragraph));
+    } else {
+        for (name, paragraph) in [("author", &title.author), ("date", &title.date)] {
+            if let Some(paragraph) = paragraph {
+                fields.push(TitlePresentationField::Paragraph(name, paragraph));
+            }
+        }
+        if let Some(hero) = &title.hero {
+            fields.push(TitlePresentationField::Hero(hero));
+        }
+        for (name, paragraph) in [
+            ("kicker", &title.kicker),
+            ("section", &title.section),
+            ("summary", &title.summary),
+            ("next", &title.next),
+            ("previous", &title.previous),
+        ] {
+            if let Some(paragraph) = paragraph {
+                fields.push(TitlePresentationField::Paragraph(name, paragraph));
+            }
         }
     }
     for (import, comment) in &title.imports {
@@ -127,8 +178,19 @@ pub fn title_presentation_fields(title: &Title) -> Vec<TitlePresentationField<'_
 }
 
 impl DocumentPresentationAddresses {
-    pub fn collect_title_outputs(&mut self, title: &Title, outputs: &mut Vec<u64>) {
-        for field in title_presentation_fields(title) {
+    pub fn collect_title_outputs(
+        &mut self,
+        title: &Title,
+        outputs: &mut Vec<DocumentPresentationOutputIdentity>,
+    ) {
+        let fields = title_presentation_fields(title);
+        let slot_name = |field: &TitlePresentationField<'_>| match field {
+            TitlePresentationField::Paragraph(name, _) => Some(*name),
+            TitlePresentationField::Hero(_) => Some("hero"),
+            TitlePresentationField::Import(_, _) => None,
+        };
+        for (index, field) in fields.iter().enumerate() {
+            let start = outputs.len();
             match field {
                 TitlePresentationField::Paragraph(_, paragraph) => {
                     collect_paragraph_output_ids(paragraph, self, outputs)
@@ -136,15 +198,26 @@ impl DocumentPresentationAddresses {
                 TitlePresentationField::Hero(hero) => {
                     collect_section_output_ids(hero, self, outputs)
                 }
-                TitlePresentationField::Import(_, Some(comment)) => {
-                    collect_comment_output_ids(comment, self, outputs)
+                // Import comments are authoring metadata, with no rendered slot.
+                TitlePresentationField::Import(_, _) => {}
+            }
+            if let Some(name) = slot_name(field)
+                && !fields[index + 1..]
+                    .iter()
+                    .any(|candidate| slot_name(candidate) == Some(name))
+            {
+                for (position, output) in outputs[start..].iter_mut().enumerate() {
+                    output.title_slot = Some((name, position));
                 }
-                TitlePresentationField::Import(_, None) => {}
             }
         }
     }
 
-    pub fn collect_section_outputs(&mut self, section: &Section, outputs: &mut Vec<u64>) {
+    pub fn collect_section_outputs(
+        &mut self,
+        section: &Section,
+        outputs: &mut Vec<DocumentPresentationOutputIdentity>,
+    ) {
         if let Some(subtitle) = &section.subtitle {
             collect_paragraph_output_ids(&subtitle.text, self, outputs);
         }
@@ -154,7 +227,9 @@ impl DocumentPresentationAddresses {
     }
 }
 
-pub fn root_document_presentation_addresses(program: &Program) -> (Vec<u64>, u64) {
+pub fn root_document_presentation_identities(
+    program: &Program,
+) -> (Vec<DocumentPresentationOutputIdentity>, u64) {
     let mut outputs = Vec::new();
     let mut addresses = DocumentPresentationAddresses::default();
     if let Some(title) = &program.title {
@@ -169,7 +244,7 @@ pub fn root_document_presentation_addresses(program: &Program) -> (Vec<u64>, u64
 fn collect_section_output_ids(
     element: &SectionElement,
     addresses: &mut DocumentPresentationAddresses,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<DocumentPresentationOutputIdentity>,
 ) {
     match element {
         SectionElement::Float((element, _)) | SectionElement::Prompt(element) => {
@@ -238,24 +313,30 @@ fn collect_section_output_ids(
 fn collect_fenced_output_ids(
     block: &FencedMechCode,
     addresses: &mut DocumentPresentationAddresses,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<DocumentPresentationOutputIdentity>,
 ) {
     if block.config.disabled || block.config.namespace != 0 {
         return;
     }
-    collect_code_comments(&block.code, addresses, output_ids);
+    // A fence publishes its block result; comment expressions are presentation-only.
     if block.config.hidden || !block.config.output {
         return;
     }
     if let Some(output_id) = addresses.fence(block, 0) {
-        output_ids.push(output_id);
+        output_ids.push(DocumentPresentationOutputIdentity {
+            output_id,
+            semantic_id: fenced_document_output_id(block).unwrap(),
+            kind: DocumentPresentationOutputKind::Fence,
+            source_range: None,
+            title_slot: None,
+        });
     }
 }
 
 fn collect_code_comments(
     code: &[(MechCode, Option<Comment>)],
     addresses: &mut DocumentPresentationAddresses,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<DocumentPresentationOutputIdentity>,
 ) {
     for (code, trailing_comment) in code {
         if let MechCode::Comment(comment) = code {
@@ -270,7 +351,7 @@ fn collect_code_comments(
 fn collect_comment_output_ids(
     comment: &Comment,
     addresses: &mut DocumentPresentationAddresses,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<DocumentPresentationOutputIdentity>,
 ) {
     collect_paragraph_output_ids(&comment.paragraph, addresses, output_ids);
 }
@@ -278,7 +359,7 @@ fn collect_comment_output_ids(
 fn collect_paragraph_output_ids(
     paragraph: &Paragraph,
     addresses: &mut DocumentPresentationAddresses,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<DocumentPresentationOutputIdentity>,
 ) {
     for element in &paragraph.elements {
         collect_paragraph_element_output_ids(element, addresses, output_ids);
@@ -288,11 +369,21 @@ fn collect_paragraph_output_ids(
 fn collect_paragraph_element_output_ids(
     element: &ParagraphElement,
     addresses: &mut DocumentPresentationAddresses,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<DocumentPresentationOutputIdentity>,
 ) {
     match element {
-        ParagraphElement::EvalInlineMechCode(_) => {
-            output_ids.push(addresses.inline(0));
+        ParagraphElement::EvalInlineMechCode(expression) => {
+            let tokens = expression.tokens();
+            output_ids.push(DocumentPresentationOutputIdentity {
+                output_id: addresses.inline_expression(0, expression),
+                semantic_id: inline_document_output_id(0, expression, 0),
+                kind: DocumentPresentationOutputKind::Inline,
+                source_range: tokens
+                    .first()
+                    .zip(tokens.last())
+                    .map(|(first, last)| (first.src_range.start, last.src_range.end)),
+                title_slot: None,
+            });
         }
         ParagraphElement::Emphasis(element)
         | ParagraphElement::Highlight(element)
@@ -311,7 +402,7 @@ fn collect_paragraph_element_output_ids(
 fn collect_list_output_ids(
     list: &MDList,
     addresses: &mut DocumentPresentationAddresses,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<DocumentPresentationOutputIdentity>,
 ) {
     match list {
         MDList::Unordered(items) => {
@@ -338,5 +429,73 @@ fn collect_list_output_ids(
                 }
             }
         }
+    }
+}
+
+pub fn root_document_presentation_addresses(program: &Program) -> (Vec<u64>, u64) {
+    let (identities, count) = root_document_presentation_identities(program);
+    (
+        identities
+            .into_iter()
+            .map(|identity| identity.output_id)
+            .collect(),
+        count,
+    )
+}
+
+pub fn fenced_document_output_id(block: &FencedMechCode) -> Option<u64> {
+    if !block
+        .code
+        .iter()
+        .any(|(code, _)| code_produces_fence_result(code))
+    {
+        return None;
+    }
+    let mut identity = String::from("mech/fenced-document-output/v2");
+    for (code, _) in &block.code {
+        identity.push_str(match code {
+            MechCode::Comment(_) => "/comment",
+            MechCode::ActivationScope(_) => "/activation",
+            MechCode::Expression(_) => "/expression",
+            MechCode::FsmImplementation(_) => "/fsm-implementation",
+            MechCode::FsmSpecification(_) => "/fsm-specification",
+            MechCode::FunctionDefine(_) => "/function",
+            MechCode::Import(_) => "/import",
+            MechCode::Statement(_) => "/statement",
+            MechCode::Error(_, _) => "/error",
+        });
+        for token in code.tokens() {
+            identity.push('/');
+            identity.push_str(&format!("{:?}:{}", token.kind, token.to_string()));
+        }
+    }
+    Some(hash_str(&identity))
+}
+pub fn fenced_document_output_occurrence_id(
+    block: &FencedMechCode,
+    occurrence: u64,
+) -> Option<u64> {
+    let base = fenced_document_output_id(block)?;
+    if occurrence == 0 {
+        Some(base)
+    } else {
+        Some(hash_str(&format!(
+            "mech/fenced-document-output/{base}/{occurrence}"
+        )))
+    }
+}
+
+fn code_produces_fence_result(code: &MechCode) -> bool {
+    match code {
+        MechCode::ActivationScope(_) | MechCode::Expression(_) => true,
+        MechCode::Statement(statement) => matches!(
+            statement,
+            Statement::OpAssign(_)
+                | Statement::VariableAssign(_)
+                | Statement::VariableDefine(_)
+                | Statement::ContextSend(_)
+                | Statement::TupleDestructure(_)
+        ),
+        _ => false,
     }
 }

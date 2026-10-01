@@ -2,7 +2,8 @@ use crate::*;
 #[cfg(feature = "no_std")]
 use alloc::collections::{BTreeMap, BTreeSet};
 use mech_core::document_presentation::{
-    DocumentPresentationAddresses, TitlePresentationField, title_presentation_fields,
+    DocumentPresentationAddresses, TitlePresentationField, fenced_document_output_id,
+    title_presentation_fields,
 };
 use mech_core::nodes::{Kind, Matrix};
 #[cfg(not(feature = "no_std"))]
@@ -244,6 +245,8 @@ pub struct Formatter {
     footnotes: Vec<String>,
     interpreter_id: u64,
     presentation_addresses: DocumentPresentationAddresses,
+    presentation_outputs_enabled: bool,
+    root_presentation_output_ids: Vec<u64>,
 }
 
 impl Formatter {
@@ -275,8 +278,20 @@ impl Formatter {
         hash_str(&format!("mika:{}:{:?}", parent_id, (&node.0, &node.1)))
     }
 
-    fn inline_eval_id(&mut self) -> u64 {
-        self.presentation_addresses.inline(self.interpreter_id)
+    fn inline_eval_id(&mut self, expression: &Expression) -> u64 {
+        let output_id = self
+            .presentation_addresses
+            .inline_expression(self.interpreter_id, expression);
+        if self.interpreter_id == 0 {
+            self.root_presentation_output_ids.push(output_id);
+        }
+        output_id
+    }
+
+    /// Addresses emitted by the last root-document render. Payload producers
+    /// use the same rendering path without requiring an execution compiler.
+    pub fn root_presentation_output_ids(&self) -> &[u64] {
+        &self.root_presentation_output_ids
     }
 
     pub fn new() -> Formatter {
@@ -302,18 +317,35 @@ impl Formatter {
             toc: false,
             interpreter_id: 0,
             presentation_addresses: DocumentPresentationAddresses::default(),
+            presentation_outputs_enabled: true,
+            root_presentation_output_ids: Vec::new(),
         }
     }
 
-    /// Continue the root document's inline-evaluation address sequence when
-    /// formatting a fragment that will be appended to an existing document.
-    pub fn set_root_inline_eval_offset(&mut self, offset: u64) {
-        self.presentation_addresses.set_inline_offset(0, offset);
+    /// Reset one document's mutable render state while retaining configuration.
+    fn reset_document_state(&mut self) {
+        self.identifiers.clear();
+        self.rows = 0;
+        self.cols = 0;
+        self.indent = 0;
+        self.nested = false;
+        self.toc = false;
+        self.interpreter_id = 0;
+        self.reset_numbering();
+        self.citation_num = 0;
+        self.citation_map.clear();
+        self.citations.clear();
+        self.footnote_num = 0;
+        self.footnote_map.clear();
+        self.footnotes.clear();
+        self.presentation_addresses = DocumentPresentationAddresses::default();
+        self.presentation_outputs_enabled = true;
+        self.root_presentation_output_ids.clear();
     }
 
     pub fn format(&mut self, tree: &Program) -> String {
+        self.reset_document_state();
         self.html = false;
-        self.presentation_addresses = DocumentPresentationAddresses::default();
         self.program(tree)
     }
 
@@ -396,8 +428,42 @@ impl Formatter {
         shim: String,
         extra_slots: &HtmlShimExtraSlots,
     ) -> HtmlShimRender {
+        self.render_document_html(tree, styles, shim, extra_slots, None)
+            .unwrap_or_else(|error| panic!("failed to encode browser document: {error:?}"))
+    }
+
+    /// Render a presentation tree with the exact source that produced it.
+    /// Parsing stays with the source owner, without a runtime or compiler here.
+    /// Tree-only entry points normalize source from their presentation tree.
+    #[cfg(feature = "serde")]
+    pub fn format_source_html_with_style_sheets_and_slots(
+        &mut self,
+        tree: &Program,
+        root_specifier: &str,
+        source: &str,
+        styles: HtmlStyleSheets,
+        shim: String,
+        extra_slots: &HtmlShimExtraSlots,
+    ) -> MResult<HtmlShimRender> {
+        self.render_document_html(
+            tree,
+            styles,
+            shim,
+            extra_slots,
+            Some((root_specifier, source)),
+        )
+    }
+
+    fn render_document_html(
+        &mut self,
+        tree: &Program,
+        styles: HtmlStyleSheets,
+        shim: String,
+        extra_slots: &HtmlShimExtraSlots,
+        retained_source: Option<(&str, &str)>,
+    ) -> MResult<HtmlShimRender> {
+        self.reset_document_state();
         self.html = true;
-        self.presentation_addresses = DocumentPresentationAddresses::default();
 
         let title_slots = self.title_slots(&tree.title);
         let (
@@ -419,12 +485,20 @@ impl Formatter {
         };
 
         #[cfg(feature = "serde")]
-        let encoded_tree = match compress_and_encode(&tree) {
-            Ok(encoded) => encoded,
-            Err(error) => panic!("failed to encode syntax tree: {error:?}"),
+        let encoded_document = {
+            let root = retained_source.map_or("document.mec", |(root, _)| root);
+            let source = retained_source
+                .map(|(_, source)| source.to_owned())
+                .unwrap_or_else(|| Formatter::new().format(tree));
+            mech_core::browser_document::BrowserDocumentPayload::new(root, source)?
+                .with_presentation_output_ids(self.root_presentation_output_ids.iter().copied())
+                .encode()?
         };
         #[cfg(not(feature = "serde"))]
-        let encoded_tree = String::new();
+        let encoded_document = {
+            let _ = retained_source;
+            String::new()
+        };
         let repl_html = r#"<div
   class="console-scroll mech-repl hidden"
   id="mech-output"
@@ -457,7 +531,7 @@ impl Formatter {
         slots.insert("CONTENT".to_string(), formatted_src);
         slots.insert("CITED".to_string(), formatted_cited);
         slots.insert("FOOTNOTES".to_string(), formatted_footnotes);
-        slots.insert("CODE".to_string(), encoded_tree);
+        slots.insert("CODE".to_string(), encoded_document);
         slots.insert("REPL".to_string(), repl_html.to_string());
         slots.insert("PRESENTATION".to_string(), "document".to_string());
 
@@ -469,51 +543,100 @@ impl Formatter {
             slots.insert(name.clone(), value.clone());
         }
 
-        render_html_shim(&shim, &slots)
+        Ok(render_html_shim(&shim, &slots))
+    }
+
+    fn render_title_field(&mut self, field: &TitleField, slots: &mut TitleSlots) {
+        match field {
+            TitleField::Author(paragraph) => {
+                slots.author = self.inline_para_el(paragraph, "mech-author")
+            }
+            TitleField::Date(paragraph) => slots.date = self.inline_para_el(paragraph, "mech-date"),
+            TitleField::Hero(hero) => slots.hero = self.hero_el(hero),
+            TitleField::Kicker(paragraph) => {
+                slots.kicker = self.inline_para_el(paragraph, "hero-kicker")
+            }
+            TitleField::Section(paragraph) => {
+                slots.section = self.inline_para_el(paragraph, "mech-section")
+            }
+            TitleField::Summary(paragraph) => slots.summary = self.synopsis_el(paragraph),
+            TitleField::Next(paragraph) => slots.next = self.inline_para_el(paragraph, "mech-next"),
+            TitleField::Previous(paragraph) => {
+                slots.previous = self.inline_para_el(paragraph, "mech-previous")
+            }
+        }
+    }
+
+    fn advance_discarded_title_field_outputs(&mut self, field: &TitleField) {
+        // Repeated fields retain only their final rendered slot. Format an
+        // earlier occurrence in an isolated snapshot so its presentation IDs
+        // still advance in authored order without leaking footnote, citation,
+        // figure, or other formatter state into the visible document.
+        let mut isolated = self.clone();
+        isolated.render_title_field(field, &mut TitleSlots::default());
+        self.presentation_addresses = isolated.presentation_addresses;
     }
 
     fn title_slots(&mut self, title: &Option<Title>) -> TitleSlots {
-        let mut slots = TitleSlots::default();
-        if let Some(title) = title {
-            for field in title_presentation_fields(title) {
-                match field {
-                    TitlePresentationField::Paragraph(name, paragraph) => {
-                        let rendered = if name == "summary" {
-                            self.synopsis_el(paragraph)
-                        } else {
-                            self.inline_para_el(
-                                paragraph,
-                                match name {
-                                    "author" => "mech-author",
-                                    "date" => "mech-date",
-                                    "kicker" => "hero-kicker",
-                                    "section" => "mech-section",
-                                    "next" => "mech-next",
-                                    "previous" => "mech-previous",
-                                    _ => unreachable!(),
-                                },
-                            )
-                        };
-                        *match name {
-                            "author" => &mut slots.author,
-                            "date" => &mut slots.date,
-                            "kicker" => &mut slots.kicker,
-                            "section" => &mut slots.section,
-                            "summary" => &mut slots.summary,
-                            "next" => &mut slots.next,
-                            "previous" => &mut slots.previous,
-                            _ => unreachable!(),
-                        } = rendered;
+        match title {
+            Some(title) if !title.fields.is_empty() => {
+                let mut slots = TitleSlots::default();
+                for (index, field) in title.fields.iter().enumerate() {
+                    let overwritten = title.fields[index + 1..].iter().any(|candidate| {
+                        core::mem::discriminant(candidate) == core::mem::discriminant(field)
+                    });
+                    if overwritten {
+                        self.advance_discarded_title_field_outputs(field);
+                    } else {
+                        self.render_title_field(field, &mut slots);
                     }
-                    TitlePresentationField::Hero(hero) => slots.hero = self.hero_el(hero),
-                    TitlePresentationField::Import(_, Some(comment)) => {
-                        drop(self.comment(comment));
-                    }
-                    TitlePresentationField::Import(_, None) => {}
                 }
+                slots
             }
+            Some(title) => TitleSlots {
+                author: title
+                    .author
+                    .as_ref()
+                    .map(|p| self.inline_para_el(p, "mech-author"))
+                    .unwrap_or_default(),
+                date: title
+                    .date
+                    .as_ref()
+                    .map(|p| self.inline_para_el(p, "mech-date"))
+                    .unwrap_or_default(),
+                hero: title
+                    .hero
+                    .as_ref()
+                    .map(|h| self.hero_el(h))
+                    .unwrap_or_default(),
+                kicker: title
+                    .kicker
+                    .as_ref()
+                    .map(|p| self.inline_para_el(p, "hero-kicker"))
+                    .unwrap_or_default(),
+                section: title
+                    .section
+                    .as_ref()
+                    .map(|p| self.inline_para_el(p, "mech-section"))
+                    .unwrap_or_default(),
+                summary: title
+                    .summary
+                    .as_ref()
+                    .map(|p| self.synopsis_el(p))
+                    .unwrap_or_default(),
+                next: title
+                    .next
+                    .as_ref()
+                    .map(|p| self.inline_para_el(p, "mech-next"))
+                    .unwrap_or_default(),
+                previous: title
+                    .previous
+                    .as_ref()
+                    .map(|p| self.inline_para_el(p, "mech-previous"))
+                    .unwrap_or_default(),
+            },
+            None => TitleSlots::default(),
         }
-        slots
     }
 
     fn document_slots(
@@ -703,26 +826,23 @@ impl Formatter {
             let mut front_matter = Vec::new();
             for field in title_presentation_fields(node) {
                 match field {
-                    TitlePresentationField::Paragraph(name, paragraph) => {
-                        let content = self.inline_paragraph(paragraph);
-                        front_matter.push(format!("{name}: {content}"));
+                    TitlePresentationField::Paragraph(name, value) => {
+                        front_matter.push(format!("{name}: {}", self.inline_paragraph(value)));
                     }
                     TitlePresentationField::Hero(hero) => {
-                        let hero = match hero {
+                        let value = match hero {
                             SectionElement::FigureTable(table) => self.figure_table_source(table),
                             _ => self.section_element(hero).trim().to_string(),
                         };
-                        front_matter.push(format!("hero: {hero}"));
+                        front_matter.push(format!("hero: {value}"));
                     }
                     TitlePresentationField::Import(import, comment) => {
-                        front_matter.push(
-                            self.mech_code(&vec![(
-                                MechCode::Import(import.clone()),
-                                comment.cloned(),
-                            )])
-                            .trim_end()
-                            .to_string(),
-                        );
+                        let mut source = self.module_import(import);
+                        if let Some(comment) = comment {
+                            source.push_str(" -- ");
+                            source.push_str(self.inline_paragraph(&comment.paragraph).trim());
+                        }
+                        front_matter.push(source);
                     }
                 }
             }
@@ -1017,11 +1137,11 @@ impl Formatter {
                 }
             }
             ParagraphElement::Highlight(n) => {
-                let content = self.paragraph_element(n);
+                let p = self.paragraph_element(n);
                 if self.html {
-                    format!("<mark class=\"mech-highlight\">{}</mark>", content)
+                    format!("<mark class=\"mech-highlight\">{}</mark>", p)
                 } else {
-                    format!("!!{}!!", content)
+                    format!("!!{}!!", p)
                 }
             }
             ParagraphElement::SectionReference(n) => {
@@ -1082,27 +1202,27 @@ impl Formatter {
                 }
             }
             ParagraphElement::Emphasis(n) => {
-                let content = self.paragraph_element(n);
+                let p = self.paragraph_element(n);
                 if self.html {
-                    format!("<em class=\"mech-em\">{}</em>", content)
+                    format!("<em class=\"mech-em\">{}</em>", p)
                 } else {
-                    format!("*{}*", content)
+                    format!("*{}*", p)
                 }
             }
             ParagraphElement::Underline(n) => {
-                let content = self.paragraph_element(n);
+                let p = self.paragraph_element(n);
                 if self.html {
-                    format!("<u class=\"mech-u\">{}</u>", content)
+                    format!("<u class=\"mech-u\">{}</u>", p)
                 } else {
-                    format!("_{}_", content)
+                    format!("_{}_", p)
                 }
             }
             ParagraphElement::Strikethrough(n) => {
-                let content = self.paragraph_element(n);
+                let p = self.paragraph_element(n);
                 if self.html {
-                    format!("<del class=\"mech-del\">{}</del>", content)
+                    format!("<del class=\"mech-del\">{}</del>", p)
                 } else {
-                    format!("~{}~", content)
+                    format!("~{}~", p)
                 }
             }
             ParagraphElement::InlineCode(n) => {
@@ -1127,14 +1247,21 @@ impl Formatter {
                 }
             }
             ParagraphElement::EvalInlineMechCode(expr) => {
-                let code_id = self.inline_eval_id();
                 let result = self.expression(expr);
                 if self.html {
-                    let element_id = format!("{}:{}", code_id, self.interpreter_id);
-                    format!(
-                        "<code id=\"{}\" class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
-                        element_id, result
-                    )
+                    if self.presentation_outputs_enabled {
+                        let code_id = self.inline_eval_id(expr);
+                        let element_id = format!("{}:{}", code_id, self.interpreter_id);
+                        format!(
+                            "<code id=\"{}\" class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
+                            element_id, result
+                        )
+                    } else {
+                        format!(
+                            "<code class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
+                            result
+                        )
+                    }
                 } else {
                     format!("{{{}}}", result)
                 }
@@ -1189,6 +1316,10 @@ impl Formatter {
         if block.config.namespace != 0 {
             self.interpreter_id = block.config.namespace;
         }
+        let parent_presentation_outputs_enabled = self.presentation_outputs_enabled;
+        // A fence publishes only its canonical block output. Evaluated syntax
+        // inside source comments must not consume root inline output IDs.
+        self.presentation_outputs_enabled = false;
         let block_id = hash_str(&format!("{:?}", block));
         let namespace_str = &block.config.namespace_str;
         let mut src = String::new();
@@ -1219,14 +1350,9 @@ impl Formatter {
         }
         let intrp_id = self.interpreter_id;
         self.interpreter_id = parent_interpreter_id;
-
+        self.presentation_outputs_enabled = parent_presentation_outputs_enabled;
         if self.html {
-            let output_id = if !block.config.disabled && !block.config.hidden && block.config.output
-            {
-                self.presentation_addresses.fence(block, intrp_id)
-            } else {
-                None
-            };
+            let base_output_id = fenced_document_output_id(block);
             let style_attr = match &block.options {
                 Some(option_map) if !option_map.elements.is_empty() => {
                     let style_str = option_map
@@ -1267,7 +1393,14 @@ impl Formatter {
                         block_id, namespace_str
                     )
                 };
-                let output_node = if let Some(output_id) = output_id {
+                let output_node = if block.config.output && base_output_id.is_some() {
+                    let output_id = self
+                        .presentation_addresses
+                        .fence(block, intrp_id)
+                        .expect("checked fenced output identity");
+                    if intrp_id == 0 {
+                        self.root_presentation_output_ids.push(output_id);
+                    }
                     format!(
                         "<div class=\"mech-block-output\" id=\"{}:{}\"></div>",
                         output_id, intrp_id
@@ -1386,7 +1519,7 @@ impl Formatter {
                     captions.push(format!(
             "<span class=\"mech-figure-caption-ref\">({})</span> <span class=\"mech-figure-caption-text\">{}</span>",
             label,
-            figure.caption.to_string()
+            self.paragraph(&figure.caption)
           ));
                     figure_ix += 1;
                 }

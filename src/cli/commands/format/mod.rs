@@ -917,13 +917,19 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         &document_sources,
                     )?;
                     let tree = parser::parse(authoritative_source.trim())?;
+                    let root_specifier = resolved_document
+                        .as_ref()
+                        .map(|bundle| bundle.root_specifier.as_str())
+                        .unwrap_or("document.mec");
                     let mut formatter = Formatter::new();
-                    let render = formatter.format_html_with_style_sheets_and_slots(
+                    let render = formatter.format_source_html_with_style_sheets_and_slots(
                         &tree,
+                        root_specifier,
+                        authoritative_source,
                         html_style_sheets(stylesheet_str.clone()),
                         shim_str.clone(),
                         &document_slots,
-                    );
+                    )?;
                     if let Some(shim_name) = shipped_shim {
                         validate_shipped_shim_render(shim_name, &render)?;
                     }
