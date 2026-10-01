@@ -4404,9 +4404,7 @@ def assert_repl_termination():
   const stopped = busyRepl.shutdown();
 
   let resetOwnership = null;
-  const configuredDocument = Boolean(document.querySelector(
-    '[data-mech-var-name="configured-answer"]'
-  ));
+  const configuredDocument = __MECH_CONFIGURED_DOCUMENT__;
   if (!configuredDocument) {
     const { encoded, bundle: sourceBundle } = __MECH_RETAINED_RESET_FIXTURE__;
     const resetDocument = WasmDocument.fromEncodedWithBundle(
@@ -4506,7 +4504,8 @@ def assert_repl_termination():
     ),
   };
 })()
-""".replace("__MECH_RETAINED_RESET_FIXTURE__", json.dumps(reset_fixture)))
+""".replace("__MECH_RETAINED_RESET_FIXTURE__", json.dumps(reset_fixture))
+    .replace("__MECH_CONFIGURED_DOCUMENT__", json.dumps(label == "configured")))
     busy_state = direct_exports.get("busyState", {}) if direct_exports else {}
     failed_busy_checks = sorted(name for name, value in busy_state.items() if not value)
     if failed_busy_checks or len(busy_state) != 7:
