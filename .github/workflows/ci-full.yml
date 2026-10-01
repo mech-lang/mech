@@ -2083,6 +2083,9 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Fetch complete locked dependency graph
+        run: cargo fetch --locked
+
       - name: Run dynamic module smoke path
         run: bash scripts/test-dynamic-modules.sh
 

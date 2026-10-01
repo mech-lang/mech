@@ -764,6 +764,51 @@ class FullWorkflowContractTests(unittest.TestCase):
             block,
         )
 
+    def test_windows_cache_never_skips_the_current_product_or_source_smoke(self):
+        steps = job_steps(CI, "standard-windows")
+        cache_index = next(
+            index for index, step in enumerate(steps)
+            if "Mozilla-Actions/sccache-action@" in step
+        )
+        toolchain_index = next(
+            index for index, step in enumerate(steps)
+            if "rustup default nightly-2026-03-03" in step
+        )
+        build_index = next(
+            index for index, step in enumerate(steps)
+            if "./scripts/build-mech.ps1" in step
+        )
+        self.assertLess(toolchain_index, cache_index)
+        self.assertLess(cache_index, build_index)
+        build = steps[build_index]
+        self.assertNotRegex(build, r"(?m)^\s+if:")
+        self.assertNotIn("continue-on-error", build)
+        self.assertIn("target/release/mech.exe --version", build)
+        self.assertIn(
+            "target/release/mech.exe run tests/fixtures/standard-resident-scalar.mec",
+            build,
+        )
+        producer = (ROOT / "scripts/build-mech.ps1").read_text(encoding="utf-8")
+        wasm = producer.index("python scripts/build-wasm.py --profile browser-compute")
+        native = producer.index("cargo build --locked --release --features compute_backends_native")
+        self.assertLess(wasm, native)
+        self.assertIn("Remove-Item $nativeArtifact -Force", producer)
+
+    def test_windows_compiler_cache_preserves_failures_and_partial_dependency_reuse(self):
+        block = job_block(CI, "standard-windows")
+        self.assertIn("CARGO_INCREMENTAL: 0", block)
+        self.assertIn("RUSTC_WRAPPER: sccache", block)
+        self.assertIn('SCCACHE_GHA_ENABLED: "true"', block)
+        # Cache-server I/O failures fall back to rustc, never suppress its errors.
+        self.assertIn('SCCACHE_IGNORE_SERVER_IO_ERROR: "1"', block)
+        dependencies = next(
+            step for step in job_steps(CI, "standard-windows")
+            if "Swatinem/rust-cache@" in step
+        )
+        self.assertIn('cache-on-failure: "true"', dependencies)
+        self.assertIn('cache-workspace-crates: "false"', dependencies)
+        self.assertNotIn("continue-on-error", block)
+
     def test_full_validation_stops_on_cancellation_and_keeps_selected_dependency_gates(self):
         block = job_block(CI, "full-validation")
         condition = re.search(r"(?s)    if: >-\n\s*\$\{\{(.*?)\}\}", block).group(1)
@@ -1158,6 +1203,13 @@ class FullWorkflowContractTests(unittest.TestCase):
         closure = "python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}"
         self.assertIn(fetch, block)
         self.assertLess(block.index(fetch), block.index(closure))
+
+    def test_dynamic_modules_prefetches_before_offline_native_build(self):
+        block = job_block(FULL, "dynamic-modules")
+        fetch = "cargo fetch --locked"
+        smoke = "bash scripts/test-dynamic-modules.sh"
+        self.assertIn(fetch, block)
+        self.assertLess(block.index(fetch), block.index(smoke))
 
     def test_language_census_prefetches_before_offline_metadata_tests(self):
         block = job_block(FULL, "cargo-language")
