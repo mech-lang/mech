@@ -2192,6 +2192,25 @@ fn production_parser_callers_are_exactly_inventoried() {
                 .is_some()
         );
     }
+    // Preserve the frozen contract/count while following explicitly recorded
+    // moves. This remains an exact census: an additional or missing call fails.
+    for (id, (source_path, caller)) in cutover_contract::unrouted_parser_consumer_callers() {
+        let row = consumers
+            .get(&id)
+            .expect("open route must belong to the frozen census");
+        let calls = expected
+            .remove(&(row.source_path.clone(), row.caller.clone()))
+            .expect("open route must not also claim canonical routing");
+        assert_eq!(source_path, row.source_path);
+        let source = fs::read_to_string(repository_root().join(&source_path)).unwrap();
+        assert!(
+            function_scopes(&production_tokens(&source))
+                .iter()
+                .any(|(scope, _, _)| scope == &caller),
+            "missing current caller {caller} for {id}"
+        );
+        assert!(expected.insert((source_path, caller), calls).is_none());
+    }
     let (discovered, prohibited_aliases) = discovered_production_calls();
     assert!(
         prohibited_aliases.is_empty(),
