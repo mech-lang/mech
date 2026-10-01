@@ -2730,14 +2730,8 @@ mod document {
             // Construct before touching the live project. A malformed replacement
             // must leave the current document usable.
             let mut replacement_bootstrap = self.bootstrap.clone();
-            let payload = decode_document_payload(
-                encoded,
-                &replacement_bootstrap.root_specifier,
-                replacement_bootstrap
-                    .source_map
-                    .get(&replacement_bootstrap.root_specifier)
-                    .map(String::as_str),
-            )?;
+            let payload =
+                decode_document_payload(encoded, &replacement_bootstrap.root_specifier, None)?;
             if payload.root_specifier() != replacement_bootstrap.root_specifier {
                 return Err(js_error(
                     "replacement document changes the retained root specifier",
@@ -3631,9 +3625,19 @@ fn decode_document_payload(
         }
     };
     let output_ids = root_document_output_ids(&tree);
-    let source = legacy_source
-        .map(str::to_owned)
-        .unwrap_or_else(|| mech_syntax::Formatter::new().format(&tree));
+    let source = if let Some(source) = legacy_source {
+        // Legacy presentation identities belong to the encoded tree. Only
+        // retain accompanying source when it describes that same tree; this
+        // check is shared by ordinary and served/bundled constructors.
+        if mech_syntax::parser::parse(source.trim()).ok().as_ref() != Some(&tree) {
+            return Err(js_error(format!(
+                "legacy browser document tree does not match source-map root `{legacy_root_specifier}`"
+            )));
+        }
+        source.to_owned()
+    } else {
+        mech_syntax::Formatter::new().format(&tree)
+    };
     BrowserDocumentPayload::new(legacy_root_specifier, source)
         .map(|payload| payload.with_presentation_output_ids(output_ids))
         .map_err(to_js_error)
@@ -4620,6 +4624,84 @@ mod tests {
         let payload = decode_document_payload(&encoded, "main.mec", Some(source)).unwrap();
         assert_eq!(payload.root_specifier(), "main.mec");
         assert_eq!(payload.source(), source);
+    }
+
+    #[test]
+    fn legacy_document_reset_executes_each_replacement_source() {
+        let mut document = WasmDocument::from_encoded(
+            &document_payload("document.mec", "x := 1\nx")
+                .encode()
+                .unwrap(),
+        )
+        .unwrap();
+        for (source, expected) in [("x := 2\nx", "2"), ("x := 3\nx\nx + 10", "3")] {
+            let tree = mech_syntax::parser::parse(source).unwrap();
+            let retained = mech_syntax::Formatter::new().format(&tree);
+            document
+                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
+                .unwrap();
+            assert_eq!(
+                document.bootstrap.source_map[&document.bootstrap.root_specifier],
+                retained
+            );
+            assert_eq!(document.bootstrap.document.initial_repl_source(), retained);
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("x")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                expected
+            );
+            assert_eq!(
+                document.bootstrap.presentation_output_ids,
+                root_document_output_ids(&tree)
+            );
+        }
+    }
+
+    #[test]
+    fn legacy_rich_payload_reconstruction_parses_and_indexes_the_document_contract() {
+        let source = include_str!("../../../tests/fixtures/shims/all-slots.mec");
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let payload = decode_document_payload(&encoded, "rich.mec", None).unwrap();
+        let retained = CanonicalWasmDocument::retain(
+            "rich.mec",
+            mech_syntax::document::Revision(0),
+            payload.source(),
+        )
+        .unwrap();
+        let index = retained.document().index().unwrap();
+        assert!(
+            index
+                .root
+                .scopes
+                .iter()
+                .any(|scope| matches!(scope, mech_runtime::resolver::SourceScope::Program))
+        );
+        assert!(index.root.scopes.iter().any(|scope| matches!(scope, mech_runtime::resolver::SourceScope::Interpreter(owner) if owner.namespace_str == "foo")));
+        assert_eq!(payload.presentation_output_ids().len(), 2);
+        assert!(payload.source().contains("~~~mech\nanswer\n~~~"));
+        assert!(
+            payload
+                .source()
+                .contains("~~~mech:foo\nfoo-value := 7\n~~~")
+        );
+        assert!(payload.source().contains("{answer + 1}"));
+        assert!(
+            payload
+                .source()
+                .contains("[^fixture]: Fixture footnote body.")
+        );
+        assert!(
+            payload
+                .source()
+                .contains("[MECH]: Mech Programming Language. https://mech-lang.org")
+        );
+        assert!(!payload.source().contains("<section"));
     }
 
     #[test]
@@ -6211,6 +6293,44 @@ phase"#;
         );
         let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
         assert!(ordinals.contains_key(&root_document_program_output_id()));
+    }
+
+    #[test]
+    fn documentation_fragment_uses_the_accepted_semicolon_normalization() {
+        let baseline = "answer := 1\nanswer";
+        let submitted = "Result {answer + 1}.\n\nanswer + 2;\r\n";
+        let mut session = mech_runtime::ResidentReplSession::from_source(
+            crate::repl::WasmReplRuntimeFactory::Standalone,
+            baseline.to_owned(),
+        )
+        .unwrap();
+        let accepted_before = session.source().len();
+        session.submit_host_source(submitted).unwrap();
+        let retained = session.source();
+        let (fragment, fragment_start) =
+            retained_submission_fragment(retained, accepted_before, submitted).unwrap();
+        assert_eq!(fragment, "Result {answer + 1}.\n\nanswer + 2\r\n");
+        assert_eq!(fragment_start, accepted_before + 1);
+        let bootstrap = document_bootstrap("document.mec", baseline, HashMap::new(), Vec::new());
+        let addresses = live_document_fragment_addresses(
+            &bootstrap,
+            session.source_document().unwrap(),
+            fragment,
+            fragment_start,
+        )
+        .unwrap();
+        let parsed = CanonicalWasmDocument::retain(
+            "browser:documentation:test",
+            mech_syntax::document::Revision(0),
+            submitted,
+        )
+        .unwrap();
+        let html = mech_runtime::CanonicalDocumentRenderer
+            .format_html_body_live(&parsed.document().document(), &addresses)
+            .unwrap();
+        assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+        assert!(!addresses.is_empty());
+        session.shutdown().unwrap();
     }
 
     #[test]
@@ -8003,6 +8123,82 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
+    fn wasm_document_legacy_sources_require_matching_tree_and_output_identities() {
+        let source = "answer := 41\n\nValue {answer + 1}.\n";
+        let tree = mech_syntax::parser::parse(source.trim()).unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let ids = root_document_output_ids(&tree);
+        assert_eq!(ids.len(), 1);
+        let exact_source = format!("  {source}\r\n");
+        for bundled in [false, true] {
+            let construct = |root_source: &str| {
+                let sources = Object::new();
+                Reflect::set(
+                    &sources,
+                    &JsValue::from_str("docs/main.mec"),
+                    &JsValue::from_str(root_source),
+                )
+                .unwrap();
+                if bundled {
+                    WasmDocument::from_encoded_with_bundle(
+                        &encoded,
+                        "docs/main.mec",
+                        sources.into(),
+                        Array::new().into(),
+                        JsValue::NULL,
+                    )
+                } else {
+                    WasmDocument::from_encoded_with_sources(
+                        &encoded,
+                        "docs/main.mec",
+                        sources.into(),
+                    )
+                }
+            };
+            for stale in [
+                "answer := 7\n\nValue {answer + 1}.\n",
+                "answer := 41\n\nValue {answer}; also {answer + 1}.\n",
+                "answer := (",
+            ] {
+                let error = construct(stale)
+                    .err()
+                    .expect("mismatched legacy source accepted");
+                assert!(
+                    error
+                        .as_string()
+                        .unwrap()
+                        .contains("does not match source-map root")
+                );
+            }
+            let document = construct(&exact_source).unwrap();
+            assert_eq!(document.bootstrap.source_map["docs/main.mec"], exact_source);
+            assert_eq!(
+                document.bootstrap.document.initial_repl_source(),
+                exact_source
+            );
+            assert_eq!(document.bootstrap.presentation_output_ids, ids);
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("answer")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "41"
+            );
+            let rendered = document.rendered_output(ids[0]).unwrap();
+            assert_eq!(
+                Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                    .unwrap()
+                    .as_string()
+                    .as_deref(),
+                Some("42")
+            );
+        }
+    }
+
+    #[wasm_bindgen_test]
     fn wasm_document_reset_restores_initial_program() {
         let initial = encoded_document("~answer := 0\nanswer += 1\nanswer");
         let mut document = WasmDocument::from_encoded(&initial).unwrap();
@@ -8018,6 +8214,267 @@ mod browser_tests {
                 .as_deref(),
             Some("7"),
         );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_legacy_replacements_keep_source_symbols_and_outputs_together() {
+        let mut document = WasmDocument::from_encoded(&encoded_document("x := 1\nx")).unwrap();
+        for (source, value) in [
+            ("x := 2\n\nValue {x}.\n", "2"),
+            ("x := 3\n\nValue {x}; plus {x + 10}.\n", "3"),
+        ] {
+            let tree = mech_syntax::parser::parse(source).unwrap();
+            let retained = mech_syntax::Formatter::new().format(&tree);
+            let ids = root_document_output_ids(&tree);
+            assert_eq!(ids.len(), if value == "3" { 2 } else { 1 });
+            document
+                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
+                .unwrap();
+            assert_eq!(
+                document.bootstrap.source_map[&document.bootstrap.root_specifier],
+                retained
+            );
+            assert_eq!(document.bootstrap.document.initial_repl_source(), retained);
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("x")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                value
+            );
+            assert_eq!(document.bootstrap.presentation_output_ids, ids);
+            let rendered = document.rendered_output(*ids.last().unwrap()).unwrap();
+            let expected = if value == "3" { "13" } else { "2" };
+            assert_eq!(
+                Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                    .unwrap()
+                    .as_string()
+                    .as_deref(),
+                Some(expected)
+            );
+        }
+        let retained = document.bootstrap.source_map.clone();
+        let revision = document.bootstrap.document.document().source().revision();
+        assert!(document.reset("malformed replacement").is_err());
+        assert_eq!(document.bootstrap.source_map, retained);
+        assert_eq!(
+            document.bootstrap.document.document().source().revision(),
+            revision
+        );
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("x")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "3"
+        );
+        let rendered = document
+            .rendered_output(*document.bootstrap.presentation_output_ids.last().unwrap())
+            .unwrap();
+        assert_eq!(
+            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("13")
+        );
+        document.reset(&encoded_document("x := 4\nx")).unwrap();
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("x")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "4"
+        );
+        assert_eq!(
+            document.bootstrap.source_map[&document.bootstrap.root_specifier],
+            "x := 4\nx"
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn legacy_nested_inline_output_does_not_redirect_the_following_fence() {
+        for source in [
+            "> Quoted value {11}.\n\n~~~mech\n22\n~~~\n",
+            "%% Abstract value {11}.\n\n~~~mech\n22\n~~~\n",
+        ] {
+            let tree = mech_syntax::parser::parse(source).unwrap();
+            let fence = tree
+                .body
+                .sections
+                .iter()
+                .flat_map(|section| &section.elements)
+                .find_map(|element| match element {
+                    mech_core::SectionElement::FencedMechCode(block) => Some(block),
+                    _ => None,
+                })
+                .unwrap();
+            let (last_code, _) = fence.code.last().unwrap();
+            let fence_address = mech_core::hash_str(&format!("{last_code:?}"));
+            let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+            let assert_fence = |document: &WasmDocument| {
+                let inline_address = mech_core::hash_str("inline-eval:0:0");
+                let inline = document.rendered_output(inline_address).unwrap();
+                assert_eq!(
+                    Reflect::get(&inline, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some("11"),
+                );
+                let output = document.rendered_output(fence_address).unwrap();
+                assert_eq!(
+                    Reflect::get(&output, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some("22"),
+                );
+            };
+            let document = WasmDocument::from_encoded(&encoded)
+                .unwrap_or_else(|error| panic!("{source:?}: {error:?}"));
+            assert_fence(&document);
+            let mut replacement =
+                WasmDocument::from_encoded(&encoded_document("answer := 7\nanswer")).unwrap();
+            replacement.reset(&encoded).unwrap();
+            assert_fence(&replacement);
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn incomplete_presentation_addresses_reject_without_replacing_the_document() {
+        let source = "> Quoted value {11}.\n\n~~~mech\n22\n~~~\n";
+        let encoded = BrowserDocumentPayload::new("document.mec", source)
+            .unwrap()
+            .with_presentation_output_ids([41])
+            .encode()
+            .unwrap();
+        assert!(WasmDocument::from_encoded(&encoded).is_err());
+        let mut document =
+            WasmDocument::from_encoded(&encoded_document("answer := 7\nanswer")).unwrap();
+        assert!(document.reset(&encoded).is_err());
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("answer")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "7"
+        );
+        let output = document
+            .rendered_output(root_document_program_output_id())
+            .unwrap();
+        assert_eq!(
+            Reflect::get(&output, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("7")
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_legacy_rich_replacements_keep_visible_and_local_owners() {
+        let original = include_str!("../../../tests/fixtures/shims/all-slots.mec");
+        let mut document =
+            WasmDocument::from_encoded(&encoded_document("sentinel := 1\nsentinel")).unwrap();
+        for (value, inline) in [(41, "42"), (7, "8"), (12, "13")] {
+            let source = original.replacen("~answer := 41", &format!("~answer := {value}"), 1);
+            let tree = mech_syntax::parser::parse(&source).unwrap();
+            let output_ids = root_document_output_ids(&tree);
+            assert_eq!(output_ids.len(), 2);
+            document
+                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
+                .unwrap();
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("answer")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                value.to_string()
+            );
+            assert!(document.repl.session.symbol("foo-value").unwrap().is_none());
+            assert!(document.repl.session.symbol("sentinel").unwrap().is_none());
+            for (id, expected) in output_ids
+                .iter()
+                .zip([inline.to_owned(), value.to_string()])
+            {
+                let rendered = document.rendered_output(*id).unwrap();
+                assert_eq!(
+                    Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some(expected.as_str())
+                );
+            }
+            assert_eq!(
+                document.bootstrap.source_map[&document.bootstrap.root_specifier],
+                mech_syntax::Formatter::new().format(&tree)
+            );
+            document.bootstrap.document.document().index().unwrap();
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_legacy_fences_preserve_execution_and_publication() {
+        let mut document = WasmDocument::from_encoded(&encoded_document("root := 0")).unwrap();
+        for (header, executes, publishes) in [
+            ("", true, true),
+            (":hidden", true, false),
+            (":disabled", false, false),
+            (":worker", false, false),
+            ("{output: false}", true, false),
+        ] {
+            let source =
+                format!("root := 5\n\n~~~mech{header}\nfence-value := 6\nfence-value\n~~~\n");
+            let tree = mech_syntax::parser::parse(&source).unwrap();
+            let output_ids = root_document_output_ids(&tree);
+            assert_eq!(output_ids.len(), usize::from(publishes), "{header}");
+            document
+                .reset(&mech_core::nodes::compress_and_encode(&tree).unwrap())
+                .unwrap();
+            assert_eq!(
+                document
+                    .repl
+                    .session
+                    .symbol("root")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "5"
+            );
+            let value = document.repl.session.symbol("fence-value").unwrap();
+            assert_eq!(value.is_some(), executes, "{header}");
+            if let Some(value) = value {
+                assert_eq!(value.format_canonical_inline(), "6");
+            }
+            if publishes {
+                let rendered = document.rendered_output(output_ids[0]).unwrap();
+                assert_eq!(
+                    Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                        .unwrap()
+                        .as_string()
+                        .as_deref(),
+                    Some("6")
+                );
+            }
+            document.bootstrap.document.document().index().unwrap();
+        }
     }
 
     #[wasm_bindgen_test]

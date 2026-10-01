@@ -946,23 +946,34 @@ fn host_free_plan_accepts_scalar_runtime_config_as_plan_identity() {
 
 #[test]
 fn production_builder_rejects_actor_bootstrap_before_planning() {
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = mech_runtime::RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build_compiler()
+        .unwrap();
+    let canonical = compiler
+        .compile_canonical_source("value := 1.0\nvalue\n")
+        .unwrap();
     let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
-    let mut request = request(LITERAL_F64);
-    request.runtime_config = Some(NativeRuntimeConfig {
-        runtime: RuntimeConfig::default(),
-        actor_bootstrap: Some(NativeActorBootstrap {
-            subject: "actor:test".to_owned(),
-            message_kind: "test".to_owned(),
-            message_payload: "payload".to_owned(),
-            initial_state: None,
-        }),
-        hosts: Vec::new(),
-        run_grants: Vec::new(),
-    });
-
-    let error = builder.plan(&request).unwrap_err();
-    assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
-    assert!(error.display_message().contains("actor bootstrap"));
+    // Actor execution is retired at the production boundary for both input
+    // formats, before either instruction or canonical contract planning.
+    for bytecode in [LITERAL_F64, canonical.bytecode()] {
+        let mut request = request(bytecode);
+        request.runtime_config = Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: Some(NativeActorBootstrap {
+                subject: "actor:test".to_owned(),
+                message_kind: "test".to_owned(),
+                message_payload: "payload".to_owned(),
+                initial_state: None,
+            }),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        });
+        let error = builder.plan(&request).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
+        assert!(error.display_message().contains("actor bootstrap"));
+    }
 }
 
 #[test]

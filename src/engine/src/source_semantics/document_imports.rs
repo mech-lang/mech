@@ -29,6 +29,42 @@ impl SemanticBuilder {
     ) -> Result<(), SourceSemanticError> {
         let syntax = import.syntax();
         let body = self.required(import.body(), syntax, "a module import body")?;
+        #[cfg(feature = "dynamic-modules")]
+        {
+            // Resolve ABI imports at the shared canonical import boundary,
+            // before namespace/glob exports are enumerated. Source modules and
+            // context imports retain their resolver-owned authority.
+            let context_import = matches!(&body,
+                CanonicalModuleImportBodySyntax::AliasedItem(body)
+                    if body.alias().is_some_and(|alias| alias.context().is_some()));
+            if !context_import {
+                let module = match &body {
+                    CanonicalModuleImportBodySyntax::Module(body) => body.module(),
+                    CanonicalModuleImportBodySyntax::AliasedItem(body) => body.module(),
+                    CanonicalModuleImportBodySyntax::Suffix(body) => body.module(),
+                };
+                let module = node_text(self.required(module, syntax, "a module name")?.syntax())?;
+                if !resolved_source_modules.contains(&module)
+                    && let Some(catalog) = self.function_catalog.as_ref()
+                    && !catalog.has_module(&module)
+                {
+                    let mut builder = mech_core::FunctionCatalogBuilder::from_catalog(catalog);
+                    crate::install_dynamic_source_module(&mut builder, &module).map_err(
+                        |error| SourceSemanticError {
+                            code: "source-semantics/unknown-function-import",
+                            message: error.display_message(),
+                            anchor: SourceSemanticAnchor::for_node(syntax),
+                        },
+                    )?;
+                    self.function_catalog = Some(Arc::new(builder.build().map_err(|error| {
+                        internal(
+                            SourceSemanticAnchor::for_node(syntax),
+                            error.display_message(),
+                        )
+                    })?));
+                }
+            }
+        }
         let (module, items) = match body {
             CanonicalModuleImportBodySyntax::Module(body) => {
                 let module = self.required(body.module(), syntax, "a module name")?;

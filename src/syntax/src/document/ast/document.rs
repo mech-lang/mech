@@ -1,4 +1,6 @@
+use alloc::string::String;
 use alloc::vec::Vec;
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::document::red::{
     AstNode, DocumentSyntax, IdentifierSyntax, ParagraphSyntax, SectionSyntax, SyntaxNode,
@@ -409,6 +411,27 @@ impl TitleFrontMatterSyntax {
             .children()
             .filter_map(IdentifierSyntax::cast)
             .collect()
+    }
+}
+
+impl UlSubtitleSyntax {
+    /// The heading line without its optional alphabetic/numeric authoring ordinal.
+    /// Ordinals follow the subtitle grammar: one or more alpha/digit graphemes,
+    /// a period, and optional horizontal whitespace.
+    pub fn title_text(&self) -> Result<String, crate::document::SourceError> {
+        let text = self.syntax().text()?;
+        let heading = text.lines().next().unwrap_or_default().trim();
+        let ordinal_bytes: usize = heading
+            .graphemes(true)
+            .take_while(|grapheme| grapheme.chars().next().is_some_and(char::is_alphanumeric))
+            .map(str::len)
+            .sum();
+        let title = if ordinal_bytes > 0 && heading.as_bytes().get(ordinal_bytes) == Some(&b'.') {
+            heading[ordinal_bytes + 1..].trim_start_matches([' ', '\t'])
+        } else {
+            heading
+        };
+        Ok(title.into())
     }
 }
 

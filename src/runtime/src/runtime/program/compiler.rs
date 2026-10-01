@@ -129,6 +129,17 @@ fn canonical_compilation_error(reason: impl Into<String>) -> MechError {
     .with_compiler_loc()
 }
 
+fn with_canonical_planning_step_limit<T>(
+    limit: usize,
+    execute: impl FnOnce() -> MResult<T>,
+) -> MResult<T> {
+    mech_engine::__resident::with_planning_step_limit(limit, execute).map_err(|limit| {
+        canonical_compilation_error(format!(
+            "canonical planning exceeds the configured {limit} step limit"
+        ))
+    })?
+}
+
 fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
     SourceDocument::parse_resolved(
         "runtime:program-compiler",
@@ -436,7 +447,12 @@ impl ProgramCompiler {
         let artifact = program.compile_artifact_with_external_contracts(
             &ResidentExternalContractResolver::new(view.resources),
         )?;
-        execute_named_canonical_outputs(&artifact, &view.function_catalog, &names)
+        execute_named_canonical_outputs(
+            &artifact,
+            &view.function_catalog,
+            &names,
+            view.max_planning_steps,
+        )
     }
 
     pub fn compile_canonical_source_artifact(
@@ -801,6 +817,7 @@ impl<'a> ProgramCompilerView<'a> {
                 &artifact,
                 &self.function_catalog,
                 external_input_names,
+                self.max_planning_steps,
             )?
         };
         let artifact = program.compile_artifact_with_external_contracts(
@@ -857,26 +874,30 @@ impl<'a> ProgramCompilerView<'a> {
         let artifact = planning.compile_artifact_with_external_contracts(
             &ResidentExternalContractResolver::new(self.resources),
         )?;
-        let mut instance = activate_external(
-            ReactiveInstanceId::new(0x4350_4c4e, 0),
-            &artifact,
-            &self.function_catalog,
-            &ActivationFacts::default(),
-            ResidentIntegrityMode::Checked,
-        )
-        .map_err(|error| {
-            canonical_compilation_error(format!(
-                "canonical resource planning activation failed: {error:?}"
-            ))
-        })?;
-        let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
-            canonical_compilation_error(format!("canonical resource planning failed: {error:?}"))
-        })?;
-        preflight_canonical_effect_payloads(&prepared, &artifact, self.resources)?;
-        // Planning owns no publication authority. All candidate state and
-        // captured effects are discarded after the provider's effect-free hook.
-        prepared.abort();
-        Ok(())
+        with_canonical_planning_step_limit(self.max_planning_steps, || {
+            let mut instance = activate_external(
+                ReactiveInstanceId::new(0x4350_4c4e, 0),
+                &artifact,
+                &self.function_catalog,
+                &ActivationFacts::default(),
+                ResidentIntegrityMode::Checked,
+            )
+            .map_err(|error| {
+                canonical_compilation_error(format!(
+                    "canonical resource planning activation failed: {error:?}"
+                ))
+            })?;
+            let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
+                canonical_compilation_error(format!(
+                    "canonical resource planning failed: {error:?}"
+                ))
+            })?;
+            preflight_canonical_effect_payloads(&prepared, &artifact, self.resources)?;
+            // Planning owns no publication authority. All candidate state and
+            // captured effects are discarded after the provider's effect-free hook.
+            prepared.abort();
+            Ok(())
+        })
     }
 
     fn validate_canonical_planning_step_limit(
@@ -1524,40 +1545,43 @@ impl<'a> ProgramCompilerView<'a> {
                 let artifact = program.compile_artifact_with_external_contracts(
                     &ResidentExternalContractResolver::new(self.resources),
                 )?;
-                let mut instance = activate_external(
-                    ReactiveInstanceId::new(0x4344_4550, 0),
-                    &artifact,
-                    &self.function_catalog,
-                    &ActivationFacts::default(),
-                    ResidentIntegrityMode::Checked,
-                )
-                .map_err(|error| {
-                    canonical_compilation_error(format!(
-                        "canonical dependency activation failed: {error:?}"
-                    ))
+                let values = with_canonical_planning_step_limit(self.max_planning_steps, || {
+                    let mut instance = activate_external(
+                        ReactiveInstanceId::new(0x4344_4550, 0),
+                        &artifact,
+                        &self.function_catalog,
+                        &ActivationFacts::default(),
+                        ResidentIntegrityMode::Checked,
+                    )
+                    .map_err(|error| {
+                        canonical_compilation_error(format!(
+                            "canonical dependency activation failed: {error:?}"
+                        ))
+                    })?;
+                    let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
+                        canonical_compilation_error(format!(
+                            "canonical dependency execution failed: {error:?}"
+                        ))
+                    })?;
+                    let values = program
+                        .document_exports()
+                        .iter()
+                        .map(|export| {
+                            let value = crate::RuntimeValueSnapshot::from_value(
+                                prepared.copied_output(export.output as usize).map_err(
+                                    |error| {
+                                        canonical_compilation_error(format!(
+                                            "canonical dependency export failed: {error:?}"
+                                        ))
+                                    },
+                                )?,
+                            )?;
+                            Ok((export.name.clone(), value))
+                        })
+                        .collect::<MResult<BTreeMap<_, _>>>()?;
+                    prepared.abort();
+                    Ok(values)
                 })?;
-                let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
-                    canonical_compilation_error(format!(
-                        "canonical dependency execution failed: {error:?}"
-                    ))
-                })?;
-                let values = program
-                    .document_exports()
-                    .iter()
-                    .map(|export| {
-                        let value = crate::RuntimeValueSnapshot::from_value(
-                            prepared
-                                .copied_output(export.output as usize)
-                                .map_err(|error| {
-                                    canonical_compilation_error(format!(
-                                        "canonical dependency export failed: {error:?}"
-                                    ))
-                                })?,
-                        )?;
-                        Ok((export.name.clone(), value))
-                    })
-                    .collect::<MResult<BTreeMap<_, _>>>()?;
-                prepared.abort();
                 context
                     .exports
                     .insert(dependency.canonical_uri.clone(), values);
@@ -1879,6 +1903,7 @@ impl<'a> ProgramCompilerView<'a> {
                 &compute_initializer_artifact,
                 &self.function_catalog,
                 &external_input_names,
+                self.max_planning_steps,
             )?
         };
         let compute_artifact = programs.compute.compile_artifact_with_external_contracts(
@@ -1966,6 +1991,7 @@ impl<'a> ProgramCompilerView<'a> {
             &self.function_catalog,
             &compute.interface,
             self.resources,
+            self.max_planning_steps,
         )?;
 
         let mut coordinator = coordinator;
@@ -2088,60 +2114,65 @@ fn execute_named_canonical_outputs(
     artifact: &ProgramArtifact,
     catalog: &Arc<mech_core::FunctionCatalog>,
     names: &BTreeSet<String>,
+    max_planning_steps: usize,
 ) -> MResult<BTreeMap<String, RuntimeHostInputValue>> {
-    let mut instance = activate_external(
-        ReactiveInstanceId::new(0x4349_4e49, 0),
-        artifact,
-        catalog,
-        &ActivationFacts::default(),
-        ResidentIntegrityMode::Checked,
-    )
-    .map_err(|error| {
-        canonical_compilation_error(format!(
-            "canonical initializer activation failed: {error:?}"
-        ))
-    })?;
-    let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
-        canonical_compilation_error(format!("canonical initializer execution failed: {error:?}"))
-    })?;
-    let values = names
-        .iter()
-        .map(|name| {
-            let output = artifact
-                .outputs()
-                .iter()
-                .position(|output| {
-                    output
-                        .interactive_binding
-                        .as_ref()
-                        .is_some_and(|binding| binding.lexical_name == *name)
-                })
-                .or_else(|| {
-                    artifact
-                        .outputs()
-                        .iter()
-                        .position(|output| output.name == *name)
-                })
-                .or_else(|| {
-                    artifact.outputs().iter().position(|output| {
-                        output.name == mech_engine::encode_interactive_symbol_output_name(name)
+    with_canonical_planning_step_limit(max_planning_steps, || {
+        let mut instance = activate_external(
+            ReactiveInstanceId::new(0x4349_4e49, 0),
+            artifact,
+            catalog,
+            &ActivationFacts::default(),
+            ResidentIntegrityMode::Checked,
+        )
+        .map_err(|error| {
+            canonical_compilation_error(format!(
+                "canonical initializer activation failed: {error:?}"
+            ))
+        })?;
+        let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
+            canonical_compilation_error(format!(
+                "canonical initializer execution failed: {error:?}"
+            ))
+        })?;
+        let values = names
+            .iter()
+            .map(|name| {
+                let output = artifact
+                    .outputs()
+                    .iter()
+                    .position(|output| {
+                        output
+                            .interactive_binding
+                            .as_ref()
+                            .is_some_and(|binding| binding.lexical_name == *name)
                     })
-                })
-                .ok_or_else(|| {
+                    .or_else(|| {
+                        artifact
+                            .outputs()
+                            .iter()
+                            .position(|output| output.name == *name)
+                    })
+                    .or_else(|| {
+                        artifact.outputs().iter().position(|output| {
+                            output.name == mech_engine::encode_interactive_symbol_output_name(name)
+                        })
+                    })
+                    .ok_or_else(|| {
+                        canonical_compilation_error(format!(
+                            "canonical initializer {name} was not published"
+                        ))
+                    })?;
+                let value = prepared.copied_output(output).map_err(|error| {
                     canonical_compilation_error(format!(
-                        "canonical initializer {name} was not published"
+                        "canonical initializer {name} could not be materialized: {error:?}"
                     ))
                 })?;
-            let value = prepared.copied_output(output).map_err(|error| {
-                canonical_compilation_error(format!(
-                    "canonical initializer {name} could not be materialized: {error:?}"
-                ))
-            })?;
-            RuntimeHostInputValue::from_numeric_value(&value).map(|value| (name.clone(), value))
-        })
-        .collect::<MResult<BTreeMap<_, _>>>()?;
-    prepared.abort();
-    Ok(values)
+                RuntimeHostInputValue::from_numeric_value(&value).map(|value| (name.clone(), value))
+            })
+            .collect::<MResult<BTreeMap<_, _>>>()?;
+        prepared.abort();
+        Ok(values)
+    })
 }
 
 #[cfg(feature = "compute")]
@@ -2150,49 +2181,52 @@ fn capture_canonical_compute_activation_inputs(
     catalog: &Arc<mech_core::FunctionCatalog>,
     interface: &ComputeRegionInterface,
     resources: &RuntimeResourceRegistry,
+    max_planning_steps: usize,
 ) -> MResult<BTreeMap<String, ComputeValue>> {
-    let mut instance = activate_external(
-        ReactiveInstanceId::new(0x4343_4f4f, 0),
-        artifact,
-        catalog,
-        &ActivationFacts::default(),
-        ResidentIntegrityMode::Checked,
-    )
-    .map_err(|error| {
-        canonical_compilation_error(format!(
-            "canonical compute coordinator activation failed: {error:?}"
-        ))
-    })?;
-    let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
-        canonical_compilation_error(format!(
-            "canonical compute coordinator planning failed: {error:?}"
-        ))
-    })?;
-    preflight_canonical_effect_payloads(&prepared, artifact, resources)?;
-    let effects = prepared
-        .effect_intents()
-        .map(|intent| (intent.ordinal, intent.requirement))
-        .collect::<Vec<_>>();
-    let mut activation_inputs = BTreeMap::new();
-    for (ordinal, requirement) in effects {
-        let Some(ApplicationRequirement::Resource(request)) =
-            artifact.requirements().get(requirement)
-        else {
-            continue;
-        };
-        if !is_compute_kernel_base(&request.base_uri) {
-            continue;
+    with_canonical_planning_step_limit(max_planning_steps, || {
+        let mut instance = activate_external(
+            ReactiveInstanceId::new(0x4343_4f4f, 0),
+            artifact,
+            catalog,
+            &ActivationFacts::default(),
+            ResidentIntegrityMode::Checked,
+        )
+        .map_err(|error| {
+            canonical_compilation_error(format!(
+                "canonical compute coordinator activation failed: {error:?}"
+            ))
+        })?;
+        let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
+            canonical_compilation_error(format!(
+                "canonical compute coordinator planning failed: {error:?}"
+            ))
+        })?;
+        preflight_canonical_effect_payloads(&prepared, artifact, resources)?;
+        let effects = prepared
+            .effect_intents()
+            .map(|intent| (intent.ordinal, intent.requirement))
+            .collect::<Vec<_>>();
+        let mut activation_inputs = BTreeMap::new();
+        for (ordinal, requirement) in effects {
+            let Some(ApplicationRequirement::Resource(request)) =
+                artifact.requirements().get(requirement)
+            else {
+                continue;
+            };
+            if !is_compute_kernel_base(&request.base_uri) {
+                continue;
+            }
+            let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
+            let payload = prepared.materialize_effect_payload(ordinal)?;
+            if let Some((name, value)) =
+                plan_compute_write(interface, &key, RuntimeResourceWriteIntent::Send, &payload)?
+            {
+                activation_inputs.insert(name, value);
+            }
         }
-        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
-        let payload = prepared.materialize_effect_payload(ordinal)?;
-        if let Some((name, value)) =
-            plan_compute_write(interface, &key, RuntimeResourceWriteIntent::Send, &payload)?
-        {
-            activation_inputs.insert(name, value);
-        }
-    }
-    prepared.abort();
-    Ok(activation_inputs)
+        prepared.abort();
+        Ok(activation_inputs)
+    })
 }
 
 #[cfg(feature = "compute")]

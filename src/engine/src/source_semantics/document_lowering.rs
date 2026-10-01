@@ -722,23 +722,12 @@ fn mixed_section_identity(
     let Some(subtitle) = section.subtitle() else {
         return Ok(None);
     };
-    let text = subtitle.syntax().text().map_err(|_| {
+    let heading = subtitle.title_text().map_err(|_| {
         internal(
             SourceSemanticAnchor::for_node(subtitle.syntax()),
             "compute section subtitle is outside retained source".to_owned(),
         )
     })?;
-    let heading = text.lines().next().unwrap_or_default().trim();
-    let prefix_length = heading
-        .as_bytes()
-        .iter()
-        .take_while(|byte| byte.is_ascii_digit())
-        .count();
-    let heading = if prefix_length > 0 && heading.as_bytes().get(prefix_length) == Some(&b'.') {
-        heading[prefix_length + 1..].trim_start()
-    } else {
-        heading
-    };
     let mut name_parts = Vec::new();
     let mut selected = None;
     for part in heading.split_whitespace() {

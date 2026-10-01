@@ -48,6 +48,7 @@ pub(crate) fn validate_artifact_requirement_reachability(
 
 pub(crate) fn analyze_artifact_native_features(
     artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
 ) -> ArtifactNativeFeatureAnalysis {
     let mut values = BTreeSet::new();
     for entry in artifact.schemas().entries() {
@@ -59,16 +60,30 @@ pub(crate) fn analyze_artifact_native_features(
         .map(NativeValueFeature::cargo_feature)
         .map(str::to_owned)
         .collect();
-    let engine_features = artifact
-        .operation_references()
-        .into_iter()
-        .filter_map(|operation| {
+    let mut engine_features = BTreeSet::new();
+    for operation in artifact.operation_references() {
+        if let Some(feature) =
             required_resident_feature(&operation.module_path, &operation.operation_name)
+        {
+            engine_features.insert(feature.to_owned());
+        }
+    }
+    // Planning has already activated this artifact with the configured
+    // catalog. Kernel binding uses the ABI loader exactly when no catalog
+    // factory owns the operation. Resource providers and direct integrity
+    // checks do not use that binding path.
+    if artifact
+        .kernel_operation_references()
+        .iter()
+        .any(|operation| {
+            catalog
+                .resident_factory(&operation.module_path, &operation.operation_name)
+                .is_none()
         })
-        .map(str::to_owned)
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .collect();
+    {
+        engine_features.insert("dynamic-modules".to_owned());
+    }
+    let engine_features = engine_features.into_iter().collect();
 
     ArtifactNativeFeatureAnalysis {
         value_features,
@@ -164,10 +179,6 @@ pub(crate) fn plan_artifact_external_contracts(
     )
     .map_err(|error| artifact_error(format!("resident activation failed: {error:?}")))?;
 
-    if effect_requirements.is_empty() {
-        return Ok(());
-    }
-
     let captured = instance
         .plan
         .inputs
@@ -197,6 +208,11 @@ pub(crate) fn plan_artifact_external_contracts(
             Ok((input.slot, value))
         })
         .collect::<MResult<Vec<_>>>()?;
+    // Shape facts admit storage, but only rebinding validates the provider's
+    // value type against the retained input schema, including read-only plans.
+    if effect_requirements.is_empty() {
+        return Ok(());
+    }
     let inputs = captured
         .iter()
         .map(|(slot, value)| CapturedValueInput { slot: *slot, value })

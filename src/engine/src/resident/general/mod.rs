@@ -2520,6 +2520,11 @@ fn activate_internal(
                     _ => ResidentActivationError::ActivationKernel { node },
                 })?;
         } else {
+            super::budget::charge_planning_step().map_err(|_| {
+                ResidentActivationError::ActivationKernel {
+                    node: step.artifact_node,
+                }
+            })?;
             execute_activation_kernel(
                 step,
                 &instance.plan,

@@ -1522,6 +1522,62 @@ fn canonical_mixed_document_owns_partitioning_and_typed_initializers() {
 
 #[cfg(feature = "compute")]
 #[test]
+fn canonical_mixed_section_ordinals_preserve_region_identity_and_artifacts() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for (annotation, placement) in [
+        ("compute", mech_core::ComputePlacement::Compute),
+        ("cpu", mech_core::ComputePlacement::Cpu),
+        ("gpu", mech_core::ComputePlacement::Gpu),
+    ] {
+        for ordinal in ["", "1. ", "A. ", "A1. ", "12B. ", "É2. ", "E\u{301}2. "] {
+            let source = MIXED_COMPUTE_SOURCE.replace(
+                "calculation @compute",
+                &format!("{ordinal}kernel @{annotation}"),
+            );
+            let mixed = compiler.compile_mixed_source(&source).unwrap();
+            let decoded = decode_program_artifact_bytecode_v1(
+                &encode_program_artifact_bytecode_v1(&mixed.compute.artifact).unwrap(),
+            )
+            .unwrap();
+            for artifact in [&mixed.compute.artifact, &decoded] {
+                assert_eq!(artifact.compute_regions().len(), 1, "{source}");
+                let region = &artifact.compute_regions()[0];
+                assert_eq!(region.name.as_ref(), "kernel", "{source}");
+                assert_eq!(region.placement, placement, "{source}");
+                let interface =
+                    mech_compute::build_compute_region_interface(artifact, Some(region)).unwrap();
+                assert_eq!(interface.inputs[0].name.as_ref(), "x");
+                assert_eq!(interface.outputs[0].name.as_ref(), "result");
+            }
+        }
+    }
+}
+
+#[cfg(feature = "compute")]
+#[test]
+fn canonical_mixed_section_ordinals_preserve_annotation_rejections() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for (heading, code) in [
+        ("A1. kernel @compute @cpu", "duplicate-section-placement"),
+        ("A1. kernel @unknown", "unsupported-section-annotation"),
+        ("A1. @compute", "empty-compute-region-name"),
+        ("A1. kernel @compute tail", "section-annotation-order"),
+        ("A1. kernel @compute(:cpu)", "section-placement-arguments"),
+    ] {
+        let source = MIXED_COMPUTE_SOURCE.replace("calculation @compute", heading);
+        let error = compiler.compile_mixed_source(&source).unwrap_err();
+        assert!(format!("{error:?}").contains(code), "{heading}: {error:?}");
+    }
+}
+
+#[cfg(feature = "compute")]
+#[test]
 fn canonical_rooted_mixed_compilation_shares_transitive_imports_and_initializers() {
     let root = r#"+> ./dep.mec
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}
@@ -7918,6 +7974,135 @@ fn canonical_initializer_projection_obeys_the_planning_step_limit() {
             .contains("canonical planning exceeds the configured 1 step limit"),
         "{error:?}"
     );
+}
+
+#[test]
+fn canonical_comprehension_planning_counts_executed_iterations() {
+    let document = canonical_planning_test_document("port := [sample | sample <- seed]\nport\n");
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(8);
+    let mut compiler = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let inputs = |columns| {
+        BTreeMap::from([(
+            "seed".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 1,
+                columns,
+                values: vec![1.0; columns],
+            },
+        )])
+    };
+    for columns in [1, 16, 1] {
+        let result = compiler.evaluate_static_document_symbols_with_inputs(
+            &document,
+            &inputs(columns),
+            &["port"],
+        );
+        if columns == 16 {
+            let error = result.unwrap_err();
+            assert!(
+                error
+                    .display_message()
+                    .contains("canonical planning exceeds the configured 8 step limit"),
+                "{error:?}"
+            );
+        } else {
+            assert_eq!(result.unwrap()["port"], inputs(columns)["seed"]);
+        }
+    }
+}
+
+#[test]
+fn canonical_comprehension_initializer_counts_nested_operations() {
+    let document =
+        canonical_planning_test_document("port := [sample + 1f32 + 2f32 | sample <- seed]\nport\n");
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(8);
+    let mut compiler = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for columns in [1, 3] {
+        let inputs = BTreeMap::from([(
+            "seed".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 1,
+                columns,
+                values: vec![1.0; columns],
+            },
+        )]);
+        let result = compiler.compile_document_artifact_with_input_initializers(
+            &document,
+            &inputs,
+            &BTreeSet::from(["port".to_owned()]),
+        );
+        if columns == 3 {
+            let error = result.unwrap_err();
+            assert!(
+                error
+                    .display_message()
+                    .contains("canonical planning exceeds the configured 8 step limit"),
+                "{error:?}"
+            );
+        } else {
+            assert_eq!(
+                result.unwrap().1["port"],
+                RuntimeHostInputValue::F32Matrix {
+                    rows: 1,
+                    columns: 1,
+                    values: vec![4.0],
+                }
+            );
+        }
+    }
+}
+
+#[test]
+fn canonical_comprehension_planning_counts_nested_generators() {
+    let document =
+        canonical_planning_test_document("port := [x + y | x <- seed, y <- seed]\nport\n");
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(16);
+    let mut compiler = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for columns in [1, 4] {
+        let inputs = BTreeMap::from([(
+            "seed".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 1,
+                columns,
+                values: vec![1.0; columns],
+            },
+        )]);
+        let result =
+            compiler.evaluate_static_document_symbols_with_inputs(&document, &inputs, &["port"]);
+        if columns == 4 {
+            let error = result.unwrap_err();
+            assert!(
+                error
+                    .display_message()
+                    .contains("canonical planning exceeds the configured 16 step limit"),
+                "{error:?}"
+            );
+        } else {
+            assert_eq!(
+                result.unwrap()["port"],
+                RuntimeHostInputValue::F32Matrix {
+                    rows: 1,
+                    columns: 1,
+                    values: vec![2.0],
+                }
+            );
+        }
+    }
 }
 
 #[test]

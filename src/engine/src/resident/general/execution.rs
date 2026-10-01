@@ -141,6 +141,9 @@ pub struct ResidentStructuralProbe {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResidentExecutionError {
+    PlanningStepLimit {
+        limit: usize,
+    },
     MemoryRuntime {
         error: mech_core::MemoryRuntimeError,
     },
@@ -1996,6 +1999,7 @@ impl ReactiveInstance {
                 &mut ignored_probe,
             );
         }
+        budget::charge_planning_step()?;
         if node.write.storage != ResidentStorageClass::State {
             return Err(ResidentExecutionError::InvalidWrite {
                 node: node.artifact_node,
@@ -2154,6 +2158,12 @@ impl ReactiveInstance {
             // another live input. Do not let any such kernel consume the
             // unpublished match region, especially when it writes state.
             return Ok(false);
+        }
+        if !matches!(
+            self.plan.steps[node_index.get() as usize],
+            ActivatedTurnStep::Kernel(_)
+        ) {
+            budget::charge_planning_step()?;
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
@@ -4015,6 +4025,7 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
+        budget::charge_planning_step()?;
         let index = node_index.get() as usize;
         let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
             &nodes[index]

@@ -1472,6 +1472,19 @@ impl FunctionCatalogBuilder {
         }
     }
 
+    /// Extend an immutable catalog while retaining every existing binding and
+    /// linkage. Building the result applies the ordinary collision checks.
+    pub fn from_catalog(catalog: &FunctionCatalog) -> Self {
+        Self {
+            runtime_factories: catalog.runtime_factories.clone(),
+            specializers: catalog.specializers.clone(),
+            intrinsic_specializers: catalog.intrinsic_specializers.clone(),
+            resident_factories: catalog.resident_factories.clone(),
+            exports_by_module_item: catalog.exports_by_module_item.clone(),
+            exports_by_operation: catalog.exports_by_operation.clone(),
+        }
+    }
+
     pub fn contains_runtime_factory(&self, id: RuntimeFunctionId) -> bool {
         self.runtime_factories.contains_key(&id)
     }

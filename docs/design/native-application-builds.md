@@ -16,7 +16,7 @@ owned `ProgramCompiler` returned by `RuntimeBuilder::build_compiler`:
 2. Create the maintained file source resolver and load the selected `.mcfg`.
 3. Create deterministic `<binary-name>-compiler` compilation configuration.
 4. Materialize configured provider names, effect-free trusted planning host
-   factories, host instances, run grants, and the trusted actor functions.
+   factories, host instances, and run grants.
 5. Inject `mech_stdlib::source_catalog()`, resolve retained root modules in
    order, and compile official bytecode v1.
 
@@ -67,46 +67,22 @@ records as source-planning factories. Its exact provider surface is:
 These providers support Unix and Windows native targets. Browser, Wasm,
 unknown, and unsupported native providers are rejected.
 
-Trusted actor calls are also exact: `actor/message/kind`,
-`actor/message/payload`, `actor/state/id`, `actor/state/get`, and
-`actor/state/put`. Each selects only its corresponding
-`mech_runtime::__mech_native::install_*` function in generated `runtime.rs`.
-Host-function installers configure `RuntimeBuilder`; they are not function
-catalog installers. Linkage metadata marks these functions as requiring an
-actor turn; native analysis never infers that context from a function-name
-prefix.
+## Actor and host-function boundary
 
-## Actor entrypoints
+R21 native applications execute through canonical resident artifacts. The
+production native host catalog registers resource providers, not actor host
+functions. `NativeApplicationBuilder::plan` rejects any actor bootstrap with
+`NativeActorBootstrapUnsupported` before planning either instruction bytecode
+or a canonical artifact. Public project rendering enforces the same boundary;
+there is no generated actor execution template.
 
-`build.actor` is required whenever bytecode uses an actor-context host
-function. Actor values are never fabricated by the build tool or generated
-application. Configure the one explicit actor turn in `.mcfg`:
-
-```mech
-config := {
-  build: {
-    actor: {
-      subject: "actor:main",
-      message-kind: "startup",
-      message-payload: "hello",
-      initial-state: "initial",
-    },
-  },
-}
-```
-
-`subject`, `message-kind`, and `message-payload` are required.
-`initial-state` is optional; `initial-state: null` means the actor starts
-without state. Subjects and message kinds must be nonempty after trimming,
-while payload and present state strings may be empty. Unknown fields and
-wrong value types are rejected, and there are no hidden actor defaults.
-
-A generated actor executable creates the configured actor and message,
-installs only the exact capabilities needed by its five actor functions, and
-executes the bytecode in one transaction-backed actor turn. Success commits
-state and acknowledges the message; failure aborts staged state and leaves the
-message pending. Actor applications with live resource drivers are currently
-rejected because this one-turn entrypoint has no live actor scheduling model.
+The retained host-function linkage types and effect-free actor planning tests
+are internal compatibility machinery. They do not establish production actor
+support or authorize restoring the retired interpreter to execute host calls.
+A future host-function implementation needs an explicit canonical resident
+execution contract and its owned qualification before native planning can
+advertise it. Supported hosted resource applications continue through their
+provider-owned observation and effect contracts.
 
 ## NativeBuildPlan
 
@@ -264,6 +240,15 @@ mutable state: allocated at process startup
 
 Bytecode cannot name arbitrary crates, Cargo features, installer paths, or
 host factories. Only trusted catalogs compiled into the build tool cross from
-program requirements into Rust dependencies. Generated applications contain
-no dynamic-library discovery, third-party package discovery, source parser,
-compiler, build tool, appended archive, or self-reading executable payload.
+program requirements into Rust dependencies. When resident activation resolves
+an operation through the dynamic ABI loader rather than a catalog factory,
+planning retains the engine's `dynamic-modules` feature in the generated
+application. The executable resolves that module through `MECH_MODULE_PATH`
+or `target/mech-modules` and validates its ABI, operation, and layout at
+activation, without a source parser or compiler. Native generation does not
+copy module libraries; they must also be available when the executable runs.
+Static resident operations do not enable this loader.
+
+Generated applications contain no third-party Cargo package discovery, source
+parser, compiler, build tool, appended archive, or self-reading executable
+payload.

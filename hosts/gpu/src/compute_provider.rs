@@ -1874,6 +1874,43 @@ mod tests {
         ]))
     }
 
+    #[test]
+    fn alphabetic_section_ordinals_bind_the_configured_compute_host() {
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap();
+        for ordinal in ["", "1. ", "A. ", "A1. ", "12B. "] {
+            let source = format!(
+                "@compute := compute://worker/kernel{{:write(input/x), :write(turn)}}\n@compute/input/x <- 2f32\n@compute/turn <- 1\n\n{ordinal}kernel @compute\n-------------------------------------------------------------------------------\nx := 1f32\nresult := x + 2f32\nresult\n"
+            );
+            let mixed = compiler.compile_mixed_source(&source).unwrap();
+            let program =
+                crate::lower_elementwise_compute_program(&mixed.compute.artifact).unwrap();
+            let factory = ComputeHostFactory::new(
+                mixed.compute.declaration.name,
+                mixed.compute.declaration.placement,
+                program,
+                mixed.compute.initializers,
+                registry(),
+                ComputePlatform::Native,
+            )
+            .unwrap();
+            let config = ConfigValue::Map(BTreeMap::from([
+                (
+                    "region".to_owned(),
+                    ConfigValue::String("kernel".to_owned()),
+                ),
+                ("backend".to_owned(), ConfigValue::String("cpu".to_owned())),
+            ]));
+            assert_eq!(
+                factory.resolved_backend_id(&config).unwrap().as_str(),
+                "cpu-scalar",
+                "{ordinal}"
+            );
+        }
+    }
+
     fn runtime_with_fake_backend(
         grant_access: bool,
         calls: Arc<Mutex<Vec<FakeCall>>>,
