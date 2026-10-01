@@ -188,7 +188,6 @@ pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<ResolvedDoc
         encoded_bundle: base64::engine::general_purpose::STANDARD.encode(encoded),
         root_specifier,
         root_source,
-        root_specifier,
     })
 }
 

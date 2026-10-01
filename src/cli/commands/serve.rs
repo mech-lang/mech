@@ -64,7 +64,26 @@ fn expand_compilation_roots(paths: impl IntoIterator<Item = PathBuf>) -> MResult
     let mut roots = Vec::new();
     for path in paths {
         if path.is_dir() {
-            roots.extend(crate::cli::commands::run::collect_run_targets(&path)?);
+            let discovery = crate::source_discovery::collect_sources_with_events(
+                &[path.clone()],
+                &path,
+                crate::source_discovery::DiscoveryOptions {
+                    allowed_file_extensions: &["mec", "🤖", "mecb"],
+                    recursive_file_extensions: &["mec", "🤖"],
+                    skip_dir_names: &["target", ".git", "dist", "out"],
+                    follow_file_symlinks: true,
+                    follow_dir_symlinks: false,
+                    missing_path_policy:
+                        crate::source_discovery::MissingPathPolicy::SkipBrokenSymlink,
+                },
+            )?;
+            let mut directory_roots = discovery
+                .entries
+                .into_iter()
+                .map(|entry| entry.logical_path)
+                .collect::<Vec<_>>();
+            directory_roots.sort();
+            roots.extend(directory_roots);
         } else {
             roots.push(path);
         }

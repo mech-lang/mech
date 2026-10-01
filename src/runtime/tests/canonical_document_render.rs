@@ -536,6 +536,36 @@ fn title_front_matter_is_semantic_and_uses_completed_inline_results() {
 }
 
 #[test]
+fn shim_reference_numbers_start_at_the_final_front_matter_value() {
+    let document = document(
+        "Report\n======\nauthor: Hidden[^hidden] [hidden]\nauthor: Visible[^visible] [visible]\n======\n\n[^hidden]: Hidden note.\n[^visible]: Visible note.\n[hidden]: Hidden citation.\n[visible]: Visible citation.\n",
+    );
+    for slots in [
+        CanonicalDocumentRenderer
+            .format_browser_html_slots(&document)
+            .unwrap(),
+        CanonicalDocumentRenderer
+            .format_static_html_slots(&document)
+            .unwrap(),
+    ] {
+        let author = &slots["AUTHOR"];
+        assert!(!author.contains("Hidden"), "{author}");
+        assert!(
+            author.contains("href='#footnote-visible'>1</a>"),
+            "{author}"
+        );
+        assert!(
+            author.contains("href='#reference-visible'>1</a>"),
+            "{author}"
+        );
+        assert!(
+            slots["FOOTNOTES"]
+                .contains("id='footnote-visible'><span class='mech-footnote-id'>1:</span>")
+        );
+    }
+}
+
+#[test]
 fn raw_hyperlinks_and_inline_code_use_semantic_html() {
     let document = document("Visit http://example.com/path or `x < y & z`.\n");
     let html = CanonicalDocumentRenderer

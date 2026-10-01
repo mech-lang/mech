@@ -41,6 +41,8 @@ pub(super) fn compile(
     while let Some(node) = pending.pop() {
         match node.kind() {
             SyntaxKind::MikaSection
+            | SyntaxKind::Prompt
+            | SyntaxKind::Float
             | SyntaxKind::Paragraph
             | SyntaxKind::InlineMechCode
             | SyntaxKind::EvalInlineMechCode => continue,

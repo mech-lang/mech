@@ -654,6 +654,18 @@ impl ServerSourceRegistry {
             })?;
             let document_error = document.index().err();
             let mut extra_slots = HtmlShimExtraSlots::default();
+            // Custom inline bootstraps own their CODE payload. Preserve the
+            // retained-source transport used by the public fromEncoded API.
+            // The shipped controller obtains its compiled bundle from /code.
+            if !shim.contains("{{DOCUMENT_SCRIPT}}") && shim.contains("{{CODE}}") {
+                let output_ids =
+                    mech_runtime::canonical_document_presentation_output_ids(&document.document())
+                        .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?;
+                let encoded = mech_runtime::BrowserDocumentPayload::new(&key, source_text)?
+                    .with_presentation_output_ids(output_ids)
+                    .encode()?;
+                extra_slots.insert("CODE", encoded);
+            }
             extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
             extra_slots.insert(
                 "PRESENTATION",
@@ -3106,14 +3118,9 @@ result\n";
             .strip_prefix("<script data-code>")
             .and_then(|html| html.strip_suffix("</script>"))
             .expect("custom shim should contain only its encoded document payload");
-        let payload = BrowserDocumentPayload::decode(encoded).unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(encoded).unwrap();
         assert_eq!(payload.root_specifier(), "main.mec");
         assert_eq!(payload.source(), source);
-        assert_eq!(
-            payload.presentation_output_ids(),
-            mech_engine::root_document_output_ids(&parser::parse(source).unwrap()),
-        );
-
         let retained = mech_runtime::SourceDocument::parse_resolved(
             payload.root_specifier(),
             mech_syntax::document::Revision(0),
@@ -3122,6 +3129,10 @@ result\n";
         )
         .unwrap();
         retained.index().unwrap();
+        assert_eq!(
+            payload.presentation_output_ids(),
+            mech_runtime::canonical_document_presentation_output_ids(&retained.document()).unwrap()
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 

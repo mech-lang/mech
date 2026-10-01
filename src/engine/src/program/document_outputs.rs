@@ -159,16 +159,6 @@ pub(crate) fn fenced_document_output_id(block: &FencedMechCode) -> Option<u64> {
     mech_core::document_presentation::fenced_document_output_id(block)
 }
 
-pub(crate) fn fenced_document_output_occurrence_id(
-    block: &FencedMechCode,
-    occurrence: u64,
-) -> Option<u64> {
-    if block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE {
-        return Some(root_document_program_output_id());
-    }
-    mech_core::document_presentation::fenced_document_output_occurrence_id(block, occurrence)
-}
-
 fn section_contains_program_value(elements: &[SectionElement]) -> bool {
     elements.iter().any(element_contains_program_value)
 }
@@ -252,4 +242,3 @@ fn split_element_at_last_program_value(
         SectionElement::FencedMechCode(capture.clone()),
     ])
 }
-

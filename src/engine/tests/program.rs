@@ -34,6 +34,43 @@ fn text(node: &SyntaxNode) -> String {
     node.text().expect("retained syntax text")
 }
 
+#[cfg(all(feature = "semantic-compiler", feature = "f64"))]
+#[test]
+fn public_inline_output_addresses_resolve_repeated_expressions() {
+    use mech_core::{
+        Body, Expression, Literal, Number, Paragraph, ParagraphElement, Program, Section,
+        SectionElement,
+    };
+    let program = Program {
+        title: None,
+        body: Body {
+            sections: vec![Section {
+                subtitle: None,
+                annotations: Vec::new(),
+                elements: vec![SectionElement::Paragraph(Paragraph {
+                    elements: [12, 13, 12]
+                        .map(|value| {
+                            ParagraphElement::EvalInlineMechCode(Expression::Literal(
+                                Literal::Number(Number::from_integer(value)),
+                            ))
+                        })
+                        .into(),
+                    error_range: None,
+                })],
+            }],
+        },
+    };
+    let addresses = mech_engine::root_document_output_ids(&program);
+    assert_eq!(addresses.len(), 3);
+    assert_ne!(addresses[0], addresses[2]);
+    let mut compiler = mech_engine::CompilerPlanningProgram::new(Default::default());
+    compiler
+        .plan_tree_with_services(&program, &mut mech_core::NoMechExecutionServices)
+        .unwrap();
+    let cells = compiler.compiler_document_output_cells(&addresses).unwrap();
+    assert!(cells.iter().all(Option::is_some));
+}
+
 #[test]
 fn program_browser_resource_binding_declaration() {
     let document = document("@browser := browser://dom/");

@@ -6,6 +6,27 @@ fn parse(source: &str) -> mech_core::MResult<MechConfigDocument> {
     parse_config_document("mech.mcfg", source, ConfigProfileOptions::default())
 }
 
+#[test]
+fn nested_config_examples_do_not_override_direct_section_configuration() {
+    for prefix in [">:", "<<:", ":>>"] {
+        for namespace in ["config", "mech-config"] {
+            let source = format!(
+                "config := {{runtime: {{name: \"root\"}}}}\n\n{prefix} ~~~mech:{namespace}\nconfig := {{runtime: {{name: \"example\"}}}}\n~~~\n"
+            );
+            assert_eq!(
+                parse(&source).unwrap().runtime.name.as_deref(),
+                Some("root"),
+                "{source}"
+            );
+        }
+    }
+    let direct = "~~~mech:config\nconfig := {runtime: {name: \"direct\"}}\n~~~\n";
+    assert_eq!(
+        parse(direct).unwrap().runtime.name.as_deref(),
+        Some("direct")
+    );
+}
+
 fn err_text(source: &str) -> String {
     let err = parse(source).expect_err("expected config parse to fail");
     format!("{} {} {:?}", err.kind_name(), err.kind_message(), err)

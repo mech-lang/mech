@@ -273,28 +273,18 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         mode: RenderMode,
     ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
-        let lookup = ResultLookup::new(document, &[], mode)?;
+        let (fields, hidden_fields) = title_slot_fields(document)?;
+        let lookup = ResultLookup::new_with_excluded(document, &[], mode, &hidden_fields)?;
         let owner = document.scope_id();
         let mut slots = BTreeMap::new();
-        if let Some(front) = document.title().and_then(|title| title.front_matter()) {
-            let mut key = None;
-            for child in front.syntax().children() {
-                if child.kind() == SyntaxKind::Identifier {
-                    key = Some(node_text(&child)?.to_uppercase());
-                } else if matches!(
-                    child.kind(),
-                    SyntaxKind::InlineParagraph | SyntaxKind::Img | SyntaxKind::Figures
-                ) {
-                    let name = key.take().ok_or_else(|| range_error(child.range()))?;
-                    let mut html = String::new();
-                    if child.kind() == SyntaxKind::InlineParagraph {
-                        render_inline_html(&child, owner, &lookup, &mut html)?;
-                    } else {
-                        render_document_node_html(&child, owner, &lookup, &mut html)?;
-                    }
-                    slots.insert(name, html);
-                }
+        for (name, child) in fields {
+            let mut html = String::new();
+            if child.kind() == SyntaxKind::InlineParagraph {
+                render_inline_html(&child, owner, &lookup, &mut html)?;
+            } else {
+                render_document_node_html(&child, owner, &lookup, &mut html)?;
             }
+            slots.insert(name, html);
         }
         let mut intro = String::new();
         let mut abstract_html = String::new();
@@ -631,6 +621,33 @@ enum RenderMode {
     Completed,
 }
 
+/// Select the final value of each shim slot before rendering or numbering its
+/// references. Full-document rendering still presents every authored field.
+fn title_slot_fields(
+    document: &DocumentSyntax,
+) -> Result<(Vec<(String, SyntaxNode)>, Vec<TextRange>), CanonicalDocumentRenderError> {
+    let mut fields = Vec::<(String, SyntaxNode)>::new();
+    let mut hidden = Vec::new();
+    if let Some(front) = document.title().and_then(|title| title.front_matter()) {
+        let mut key = None;
+        for child in front.syntax().children() {
+            if child.kind() == SyntaxKind::Identifier {
+                key = Some(node_text(&child)?.to_uppercase());
+            } else if matches!(
+                child.kind(),
+                SyntaxKind::InlineParagraph | SyntaxKind::Img | SyntaxKind::Figures
+            ) {
+                let name = key.take().ok_or_else(|| range_error(child.range()))?;
+                if let Some(index) = fields.iter().position(|(existing, _)| *existing == name) {
+                    hidden.push(fields.remove(index).1.range());
+                }
+                fields.push((name, child));
+            }
+        }
+    }
+    Ok((fields, hidden))
+}
+
 struct ResultLookup<'a> {
     mode: RenderMode,
     root_owner: DocumentScopeId,
@@ -647,6 +664,15 @@ impl<'a> ResultLookup<'a> {
         document: &DocumentSyntax,
         results: &'a [CanonicalScopeResults],
         mode: RenderMode,
+    ) -> Result<Self, CanonicalDocumentRenderError> {
+        Self::new_with_excluded(document, results, mode, &[])
+    }
+
+    fn new_with_excluded(
+        document: &DocumentSyntax,
+        results: &'a [CanonicalScopeResults],
+        mode: RenderMode,
+        excluded: &[TextRange],
     ) -> Result<Self, CanonicalDocumentRenderError> {
         let mut owners = document
             .mika_scopes()
@@ -736,6 +762,11 @@ impl<'a> ResultLookup<'a> {
             SyntaxKind::Reference,
             &mut citation_occurrences,
         );
+        citation_occurrences.retain(|node| {
+            !excluded
+                .iter()
+                .any(|range| range.contains_range(node.range()))
+        });
         citation_occurrences.sort_by_key(|node| node.range().start);
         let mut citation_numbers = HashMap::new();
         for occurrence in citation_occurrences {
@@ -773,6 +804,11 @@ impl<'a> ResultLookup<'a> {
             SyntaxKind::FootnoteReference,
             &mut footnote_occurrences,
         );
+        footnote_occurrences.retain(|node| {
+            !excluded
+                .iter()
+                .any(|range| range.contains_range(node.range()))
+        });
         footnote_occurrences.sort_by_key(|node| node.range().start);
         let mut footnote_numbers = HashMap::new();
         for occurrence in footnote_occurrences {

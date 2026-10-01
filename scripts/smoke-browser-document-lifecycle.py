@@ -147,7 +147,7 @@ def main() -> None:
                 browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "title document readiness")
                 result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
                   const controller = globalThis.MechDocumentController;
-                  const original = document.querySelector('.mech-section .mech-inline-mech-code[id]');
+                  const original = document.querySelector('.hero-kicker .mech-inline-mech-code[id]');
                   const address = original?.id;
                   const body = [...document.querySelectorAll('.mech-inline-mech-code[id]')].find(node => node !== original);
                   const bodyAddress = body?.id;

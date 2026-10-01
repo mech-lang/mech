@@ -4,7 +4,8 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use super::{
-    DocumentId, ParseConfig, Revision, SyntaxKind, TextSnapshot, parse_canonical_document,
+    AstNode, CodeBlockSyntax, CodeFenceScope, DocumentId, ParseConfig, Revision, SyntaxKind,
+    TextSnapshot, parse_canonical_document,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -22,6 +23,22 @@ pub fn submission_terminal(source: &str) -> Option<SubmissionTerminal> {
     let mut pending = vec![parsed.syntax()];
     let mut terminal = None;
     while let Some(node) = pending.pop() {
+        if matches!(
+            node.kind(),
+            SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+        ) {
+            continue;
+        }
+        if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+            if matches!(
+                fence.info().map(|info| info.scope),
+                Some(CodeFenceScope::Root | CodeFenceScope::Named(_))
+            ) && let Some(code) = fence.mech_code()
+            {
+                pending.push(code.syntax().clone());
+            }
+            continue;
+        }
         let children = node.children().collect::<Vec<_>>();
         if node.kind() == SyntaxKind::MechCode {
             let mut executable_owner = false;
@@ -64,6 +81,26 @@ pub fn submission_terminal(source: &str) -> Option<SubmissionTerminal> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn disabled_fence_terminators_do_not_suppress_an_executable_submission() {
+        for language in ["mech:disabled", "mec:disabled", "🤖:disabled", "rust"] {
+            for delimiter in ["```", "~~~"] {
+                let example = format!("{delimiter}{language}\n99;\n{delimiter}\n");
+                assert_eq!(submission_terminal(&example), None);
+                let source = format!("1 + 1\n\n{example}");
+                let terminal = submission_terminal(&source).unwrap();
+                assert!(!terminal.suppresses_value, "{source}");
+                assert!(terminal.byte_offset < source.find(delimiter).unwrap());
+                let source = format!("1 + 1;\n\n{example}");
+                assert!(submission_terminal(&source).unwrap().suppresses_value);
+            }
+        }
+        for scope in ["", ":worker", ":false"] {
+            let source = format!("1 + 1\n\n```mech{scope}\n99;\n```\n");
+            assert!(submission_terminal(&source).unwrap().suppresses_value);
+        }
+    }
 
     #[test]
     fn terminal_metadata_follows_canonical_comments_strings_and_resource_uris() {
