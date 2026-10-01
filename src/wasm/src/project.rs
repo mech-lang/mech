@@ -22,9 +22,7 @@ use mech_core::{
 };
 #[cfg(test)]
 use mech_engine::{CanonicalSourceFrontend, root_document_output_ids};
-use mech_engine::{
-    SourceDocumentOutputKind, root_document_output_identities, root_document_program_output_id,
-};
+use mech_engine::{SourceDocumentOutputKind, root_document_program_output_id};
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
 use mech_runtime::{
@@ -1320,8 +1318,6 @@ fn live_document_fragment_addresses(
     fragment: &str,
     accepted_before: usize,
 ) -> MResult<Vec<(mech_syntax::document::TextRange, u64)>> {
-    use mech_syntax::document::{TextRange, TextSize};
-
     let executable = accepted.source().to_contiguous_string();
     let fragment_start = executable
         .rfind(fragment)
@@ -1329,24 +1325,8 @@ fn live_document_fragment_addresses(
         .ok_or_else(|| {
             document_runtime_error("accepted documentation fragment was not retained")
         })?;
-    let fragment_end = fragment_start + fragment.len();
     let state = document::document_output_state_for_source(bootstrap, accepted, false)?;
-    Ok(state
-        .bindings
-        .into_iter()
-        .filter_map(|binding| {
-            let (start, end) = binding.source_span?;
-            (start >= fragment_start && end <= fragment_end).then(|| {
-                (
-                    TextRange::new(
-                        TextSize((start - fragment_start) as u32),
-                        TextSize((end - fragment_start) as u32),
-                    ),
-                    binding.output_id,
-                )
-            })
-        })
-        .collect())
+    retained_document_fragment_addresses(&state.bindings, fragment_start, fragment.len())
 }
 
 fn document_runtime_error(message: impl Into<String>) -> MechError {
@@ -1420,6 +1400,7 @@ mod document {
         kind: SourceDocumentOutputKind,
         ordinal: u64,
         pub(super) source_span: Option<(usize, usize)>,
+        title_slot: Option<(&'static str, usize)>,
     }
 
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1432,6 +1413,7 @@ mod document {
         // A suppressed occurrence still owns its original DOM address. None
         // denotes actual deletion, whose restoration requires exact identity.
         unpublished_span: Option<(usize, usize)>,
+        title_slot: Option<(&'static str, usize)>,
     }
 
     #[derive(Clone, Default)]
@@ -1592,11 +1574,21 @@ mod document {
                 "browser presentation identity parsing failed: {error:?}"
             ))
         })?;
-        let identities = root_document_output_identities(&presentation);
+        let (identities, _) =
+            mech_core::document_presentation::root_document_presentation_identities(&presentation);
+        let fences = root_fence_occurrences(&source);
         let mut claimed = vec![false; outputs.len()];
         let bindings = identities
             .into_iter()
             .map(|identity| {
+                let kind = match identity.kind {
+                    mech_core::document_presentation::DocumentPresentationOutputKind::Inline => {
+                        SourceDocumentOutputKind::Inline
+                    }
+                    mech_core::document_presentation::DocumentPresentationOutputKind::Fence => {
+                        SourceDocumentOutputKind::Fence
+                    }
+                };
                 let presentation_span = presentation_source_span(&source, identity.source_range);
                 let ranged_match = presentation_span.and_then(|presentation_span| {
                     outputs
@@ -1604,7 +1596,7 @@ mod document {
                         .enumerate()
                         .position(|(index, (output, canonical_span))| {
                             !claimed[index]
-                                && output.kind == identity.kind
+                                && output.kind == kind
                                 && canonical_span.is_some_and(|canonical_span| {
                                     source_spans_overlap(presentation_span, canonical_span)
                                 })
@@ -1614,7 +1606,7 @@ mod document {
                 // their row/column locations are not document absolute. Fence
                 // publication order is canonical and contains no ignored
                 // front-matter values, making kind/order the precise fallback.
-                let ordered_fence_match = (identity.kind == SourceDocumentOutputKind::Fence)
+                let ordered_fence_match = (kind == SourceDocumentOutputKind::Fence)
                     .then(|| {
                         outputs.iter().enumerate().position(|(index, (output, _))| {
                             !claimed[index] && output.kind == SourceDocumentOutputKind::Fence
@@ -1632,12 +1624,23 @@ mod document {
                 };
                 claimed[index] = true;
                 let (output, source_span) = outputs[index];
+                let source_span = if kind == SourceDocumentOutputKind::Fence {
+                    source_span.and_then(|span| {
+                        fences
+                            .iter()
+                            .copied()
+                            .find(|fence| source_spans_overlap(*fence, span))
+                    })
+                } else {
+                    source_span
+                };
                 Ok(Some(DocumentOutputBinding {
                     output_id: identity.output_id,
                     semantic_id: identity.semantic_id,
                     kind: output.kind,
                     ordinal: u64::from(output.output),
                     source_span,
+                    title_slot: identity.title_slot,
                 }))
             })
             .collect::<MResult<Vec<_>>>()?
@@ -1782,11 +1785,8 @@ mod document {
                     // Syntax-node ranges can include neighboring newline trivia.
                     // The occurrence owns its delimiters, independently of prose
                     // inserted immediately before or after the fence.
-                    let delimiters = fence.delimiters();
-                    if delimiters.len() >= 2 {
-                        let first = &delimiters[0];
-                        let last = &delimiters[delimiters.len() - 1];
-                        spans.push((first.range().start.0 as usize, last.range().end.0 as usize));
+                    if let Some(range) = fence.delimiter_range() {
+                        spans.push((range.start.0 as usize, range.end.0 as usize));
                     }
                 }
             }
@@ -1825,18 +1825,46 @@ mod document {
         retired: &mut Vec<RetiredDocumentOutput>,
     ) {
         let edit = edit.or_else(|| inferred_source_edit(previous_source, next_source));
-        let mut groups =
-            HashMap::<(SourceDocumentOutputKind, u64), (Vec<usize>, Vec<usize>)>::new();
+        let mut old_assigned = vec![false; previous.len()];
+        let mut assigned = vec![false; next.len()];
+        // Title markup keeps one slot per recognized field. Its public address
+        // follows the last field occurrence, even when an earlier occurrence
+        // survives unchanged or the winning expression changes completely.
+        for new_index in 0..next.len() {
+            if let Some(slot) = next[new_index].title_slot
+                && let Some(old_index) =
+                    previous.iter().position(|old| old.title_slot == Some(slot))
+            {
+                preserve_output_identity(
+                    previous,
+                    next,
+                    old_index,
+                    new_index,
+                    &mut old_assigned,
+                    &mut assigned,
+                );
+            }
+        }
+        let mut groups = HashMap::<
+            (SourceDocumentOutputKind, u64, Option<(&'static str, usize)>),
+            (Vec<usize>, Vec<usize>),
+        >::new();
         for (index, binding) in previous.iter().enumerate() {
+            if old_assigned[index] {
+                continue;
+            }
             groups
-                .entry((binding.kind, binding.semantic_id))
+                .entry((binding.kind, binding.semantic_id, binding.title_slot))
                 .or_default()
                 .0
                 .push(index);
         }
         for (index, binding) in next.iter().enumerate() {
+            if assigned[index] {
+                continue;
+            }
             groups
-                .entry((binding.kind, binding.semantic_id))
+                .entry((binding.kind, binding.semantic_id, binding.title_slot))
                 .or_default()
                 .1
                 .push(index);
@@ -1847,8 +1875,6 @@ mod document {
         // removed placeholder can never begin displaying a later output.
         let mut claimed = reserved.clone();
         claimed.extend(previous.iter().map(|binding| binding.output_id));
-        let mut old_assigned = vec![false; previous.len()];
-        let mut assigned = vec![false; next.len()];
         for (old, new) in groups.values() {
             if let Some(edit) = edit {
                 let old_before = old
@@ -1966,19 +1992,30 @@ mod document {
         // semantic hash. Pair the still-unmatched outputs inside the edit by
         // kind and order so live DOM placeholders keep their public address.
         if let Some(edit) = edit {
-            let mut changed = HashMap::<SourceDocumentOutputKind, (Vec<usize>, Vec<usize>)>::new();
+            let mut changed = HashMap::<
+                (SourceDocumentOutputKind, Option<(&'static str, usize)>),
+                (Vec<usize>, Vec<usize>),
+            >::new();
             for (index, binding) in previous.iter().enumerate() {
                 if !old_assigned[index]
                     && binding_intersects_edit(binding, edit.old_start, edit.old_end)
                 {
-                    changed.entry(binding.kind).or_default().0.push(index);
+                    changed
+                        .entry((binding.kind, binding.title_slot))
+                        .or_default()
+                        .0
+                        .push(index);
                 }
             }
             for (index, binding) in next.iter().enumerate() {
                 if !assigned[index]
                     && binding_intersects_edit(binding, edit.new_start, edit.new_end)
                 {
-                    changed.entry(binding.kind).or_default().1.push(index);
+                    changed
+                        .entry((binding.kind, binding.title_slot))
+                        .or_default()
+                        .1
+                        .push(index);
                 }
             }
             for (old, new) in changed.values() {
@@ -2024,17 +2061,20 @@ mod document {
                         .find_map(|(tombstone_index, tombstone)| {
                             (!restored_tombstones.contains(&tombstone_index)
                                 && tombstone.kind == binding.kind
-                                && (tombstone.unpublished_span.is_some_and(|span| {
-                                    binding.source_span.is_some_and(|binding_span| {
-                                        source_spans_overlap(span, binding_span)
+                                && tombstone.title_slot == binding.title_slot
+                                && (binding.title_slot.is_some()
+                                    || tombstone.unpublished_span.is_some_and(|span| {
+                                        binding.source_span.is_some_and(|binding_span| {
+                                            source_spans_overlap(span, binding_span)
+                                        })
                                     })
-                                }) || (binding_intersects_edit(
-                                    binding,
-                                    edit.new_start,
-                                    edit.new_end,
-                                ) && tombstone.anchor == edit.new_start
-                                    && tombstone.semantic_id == binding.semantic_id
-                                    && tombstone.source == source)))
+                                    || (binding_intersects_edit(
+                                        binding,
+                                        edit.new_start,
+                                        edit.new_end,
+                                    ) && tombstone.anchor == edit.new_start
+                                        && tombstone.semantic_id == binding.semantic_id
+                                        && tombstone.source == source)))
                                 .then_some(tombstone_index)
                         })
                 else {
@@ -2076,6 +2116,7 @@ mod document {
                     output_id: binding.output_id,
                     semantic_id: binding.semantic_id,
                     kind: binding.kind,
+                    title_slot: binding.title_slot,
                     source: source.to_owned(),
                     anchor,
                     unpublished_span: (binding.kind == SourceDocumentOutputKind::Fence)
@@ -2094,7 +2135,7 @@ mod document {
             }
         }
 
-        for ((kind, semantic_id), (_, new)) in groups {
+        for ((kind, semantic_id, _), (_, new)) in groups {
             let mut occurrence = 0_u64;
             for index in new {
                 if assigned[index] {
@@ -2164,6 +2205,7 @@ mod document {
                 kind: SourceDocumentOutputKind::Fence,
                 ordinal,
                 source_span: Some((start, start + 1)),
+                title_slot: None,
             }
         }
 
@@ -6295,6 +6337,65 @@ phase"#;
     }
 
     #[test]
+    fn documentation_fences_mount_after_host_submission_without_a_terminal_newline() {
+        for baseline_tail in ["", "\n", "\r\n"] {
+            for delimiter in ["```", "~~~"] {
+                for fragment_tail in ["", "\n", "\r\n"] {
+                    let baseline = format!("answer := 1\nanswer{baseline_tail}");
+                    let submitted = format!(
+                        "Unicode 🙂 result {{answer + 1}}.\n\n{delimiter}mech\nanswer + 2\n{delimiter}{fragment_tail}"
+                    );
+                    let mut session = mech_runtime::ResidentReplSession::from_source(
+                        crate::repl::WasmReplRuntimeFactory::Standalone,
+                        baseline.clone(),
+                    )
+                    .unwrap();
+                    let accepted_before = session.source().len();
+                    session.submit_host_source(&submitted).unwrap();
+                    let retained = session.source();
+                    let (fragment, fragment_start) =
+                        retained_submission_fragment(retained, accepted_before, &submitted)
+                            .unwrap();
+                    assert_eq!(fragment, submitted);
+                    let bootstrap =
+                        document_bootstrap("document.mec", &baseline, HashMap::new(), Vec::new());
+                    let state = document::document_output_state_for_source(
+                        &bootstrap,
+                        session.source_document().unwrap(),
+                        false,
+                    )
+                    .unwrap();
+                    let addresses = retained_document_fragment_addresses(
+                        &state.bindings,
+                        fragment_start,
+                        fragment.len(),
+                    )
+                    .unwrap();
+                    assert_eq!(addresses.len(), 2, "{submitted:?}");
+                    let parsed = CanonicalWasmDocument::retain(
+                        "browser:documentation:test",
+                        mech_syntax::document::Revision(0),
+                        fragment,
+                    )
+                    .unwrap();
+                    let html = mech_runtime::CanonicalDocumentRenderer
+                        .format_html_body_live(&parsed.document().document(), &addresses)
+                        .unwrap();
+                    for (_, address) in &addresses {
+                        assert!(
+                            html.contains(&format!("id='{address}:0'")),
+                            "{submitted:?}: {html}"
+                        );
+                    }
+                    assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+                    assert!(html.contains("class='mech-block-output'"), "{html}");
+                    session.shutdown().unwrap();
+                }
+            }
+        }
+    }
+
+    #[test]
     fn appended_document_fragment_mounts_its_live_outputs() {
         let baseline = "answer := 1\nanswer\n";
         let fragment = "\nResult {answer + 1}.\n\n```mech\nanswer + 2\n```\n";
@@ -8074,6 +8175,135 @@ mod browser_tests {
                 .format_canonical_inline(),
             user_value
         );
+    }
+
+    #[wasm_bindgen_test]
+    fn public_documentation_response_keeps_live_fences_without_a_terminal_newline() {
+        for delimiter in ["```", "~~~"] {
+            let mut document =
+                WasmDocument::from_encoded(&encoded_document("answer := 1\nanswer")).unwrap();
+            let request = document.repl_invoke(":docs browser/test").unwrap();
+            let request_id = Reflect::get(&request, &JsValue::from_str("hostRequestId"))
+                .unwrap()
+                .as_string()
+                .unwrap();
+            let submitted =
+                format!("Result {{answer + 1}}.\n\n{delimiter}mech\nanswer + 2\n{delimiter}");
+            let response = document
+                .repl_load_documentation(&request_id, "browser/test", &submitted)
+                .unwrap();
+            let html = Reflect::get(&response, &JsValue::from_str("html"))
+                .unwrap()
+                .as_string()
+                .unwrap();
+            assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+            assert!(html.contains("class='mech-block-output'"), "{html}");
+            let addresses = html
+                .split("id='")
+                .skip(1)
+                .filter_map(|suffix| {
+                    suffix
+                        .split_once(":0'")
+                        .and_then(|(address, _)| address.parse::<u64>().ok())
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(addresses.len(), 2, "{html}");
+            for (address, expected) in addresses.into_iter().zip(["2", "3"]) {
+                assert_eq!(
+                    rendered_text(&document.rendered_output(address).unwrap()),
+                    expected
+                );
+            }
+        }
+    }
+
+    #[wasm_bindgen_test]
+    fn repeated_title_fields_transfer_the_existing_slot_on_public_source_edits() {
+        for name in [
+            "author", "date", "kicker", "section", "summary", "next", "previous", "hero",
+        ] {
+            let field = |value: &str| {
+                if name == "hero" {
+                    format!("hero: | ![Result {value}](hero.svg) |\n")
+                } else {
+                    format!("{name}: {value}\n")
+                }
+            };
+            for replace in [false, true] {
+                let original = format!(
+                    "Document\n========\n{}========\n\nVisible {{1}}.\n",
+                    field("{1}")
+                );
+                let mut document =
+                    WasmDocument::from_encoded(&encoded_document(&original)).unwrap();
+                let ids = document.bootstrap.presentation_output_ids.clone();
+                assert_eq!(ids.len(), 2, "{name}");
+                let slot = ids[0];
+                let body = ids[1];
+                let check = |document: &WasmDocument, expected: Option<&str>| {
+                    let rendered = document.rendered_output(slot).unwrap();
+                    if let Some(expected) = expected {
+                        assert_eq!(
+                            rendered_text(&rendered),
+                            expected,
+                            "{name}, replace={replace}"
+                        );
+                    } else {
+                        assert!(rendered.is_null(), "{name}, replace={replace}");
+                    }
+                    assert_eq!(rendered_text(&document.rendered_output(body).unwrap()), "1");
+                };
+                check(&document, Some("1"));
+                for value in ["{2}", "{3}", "literal", "{4}"] {
+                    let source = document.repl_source();
+                    let insertion = source.rfind("========").unwrap();
+                    let addition = field(value);
+                    if replace {
+                        let next = format!(
+                            "{}{}{}",
+                            &source[..insertion],
+                            addition,
+                            &source[insertion..]
+                        );
+                        document.repl_replace_source(&next).unwrap();
+                    } else {
+                        document
+                            .repl_apply_edit(insertion as u32, insertion as u32, &addition)
+                            .unwrap();
+                    }
+                    check(
+                        &document,
+                        (value != "literal").then(|| &value[1..value.len() - 1]),
+                    );
+                    let accepted = document.repl_source();
+                    assert!(document.repl_apply_edit(0, 0, "[\n").is_err());
+                    assert_eq!(document.repl_source(), accepted);
+                    check(
+                        &document,
+                        (value != "literal").then(|| &value[1..value.len() - 1]),
+                    );
+                }
+                for (removed, expected) in [
+                    ("{4}", None),
+                    ("literal", Some("3")),
+                    ("{3}", Some("2")),
+                    ("{2}", Some("1")),
+                ] {
+                    let source = document.repl_source();
+                    let removal = field(removed);
+                    let start = source.find(&removal).unwrap();
+                    if replace {
+                        let next = source.replacen(&removal, "", 1);
+                        document.repl_replace_source(&next).unwrap();
+                    } else {
+                        document
+                            .repl_apply_edit(start as u32, (start + removal.len()) as u32, "")
+                            .unwrap();
+                    }
+                    check(&document, expected);
+                }
+            }
+        }
     }
 
     #[wasm_bindgen_test]

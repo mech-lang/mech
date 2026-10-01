@@ -29,6 +29,8 @@ pub struct DocumentPresentationOutputIdentity {
     pub semantic_id: u64,
     pub kind: DocumentPresentationOutputKind,
     pub source_range: Option<(SourceLocation, SourceLocation)>,
+    /// The rendered title field and output position within its final occurrence.
+    pub title_slot: Option<(&'static str, usize)>,
 }
 
 impl DocumentPresentationAddresses {
@@ -181,7 +183,14 @@ impl DocumentPresentationAddresses {
         title: &Title,
         outputs: &mut Vec<DocumentPresentationOutputIdentity>,
     ) {
-        for field in title_presentation_fields(title) {
+        let fields = title_presentation_fields(title);
+        let slot_name = |field: &TitlePresentationField<'_>| match field {
+            TitlePresentationField::Paragraph(name, _) => Some(*name),
+            TitlePresentationField::Hero(_) => Some("hero"),
+            TitlePresentationField::Import(_, _) => None,
+        };
+        for (index, field) in fields.iter().enumerate() {
+            let start = outputs.len();
             match field {
                 TitlePresentationField::Paragraph(_, paragraph) => {
                     collect_paragraph_output_ids(paragraph, self, outputs)
@@ -191,6 +200,15 @@ impl DocumentPresentationAddresses {
                 }
                 // Import comments are authoring metadata, with no rendered slot.
                 TitlePresentationField::Import(_, _) => {}
+            }
+            if let Some(name) = slot_name(field)
+                && !fields[index + 1..]
+                    .iter()
+                    .any(|candidate| slot_name(candidate) == Some(name))
+            {
+                for (position, output) in outputs[start..].iter_mut().enumerate() {
+                    output.title_slot = Some((name, position));
+                }
             }
         }
     }
@@ -310,6 +328,7 @@ fn collect_fenced_output_ids(
             semantic_id: fenced_document_output_id(block).unwrap(),
             kind: DocumentPresentationOutputKind::Fence,
             source_range: None,
+            title_slot: None,
         });
     }
 }
@@ -363,6 +382,7 @@ fn collect_paragraph_element_output_ids(
                     .first()
                     .zip(tokens.last())
                     .map(|(first, last)| (first.src_range.start, last.src_range.end)),
+                title_slot: None,
             });
         }
         ParagraphElement::Emphasis(element)

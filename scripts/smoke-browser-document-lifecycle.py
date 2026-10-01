@@ -71,6 +71,8 @@ def main() -> None:
         source_dir = Path(directory)
         (source_dir / "fence.mec").write_text("~~~mech\n11\n~~~\n")
         (source_dir / "inline.mec").write_text("anchor := 0\n\nVisible {11}.\n")
+        (source_dir / "title.mec").write_text("Document\n========\nsection: {1}\n========\n\nVisible {1}.\n")
+        (source_dir / "documentation.mec").write_text("answer := 1\nanswer")
         original = "first := 1\nsecond := 2\nsecond\n\nVisible {second}.\n"
         (source_dir / "console.mec").write_text(original)
         port = free_port()
@@ -82,7 +84,7 @@ def main() -> None:
                 wait_for_http(url + "/fence.mec", server)
                 browser = ChromeSession(None, artifacts / "chrome-profile", artifacts / "chrome.log", flags=["--disable-gpu"]).start()
                 browser.navigate(url + "/fence.mec")
-                browser.wait_for("document.documentElement.dataset.mechDocumentStatus === 'ready'", "fence document readiness")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "fence document readiness")
                 result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
                   const controller = globalThis.MechDocumentController;
                   const original = document.querySelector('.mech-block-output[id]');
@@ -117,7 +119,7 @@ def main() -> None:
                 results.append(result)
                 browser.write_dom(artifacts / "fence.dom.html")
                 browser.navigate(url + "/inline.mec")
-                browser.wait_for("document.documentElement.dataset.mechDocumentStatus === 'ready'", "inline document readiness")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "inline document readiness")
                 result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
                   const controller = globalThis.MechDocumentController;
                   const original = document.querySelector('.mech-inline-mech-code[id]');
@@ -141,8 +143,70 @@ def main() -> None:
                 })()""")
                 results.append(result)
                 browser.write_dom(artifacts / "inline.dom.html")
+                browser.navigate(url + "/title.mec")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "title document readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const controller = globalThis.MechDocumentController;
+                  const original = document.querySelector('.mech-section .mech-inline-mech-code[id]');
+                  const address = original?.id;
+                  const body = [...document.querySelectorAll('.mech-inline-mech-code[id]')].find(node => node !== original);
+                  const bodyAddress = body?.id;
+                  const initial = controller.source();
+                  for (const replace of [false, true]) {
+                    controller.replaceSource(initial);
+                    checkOutput(original, address, '1');
+                    for (const value of ['{2}', '{3}', 'literal', '{4}']) {
+                      const source = controller.source();
+                      const start = source.lastIndexOf('========');
+                      const addition = `section: ${value}\\n`;
+                      if (replace) controller.replaceSource(source.slice(0, start) + addition + source.slice(start));
+                      else controller.applyEdit(start, start, addition);
+                      if (value === 'literal') checkUnavailable(original, address);
+                      else checkSelection(original, address, value.slice(1, -1));
+                      checkOutput(body, bodyAddress, '1');
+                      const accepted = controller.source();
+                      let rejected = false;
+                      try { controller.applyEdit(0, 0, '[\\n'); } catch (_) { rejected = true; }
+                      if (!rejected || controller.source() !== accepted) throw new Error('Malformed title edit changed accepted source');
+                    }
+                    for (const [value, expected] of [['{4}', null], ['literal', '3'], ['{3}', '2'], ['{2}', '1']]) {
+                      const source = controller.source();
+                      const removal = `section: ${value}\\n`;
+                      const start = source.indexOf(removal);
+                      if (replace) controller.replaceSource(source.replace(removal, ''));
+                      else controller.applyEdit(start, start + removal.length, '');
+                      if (expected === null) checkUnavailable(original, address);
+                      else checkSelection(original, address, expected);
+                      checkOutput(body, bodyAddress, '1');
+                    }
+                  }
+                  return {contract:'title-slot-winner-transfer', address, originalNodeRetained:document.getElementById(address) === original, applyEdit:true, replaceSource:true, restoration:true, bodyOutputPreserved:true};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "title.dom.html")
+                browser.navigate(url + "/documentation.mec")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "documentation document readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const nativeFetch = globalThis.fetch;
+                  globalThis.fetch = (input, init) => String(input).includes('/browser-lifecycle/main/docs/fence.mec')
+                    ? Promise.resolve(new Response('Result {answer + 1}.\\n\\n~~~mech\\nanswer + 2\\n~~~', {status:200}))
+                    : nativeFetch(input, init);
+                  try {
+                    await globalThis.MechDocumentController.invoke(':docs browser-lifecycle/fence');
+                    const row = document.querySelector('[data-mech-documentation-topic="browser-lifecycle/fence"]');
+                    const inline = row?.querySelector('.mech-inline-mech-code[id]');
+                    const fence = row?.querySelector('.mech-block-output[id]');
+                    checkSelection(inline, inline?.id, '2');
+                    checkSelection(fence, fence?.id, '3');
+                    return {contract:'documentation-fence-without-final-newline', inlineValue:'2', fenceValue:'3', liveSelection:true};
+                  } finally {
+                    globalThis.fetch = nativeFetch;
+                  }
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "documentation.dom.html")
                 browser.navigate(url + "/console.mec")
-                browser.wait_for("document.documentElement.dataset.mechDocumentStatus === 'ready'", "console document readiness")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "console document readiness")
                 result = browser.evaluate_json("""(async () => {
                   const controller = globalThis.MechDocumentController;
                   const initial = controller.source();
@@ -172,7 +236,7 @@ def main() -> None:
                 results.append(result)
                 browser.write_dom(artifacts / "console.dom.html")
                 (artifacts / "results.json").write_text(json.dumps(results, indent=2) + "\n")
-                print("browser document lifecycle: 3 operation sequences passed")
+                print("browser document lifecycle: 5 operation sequences passed")
             finally:
                 if browser is not None:
                     browser.close()
