@@ -326,11 +326,32 @@ fn collect_paragraph_output_ids(
     output_ids: &mut Vec<u64>,
 ) {
     for element in &paragraph.elements {
-        if matches!(element, ParagraphElement::EvalInlineMechCode(_)) {
+        collect_paragraph_element_output_ids(element, inline_index, output_ids);
+    }
+}
+
+fn collect_paragraph_element_output_ids(
+    element: &ParagraphElement,
+    inline_index: &mut u64,
+    output_ids: &mut Vec<u64>,
+) {
+    match element {
+        ParagraphElement::EvalInlineMechCode(_) => {
             let output_id = hash_str(&format!("inline-eval:0:{inline_index}"));
             *inline_index += 1;
             push_unique(output_ids, output_id);
         }
+        ParagraphElement::Emphasis(element)
+        | ParagraphElement::Highlight(element)
+        | ParagraphElement::Strikethrough(element)
+        | ParagraphElement::Strong(element)
+        | ParagraphElement::Underline(element) => {
+            collect_paragraph_element_output_ids(element, inline_index, output_ids);
+        }
+        ParagraphElement::Hyperlink((paragraph, _)) => {
+            collect_paragraph_output_ids(paragraph, inline_index, output_ids);
+        }
+        _ => {}
     }
 }
 

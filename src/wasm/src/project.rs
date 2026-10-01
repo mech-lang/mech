@@ -6819,6 +6819,62 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
+    fn nested_paragraph_evaluations_keep_formatter_and_browser_addresses_aligned() {
+        for nested in [
+            "**{11}**",
+            "[value {11}](https://example.test)",
+            "*{11}*",
+            "_{11}_",
+            "~{11}~",
+            "!!{11}!!",
+            "**[value !!{11}!!](https://example.test)**",
+        ] {
+            let source = format!("> Nested {nested}, direct {{33}}.\n\n~~~mech\n22\n~~~\n");
+            let tree = mech_syntax::parser::parse(&source).unwrap();
+            let ids = root_document_output_ids(&tree);
+            let legacy = mech_core::nodes::compress_and_encode(&tree).unwrap();
+            let modern = BrowserDocumentPayload::new("document.mec", &source)
+                .unwrap()
+                .with_presentation_output_ids(ids.clone())
+                .encode()
+                .unwrap();
+            let assert_outputs = |document: &WasmDocument| {
+                assert_eq!(ids.len(), 3, "{source}");
+                for (id, expected) in ids.iter().zip(["11", "33", "22"]) {
+                    let rendered = document.rendered_output(*id).unwrap();
+                    assert_eq!(
+                        Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                            .unwrap()
+                            .as_string()
+                            .as_deref(),
+                        Some(expected),
+                        "{source}: {id}",
+                    );
+                }
+            };
+            for encoded in [&modern, &legacy] {
+                let document = WasmDocument::from_encoded(encoded)
+                    .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+                assert_outputs(&document);
+                let mut replacement =
+                    WasmDocument::from_encoded(&encoded_document("answer := 7\nanswer")).unwrap();
+                replacement.reset(encoded).unwrap();
+                assert_outputs(&replacement);
+            }
+            let mut formatter = mech_syntax::Formatter::new();
+            let html = formatter.format_html(&tree, String::new(), "{{INTRO}}".to_owned());
+            for id in &ids {
+                assert_eq!(
+                    html.matches(&format!("id=\"{id}:0\"")).count(),
+                    1,
+                    "{source}"
+                );
+            }
+            assert_eq!(html.matches("class=\"mech-inline-mech-code\"").count(), 2);
+        }
+    }
+
+    #[wasm_bindgen_test]
     fn incomplete_presentation_addresses_reject_without_replacing_the_document() {
         let source = "> Quoted value {11}.\n\n~~~mech\n22\n~~~\n";
         let encoded = BrowserDocumentPayload::new("document.mec", source)

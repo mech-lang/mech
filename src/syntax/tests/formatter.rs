@@ -822,3 +822,32 @@ fn legacy_source_fences_preserve_execution_ownership_and_options() {
         assert_eq!(before.exports.len(), after.exports.len());
     }
 }
+
+#[test]
+fn nested_evaluations_preserve_source_and_emit_distinct_placeholders() {
+    for nested in [
+        "**{11}**",
+        "[value {11}](https://example.test)",
+        "*{11}*",
+        "_{11}_",
+        "~{11}~",
+        "!!{11}!!",
+        "**[value !!{11}!!](https://example.test)**",
+    ] {
+        let source = format!("> Nested {nested}, direct {{33}}.\n");
+        let tree = mech_syntax::parser::parse(&source).unwrap();
+        let formatted = Formatter::new().format(&tree);
+        assert!(formatted.contains(nested), "{formatted}");
+        assert_eq!(mech_syntax::parser::parse(&formatted).unwrap(), tree);
+        let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_owned());
+        for index in 0..2 {
+            let id = hash_str(&format!("inline-eval:0:{index}"));
+            assert_eq!(
+                html.matches(&format!("id=\"{id}:0\"")).count(),
+                1,
+                "{source}"
+            );
+        }
+        assert_eq!(html.matches("class=\"mech-inline-mech-code\"").count(), 2);
+    }
+}

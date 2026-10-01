@@ -1037,10 +1037,11 @@ impl Formatter {
                 }
             }
             ParagraphElement::Highlight(n) => {
+                let content = self.paragraph_element(n);
                 if self.html {
-                    format!("<mark class=\"mech-highlight\">{}</mark>", n.to_string())
+                    format!("<mark class=\"mech-highlight\">{}</mark>", content)
                 } else {
-                    format!("!!{}!!", n.to_string())
+                    format!("!!{}!!", content)
                 }
             }
             ParagraphElement::SectionReference(n) => {
@@ -1101,24 +1102,27 @@ impl Formatter {
                 }
             }
             ParagraphElement::Emphasis(n) => {
+                let content = self.paragraph_element(n);
                 if self.html {
-                    format!("<em class=\"mech-em\">{}</em>", n.to_string())
+                    format!("<em class=\"mech-em\">{}</em>", content)
                 } else {
-                    format!("*{}*", n.to_string())
+                    format!("*{}*", content)
                 }
             }
             ParagraphElement::Underline(n) => {
+                let content = self.paragraph_element(n);
                 if self.html {
-                    format!("<u class=\"mech-u\">{}</u>", n.to_string())
+                    format!("<u class=\"mech-u\">{}</u>", content)
                 } else {
-                    format!("_{}_", n.to_string())
+                    format!("_{}_", content)
                 }
             }
             ParagraphElement::Strikethrough(n) => {
+                let content = self.paragraph_element(n);
                 if self.html {
-                    format!("<del class=\"mech-del\">{}</del>", n.to_string())
+                    format!("<del class=\"mech-del\">{}</del>", content)
                 } else {
-                    format!("~{}~", n.to_string())
+                    format!("~{}~", content)
                 }
             }
             ParagraphElement::InlineCode(n) => {
