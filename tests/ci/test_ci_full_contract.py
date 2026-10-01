@@ -1204,6 +1204,13 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn(fetch, block)
         self.assertLess(block.index(fetch), block.index(closure))
 
+    def test_dynamic_modules_prefetches_before_offline_native_build(self):
+        block = job_block(FULL, "dynamic-modules")
+        fetch = "cargo fetch --locked"
+        smoke = "bash scripts/test-dynamic-modules.sh"
+        self.assertIn(fetch, block)
+        self.assertLess(block.index(fetch), block.index(smoke))
+
     def test_language_census_prefetches_before_offline_metadata_tests(self):
         block = job_block(FULL, "cargo-language")
         fetch = "cargo fetch --locked"
