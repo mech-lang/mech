@@ -1,7 +1,10 @@
 use crate::*;
 #[cfg(feature = "no_std")]
 use alloc::collections::{BTreeMap, BTreeSet};
-use mech_core::document_presentation::{DocumentPresentationAddresses, fenced_document_output_id};
+use mech_core::document_presentation::{
+    DocumentPresentationAddresses, TitlePresentationField, fenced_document_output_id,
+    title_presentation_fields,
+};
 use mech_core::nodes::{Kind, Matrix};
 #[cfg(not(feature = "no_std"))]
 use std::collections::{BTreeMap, BTreeSet};
@@ -821,58 +824,27 @@ impl Formatter {
             format!("<h1 class=\"mech-program-title\">{}</h1>", title)
         } else {
             let mut front_matter = Vec::new();
-            if node.fields.is_empty() {
-                for (name, value) in [
-                    ("author", &node.author),
-                    ("date", &node.date),
-                    ("kicker", &node.kicker),
-                    ("section", &node.section),
-                    ("summary", &node.summary),
-                    ("next", &node.next),
-                    ("previous", &node.previous),
-                ] {
-                    if let Some(value) = value {
-                        front_matter.push(format!("{name}: {}", value.to_string()));
+            for field in title_presentation_fields(node) {
+                match field {
+                    TitlePresentationField::Paragraph(name, value) => {
+                        front_matter.push(format!("{name}: {}", self.inline_paragraph(value)));
+                    }
+                    TitlePresentationField::Hero(hero) => {
+                        let value = match hero {
+                            SectionElement::FigureTable(table) => self.figure_table_source(table),
+                            _ => self.section_element(hero).trim().to_string(),
+                        };
+                        front_matter.push(format!("hero: {value}"));
+                    }
+                    TitlePresentationField::Import(import, comment) => {
+                        let mut source = self.module_import(import);
+                        if let Some(comment) = comment {
+                            source.push_str(" -- ");
+                            source.push_str(self.inline_paragraph(&comment.paragraph).trim());
+                        }
+                        front_matter.push(source);
                     }
                 }
-                if let Some(hero) = &node.hero {
-                    let hero = match hero {
-                        SectionElement::FigureTable(table) => self.figure_table_source(table),
-                        _ => self.section_element(hero).trim().to_string(),
-                    };
-                    front_matter.push(format!("hero: {hero}"));
-                }
-            } else {
-                for field in &node.fields {
-                    let (name, value) = match field {
-                        TitleField::Author(value) => ("author", self.inline_paragraph(value)),
-                        TitleField::Date(value) => ("date", self.inline_paragraph(value)),
-                        TitleField::Kicker(value) => ("kicker", self.inline_paragraph(value)),
-                        TitleField::Section(value) => ("section", self.inline_paragraph(value)),
-                        TitleField::Summary(value) => ("summary", self.inline_paragraph(value)),
-                        TitleField::Next(value) => ("next", self.inline_paragraph(value)),
-                        TitleField::Previous(value) => ("previous", self.inline_paragraph(value)),
-                        TitleField::Hero(hero) => {
-                            let value = match hero {
-                                SectionElement::FigureTable(table) => {
-                                    self.figure_table_source(table)
-                                }
-                                _ => self.section_element(hero).trim().to_string(),
-                            };
-                            ("hero", value)
-                        }
-                    };
-                    front_matter.push(format!("{name}: {value}"));
-                }
-            }
-            if !node.imports.is_empty() {
-                let imports = node
-                    .imports
-                    .iter()
-                    .cloned()
-                    .map(|(import, comment)| (MechCode::Import(import), comment))
-                    .collect::<Vec<_>>();
-                front_matter.push(self.mech_code(&imports).trim_end().to_string());
             }
 
             let opening = format!(

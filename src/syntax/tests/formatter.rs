@@ -1216,6 +1216,81 @@ fn cloned_fences_receive_distinct_occurrence_addresses() {
 }
 
 #[test]
+fn source_formatting_preserves_interleaved_title_imports_and_fields() {
+    for lines in [
+        vec!["+> math", "author: Before {1}", "date: After {math/value}"],
+        vec!["author: Before {1}", "+> math", "date: After {math/value}"],
+        vec!["author: Before {1}", "date: After {2}", "+> math"],
+        vec![
+            "author: Before {1}",
+            "+> math -- Import {99}",
+            "date: After {math/value}",
+            "+> extra -- second",
+            "author: Again {extra/value}",
+            "summary: Summary {3}",
+        ],
+    ] {
+        let source = format!("Document\n========\n{}\n========\n", lines.join("\n"));
+        let tree = mech_syntax::parser::parse(&source).unwrap();
+        assert_eq!(
+            tree.title.as_ref().unwrap().imports.len(),
+            lines.iter().filter(|line| line.starts_with("+>")).count()
+        );
+        let formatted = Formatter::new().format(&tree);
+        let actual = formatted
+            .lines()
+            .filter(|line| {
+                line.starts_with("author:")
+                    || line.starts_with("date:")
+                    || line.starts_with("summary:")
+                    || line.starts_with("+>")
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(actual, lines, "{formatted}");
+        assert_eq!(mech_syntax::parser::parse(&formatted).unwrap(), tree);
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn tree_only_html_payload_preserves_title_import_execution_order() {
+    use mech_core::browser_document::BrowserDocumentPayload;
+    let source = "Document\n========\nauthor: Before {1}\n+> math -- Import {99}\ndate: After {math/value}\n========\n";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let mut formatter = Formatter::new();
+    let html = formatter.format_html(&tree, String::new(), "{{CODE}}".to_owned());
+    let payload = BrowserDocumentPayload::decode(&html).unwrap();
+    let retained = payload.source();
+    assert!(
+        retained.find("author:").unwrap() < retained.find("+>").unwrap(),
+        "{retained}"
+    );
+    assert!(
+        retained.find("+>").unwrap() < retained.find("date:").unwrap(),
+        "{retained}"
+    );
+    assert_eq!(mech_syntax::parser::parse(retained).unwrap(), tree);
+    assert_eq!(
+        payload.presentation_output_ids(),
+        formatter.root_presentation_output_ids()
+    );
+    assert_eq!(payload.presentation_output_ids().len(), 2);
+}
+
+#[test]
+fn grouped_title_metadata_keeps_retained_import_positions() {
+    let source =
+        "Document\n========\nauthor: Before {1}\n+> math\ndate: After {math/value}\n========\n";
+    let original = mech_syntax::parser::parse(source).unwrap();
+    let mut grouped = original.clone();
+    grouped.title.as_mut().unwrap().fields.clear();
+    let formatted = Formatter::new().format(&grouped);
+    assert!(formatted.find("author:").unwrap() < formatted.find("+>").unwrap());
+    assert!(formatted.find("+>").unwrap() < formatted.find("date:").unwrap());
+    assert_eq!(mech_syntax::parser::parse(&formatted).unwrap(), original);
+}
+
+#[test]
 fn title_import_comments_have_no_live_presentation_slots() {
     let source = "Document\n========\nauthor: {40 + 2}\n+> math -- Import {41 + 1}\ndate: {42 + 0}\n========\n";
     let tree = mech_syntax::parse(source).unwrap();

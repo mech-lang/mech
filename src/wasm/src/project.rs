@@ -4990,6 +4990,39 @@ mod tests {
     }
 
     #[test]
+    fn public_html_payload_executes_title_fields_after_their_import() {
+        let source = "Document\n========\nauthor: Before {1}\n+> helper -- Import {99}\ndate: After {helper/value}\n========\n";
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let mut formatter = mech_syntax::Formatter::new();
+        let encoded = formatter.format_html(&tree, String::new(), "{{CODE}}".to_owned());
+        let payload = BrowserDocumentPayload::decode(&encoded).unwrap();
+        let retained = payload.source().to_owned();
+        assert!(retained.find("author:").unwrap() < retained.find("+>").unwrap());
+        assert!(retained.find("+>").unwrap() < retained.find("date:").unwrap());
+        assert_eq!(payload.presentation_output_ids().len(), 2);
+        let addresses = payload.presentation_output_ids().to_vec();
+        let sources = HashMap::from([
+            ("document.mec".to_owned(), retained.clone()),
+            ("helper".to_owned(), "value := 42\n<+ value\n".to_owned()),
+        ]);
+        let document =
+            WasmDocument::from_payload_with_sources(payload, "document.mec", sources, Vec::new())
+                .unwrap();
+        assert_eq!(document.repl.session.source(), retained);
+        let ordinals = document::document_output_ordinals(&document.bootstrap).unwrap();
+        for (address, expected) in addresses.iter().zip(["1", "42"]) {
+            let output = OutputId::new(u32::try_from(ordinals[address]).unwrap());
+            let value = document
+                .runtime()
+                .unwrap()
+                .output_value(output)
+                .unwrap()
+                .unwrap();
+            assert_eq!(value.format_canonical_inline(), expected);
+        }
+    }
+
+    #[test]
     fn title_import_comment_does_not_add_canonical_output() {
         let source = "Document\n===============================================================================\nauthor: {40 + 2}\n+> math -- Import {41 + 1}\ndate: {42 + 0}\n===============================================================================\n";
         let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
