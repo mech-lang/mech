@@ -182,7 +182,12 @@ The artifacts have distinct responsibilities:
   source path as an atomic-cutover removal target and assigns its final
   canonical consumer boundary. Its source scanner binds each call to the exact
   enclosing function and rejects imports, globs, renames, and function-value
-  aliases that could bypass the census.
+  aliases that could bypass the census. This historical census stays frozen:
+  open route rows in `s8-removal-manifest.tsv` name the current exact caller
+  when a retained check moves. Such rows remain inventoried, with the original
+  call count enforced, until canonical routing removes the parser call. New
+  legacy AST helpers also require explicit removal owners and linked consumer
+  dependencies; moving code does not complete its retirement.
 - `source-parser-consumer-fixtures.tsv` freezes specification-derived document
   expectations shared by those consumer contracts without executing the old
   parser as an oracle.

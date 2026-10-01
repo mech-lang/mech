@@ -1,6 +1,6 @@
 +> math
 
-EKF array inputs
+1. EKF array inputs
 -------------------------------------------------------------------------------
 
 -- This ordinary Mech section constructs the outer arrays. The accelerator

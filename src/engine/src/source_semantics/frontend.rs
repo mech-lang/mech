@@ -914,6 +914,17 @@ impl CanonicalSourceFrontend {
         )
     }
 
+    /// Whether a retained document declares at least one executable compute
+    /// section. This performs the same structured heading validation used by
+    /// mixed compilation without compiling either program partition.
+    pub fn has_mixed_document_region(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<bool, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::has_mixed_document_region(document)
+    }
+
     /// Partition one retained mixed document into coordinator, compute, and
     /// initializer semantic programs. All three projections share the same
     /// canonical source owner and source coordinates.
@@ -979,6 +990,14 @@ impl CanonicalSourceFrontend {
         resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
         reject_recovered_syntax(document)?;
+        // A document's ordinary program result is always named `result`.
+        // Compute capabilities, however, name lexical bindings, which may also
+        // be called `result`. Publish the encoded binding identities so output
+        // projection cannot accidentally select the aggregate program result.
+        let retained_output_bindings = retained_outputs
+            .iter()
+            .map(|name| crate::encode_interactive_symbol_output_name(name))
+            .collect();
         document_lowering::prepare_mixed_document_with_catalog_and_resources(
             document,
             self.nominal_origin.as_ref(),
@@ -987,7 +1006,7 @@ impl CanonicalSourceFrontend {
             input_schemas,
             resource_writes,
             external_inputs,
-            retained_outputs,
+            &retained_output_bindings,
             resolved_source_modules,
         )
     }
@@ -7113,6 +7132,31 @@ impl SemanticBuilder {
             source,
             anchor: SourceSemanticAnchor::for_node(syntax),
         });
+    }
+
+    fn publish_interactive_binding(
+        &mut self,
+        lexical_name: &str,
+        source: PendingValue,
+        syntax: &SyntaxNode,
+    ) {
+        if let Some(output) = self
+            .outputs
+            .iter_mut()
+            .find(|output| output.interactive_symbol.as_deref() == Some(lexical_name))
+        {
+            output.source = source;
+            output.anchor = SourceSemanticAnchor::for_node(syntax);
+            return;
+        }
+        let base = crate::encode_interactive_symbol_output_name(lexical_name);
+        let mut name = base.clone();
+        let mut suffix = 2u32;
+        while self.outputs.iter().any(|output| output.name == name) {
+            name = format!("{base}-{suffix}");
+            suffix += 1;
+        }
+        self.publish(&name, Some(lexical_name.to_owned()), source, syntax);
     }
 
     fn finish(self) -> Result<CanonicalSourceProgram, SourceSemanticError> {

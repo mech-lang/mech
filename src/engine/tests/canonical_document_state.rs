@@ -2553,6 +2553,7 @@ fn ordered_root_registers_declared_fsm_before_its_invocation() {
     assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
     let root = CanonicalOrderedDocument {
         identity: 0,
+        publish_result: true,
         document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
         nominal_origin: None,
         nominal_package_id: None,
@@ -2593,6 +2594,7 @@ fn ordered_roots_namespace_same_named_fsm_state_schemas() {
         assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
         CanonicalOrderedDocument {
             identity,
+            publish_result: true,
             document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
             nominal_origin: None,
             nominal_package_id: None,
@@ -2635,6 +2637,7 @@ fn ordered_root_imports_preserve_activation_state_ownership() {
         assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
         CanonicalOrderedDocument {
             identity,
+            publish_result: true,
             document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
             nominal_origin: None,
             nominal_package_id: None,
@@ -2686,6 +2689,7 @@ fn ordered_roots_reject_same_nominal_path_from_distinct_sources() {
         assert!(parsed.diagnostics.is_empty());
         CanonicalOrderedDocument {
             identity,
+            publish_result: true,
             document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
             nominal_origin: Some(origin.clone()),
             nominal_package_id: Some(package_id.to_owned()),
@@ -2729,6 +2733,7 @@ fn ordered_imports_match_enum_arms_from_the_value_schema() {
         );
         CanonicalOrderedDocument {
             identity,
+            publish_result: true,
             document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
             nominal_origin: Some(
                 CanonicalNominalPath::new(vec!["sample".to_owned(), format!("module{identity}")])

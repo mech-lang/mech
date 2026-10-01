@@ -209,10 +209,11 @@ fn compute_metadata_round_trips_but_native_package_products_fail_before_writing(
         &source,
         concat!(
             "+> math\n\n",
-            "seed := 1\n\n",
+            "coordinator := 0f32\n\n",
             "kernel @compute\n",
             "-------------------------------------------------------------------------------\n\n",
-            "answer := seed + 1\n",
+            "seed := 1f32\n",
+            "answer := seed + 1f32\n",
             "answer\n",
         ),
     )

@@ -22,10 +22,10 @@ use mech_core::{
     MemoryPlanError, MemoryPlanPoint, NodeId, ObservationReplayPolicy, OutputConstruction,
     PlanGeneration, PlannedArenaElement, PlannedArenaProjection, ProgramRevision,
     ReactiveInstanceId, RegionAccessPlan, ResidentBuildContext, ResidentKernelBindError,
-    ResidentKernelBindRequest, ResidentKernelInputs, ResidentOperationKey, ResidentPortLayout,
-    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedRangeMode,
-    ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule, SlotIndex,
-    TargetMemoryProfile, Value, plan_call_memory,
+    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentOperationKey,
+    ResidentPortLayout, ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedRangeMode, ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance,
+    ShapeRule, SlotIndex, TargetMemoryProfile, Value, plan_call_memory,
 };
 use sha2::{Digest, Sha256};
 
@@ -1920,6 +1920,10 @@ pub enum ResidentActivationError {
     ActivationKernel {
         node: NodeId,
     },
+    ActivationKernelExecution {
+        node: NodeId,
+        error: ResidentKernelError,
+    },
     InvalidDependency {
         node: NodeId,
     },
@@ -2080,6 +2084,7 @@ fn resident_activation_error_node(
         | ResidentActivationError::MissingResidentFactory { node }
         | ResidentActivationError::KernelBind { node, .. }
         | ResidentActivationError::ActivationKernel { node }
+        | ResidentActivationError::ActivationKernelExecution { node, .. }
         | ResidentActivationError::InvalidDependency { node } => Some(*node),
         ResidentActivationError::TurnDimension {
             slot: Some(slot), ..
@@ -2515,6 +2520,11 @@ fn activate_internal(
                     _ => ResidentActivationError::ActivationKernel { node },
                 })?;
         } else {
+            super::budget::charge_planning_step().map_err(|_| {
+                ResidentActivationError::ActivationKernel {
+                    node: step.artifact_node,
+                }
+            })?;
             execute_activation_kernel(
                 step,
                 &instance.plan,
@@ -5983,8 +5993,9 @@ fn execute_activation_kernel(
                     },
                     arena.write(step.write),
                 )
-                .map_err(|_| ResidentActivationError::ActivationKernel {
+                .map_err(|error| ResidentActivationError::ActivationKernelExecution {
                     node: step.artifact_node,
+                    error,
                 })
         })
     });

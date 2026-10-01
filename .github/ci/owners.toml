@@ -199,7 +199,7 @@ cross_cutting = false
 browser = true
 
 [owners.ekf-browser-canary]
-paths = ["examples/ekf/**", "scripts/smoke-served-resident-ekf-browser.sh"]
+paths = ["examples/ekf/**", "scripts/check-ekf-browser-results.py", "scripts/smoke-served-resident-ekf-browser.sh"]
 command = []
 standard = false
 cross_cutting = false

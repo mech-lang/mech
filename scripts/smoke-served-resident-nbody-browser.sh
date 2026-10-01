@@ -86,6 +86,20 @@ marker = "</head>"
 harness = r'''<script>
     const root = document.documentElement;
     const originalConsoleError = console.error;
+    const completionUrl = new URLSearchParams(location.search).get("mech-canary-callback");
+    const signalCompletion = () => {
+      if (completionUrl) {
+        navigator.sendBeacon(
+          `${completionUrl}/nbody-finished`,
+          JSON.stringify(Object.fromEntries(Object.entries(root.dataset))),
+        );
+      }
+    };
+    const signalProgress = () => {
+      if (completionUrl) {
+        navigator.sendBeacon(`${completionUrl}/nbody-progress`, String(sunFrameCount));
+      }
+    };
     console.error = (...args) => {
       root.dataset.mechConsoleError = args.map(String).join(" ");
       originalConsoleError.apply(console, args);
@@ -101,6 +115,7 @@ harness = r'''<script>
     let firstMercuryX;
     let firstMercuryY;
     let lastSunDisplayUpdate = -1;
+    let lastReportedSunFrame = 0;
     let sunFrameCount = 0;
     let maximumSunOffset = 0;
     let sunEverOffCenter = false;
@@ -108,10 +123,12 @@ harness = r'''<script>
     // Table-backed scene collections rebuild more structured data per frame.
     // Preserve the 600-turn physics proof while allowing slower CI runners to
     // complete it instead of weakening the number of observed simulation steps.
-    const deadline = Date.now() + 30000;
+    let deadline;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       callback(performance.now());
+      if (root.dataset.mechDocumentStatus !== "ready") return;
+      deadline ??= Date.now() + 30000;
       const mercury = document.querySelector('[data-mech-scene-id="body-1"]');
       if (mercury && firstMercuryX === undefined) {
         firstMercuryX = mercury.getAttribute("cx");
@@ -185,6 +202,10 @@ harness = r'''<script>
         maximumSunOffset = Math.max(maximumSunOffset, sunOffset);
         sunEverOffCenter ||= sunOffset >= 0.001;
         minimumMercuryOffset = Math.min(minimumMercuryOffset, mercuryOffset);
+        if (sunFrameCount - lastReportedSunFrame >= 50) {
+          lastReportedSunFrame = sunFrameCount;
+          signalProgress();
+        }
       }
       const sunCentered = sunFrameCount > 0 && !sunEverOffCenter;
       // The independently bounded 0.295 AU perihelion maps above 23 px.
@@ -217,6 +238,7 @@ harness = r'''<script>
         root.dataset.mechPresentationRevealed = String(presentationRevealed);
         if (presentationRevealed) {
           root.dataset.mechDone = "true";
+          signalCompletion();
           globalThis.MechDocumentController?.dispose();
           return;
         }
@@ -289,6 +311,7 @@ harness = r'''<script>
         root.dataset.mechTimedOut = "true";
         root.dataset.mechSceneGeometryCorrect = String(sceneGeometryCorrect);
         root.dataset.mechSunCentered = String(sunCentered);
+        signalCompletion();
         globalThis.MechDocumentController?.dispose();
       }
     }, 16);
@@ -310,34 +333,43 @@ if ! grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html"; then
 fi
 
 run_chrome() {
+  : >"$dom_file"
+  : >"$chrome_log"
   python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" <<'PY'
+import json
 import sys
+import urllib.parse
 
-from tests.browser.harness import ChromeSession
+from tests.browser.harness import (
+    BrowserCompletionServer,
+    ChromeSession,
+    write_dataset_snapshot,
+)
 
 
 page_url, profile, dom_file, chrome_log = sys.argv[1:]
-browser = ChromeSession(
-    None,
-    profile,
-    chrome_log,
-    flags=[
-        "--disable-gpu",
-        "--run-all-compositor-stages-before-draw",
-    ],
-).start()
-try:
-    browser.navigate(page_url)
-    browser.wait_for(
-        "document.documentElement?.dataset.mechDone === 'true' || "
-        "document.documentElement?.dataset.mechTimedOut === 'true'",
-        "the n-body browser proof",
-        timeout=90,
-        interval=0.25,
-    )
-    browser.write_dom(dom_file)
-finally:
-    browser.close()
+with BrowserCompletionServer() as completion:
+    browser = ChromeSession(
+        None,
+        profile,
+        chrome_log,
+        flags=[
+            "--disable-gpu",
+            "--run-all-compositor-stages-before-draw",
+        ],
+    ).start()
+    try:
+        query = urllib.parse.urlencode({"mech-canary-callback": completion.base_url})
+        browser.navigate(f"{page_url}?{query}")
+        payload = completion.wait_for(
+            "nbody-finished",
+            timeout=300,
+            progress=("nbody-progress",),
+            max_timeout=600,
+        )
+        write_dataset_snapshot(dom_file, json.loads(payload))
+    finally:
+        browser.close()
 raise SystemExit(124)
 PY
 }

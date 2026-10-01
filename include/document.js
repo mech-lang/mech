@@ -4556,7 +4556,8 @@ function frame() {
     }
     if (state.computeBridge?.failure) {
       const failure = state.computeBridge.failure;
-      const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
+      const requestedBackend = controller.computeManifest()?.requestedBackend ||
+        servedComputeHostConfig()?.settings?.backend || "auto";
       if (
         failure.mechDeviceLost &&
         requestedBackend === "auto" &&
@@ -4680,7 +4681,10 @@ async function createDocumentComputeBridgeWithFallback(
     if (!isCurrent()) throw error;
     document.documentElement.dataset.mechComputeBridgeCreateError =
       error instanceof Error ? error.message : String(error);
-    const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
+    document.documentElement.dataset.mechGpuBridgeError =
+      document.documentElement.dataset.mechComputeBridgeCreateError;
+    const requestedBackend = controller.computeManifest()?.requestedBackend ||
+      servedComputeHostConfig()?.settings?.backend || "auto";
     if (
       requestedBackend !== "auto" || controller.computeBackend() !== "wgpu" ||
       (previous && !previous.lifecycle.canAutoFallback())
@@ -4696,14 +4700,20 @@ async function createDocumentComputeBridgeWithFallback(
       );
     }
     setComputeBridgeLifecycle("falling-back");
-    controller.fallbackComputeToCpu();
-    acceptGeneration();
-    if (!isCurrent()) throw error;
-    const bridge = await DocumentComputeBridge.create(controller, null, isCurrent);
-    if (bridge?.backend === "wgpu") {
-      throw error;
+    try {
+      controller.fallbackComputeToCpu();
+      acceptGeneration();
+      if (!isCurrent()) throw error;
+      const bridge = await DocumentComputeBridge.create(controller, null, isCurrent);
+      if (bridge?.backend === "wgpu") throw error;
+      return bridge;
+    } catch (fallbackError) {
+      if (fallbackError === error) throw error;
+      throw new Error(
+        `${error instanceof Error ? error.message : String(error)}; CPU fallback also failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
+        { cause: error },
+      );
     }
-    return bridge;
   }
 }
 

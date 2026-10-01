@@ -11,8 +11,9 @@ edition = "2024"
 rust-version = "1.92"
 
 [features]
-default = []
+default = ["runtime-values"]
+runtime-values = ["mech-core/f32"]
 
 [dependencies]
-mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["f32", "matrixd", "range"] }
+mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["matrixd", "range"] }
 mech-engine = { version = "0.3.5", path = "../engine", default-features = false, features = ["resident-artifact"] }

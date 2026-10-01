@@ -1,6 +1,7 @@
 //! Backend-neutral planning and intermediate representations for resident
 //! Mech compute regions.
 
+#[cfg(feature = "runtime-values")]
 mod activation;
 mod diagnostic;
 mod fixed_shape;
@@ -12,6 +13,7 @@ mod program;
 mod registry;
 mod shape;
 
+#[cfg(feature = "runtime-values")]
 pub use activation::*;
 pub use diagnostic::*;
 pub use fixed_shape::*;

@@ -26,12 +26,18 @@ impl CanonicalSourceProgram {
                 .program
                 .outputs
                 .iter()
-                .position(|output| output.name == encoded)
+                .position(|output| output.interactive_symbol.as_deref() == Some(root))
                 .or_else(|| {
                     self.program
                         .outputs
                         .iter()
                         .position(|output| output.name == root)
+                })
+                .or_else(|| {
+                    self.program
+                        .outputs
+                        .iter()
+                        .position(|output| output.name == encoded)
                 })
                 .ok_or_else(|| self.unknown_projected_output(path))?;
             let output = &self.program.outputs[output_index];
@@ -177,12 +183,18 @@ impl CanonicalSourceProgram {
                 .program
                 .outputs
                 .iter()
-                .position(|output| output.name == encoded)
+                .position(|output| output.interactive_symbol.as_deref() == Some(name.as_str()))
                 .or_else(|| {
                     self.program
                         .outputs
                         .iter()
                         .position(|output| output.name == *name)
+                })
+                .or_else(|| {
+                    self.program
+                        .outputs
+                        .iter()
+                        .position(|output| output.name == encoded)
                 })
                 .ok_or_else(|| SourceSemanticError {
                     code: "source-semantics/unknown-published-binding",

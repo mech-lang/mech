@@ -142,7 +142,15 @@ pub enum ResidentKernelError {
     InvalidOutput,
     InvalidShape,
     Arithmetic,
-    IndexOutOfRange { index: u64, upper_bound: u64 },
+    ProviderStatus {
+        operation: Box<str>,
+        status: Box<str>,
+        code: i32,
+    },
+    IndexOutOfRange {
+        index: u64,
+        upper_bound: u64,
+    },
     IncompleteOutput,
 }
 

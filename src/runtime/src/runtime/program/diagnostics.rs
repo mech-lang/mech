@@ -1,3 +1,4 @@
+use mech_core::ResidentKernelError;
 #[cfg(feature = "resident-routing-source")]
 use mech_engine::resident::ResidentExecutionError;
 use mech_engine::{ProgramArtifact, resident::ResidentActivationError};
@@ -41,6 +42,7 @@ pub(crate) fn activation_failure(error: ResidentActivationError) -> mech_core::M
         | StaticSelectorResolutionLimit { .. }
         | KernelBind { .. }
         | ActivationKernel { .. }
+        | ActivationKernelExecution { .. }
         | ActiveCandidate
         | OutputUnavailable { .. }
         | IncompatibleState { .. }
@@ -55,6 +57,23 @@ pub(crate) fn activation_failure_for_artifact(
     artifact: &ProgramArtifact,
     error: ResidentActivationError,
 ) -> mech_core::MechError {
+    if let ResidentActivationError::ActivationKernelExecution {
+        node,
+        error:
+            ResidentKernelError::ProviderStatus {
+                operation,
+                status,
+                code,
+            },
+    } = &error
+    {
+        return route_failure(
+            ResidentRouteFailureClass::ActivationFailure,
+            format!(
+                "dynamic kernel `{operation}` returned {status} (status {code}) during resident activation at {node:?}"
+            ),
+        );
+    }
     let operation_node = match &error {
         ResidentActivationError::UnsupportedControlLayout { node }
         | ResidentActivationError::LegacyOpaque { node }

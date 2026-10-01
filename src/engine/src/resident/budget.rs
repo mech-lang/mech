@@ -35,6 +35,59 @@ struct ControlWorkScope {
 thread_local! {
     static CONTROL_WORK: std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWork>>>> = const { std::cell::RefCell::new(None) };
     static CONTROL_WORK_SCOPE: std::cell::RefCell<Option<ControlWorkScope>> = const { std::cell::RefCell::new(None) };
+    static PLANNING_STEPS: std::cell::RefCell<Option<PlanningSteps>> = const { std::cell::RefCell::new(None) };
+}
+
+struct PlanningSteps {
+    limit: usize,
+    remaining: usize,
+    exhausted: bool,
+}
+
+/// Bounds synchronous compiler evaluation across activation and initial-turn
+/// execution. Nested control operations share the caller's step authority.
+#[doc(hidden)]
+pub fn with_planning_step_limit<T>(limit: usize, execute: impl FnOnce() -> T) -> Result<T, usize> {
+    struct Guard(Option<PlanningSteps>);
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            PLANNING_STEPS.with(|active| *active.borrow_mut() = self.0.take());
+        }
+    }
+    let _guard = Guard(PLANNING_STEPS.with(|active| {
+        active.replace(Some(PlanningSteps {
+            limit,
+            remaining: limit,
+            exhausted: false,
+        }))
+    }));
+    let result = execute();
+    PLANNING_STEPS.with(|active| {
+        let active = active.borrow();
+        let steps = active.as_ref().expect("planning step scope is installed");
+        if steps.exhausted {
+            Err(steps.limit)
+        } else {
+            Ok(result)
+        }
+    })
+}
+
+pub(crate) fn charge_planning_step() -> Result<(), super::general::ResidentExecutionError> {
+    PLANNING_STEPS.with(|active| {
+        let mut active = active.borrow_mut();
+        let Some(steps) = active.as_mut() else {
+            return Ok(());
+        };
+        if steps.remaining == 0 {
+            steps.exhausted = true;
+            return Err(super::general::ResidentExecutionError::PlanningStepLimit {
+                limit: steps.limit,
+            });
+        }
+        steps.remaining -= 1;
+        Ok(())
+    })
 }
 
 pub(crate) fn with_control_work_budget<T>(execute: impl FnOnce() -> T) -> T {

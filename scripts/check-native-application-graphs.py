@@ -4,12 +4,25 @@
 from __future__ import annotations
 
 import json
+import os
+import queue
+import signal
 import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+GENERATOR_TIMEOUT_SECONDS = int(
+    os.environ.get("MECH_NATIVE_APPLICATION_GENERATOR_TIMEOUT_SECS", "1320")
+)
+METADATA_TIMEOUT_SECONDS = int(
+    os.environ.get("MECH_NATIVE_APPLICATION_METADATA_TIMEOUT_SECS", "120")
+)
+GENERATOR_HEARTBEAT_SECONDS = 30
+PROJECT_MARKER = "MECH_NATIVE_PROJECT_CASE="
 EXPECTED_FEATURES = {
     "generated_native_literal": {
         "mech-core": {"f64", "program"},
@@ -19,57 +32,35 @@ EXPECTED_FEATURES = {
     "generated_native_scalar": {
         "mech-core": {"f64", "program"},
         "mech-engine": {"f64", "runtime"},
-        "mech-math": {"add", "f64", "native-link", "runtime"},
         "mech-runtime": {"f64", "resident-routing", "runtime", "string"},
     },
     "generated_native_unary": {
-        "mech-core": {"f64", "program", "row_vectord"},
-        "mech-engine": {
-            "bool",
-            "f64",
-            "matrix_horzcat",
-            "native-link",
-            "row_vectord",
-            "runtime",
-            "vectord",
-        },
-        "mech-runtime": {
-            "f64",
-            "resident-routing",
-            "row_vectord",
-            "runtime",
-            "string",
-        },
+        "mech-core": {"f64", "matrix1", "program"},
+        "mech-engine": {"f64", "matrix1", "runtime"},
+        "mech-runtime": {"f64", "matrix1", "resident-routing", "runtime", "string"},
     },
     "generated_native_ternary": {
-        "mech-core": {"f64", "program", "row_vectord"},
-        "mech-engine": {"bool", "f64", "row_vectord", "runtime", "vectord"},
-        "mech-range": {"f64", "inclusive", "native-link", "row_vectord", "runtime"},
+        "mech-core": {"f64", "program", "row_vector4"},
+        "mech-engine": {"f64", "row_vector4", "runtime"},
         "mech-runtime": {
             "f64",
             "resident-routing",
-            "row_vectord",
+            "row_vector4",
             "runtime",
             "string",
         },
     },
     "generated_native_quaternary": {
-        "mech-core": {"bool", "f64", "matrixd", "program", "row_vectord", "string"},
+        "mech-core": {"f64", "matrixd", "program", "row_vectord"},
         "mech-engine": {
             "bool",
             "f64",
-            "matrix_horzcat",
-            "matrix_vertcat",
             "matrixd",
-            "native-link",
             "row_vectord",
             "runtime",
-            "string",
-            "variable_define",
             "vectord",
         },
         "mech-runtime": {
-            "bool",
             "f64",
             "matrixd",
             "resident-routing",
@@ -83,8 +74,6 @@ EXPECTED_FEATURES = {
         "mech-engine": {
             "bool",
             "f64",
-            "matrix_horzcat",
-            "native-link",
             "row_vectord",
             "runtime",
             "vectord",
@@ -99,67 +88,50 @@ EXPECTED_FEATURES = {
     },
     "generated_native_integrity": {
         "mech-core": {"bool", "f64", "program", "string"},
-        "mech-compare": {"bool", "f64", "lte", "native-link", "runtime"},
-        "mech-engine": {
-            "bool",
-            "f64",
-            "invariant_define",
-            "native-link",
-            "runtime",
-            "string",
-            "variable_define",
-        },
+        "mech-engine": {"bool", "f64", "runtime", "string"},
         "mech-runtime": {
             "bool",
             "f64",
-            "invariant_define",
             "resident-routing",
             "runtime",
             "string",
         },
     },
-    "generated_native_fixed_matrix": {
-        "mech-core": {"f64", "matrixd", "program", "row_vectord"},
-        "mech-engine": {
-            "bool",
+    # This closure follows from the retained artifact schemas in the fixture:
+    # f64 and u8 scalars, one f32 2x3 matrix, and convert/kind. In particular,
+    # these are direct generated-manifest features; matrix2x3 closes its
+    # engine-internal concatenation features through mech-engine's manifest.
+    "generated_native_canonical_artifact_features": {
+        "mech-core": {"f32", "f64", "matrix2x3", "program", "u8"},
+        "mech-engine": {"convert", "f32", "f64", "matrix2x3", "runtime", "u8"},
+        "mech-runtime": {
+            "f32",
             "f64",
-            "matrix_horzcat",
-            "matrix_vertcat",
-            "matrixd",
-            "native-link",
-            "row_vectord",
+            "matrix2x3",
+            "resident-routing",
             "runtime",
-            "vectord",
+            "string",
+            "u8",
         },
-        "mech-math": {"add", "f64", "matrixd", "native-link", "runtime"},
+    },
+    "generated_native_fixed_matrix": {
+        "mech-core": {"f64", "matrix2", "program"},
+        "mech-engine": {"bool", "f64", "matrix2", "runtime", "vector2"},
         "mech-runtime": {
             "f64",
-            "matrixd",
+            "matrix2",
             "resident-routing",
-            "row_vectord",
             "runtime",
             "string",
         },
     },
     "generated_native_dynamic_matrix": {
-        "mech-core": {"f64", "matrixd", "program", "row_vectord"},
-        "mech-engine": {
-            "bool",
-            "f64",
-            "matrix_horzcat",
-            "matrix_vertcat",
-            "matrixd",
-            "native-link",
-            "row_vectord",
-            "runtime",
-            "vectord",
-        },
-        "mech-math": {"add", "f64", "matrixd", "native-link", "runtime"},
+        "mech-core": {"f64", "matrixd", "program"},
+        "mech-engine": {"f64", "matrixd", "runtime"},
         "mech-runtime": {
             "f64",
             "matrixd",
             "resident-routing",
-            "row_vectord",
             "runtime",
             "string",
         },
@@ -177,30 +149,22 @@ EXPECTED_FEATURES = {
         "mech-runtime": {"resident-routing", "runtime", "string"},
     },
     "generated_native_time": {
-        "mech-core": {"bool", "program", "string"},
-        "mech-engine": {"bool", "f64", "native-link", "runtime", "string", "variable_define"},
+        "mech-core": {"f64", "program", "string"},
+        "mech-engine": {"f64", "runtime", "string"},
         "mech-time": {"native"},
-        "mech-runtime": {"bool", "resident-routing", "runtime", "string"},
+        "mech-runtime": {"f64", "resident-routing", "runtime", "string"},
     },
     "generated_native_timer": {
-        "mech-core": {"bool", "program", "string"},
-        "mech-engine": {"bool", "f64", "native-link", "runtime", "string", "variable_define"},
+        "mech-core": {"f64", "program", "string"},
+        "mech-engine": {"f64", "runtime", "string"},
         "mech-timer": {"native"},
-        "mech-runtime": {"bool", "resident-routing", "runtime", "string"},
+        "mech-runtime": {"f64", "resident-routing", "runtime", "string"},
     },
     "generated_native_scene": {
-        "mech-core": {"bool", "f64", "program", "record", "string"},
-        "mech-engine": {
-            "bool",
-            "f64",
-            "native-link",
-            "record",
-            "runtime",
-            "string",
-            "variable_define",
-        },
+        "mech-core": {"f64", "program", "record", "string"},
+        "mech-engine": {"f64", "record", "runtime", "string"},
         "mech-scene": {"native"},
-        "mech-runtime": {"bool", "f64", "record", "resident-routing", "runtime", "string"},
+        "mech-runtime": {"f64", "record", "resident-routing", "runtime", "string"},
     },
     "generated_native_robot_arm": {
         "mech-core": {"bool", "program", "string"},
@@ -210,259 +174,249 @@ EXPECTED_FEATURES = {
     },
 }
 EXPECTED = {binary: set(packages) for binary, packages in EXPECTED_FEATURES.items()}
-EXPECTED_RESOLVED_FEATURES = {
-    "native_literal": {
-        "mech-core": {
-            "byteorder",
-            "crc32fast",
-            "f64",
-            "floats",
-            "functions",
-            "indexmap",
-            "num-traits",
-            "numbers",
-            "program",
-            "symbol_table",
-        },
-        "mech-engine": {
-            "assign",
-            "f64",
-            "floats",
-            "functions",
-            "numbers",
-            "program",
-            "runtime",
-            "symbol_table",
-        },
-    },
-    "native_scalar": {
-        "mech-core": {
-            "byteorder",
-            "crc32fast",
-            "f64",
-            "floats",
-            "functions",
-            "indexmap",
-            "num-traits",
-            "numbers",
-            "program",
-            "symbol_table",
-        },
-        "mech-engine": {
-            "assign",
-            "f64",
-            "floats",
-            "functions",
-            "numbers",
-            "program",
-            "runtime",
-            "symbol_table",
-        },
-        "mech-math": {
-            "add",
-            "f64",
-            "floats",
-            "math",
-            "native-link",
-            "numbers",
-            "ops",
-            "runtime",
-        },
-    },
-    "native_fixed_matrix": {
-        "mech-core": {
-            "bool",
-            "byteorder",
-            "crc32fast",
-            "f64",
-            "floats",
-            "functions",
-            "indexmap",
-            "matrix",
-            "matrix2",
-            "nalgebra",
-            "num-traits",
-            "numbers",
-            "program",
-            "row_vector2",
-            "symbol_table",
-            "vector2",
-        },
-        "mech-engine": {
-            "assign",
-            "bool",
-            "f64",
-            "floats",
-            "functions",
-            "matrix",
-            "matrix2",
-            "matrix_horzcat",
-            "matrix_vertcat",
-            "nalgebra",
-            "native-link",
-            "numbers",
-            "program",
-            "row_vector2",
-            "runtime",
-            "symbol_table",
-            "vector2",
-        },
-        "mech-math": {
-            "add",
-            "f64",
-            "floats",
-            "math",
-            "matrix",
-            "matrix2",
-            "nalgebra",
-            "native-link",
-            "numbers",
-            "ops",
-            "runtime",
-        },
-    },
-    "native_dynamic_matrix": {
-        "mech-core": {
-            "bool",
-            "byteorder",
-            "crc32fast",
-            "f64",
-            "floats",
-            "functions",
-            "indexmap",
-            "matrix",
-            "matrixd",
-            "nalgebra",
-            "num-traits",
-            "numbers",
-            "program",
-            "row_vectord",
-            "symbol_table",
-            "vectord",
-        },
-        "mech-engine": {
-            "assign",
-            "bool",
-            "f64",
-            "floats",
-            "functions",
-            "matrix",
-            "matrix_horzcat",
-            "matrix_vertcat",
-            "matrixd",
-            "nalgebra",
-            "native-link",
-            "numbers",
-            "program",
-            "row_vectord",
-            "runtime",
-            "symbol_table",
-            "vectord",
-        },
-        "mech-math": {
-            "add",
-            "f64",
-            "floats",
-            "math",
-            "matrix",
-            "matrixd",
-            "nalgebra",
-            "native-link",
-            "numbers",
-            "ops",
-            "runtime",
-        },
-    },
-    "native_variadic": {
-        "mech-core": {
-            "bool",
-            "byteorder",
-            "crc32fast",
-            "f64",
-            "floats",
-            "functions",
-            "indexmap",
-            "matrix",
-            "matrixd",
-            "nalgebra",
-            "num-traits",
-            "numbers",
-            "program",
-            "row_vectord",
-            "symbol_table",
-            "vectord",
-        },
-        "mech-engine": {
-            "assign",
-            "bool",
-            "f64",
-            "floats",
-            "functions",
-            "matrix",
-            "matrix_horzcat",
-            "matrix_vertcat",
-            "matrixd",
-            "nalgebra",
-            "native-link",
-            "numbers",
-            "program",
-            "row_vectord",
-            "runtime",
-            "symbol_table",
-            "vectord",
-        },
-    },
-    "native_cli_hosted": {
-        "mech-core": {
-            "byteorder",
-            "crc32fast",
-            "functions",
-            "indexmap",
-            "program",
-            "string",
-            "symbol_table",
-        },
-        "mech-engine": {
-            "assign",
-            "functions",
-            "program",
-            "runtime",
-            "string",
-            "symbol_table",
-        },
-        "mech-terminal": {"provider"},
-        "mech-runtime": {"runtime", "string"},
-    },
+EXPECTED_CASES = {
+    "literal": "generated_native_literal",
+    "scalar": "generated_native_scalar",
+    "unary": "generated_native_unary",
+    "ternary": "generated_native_ternary",
+    "quaternary": "generated_native_quaternary",
+    "variadic": "generated_native_variadic",
+    "integrity": "generated_native_integrity",
+    "canonical-artifact-features": "generated_native_canonical_artifact_features",
+    "fixed-matrix": "generated_native_fixed_matrix",
+    "dynamic-matrix": "generated_native_dynamic_matrix",
+    "cli": "generated_native_cli",
+    "console": "generated_native_console",
+    "time-once": "generated_native_time",
+    "timer-once": "generated_native_timer",
+    "scene": "generated_native_scene",
+    "robot-arm": "generated_native_robot_arm",
 }
-FORBIDDEN_FEATURES = {"source", "compiler", "native-plan"}
+FORBIDDEN_FEATURES = {"source", "compiler", "native-link", "native-plan"}
 FORBIDDEN_PACKAGES = {"mech-stdlib", "mech-syntax", "mech-bytecode", "mech-build"}
 
 
-def execute(arguments: list[str]) -> str:
-    process = subprocess.run(
+def execute(
+    arguments: list[str], environment: dict[str, str] | None = None, *, label: str
+) -> str:
+    if METADATA_TIMEOUT_SECONDS <= 0:
+        raise RuntimeError(
+            "MECH_NATIVE_APPLICATION_METADATA_TIMEOUT_SECS must be positive"
+        )
+    creationflags = 0
+    if os.name == "nt":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+    process = subprocess.Popen(
         arguments,
         cwd=ROOT,
+        env=environment,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        start_new_session=os.name != "nt",
+        creationflags=creationflags,
+    )
+
+    def interrupted(signum: int, _frame: object) -> None:
+        raise RuntimeError(f"{label} interrupted by signal {signum}")
+
+    previous_sigterm = signal.signal(signal.SIGTERM, interrupted)
+    try:
+        try:
+            stdout, stderr = process.communicate(timeout=METADATA_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError(
+                f"{label} exceeded {METADATA_TIMEOUT_SECONDS}s"
+            ) from error
+        if process.returncode:
+            details = "\n".join(
+                output.strip() for output in (stdout, stderr) if output.strip()
+            )
+            raise RuntimeError(f"{label} failed:\n{details}")
+        return stdout
+    except BaseException:
+        terminate_process_tree(process)
+        raise
+    finally:
+        signal.signal(signal.SIGTERM, previous_sigterm)
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
+
+
+def execute_streamed(
+    arguments: list[str], environment: dict[str, str], label: str
+) -> str:
+    if GENERATOR_TIMEOUT_SECONDS <= 0:
+        raise RuntimeError(
+            "MECH_NATIVE_APPLICATION_GENERATOR_TIMEOUT_SECS must be positive"
+        )
+    creationflags = 0
+    start_new_session = os.name != "nt"
+    if os.name == "nt":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+    process = subprocess.Popen(
+        arguments,
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        bufsize=1,
+        start_new_session=start_new_session,
+        creationflags=creationflags,
+    )
+    assert process.stdout is not None
+    stream_end = object()
+    lines: queue.Queue[object] = queue.Queue()
+
+    def read_output() -> None:
+        try:
+            for line in process.stdout:
+                lines.put(line)
+        finally:
+            lines.put(stream_end)
+
+    reader = threading.Thread(target=read_output, daemon=True)
+    reader.start()
+    started = time.monotonic()
+    deadline = started + GENERATOR_TIMEOUT_SECONDS
+    next_heartbeat = started + GENERATOR_HEARTBEAT_SECONDS
+    output: list[str] = []
+    last_progress = "generator spawned"
+
+    def interrupted(signum: int, _frame: object) -> None:
+        raise RuntimeError(
+            f"{label} generator interrupted by signal {signum}; "
+            f"last progress: {last_progress}"
+        )
+
+    previous_sigterm = signal.signal(signal.SIGTERM, interrupted)
+    try:
+        while True:
+            now = time.monotonic()
+            if now >= deadline:
+                raise RuntimeError(
+                    f"{label} generator exceeded {GENERATOR_TIMEOUT_SECONDS}s; "
+                    f"last progress: {last_progress}"
+                )
+            try:
+                item = lines.get(timeout=min(0.5, deadline - now))
+            except queue.Empty:
+                item = None
+            if item is stream_end:
+                break
+            if isinstance(item, str):
+                output.append(item)
+                print(item, end="", flush=True)
+                if item.strip():
+                    last_progress = item.strip()
+            now = time.monotonic()
+            if now >= next_heartbeat:
+                print(
+                    f"native application graph progress: stage={label} "
+                    f"elapsed={now - started:.1f}s last={last_progress!r}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                next_heartbeat = now + GENERATOR_HEARTBEAT_SECONDS
+
+        returncode = process.wait(timeout=5)
+        if returncode:
+            raise RuntimeError(
+                f"{label} generator failed with exit status {returncode}; "
+                f"last progress: {last_progress}"
+            )
+        return "".join(output)
+    except BaseException:
+        terminate_process_tree(process)
+        raise
+    finally:
+        signal.signal(signal.SIGTERM, previous_sigterm)
+        reader.join(timeout=5)
+
+
+def terminate_process_tree(process: subprocess.Popen[str]) -> None:
+    if os.name == "nt":
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    else:
+        process_groups = unix_process_groups(process.pid)
+        started = time.monotonic()
+        for process_group in process_groups:
+            try:
+                os.killpg(process_group, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        if process.poll() is None:
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                pass
+        remaining = 2 - (time.monotonic() - started)
+        if remaining > 0:
+            time.sleep(remaining)
+        process_groups.update(unix_process_groups(process.pid))
+        for process_group in process_groups:
+            try:
+                os.killpg(process_group, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
+def unix_process_groups(root_pid: int) -> set[int]:
+    """Snapshot every process group currently owned by one descendant tree."""
+
+    groups = {root_pid}
+    process = subprocess.run(
+        ["ps", "-axo", "pid=,ppid=,pgid="],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
         check=False,
     )
     if process.returncode:
-        details = "\n".join(
-            output.strip()
-            for output in (process.stdout, process.stderr)
-            if output.strip()
-        )
-        raise RuntimeError(f"{' '.join(arguments)} failed:\n{details}")
-    return process.stdout
+        return groups
+    children: dict[int, list[tuple[int, int]]] = {}
+    for line in process.stdout.splitlines():
+        fields = line.split()
+        if len(fields) != 3:
+            continue
+        pid, parent, process_group = map(int, fields)
+        children.setdefault(parent, []).append((pid, process_group))
+    pending = [root_pid]
+    visited = {root_pid}
+    while pending:
+        parent = pending.pop()
+        for pid, process_group in children.get(parent, []):
+            if pid in visited:
+                continue
+            visited.add(pid)
+            pending.append(pid)
+            groups.add(process_group)
+    return groups
 
 
-def materialize_projects() -> list[Path]:
-    output = execute(
+def materialize_projects() -> list[tuple[str, str, Path]]:
+    environment = os.environ.copy()
+    environment.pop("MECH_NATIVE_GENERATED_CASE", None)
+    output = execute_streamed(
         [
             "cargo",
             "+nightly-2026-03-03",
             "test",
+            "--locked",
+            "--offline",
             "-p",
             "mech-build",
             "--features",
@@ -472,16 +426,46 @@ def materialize_projects() -> list[Path]:
             "--",
             "--nocapture",
             "--test-threads=1",
-        ]
+        ],
+        environment,
+        "materialize",
     )
-    paths = []
+    projects: dict[str, tuple[str, Path]] = {}
+    binaries: set[str] = set()
+    paths: set[Path] = set()
     for line in output.splitlines():
-        marker = "MECH_NATIVE_PROJECT="
-        if marker in line:
-            paths.append(Path(line.split(marker, 1)[1].strip()))
-    if len(set(paths)) != len(EXPECTED):
-        raise RuntimeError(f"expected {len(EXPECTED)} generated projects, found {len(set(paths))}")
-    return sorted(set(paths))
+        if PROJECT_MARKER not in line:
+            continue
+        marker = line.split(PROJECT_MARKER, 1)[1].strip()
+        fields = marker.split("\t")
+        if len(fields) != 3:
+            raise RuntimeError(f"invalid generated project marker: {marker!r}")
+        case, binary, raw_path = fields
+        path = Path(raw_path)
+        if case in projects or binary in binaries or path in paths:
+            raise RuntimeError(
+                f"duplicate generated project identity: case={case!r} "
+                f"binary={binary!r} path={path}"
+            )
+        expected_binary = EXPECTED_CASES.get(case)
+        if expected_binary is None or binary != expected_binary:
+            raise RuntimeError(
+                f"unexpected generated identity: case={case!r} binary={binary!r} "
+                f"expected={expected_binary!r}"
+            )
+        projects[case] = (binary, path)
+        binaries.add(binary)
+        paths.add(path)
+    if set(projects) != set(EXPECTED_CASES):
+        raise RuntimeError(
+            "generated application graph cases did not match the exact contract: "
+            f"missing={sorted(set(EXPECTED_CASES) - set(projects))} "
+            f"unexpected={sorted(set(projects) - set(EXPECTED_CASES))}"
+        )
+    return [
+        (case, *projects[case])
+        for case in sorted(projects)
+    ]
 
 
 def dependency_key(dependency: dict[str, object]) -> str:
@@ -596,6 +580,10 @@ def validate_project(project: Path) -> str:
     binary = plan["binary_name"]
     if binary not in EXPECTED:
         raise RuntimeError(f"unexpected generated binary {binary!r}")
+    if plan["runtime_functions"]:
+        raise RuntimeError(
+            f"{binary}: canonical artifact plan retained legacy runtime installers"
+        )
     metadata = json.loads(
         execute(
             [
@@ -607,7 +595,8 @@ def validate_project(project: Path) -> str:
                 str(project / "Cargo.toml"),
                 "--locked",
                 "--offline",
-            ]
+            ],
+            label=f"stage=cargo metadata project={binary} path={project}",
         )
     )
     packages = {package["id"]: package for package in metadata["packages"]}
@@ -689,10 +678,46 @@ def validate_project(project: Path) -> str:
 
 def main() -> int:
     try:
-        observed = {validate_project(path) for path in materialize_projects()}
+        observed = set()
+        for index, (case, expected_binary, path) in enumerate(
+            materialize_projects(), start=1
+        ):
+            profile = (
+                "fixed"
+                if case == "fixed-matrix"
+                else "full"
+                if case == "robot-arm"
+                else "standard"
+            )
+            print(
+                "native application graph progress: "
+                f"case={case} profile={profile} stage=metadata "
+                f"project={index}/{len(EXPECTED_CASES)} path={path}",
+                file=sys.stderr,
+                flush=True,
+            )
+            binary = validate_project(path)
+            if binary != expected_binary:
+                raise RuntimeError(
+                    f"{case}: plan binary {binary!r} != marker binary {expected_binary!r}"
+                )
+            observed.add(binary)
+            print(
+                "native application graph progress: "
+                f"case={case} profile={profile} stage=metadata status=complete",
+                file=sys.stderr,
+                flush=True,
+            )
         if observed != set(EXPECTED):
             raise RuntimeError(f"missing generated graphs: {sorted(set(EXPECTED) - observed)}")
-    except (OSError, ValueError, KeyError, StopIteration, RuntimeError) as error:
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        StopIteration,
+        RuntimeError,
+        subprocess.SubprocessError,
+    ) as error:
         print(f"native application graph contract failed: {error}", file=sys.stderr)
         return 1
     print(f"native application graph contract passed ({len(EXPECTED)} exact Cargo graphs)")

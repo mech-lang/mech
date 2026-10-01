@@ -4,6 +4,7 @@ mod data;
 mod draft;
 mod encoding;
 mod error;
+mod index;
 mod relations;
 mod sequence;
 pub(crate) mod validation;

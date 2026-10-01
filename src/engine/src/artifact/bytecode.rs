@@ -1083,19 +1083,7 @@ impl<'de> Visitor<'de> for CountSequence {
 fn operation_table(
     artifact: &ProgramArtifact,
 ) -> (Vec<WireOperation>, BTreeMap<OperationReference, u32>) {
-    let mut references = artifact
-        .nodes()
-        .iter()
-        .flat_map(|node| node_operation_references(&node.body))
-        .chain(
-            artifact
-                .constraints()
-                .iter()
-                .map(|constraint| constraint.operation.clone()),
-        )
-        .collect::<Vec<_>>();
-    references.sort();
-    references.dedup();
+    let references = artifact.operation_references();
     let ids = references
         .iter()
         .enumerate()
@@ -2271,56 +2259,6 @@ fn match_from_wire(
             })
             .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
     })
-}
-
-fn node_operation_references(body: &super::ExecutableNodeBody) -> Vec<OperationReference> {
-    match body {
-        super::ExecutableNodeBody::Operation(operation) => vec![operation.operation.clone()],
-        super::ExecutableNodeBody::Comprehension(control) => {
-            comprehension_operation_references(control)
-        }
-        super::ExecutableNodeBody::Match(control) => match_operation_references(control),
-        super::ExecutableNodeBody::Activation(control) => match_operation_references(control),
-        super::ExecutableNodeBody::Fsm(_) => Vec::new(),
-    }
-}
-
-fn control_body_operation_references(
-    body: &super::ControlOperationBody,
-) -> Vec<OperationReference> {
-    match body {
-        super::ControlOperationBody::Operation { operation, .. } => vec![operation.clone()],
-        super::ControlOperationBody::Match(control) => match_operation_references(control),
-        super::ControlOperationBody::Comprehension(control) => {
-            comprehension_operation_references(control)
-        }
-        super::ControlOperationBody::Recur(_)
-        | super::ControlOperationBody::Suspend
-        | super::ControlOperationBody::Publish => Vec::new(),
-    }
-}
-
-fn match_operation_references(control: &super::MatchDeclaration) -> Vec<OperationReference> {
-    control
-        .arms
-        .iter()
-        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-        .flat_map(|block| {
-            block
-                .operations
-                .iter()
-                .flat_map(|operation| control_body_operation_references(&operation.body))
-        })
-        .collect()
-}
-
-fn comprehension_operation_references(
-    control: &super::ComprehensionDeclaration,
-) -> Vec<OperationReference> {
-    control
-        .operations()
-        .flat_map(|operation| control_body_operation_references(&operation.body))
-        .collect()
 }
 
 fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {

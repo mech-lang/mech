@@ -1,3 +1,5 @@
+#![cfg_attr(windows, feature(windows_process_extensions_main_thread_handle))]
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
@@ -9,7 +11,7 @@ use mech_build::{
     NativeActorBootstrap, NativeApplicationBuilder, NativeApplicationKind, NativeBuildEnvironment,
     NativeBuildPlan, NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit,
     NativeHostCatalog, NativeHostFunctionContext, NativeHostFunctionLinkage, NativeRuntimeConfig,
-    WorkspacePackage, fingerprint_workspace,
+    WorkspacePackage, fingerprint_workspace, render_catalog_source,
 };
 #[cfg(not(feature = "full-hosts"))]
 use mech_build::{NativeHostLinkage, NativeTargetFamily};
@@ -20,9 +22,12 @@ use mech_core::{
     EncodedConstant, ExecutionHostFunctionRequest, FunctionCatalog, FunctionCatalogBuilder,
     FunctionInvocation, FunctionRuntimeType, FunctionValueOutput, FunctionValueRepresentation,
     MResult, MatrixStorage, MechFunction, MechFunctionCompiler, MechFunctionFactory,
-    MechFunctionImpl, NativeFunctionLinkage, Register, RuntimeFamilyId, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, RuntimeTypeTag, hash_str,
-    write_bytecode,
+    MechFunctionImpl, NativeFunctionLinkage, ParsedProgram, Register, RuntimeFamilyId,
+    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType,
+    RuntimeTypeTag, hash_str, write_bytecode, write_bytecode_with_artifact,
+};
+use mech_engine::{
+    ApplicationRequirementTable, ProgramArtifactDraft, encode_program_artifact_bytecode_v1,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use sha2::{Digest, Sha256};
@@ -40,6 +45,16 @@ use mech_runtime::{
 const LITERAL_F64: &[u8] =
     include_bytes!("../../../tests/architecture/bytecode-v1/literal-f64.mecb");
 const CLI_STDOUT: &[u8] = include_bytes!("../../../tests/architecture/bytecode-v1/cli-stdout.mecb");
+
+#[test]
+#[ignore = "explicit CI preparation stage; normal planning execution consumes the prepared profiles"]
+fn prepare_planning_owner_runners() {
+    isolated::prepare_owner_runners(
+        &[OwnerProfile::Standard, OwnerProfile::Fixed],
+        "planning-owner-preparation",
+    )
+    .unwrap_or_else(|error| panic!("{error}"));
+}
 
 #[cfg(not(feature = "full-hosts"))]
 fn cli_manifest() -> MResult<HostManifestConfig> {
@@ -260,33 +275,115 @@ fn plan(bytecode: &[u8]) -> mech_build::NativeBuildPlan {
         .unwrap()
 }
 
-fn assert_owner_runtime_function(
+fn assert_artifact_only_bytecode(bytecode: &[u8], expected_operations: &[&str]) {
+    let parsed = ParsedProgram::from_bytes(bytecode).unwrap();
+    assert_eq!(parsed.header.register_count, 0);
+    assert_eq!(parsed.header.instruction_count, 0);
+    assert!(parsed.types.is_empty());
+    assert!(parsed.constants.is_empty());
+    assert!(parsed.constant_blob.is_empty());
+    assert!(parsed.symbols.is_empty());
+    assert!(parsed.mutable_symbols.is_empty());
+    assert!(
+        parsed.instructions.is_empty(),
+        "canonical artifact unexpectedly retained legacy instructions"
+    );
+    assert!(parsed.dictionary.is_empty());
+    assert!(
+        parsed
+            .instructions
+            .iter()
+            .filter_map(BytecodeInstruction::runtime_function)
+            .next()
+            .is_none(),
+        "canonical artifact unexpectedly retained legacy runtime IDs"
+    );
+    let artifact = mech_engine::decode_program_artifact_bytecode_v1(bytecode).unwrap();
+    let operations = artifact
+        .operation_references()
+        .into_iter()
+        .map(|operation| operation.canonical_name())
+        .collect::<BTreeSet<_>>();
+    let expected = expected_operations
+        .iter()
+        .map(|operation| (*operation).to_owned())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(operations, expected);
+}
+
+fn assert_artifact_only_plan(
+    plan: &NativeBuildPlan,
+    expected_core_features: &[&str],
+    expected_engine_features: &[&str],
+    expected_runtime_features: &[&str],
+) {
+    assert_eq!(plan.application_kind, NativeApplicationKind::Engine);
+    assert!(
+        plan.runtime_functions.is_empty(),
+        "canonical artifact must not reconstruct legacy runtime installers: {:#?}",
+        plan.runtime_functions
+    );
+    assert!(plan.runtime_types.is_empty());
+    assert_eq!(
+        plan.packages
+            .iter()
+            .map(|package| package.package.as_str())
+            .collect::<Vec<_>>(),
+        ["mech-core", "mech-engine", "mech-runtime"]
+    );
+    assert_eq!(
+        plan.core_features
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        expected_core_features
+    );
+    assert_eq!(
+        plan.engine_features
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        expected_engine_features
+    );
+    assert_eq!(
+        plan.runtime_features
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        expected_runtime_features
+    );
+
+    let catalog = render_catalog_source(plan).unwrap();
+    assert!(catalog.contains("mech_engine::install_intrinsic_resident"));
+    assert!(!catalog.contains("__mech_native::install_"));
+}
+
+fn assert_owner_resident_artifact(
     profile: OwnerProfile,
     fixture: &str,
     case: &str,
-    name: &str,
-    installer_path: &str,
-    package: &str,
+    expected_operations: &[&str],
+    expected_core_features: &[&str],
+    expected_engine_features: &[&str],
+    expected_runtime_features: &[&str],
 ) -> NativeBuildPlan {
+    let fixture = fixture_path(fixture);
+    assert_artifact_only_bytecode(&fs::read(&fixture).unwrap(), expected_operations);
     let plan = run_owner(
         profile,
         RunnerAction::Plan,
         case,
-        fixture_path(fixture),
+        fixture,
         "native_planning",
         false,
     )
     .plan;
-    assert_eq!(plan.application_kind, NativeApplicationKind::Engine);
-    let function = plan
-        .runtime_functions
-        .iter()
-        .find(|function| function.runtime_name == name)
-        .unwrap_or_else(|| panic!("actual owner catalog did not plan `{name}`"));
-    assert_eq!(function.runtime_name, name);
-    assert_eq!(function.runtime_id, hash_str(name));
-    assert_eq!(function.installer_path, installer_path);
-    assert_eq!(function.package, package);
+    assert_artifact_only_plan(
+        &plan,
+        expected_core_features,
+        expected_engine_features,
+        expected_runtime_features,
+    );
     plan
 }
 
@@ -317,6 +414,518 @@ fn literal_only_bytecode_yields_an_engine_plan_without_runtime_config() {
 }
 
 #[test]
+fn canonical_source_native_plan_uses_only_resident_operation_authority() {
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = mech_runtime::RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_source("left := 1.0\nright := 2.0\nleft + right\n")
+        .unwrap();
+    assert_eq!(
+        product
+            .artifact()
+            .operation_references()
+            .into_iter()
+            .map(|operation| operation.canonical_name())
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from(["math/add".to_owned()])
+    );
+    let (_, bytecode, bindings, requirements, _) = product.into_native_parts();
+    assert_artifact_only_bytecode(&bytecode, &["math/add"]);
+    let mut request = request(&bytecode);
+    request.instruction_type_bindings = Some(bindings);
+    request.instruction_type_binding_requirements = Some(requirements);
+    let plan = NativeApplicationBuilder::new(environment(catalog))
+        .plan(&request)
+        .unwrap();
+    assert_artifact_only_plan(
+        &plan,
+        &["f64", "program"],
+        &["f64", "runtime"],
+        &["f64", "resident-routing", "runtime", "string"],
+    );
+}
+
+fn canonical_constant_bytecode(
+    schema: mech_core::SchemaBody,
+    data: impl FnOnce(mech_core::SchemaId) -> mech_core::ValueDataDraft,
+) -> Vec<u8> {
+    use mech_core::snapshot::SnapshotValidationContext;
+    use mech_core::{
+        ConstantStoreBuilder, OperationContractTableBuilder, SchemaBody, SchemaDraft,
+        SchemaTableBuilder, ValueDraft,
+    };
+
+    let mut schemas = SchemaTableBuilder::new();
+    let handle = schemas
+        .insert(
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: schema,
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let index_handle = schemas
+        .insert(
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Index,
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let build = schemas.finish().unwrap();
+    let schema = build.resolve(handle).unwrap();
+    let index_schema = build.resolve(index_handle).unwrap();
+    let schemas = build.table;
+    let value = ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data: data(index_schema),
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .unwrap();
+    let mut constants = ConstantStoreBuilder::new(&schemas);
+    constants.insert(value).unwrap();
+    let constants = constants.finish().unwrap().store;
+    let artifact = ProgramArtifactDraft {
+        schemas,
+        constants,
+        contracts: OperationContractTableBuilder::new().finish().unwrap().table,
+        requirements: ApplicationRequirementTable::empty(),
+        inputs: Box::new([]),
+        slots: Box::new([]),
+        nodes: Box::new([]),
+        bindings: Box::new([]),
+        outputs: Box::new([]),
+        constraints: Box::new([]),
+        compute_regions: Box::new([]),
+    }
+    .finalize()
+    .unwrap();
+    let bytecode = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    assert_artifact_only_bytecode(&bytecode, &[]);
+    bytecode
+}
+
+#[test]
+fn canonical_native_plan_admits_u32_max_index_on_a_32_bit_target() {
+    let bytecode = canonical_constant_bytecode(mech_core::SchemaBody::Index, |_| {
+        mech_core::ValueDataDraft::Index(u64::from(u32::MAX))
+    });
+    let mut request = request(&bytecode);
+    request.target = Some("i686-pc-windows-msvc".to_owned());
+    let plan = NativeApplicationBuilder::new(environment(empty_catalog()))
+        .plan(&request)
+        .unwrap();
+    assert!(plan.runtime_types.is_empty());
+    assert!(plan.runtime_functions.is_empty());
+}
+
+#[test]
+#[cfg(target_pointer_width = "64")]
+fn canonical_native_plan_checks_index_constants_against_the_target_pointer_width() {
+    let value = u64::from(u32::MAX) + 1;
+    let bytecode = canonical_constant_bytecode(mech_core::SchemaBody::Index, |_| {
+        mech_core::ValueDataDraft::Index(value)
+    });
+    let mut request = request(&bytecode);
+    request.target = Some("i686-pc-windows-msvc".to_owned());
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
+    let error = builder.plan(&request).unwrap_err();
+    assert_eq!(error.kind_name(), "NativeBuildIndexConstantOutOfRange");
+    assert!(error.display_message().contains(&value.to_string()));
+
+    request.target = Some("x86_64-unknown-linux-gnu".to_owned());
+    let plan = builder.plan(&request).unwrap();
+    assert!(plan.runtime_types.is_empty());
+    assert!(plan.runtime_functions.is_empty());
+}
+
+#[cfg(target_pointer_width = "64")]
+fn nested_canonical_index_cases(
+    value: u64,
+) -> Vec<(
+    &'static str,
+    mech_core::SchemaBody,
+    mech_core::ValueDataDraft,
+)> {
+    use mech_core::snapshot::{
+        EnumDraft, MapEntryDraft, NamedValueDraft, OptionDraft, TableColumnDraft,
+    };
+    use mech_core::{
+        CardinalitySpec, DimensionExpr, EnumVariantSchema, NominalKey, SchemaBody, SchemaField,
+        ValueDataDraft,
+    };
+    let extent = || CardinalitySpec::Exact(DimensionExpr::Constant(1));
+    let tuple = || SchemaBody::Tuple(vec![SchemaBody::Index].into_boxed_slice());
+    let tuple_data =
+        || ValueDataDraft::Tuple(vec![ValueDataDraft::Index(value)].into_boxed_slice());
+    vec![
+        ("tuple", tuple(), tuple_data()),
+        (
+            "option",
+            SchemaBody::Option(Box::new(tuple())),
+            ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(tuple_data())),
+            }),
+        ),
+        (
+            "record",
+            SchemaBody::Record(
+                vec![SchemaField {
+                    name: "index".into(),
+                    schema: tuple(),
+                }]
+                .into_boxed_slice(),
+            ),
+            ValueDataDraft::Record(
+                vec![NamedValueDraft {
+                    name: "index".into(),
+                    value: tuple_data(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "packed matrix",
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Index),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(1)]
+                    .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(vec![ValueDataDraft::Index(value)].into_boxed_slice()),
+        ),
+        (
+            "nested matrix",
+            SchemaBody::Matrix {
+                element: Box::new(tuple()),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(1)]
+                    .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(vec![tuple_data()].into_boxed_slice()),
+        ),
+        (
+            "packed table",
+            SchemaBody::Table {
+                columns: vec![SchemaField {
+                    name: "index".into(),
+                    schema: SchemaBody::Index,
+                }]
+                .into_boxed_slice(),
+                rows: extent(),
+            },
+            ValueDataDraft::Table(
+                vec![TableColumnDraft {
+                    name: "index".into(),
+                    values: vec![ValueDataDraft::Index(value)].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "nested table",
+            SchemaBody::Table {
+                columns: vec![SchemaField {
+                    name: "index".into(),
+                    schema: tuple(),
+                }]
+                .into_boxed_slice(),
+                rows: extent(),
+            },
+            ValueDataDraft::Table(
+                vec![TableColumnDraft {
+                    name: "index".into(),
+                    values: vec![tuple_data()].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "set",
+            SchemaBody::Set {
+                element: Box::new(tuple()),
+                cardinality: extent(),
+            },
+            ValueDataDraft::Set(vec![tuple_data()].into_boxed_slice()),
+        ),
+        (
+            "map key",
+            SchemaBody::Map {
+                key: Box::new(tuple()),
+                value: Box::new(SchemaBody::Bool),
+                cardinality: extent(),
+            },
+            ValueDataDraft::Map(
+                vec![MapEntryDraft {
+                    items: vec![tuple_data(), ValueDataDraft::Bool(true)].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "map value",
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::Bool),
+                value: Box::new(tuple()),
+                cardinality: extent(),
+            },
+            ValueDataDraft::Map(
+                vec![MapEntryDraft {
+                    items: vec![ValueDataDraft::Bool(true), tuple_data()].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "enum payload",
+            SchemaBody::Enum {
+                key: NominalKey::from_bytes([23; 32]),
+                variants: vec![EnumVariantSchema {
+                    name: "index".into(),
+                    payload: Some(tuple()),
+                }]
+                .into_boxed_slice(),
+            },
+            ValueDataDraft::Enum(EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(tuple_data())),
+            }),
+        ),
+    ]
+}
+
+#[test]
+#[cfg(target_pointer_width = "64")]
+fn canonical_native_plan_checks_index_constants_in_supported_nested_aggregates() {
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
+    for value in [u64::from(u32::MAX), u64::from(u32::MAX) + 1] {
+        for (name, schema, data) in nested_canonical_index_cases(value) {
+            let bytecode = canonical_constant_bytecode(schema, |_| data);
+            let mut request = request(&bytecode);
+            request.target = Some("i686-pc-windows-msvc".to_owned());
+            let result = builder.plan(&request);
+            if value == u64::from(u32::MAX) {
+                assert!(result.is_ok(), "{name}: {result:?}");
+            } else {
+                assert_eq!(
+                    result.unwrap_err().kind_name(),
+                    "NativeBuildIndexConstantOutOfRange",
+                    "{name}",
+                );
+            }
+            request.target = Some("x86_64-unknown-linux-gnu".to_owned());
+            assert!(builder.plan(&request).is_ok(), "{name}");
+        }
+    }
+}
+
+#[test]
+#[cfg(target_pointer_width = "64")]
+fn canonical_native_plan_checks_index_constants_inside_dynamic_values() {
+    use mech_core::{SchemaBody, ValueDataDraft, ValueDraft};
+    let bytecode = canonical_constant_bytecode(SchemaBody::Dynamic, |schema| {
+        ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Index(u64::from(u32::MAX) + 1),
+        })))
+    });
+    let mut request = request(&bytecode);
+    request.target = Some("i686-pc-windows-msvc".to_owned());
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
+    assert_eq!(
+        builder.plan(&request).unwrap_err().kind_name(),
+        "NativeBuildIndexConstantOutOfRange",
+    );
+    request.target = Some("x86_64-unknown-linux-gnu".to_owned());
+    builder.plan(&request).unwrap();
+}
+
+#[test]
+fn canonical_native_plan_rejects_parallel_legacy_program_authority() {
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = mech_runtime::RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_source("value := 1.0\nvalue\n")
+        .unwrap();
+    let (_, bytecode, _, _, _) = product.into_native_parts();
+    let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
+    let hybrid = write_bytecode_with_artifact(
+        &BytecodeProgram {
+            register_count: 1,
+            constants: vec![EncodedConstant {
+                runtime_type: RuntimeType::F64,
+                alignment: 8,
+                bytes: 99.0_f64.to_bits().to_le_bytes().to_vec(),
+            }],
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            dictionary: BTreeMap::new(),
+            requirements: parsed.requirements,
+        },
+        &parsed.artifact,
+    )
+    .unwrap();
+
+    let error = NativeApplicationBuilder::new(environment(catalog))
+        .plan(&request(&hybrid))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeProgramArtifactInvalid");
+    assert!(
+        error
+            .display_message()
+            .contains("parallel legacy execution authority")
+    );
+}
+
+#[test]
+fn canonical_native_plan_rejects_unreferenced_artifact_requirement_authority() {
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = mech_runtime::RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_source("value := 1.0\nvalue\n")
+        .unwrap();
+    let artifact = product.artifact();
+    let augmented = ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: ApplicationRequirementTable::from_canonical_entries(vec![
+            ApplicationRequirement::HostFunction(ExecutionHostFunctionRequest {
+                name: "unreferenced/host-function".to_owned(),
+            }),
+        ])
+        .unwrap(),
+        inputs: artifact.inputs().to_vec().into_boxed_slice(),
+        slots: artifact.slots().to_vec().into_boxed_slice(),
+        nodes: artifact.nodes().to_vec().into_boxed_slice(),
+        bindings: artifact.bindings().to_vec().into_boxed_slice(),
+        outputs: artifact.outputs().to_vec().into_boxed_slice(),
+        constraints: artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let bytecode = encode_program_artifact_bytecode_v1(&augmented).unwrap();
+
+    let error = NativeApplicationBuilder::new(environment(catalog))
+        .plan(&request(&bytecode))
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeProgramArtifactInvalid");
+    assert!(
+        error
+            .display_message()
+            .contains("is not owned by an artifact operation node")
+    );
+}
+
+#[test]
+fn canonical_native_plan_retains_exact_resident_operation_identity() {
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = mech_runtime::RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_source("left := 1.0\nright := 2.0\nleft < right\n")
+        .unwrap();
+    assert_eq!(
+        product
+            .artifact()
+            .operation_references()
+            .into_iter()
+            .map(|operation| operation.canonical_name())
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from(["compare/lt".to_owned()])
+    );
+    let (_, bytecode, bindings, requirements, _) = product.into_native_parts();
+    assert_artifact_only_bytecode(&bytecode, &["compare/lt"]);
+    let mut request = request(&bytecode);
+    request.instruction_type_bindings = Some(bindings);
+    request.instruction_type_binding_requirements = Some(requirements);
+    let plan = NativeApplicationBuilder::new(environment(catalog))
+        .plan(&request)
+        .unwrap();
+    assert_artifact_only_plan(
+        &plan,
+        &["bool", "f64", "program"],
+        &["bool", "f64", "runtime"],
+        &["bool", "f64", "resident-routing", "runtime", "string"],
+    );
+}
+
+#[test]
+fn canonical_native_plan_fails_closed_without_its_resident_operation() {
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = mech_runtime::RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_source("left := 1.0\nright := 2.0\nleft + right\n")
+        .unwrap();
+    let (_, bytecode, bindings, requirements, _) = product.into_native_parts();
+    assert_artifact_only_bytecode(&bytecode, &["math/add"]);
+    let mut request = request(&bytecode);
+    request.instruction_type_bindings = Some(bindings);
+    request.instruction_type_binding_requirements = Some(requirements);
+
+    let error = NativeApplicationBuilder::new(environment(empty_catalog()))
+        .plan(&request)
+        .unwrap_err();
+    assert_eq!(error.kind_name(), "NativeProgramArtifactInvalid");
+    assert!(
+        error
+            .display_message()
+            .contains("resident activation failed")
+    );
+}
+
+#[test]
+fn canonical_literal_aggregate_contributes_native_type_features() {
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = mech_runtime::RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_source("value := (1.0, true)\nvalue\n")
+        .unwrap();
+    let (_, bytecode, bindings, requirements, _) = product.into_native_parts();
+    let mut request = request(&bytecode);
+    request.instruction_type_bindings = Some(bindings);
+    request.instruction_type_binding_requirements = Some(requirements);
+    let plan = NativeApplicationBuilder::new(environment(catalog))
+        .plan(&request)
+        .unwrap();
+    for feature in ["bool", "f64", "tuple"] {
+        assert!(plan.core_features.iter().any(|actual| actual == feature));
+        assert!(plan.engine_features.iter().any(|actual| actual == feature));
+        assert!(plan.runtime_features.iter().any(|actual| actual == feature));
+    }
+}
+
+#[test]
 fn host_free_plan_accepts_scalar_runtime_config_as_plan_identity() {
     let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
     let mut request = request(LITERAL_F64);
@@ -337,23 +946,34 @@ fn host_free_plan_accepts_scalar_runtime_config_as_plan_identity() {
 
 #[test]
 fn production_builder_rejects_actor_bootstrap_before_planning() {
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = mech_runtime::RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build_compiler()
+        .unwrap();
+    let canonical = compiler
+        .compile_canonical_source("value := 1.0\nvalue\n")
+        .unwrap();
     let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
-    let mut request = request(LITERAL_F64);
-    request.runtime_config = Some(NativeRuntimeConfig {
-        runtime: RuntimeConfig::default(),
-        actor_bootstrap: Some(NativeActorBootstrap {
-            subject: "actor:test".to_owned(),
-            message_kind: "test".to_owned(),
-            message_payload: "payload".to_owned(),
-            initial_state: None,
-        }),
-        hosts: Vec::new(),
-        run_grants: Vec::new(),
-    });
-
-    let error = builder.plan(&request).unwrap_err();
-    assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
-    assert!(error.display_message().contains("actor bootstrap"));
+    // Actor execution is retired at the production boundary for both input
+    // formats, before either instruction or canonical contract planning.
+    for bytecode in [LITERAL_F64, canonical.bytecode()] {
+        let mut request = request(bytecode);
+        request.runtime_config = Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: Some(NativeActorBootstrap {
+                subject: "actor:test".to_owned(),
+                message_kind: "test".to_owned(),
+                message_payload: "payload".to_owned(),
+                initial_state: None,
+            }),
+            hosts: Vec::new(),
+            run_grants: Vec::new(),
+        });
+        let error = builder.plan(&request).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
+        assert!(error.display_message().contains("actor bootstrap"));
+    }
 }
 
 #[test]
@@ -407,62 +1027,72 @@ fn standard_catalog_rejects_untrusted_host_functions() {
 }
 
 #[test]
-fn scalar_add_resolves_only_the_exact_scalar_installer() {
-    assert_owner_runtime_function(
+fn scalar_add_uses_the_exact_resident_artifact_closure() {
+    assert_owner_resident_artifact(
         OwnerProfile::Standard,
         "scalar-add-f64.mecb",
         "scalar",
-        "AddSS<f64>",
-        "mech_math::__mech_native::install_add_ss_f64",
-        "mech-math",
+        &["math/add"],
+        &["f64", "program"],
+        &["f64", "runtime"],
+        &["f64", "resident-routing", "runtime", "string"],
     );
 }
 
 #[test]
-fn fixed_profile_matrix_add_resolves_the_canonical_dynamic_installer() {
-    let plan = assert_owner_runtime_function(
+fn fixed_profile_matrix_add_uses_the_exact_resident_artifact_closure() {
+    let plan = assert_owner_resident_artifact(
         OwnerProfile::Fixed,
         "fixed-matrix-add-f64.mecb",
         "fixed",
-        "AddMDMD<f64>",
-        "mech_math::__mech_native::install_add_mdmd_f64",
-        "mech-math",
+        &["math/add"],
+        &["f64", "matrix2", "program"],
+        &["bool", "f64", "matrix2", "runtime", "vector2"],
+        &["f64", "matrix2", "resident-routing", "runtime", "string"],
     );
     assert!(plan.engine_features.iter().any(|feature| feature == "bool"));
     assert!(
         plan.engine_features
             .iter()
-            .any(|feature| feature == "vectord")
+            .any(|feature| feature == "vector2")
     );
     assert!(plan.core_features.iter().all(|feature| feature != "bool"));
     assert!(
         plan.core_features
             .iter()
-            .all(|feature| feature != "vectord")
+            .all(|feature| feature != "vector2")
     );
 }
 
 #[test]
-fn dynamic_matrix_add_resolves_the_exact_dynamic_matrix_installer() {
-    assert_owner_runtime_function(
+fn dynamic_matrix_add_uses_the_exact_resident_artifact_closure() {
+    assert_owner_resident_artifact(
         OwnerProfile::Standard,
         "dynamic-matrix-add-f64.mecb",
         "dynamic",
-        "AddMDMD<f64>",
-        "mech_math::__mech_native::install_add_mdmd_f64",
-        "mech-math",
+        &["math/add"],
+        &["f64", "matrixd", "program"],
+        &["f64", "matrixd", "runtime"],
+        &["f64", "matrixd", "resident-routing", "runtime", "string"],
     );
 }
 
 #[test]
-fn variadic_horzcat_resolves_the_exact_variadic_installer() {
-    assert_owner_runtime_function(
+fn variadic_horzcat_uses_the_exact_resident_artifact_closure() {
+    assert_owner_resident_artifact(
         OwnerProfile::Standard,
         "variadic-horzcat-f64.mecb",
         "variadic",
-        "matrix/horzcat",
-        "mech_engine::__mech_native::install_value_horizontal_concatenation",
-        "mech-engine",
+        &[],
+        &["f64", "program", "row_vectord"],
+        &["bool", "f64", "row_vectord", "runtime", "vectord"],
+        &[
+            "f64",
+            "resident-routing",
+            "row_vectord",
+            "runtime",
+            "string",
+        ],
     );
 }
 

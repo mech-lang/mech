@@ -720,3 +720,187 @@ fn shipped_document_shims_consume_required_slots() {
         assert!(render.html.contains("encoded-source-key"));
     }
 }
+
+#[test]
+fn legacy_rich_document_source_roundtrips_without_html() {
+    use mech_syntax::document::{
+        DocumentId, ParseConfig, Revision, TextSnapshot, parse_canonical_document,
+    };
+    let original =
+        mech_syntax::parser::parse(include_str!("../../../tests/fixtures/shims/all-slots.mec"))
+            .unwrap();
+    let source = Formatter::new().format(&original);
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(878), Revision(0), source.as_str()).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(
+        parsed.diagnostics.is_empty(),
+        "{source}\n{:?}",
+        parsed.diagnostics
+    );
+    assert!(!source.contains("<section"), "{source}");
+    assert!(
+        source.contains("hero: ![Fixture hero](hero.svg)"),
+        "{source}"
+    );
+    assert!(source.contains("%% This abstract"), "{source}");
+    let replacement = mech_syntax::parser::parse(&source).unwrap();
+    assert_eq!(
+        replacement.body.sections.len(),
+        original.body.sections.len()
+    );
+    for (before, after) in original
+        .body
+        .sections
+        .iter()
+        .zip(&replacement.body.sections)
+    {
+        assert_eq!(
+            before.subtitle.as_ref().map(|s| (s.level, s.to_string())),
+            after.subtitle.as_ref().map(|s| (s.level, s.to_string()))
+        );
+        assert_eq!(before.elements.len(), after.elements.len(), "{source}");
+        for (before, after) in before.elements.iter().zip(&after.elements) {
+            match (before, after) {
+                (SectionElement::FencedMechCode(before), SectionElement::FencedMechCode(after)) => {
+                    assert_eq!(before.config, after.config);
+                    assert_eq!(
+                        before.source.to_string().trim(),
+                        after.source.to_string().trim()
+                    );
+                    assert_eq!(before.imports.len(), after.imports.len());
+                    assert_eq!(before.exports.len(), after.exports.len());
+                }
+                (SectionElement::Subtitle(before), SectionElement::Subtitle(after)) => assert_eq!(
+                    (before.level, before.to_string()),
+                    (after.level, after.to_string())
+                ),
+                (SectionElement::Citation(before), SectionElement::Citation(after)) => {
+                    assert_eq!(before.text.to_string(), after.text.to_string())
+                }
+                _ => assert_eq!(
+                    std::mem::discriminant(before),
+                    std::mem::discriminant(after)
+                ),
+            }
+        }
+    }
+}
+
+#[test]
+fn legacy_source_fences_preserve_execution_ownership_and_options() {
+    for qualifier in ["", ":hidden", ":disabled", ":worker"] {
+        let source = format!("~~~mech{qualifier}{{output: false}}\n+> math\nx := 1\n<+ x\n~~~\n");
+        let original = mech_syntax::parser::parse(&source).unwrap();
+        let formatted = Formatter::new().format(&original);
+        let replacement = mech_syntax::parser::parse(&formatted).unwrap();
+        let fence = |program: &Program| {
+            program
+                .body
+                .sections
+                .iter()
+                .flat_map(|s| &s.elements)
+                .find_map(|element| {
+                    if let SectionElement::FencedMechCode(block) = element {
+                        Some(block.clone())
+                    } else {
+                        None
+                    }
+                })
+                .unwrap()
+        };
+        let before = fence(&original);
+        let after = fence(&replacement);
+        assert_eq!(before.config, after.config, "{formatted}");
+        assert!(!after.config.output);
+        assert_eq!(
+            before.source.to_string().trim(),
+            after.source.to_string().trim()
+        );
+        assert_eq!(before.imports.len(), after.imports.len());
+        assert_eq!(before.exports.len(), after.exports.len());
+    }
+}
+
+#[test]
+fn nested_evaluations_preserve_source_and_emit_distinct_placeholders() {
+    for nested in [
+        "**{11}**",
+        "[value {11}](https://example.test)",
+        "*{11}*",
+        "_{11}_",
+        "~{11}~",
+        "!!{11}!!",
+        "**[value !!{11}!!](https://example.test)**",
+    ] {
+        let source = format!("> Nested {nested}, direct {{33}}.\n");
+        let tree = mech_syntax::parser::parse(&source).unwrap();
+        let formatted = Formatter::new().format(&tree);
+        assert!(formatted.contains(nested), "{formatted}");
+        assert_eq!(mech_syntax::parser::parse(&formatted).unwrap(), tree);
+        let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_owned());
+        for index in 0..2 {
+            let id = hash_str(&format!("inline-eval:0:{index}"));
+            assert_eq!(
+                html.matches(&format!("id=\"{id}:0\"")).count(),
+                1,
+                "{source}"
+            );
+        }
+        assert_eq!(html.matches("class=\"mech-inline-mech-code\"").count(), 2);
+    }
+}
+
+#[test]
+fn document_slots_share_addresses_and_keep_title_source_order() {
+    let source = include_str!("../../../tests/fixtures/shims/output-addresses.mec");
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let (ids, inline_count) =
+        mech_core::document_presentation::root_document_presentation_addresses(&tree);
+    assert_eq!(inline_count, 6);
+    assert_eq!(ids.len(), 8);
+    assert_eq!(
+        ids.iter().collect::<std::collections::BTreeSet<_>>().len(),
+        8
+    );
+    let formatted = Formatter::new().format(&tree);
+    assert!(formatted.find("summary:").unwrap() < formatted.find("author:").unwrap());
+    assert!(formatted.contains("Summary {11}."));
+    assert!(formatted.contains("Hero {13}."));
+    mech_syntax::parser::parse(&formatted).unwrap();
+    for (index, shim) in [
+        include_str!("../../../include/docs.html"),
+        include_str!("../../../include/index.html"),
+        "{{SUMMARY}}{{AUTHOR}}{{HERO}}{{ABSTRACT}}{{INTRO}}{{CONTENTS}}",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let html = Formatter::new().format_html(&tree, String::new(), shim.to_owned());
+        let required = if index == 2 { &ids[..] } else { &ids[3..] };
+        for id in required {
+            assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1, "{id}");
+        }
+    }
+    let sections = Formatter::new().format_html(&tree, String::new(), "{{SECTION1}}".to_owned());
+    for id in &ids[5..] {
+        assert_eq!(sections.matches(&format!("id=\"{id}:0\"")).count(), 1);
+    }
+}
+
+#[test]
+fn cloned_fences_receive_distinct_occurrence_addresses() {
+    let mut tree = mech_syntax::parser::parse("~~~mech\n1\n~~~\n").unwrap();
+    let fence = tree.body.sections[0].elements[0].clone();
+    tree.body.sections[0].elements.push(fence);
+    let (ids, count) =
+        mech_core::document_presentation::root_document_presentation_addresses(&tree);
+    assert_eq!(count, 0);
+    assert_eq!(ids.len(), 2);
+    assert_ne!(ids[0], ids[1]);
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_owned());
+    for id in &ids {
+        assert_eq!(html.matches(&format!("id=\"{id}:0\"")).count(), 1);
+    }
+}

@@ -858,6 +858,99 @@ fn live_native_plans_require_an_exact_materialized_input_driver() {
 }
 
 #[test]
+fn read_only_artifact_native_planning_validates_the_observation_value_type() {
+    struct ObservationContract;
+    impl mech_engine::ExternalRequirementContractResolver for ObservationContract {
+        fn resolve_external_contract(
+            &self,
+            _: &ApplicationRequirement,
+        ) -> MResult<Option<&'static mech_core::OperationContractDeclaration>> {
+            Ok(Some(mech_runtime::resource_observation_contract()))
+        }
+    }
+    let config = NativeRuntimeConfig {
+        runtime: RuntimeConfig::default(),
+        actor_bootstrap: None,
+        hosts: vec![host("terminal", "test")],
+        run_grants: vec![grant("terminal/output", &["read"], &["line"])],
+    };
+    let mut sources = mech_runtime::InMemorySourceResolver::new();
+    sources
+        .insert_canonical_string("observation.mec", "observed")
+        .unwrap();
+    let resolved = mech_runtime::SourceResolver::resolve(
+        &sources,
+        &mech_runtime::SourceRequest::new("observation.mec"),
+    )
+    .unwrap()
+    .unwrap();
+    let document = resolved.source_document().unwrap();
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    for schema in [mech_core::SchemaBody::String, mech_core::SchemaBody::Bool] {
+        let program = mech_engine::CanonicalSourceFrontend
+            .compile_document_with_catalog_and_resources(
+                &document.document(),
+                catalog.clone(),
+                BTreeMap::from([("observed".to_owned(), schema.clone())]),
+                BTreeMap::new(),
+                BTreeMap::new(),
+            )
+            .unwrap()
+            .bind_resource_input(
+                "observed",
+                ExecutionResourceRequest {
+                    base_uri: "test://terminal/output".to_owned(),
+                    path: "line".to_owned(),
+                    context_name: "output".to_owned(),
+                    operation: "read".to_owned(),
+                    intent: ResourceIntent::Read,
+                    delivery: ResourceDelivery::Live,
+                },
+            )
+            .unwrap();
+        let artifact = program
+            .compile_artifact_with_external_contracts(&ObservationContract)
+            .unwrap();
+        let request = crate::NativeBuildRequest {
+            bytecode: mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            instruction_type_bindings: None,
+            instruction_type_binding_requirements: None,
+            runtime_config: Some(config.clone()),
+            target: None,
+            profile: crate::NativeBuildProfile::Debug,
+            binary_name: "read-only-observation".to_owned(),
+            output: "ignored".into(),
+            emit: crate::NativeEmit::Plan,
+            keep_project: false,
+            offline: true,
+        };
+        let result = crate::NativeApplicationBuilder::new(crate::NativeBuildEnvironment {
+            function_catalog: catalog.clone(),
+            host_catalog: std::sync::Arc::new(host_catalog_with(
+                live_test_manifest,
+                driven_live_planning_factory,
+            )),
+            dependency_source: crate::NativeDependencySource::Registry {
+                version: "0.3.5".to_owned(),
+            },
+        })
+        .plan(&request);
+        if schema == mech_core::SchemaBody::String {
+            assert!(result.is_ok(), "{result:?}");
+        } else {
+            let error = result.unwrap_err();
+            assert_eq!(error.kind_name(), "NativeProgramArtifactInvalid");
+            assert!(
+                error
+                    .display_message()
+                    .contains("does not match artifact input"),
+                "{error:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn duplicate_host_instances_are_rejected() {
     let config = NativeRuntimeConfig {
         runtime: RuntimeConfig::default(),

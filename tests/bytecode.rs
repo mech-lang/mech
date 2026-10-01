@@ -5,13 +5,13 @@ mod catalog;
 #[path = "support/bytecode/dynamic_matrix_factory.rs"]
 mod dynamic_matrix_factory;
 
-use mech_core::{
-    BytecodeInstruction, MResult, ParsedProgram, ResolvedSelectionMode, RuntimeType, SchemaBody,
-    Value, ValueData, hash_str, snapshot::SequenceView,
-};
 #[cfg(feature = "distribution-full")]
 use mech_core::{
     ExecutionTarget, ResolvedRangeMode, ResolvedReductionMode, RuntimeOperationBinding,
+};
+use mech_core::{
+    MResult, ParsedProgram, ResolvedSelectionMode, SchemaBody, Value, ValueData,
+    snapshot::SequenceView,
 };
 #[cfg(feature = "distribution-full")]
 use mech_engine::ProgramArtifactDraft;
@@ -83,14 +83,29 @@ fn expected_artifact_selector(
     resolve(artifact, source, &mut std::collections::BTreeSet::new())
 }
 
-fn run_compiled_source(source: &str) -> MResult<(ParsedProgram, Value)> {
+fn decoded_source_artifact(bytecode: &[u8]) -> MResult<ProgramArtifact> {
+    let parsed = ParsedProgram::from_bytes(bytecode)?;
+    assert_eq!(parsed.header.register_count, 0);
+    assert_eq!(parsed.header.instruction_count, 0);
+    assert!(parsed.types.is_empty());
+    assert!(parsed.constants.is_empty());
+    assert!(parsed.constant_blob.is_empty());
+    assert!(parsed.symbols.is_empty());
+    assert!(parsed.mutable_symbols.is_empty());
+    assert!(parsed.instructions.is_empty());
+    assert!(parsed.dictionary.is_empty());
+    Ok(decode_program_artifact_bytecode_v1(bytecode)
+        .expect("source bytecode must decode its authoritative canonical artifact"))
+}
+
+fn run_compiled_source(source: &str) -> MResult<(ProgramArtifact, Value)> {
     let bytecode = compile_source(source)?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    let artifact = decoded_source_artifact(&bytecode)?;
     let mut runtime = RuntimeBuilder::new()
         .function_catalog(mech::stdlib::source_catalog())
         .build()?;
     let loaded = runtime.load_bytecode_program(&bytecode, ResidentDurabilityPolicy::Volatile)?;
-    Ok((parsed, loaded.initial_value.into_value()))
+    Ok((artifact, loaded.initial_value.into_value()))
 }
 
 fn assert_source_and_bytecode_resident_parity(source: &str) -> MResult<()> {
@@ -447,7 +462,7 @@ fn reactive_range_shape_is_rejected_before_resident_instance_emission() -> MResu
         assert_eq!(operation.module_path.len(), 1);
         assert_eq!(operation.module_path[0], "range");
         assert_eq!(operation.operation_name, expected_operation);
-        assert!(error.reason.contains("TurnDimension"));
+        assert!(error.reason.contains("UnsupportedLayout"), "{error:?}");
     }
     Ok(())
 }
@@ -550,58 +565,57 @@ fn assert_f32_matrix(value: &Value, expected: &[f32]) {
     );
 }
 
-fn return_register(program: &ParsedProgram) -> u32 {
-    match program.instructions.last() {
-        Some(BytecodeInstruction::Return { src }) => *src,
-        instruction => panic!("expected one final Return, found {instruction:?}"),
+fn result_source(artifact: &ProgramArtifact) -> ArtifactSource {
+    let [output] = artifact.outputs() else {
+        panic!("expected one final artifact output");
+    };
+    match artifact.slots()[output.source.get() as usize].producer {
+        ProducerReference::Output { source, .. } => source,
+        producer => panic!("expected an artifact output producer, found {producer:?}"),
     }
 }
 
-fn final_binary_register(program: &ParsedProgram) -> u32 {
-    program
-        .instructions
+fn operation_output(artifact: &ProgramArtifact, name: &str, arity: usize) -> ArtifactSource {
+    let node = artifact
+        .nodes()
         .iter()
         .rev()
-        .find_map(|instruction| match instruction {
-            BytecodeInstruction::RuntimeBinary { dst, .. } => Some(*dst),
-            _ => None,
+        .find(|node| {
+            node.as_operation()
+                .is_some_and(|operation| operation.operation.canonical_name() == name)
         })
-        .expect("expected a RuntimeBinary instruction")
+        .unwrap_or_else(|| panic!("expected canonical {name} operation"));
+    assert_eq!(
+        (node.input_bindings.end - node.input_bindings.start) as usize,
+        arity
+    );
+    let [BindingDeclaration::Output { target, .. }] = &artifact.bindings()
+        [node.output_bindings.start as usize..node.output_bindings.end as usize]
+    else {
+        panic!("expected one output for canonical {name}");
+    };
+    ArtifactSource::Slot(*target)
 }
 
 #[test]
-fn literal_only_source_returns_its_literal_register() -> MResult<()> {
-    let (parsed, value) = run_compiled_source("10")?;
+fn literal_only_source_returns_its_constant_producer() -> MResult<()> {
+    let (artifact, value) = run_compiled_source("10")?;
     assert_f64(&value, 10.0);
-    assert_eq!(
-        parsed
-            .instructions
-            .iter()
-            .filter(|instruction| matches!(instruction, BytecodeInstruction::Return { .. }))
-            .count(),
-        1,
-    );
-    assert!(matches!(
-        parsed.instructions.last(),
-        Some(BytecodeInstruction::Return { .. })
-    ));
+    let ArtifactSource::Constant(constant) = result_source(&artifact) else {
+        panic!("literal result must retain its canonical constant producer");
+    };
+    assert_f64(artifact.constants().get(constant).unwrap(), 10.0);
     Ok(())
 }
 
 #[test]
-fn scalar_add_returns_the_final_function_register() -> MResult<()> {
-    let (parsed, value) = run_compiled_source("1 + 2")?;
+fn scalar_add_returns_the_final_operation_output() -> MResult<()> {
+    let (artifact, value) = run_compiled_source("1 + 2")?;
     assert_f64(&value, 3.0);
-    assert!(
-        parsed
-            .instructions
-            .iter()
-            .any(|instruction| matches!(instruction, BytecodeInstruction::RuntimeBinary { .. }))
+    assert_eq!(
+        result_source(&artifact),
+        operation_output(&artifact, "math/add", 2)
     );
-    assert!(matches!(
-        parsed.instructions.last(),
-        Some(BytecodeInstruction::Return { .. })
-    ));
     Ok(())
 }
 
@@ -634,13 +648,17 @@ fn completed_math_lowerings_activate_and_execute_through_bytecode_v1() -> MResul
             1.0e-12,
         ),
     ] {
-        let (parsed, value) = run_compiled_source(source)?;
-        assert!(
-            parsed.instructions.iter().any(|instruction| matches!(
-                instruction,
-                BytecodeInstruction::RuntimeBinary { .. }
-            )),
-            "{source} did not lower to a binary runtime instruction",
+        let (artifact, value) = run_compiled_source(source)?;
+        let operation = source
+            .split_once('\n')
+            .unwrap()
+            .1
+            .split_once('(')
+            .unwrap()
+            .0;
+        assert_eq!(
+            result_source(&artifact),
+            operation_output(&artifact, operation, 2)
         );
         let ValueData::F64(actual) = value.data() else {
             panic!("{source} did not produce a canonical f64 value");
@@ -745,13 +763,17 @@ fn declared_float_unary_surface_activates_through_shared_residents() -> MResult<
         "+> math\nmath/tgamma(2.0)",
         "+> math\nmath/trunc(1.8)",
     ] {
-        let (parsed, value) = run_compiled_source(source)?;
-        assert!(
-            parsed
-                .instructions
-                .iter()
-                .any(|instruction| matches!(instruction, BytecodeInstruction::RuntimeUnary { .. })),
-            "{source} did not lower to a unary runtime instruction",
+        let (artifact, value) = run_compiled_source(source)?;
+        let operation = source
+            .split_once('\n')
+            .unwrap()
+            .1
+            .split_once('(')
+            .unwrap()
+            .0;
+        assert_eq!(
+            result_source(&artifact),
+            operation_output(&artifact, operation, 1)
         );
         let ValueData::F64(actual) = value.data() else {
             panic!("{source} did not produce a canonical f64 value");
@@ -878,48 +900,61 @@ fn generated_catalog_numeric_families_have_exact_resident_capabilities() -> MRes
         ))?;
     }
 
-    // Matrix dot and multiplication advertise integer and floating-point
-    // families only. Rational and complex programs therefore fail at source
-    // specialization instead of emitting an artifact that ResidentCpu cannot
-    // activate.
+    // Canonical source retains numeric operations independently of a target's
+    // implementations. ResidentCpu rejects these families before activation.
     for kind in ["r64", "c64"] {
         let one = typed_number(kind, 1);
         let two = typed_number(kind, 2);
         let three = typed_number(kind, 3);
         let four = typed_number(kind, 4);
-        assert!(
-            compile_source(&format!("[{one} {two}] · [{three} {four}]")).is_err(),
-            "matrix/dot unexpectedly advertised {kind}",
-        );
-        assert!(
-            compile_source(&format!("[{one} {two}] ** [{three}; {four}]")).is_err(),
-            "matrix/multiply unexpectedly advertised {kind}",
-        );
+        for (source, operation) in [
+            (format!("[{one} {two}] · [{three} {four}]"), "matrix/dot"),
+            (
+                format!("[{one} {two}] ** [{three}; {four}]"),
+                "matrix/matmul",
+            ),
+        ] {
+            let artifact = decoded_source_artifact(&compile_source(&source)?)?;
+            let error = preflight_resident_target(
+                &artifact,
+                &mech::stdlib::source_catalog(),
+                &ActivationFacts::default(),
+                ResidentActivationOptions::default(),
+            )
+            .expect_err("unsupported numeric family must fail before resident activation");
+            assert_eq!(error.target, ExecutionTarget::ResidentCpu);
+            assert_eq!(
+                error.operation.as_ref().unwrap().canonical_name(),
+                operation
+            );
+            assert!(
+                error.reason.contains("UnsupportedLayout"),
+                "{source}: {error:?}"
+            );
+        }
     }
     Ok(())
 }
 
 #[test]
 fn dynamic_strict_equality_round_trips_through_bytecode() -> MResult<()> {
-    let (parsed, value) = run_compiled_source("x := 1 + [4 5 6]\nx === [5 6 7]")?;
+    let (artifact, value) = run_compiled_source("x := 1 + [4 5 6]\nx === [5 6 7]")?;
     assert_bool(&value, true);
-    assert!(parsed.instructions.iter().any(|instruction| matches!(
-        instruction,
-        BytecodeInstruction::RuntimeBinary { function, .. }
-            if *function == hash_str("compare/seq")
-    )));
+    assert_eq!(
+        result_source(&artifact),
+        operation_output(&artifact, "compare/seq", 2)
+    );
     Ok(())
 }
 
 #[test]
 fn dynamic_strict_inequality_round_trips_through_bytecode() -> MResult<()> {
-    let (parsed, value) = run_compiled_source("x := 1 + [4 5 6]\nx !== [5 6 8]")?;
+    let (artifact, value) = run_compiled_source("x := 1 + [4 5 6]\nx !== [5 6 8]")?;
     assert_bool(&value, true);
-    assert!(parsed.instructions.iter().any(|instruction| matches!(
-        instruction,
-        BytecodeInstruction::RuntimeBinary { function, .. }
-            if *function == hash_str("compare/sneq")
-    )));
+    assert_eq!(
+        result_source(&artifact),
+        operation_output(&artifact, "compare/sneq", 2)
+    );
     Ok(())
 }
 
@@ -928,17 +963,11 @@ fn dynamic_strict_inequality_round_trips_through_bytecode() -> MResult<()> {
 fn r3_conversions_and_promoted_matrix_round_trip_through_bytecode() -> MResult<()> {
     let source = "scalar := 1<u8> + 2<u16>\ncast := scalar<f64>\n[1<f32> 2<f32>] + [3<f64> 4<f64>]";
     let bytecode = compile_source(source)?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-    assert!(
-        parsed.instructions.iter().any(|instruction| {
-            instruction.runtime_function() == Some(hash_str("convert/kind"))
-        })
-    );
-    assert!(
-        parsed
-            .instructions
-            .iter()
-            .any(|instruction| matches!(instruction, BytecodeInstruction::RuntimeBinary { .. })),
+    let artifact = decoded_source_artifact(&bytecode)?;
+    operation_output(&artifact, "convert/kind", 1);
+    assert_eq!(
+        result_source(&artifact),
+        operation_output(&artifact, "math/add", 2)
     );
     Ok(())
 }
@@ -956,16 +985,10 @@ fn strict_comparison_rejects_different_semantic_shapes() {
 
 #[test]
 fn ordinary_set_elements_round_trip_through_bytecode() -> MResult<()> {
-    let (inserted_program, inserted) = run_compiled_source("set/insert({1, 2}, 3)")?;
-    assert!(
-        inserted_program
-            .instructions
-            .iter()
-            .any(|instruction| matches!(
-                instruction,
-                BytecodeInstruction::RuntimeBinary { function, .. }
-                    if *function == hash_str("SetInsertFxn")
-            ))
+    let (artifact, inserted) = run_compiled_source("set/insert({1, 2}, 3)")?;
+    assert_eq!(
+        result_source(&artifact),
+        operation_output(&artifact, "set/insert", 2)
     );
     let inserted = inserted
         .set_view()
@@ -1130,24 +1153,16 @@ fn set_membership_preserves_element_schema_identity() -> MResult<()> {
 #[test]
 fn compiled_integrity_constraints_are_reconstructed() -> MResult<()> {
     let bytecode = compile_source("x := 1.0\nsafe! := x <= 2.0")?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    let artifact = decoded_source_artifact(&bytecode)?;
+    let [constraint] = artifact.constraints() else {
+        panic!("expected one canonical integrity constraint");
+    };
+    assert_eq!(constraint.name, "safe!");
+    assert_eq!(constraint.operation.canonical_name(), "integrity/assert");
     assert_eq!(
-        parsed
-            .dictionary
-            .get(&hash_str("safe!"))
-            .map(String::as_str),
-        Some("safe!"),
+        constraint.inputs.as_ref(),
+        [operation_output(&artifact, "compare/lte", 2)]
     );
-    assert!(parsed.instructions.iter().any(|instruction| matches!(
-        instruction,
-        BytecodeInstruction::RuntimeVariadic { function, arguments, .. }
-            if *function == hash_str("integrity/constraint")
-                && arguments.first() == parsed.symbols.get(&hash_str("safe!"))
-    )));
-
-    let artifact = decode_program_artifact_bytecode_v1(&bytecode)
-        .expect("compiled bytecode must decode its authoritative artifact sections");
-    assert_eq!(artifact.constraints().len(), 1);
     let mut runtime = RuntimeBuilder::new()
         .function_catalog(mech::stdlib::source_catalog())
         .build()?;
@@ -1159,17 +1174,27 @@ fn compiled_integrity_constraints_are_reconstructed() -> MResult<()> {
 
 #[test]
 fn mixed_program_returns_trailing_literal_after_planned_work() -> MResult<()> {
-    let (parsed, value) = run_compiled_source("x := 1.0 + 2.0\n42.0")?;
+    let (artifact, value) = run_compiled_source("x := 1.0 + 2.0\n42.0")?;
     assert_f64(&value, 42.0);
-    assert_ne!(return_register(&parsed), final_binary_register(&parsed));
+    assert_ne!(
+        result_source(&artifact),
+        operation_output(&artifact, "math/add", 2)
+    );
+    assert!(matches!(
+        result_source(&artifact),
+        ArtifactSource::Constant(_)
+    ));
     Ok(())
 }
 
 #[test]
-fn mixed_program_reuses_trailing_symbol_producer_register() -> MResult<()> {
-    let (parsed, value) = run_compiled_source("x := 1.0 + 2.0\nx")?;
+fn mixed_program_reuses_trailing_symbol_producer() -> MResult<()> {
+    let (artifact, value) = run_compiled_source("x := 1.0 + 2.0\nx")?;
     assert_f64(&value, 3.0);
-    assert_eq!(return_register(&parsed), final_binary_register(&parsed));
+    assert_eq!(
+        result_source(&artifact),
+        operation_output(&artifact, "math/add", 2)
+    );
     Ok(())
 }
 
@@ -1278,11 +1303,16 @@ fn canonical_resident_capabilities_close_matrix_logic_comparison_and_indexing_pa
     let (_, value) = run_compiled_source("[1<u64> 2<u64>] < [2<u64> 2<u64>]")?;
     assert_bool_matrix(&value, &[true, false]);
 
-    // Records and maps have indexing/assignment capabilities, but equality is
-    // not part of their source-admitted v0.4 surface. Keep that boundary
-    // closed instead of relying on the resident aggregate-equality fallback.
-    assert!(compile_source("{number: 1<u64>} == {number: 1<u64>}").is_err());
-    assert!(compile_source("{\"key\": 1<u64>} != {\"key\": 2<u64>}").is_err());
+    for (source, expected) in [
+        ("{number: 1<u64>} == {number: 1<u64>}", true),
+        ("{number: 1<u64>} == {number: 2<u64>}", false),
+        ("{\"key\": 1<u64>} != {\"key\": 2<u64>}", true),
+        ("{\"key\": 1<u64>} != {\"key\": 1<u64>}", false),
+    ] {
+        let (_, value) = run_compiled_source(source)?;
+        assert_bool(&value, expected);
+        assert_source_and_bytecode_resident_parity(source)?;
+    }
 
     let (_, value) = run_compiled_source(
         "left := |number<u64>| 1 | 2 |\nright := |number<u64>| 1 | 2 |\nleft == right",
@@ -1366,14 +1396,24 @@ fn canonical_resident_capabilities_close_matrix_logic_comparison_and_indexing_pa
 }
 
 #[test]
-fn variadic_f64_matrix_construction_round_trips() -> MResult<()> {
-    let (parsed, value) = run_compiled_source("[1 2 3]")?;
+fn literal_and_variadic_f64_matrix_construction_round_trip() -> MResult<()> {
+    let (artifact, value) = run_compiled_source("[1 2 3]")?;
     assert_f64_matrix(&value, &[1.0, 2.0, 3.0], 1, 3);
-    assert!(
-        parsed
-            .instructions
-            .iter()
-            .any(|instruction| matches!(instruction, BytecodeInstruction::RuntimeVariadic { .. }))
+    let ArtifactSource::Constant(constant) = result_source(&artifact) else {
+        panic!("literal matrix must retain its canonical constant producer");
+    };
+    assert_f64_matrix(
+        artifact.constants().get(constant).unwrap(),
+        &[1.0, 2.0, 3.0],
+        1,
+        3,
+    );
+
+    let (artifact, value) = run_compiled_source("value := 1 + 1\n[1 value 3]")?;
+    assert_f64_matrix(&value, &[1.0, 2.0, 3.0], 1, 3);
+    assert_eq!(
+        result_source(&artifact),
+        operation_output(&artifact, "matrix/horzcat", 3)
     );
     Ok(())
 }
@@ -1433,52 +1473,104 @@ fn source_compilation_is_byte_for_byte_deterministic() -> MResult<()> {
 
 #[test]
 fn tuple_source_constant_is_encoded_by_bytecode_v1() -> MResult<()> {
-    let compiled = compile_source("(1, 2)")?;
-    let parsed = ParsedProgram::from_bytes(&compiled)?;
-    assert!(
-        parsed
-            .types
-            .iter()
-            .any(|ty| matches!(ty, RuntimeType::Tuple(_)))
+    let (artifact, value) = run_compiled_source("(1, 2)")?;
+    let [output] = artifact.outputs() else {
+        panic!("expected one tuple output");
+    };
+    let SchemaBody::Tuple(elements) = artifact.schemas().get(output.schema).unwrap().body() else {
+        panic!("tuple output must retain its canonical schema");
+    };
+    assert_eq!(
+        elements.as_ref(),
+        [
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+        ]
     );
+    let ValueData::Tuple(elements) = value.data() else {
+        panic!("tuple bytecode must reconstruct its canonical payload");
+    };
+    assert_eq!(elements.len(), 2);
+    assert!(matches!(&elements[0], ValueData::F64(value) if value.to_f64() == 1.0));
+    assert!(matches!(&elements[1], ValueData::F64(value) if value.to_f64() == 2.0));
     Ok(())
 }
 
 #[test]
 #[cfg(feature = "distribution-full")]
-fn table_joins_remain_bytecode_v1_but_are_resident_target_gated() -> MResult<()> {
-    for (operator, expected_operation) in [
-        ("⋈", "join"),
-        ("⟕", "left-outer-join"),
-        ("⟖", "right-outer-join"),
-        ("⟗", "full-outer-join"),
-        ("⋉", "left-semi-join"),
-        ("▷", "left-anti-join"),
+fn canonical_table_joins_round_trip_and_execute_through_bytecode_v1() -> MResult<()> {
+    for (operator, expected_operation, expected_ids) in [
+        ("⋈", "join", &[2][..]),
+        ("⟕", "left-outer-join", &[1, 2][..]),
+        ("⟖", "right-outer-join", &[2, 3][..]),
+        ("⟗", "full-outer-join", &[1, 2, 3][..]),
+        ("⋉", "left-semi-join", &[2][..]),
+        ("▷", "left-anti-join", &[1][..]),
     ] {
         let source = format!(
             "a := |id<u64> x<u8>| 1 10 | 2 20 |\nb := |id<u64> y<u8>| 2 30 | 3 40 |\na {operator} b"
         );
         let bytecode = compile_source(&source)?;
-        let parsed = ParsedProgram::from_bytes(&bytecode)?;
-        parsed.decode_constants()?;
-        let artifact = decode_program_artifact_bytecode_v1(&bytecode).unwrap();
+        let artifact = decoded_source_artifact(&bytecode)?;
         let canonical = encode_program_artifact_bytecode_v1(&artifact).unwrap();
         let artifact = decode_program_artifact_bytecode_v1(&canonical).unwrap();
-        let error = preflight_resident_target(
+        let preflight = preflight_resident_target(
             &artifact,
             &mech::stdlib::source_catalog(),
             &ActivationFacts::default(),
             ResidentActivationOptions::default(),
         )
-        .unwrap_err();
-        assert_eq!(error.target, ExecutionTarget::ResidentCpu);
-        let operation = error.operation.as_ref().unwrap();
-        assert_eq!(operation.module_path.as_ref(), ["table"]);
-        assert_eq!(operation.operation_name, expected_operation);
-        assert!(
-            error.reason.contains("MissingResidentFactory"),
-            "unexpected table join preflight failure for {operator}: {error:?}",
+        .unwrap_or_else(|error| panic!("canonical {operator} preflight failed: {error:?}"));
+        let case = preflight
+            .concrete_cases
+            .iter()
+            .find(|case| {
+                case.operation.module_path.as_ref() == ["table"]
+                    && case.operation.operation_name == expected_operation
+            })
+            .expect("canonical table join must retain its exact resident capability");
+        assert_eq!(
+            case.targets.iter().collect::<Vec<_>>(),
+            [ExecutionTarget::ResidentCpu]
         );
+        assert_eq!(
+            result_source(&artifact),
+            operation_output(&artifact, &format!("table/{expected_operation}"), 2)
+        );
+
+        let mut runtime = RuntimeBuilder::new()
+            .function_catalog(mech::stdlib::source_catalog())
+            .build()?;
+        let loaded =
+            runtime.load_bytecode_program(&canonical, ResidentDurabilityPolicy::Volatile)?;
+        assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
+        let value = loaded.initial_value.into_value();
+        let table = value
+            .table_view()
+            .expect("join must reconstruct a canonical table");
+        let expected_columns: &[&str] =
+            if matches!(expected_operation, "left-semi-join" | "left-anti-join") {
+                &["id", "x"]
+            } else {
+                &["id", "x", "y"]
+            };
+        assert_eq!(table.len(), expected_columns.len());
+        let SchemaBody::Table { columns, .. } =
+            artifact.schemas().get(case.output_schema).unwrap().body()
+        else {
+            panic!("join output must retain its canonical table schema");
+        };
+        assert_eq!(
+            columns
+                .iter()
+                .map(|column| column.name.as_str())
+                .collect::<Vec<_>>(),
+            expected_columns
+        );
+        let SequenceView::U64(ids) = table.column(0).unwrap() else {
+            panic!("join must preserve its u64 key column");
+        };
+        assert_eq!(ids, expected_ids);
     }
     Ok(())
 }

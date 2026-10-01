@@ -67,14 +67,14 @@ cargo +nightly-2026-03-03 check --locked --no-default-features --features "${ROO
 
 echo "testing math dynamic provider"
 external_cargo "${MATH_LOCKFILE}" generate-lockfile --offline --manifest-path machines/math/Cargo.toml
-external_cargo "${MATH_LOCKFILE}" test --locked --offline --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module"
+external_cargo "${MATH_LOCKFILE}" test --locked --offline --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
 
 echo "building math dynamic provider"
 external_cargo "${MATH_LOCKFILE}" build --locked --offline --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
 
 echo "testing combinatorics dynamic provider"
 external_cargo "${COMBINATORICS_LOCKFILE}" generate-lockfile --offline --manifest-path machines/combinatorics/Cargo.toml
-external_cargo "${COMBINATORICS_LOCKFILE}" test --locked --offline --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module"
+external_cargo "${COMBINATORICS_LOCKFILE}" test --locked --offline --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
 
 echo "building combinatorics dynamic provider"
 external_cargo "${COMBINATORICS_LOCKFILE}" build --locked --offline --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"

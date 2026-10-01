@@ -55,8 +55,9 @@ impl ParsedProgram {
         constants::referenced_runtime_types(&self.types, &self.constants, &self.constant_blob)
     }
 
-    /// Largest canonical `Index` payload, read independently of this process's
-    /// pointer width for native cross-target validation.
+    /// Largest `Index` payload in the legacy constant sections, read
+    /// independently of this process's pointer width. Artifact-only callers
+    /// inspect the decoded artifact's canonical constant store instead.
     pub fn maximum_index_constant(&self) -> MResult<Option<u64>> {
         constants::maximum_index_constant(&self.types, &self.constants, &self.constant_blob)
     }

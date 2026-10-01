@@ -13,13 +13,11 @@ use std::time::{Duration, Instant};
 use colored::{ColoredString, Colorize};
 use ignore::WalkBuilder;
 use mech_browser::BrowserRuntimeInjectionConfig;
-use mech_core::{
-    GenericError, MResult, MechError, MechErrorKind, MechSourceCode, compress_and_encode,
-};
+use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode};
 use mech_runtime::{
-    DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
-    FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeConfig, RuntimeEvent,
-    RuntimeWorkspaceFolder, RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget,
+    BrowserDocumentPayload, DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ,
+    FS_RESOLVE, FS_SERVE, FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeConfig,
+    RuntimeEvent, RuntimeWorkspaceFolder, RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget,
     RuntimeWorkspaceWatchEvent, SERVE_HOST_SUBJECT, ServerWorkspaceSession, SourceKind,
     SourceResolutionEntry, check_fs_capability, validate_source_resolution_entries,
 };
@@ -463,19 +461,18 @@ impl ServerSourceRegistry {
                     backing_paths: vec![path.clone()],
                 },
             );
-            let fallback_tree = source
-                .syntax_tree
-                .is_none()
-                .then(|| parser::parse(&source_text));
-            let tree = match (source.syntax_tree.as_deref(), fallback_tree.as_ref()) {
-                (Some(tree), _) => Ok(tree),
-                (None, Some(tree)) => tree.as_ref(),
-                (None, None) => unreachable!("missing parsed-tree fallback"),
-            };
+            let tree = parser::parse(&source_text);
             match tree {
-                Ok(tree) => {
+                Ok(ref tree) => {
+                    let browser_payload =
+                        BrowserDocumentPayload::new(&logical_specifier, &source_text)?
+                            .with_presentation_output_ids(mech_engine::root_document_output_ids(
+                                tree,
+                            ))
+                            .encode()?;
                     let mut extra_slots = HtmlShimExtraSlots::default();
                     extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
+                    extra_slots.insert("CODE", browser_payload.clone());
                     extra_slots.insert(
                         "PRESENTATION",
                         self.document_presentation.as_str().to_string(),
@@ -523,9 +520,7 @@ impl ServerSourceRegistry {
                     self.code_sources.insert(
                         key.clone(),
                         ServerAsset {
-                            bytes: compress_and_encode(&tree)
-                                .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?
-                                .into_bytes(),
+                            bytes: browser_payload.into_bytes(),
                             content_type: "text/plain",
                             content_encoding: None,
                             backing_paths: vec![path.clone()],
@@ -2058,7 +2053,6 @@ impl MechErrorKind for Utf8ConversionError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{Program, decode_and_decompress};
     use mech_runtime::MECH_TOOL_SUBJECT;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -2566,6 +2560,47 @@ mod tests {
         let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
         assert!(html.contains("child-value"));
         assert!(html.contains("nested-value"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn custom_inline_shim_code_retains_exact_served_source() {
+        let root = temp_root("custom-inline-retained-source");
+        let source = "  answer := 42\n";
+        std::fs::write(root.join("main.mec"), source).unwrap();
+        let snapshot = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                "<script data-code>{{CODE}}</script>",
+                &[],
+            )
+            .unwrap();
+
+        let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        let encoded = html
+            .strip_prefix("<script data-code>")
+            .and_then(|html| html.strip_suffix("</script>"))
+            .expect("custom shim should contain only its encoded document payload");
+        let payload = BrowserDocumentPayload::decode(encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), source);
+        assert_eq!(
+            payload.presentation_output_ids(),
+            mech_engine::root_document_output_ids(&parser::parse(source).unwrap()),
+        );
+
+        let retained = mech_runtime::SourceDocument::parse_resolved(
+            payload.root_specifier(),
+            mech_syntax::document::Revision(0),
+            payload.source(),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        retained.index().unwrap();
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -3095,7 +3130,7 @@ mod tests {
     }
 
     #[test]
-    fn registry_distinguishes_source_text_and_encoded_compiled_code_routes() {
+    fn registry_distinguishes_source_text_and_encoded_document_routes() {
         let root = temp_root("html-code-routes");
         let source_text = "x := 1\n";
         std::fs::write(root.join("main.mec"), source_text).unwrap();
@@ -3112,8 +3147,13 @@ mod tests {
         let encoded = String::from_utf8(code.bytes).unwrap();
         assert_ne!(encoded, source_text);
         assert!(!encoded.contains("x := 1"));
-        let decoded: Program = decode_and_decompress(&encoded).unwrap();
-        assert_eq!(decoded, parser::parse(source_text).unwrap());
+        let decoded = BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(decoded.root_specifier(), "main.mec");
+        assert_eq!(decoded.source(), source_text);
+        assert_eq!(
+            decoded.presentation_output_ids(),
+            mech_engine::root_document_output_ids(&parser::parse(source_text).unwrap()),
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -4350,7 +4390,6 @@ mod tests {
                     path: Some(root.join("missing.mec")),
                     source: None,
                     source_document: None,
-                    syntax_tree: None,
                     module_version: None,
                     content_hash: 0,
                     modified_time: None,

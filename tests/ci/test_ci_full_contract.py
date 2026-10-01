@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
+import ast
+import html
 import json
+import os
 import re
+import shlex
 import subprocess
+import tempfile
 import textwrap
 import unittest
 from pathlib import Path
@@ -12,6 +17,27 @@ ROOT = Path(__file__).resolve().parents[2]
 CI = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 FULL = (ROOT / ".github/workflows/ci-full.yml").read_text(encoding="utf-8")
 NATIVE = (ROOT / ".github/workflows/ci-native-plan.yml").read_text(encoding="utf-8")
+NATIVE_APPLICATIONS = (ROOT / ".github/actions/native-applications/action.yml").read_text(encoding="utf-8")
+NATIVE_STABILIZATION = (ROOT / ".github/workflows/ci-native-stabilization.yml").read_text(encoding="utf-8")
+NATIVE_DETERMINISM = (
+    ROOT / "scripts/check-generated-project-determinism.py"
+).read_text(encoding="utf-8")
+NATIVE_APPLICATION_GRAPHS = (
+    ROOT / "scripts/check-native-application-graphs.py"
+).read_text(encoding="utf-8")
+NATIVE_GENERATED_END_TO_END = (
+    ROOT / "src/build/tests/native_generated_end_to_end.rs"
+).read_text(encoding="utf-8")
+NATIVE_PLANNING = (ROOT / "src/build/tests/planning.rs").read_text(encoding="utf-8")
+NBODY_BROWSER = (ROOT / "scripts/smoke-served-resident-nbody-browser.sh").read_text(
+    encoding="utf-8"
+)
+EKF_BROWSER = (ROOT / "scripts/smoke-served-resident-ekf-browser.sh").read_text(
+    encoding="utf-8"
+)
+BROWSER_HARNESS = (ROOT / "tests/browser/harness/chrome.py").read_text(
+    encoding="utf-8"
+)
 STATIC = (ROOT / "scripts/check-static-distribution-profiles.sh").read_text(
     encoding="utf-8"
 )
@@ -33,6 +59,24 @@ SIZE_PROFILES = (
     "full-compiler-tooling",
     "wasm-browser-project",
 )
+INTEGRATION_CHECKOUT_JOBS = {
+    "impact",
+    "standard-linux",
+    "changed-owner-tests",
+    "standard-windows",
+    "browser-standard-canary",
+    "browser-nbody-reference",
+}
+EXACT_HEAD_CHECKOUT_JOBS = {
+    "static-architecture",
+    "static-mutations",
+    "static-distribution",
+    "browser-compute-build",
+    "browser-compute-smoke",
+    "browser-ekf-cpu",
+    "browser-ekf-wgpu",
+    "browser-ekf-parity",
+}
 
 
 def job_block(source: str, job: str) -> str:
@@ -43,6 +87,36 @@ def job_block(source: str, job: str) -> str:
     if match is None:
         raise AssertionError(f"workflow job {job!r} is missing")
     return match.group("body")
+
+
+def job_steps(source: str, job: str) -> list[str]:
+    body = job_block(source, job).split("    steps:\n", 1)[1]
+    starts = [match.start() for match in re.finditer(r"(?m)^      - ", body)]
+    return [
+        body[start : starts[index + 1] if index + 1 < len(starts) else len(body)]
+        for index, start in enumerate(starts)
+    ]
+
+
+def checkout_jobs(source: str) -> set[str]:
+    return {
+        match.group(1)
+        for match in re.finditer(r"(?m)^  ([a-z0-9][a-z0-9-]*):\n", source)
+        if "uses: actions/checkout@" in job_block(source, match.group(1))
+    }
+
+
+def workflow_checkout_identity(source: str) -> str:
+    match = re.search(
+        r"(?ms)^env:\n  RECORD_CHECKOUT_IDENTITY: \|\n(?P<body>.*?)(?=^jobs:\n)",
+        source,
+    )
+    if match is None:
+        raise AssertionError("workflow-owned checkout identity verifier is missing")
+    return textwrap.dedent(match.group("body")).strip()
+
+
+CHECKOUT_IDENTITY = workflow_checkout_identity(CI)
 
 
 def normal_static_contracts() -> str:
@@ -62,6 +136,16 @@ def full_architecture_contracts() -> str:
         job_block(FULL, job)
         for job in ("architecture-contracts", "architecture-mutations")
     )
+
+
+def literal_assignment(source: str, name: str):
+    module = ast.parse(source)
+    for statement in module.body:
+        if not isinstance(statement, ast.Assign):
+            continue
+        if any(isinstance(target, ast.Name) and target.id == name for target in statement.targets):
+            return ast.literal_eval(statement.value)
+    raise AssertionError(f"assignment {name!r} is missing")
 
 
 class FullWorkflowContractTests(unittest.TestCase):
@@ -97,15 +181,287 @@ class FullWorkflowContractTests(unittest.TestCase):
         native = job_block(NATIVE, "native-plan")
         self.assertIn("ref: ${{ inputs.validation_ref }}", native)
         self.assertNotIn("continue-on-error", native)
-        pair = "cargo +nightly-2026-03-03 test -p mech-build --all-features --test registry_generated_project"
-        pruning = "cargo +nightly-2026-03-03 test -p mech-build --all-features --test native_host_pruning"
+        self.assertIn("Record exact native-plan checkout", native)
+        self.assertIn('expected=$(git rev-parse "$VALIDATION_REF^{commit}")', native)
+        self.assertIn('test "$actual" = "$expected"', native)
+        self.assertIn('CARGO_BUILD_JOBS: "1"', native)
+        self.assertIn('CARGO_PROFILE_DEV_DEBUG: "0"', native)
+        self.assertIn('CARGO_PROFILE_TEST_DEBUG: "0"', native)
+        pair = "cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test registry_generated_project"
+        wrapper = "cargo +nightly-2026-03-03 test --locked -p mech-build --test isolated_process -- --nocapture"
+        planning_compile = "--test planning --no-run --message-format=json-render-diagnostics"
+        planning_prepare = "--ignored --exact prepare_planning_owner_runners --test-threads=1 --nocapture"
+        planning = "--stage 02-planning-execution"
+        pruning = "cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test native_host_pruning"
+        self.assertLess(native.index(pair), native.index(wrapper))
+        self.assertLess(native.index(wrapper), native.index(planning_compile))
+        self.assertLess(native.index(planning_compile), native.index(planning_prepare))
+        self.assertLess(native.index(planning_prepare), native.index(planning))
+        self.assertLess(native.index(planning), native.index(pruning))
         self.assertLess(native.index(pair), native.index(pruning))
-        self.assertEqual(re.findall(r"--skip ([a-z_]+)", native), [
-            "registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch",
-            "live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure",
-        ])
+        bounded = "cargo +nightly-2026-03-03 test --locked -p mech-build --all-features"
+        self.assertEqual(native.count(bounded), 3)
+        self.assertIn("cargo +nightly-2026-03-03 test --locked --offline -p mech-build --all-features", native)
+        self.assertIn("--lib", native)
+        self.assertIn("--test standard_host_source_planning", native)
+        self.assertIn("Verify native build planning contracts", native)
+        self.assertIn("witness=actor-retirement,artifact-closure", native)
+        self.assertNotIn("--skip", native)
+        for expensive_target in (
+            "native_literal",
+            "native_scalar",
+            "native_representative_families",
+            "native_output_seed_arities",
+            "native_generated_arguments",
+            "native_generated_end_to_end",
+        ):
+            self.assertNotIn(f"--test {expensive_target}", native)
+        stages = (
+            ("Verify native host pruning", pruning),
+            ("Verify standard host source planning", "--test standard_host_source_planning"),
+            ("Verify native host catalog", "python3 scripts/check-native-host-catalog.py"),
+            ("Verify generated project determinism", "python3 scripts/check-generated-project-determinism.py"),
+            ("Verify native application graphs", "python3 scripts/check-native-application-graphs.py"),
+        )
+        previous = -1
+        for name, witness in stages:
+            self.assertIn(f"- name: {name}", native)
+            position = native.index(witness)
+            self.assertGreater(position, previous)
+            previous = position
         for script in ("check-native-host-catalog.py", "check-generated-project-determinism.py", "check-native-application-graphs.py"):
             self.assertIn(f"python3 scripts/{script}", native)
+        self.assertNotIn("Verify bounded native planning and generation", native)
+        self.assertIn("Verify native owner subprocess wrapper", native)
+        self.assertIn(
+            "cases=hang,parent-death,failed-parent-tree,nonzero,malformed-json", native
+        )
+        self.assertEqual(native.count("python3 scripts/run-native-plan-stage.py"), 12)
+        self.assertNotIn("pipeline_status", native)
+        self.assertIn("Retain native-plan diagnostics", native)
+        self.assertIn("target/native-plan-logs", native)
+        self.assertIn("target/bytecode-v1-fixtures/owner-runner/logs", native)
+        self.assertIn("if: always()", native)
+        self.assertIn("retention-days: 14", native)
+
+    def test_planning_preparation_execution_and_deadlines_remain_separate(self):
+        steps = job_steps(NATIVE, "native-plan")
+        def named(name):
+            return next(step for step in steps if f"- name: {name}\n" in step)
+        compile_step = named("Compile native planning contracts without execution")
+        prepare_step = named("Prepare exactly the planning owner profiles")
+        execution_step = named("Verify native build planning contracts")
+        self.assertIn("--record-test-executable planning", compile_step)
+        self.assertIn("--no-run", compile_step)
+        for step in (prepare_step, execution_step):
+            self.assertIn("--test-executable-file target/native-plan-logs/planning-executable", step)
+            self.assertNotIn("cargo +", step)
+        self.assertIn("--ignored --exact prepare_planning_owner_runners", prepare_step)
+        self.assertIn("&[OwnerProfile::Standard, OwnerProfile::Fixed]", NATIVE_PLANNING)
+        self.assertIn('MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"', execution_step)
+        self.assertIn("--test-threads=1 --nocapture", execution_step)
+        self.assertNotIn("--ignored", execution_step)
+        self.assertNotIn("--exact", execution_step)
+        self.assertNotIn("--skip", execution_step)
+        build_timeout = int(re.search(r'MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "(\d+)"', prepare_step).group(1))
+        prepare_timeout = int(re.search(r"--timeout-secs (\d+)", prepare_step).group(1))
+        # Both serial profile builds and host discovery/reaping fit before the
+        # outer boundary; that boundary also leaves room before Actions expiry.
+        self.assertGreater(prepare_timeout, 2 * build_timeout + 2 * (30 + 10))
+        for step in steps:
+            if "python3 scripts/run-native-plan-stage.py" in step:
+                command_timeouts = [int(value) for value in re.findall(r"--timeout-secs (\d+)", step)]
+                actions_timeout = int(re.search(r"timeout-minutes: (\d+)", step).group(1)) * 60
+                self.assertGreater(actions_timeout, sum(value + 30 + 5 + 15 for value in command_timeouts))
+        for stage, checkpoint in (
+            (compile_step, "Retain native planning compilation evidence"),
+            (prepare_step, "Retain native planning preparation evidence"),
+            (execution_step, "Retain native planning execution evidence before the next stage"),
+        ):
+            retained = steps[steps.index(stage) + 1]
+            self.assertIn(checkpoint, retained)
+            self.assertIn("if: always()", retained)
+            self.assertIn("target/native-plan-logs", retained)
+            self.assertIn("target/bytecode-v1-fixtures/owner-runner/logs", retained)
+        self.assertIn("python3 -B scripts/tests/test_native_plan_stage.py", NATIVE)
+
+    def test_native_metadata_subprocess_contracts_run_before_generation(self):
+        steps = job_steps(NATIVE, "native-plan")
+        name = "Verify native metadata subprocess contracts"
+        metadata_steps = [step for step in steps if f"- name: {name}\n" in step]
+        self.assertEqual(len(metadata_steps), 1)
+        metadata = metadata_steps[0]
+        self.assertRegex(metadata, r"(?m)^        timeout-minutes: 2$")
+        self.assertRegex(
+            metadata,
+            r"(?m)^        run: python3 -B scripts/tests/test_native_application_graphs\.py$",
+        )
+        self.assertNotIn("continue-on-error", metadata)
+        self.assertNotRegex(metadata, r"(?m)^        if:")
+        position = steps.index(metadata)
+        for generation_name in (
+            "Verify registry projects and live shutdown first",
+            "Verify generated project determinism",
+            "Verify native application graphs",
+        ):
+            generation = next(
+                step for step in steps if f"- name: {generation_name}\n" in step
+            )
+            self.assertLess(position, steps.index(generation))
+
+    def test_native_generated_contracts_share_all_exact_case_identities(self):
+        cases = literal_assignment(NATIVE_DETERMINISM, "EXPECTED_CASES")
+        features = literal_assignment(NATIVE_APPLICATION_GRAPHS, "EXPECTED_FEATURES")
+        graph_cases = literal_assignment(NATIVE_APPLICATION_GRAPHS, "EXPECTED_CASES")
+        self.assertEqual(
+            cases,
+            {
+                "literal": "generated_native_literal",
+                "scalar": "generated_native_scalar",
+                "unary": "generated_native_unary",
+                "ternary": "generated_native_ternary",
+                "quaternary": "generated_native_quaternary",
+                "variadic": "generated_native_variadic",
+                "integrity": "generated_native_integrity",
+                "canonical-artifact-features": "generated_native_canonical_artifact_features",
+                "fixed-matrix": "generated_native_fixed_matrix",
+                "dynamic-matrix": "generated_native_dynamic_matrix",
+                "cli": "generated_native_cli",
+                "console": "generated_native_console",
+                "time-once": "generated_native_time",
+                "timer-once": "generated_native_timer",
+                "scene": "generated_native_scene",
+                "robot-arm": "generated_native_robot_arm",
+            },
+        )
+        self.assertEqual(graph_cases, cases)
+        self.assertEqual(set(cases.values()), set(features))
+        canonical = features["generated_native_canonical_artifact_features"]
+        self.assertEqual(
+            canonical,
+            {
+                "mech-core": {"f32", "f64", "matrix2x3", "program", "u8"},
+                "mech-engine": {"convert", "f32", "f64", "matrix2x3", "runtime", "u8"},
+                "mech-runtime": {
+                    "f32",
+                    "f64",
+                    "matrix2x3",
+                    "resident-routing",
+                    "runtime",
+                    "string",
+                    "u8",
+                },
+            },
+        )
+        self.assertIn('environment.pop("MECH_NATIVE_GENERATED_CASE", None)', NATIVE_APPLICATION_GRAPHS)
+        self.assertIn('"--locked"', NATIVE_APPLICATION_GRAPHS)
+        self.assertIn('"--offline"', NATIVE_APPLICATION_GRAPHS)
+        self.assertIn("execute_streamed(", NATIVE_APPLICATION_GRAPHS)
+        self.assertIn("PROJECT_MARKER", NATIVE_APPLICATION_GRAPHS)
+        self.assertIn("case={case} profile={profile} stage=metadata", NATIVE_APPLICATION_GRAPHS)
+        self.assertIn("environment.pop(CASE_SELECTOR_ENV, None)", NATIVE_DETERMINISM)
+        self.assertIn("tempfile.TemporaryDirectory", NATIVE_DETERMINISM)
+        self.assertIn('generate(projects_root, "first")', NATIVE_DETERMINISM)
+        self.assertIn('generate(projects_root, "second")', NATIVE_DETERMINISM)
+
+    def test_generated_program_selectors_are_live_and_fail_closed(self):
+        generated_commands = re.findall(
+            r"cargo \+nightly-2026-03-03 test --locked --offline "
+            r"-p mech-build --features full-hosts\s*(?:\\\s*)?"
+            r"--test native_generated_end_to_end",
+            FULL + NATIVE_APPLICATIONS,
+        )
+        self.assertEqual(len(generated_commands), 5)
+
+        windows = job_block(FULL, "native-windows")
+        self.assertNotIn("actor-alpha", windows)
+        self.assertNotIn("actor-beta", windows)
+        self.assertIn(
+            '$cases = @("scalar", "fixed-matrix", "dynamic-matrix", "cli", "console", "time-once")',
+            windows,
+        )
+        self.assertIn("Validate Windows owner-process containment", windows)
+        self.assertIn("--test isolated_process -- --nocapture", windows)
+        qualification = "Compile required Windows owner-helper consumers"
+        self.assertIn(qualification, windows)
+        for command in (
+            "cargo +nightly-2026-03-03 test --locked --offline -p mech-build --test isolated_process --no-run",
+            "cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end --no-run",
+        ):
+            self.assertIn(command, windows)
+            self.assertLess(windows.index(command), windows.index("Validate Windows owner-process containment"))
+            self.assertLess(windows.index(command), windows.index("Build selected native fixture families"))
+        self.assertIn('#![cfg(feature = "full-hosts")]', NATIVE_GENERATED_END_TO_END)
+        self.assertIn("assert_eq!(", NATIVE_GENERATED_END_TO_END)
+        self.assertIn("matched, requested", NATIVE_GENERATED_END_TO_END)
+        self.assertIn(
+            "production_builder_rejects_actor_bootstrap_before_planning",
+            NATIVE_PLANNING,
+        )
+        native = job_block(NATIVE, "native-plan")
+        self.assertIn("--test planning --no-run --message-format=json-render-diagnostics", native)
+        self.assertIn("--stage 02-planning-execution", native)
+
+        engine = job_block(FULL, "native-engine")
+        self.assertIn("uses: ./.github/actions/native-applications", engine)
+        self.assertIn("suite: engine", engine)
+        grouped = (
+            "cargo +nightly-2026-03-03 test --locked --offline "
+            "-p mech-build --features full-hosts"
+        )
+        application_commands = " ".join(NATIVE_APPLICATIONS.replace("\\\n", " ").split())
+        self.assertEqual(application_commands.count(grouped), 4)
+        for target in (
+            "native_literal",
+            "native_scalar",
+            "native_representative_families",
+            "native_output_seed_arities",
+            "native_generated_arguments",
+        ):
+            self.assertIn(f"--test {target}", application_commands)
+
+        hosted = job_block(FULL, "native-hosted")
+        self.assertIn("uses: ./.github/actions/native-applications", hosted)
+        self.assertIn("suite: hosted", hosted)
+        self.assertIn(
+            f"{grouped} --test native_cli_hosted",
+            application_commands,
+        )
+        self.assertIn(
+            "cargo +nightly-2026-03-03 test --locked --offline "
+            "-p mech-build --features full-hosts --test native_generated_end_to_end",
+            application_commands,
+        )
+        self.assertIn("MECH_NATIVE_GENERATED_CASE: console", NATIVE_APPLICATIONS)
+        self.assertIn("--lib cli::app::tests::build_", NATIVE_APPLICATIONS)
+        self.assertIn("--test mech_build", NATIVE_APPLICATIONS)
+
+    def test_affected_native_commands_retain_each_stage_and_reuse_same_recipe(self):
+        stages = re.split(r"(?m)^    - name: ", NATIVE_APPLICATIONS)[1:]
+        bounded = [stage for stage in stages if "python3 scripts/run-native-plan-stage.py" in stage]
+        self.assertEqual(len(bounded), 6)
+        for stage in bounded:
+            following = stages[stages.index(stage) + 1]
+            self.assertIn("if: always()", following)
+            self.assertIn("uses: actions/upload-artifact@v4", following)
+            self.assertIn("target/native-plan-logs", following)
+            self.assertIn("target/bytecode-v1-fixtures/owner-runner/logs", following)
+        self.assertNotIn("--skip", NATIVE_APPLICATIONS)
+        self.assertNotIn("continue-on-error", NATIVE_APPLICATIONS)
+        self.assertIn("branches: [codex/r21-native-stabilization]", NATIVE_STABILIZATION)
+        self.assertIn("suite: [engine, hosted]", NATIVE_STABILIZATION)
+        self.assertEqual(NATIVE_STABILIZATION.count("uses: ./.github/actions/native-applications"), 2)
+        self.assertIn("phase: cold", NATIVE_STABILIZATION)
+        self.assertIn("phase: reuse", NATIVE_STABILIZATION)
+        self.assertIn("verify_reuse: true", NATIVE_STABILIZATION)
+        for job in ("native-plan", "applications"):
+            self.assertIn("needs: harness", job_block(NATIVE_STABILIZATION, job))
+        self.assertIn("python3 scripts/probe-unix-kill-targeting.py", NATIVE_STABILIZATION)
+        reuse = next(step for step in job_steps(NATIVE, "native-plan")
+                     if "- name: Verify fresh-process owner reuse and planning execution" in step)
+        self.assertIn("if: inputs.verify_reuse", reuse)
+        self.assertIn('MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"', reuse)
+        self.assertIn("--stage 02-planning-reuse-execution", reuse)
 
     def test_native_plan_handoff_gates_fail_closed(self):
         def accepts(block, **overrides):
@@ -190,6 +546,11 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_browser_suites_run_in_parallel_behind_one_required_gate(self):
         standard = job_block(CI, "browser-standard-canary")
         nbody = job_block(CI, "browser-nbody-reference")
+        compute_build = job_block(CI, "browser-compute-build")
+        compute_smoke = job_block(CI, "browser-compute-smoke")
+        ekf_cpu = job_block(CI, "browser-ekf-cpu")
+        ekf_wgpu = job_block(CI, "browser-ekf-wgpu")
+        ekf_parity = job_block(CI, "browser-ekf-parity")
         compute = job_block(CI, "browser-compute-canary")
         aggregate = job_block(CI, "browser-canary")
 
@@ -197,10 +558,23 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("Verify resident rendering without browser errors", standard)
         self.assertNotIn("Verify N-body physics against independent references", standard)
         self.assertIn("Verify N-body physics against independent references", nbody)
-        self.assertIn("Build mixed compute WASM and refresh the server", compute)
-        self.assertIn("--profile browser-compute-canary", compute)
-        self.assertIn("Verify report-only particle WebGPU execution", compute)
-        self.assertIn("Verify scalar and WebGPU EKF rendering", compute)
+        self.assertIn("Build mixed compute WASM and refresh the server", compute_build)
+        self.assertIn("--profile browser-compute-canary", compute_build)
+        self.assertIn("browser-compute-canary-build", compute_build)
+        self.assertIn("Verify report-only particle WebGPU execution", compute_smoke)
+        self.assertIn("Verify scalar EKF rendering", ekf_cpu)
+        self.assertIn("Verify WebGPU EKF rendering", ekf_wgpu)
+        self.assertIn("scripts/check-ekf-browser-results.py", ekf_parity)
+        for dependency in (
+            "browser-compute-build",
+            "browser-compute-smoke",
+            "browser-ekf-cpu",
+            "browser-ekf-wgpu",
+            "browser-ekf-parity",
+        ):
+            self.assertIn(f"- {dependency}", compute)
+        for result in ("BUILD", "SMOKE", "CPU", "WGPU", "PARITY"):
+            self.assertIn(f'test "${result}_RESULT" = success', compute)
         self.assertIn("Smoke test rich served documents before full validation", standard)
         self.assertIn("smoke-served-rich-document-browser.sh", standard)
         project_browser = job_block(FULL, "project-browser")
@@ -217,14 +591,168 @@ class FullWorkflowContractTests(unittest.TestCase):
 
         self.assertIn("smoke-served-resident-nbody-browser.sh", standard)
         self.assertNotIn("smoke-gpu-particles-browser.py", standard)
-        self.assertIn("smoke-gpu-particles-browser.py", compute)
-        self.assertIn("smoke-served-resident-ekf-browser.sh", compute)
+        self.assertIn("smoke-gpu-particles-browser.py", compute_smoke)
+        self.assertIn("smoke-served-resident-ekf-browser.sh", ekf_cpu)
+        self.assertIn("smoke-served-resident-ekf-browser.sh", ekf_wgpu)
         self.assertNotIn("smoke-served-resident-nbody-browser.sh", compute)
+
+    def test_long_browser_canaries_use_progress_watchdogs_with_hard_caps(self):
+        static_architecture = job_block(CI, "static-architecture")
+        self.assertIn(
+            "tests.browser.harness.test_completion_server", static_architecture
+        )
+        self.assertIn("if message in progress:", BROWSER_HARNESS)
+        self.assertIn("deadline = min(deadline, max_deadline)", BROWSER_HARNESS)
+        self.assertIn("last progress", BROWSER_HARNESS)
+        self.assertIn("no progress beacon was received", BROWSER_HARNESS)
+        self.assertIn('progress=("nbody-progress",)', NBODY_BROWSER)
+        self.assertIn("max_timeout=600", NBODY_BROWSER)
+        self.assertIn('progress=("ekf-terminal-progress",)', EKF_BROWSER)
+        self.assertIn('progress=("ekf-progress",)', EKF_BROWSER)
+        self.assertIn("max_timeout=900", EKF_BROWSER)
+        for milestone in (
+            "document-ready",
+            "first-compute-submit",
+            "first-compute-completion",
+            "compute-checkpoint-",
+            "continuity-post-edit-turn-complete",
+            "parity-turn-complete",
+            "continuity-replacement-accepted",
+            "incompatible-replacement-accepted",
+            "shutdown-completed",
+        ):
+            self.assertIn(milestone, EKF_BROWSER)
+
+    def test_ekf_failure_diagnostics_are_not_numerical_evidence(self):
+        for backend, label in (("cpu", "scalar"), ("wgpu", "WebGPU")):
+            with self.subTest(backend=backend):
+                steps = job_steps(CI, f"browser-ekf-{backend}")
+                evidence = next(
+                    step for step in steps
+                    if f"name: Upload {label} EKF evidence" in step
+                )
+                diagnostics = next(
+                    step for step in steps
+                    if f"name: Retain {label} EKF failure diagnostics" in step
+                )
+                self.assertNotRegex(evidence, r"(?m)^        if:")
+                self.assertIn(f"name: browser-ekf-{backend}-results\n", evidence)
+                self.assertIn("if-no-files-found: error", evidence)
+                self.assertIn("if: always()", diagnostics)
+                self.assertIn("uses: actions/upload-artifact@v4", diagnostics)
+                self.assertIn(f"name: browser-ekf-{backend}-diagnostics-", diagnostics)
+                self.assertIn("path: target/served-resident-ekf-browser.*", diagnostics)
+                self.assertNotIn("-results", diagnostics)
+                self.assertGreater(steps.index(diagnostics), steps.index(evidence))
+        for field in (
+            "mechGpuBindingInventory", "mechGpuRequiredStorageBindings",
+            "mechGpuSupportedStorageBindings", "mechGpuBridgeError",
+        ):
+            self.assertIn(f"root.dataset.{field}", EKF_BROWSER)
+            self.assertIn(f'dataset.get("{field}", "")', EKF_BROWSER)
+        self.assertIn('2>"$harness_log"', EKF_BROWSER)
+
+    def test_ekf_terminal_probe_reaps_its_browser_before_numerical_launch(self):
+        terminal = EKF_BROWSER.index('"terminal compute submission proof failed:')
+        close = EKF_BROWSER.index("            browser.close()", terminal)
+        restart = EKF_BROWSER.index("            browser = ChromeSession", close)
+        numerical = EKF_BROWSER.index('"the fresh numeric EKF document to commit"', restart)
+        self.assertLess(terminal, close)
+        self.assertLess(close, restart)
+        self.assertLess(restart, numerical)
+        self.assertIn('"terminal-probe.json"', EKF_BROWSER[terminal:numerical])
+        self.assertIn('"terminal.chrome.stderr"', EKF_BROWSER[terminal:numerical])
+        self.assertIn('"EKF_TERMINAL_SUBMIT"', EKF_BROWSER[terminal:numerical])
+
+    def test_ekf_cleanup_keeps_failed_artifacts_and_preserves_exit_status(self):
+        match = re.search(
+            r"(?ms)^cleanup\(\) \{\n.*?^\}\n(?=trap cleanup EXIT)", EKF_BROWSER,
+        )
+        self.assertIsNotNone(match)
+        capability_error = (
+            "region ekf-batch requires 12 for maxStorageBuffersPerShaderStage, "
+            "but this adapter supports 10"
+        )
+        inventory = json.dumps([{"binding": 0, "name": "state_read", "access": "read"}])
+        for status in (0, 27):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                project = directory / "project"
+                browser = directory / "browser"
+                profile = browser / "chrome-profile"
+                project.mkdir()
+                profile.mkdir(parents=True)
+                (profile / "private-profile-data").write_text("discard profile")
+                (browser / "server.log").write_text("server diagnostics\n")
+                (browser / "chrome.stderr").write_text("adapter diagnostics\n")
+                (browser / "harness.stderr").write_text("bridge creation failed\n")
+                (browser / "chrome.dom").write_text(
+                    '<html data-mech-compute-dispatches="0" '
+                    f'data-mech-document-error="{html.escape(capability_error)}" '
+                    f'data-mech-gpu-binding-inventory="{html.escape(inventory)}">'
+                    "<head></head><body></body></html>\n"
+                )
+                script = "\n".join((
+                    "set -euo pipefail",
+                    f"project_dir={shlex.quote(str(project))}",
+                    f"browser_dir={shlex.quote(str(browser))}",
+                    f"chrome_profile={shlex.quote(str(profile))}",
+                    "server_pid=''",
+                    "compute_backend=wgpu",
+                    "filter_count=1000",
+                    "continuity_edit=false",
+                    "terminal_submit_probe=false",
+                    match.group(),
+                    "trap cleanup EXIT",
+                    f"exit {status}",
+                ))
+                result = subprocess.run(
+                    ["bash", "--noprofile", "--norc", "-c", script], cwd=ROOT,
+                    text=True, capture_output=True, timeout=30,
+                )
+                self.assertEqual(result.returncode, status, result.stderr)
+                self.assertFalse(project.exists())
+                if status == 0:
+                    self.assertFalse(browser.exists())
+                    continue
+                self.assertFalse(profile.exists())
+                self.assertIn(f"Retained EKF failure diagnostics: {browser}", result.stderr)
+                self.assertTrue((browser / "chrome.stderr").exists())
+                self.assertTrue((browser / "harness.stderr").exists())
+                failure = json.loads((browser / "failure.json").read_text())
+                self.assertEqual(failure["outcome"], "failed")
+                self.assertEqual(failure["exit_status"], status)
+                self.assertEqual(failure["requested_backend"], "wgpu")
+                self.assertRegex(failure["revision"], r"^[0-9a-f]{40}$")
+                self.assertEqual(
+                    failure["dataset"]["data-mech-document-error"], capability_error,
+                )
+                self.assertEqual(
+                    failure["dataset"]["data-mech-gpu-binding-inventory"], inventory,
+                )
+                self.assertEqual(failure["dataset"]["data-mech-compute-dispatches"], "0")
+                self.assertNotIn("output", failure)
+                self.assertFalse((directory / "ekf-wgpu-no-edit.json").exists())
 
     def test_engine_owner_runs_source_semantics_before_full_validation(self):
         owners = (ROOT / ".github/ci/owners.toml").read_text(encoding="utf-8")
         engine = owners.split("[owners.mech-engine]", 1)[1].split("\n[owners.", 1)[0]
         self.assertIn('"--test", "canonical_source_semantics"', engine)
+
+    def test_runtime_compute_contracts_execute_mixed_source_tests(self):
+        cargo_language = job_block(FULL, "cargo-language")
+        self.assertIn(
+            "Verify mixed-source compute admission contracts", cargo_language
+        )
+        self.assertIn(
+            "--no-default-features --features full_compiler,watcher,compute",
+            cargo_language,
+        )
+        self.assertIn("MIXED_TEST_LIST=$(cargo", cargo_language)
+        self.assertIn("MIXED_TEST_COUNT=$(", cargo_language)
+        self.assertIn("/: test$/", cargo_language)
+        self.assertIn('test "$MIXED_TEST_COUNT" -gt 0', cargo_language)
+        self.assertIn("--lib mixed_ -- --nocapture", cargo_language)
 
     def test_pr_full_validation_receives_exact_head(self):
         block = job_block(CI, "full-validation")
@@ -235,6 +763,104 @@ class FullWorkflowContractTests(unittest.TestCase):
             "rich_browser_smoke_in_caller: ${{ needs.impact.outputs.browser_canary_required == 'true' }}",
             block,
         )
+
+    def test_windows_cache_never_skips_the_current_product_or_source_smoke(self):
+        steps = job_steps(CI, "standard-windows")
+        cache_index = next(
+            index for index, step in enumerate(steps)
+            if "Mozilla-Actions/sccache-action@" in step
+        )
+        toolchain_index = next(
+            index for index, step in enumerate(steps)
+            if "rustup default nightly-2026-03-03" in step
+        )
+        build_index = next(
+            index for index, step in enumerate(steps)
+            if "./scripts/build-mech.ps1" in step
+        )
+        self.assertLess(toolchain_index, cache_index)
+        self.assertLess(cache_index, build_index)
+        build = steps[build_index]
+        self.assertNotRegex(build, r"(?m)^\s+if:")
+        self.assertNotIn("continue-on-error", build)
+        self.assertIn("target/release/mech.exe --version", build)
+        self.assertIn(
+            "target/release/mech.exe run tests/fixtures/standard-resident-scalar.mec",
+            build,
+        )
+        producer = (ROOT / "scripts/build-mech.ps1").read_text(encoding="utf-8")
+        wasm = producer.index("python scripts/build-wasm.py --profile browser-compute")
+        native = producer.index("cargo build --locked --release --features compute_backends_native")
+        self.assertLess(wasm, native)
+        self.assertIn("Remove-Item $nativeArtifact -Force", producer)
+
+    def test_windows_compiler_cache_preserves_failures_and_partial_dependency_reuse(self):
+        block = job_block(CI, "standard-windows")
+        self.assertIn("CARGO_INCREMENTAL: 0", block)
+        self.assertIn("RUSTC_WRAPPER: sccache", block)
+        self.assertIn('SCCACHE_GHA_ENABLED: "true"', block)
+        # Cache-server I/O failures fall back to rustc, never suppress its errors.
+        self.assertIn('SCCACHE_IGNORE_SERVER_IO_ERROR: "1"', block)
+        dependencies = next(
+            step for step in job_steps(CI, "standard-windows")
+            if "Swatinem/rust-cache@" in step
+        )
+        self.assertIn('cache-on-failure: "true"', dependencies)
+        self.assertIn('cache-workspace-crates: "false"', dependencies)
+        self.assertNotIn("continue-on-error", block)
+
+    def test_full_validation_stops_on_cancellation_and_keeps_selected_dependency_gates(self):
+        block = job_block(CI, "full-validation")
+        condition = re.search(r"(?s)    if: >-\n\s*\$\{\{(.*?)\}\}", block).group(1)
+        self.assertIn("!cancelled()", condition)
+
+        def selected(cancelled=False, **overrides):
+            values = {
+                "needs.impact.outputs.full_validation_required": "true",
+                "needs.impact.outputs.docs_only": "false",
+                "needs.static-contracts.result": "success",
+                "needs.standard-linux.result": "success",
+                "needs.standard-windows.result": "success",
+                "needs.changed-owner-tests.result": "success",
+                "needs.browser-canary.result": "success",
+            }
+            values.update(overrides)
+            expression = re.sub(
+                r"needs\.[a-z-]+\.(?:outputs\.[a-z_]+|result)",
+                lambda match: repr(values[match.group()]), condition,
+            )
+            expression = expression.replace("cancelled()", repr(cancelled)).replace("always()", "True")
+            expression = expression.replace("&&", " and ").replace("||", " or ")
+            expression = re.sub(r"!(?!=)", " not ", expression)
+            expression = " ".join(expression.split())
+            return eval(expression, {"__builtins__": {}}, {})
+
+        self.assertTrue(selected())
+        self.assertFalse(selected(cancelled=True))
+        self.assertFalse(selected(**{"needs.impact.outputs.full_validation_required": "false"}))
+        skipped_optional = {
+            "needs.changed-owner-tests.result": "skipped",
+            "needs.browser-canary.result": "skipped",
+        }
+        self.assertTrue(selected(**skipped_optional))
+        self.assertFalse(selected(cancelled=True, **skipped_optional))
+        skipped_docs = {
+            "needs.impact.outputs.docs_only": "true",
+            **{f"needs.{job}.result": "skipped" for job in (
+                "static-contracts", "standard-linux", "standard-windows",
+                "changed-owner-tests", "browser-canary",
+            )},
+        }
+        self.assertTrue(selected(**skipped_docs))
+        self.assertFalse(selected(cancelled=True, **skipped_docs))
+        for job in ("static-contracts", "standard-linux", "standard-windows",
+                    "changed-owner-tests", "browser-canary"):
+            for result in ("failure", "cancelled"):
+                with self.subTest(job=job, result=result):
+                    self.assertFalse(selected(**{f"needs.{job}.result": result}))
+        for job in ("static-contracts", "standard-linux", "standard-windows"):
+            with self.subTest(job=job, result="skipped"):
+                self.assertFalse(selected(**{f"needs.{job}.result": "skipped"}))
 
     def test_reusable_workflow_declares_ref_and_falls_back_for_other_invocations(self):
         self.assertRegex(
@@ -261,6 +887,169 @@ class FullWorkflowContractTests(unittest.TestCase):
                         for line in lines[index + 1 : index + 5]
                     )
                 )
+
+    def test_normal_ci_checkout_roles_are_explicit_and_recorded(self):
+        self.assertEqual(
+            checkout_jobs(CI),
+            INTEGRATION_CHECKOUT_JOBS | EXACT_HEAD_CHECKOUT_JOBS,
+        )
+        roles = (
+            (
+                INTEGRATION_CHECKOUT_JOBS,
+                "integration-merge",
+                "${{ github.sha }}",
+            ),
+            (
+                EXACT_HEAD_CHECKOUT_JOBS,
+                "exact-head",
+                "${{ github.event.pull_request.head.sha }}",
+            ),
+        )
+        for jobs, validation_kind, requested_ref in roles:
+            for job in jobs:
+                with self.subTest(job=job, validation_kind=validation_kind):
+                    steps = job_steps(CI, job)
+                    checkout_indexes = [
+                        index
+                        for index, step in enumerate(steps)
+                        if "uses: actions/checkout@" in step
+                    ]
+                    self.assertEqual(checkout_indexes, [0])
+                    checkout = steps[0]
+                    recorder = steps[1]
+                    self.assertIn("id: checkout", checkout)
+                    self.assertIn(f"ref: {requested_ref}", checkout)
+                    self.assertIn(f"VALIDATION_KIND: {validation_kind}", recorder)
+                    self.assertIn(f"REQUESTED_REF: {requested_ref}", recorder)
+                    self.assertIn(
+                        "CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}", recorder
+                    )
+                    self.assertIn(
+                        "CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}",
+                        recorder,
+                    )
+                    self.assertIn(
+                        'run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"',
+                        recorder,
+                    )
+                    self.assertIn("shell: bash", recorder)
+                    self.assertNotIn("uses: ./.github/actions/", recorder)
+
+    def test_full_ci_checkouts_are_exact_ref_and_recorded_immediately(self):
+        jobs = checkout_jobs(FULL)
+        self.assertEqual(len(jobs), 37)
+        for job in jobs:
+            with self.subTest(job=job):
+                steps = job_steps(FULL, job)
+                checkout_indexes = [
+                    index
+                    for index, step in enumerate(steps)
+                    if "uses: actions/checkout@" in step
+                ]
+                self.assertEqual(checkout_indexes, [0])
+                checkout = steps[0]
+                recorder = steps[1]
+                self.assertIn("id: checkout", checkout)
+                self.assertIn(FULL_CHECKOUT_REF, checkout)
+                self.assertIn("VALIDATION_KIND: exact-ref", recorder)
+                self.assertIn(
+                    "REQUESTED_REF: ${{ inputs.validation_ref || github.sha }}",
+                    recorder,
+                )
+                self.assertIn(
+                    "CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}", recorder
+                )
+                self.assertIn(
+                    "CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}", recorder
+                )
+                self.assertIn(
+                    'run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"',
+                    recorder,
+                )
+                self.assertIn("shell: bash", recorder)
+                self.assertNotIn("uses: ./.github/actions/", recorder)
+
+    def test_checkout_identity_recorder_is_fail_closed_and_auditable(self):
+        self.assertEqual(CHECKOUT_IDENTITY, workflow_checkout_identity(FULL))
+        for validation_kind in ("integration-merge", "exact-head", "exact-ref"):
+            self.assertIn(validation_kind, CHECKOUT_IDENTITY)
+        self.assertIn("actual_sha=$(git rev-parse HEAD)", CHECKOUT_IDENTITY)
+        self.assertIn('test -n "$REQUESTED_REF"', CHECKOUT_IDENTITY)
+        self.assertIn('test -n "$CHECKOUT_SHA"', CHECKOUT_IDENTITY)
+        self.assertIn(
+            'test "$actual_sha" = "$CHECKOUT_SHA"', CHECKOUT_IDENTITY
+        )
+        self.assertIn(
+            'test "$actual_sha" = "$requested_sha"', CHECKOUT_IDENTITY
+        )
+        self.assertIn('tee -a "$GITHUB_STEP_SUMMARY"', CHECKOUT_IDENTITY)
+        for field in (
+            "validation_kind",
+            "requested_ref",
+            "checkout_ref",
+            "checkout_sha",
+            "actual_sha",
+        ):
+            self.assertIn(f'echo "{field}=', CHECKOUT_IDENTITY)
+        self.assertNotIn("continue-on-error", CHECKOUT_IDENTITY)
+
+    def test_checkout_identity_recorder_works_for_a_tree_without_the_action(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary)
+            subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+            (repository / "historical.txt").write_text("historical\n", encoding="utf-8")
+            subprocess.run(["git", "add", "historical.txt"], cwd=repository, check=True)
+            commit_env = os.environ.copy()
+            commit_env.update(
+                {
+                    "GIT_AUTHOR_NAME": "CI contract",
+                    "GIT_AUTHOR_EMAIL": "ci-contract@example.invalid",
+                    "GIT_COMMITTER_NAME": "CI contract",
+                    "GIT_COMMITTER_EMAIL": "ci-contract@example.invalid",
+                }
+            )
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "historical"],
+                cwd=repository,
+                env=commit_env,
+                check=True,
+            )
+            sha = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repository, text=True
+            ).strip()
+            summary = repository / "summary.md"
+            verifier_env = os.environ.copy()
+            verifier_env.update(
+                {
+                    "VALIDATION_KIND": "exact-ref",
+                    "REQUESTED_REF": sha,
+                    "CHECKOUT_REF": "",
+                    "CHECKOUT_SHA": sha,
+                    "GITHUB_STEP_SUMMARY": str(summary),
+                }
+            )
+            command = [
+                "bash",
+                "--noprofile",
+                "--norc",
+                "-euo",
+                "pipefail",
+                "-c",
+                CHECKOUT_IDENTITY,
+            ]
+            subprocess.run(command, cwd=repository, env=verifier_env, check=True)
+            self.assertIn(f"actual_sha={sha}", summary.read_text(encoding="utf-8"))
+
+            mismatched = verifier_env | {"REQUESTED_REF": "0" * len(sha)}
+            self.assertNotEqual(
+                subprocess.run(command, cwd=repository, env=mismatched).returncode,
+                0,
+            )
+            unsupported = verifier_env | {"VALIDATION_KIND": "unknown"}
+            self.assertNotEqual(
+                subprocess.run(command, cwd=repository, env=unsupported).returncode,
+                0,
+            )
 
     def test_value_system_absence_and_permanent_contracts_are_unwaived(self):
         static = normal_static_contracts()
@@ -414,6 +1203,13 @@ class FullWorkflowContractTests(unittest.TestCase):
         closure = "python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}"
         self.assertIn(fetch, block)
         self.assertLess(block.index(fetch), block.index(closure))
+
+    def test_dynamic_modules_prefetches_before_offline_native_build(self):
+        block = job_block(FULL, "dynamic-modules")
+        fetch = "cargo fetch --locked"
+        smoke = "bash scripts/test-dynamic-modules.sh"
+        self.assertIn(fetch, block)
+        self.assertLess(block.index(fetch), block.index(smoke))
 
     def test_language_census_prefetches_before_offline_metadata_tests(self):
         block = job_block(FULL, "cargo-language")

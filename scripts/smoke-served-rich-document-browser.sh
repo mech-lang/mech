@@ -2771,7 +2771,7 @@ def assert_console_contract():
     submit(":docs browser-smoke/rejected")
     wait_for(
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
-        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic')].some((row) => /missing|resident activation failed/.test(row.textContent))",
+        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic')].some((row) => /missing|resident activation failed|SemanticUnsupported/.test(row.textContent))",
         "a semantically rejected documentation fragment returning control",
     )
     if evaluate("Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/rejected\"]'))"):
@@ -4383,7 +4383,25 @@ def assert_repl_termination():
       ? await (await fetch(`/code/${sourceKey}`)).text()
       : document.querySelector('[data-mech-document-code]')?.textContent?.trim();
     if (!encoded) throw new Error('direct reset smoke could not locate the encoded document');
-    const resetDocument = WasmDocument.fromEncoded(encoded);
+    const embeddedBundle = document.querySelector(
+      'script[data-mech-document-sources]'
+    )?.textContent?.trim();
+    const sourceBundle = embeddedBundle
+      ? JSON.parse(atob(embeddedBundle))
+      : null;
+    const resetDocument = sourceKey
+      ? WasmDocument.fromEncodedWithSources(encoded, sourceKey, {
+          [sourceKey]: await (await fetch(`/source/${sourceKey}`)).text(),
+        })
+      : sourceBundle
+        ? WasmDocument.fromEncodedWithSources(
+            encoded,
+            sourceBundle.rootSpecifier,
+            Object.fromEntries(sourceBundle.sources.map(
+              ({ specifier, source }) => [specifier, source]
+            )),
+          )
+      : WasmDocument.fromEncoded(encoded);
     const oldStep = resetDocument.replInvoke(':step 1000');
     resetDocument.reset(encoded);
     const newStep = resetDocument.replInvoke(':step 1000');
@@ -4954,7 +4972,7 @@ try:
     if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/latency-next.mec')) {
       return new Promise((resolve, reject) => {
         window.__MECH_DOCUMENTATION_RELEASES__.set('latency-next', () => resolve(new Response(
-          'Accepted Documentation\\n----------------------\\nAccepted documentation evaluates {answer}.\\n\\n',
+          'Accepted Documentation\\n===============================================================================\\nAccepted documentation evaluates {answer}.\\n\\n',
           { status: 200, headers: { 'content-type': 'text/plain' } },
         )));
         init?.signal?.addEventListener(
@@ -5150,6 +5168,12 @@ run_configured_case() {
 
   stop_server
 }
+
+if [[ "${MECH_RICH_CASE:-}" == "configured" ]]; then
+  prepare_configured_case
+  run_configured_case
+  exit 0
+fi
 
 prepare_formatted_case \
   formatted-blog \

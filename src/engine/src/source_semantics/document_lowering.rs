@@ -4,7 +4,8 @@
 use mech_syntax::document::{
     ActivationScopeSyntax, CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation,
     CodeFenceScope, EvalInlineMechCodeSyntax, ExportDeclarationSyntax, InvariantDefineSyntax,
-    OpAssignSyntax, SliceRefSyntax, VariableAssignSyntax,
+    OpAssignSyntax, SliceRefSyntax, TupleDestructureSyntax, VariableAssignSyntax,
+    VariableDefineSyntax,
 };
 
 use super::*;
@@ -72,9 +73,29 @@ pub(super) fn root_state_mutation_names(
     for node in root_statement_nodes(document)? {
         let target = VariableAssignSyntax::cast(node.clone())
             .and_then(|assignment| assignment.target())
-            .or_else(|| OpAssignSyntax::cast(node).and_then(|assignment| assignment.target()));
+            .or_else(|| {
+                OpAssignSyntax::cast(node.clone()).and_then(|assignment| assignment.target())
+            });
         if let Some(stem) = target.and_then(|target| target.stem()) {
             names.insert(node_text(stem.syntax())?);
+            continue;
+        }
+        if let Some(definition) = VariableDefineSyntax::cast(node.clone()) {
+            if definition.mutability_marker().is_some() {
+                let variable = definition
+                    .variable()
+                    .ok_or_else(|| missing_kind_child(definition.syntax(), "a defined variable"))?;
+                let stem = variable
+                    .stem()
+                    .ok_or_else(|| missing_kind_child(variable.syntax(), "a variable stem"))?;
+                names.insert(node_text(stem.syntax())?);
+            }
+            continue;
+        }
+        if let Some(destructure) = TupleDestructureSyntax::cast(node) {
+            for name in destructure.names() {
+                names.insert(node_text(name.syntax())?);
+            }
         }
     }
     Ok(names)
@@ -608,14 +629,15 @@ fn compile_collected_document(
         document_exports.push(SourceDocumentExport { output, name });
     }
     for output_name in published_bindings {
-        if builder
-            .outputs
-            .iter()
-            .any(|output| output.name == *output_name)
+        let decoded = crate::decode_interactive_symbol_output_name(output_name);
+        if decoded.is_none()
+            && builder
+                .outputs
+                .iter()
+                .any(|output| output.name == *output_name)
         {
             continue;
         }
-        let decoded = crate::decode_interactive_symbol_output_name(output_name);
         let name = decoded.as_ref().unwrap_or(output_name);
         let value = if let Some(binding) = builder.bindings.get(name).copied() {
             builder.read_document_binding(binding, &last.syntax)?
@@ -631,6 +653,15 @@ fn compile_collected_document(
             });
             builder.input_by_name.insert(name.clone(), ordinal);
             PendingValue::Input(ordinal)
+        } else if decoded.is_some()
+            && name == "result"
+            && builder.outputs.iter().any(|output| output.name == *name)
+        {
+            // Encoded publication requests prefer a lexical binding so a
+            // binding named `result` cannot be confused with the document's
+            // aggregate result. When no such binding exists, however, the
+            // ordinary result is the compute region's canonical publication.
+            continue;
         } else {
             return Err(SourceSemanticError {
                 code: "source-semantics/unknown-published-binding",
@@ -638,7 +669,11 @@ fn compile_collected_document(
                 anchor,
             });
         };
-        builder.publish(output_name, None, value, &last.syntax);
+        if decoded.is_some() {
+            builder.publish_interactive_binding(name, value, &last.syntax);
+        } else {
+            builder.publish(output_name, None, value, &last.syntax);
+        }
     }
     presentation.sort_by_key(|(_, _, owner)| owner.range().start);
     for (kind, value, owner) in presentation {
@@ -670,12 +705,7 @@ fn compile_collected_document(
                 PendingBinding::MutableState(state) => PendingValue::State(state),
                 PendingBinding::Value(_) => builder.read_document_binding(binding, &last.syntax)?,
             };
-            builder.publish(
-                &crate::encode_interactive_symbol_output_name(&name),
-                Some(name),
-                value,
-                &last.syntax,
-            );
+            builder.publish_interactive_binding(&name, value, &last.syntax);
         }
     }
     builder.order_document_state_writers();
@@ -692,13 +722,12 @@ fn mixed_section_identity(
     let Some(subtitle) = section.subtitle() else {
         return Ok(None);
     };
-    let text = subtitle.syntax().text().map_err(|_| {
+    let heading = subtitle.title_text().map_err(|_| {
         internal(
             SourceSemanticAnchor::for_node(subtitle.syntax()),
             "compute section subtitle is outside retained source".to_owned(),
         )
     })?;
-    let heading = text.lines().next().unwrap_or_default().trim();
     let mut name_parts = Vec::new();
     let mut selected = None;
     for part in heading.split_whitespace() {
@@ -754,6 +783,21 @@ fn mixed_section_identity(
         });
     }
     Ok(Some((name, placement)))
+}
+
+pub(super) fn has_mixed_document_region(
+    document: &DocumentSyntax,
+) -> Result<bool, SourceSemanticError> {
+    for section in document
+        .body()
+        .map(|body| body.sections())
+        .unwrap_or_default()
+    {
+        if mixed_section_identity(&section)?.is_some() {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 fn collect_document_units(

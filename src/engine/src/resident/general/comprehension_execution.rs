@@ -5807,6 +5807,12 @@ impl ReactiveInstance {
         };
         for position in start..control.steps.len() {
             meter.charge_compute_work(1).map_err(fail)?;
+            if !matches!(
+                control.steps[position],
+                ActivatedCollectionStep::Operation { .. }
+            ) {
+                budget::charge_planning_step()?;
+            }
             match &control.steps[position] {
                 ActivatedCollectionStep::Operation {
                     node,
@@ -5946,6 +5952,7 @@ impl ReactiveInstance {
                         .dimension_parameters()
                         .len();
                     for ordinal in 0..count {
+                        budget::charge_planning_step()?;
                         meter.charge_compute_work(1).map_err(fail)?;
                         let mut iteration_end = usize::try_from(*binding_end)
                             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;

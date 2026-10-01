@@ -833,6 +833,7 @@ impl<S, V> CollectionPattern<S, V> {
         }
     }
 
+    #[cfg(any(feature = "source", feature = "resident-artifact"))]
     pub(crate) fn bindings(&self, visit: &mut impl FnMut(u32, &S)) {
         match self {
             Self::Bind { local, schema } => visit(*local, schema),

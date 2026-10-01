@@ -88,6 +88,22 @@ fn document(source: &str) -> DocumentSyntax {
     DocumentSyntax::cast(snapshot.syntax()).expect("canonical Document")
 }
 
+#[test]
+fn root_state_mutations_include_mutable_definitions_and_destructures() {
+    let names = CanonicalSourceFrontend
+        .root_state_mutation_names(&document(
+            "~counter := 0\nordinary := 1\n(left, right) := (2, 3)\ncounter += 1\n",
+        ))
+        .unwrap();
+    assert_eq!(
+        names,
+        ["counter", "left", "right"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect()
+    );
+}
+
 fn nominal_origin() -> CanonicalNominalPath {
     CanonicalNominalPath::new(vec!["mech-test".to_owned(), "canonical-source".to_owned()]).unwrap()
 }
@@ -6773,4 +6789,32 @@ fn static_output_projection_retains_state_dependencies_and_source_identity() {
         Ok(_) => panic!("missing output must fail"),
         Err(error) => assert_eq!(error.code, "source-semantics/unknown-published-binding"),
     }
+}
+
+#[test]
+fn interactive_planning_projection_keeps_mutable_binding_state_identity() {
+    use std::collections::BTreeSet;
+    let compiled = CanonicalSourceFrontend
+        .compile_interactive_document_with_planning_contract(
+            &document("~answer := 40\nanswer += 2\nanswer\n"),
+            std::sync::Arc::new(mech_core::FunctionCatalogBuilder::new().build().unwrap()),
+            Default::default(),
+            Default::default(),
+            &BTreeSet::new(),
+            &BTreeSet::from(["answer".to_owned()]),
+            &BTreeSet::new(),
+        )
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let binding = artifact
+        .interactive_symbol_bindings()
+        .find(|binding| binding.lexical_name == "answer")
+        .expect("mutable answer has one interactive identity");
+    let mech_engine::ArtifactSource::Slot(slot) = binding.artifact_source else {
+        panic!("mutable answer must retain a state slot")
+    };
+    assert_eq!(
+        artifact.slots()[slot.get() as usize].role,
+        mech_engine::SlotRole::State,
+    );
 }
