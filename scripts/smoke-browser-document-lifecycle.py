@@ -15,6 +15,49 @@ sys.path.insert(0, str(ROOT))
 from tests.browser.harness import ChromeSession, free_port, wait_for_http
 
 
+OUTPUT_ASSERTIONS = """
+  const checkOutput = (node, address, value) => {
+    if (!node || document.getElementById(address) !== node || node.textContent.trim() !== value) {
+      throw new Error(`Original placeholder: ${node?.textContent}, expected ${value}`);
+    }
+    if (!node.classList.contains('mech-clickable') || node.getAttribute('role') !== 'button' || node.tabIndex !== 0 || node.hasAttribute('aria-disabled')) {
+      throw new Error('Published output is not selectable');
+    }
+  };
+  const checkUnavailable = (node, address) => {
+    if (document.getElementById(address) !== node || node.childNodes.length !== 0 || node.hasAttribute('data-mech-source')) {
+      throw new Error(`Unavailable placeholder retains content: ${node.textContent}`);
+    }
+    if (node.dataset.mechValueAvailable !== 'false' || node.classList.contains('mech-clickable') || node.hasAttribute('role') || node.hasAttribute('tabindex') || node.getAttribute('aria-disabled') !== 'true') {
+      throw new Error('Unavailable placeholder remains selectable');
+    }
+    const selectionState = () => JSON.stringify([
+      ...document.querySelectorAll('[data-mech-repl-popup], .mech-repl-transcript, [data-mech-errors-panel]'),
+    ].map(element => element.outerHTML));
+    const before = selectionState();
+    node.click();
+    for (const key of ['Enter', ' ']) {
+      node.dispatchEvent(new KeyboardEvent('keydown', {key, bubbles:true, cancelable:true}));
+    }
+    if (selectionState() !== before) throw new Error('Unavailable output handled a selection');
+  };
+  const checkSelection = (node, address, value) => {
+    checkOutput(node, address, value);
+    // Use the closed-console inspector to observe selection of the restored node.
+    const root = document.querySelector('.mech-root');
+    const consoleOpen = root.dataset.mechConsoleOpen;
+    root.dataset.mechConsoleOpen = 'false';
+    node.click();
+    const popup = document.querySelector('[data-mech-repl-popup]');
+    if (!popup || popup.querySelector('.mech-output-value')?.textContent.trim() !== value || popup.classList.contains('mech-inline-popup--error')) {
+      throw new Error('Restored output selection did not inspect the current value');
+    }
+    popup.querySelector('.mech-inline-popup__close').click();
+    root.dataset.mechConsoleOpen = consoleOpen;
+  };
+"""
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mech-bin", default="target/debug/mech")
@@ -27,6 +70,7 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="document-source-", dir=artifacts) as directory:
         source_dir = Path(directory)
         (source_dir / "fence.mec").write_text("~~~mech\n11\n~~~\n")
+        (source_dir / "inline.mec").write_text("anchor := 0\n\nVisible {11}.\n")
         original = "first := 1\nsecond := 2\nsecond\n\nVisible {second}.\n"
         (source_dir / "console.mec").write_text(original)
         port = free_port()
@@ -39,36 +83,64 @@ def main() -> None:
                 browser = ChromeSession(None, artifacts / "chrome-profile", artifacts / "chrome.log", flags=["--disable-gpu"]).start()
                 browser.navigate(url + "/fence.mec")
                 browser.wait_for("document.documentElement.dataset.mechDocumentStatus === 'ready'", "fence document readiness")
-                result = browser.evaluate_json("""(async () => {
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
                   const controller = globalThis.MechDocumentController;
                   const original = document.querySelector('.mech-block-output[id]');
                   const address = original?.id;
-                  const check = (value) => {
-                    if (!original || document.getElementById(address) !== original || original.textContent.trim() !== value) throw new Error(`Original placeholder: ${original?.textContent}, expected ${value}`);
-                  };
-                  check('11');
+                  checkOutput(original, address, '11');
                   controller.applyEdit(7, 7, '{output: false}');
+                  checkUnavailable(original, address);
                   const body = controller.source().indexOf('11');
                   controller.applyEdit(body, body + 2, '22');
+                  checkUnavailable(original, address);
                   const accepted = controller.source();
                   let rejected = false;
                   try { controller.applyEdit(body, body + 2, '['); } catch (_) { rejected = true; }
                   if (!rejected || controller.source() !== accepted) throw new Error('Malformed suppressed edit changed accepted source');
+                  checkUnavailable(original, address);
                   controller.applyEdit(0, 0, 'Prose before the fence.\\n\\n');
                   const end = controller.source().length;
                   controller.applyEdit(end, end, '\\nProse after the fence.\\n');
+                  checkUnavailable(original, address);
                   const suppressor = controller.source().indexOf('{output: false}');
                   controller.applyEdit(suppressor, suppressor + 15, '');
-                  check('22');
+                  checkSelection(original, address, '22');
                   const fenceStart = controller.source().indexOf('~~~mech');
                   controller.applyEdit(fenceStart + 7, fenceStart + 7, '{output: false}');
+                  checkUnavailable(original, address);
                   controller.applyEdit(0, controller.source().length, '');
+                  checkUnavailable(original, address);
                   controller.applyEdit(0, 0, '~~~mech\\n33\\n~~~\\n\\n~~~mech\\n33\\n~~~\\n');
-                  if (original.textContent.trim() === '33') throw new Error('Deleted placeholder adopted an unrelated duplicate');
-                  return {contract:'suppression-edit-restoration', address, originalNodeRetained:document.getElementById(address) === original, malformedEditRejected:rejected, restoredValue:'22', unrelatedDuplicateRejected:true};
+                  checkUnavailable(original, address);
+                  return {contract:'suppression-edit-restoration', address, originalNodeRetained:document.getElementById(address) === original, malformedEditRejected:rejected, restoredValue:'22', unavailableOutputCleared:true, unavailableSelectionDisabled:true, restoredSelectionAvailable:true, unrelatedDuplicateRejected:true};
                 })()""")
                 results.append(result)
                 browser.write_dom(artifacts / "fence.dom.html")
+                browser.navigate(url + "/inline.mec")
+                browser.wait_for("document.documentElement.dataset.mechDocumentStatus === 'ready'", "inline document readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const controller = globalThis.MechDocumentController;
+                  const original = document.querySelector('.mech-inline-mech-code[id]');
+                  const address = original?.id;
+                  checkOutput(original, address, '11');
+                  const start = controller.source().indexOf('{11}');
+                  controller.applyEdit(start, start + 4, '');
+                  checkUnavailable(original, address);
+                  const accepted = controller.source();
+                  let rejected = false;
+                  try { controller.applyEdit(start, start, '{[}'); } catch (_) { rejected = true; }
+                  if (!rejected || controller.source() !== accepted) throw new Error('Malformed inline edit changed accepted source');
+                  checkUnavailable(original, address);
+                  controller.applyEdit(start, start, '{11}');
+                  checkSelection(original, address, '11');
+                  controller.applyEdit(start, start + 4, '');
+                  checkUnavailable(original, address);
+                  controller.applyEdit(start, start, '{33} and {33}');
+                  checkUnavailable(original, address);
+                  return {contract:'inline-deletion-restoration', address, originalNodeRetained:document.getElementById(address) === original, malformedEditRejected:rejected, unavailableOutputCleared:true, unavailableSelectionDisabled:true, restoredSelectionAvailable:true, unrelatedDuplicateRejected:true};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "inline.dom.html")
                 browser.navigate(url + "/console.mec")
                 browser.wait_for("document.documentElement.dataset.mechDocumentStatus === 'ready'", "console document readiness")
                 result = browser.evaluate_json("""(async () => {
@@ -100,7 +172,7 @@ def main() -> None:
                 results.append(result)
                 browser.write_dom(artifacts / "console.dom.html")
                 (artifacts / "results.json").write_text(json.dumps(results, indent=2) + "\n")
-                print("browser document lifecycle: 2 operation sequences passed")
+                print("browser document lifecycle: 3 operation sequences passed")
             finally:
                 if browser is not None:
                     browser.close()
