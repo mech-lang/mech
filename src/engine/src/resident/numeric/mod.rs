@@ -17661,16 +17661,16 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
             left.0 * right.1 + left.1 * right.0,
         );
     }
-    if right.1 == 0.0 && !right.0.is_nan() {
+    if right.1 == 0.0 && right.0 != 0.0 && !right.0.is_nan() {
         return (left.0 * right.0, left.1 * right.0);
     }
-    if left.1 == 0.0 && !left.0.is_nan() {
+    if left.1 == 0.0 && left.0 != 0.0 && !left.0.is_nan() {
         return (right.0 * left.0, right.1 * left.0);
     }
-    if right.0 == 0.0 && !right.1.is_nan() {
+    if right.0 == 0.0 && right.1 != 0.0 && !right.1.is_nan() {
         return (-left.1 * right.1, left.0 * right.1);
     }
-    if left.0 == 0.0 && !left.1.is_nan() {
+    if left.0 == 0.0 && left.1 != 0.0 && !left.1.is_nan() {
         return (-right.1 * left.1, right.0 * left.1);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
@@ -17874,16 +17874,16 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
             left.0 * right.1 + left.1 * right.0,
         );
     }
-    if right.1 == 0.0 && !right.0.is_nan() {
+    if right.1 == 0.0 && right.0 != 0.0 && !right.0.is_nan() {
         return (left.0 * right.0, left.1 * right.0);
     }
-    if left.1 == 0.0 && !left.0.is_nan() {
+    if left.1 == 0.0 && left.0 != 0.0 && !left.0.is_nan() {
         return (right.0 * left.0, right.1 * left.0);
     }
-    if right.0 == 0.0 && !right.1.is_nan() {
+    if right.0 == 0.0 && right.1 != 0.0 && !right.1.is_nan() {
         return (-left.1 * right.1, left.0 * right.1);
     }
-    if left.0 == 0.0 && !left.1.is_nan() {
+    if left.0 == 0.0 && left.1 != 0.0 && !left.1.is_nan() {
         return (-right.1 * left.1, right.0 * left.1);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
@@ -23464,7 +23464,11 @@ mod tests {
             for c in [0.0_f32, -0.0, 3.0, -3.0] {
                 for b in [0.0_f32, -0.0, 2.0, -2.0] {
                     for d in [0.0_f32, -0.0, 3.0, -3.0] {
-                        if !(a == 0.0 && c == 0.0 || b == 0.0 && d == 0.0) {
+                        if !(a == 0.0 && c == 0.0
+                            || b == 0.0 && d == 0.0
+                            || a == 0.0 && b == 0.0
+                            || c == 0.0 && d == 0.0)
+                        {
                             continue;
                         }
                         let expected = (a * c - b * d, a * d + b * c);

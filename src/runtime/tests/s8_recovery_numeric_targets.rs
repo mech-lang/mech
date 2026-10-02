@@ -707,17 +707,19 @@ fn public_rejected_late_matrix_update_retains_state_and_recovers() {
 }
 
 #[test]
-fn public_zero_imaginary_products_keep_component_zero_signs() {
+fn public_zero_products_keep_component_zero_signs() {
     for width in [FloatWidth::W32, FloatWidth::W64] {
-        let artifact = bound(
-            "answer := left * right\nanswer\n",
-            &[
-                ("left", scalar(width, 0.0, 0.0)),
-                ("right", scalar(width, 0.0, 1.0)),
-            ],
-        );
-        let expected = scalar(width, 0.0, 0.0);
-        public_outputs(None, &artifact, &[expected.clone(), expected], None);
+        for right in [(0.0, 1.0), (1.0, -1.0)] {
+            let artifact = bound(
+                "answer := left * right\nanswer\n",
+                &[
+                    ("left", scalar(width, 0.0, 0.0)),
+                    ("right", scalar(width, right.0, right.1)),
+                ],
+            );
+            let expected = scalar(width, 0.0, 0.0);
+            public_outputs(None, &artifact, &[expected.clone(), expected], None);
+        }
     }
 }
 
