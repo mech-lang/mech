@@ -2727,8 +2727,9 @@ mod tests {
 
     #[test]
     fn default_document_shim_keeps_bundle_for_compute_configuration() {
-        let root = temp_root("mixed-compute-default-document-shim");
-        let source = "@compute := compute://compute/kernel{:write(turn), :read(sample/result)}\n\
+        assert_default_document_shim_compute_configuration("answer := 40 + 2\nanswer\n", false);
+        assert_default_document_shim_compute_configuration(
+            "@compute := compute://compute/kernel{:write(turn), :read(sample/result)}\n\
 @compute/turn <- 1\n\
 answer := @compute/sample/result\n\
 answer\n\n\
@@ -2736,7 +2737,13 @@ calculation @compute\n\
 -------------------\n\
 ~result := 0f32\n\
 result += 1f32\n\
-result\n";
+result\n",
+            true,
+        );
+    }
+
+    fn assert_default_document_shim_compute_configuration(source: &str, requires_compute: bool) {
+        let root = temp_root("mixed-compute-default-document-shim");
         let path = root.join("main.mec");
         std::fs::write(&path, source).unwrap();
         let retained = snapshot(&root, "main.mec");
@@ -2753,19 +2760,34 @@ result\n";
             Some(include_str!("../include/document.js").to_string()),
             Some("include/index.html".to_string()),
         );
-        registry
-            .sync_workspace_snapshot(
-                &root,
-                &retained,
-                "",
-                include_str!("../include/index.html"),
-                &[],
-            )
-            .unwrap();
-
-        assert!(registry.get_route("/code/main.mec").is_some());
-        let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
-        assert!(html.contains("fetch(`/code/${sourceUrlKey}`)"), "{html}");
+        let result = registry.sync_workspace_snapshot(
+            &root,
+            &retained,
+            "",
+            include_str!("../include/index.html"),
+            &[],
+        );
+        if requires_compute && !cfg!(feature = "compute_backends_native") {
+            // A configured compute host must not suppress ordinary bundles.
+            // Actual mixed compilation remains owned by the compute profile.
+            let error = result.unwrap_err().full_chain_message();
+            assert!(
+                error.contains("no runtime resource provider registered for scheme `compute`"),
+                "{error}"
+            );
+            assert!(registry.get_route("/code/main.mec").is_none());
+        } else {
+            result.unwrap();
+            let code = registry.get_route("/code/main.mec").unwrap();
+            let bundle =
+                CanonicalProgramBundle::decode(std::str::from_utf8(&code.bytes).unwrap(), None)
+                    .unwrap();
+            bundle
+                .validate_dependency_sources(|_| Some(source))
+                .unwrap();
+            let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+            assert!(html.contains("fetch(`/code/${sourceUrlKey}`)"), "{html}");
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -2972,7 +2994,8 @@ result\n";
         let root = temp_root("invalid-non-root-source");
         std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
         std::fs::write(root.join("broken.mec"), "broken := (\n").unwrap();
-        let retained = snapshot_for_sources(&root, &["main.mec", "broken.mec"]);
+        let mut retained = snapshot(&root, "main.mec");
+        retain_test_source(&mut retained, &root, "broken.mec");
         let mut registry = ServerSourceRegistry {
             compiler_roots: Some(BTreeSet::from([root
                 .join("main.mec")
@@ -3539,11 +3562,54 @@ result\n";
     }
 
     fn synced_registry(root: &Path, file: &str) -> ServerSourceRegistry {
-        let mut registry = ServerSourceRegistry::default();
+        let mut registry = document_registry();
         registry
-            .sync_workspace_snapshot(root, &snapshot(root, file), "", "", &[])
+            .sync_workspace_snapshot(
+                root,
+                &snapshot(root, file),
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
             .unwrap();
         registry
+    }
+
+    fn document_registry() -> ServerSourceRegistry {
+        let mut registry = ServerSourceRegistry::default();
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        registry
+    }
+
+    // A failed run target is absent from the compiled workspace snapshot.
+    // Serve fixtures must also retain its source and diagnostic revision.
+    fn retain_test_source(snapshot: &mut RuntimeWorkspaceSnapshot, root: &Path, file: &str) {
+        let path = root.join(file).canonicalize().unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        let uri = format!("file://{}", path.to_string_lossy());
+        let document = SourceDocument::parse_resolved(
+            &uri,
+            Revision(0),
+            text.as_str(),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(document.index().is_err());
+        snapshot.sources.insert(
+            uri.clone(),
+            mech_runtime::RuntimeWorkspaceSourceSnapshot {
+                canonical_uri: uri,
+                path: Some(path),
+                source: Some(MechSourceCode::String(text.clone())),
+                source_document: Some(document),
+                module_version: None,
+                content_hash: mech_core::hash_str(&text),
+                modified_time: None,
+            },
+        );
     }
 
     fn test_server() -> MechServer {
@@ -4283,6 +4349,11 @@ result\n";
         std::fs::write(root.join("main.mec"), raw_source).unwrap();
         let guard = CurrentDirGuard::enter(&root);
         let mut server = initialized_server();
+        server.html_shim = include_str!("../include/index.html").to_string();
+        server.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
         server
             .load_workspace(&vec!["main.mec".to_string()])
             .unwrap();
@@ -4943,13 +5014,13 @@ result\n";
         let root = temp_root("code-root-alias");
         std::fs::write(root.join("a.mec"), "a := 1\n").unwrap();
         std::fs::write(root.join("b.mec"), "b := 2\n").unwrap();
-        let mut registry = ServerSourceRegistry::default();
+        let mut registry = document_registry();
         registry
             .sync_workspace_snapshot(
                 &root,
                 &snapshot_for_sources(&root, &["a.mec", "b.mec"]),
                 "",
-                "",
+                include_str!("../include/index.html"),
                 &[],
             )
             .unwrap();
