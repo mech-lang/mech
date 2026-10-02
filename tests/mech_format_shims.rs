@@ -645,6 +645,12 @@ fn mech_format_raw_normalizes_reviewed_syntax_families_idempotently() {
     let second = directory.path().join("second.mec");
     let source = "Report\n======\n+> math/{sin,cos}\nauthor: Keep a,b\n======\n+> math/{trig/sin,trig/cos}\n@io:=cli://stdout{:read(*),:write(line)}\nresult:=make(x:1,y:2,note:\"a,b:c\")\n~~~mech{output:false,color:red}\nvalue:=1..3\n~~~\n![Keep  caption](image.png){width:wide,color:red}\n~~~mech:worker\n+> math/{sin,cos}\n~~~\n";
     let expected = "Report\n======\n+> math/{sin, cos}\nauthor: Keep a,b\n======\n+> math/{trig/sin, trig/cos}\n@io := cli://stdout { :read(*), :write(line) }\nresult := make(x: 1, y: 2, note: \"a,b:c\")\n~~~mech{output: false, color: red}\nvalue := 1..3\n~~~\n![Keep  caption](image.png){width: wide, color: red}\n~~~mech:worker\n+> math/{sin, cos}\n~~~\n";
+    let source = format!(
+        "{source}add(x<u64>,y<u64>) = out<u64> := out := x + y.\nsplit(x<u64>,y<u64>) = (a<u64>,b<u64>) := a := x; b := y.\n~~~mech:signatures\nchoose(x<u64>,y<u64>) => <u64>\n| 0 => y\n| x => x.\n~~~\n"
+    );
+    let expected = format!(
+        "{expected}add(x<u64>, y<u64>) = out<u64> := out := x + y.\nsplit(x<u64>, y<u64>) = (a<u64>, b<u64>) := a := x; b := y.\n~~~mech:signatures\nchoose(x<u64>, y<u64>) => <u64>\n| 0 => y\n| x => x.\n~~~\n"
+    );
     std::fs::write(&input, source).unwrap();
     for (source_path, output_path) in [(&input, &output), (&output, &second)] {
         let result = Command::new(env!("CARGO_BIN_EXE_mech"))
@@ -671,6 +677,7 @@ fn mech_format_preserves_executable_results_through_public_commands() {
         "pair:=(2,3)\n(left,right):=pair\nleft * 10 + right\n",
         "record:={left:2,right:3}\nrecord.left * 10 + record.right\n",
         "answer:=math/sub(left:30,right:7)\nanswer\n",
+        "add(x<u64>,y<u64>) = out<u64> := out := x + y.\nadd(20,3)\n",
     ]
     .iter()
     .enumerate()

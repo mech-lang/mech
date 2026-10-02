@@ -3486,6 +3486,20 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         .into_iter()
         .map(|arguments| arguments.range())
         .collect::<Vec<_>>();
+    // Function inputs have no ArgumentList wrapper. Normalize only direct
+    // signature commas, without claiming separators in the function body.
+    let mut signature_nodes = Vec::new();
+    for kind in [SyntaxKind::FunctionDefine, SyntaxKind::FunctionOutArgs] {
+        collect_nodes(node, kind, &mut signature_nodes);
+    }
+    let signature_comma_ranges = signature_nodes
+        .into_iter()
+        .flat_map(|signature| signature.children_with_tokens())
+        .filter_map(|element| match element {
+            SyntaxElement::Token(token) if token.kind() == SyntaxKind::Comma => Some(token.range()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
     let mut binding_nodes = Vec::new();
     for kind in [
         SyntaxKind::MapEntry,
@@ -3543,9 +3557,10 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         let ends_operator = kind == SyntaxKind::OutputOperator
             || operator.is_some_and(|range| token.range().end == range.end);
         let separator = (kind == SyntaxKind::Comma
-            && separator_list_ranges
-                .iter()
-                .any(|range| token.range().start >= range.start && token.range().end <= range.end))
+            && (signature_comma_ranges.contains(&token.range())
+                || separator_list_ranges.iter().any(|range| {
+                    token.range().start >= range.start && token.range().end <= range.end
+                })))
             || (kind == SyntaxKind::Colon && binding_colon_ranges.contains(&token.range()));
         let closes_delimiter = matches!(
             kind,
