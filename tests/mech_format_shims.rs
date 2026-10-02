@@ -151,17 +151,26 @@ fn mech_format_static_custom_shim_is_ready_and_repeated_sections_are_navigable()
     let output = directory.path().join("formatted.html");
     std::fs::write(
         &input,
-        "1. First\n---------\nFirst body.\n\n1. Second\n----------\nSecond body.\n",
+        "1. First\n---------\nFirst body with [BOOK] and [^note].\n\n1. Second\n----------\nSecond body.\n\n[^note]: A footnote.\n\n[BOOK]: A reference.\n",
     )
     .unwrap();
-    for attribute in [
-        "data-mech-document-status='loading'",
-        "DATA-MECH-DOCUMENT-STATUS = loading",
-        "data-mech-document-status\n=\t\"loading\"",
+    for (attribute, controller) in [
+        (
+            "data-mech-document-status='loading'",
+            "data-mech-document-controller",
+        ),
+        (
+            "DATA-MECH-DOCUMENT-STATUS = loading",
+            "data-mech-document-controller='document'",
+        ),
+        (
+            "data-mech-document-status\n=\t\"loading\"",
+            "DATA-MECH-DOCUMENT-CONTROLLER\n= \"document\"",
+        ),
     ] {
         std::fs::write(
             &shim,
-            format!("<main {attribute}>{{{{TOC}}}}{{{{CONTENT}}}}</main>"),
+            format!("<aside>{{{{SECTION1}}}}</aside><nav>{{{{TOC}}}}</nav><main {controller} data-mech-document-controller-extra='keep' {attribute}>{{{{CONTENT}}}}{{{{FOOTNOTES}}}}{{{{CITED}}}}</main><aside>{{{{CONTENT}}}}{{{{FOOTNOTES}}}}{{{{CITED}}}}</aside>"),
         )
         .unwrap();
         let result = Command::new(env!("CARGO_BIN_EXE_mech"))
@@ -180,13 +189,22 @@ fn mech_format_static_custom_shim_is_ready_and_repeated_sections_are_navigable()
         );
         let html = std::fs::read_to_string(&output).unwrap();
         assert!(
-            html.contains("<main data-mech-document-status=\"ready\">"),
+            html.contains("data-mech-document-status=\"ready\""),
             "{html}"
         );
+        assert!(
+            html.contains("data-mech-document-controller-extra='keep'"),
+            "{html}"
+        );
+        assert!(!html.contains(&format!("{controller} ")), "{html}");
         let anchors = html
             .split("href='#")
             .skip(1)
             .map(|link| link.split_once('\'').unwrap().0)
+            .collect::<Vec<_>>();
+        let anchors = anchors
+            .into_iter()
+            .filter(|anchor| !anchor.starts_with("footnote-") && !anchor.starts_with("reference-"))
             .collect::<Vec<_>>();
         assert_eq!(anchors.len(), 2, "{html}");
         assert_ne!(anchors[0], anchors[1], "{html}");
@@ -625,8 +643,8 @@ fn mech_format_raw_normalizes_reviewed_syntax_families_idempotently() {
     let input = directory.path().join("document.mec");
     let output = directory.path().join("formatted.mec");
     let second = directory.path().join("second.mec");
-    let source = "+> math/{sin,cos}\n@io:=cli://stdout{:read(*),:write(line)}\nresult:=make(x:1,y:2,note:\"a,b:c\")\n~~~mech{output:false,color:red}\nvalue:=1..3\n~~~\n![Keep  caption](image.png){width:wide,color:red}\n";
-    let expected = "+> math/{sin, cos}\n@io := cli://stdout { :read(*), :write(line) }\nresult := make(x: 1, y: 2, note: \"a,b:c\")\n~~~mech{output: false, color: red}\nvalue := 1..3\n~~~\n![Keep  caption](image.png){width: wide, color: red}\n";
+    let source = "Report\n======\n+> math/{sin,cos}\nauthor: Keep a,b\n======\n+> math/{trig/sin,trig/cos}\n@io:=cli://stdout{:read(*),:write(line)}\nresult:=make(x:1,y:2,note:\"a,b:c\")\n~~~mech{output:false,color:red}\nvalue:=1..3\n~~~\n![Keep  caption](image.png){width:wide,color:red}\n~~~mech:worker\n+> math/{sin,cos}\n~~~\n";
+    let expected = "Report\n======\n+> math/{sin, cos}\nauthor: Keep a,b\n======\n+> math/{trig/sin, trig/cos}\n@io := cli://stdout { :read(*), :write(line) }\nresult := make(x: 1, y: 2, note: \"a,b:c\")\n~~~mech{output: false, color: red}\nvalue := 1..3\n~~~\n![Keep  caption](image.png){width: wide, color: red}\n~~~mech:worker\n+> math/{sin, cos}\n~~~\n";
     std::fs::write(&input, source).unwrap();
     for (source_path, output_path) in [(&input, &output), (&output, &second)] {
         let result = Command::new(env!("CARGO_BIN_EXE_mech"))

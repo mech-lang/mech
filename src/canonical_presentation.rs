@@ -108,8 +108,7 @@ fn render_canonical_html_mode(
     live: bool,
 ) -> MResult<HtmlShimRender> {
     if !live {
-        shim = mark_static_document_statuses_ready(&shim);
-        shim = shim.replacen(" data-mech-document-controller", "", 1);
+        shim = normalize_static_document_attributes(&shim);
     }
     let mut presentation = if live {
         CanonicalDocumentRenderer.format_browser_html_slots(document)
@@ -118,18 +117,10 @@ fn render_canonical_html_mode(
     }
     .map_err(|error| presentation_error(error.to_string()))?;
     complete_presentation_slots(&mut presentation, &shim);
-    let mut source_slots = if live {
-        Some(
-            CanonicalDocumentRenderer
-                .format_static_html_slots(document)
-                .map_err(|error| presentation_error(error.to_string()))?,
-        )
-    } else {
-        None
-    };
-    if let Some(source_slots) = &mut source_slots {
-        complete_presentation_slots(source_slots, &shim);
-    }
+    let mut source_slots = CanonicalDocumentRenderer
+        .format_passive_html_slots(document)
+        .map_err(|error| presentation_error(error.to_string()))?;
+    complete_presentation_slots(&mut source_slots, &shim);
     let title = document
         .title()
         .and_then(|title| title.syntax().text().ok())
@@ -190,10 +181,10 @@ fn render_canonical_html_mode(
         slots.insert(name, value);
     }
     slots.extend(extra_slots.slots.clone());
-    Ok(render_html_shim(&shim, &slots, source_slots.as_ref()))
+    Ok(render_html_shim(&shim, &slots, Some(&source_slots)))
 }
 
-fn mark_static_document_statuses_ready(shim: &str) -> String {
+fn normalize_static_document_attributes(shim: &str) -> String {
     let bytes = shim.as_bytes();
     let lower = shim.to_ascii_lowercase();
     let mut cursor = 0;
@@ -274,7 +265,15 @@ fn mark_static_document_statuses_ready(shim: &str) -> String {
             if shim[attribute_start..attribute_end]
                 .eq_ignore_ascii_case("data-mech-document-status")
             {
-                edits.push((attribute_start, value_end));
+                edits.push((
+                    attribute_start,
+                    value_end,
+                    "data-mech-document-status=\"ready\"",
+                ));
+            } else if shim[attribute_start..attribute_end]
+                .eq_ignore_ascii_case("data-mech-document-controller")
+            {
+                edits.push((attribute_start, value_end, ""));
             }
         }
         // Attribute-looking examples inside raw text and RCDATA are content.
@@ -304,8 +303,8 @@ fn mark_static_document_statuses_ready(shim: &str) -> String {
         }
     }
     let mut output = shim.to_owned();
-    for (start, end) in edits.into_iter().rev() {
-        output.replace_range(start..end, "data-mech-document-status=\"ready\"");
+    for (start, end, value) in edits.into_iter().rev() {
+        output.replace_range(start..end, value);
     }
     output
 }
@@ -526,7 +525,7 @@ mod tests {
         let source = mech_runtime::SourceDocument::parse_resolved(
             "bundle:///overlap.mec",
             mech_syntax::document::Revision(0),
-            "1. First\n---------\nFirst {11}.\n\n2. Second\n----------\nSecond {22}.\n",
+            "1. First\n---------\nFirst {11} with [BOOK] and [^note].\n\n2. Second\n----------\nSecond {22}.\n\n[^note]: A footnote.\n\n[BOOK]: A reference.\n",
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
@@ -538,37 +537,58 @@ mod tests {
             "<aside>{{SECTION1}}</aside><main>{{CONTENT}}</main><aside>{{CONTENTS}}{{CONTENT}}{{SECTION1}}</aside>",
             "<main>{{CONTENTS}}</main><aside>{{CONTENTS}}</aside>",
             "<main>{{SECTION1}}{{SECTION2}}</main><aside>{{SECTION1}}</aside>",
+            "<aside>{{SECTION1}}</aside><nav>{{TOC}}</nav><main>{{CONTENT}}{{FOOTNOTES}}{{CITED}}</main><aside>{{CONTENT}}{{FOOTNOTES}}{{CITED}}</aside>",
         ] {
-            let html = render_canonical_html(
-                &document,
-                "".into(),
-                shim.into(),
-                &HtmlShimExtraSlots::default(),
-            )
-            .unwrap()
-            .html;
-            assert_eq!(
-                html.matches("data-mech-output-address").count(),
-                2,
-                "{html}"
-            );
-            for output in &outputs {
+            for live in [true, false] {
+                let render = if live {
+                    render_canonical_html
+                } else {
+                    render_canonical_static_html
+                };
+                let html = render(
+                    &document,
+                    "".into(),
+                    shim.into(),
+                    &HtmlShimExtraSlots::default(),
+                )
+                .unwrap()
+                .html;
                 assert_eq!(
-                    html.matches(&format!("id='{}:0'", output.output_id))
-                        .count(),
-                    1,
+                    html.matches("data-mech-output-address").count(),
+                    if live { 2 } else { 0 },
                     "{html}"
                 );
+                for output in &outputs {
+                    assert_eq!(
+                        html.matches(&format!("id='{}:0'", output.output_id))
+                            .count(),
+                        if live { 1 } else { 0 },
+                        "{html}"
+                    );
+                }
+                let (main, copies) = html.split_once("</main>").unwrap();
+                assert_eq!(
+                    main.matches("data-mech-output-address").count(),
+                    if live { 2 } else { 0 },
+                    "{html}"
+                );
+                assert!(!copies.contains("data-mech-output-address"), "{html}");
+                assert!(html.contains("First"));
+                assert!(html.contains("Second"));
+                let (before_main, main) = main.split_once("<main>").unwrap();
+                assert!(!before_main.contains("id='"), "{html}");
+                assert!(!copies.contains("id='"), "{html}");
+                for anchor in ["1", "2"] {
+                    assert_eq!(html.matches(&format!("id='{anchor}'")).count(), 1, "{html}");
+                    assert!(main.contains(&format!("id='{anchor}'")), "{html}");
+                }
+                if !shim.contains("{{SECTION2}}") {
+                    for anchor in ["footnote-note", "reference-BOOK"] {
+                        assert_eq!(html.matches(&format!("id='{anchor}'")).count(), 1, "{html}");
+                        assert!(main.contains(&format!("id='{anchor}'")), "{html}");
+                    }
+                }
             }
-            let (main, copies) = html.split_once("</main>").unwrap();
-            assert_eq!(
-                main.matches("data-mech-output-address").count(),
-                2,
-                "{html}"
-            );
-            assert!(!copies.contains("data-mech-output-address"), "{html}");
-            assert!(html.contains("First"));
-            assert!(html.contains("Second"));
         }
     }
 
@@ -718,32 +738,51 @@ mod tests {
             "DATA-MECH-DOCUMENT-STATUS = 'loading'",
             "data-mech-document-status\n=\t\"loading\"",
         ] {
-            let shim = format!(
-                "{literals}<main {attribute}>{{{{CONTENT}}}}</main><aside {attribute}></aside>"
-            );
-            let html = render_canonical_static_html(
-                &document.document(),
-                "".into(),
-                shim.clone(),
-                &HtmlShimExtraSlots::default(),
-            )
-            .unwrap()
-            .html;
-            assert!(html.starts_with(literals), "{html}");
-            assert_eq!(
-                html.matches("data-mech-document-status=\"ready\"").count(),
-                2,
-                "{html}"
-            );
-            let live = render_canonical_html(
-                &document.document(),
-                "".into(),
-                shim,
-                &HtmlShimExtraSlots::default(),
-            )
-            .unwrap()
-            .html;
-            assert!(live.contains(&format!("<main {attribute}>")), "{live}");
+            for controller in [
+                "data-mech-document-controller",
+                "data-mech-document-controller='document'",
+                "data-mech-document-controller=\"document\"",
+                "data-mech-document-controller = document",
+                "DATA-MECH-DOCUMENT-CONTROLLER\n=\t'document'",
+            ] {
+                let shim = format!(
+                    "{literals}<main {controller} data-mech-document-controller-extra='keep' {attribute}>{{{{CONTENT}}}}</main><aside {controller} {attribute}></aside>"
+                );
+                let html = render_canonical_static_html(
+                    &document.document(),
+                    "".into(),
+                    shim.clone(),
+                    &HtmlShimExtraSlots::default(),
+                )
+                .unwrap()
+                .html;
+                assert!(html.starts_with(literals), "{html}");
+                assert_eq!(
+                    html.matches("data-mech-document-status=\"ready\"").count(),
+                    2,
+                    "{html}"
+                );
+                let body = &html[literals.len()..];
+                assert!(
+                    body.contains("data-mech-document-controller-extra='keep'"),
+                    "{html}"
+                );
+                assert!(!body.contains(&format!("{controller} ")), "{html}");
+                let live = render_canonical_html(
+                    &document.document(),
+                    "".into(),
+                    shim,
+                    &HtmlShimExtraSlots::default(),
+                )
+                .unwrap()
+                .html;
+                assert!(
+                    live.contains(&format!(
+                        "<main {controller} data-mech-document-controller-extra='keep' {attribute}>"
+                    )),
+                    "{live}"
+                );
+            }
         }
     }
 }

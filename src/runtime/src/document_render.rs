@@ -249,7 +249,7 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
-        self.format_html_slots_mode(document, RenderMode::Browser)
+        self.format_html_slots_mode(document, RenderMode::Browser, true)
     }
 
     /// Format a served source page without executable browser mounts.
@@ -257,16 +257,27 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
-        self.format_html_slots_mode(document, RenderMode::Source)
+        self.format_html_slots_mode(document, RenderMode::Source, true)
+    }
+
+    /// Render passive region copies whose navigation targets belong to the
+    /// primary document. Links still point to those primary targets.
+    pub fn format_passive_html_slots(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
+        self.format_html_slots_mode(document, RenderMode::Source, false)
     }
 
     fn format_html_slots_mode(
         &self,
         document: &DocumentSyntax,
         mode: RenderMode,
+        owns_navigation_targets: bool,
     ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
         let (fields, hidden_fields) = title_slot_fields(document)?;
-        let lookup = ResultLookup::new_with_excluded(document, &[], mode, &hidden_fields)?;
+        let mut lookup = ResultLookup::new_with_excluded(document, &[], mode, &hidden_fields)?;
+        lookup.owns_navigation_targets = owns_navigation_targets;
         let summary_lookup = lookup.without_live_mounts();
         let owner = document.scope_id();
         let mut slots = BTreeMap::new();
@@ -795,6 +806,7 @@ fn title_slot_fields(
 
 struct ResultLookup<'a> {
     mode: RenderMode,
+    owns_navigation_targets: bool,
     root_owner: DocumentScopeId,
     values: Cow<'a, HashMap<ResultKey, &'a RuntimeValueSnapshot>>,
     output_addresses: Cow<'a, HashMap<TextRange, u64>>,
@@ -969,6 +981,7 @@ impl<'a> ResultLookup<'a> {
         }
         Ok(Self {
             mode,
+            owns_navigation_targets: true,
             root_owner: document.scope_id(),
             values: Cow::Owned(values),
             output_addresses: Cow::Owned(HashMap::new()),
@@ -988,6 +1001,7 @@ impl<'a> ResultLookup<'a> {
                 RenderMode::Live | RenderMode::Browser => RenderMode::Source,
                 mode => mode,
             },
+            owns_navigation_targets: false,
             root_owner: self.root_owner,
             values: Cow::Borrowed(&self.values),
             output_addresses: Cow::Borrowed(&self.output_addresses),
@@ -1254,14 +1268,19 @@ fn render_subtitle_html(
         .children()
         .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
         .ok_or_else(|| range_error(node.range()))?;
-    output.push_str(&format!("<h{level} class='mech-subtitle' id='"));
-    output.push_str(&escape_attribute(&section));
+    output.push_str(&format!("<h{level} class='mech-subtitle'"));
+    if lookup.owns_navigation_targets {
+        output.push_str(" id='");
+        output.push_str(&escape_attribute(section));
+        output.push('\'');
+    }
     let annotation = subtitle_annotation(&paragraph)?;
     if let Some((_, annotation)) = &annotation {
-        output.push_str("' data-mech-annotations='");
+        output.push_str(" data-mech-annotations='");
         output.push_str(&escape_attribute(annotation));
+        output.push('\'');
     }
-    output.push_str("'>");
+    output.push('>');
     if let Some((cutoff, _)) = &annotation {
         render_inline_children_html_until(
             &paragraph,
@@ -1911,9 +1930,13 @@ fn render_note_definition_html(
 ) -> Result<(), CanonicalDocumentRenderError> {
     let prefix = "footnote";
     let label = definition_label(node)?;
-    output.push_str("<aside class='mech-footnote' id='");
-    output.push_str(&escape_attribute(&format!("{prefix}-{label}")));
-    output.push_str("'><span class='mech-footnote-id'>");
+    output.push_str("<aside class='mech-footnote'");
+    if lookup.owns_navigation_targets {
+        output.push_str(" id='");
+        output.push_str(&escape_attribute(&format!("{prefix}-{label}")));
+        output.push('\'');
+    }
+    output.push_str("><span class='mech-footnote-id'>");
     if let Some(number) = lookup.footnote_numbers.get(&label) {
         output.push_str(&number.to_string());
     } else {
@@ -1972,9 +1995,13 @@ fn append_citations_html(
             .get(&label)
             .copied()
             .ok_or_else(|| range_error(citation.range()))?;
-        output.push_str("<div class='mech-citation' id='reference-");
-        output.push_str(&escape_attribute(&label));
-        output.push_str("'><span class='mech-citation-id'>[");
+        output.push_str("<div class='mech-citation'");
+        if lookup.owns_navigation_targets {
+            output.push_str(" id='reference-");
+            output.push_str(&escape_attribute(&label));
+            output.push('\'');
+        }
+        output.push_str("><span class='mech-citation-id'>[");
         output.push_str(&number.to_string());
         output.push_str("]:</span><div class='mech-citation-body'>");
         for child in citation.children() {

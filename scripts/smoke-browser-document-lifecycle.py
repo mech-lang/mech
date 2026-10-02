@@ -74,13 +74,13 @@ def main() -> None:
         (source_dir / "title.mec").write_text("Document\n========\nsection: {1}\n========\n\nVisible {1}.\n")
         (source_dir / "figure.mec").write_text("anchor := 0\n\n| ![one {11}](one.png) | ![two {22}](two.png) |\n\nNeighbor {33}.\n")
         overlap = source_dir / "overlap.mec"
-        overlap.write_text("1. First\n---------\nFirst {11}.\n\n2. Second\n----------\nSecond {22}.\n")
+        overlap.write_text("1. First\n---------\nFirst {11} with [BOOK] and [^note].\n\n1. Second\n----------\nSecond {22}.\n\n[^note]: A footnote.\n\n[BOOK]: A reference.\n")
         overlap_shim = source_dir / "overlap-shim.html"
         overlap_shim.write_text((ROOT / "include/index.html").read_text().replace(
             "{{WASM_MODULE_URL}}", "/_mech/pkg/mech_wasm.js",
         ).replace(
             "{{CONTENTS}}",
-            "<aside data-mech-copy>{{SECTION1}}</aside><div data-mech-primary>{{CONTENT}}</div><aside data-mech-copy>{{CONTENTS}}{{CONTENT}}</aside>",
+            "<aside data-mech-copy>{{SECTION1}}</aside><div data-mech-primary>{{CONTENT}}{{FOOTNOTES}}{{CITED}}</div><aside data-mech-copy>{{CONTENTS}}{{CONTENT}}{{FOOTNOTES}}{{CITED}}</aside>",
         ))
         subprocess.run([
             str(binary), "--no-config", "format", str(overlap), "--html",
@@ -92,6 +92,32 @@ def main() -> None:
         assert primary.count("data-mech-output-address=") == 2
         assert "data-mech-output-address=" not in before_primary.split("<aside data-mech-copy>", 1)[1]
         assert "data-mech-output-address=" not in after_primary.split("</article>", 1)[0]
+        static_cases = []
+        literal = "<div data-mech-document-controller='document' data-mech-document-status='loading'>"
+        for index, (controller, status) in enumerate([
+            ("data-mech-document-controller", "data-mech-document-status='loading'"),
+            ("data-mech-document-controller='document'", 'data-mech-document-status="loading"'),
+            ('data-mech-document-controller="document"', "data-mech-document-status = loading"),
+            ("data-mech-document-controller = document", "DATA-MECH-DOCUMENT-STATUS\n=\t'loading'"),
+            ("DATA-MECH-DOCUMENT-CONTROLLER\n=\t'document'", "data-mech-document-status='loading'"),
+        ]):
+            shim = source_dir / f"static-{index}-shim.html"
+            shim.write_text(
+                f"<!doctype html><html {controller}\n{status} data-mech-document-controller-extra='keep'>"
+                "<head><title>Static ownership</title></head><body>"
+                f"<script>globalThis.shimLiteral = {json.dumps(literal)};</script>"
+                f"<!-- {literal} --><textarea id='literal'>{literal}</textarea>"
+                "<aside data-mech-copy>{{SECTION1}}</aside><nav>{{TOC}}</nav>"
+                "<main data-mech-primary>{{CONTENT}}{{FOOTNOTES}}{{CITED}}</main>"
+                "<aside data-mech-copy>{{CONTENTS}}{{CONTENT}}{{FOOTNOTES}}{{CITED}}</aside>"
+                "</body></html>"
+            )
+            page = source_dir / f"static-{index}.html"
+            subprocess.run([
+                str(binary), "--no-config", "format", str(overlap), "--html",
+                "--shim", str(shim), "--out", str(page),
+            ], cwd=source_dir, check=True, stdout=subprocess.DEVNULL)
+            static_cases.append(page.name)
         (source_dir / "documentation.mec").write_text("answer := 1\nanswer")
         original = "first := 1\nsecond := 2\nsecond\n\nVisible {second}.\n"
         (source_dir / "console.mec").write_text(original)
@@ -103,6 +129,27 @@ def main() -> None:
                 url = f"http://127.0.0.1:{port}"
                 wait_for_http(url + "/fence.mec", server)
                 browser = ChromeSession(None, artifacts / "chrome-profile", artifacts / "chrome.log", flags=["--disable-gpu"]).start()
+                for page in static_cases:
+                    browser.navigate(url + "/" + page)
+                    browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "static custom shim readiness")
+                    state = browser.evaluate_json("""(() => {
+                      const root = document.documentElement;
+                      const primary = document.querySelector('[data-mech-primary]');
+                      const links = [...document.querySelectorAll('.toc a')];
+                      const targets = links.map(link => document.getElementById(decodeURIComponent(link.hash.slice(1))));
+                      const anchors = ['footnote-note', 'reference-BOOK', ...targets.map(node => node?.id)];
+                      if (root.hasAttribute('data-mech-document-controller') || root.getAttribute('data-mech-document-controller-extra') !== 'keep' || root.getAttribute('data-mech-document-status') !== 'ready') throw new Error('Static shim attributes are malformed or incomplete');
+                      if (links.length !== 2 || new Set(targets).size !== 2 || targets.some(node => !node || !primary.contains(node))) throw new Error('Static TOC does not reach distinct primary headings');
+                      for (const anchor of anchors) {
+                        if ([...document.querySelectorAll('[id]')].filter(node => node.id === anchor).length !== 1) throw new Error('Static document anchor is duplicated');
+                      }
+                      if ([...document.querySelectorAll('[data-mech-copy]')].some(node => node.querySelector('[id]'))) throw new Error('Passive static copy owns navigation');
+                      if (document.querySelector('[data-mech-output-address]') || globalThis.MechDocumentController) throw new Error('Static shim contains live output/controller');
+                      if (globalThis.shimLiteral !== document.querySelector('#literal').value || !globalThis.shimLiteral.includes("data-mech-document-controller='document'")) throw new Error('Literal shim content was rewritten');
+                      return {ready:true, controllerRemoved:true, prefixedAttributePreserved:true, distinctPrimaryTargets:true, backmatterTargetsUnique:true, literalsPreserved:true};
+                    })()""")
+                    assert all(state.values()), state
+                results.append({"contract": "static-shim-attributes-and-navigation", "htmlSpellings": len(static_cases), "domVerified": True})
                 browser.navigate(url + "/fence.mec")
                 browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "fence document readiness")
                 result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
@@ -240,6 +287,13 @@ def main() -> None:
                   if (mounts.length !== 2 || new Set(mounts.map(node => node.id)).size !== 2 || (primary && mounts.some(node => !primary.contains(node)))) throw new Error('Overlapping shim duplicates or relocates live output mounts');
                   const copies = Array.from(document.querySelectorAll('[data-mech-copy]'));
                   if (copies.some(node => node.querySelector('[data-mech-output-address]'))) throw new Error('Shim copy owns a live mount');
+                  if (copies.some(node => node.querySelector('[id]'))) throw new Error('Shim copy owns a document anchor');
+                  const links = [...document.querySelectorAll('.toc a')];
+                  const targets = links.map(link => document.getElementById(decodeURIComponent(link.hash.slice(1))));
+                  if (links.length !== 2 || new Set(targets).size !== 2 || targets.some(node => !node || !primary.contains(node))) throw new Error('TOC does not reach distinct primary headings');
+                  for (const anchor of ['footnote-note', 'reference-BOOK', ...targets.map(node => node.id)]) {
+                    if ([...document.querySelectorAll('[id]')].filter(node => node.id === anchor).length !== 1) throw new Error('Document anchor is duplicated');
+                  }
                   const addresses = mounts.map(node => node.id);
                   checkSelection(mounts[0], addresses[0], '11');
                   checkSelection(mounts[1], addresses[1], '22');
@@ -250,7 +304,7 @@ def main() -> None:
                   controller.replaceSource(controller.source().replace('{22}', '{55}'));
                   checkSelection(mounts[0], addresses[0], '44');
                   checkSelection(mounts[1], addresses[1], '55');
-                  return {contract:'overlapping-shim-output-ownership', liveMounts:2, distinctMounts:true, selection:true, edit:true, replacement:true, copiesNonLive:true, neighboringValuesPreserved:true};
+                  return {contract:'overlapping-shim-output-ownership', liveMounts:2, distinctMounts:true, selection:true, edit:true, replacement:true, copiesNonLive:true, neighboringValuesPreserved:true, primaryNavigation:true, distinctHeadingTargets:true, backmatterTargetsUnique:true};
                 })()""")
                 results.append(result)
                 browser.write_dom(artifacts / "overlap.dom.html")

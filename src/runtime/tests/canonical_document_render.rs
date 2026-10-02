@@ -1663,6 +1663,14 @@ fn canonical_pretty_text_normalizes_grouped_import_separators() {
             "Report\n======\n+> math/{sin,cos}\nauthor: Keep a,b\n======\n",
             "Report\n======\n+> math/{sin, cos}\nauthor: Keep a,b\n======\n",
         ),
+        (
+            "+> math/{trig/sin,trig/cos}\n",
+            "+> math/{trig/sin, trig/cos}\n",
+        ),
+        (
+            "~~~mech:worker\n+> math/{sin,cos}\n~~~\n",
+            "~~~mech:worker\n+> math/{sin, cos}\n~~~\n",
+        ),
     ]);
 }
 
