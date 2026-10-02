@@ -1427,6 +1427,7 @@ jobs:
           --test canonical_declaration_handoff --test canonical_document_outputs
           --test canonical_document_render --test canonical_source_index
           --test source_document --test canonical_config_profile --test config_profile
+          --test s8_recovery_index_range
 
       - name: Verify canonical compiler execution contracts
         run: >-
