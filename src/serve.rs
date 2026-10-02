@@ -713,7 +713,9 @@ impl ServerSourceRegistry {
                     escape_html(&format!("{error:#?}"))
                 )
             } else {
-                let render = if is_root && shim.contains("{{DOCUMENT_SCRIPT}}") {
+                let render = if is_root
+                    && (shim.contains("{{DOCUMENT_SCRIPT}}") || shim.contains("{{CODE}}"))
+                {
                     render_canonical_html(
                         &document.document(),
                         stylesheets.clone(),
@@ -3205,6 +3207,42 @@ result\n";
             payload.presentation_output_ids(),
             mech_runtime::canonical_document_presentation_output_ids(&retained.document()).unwrap()
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn custom_inline_shim_keeps_output_mounts_for_its_encoded_source() {
+        let root = temp_root("custom-inline-output-mounts");
+        let source = "```mech\nanswer := 42\nanswer\n```\n";
+        std::fs::write(root.join("main.mec"), source).unwrap();
+        let snapshot = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                include_str!("../tests/fixtures/serve/inline-shim.html"),
+                &[],
+            )
+            .unwrap();
+        let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        let encoded = html
+            .split_once("const code = `")
+            .and_then(|(_, suffix)| suffix.split_once("`;"))
+            .map(|(encoded, _)| encoded)
+            .unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(encoded).unwrap();
+        assert_eq!(payload.source(), source);
+        assert!(!payload.presentation_output_ids().is_empty());
+        assert!(html.contains("class='mech-block-output'"), "{html}");
+        for output_id in payload.presentation_output_ids() {
+            assert!(html.contains(&format!("id='{output_id}:0'")), "{html}");
+        }
+        assert!(html.contains("data-mech-document-status=\"loading\""));
+        assert!(html.contains("data-mech-inline-shim=\"true\""));
+        assert!(!html.contains("data-mech-document-controller"));
+        assert!(registry.get_route("/code/main.mec").is_none());
         std::fs::remove_dir_all(root).unwrap();
     }
 

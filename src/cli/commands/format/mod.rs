@@ -1019,7 +1019,7 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         &document_sources,
                         &encoded_document,
                     )?;
-                    let render = if uses_document_controller {
+                    let render = if uses_document_controller || shim_str.contains("{{CODE}}") {
                         render_canonical_html(
                             &document.document(),
                             html_style_sheets(stylesheet_str.clone()),

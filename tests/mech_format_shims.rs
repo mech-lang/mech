@@ -125,6 +125,42 @@ fn format_fixture(shim: Option<&Path>, stylesheet: Option<&Path>, output: &Path)
 }
 
 #[test]
+fn mech_format_custom_inline_shim_keeps_encoded_source_output_mounts() {
+    let directory = TestDirectory::new("custom-inline-mounts");
+    let input = directory.path().join("main.mec");
+    let output = directory.path().join("main.html");
+    let source = "```mech\nanswer := 42\nanswer\n```\n";
+    std::fs::write(&input, source).unwrap();
+    let result = Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("--no-config")
+        .arg("format")
+        .arg(&input)
+        .arg("--html")
+        .arg("--shim")
+        .arg(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/serve/inline-shim.html"))
+        .arg("--out")
+        .arg(&output)
+        .output()
+        .unwrap();
+    assert!(result.status.success(), "{result:?}");
+    let html = std::fs::read_to_string(output).unwrap();
+    let encoded = html
+        .split_once("const code = `")
+        .and_then(|(_, suffix)| suffix.split_once("`;"))
+        .map(|(encoded, _)| encoded)
+        .unwrap();
+    let payload = mech_runtime::BrowserDocumentPayload::decode(encoded).unwrap();
+    assert_eq!(payload.source(), source);
+    assert!(!payload.presentation_output_ids().is_empty());
+    assert!(html.contains("class='mech-block-output'"), "{html}");
+    for output_id in payload.presentation_output_ids() {
+        assert!(html.contains(&format!("id='{output_id}:0'")), "{html}");
+    }
+    assert!(html.contains("data-mech-document-status=\"loading\""));
+    assert!(!html.contains("data-mech-document-controller"));
+}
+
+#[test]
 fn mech_format_static_custom_shim_emits_no_runtime_assets() {
     let directory = TestDirectory::new("static-custom");
     let output = directory.path().join("static.html");
