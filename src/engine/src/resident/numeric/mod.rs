@@ -2787,6 +2787,30 @@ fn snapshot_power_compute_work(
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
+// A rational matrix reduction performs one multiplication and one addition
+// per term. Together they can call rational_gcd nine times, and Euclid's
+// algorithm can take 184 modulus steps for consecutive u128 Fibonacci values.
+// Keep fixed arithmetic inside the same conservative power-of-two allowance.
+const RATIONAL_REDUCTION_TERM_COMPUTE_WORK: usize = 2_048;
+
+fn snapshot_reduction_compute_work(
+    element: &SchemaBody,
+    terms: usize,
+) -> Result<usize, ResidentKernelError> {
+    let element = match element {
+        SchemaBody::Matrix { element, .. } => element.as_ref(),
+        scalar => scalar,
+    };
+    let work_per_term = if cfg!(feature = "r64") && matches!(element, SchemaBody::Rational64) {
+        RATIONAL_REDUCTION_TERM_COMPUTE_WORK
+    } else {
+        2
+    };
+    terms
+        .checked_mul(work_per_term)
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
 fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
     use mech_core::FloatWidth;
     matches!(
@@ -16654,10 +16678,10 @@ fn matrix_multiply_snapshot(
     if lhs_matrix.elements().len() != lhs_len || rhs_matrix.elements().len() != rhs_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let compute_work = output_len
+    let terms = output_len
         .checked_mul(inner)
-        .and_then(|work| work.checked_mul(2))
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let compute_work = snapshot_reduction_compute_work(lhs_schema.body(), terms)?;
     preflight_snapshot_arithmetic(
         kernel,
         schemas,
@@ -18869,6 +18893,7 @@ fn matrix_dot_snapshot(
     if left_count != right_count {
         return Err(ResidentKernelError::InvalidShape);
     }
+    let compute_work = snapshot_reduction_compute_work(left_schema.body(), left_count)?;
     preflight_snapshot_arithmetic(
         kernel,
         schemas,
@@ -18878,9 +18903,7 @@ fn matrix_dot_snapshot(
             .checked_add(right_count)
             .ok_or(ResidentKernelError::InvalidShape)?,
         1,
-        left_count
-            .checked_mul(2)
-            .ok_or(ResidentKernelError::InvalidShape)?,
+        compute_work,
     )?;
     let left = snapshot_numeric_elements(left)?;
     let right = snapshot_numeric_elements(right)?;
@@ -24108,6 +24131,146 @@ mod tests {
                 .into_boxed_slice(),
             ),
         );
+    }
+
+    #[cfg(feature = "r64")]
+    #[test]
+    fn rational_matrix_reductions_charge_euclidean_work_before_execution() {
+        assert_eq!(
+            snapshot_reduction_compute_work(&SchemaBody::Rational64, 1),
+            Ok(RATIONAL_REDUCTION_TERM_COMPUTE_WORK),
+        );
+        assert_eq!(
+            snapshot_reduction_compute_work(&SchemaBody::UnsignedInteger(IntegerWidth::W64), 1,),
+            Ok(2),
+        );
+
+        let matrix_body = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Rational64),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(1),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([matrix_body, SchemaBody::Rational64]);
+        let [matrix_schema, scalar_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let snapshot_kernel = |executor, output_schema| {
+            BoundResidentKernel::new(executor, Box::new([]))
+                .with_snapshot_output(ResidentSnapshotOutput {
+                    schema: output_schema,
+                    schema_key: schemas.entry(output_schema).unwrap().key(),
+                    shape: schemas
+                        .get(output_schema)
+                        .unwrap()
+                        .instantiate_shape(Box::new([]))
+                        .unwrap(),
+                    exact_cardinality: None,
+                    maximum_cardinality: None,
+                })
+                .with_snapshot_schemas(schemas.clone())
+        };
+        let scalar = |numerator, denominator| {
+            test_value(
+                &schemas,
+                *scalar_schema,
+                ValueDataDraft::Rational64 {
+                    numerator,
+                    denominator,
+                },
+            )
+        };
+        let matrix = |numerator, denominator| {
+            test_value(
+                &schemas,
+                *matrix_schema,
+                ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::Rational64 {
+                        numerator,
+                        denominator,
+                    }]
+                    .into_boxed_slice(),
+                ),
+            )
+        };
+
+        // Consecutive Fibonacci values force the Euclidean path while the
+        // cross-cancelled result remains representable in Rational64.
+        const F90: i64 = 2_880_067_194_370_816_120;
+        const F91: i64 = 4_660_046_610_375_530_309;
+        const F92: u64 = 7_540_113_804_746_346_429;
+        let left = [Some(matrix(F91, F92))];
+        let right = [Some(matrix(F90, F91 as u64))];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
+
+        let node = mech_core::NodeId::new(0);
+        let program = crate::memory_planner::ProgramMemoryPlan {
+            allocations: vec![mech_core::AllocationPlan {
+                id: mech_core::MemoryObjectId::new(0),
+                owner: mech_core::MemoryObjectOwner::TransactionStage { node, output: 0 },
+                role: mech_core::AllocationRole::TransactionStage,
+                slot: None,
+                space: mech_core::MemorySpace::ResidentCpu,
+                current_bytes: 0,
+                capacity_bytes: 0,
+                payload_block_capacity: 0,
+                alignment: 1,
+                lifetime: mech_core::MemoryLifetime::Transaction {
+                    first: mech_core::MemoryPlanPoint::new(0),
+                    last: mech_core::MemoryPlanPoint::new(1),
+                },
+                placement: mech_core::ArenaPlacement {
+                    arena: mech_core::MemoryArenaId::new(0),
+                    offset: 0,
+                },
+                reuse_group: None,
+            }]
+            .into_boxed_slice(),
+            budget_limits: mech_core::TargetMemoryProfile::current_resident_cpu()
+                .unwrap()
+                .limits,
+            ..Default::default()
+        };
+        let plan =
+            crate::memory_planner::plan_turn_memory(&program, node, &Default::default()).unwrap();
+        for (kernel, prior, expected) in [
+            (
+                snapshot_kernel(matrix_multiply_snapshot, *matrix_schema),
+                matrix(0, 1),
+                matrix(F90, F92),
+            ),
+            (
+                snapshot_kernel(matrix_dot_snapshot, *scalar_schema),
+                scalar(0, 1),
+                scalar(F90, F92),
+            ),
+        ] {
+            for (remaining_work, expected_result) in [
+                (10_000, Ok(true)),
+                (1_000, Err(ResidentKernelError::InvalidShape)),
+            ] {
+                let mut bounded = plan.clone();
+                bounded.budget_limits.max_compute_work = Some(remaining_work);
+                let mut output = [Some(prior.clone())];
+                let result = super::super::budget::with_resident_turn_plan(bounded, || {
+                    kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+                });
+                assert_eq!(
+                    result, expected_result,
+                    "compute allowance {remaining_work}"
+                );
+                let expected = if result.is_ok() { &expected } else { &prior };
+                assert_eq!(
+                    output[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+                    expected.canonical_data_draft().unwrap(),
+                );
+            }
+        }
     }
 
     #[test]
