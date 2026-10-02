@@ -707,6 +707,81 @@ fn public_rejected_late_matrix_update_retains_state_and_recovers() {
 }
 
 #[test]
+fn public_zero_imaginary_products_keep_component_zero_signs() {
+    for width in [FloatWidth::W32, FloatWidth::W64] {
+        let artifact = bound(
+            "answer := left * right\nanswer\n",
+            &[
+                ("left", scalar(width, 0.0, 0.0)),
+                ("right", scalar(width, 0.0, 1.0)),
+            ],
+        );
+        let expected = scalar(width, 0.0, 0.0);
+        public_outputs(None, &artifact, &[expected.clone(), expected], None);
+    }
+}
+
+#[test]
+fn public_complex_reductions_keep_first_term_zero_signs() {
+    for width in [FloatWidth::W32, FloatWidth::W64] {
+        let left = complex_matrix(width, 1, 1, &[(-0.0, -0.0)]);
+        let right = complex_matrix(width, 1, 1, &[(1.0, 0.0)]);
+        for (source, expected) in [
+            (
+                "answer := matrix/matmul(left,right)\nanswer\n",
+                left.clone(),
+            ),
+            (
+                "answer := matrix/dot(left,right)\nanswer\n",
+                scalar(width, -0.0, -0.0),
+            ),
+            (
+                "+> stats\nanswer := stats/sum/row(left)\nanswer\n",
+                left.clone(),
+            ),
+            (
+                "+> stats\nanswer := stats/sum/column(left)\nanswer\n",
+                left.clone(),
+            ),
+        ] {
+            let artifact = bound(source, &[("left", left.clone()), ("right", right.clone())]);
+            public_outputs(None, &artifact, &[expected.clone(), expected], None);
+        }
+    }
+}
+
+#[test]
+fn public_c64_products_keep_finite_cancellation_components() {
+    let a = 2.0_f64.powi(563) * (1.0 + f64::EPSILON);
+    let b = 2.0_f64.powi(563);
+    let c = 2.0_f64.powi(564) * (1.0 - f64::EPSILON);
+    let d = 2.0_f64.powi(564);
+    let expected = scalar(FloatWidth::W64, -2.0_f64.powi(1023), f64::INFINITY);
+    let artifact = bound(
+        "answer := left * right\nanswer\n",
+        &[
+            ("left", scalar(FloatWidth::W64, a, b)),
+            ("right", scalar(FloatWidth::W64, c, d)),
+        ],
+    );
+    public_outputs(None, &artifact, &[expected.clone(), expected], None);
+    let expected = complex_matrix(
+        FloatWidth::W64,
+        1,
+        1,
+        &[(-2.0_f64.powi(1023), f64::INFINITY)],
+    );
+    let artifact = bound(
+        "answer := matrix/matmul(left,right)\nanswer\n",
+        &[
+            ("left", complex_matrix(FloatWidth::W64, 1, 1, &[(a, b)])),
+            ("right", complex_matrix(FloatWidth::W64, 1, 1, &[(c, d)])),
+        ],
+    );
+    public_outputs(None, &artifact, &[expected.clone(), expected], None);
+}
+
+#[test]
 fn public_c32_large_integral_complex_power() {
     let expected = scalar(FloatWidth::W32, -0.7447482313713072, 0.7140339843362773);
     let artifact = bound(

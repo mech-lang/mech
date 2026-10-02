@@ -12417,19 +12417,17 @@ fn sum_snapshot(
     let mut sums = Vec::with_capacity(output_count);
     if column {
         for row in 0..rows {
-            let mut sum = numeric_zero(element)?;
-            for column in 0..columns {
-                sum = numeric_add(sum, values[row * columns + column].clone())?;
-            }
-            sums.push(sum);
+            sums.push(numeric_sum(
+                element,
+                (0..columns).map(|column| Ok(values[row * columns + column].clone())),
+            )?);
         }
     } else {
         for column in 0..columns {
-            let mut sum = numeric_zero(element)?;
-            for row in 0..rows {
-                sum = numeric_add(sum, values[row * columns + column].clone())?;
-            }
-            sums.push(sum);
+            sums.push(numeric_sum(
+                element,
+                (0..rows).map(|row| Ok(values[row * columns + column].clone())),
+            )?);
         }
     }
     if let Some(output_shape) = output_shape {
@@ -16695,15 +16693,15 @@ fn matrix_multiply_snapshot(
     let mut result = Vec::with_capacity(output_len);
     for row in 0..rows {
         for column in 0..columns {
-            let mut sum = numeric_zero(element)?;
-            for offset in 0..inner {
-                let product = numeric_multiply(
-                    lhs[row * inner + offset].clone(),
-                    rhs[offset * columns + column].clone(),
-                )?;
-                sum = numeric_add(sum, product)?;
-            }
-            result.push(sum);
+            result.push(numeric_sum(
+                element,
+                (0..inner).map(|offset| {
+                    numeric_multiply(
+                        lhs[row * inner + offset].clone(),
+                        rhs[offset * columns + column].clone(),
+                    )
+                }),
+            )?);
         }
     }
     write_snapshot_data_for_shape_with_work_budget(
@@ -17287,6 +17285,28 @@ fn snapshot_numeric_abs(
     write_snapshot_data_for_shape_with_work_budget(kernel, output, &output_shape, data, Some(0))
 }
 
+// Complex zero signs are observable in canonical values. A nonempty complex
+// reduction starts with its first term; other numeric families retain their
+// existing positive-zero seed. Empty reductions retain their typed zero.
+fn numeric_sum(
+    body: &SchemaBody,
+    terms: impl IntoIterator<Item = Result<ValueDataDraft, ResidentKernelError>>,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    let mut terms = terms.into_iter();
+    let mut sum = if matches!(body, SchemaBody::Complex(_)) {
+        match terms.next() {
+            Some(first) => first?,
+            None => return numeric_zero(body),
+        }
+    } else {
+        numeric_zero(body)?
+    };
+    for term in terms {
+        sum = numeric_add(sum, term?)?;
+    }
+    Ok(sum)
+}
+
 fn numeric_zero(body: &SchemaBody) -> Result<ValueDataDraft, ResidentKernelError> {
     use mech_core::IntegerWidth;
     match body {
@@ -17619,13 +17639,13 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
     if left.1 == 0.0 && right.1 == 0.0 {
         // Keep the signs of zero cross terms without multiplying zero by infinity.
         return (
-            left.0 * right.0,
+            left.0 * right.0 - left.1 * right.1,
             left.0.signum() * right.1 + left.1 * right.0.signum(),
         );
     }
     if left.0 == 0.0 && right.0 == 0.0 {
         return (
-            -left.1 * right.1,
+            left.0 * right.0 - left.1 * right.1,
             left.0 * right.1.signum() + left.1.signum() * right.0,
         );
     }
@@ -17747,13 +17767,19 @@ fn complex64_from_parts(real: f64, imaginary: f64) -> ValueDataDraft {
     ))
 }
 
-fn scaled_f64_product(left: f64, right: f64) -> Option<(f64, i32)> {
+// Products stay normalized until their sum is formed. Retain the FMA rounding
+// residual as well: equal rounded leading products need not cancel exactly.
+fn scaled_f64_product(left: f64, right: f64) -> Option<((f64, f64), i32)> {
     if left == 0.0 || right == 0.0 {
-        return Some((left * right, 0));
+        return Some(((left * right, 0.0), 0));
     }
     let (left, left_exponent) = libm::frexp(left);
     let (right, right_exponent) = libm::frexp(right);
-    Some((left * right, left_exponent + right_exponent))
+    let product = left * right;
+    Some((
+        (product, libm::fma(left, right, -product)),
+        left_exponent + right_exponent,
+    ))
 }
 
 fn scaled_f64_product_sum(
@@ -17761,39 +17787,45 @@ fn scaled_f64_product_sum(
     second: (f64, f64),
     subtract_second: bool,
 ) -> Option<(f64, i32)> {
-    let first = scaled_f64_product(first.0, first.1);
-    let second = scaled_f64_product(second.0, second.1);
-    let (mantissa, exponent) = match (first, second) {
-        (None, None) => return None,
-        (Some(value), None) => value,
-        (None, Some((mantissa, exponent))) => {
-            (if subtract_second { -mantissa } else { mantissa }, exponent)
-        }
-        (Some((first, first_exponent)), Some((second, second_exponent))) => {
-            // An exact zero has a sign but no scale. Its placeholder exponent
-            // must not force a tiny nonzero product to underflow during alignment.
-            let exponent = if first == 0.0 {
-                second_exponent
-            } else if second == 0.0 {
-                first_exponent
-            } else {
-                first_exponent.max(second_exponent)
-            };
-            let second = if subtract_second { -second } else { second };
-            let first = if first == 0.0 {
-                first
-            } else {
-                libm::scalbn(first, first_exponent - exponent)
-            };
-            let second = if second == 0.0 {
-                second
-            } else {
-                libm::scalbn(second, second_exponent - exponent)
-            };
-            (first + second, exponent)
+    let (first, first_exponent) = scaled_f64_product(first.0, first.1)?;
+    let (second, second_exponent) = scaled_f64_product(second.0, second.1)?;
+    // Zero has a sign but no scale. Do not let its placeholder exponent erase
+    // a tiny nonzero product while aligning either the lead or residual.
+    let exponent = if first.0 == 0.0 {
+        second_exponent
+    } else if second.0 == 0.0 {
+        first_exponent
+    } else {
+        first_exponent.max(second_exponent)
+    };
+    let align = |product: (f64, f64), scale| {
+        if product.0 == 0.0 {
+            product
+        } else {
+            (
+                libm::scalbn(product.0, scale - exponent),
+                libm::scalbn(product.1, scale - exponent),
+            )
         }
     };
-    let (mantissa, adjustment) = libm::frexp(mantissa);
+    let first = align(first, first_exponent);
+    let second = align(second, second_exponent);
+    let second = if subtract_second {
+        (-second.0, -second.1)
+    } else {
+        second
+    };
+    let (sum, sum_residual) = power_log_sum(first.0, second.0);
+    let (product_residual, product_tail) = power_log_sum(first.1, second.1);
+    let (sum, tail) = if sum_residual == 0.0 && product_residual == 0.0 && product_tail == 0.0 {
+        // Adding a synthetic positive zero would erase a negative-zero sum.
+        (sum, 0.0)
+    } else {
+        let (sum, tail) = power_log_sum(sum, sum_residual + product_residual);
+        (sum, tail + product_tail)
+    };
+    let combined = if tail == 0.0 { sum } else { sum + tail };
+    let (mantissa, adjustment) = libm::frexp(combined);
     Some((mantissa, exponent + adjustment))
 }
 
@@ -17820,13 +17852,13 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
     if left.1 == 0.0 && right.1 == 0.0 {
         // Keep the signs of zero cross terms without multiplying zero by infinity.
         return (
-            left.0 * right.0,
+            left.0 * right.0 - left.1 * right.1,
             left.0.signum() * right.1 + left.1 * right.0.signum(),
         );
     }
     if left.0 == 0.0 && right.0 == 0.0 {
         return (
-            -left.1 * right.1,
+            left.0 * right.0 - left.1 * right.1,
             left.0 * right.1.signum() + left.1.signum() * right.0,
         );
     }
@@ -18859,10 +18891,12 @@ fn matrix_dot_snapshot(
     let output_schema = schemas
         .get(metadata.schema)
         .ok_or(ResidentKernelError::InvalidOutput)?;
-    let mut next = numeric_zero(output_schema.body())?;
-    for (left, right) in left.into_iter().zip(right) {
-        next = numeric_add(next, numeric_multiply(left, right)?)?;
-    }
+    let next = numeric_sum(
+        output_schema.body(),
+        left.into_iter()
+            .zip(right)
+            .map(|(left, right)| numeric_multiply(left, right)),
+    )?;
     write_snapshot_data_with_work_budget(kernel, output, next, Some(0))
 }
 
@@ -23420,6 +23454,224 @@ mod tests {
                 complex64_power((f64::INFINITY, 0.0), (1.0, 0.0)),
                 (f64::INFINITY, 0.0)
             );
+        }
+    }
+
+    #[test]
+    fn complex_review_zero_axis_products_follow_component_signs() {
+        let mut failures = [0_usize; 2];
+        for a in [0.0_f32, -0.0, 2.0, -2.0] {
+            for c in [0.0_f32, -0.0, 3.0, -3.0] {
+                for b in [0.0_f32, -0.0, 2.0, -2.0] {
+                    for d in [0.0_f32, -0.0, 3.0, -3.0] {
+                        if !(a == 0.0 && c == 0.0 || b == 0.0 && d == 0.0) {
+                            continue;
+                        }
+                        let expected = (a * c - b * d, a * d + b * c);
+                        let result = complex32_multiply((a, b), (c, d));
+                        failures[0] += usize::from(
+                            (result.0.to_bits(), result.1.to_bits())
+                                != (expected.0.to_bits(), expected.1.to_bits()),
+                        );
+                        #[cfg(feature = "c64")]
+                        {
+                            let result = complex64_multiply(
+                                (f64::from(a), f64::from(b)),
+                                (f64::from(c), f64::from(d)),
+                            );
+                            failures[1] += usize::from(
+                                (result.0.to_bits(), result.1.to_bits())
+                                    != (
+                                        f64::from(expected.0).to_bits(),
+                                        f64::from(expected.1).to_bits(),
+                                    ),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        assert_eq!(failures, [0, 0], "c32/c64 axis component sign mismatches");
+        for zero in [(0.0_f32, 0.0_f32), (-0.0, -0.0)] {
+            let square = complex32_power(zero, (2.0, 0.0));
+            assert_eq!(square.0.to_bits(), 0.0_f32.to_bits());
+            #[cfg(feature = "c64")]
+            assert_eq!(
+                complex64_power((f64::from(zero.0), f64::from(zero.1)), (2.0, 0.0))
+                    .0
+                    .to_bits(),
+                0.0_f64.to_bits()
+            );
+        }
+    }
+
+    #[test]
+    fn complex_review_reductions_preserve_first_term_zero_signs() {
+        let mut failures = [[0_usize; 3]; 2];
+        let widths = [mech_core::FloatWidth::W32, mech_core::FloatWidth::W64];
+        for (width_index, width) in widths.into_iter().enumerate() {
+            if width == mech_core::FloatWidth::W64 && !cfg!(feature = "c64") {
+                continue;
+            }
+            for count in [0_u64, 1, 2] {
+                let element = SchemaBody::Complex(width);
+                let matrix = |rows, columns| SchemaBody::Matrix {
+                    element: Box::new(element.clone()),
+                    dimensions: vec![
+                        mech_core::DimensionExpr::Constant(rows),
+                        mech_core::DimensionExpr::Constant(columns),
+                    ]
+                    .into_boxed_slice(),
+                };
+                let (schemas, ids) = test_schema_table([
+                    matrix(1, count),
+                    matrix(count, 1),
+                    matrix(1, 1),
+                    element.clone(),
+                ]);
+                let value = |real: f64, imaginary: f64| match width {
+                    mech_core::FloatWidth::W32 => complex32_to_draft(real as f32, imaginary as f32),
+                    mech_core::FloatWidth::W64 => {
+                        #[cfg(feature = "c64")]
+                        {
+                            complex64_from_parts(real, imaginary)
+                        }
+                        #[cfg(not(feature = "c64"))]
+                        {
+                            unreachable!()
+                        }
+                    }
+                };
+                let data = value(-0.0, -0.0);
+                let lhs = [Some(test_value(
+                    &schemas,
+                    ids[0],
+                    ValueDataDraft::Matrix(vec![data.clone(); count as usize].into_boxed_slice()),
+                ))];
+                let ones = vec![value(1.0, 0.0); count as usize];
+                let rhs = [Some(test_value(
+                    &schemas,
+                    ids[1],
+                    ValueDataDraft::Matrix(ones.clone().into_boxed_slice()),
+                ))];
+                let dot_rhs = [Some(test_value(
+                    &schemas,
+                    ids[0],
+                    ValueDataDraft::Matrix(ones.into_boxed_slice()),
+                ))];
+                let kernel = |executor, output_schema, parameters| {
+                    BoundResidentKernel::new(executor, parameters)
+                        .with_snapshot_output(ResidentSnapshotOutput {
+                            schema: output_schema,
+                            schema_key: schemas.entry(output_schema).unwrap().key(),
+                            shape: schemas
+                                .get(output_schema)
+                                .unwrap()
+                                .instantiate_shape(Box::new([]))
+                                .unwrap(),
+                            exact_cardinality: None,
+                            maximum_cardinality: None,
+                        })
+                        .with_snapshot_schemas(schemas.clone())
+                };
+                let expected = if count == 0 { value(0.0, 0.0) } else { data };
+                let mat_inputs = [
+                    ResidentValueRef::Snapshot(&lhs),
+                    ResidentValueRef::Snapshot(&rhs),
+                ];
+                let dot_inputs = [
+                    ResidentValueRef::Snapshot(&lhs),
+                    ResidentValueRef::Snapshot(&dot_rhs),
+                ];
+                let sum_inputs = [ResidentValueRef::Snapshot(&lhs)];
+                for (path, (bound, inputs, expected)) in [
+                    (
+                        kernel(matrix_multiply_snapshot, ids[2], Box::new([])),
+                        mat_inputs.as_slice(),
+                        ValueDataDraft::Matrix(vec![expected.clone()].into_boxed_slice()),
+                    ),
+                    (
+                        kernel(matrix_dot_snapshot, ids[3], Box::new([])),
+                        dot_inputs.as_slice(),
+                        expected.clone(),
+                    ),
+                    (
+                        kernel(sum_snapshot, ids[2], vec![1, 1].into_boxed_slice()),
+                        sum_inputs.as_slice(),
+                        ValueDataDraft::Matrix(vec![expected.clone()].into_boxed_slice()),
+                    ),
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    let mut output = [None];
+                    assert_eq!(
+                        bound.execute(&Inputs(inputs), ResidentValueMut::Snapshot(&mut output)),
+                        Ok(true)
+                    );
+                    failures[width_index][path] += usize::from(
+                        output[0].as_ref().unwrap().canonical_data_draft().unwrap() != expected,
+                    );
+                }
+            }
+        }
+        assert_eq!(
+            failures, [[0; 3]; 2],
+            "c32/c64 failures for matmul, dot, and sum"
+        );
+    }
+
+    #[cfg(feature = "c64")]
+    #[test]
+    fn complex_review_scaled_products_preserve_cancellation_residuals() {
+        // Exact binary products: (1+2^-52)(1-2^-52)-1 = -2^-104.
+        // Their rounded leading products are equal; only the residual survives.
+        for (left_scale, right_scale) in [
+            (563, 564),
+            (100, 101),
+            (-460, -460),
+            (-485, -485),
+            (-486, -485),
+        ] {
+            let a = libm::scalbn(1.0 + f64::EPSILON, left_scale);
+            let b = libm::scalbn(1.0, left_scale);
+            let c = libm::scalbn(1.0 - f64::EPSILON, right_scale);
+            let d = libm::scalbn(1.0, right_scale);
+            let expected = -libm::scalbn(1.0, left_scale + right_scale - 104);
+            for sign in [1.0, -1.0] {
+                for (left, right, imaginary) in [
+                    ((sign * a, sign * b), (c, d), false),
+                    ((c, d), (sign * a, sign * b), false),
+                    ((sign * a, sign * b), (-d, c), true),
+                ] {
+                    let result = complex64_multiply(left, right);
+                    let component = if imaginary { result.1 } else { result.0 };
+                    assert_eq!(
+                        component.to_bits(),
+                        (sign * expected).to_bits(),
+                        "{left_scale},{right_scale} {result:?}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[cfg(feature = "c64")]
+    #[test]
+    fn complex_review_scaled_division_preserves_cancellation_residuals() {
+        let a = libm::scalbn(1.0 + f64::EPSILON, 563);
+        let b = libm::scalbn(1.0, 563);
+        let c = libm::scalbn(1.0 - f64::EPSILON, 564);
+        let d = libm::scalbn(1.0, 564);
+        // Independent exact-input 180-digit Decimal quotient reference.
+        let expected = -1.2325951644078312e-32;
+        for sign in [1.0, -1.0] {
+            let result = complex64_divide((sign * a, sign * b), (c, -d));
+            assert!(
+                result.0 != 0.0 && (result.0 / (sign * expected) - 1.0).abs() < 1e-15,
+                "{result:?}"
+            );
+            assert!((result.1 / sign - 0.5).abs() < 1e-15);
         }
     }
 
