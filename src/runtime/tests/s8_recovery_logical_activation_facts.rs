@@ -18,13 +18,17 @@ fn compile(source: &str) -> ProgramArtifact {
         ParseConfig::default(),
     )
     .unwrap();
-    assert!(document.is_strictly_clean());
+    assert!(
+        document.is_strictly_clean(),
+        "source did not parse cleanly: {:?}",
+        document.snapshot().diagnostics.as_slice(),
+    );
     RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
         .unwrap()
         .compile_document(&document)
-        .unwrap()
+        .unwrap_or_else(|error| panic!("failed to compile:\n{source}\n{error:?}"))
         .artifact()
         .clone()
 }
@@ -53,7 +57,7 @@ fn exact_closed_mask(source: &str, expected: &str) {
             &catalog,
             &ActivationFacts::default(),
         )
-        .unwrap();
+        .unwrap_or_else(|error| panic!("failed to activate:\n{source}\n{error:?}"));
         for _ in 0..2 {
             instance.turn(&[]).unwrap();
             assert_eq!(output(&instance), expected);
@@ -84,7 +88,11 @@ fn closed_comparison_masks_share_broadcast_and_ordering_semantics() {
         );
     }
     exact_closed_mask("x := [1 2; 3 4]\nmask := x >= 3\nx[mask]\n", "[3; 4]");
-    exact_closed_mask("x := [42]\nmask := 1 < 2\nx[mask]\n", "[42]");
+    exact_closed_mask(
+        "x := [42 43]\np := 1 < 2\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask("x := [1 2 3]\nmask := logic/not(x > 1)\nx[mask]\n", "[1]");
 }
 
 #[test]
