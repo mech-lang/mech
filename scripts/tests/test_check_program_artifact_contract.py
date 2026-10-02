@@ -21,9 +21,21 @@ class ProgramArtifactContractTests(unittest.TestCase):
 
     def test_canonical_source_proof_rejects_missing_field_assertions(self) -> None:
         source = (ROOT / "src/engine/tests/canonical_document_state.rs").read_text()
-        for field in ("contracts", "inputs", "slots", "bindings", "outputs", "constraints", "nodes"):
+        for field in (
+            "requirements", "compute_regions", "contracts", "inputs",
+            "slots", "bindings", "outputs", "constraints", "nodes",
+        ):
             assertion = f"assert_eq!(artifact.{field}(), decoded.{field}());"
             with self.subTest(field=field):
+                self.assertTrue(CHECKER.validate_ordinary_source_proof(source.replace(assertion, "")))
+        for assertion in (
+            "assert_eq!(artifact.schemas().len(), decoded.schemas().len());",
+            "assert_eq!(left.key(), right.key());",
+            "assert_eq!(left.canonical_bytes(), right.canonical_bytes());",
+            "assert_eq!(artifact.constants().len(), decoded.constants().len());",
+            "assert_eq!(artifact_constant, decoded_constant);",
+        ):
+            with self.subTest(assertion=assertion):
                 self.assertTrue(CHECKER.validate_ordinary_source_proof(source.replace(assertion, "")))
 
     def test_canonical_source_proof_requires_independent_compilation(self) -> None:

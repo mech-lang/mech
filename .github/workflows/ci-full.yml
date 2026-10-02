@@ -1401,7 +1401,13 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features full
           cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features base
-          cargo +nightly-2026-03-03 test --locked -p mech-syntax --test grammar_conformance --no-default-features --features "baselib pretty_print serde compiler program statements_default subscript_default mechdown"
+          # The canonical registries and grammar tests own the retired grammar assertions.
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --no-default-features \
+            --features "baselib pretty_print serde compiler program statements_default subscript_default" \
+            --test canonical_port_registry --test canonical_rule_registry \
+            --test canonical_recursive_core_inventory --test canonical_recursive_core_schema \
+            --test canonical_grammar --test canonical_mechdown_closed_rules \
+            --test canonical_phase_2i_certification --test canonical_phase_2i_recovery
 
       - name: Verify canonical document syntax with optional features disabled
         run: >-

@@ -207,10 +207,27 @@ def validate_ordinary_source_proof(source: str) -> list[str]:
     ):
         if required not in proof:
             failures.append(f"ordinary-source artifact proof is missing {required}")
-    for field in ("contracts", "inputs", "slots", "bindings", "outputs", "constraints", "nodes"):
+    for field in (
+        "requirements", "compute_regions", "contracts", "inputs",
+        "slots", "bindings", "outputs", "constraints", "nodes",
+    ):
         assertion = f"assert_eq!(artifact.{field}(), decoded.{field}())"
         if assertion not in proof:
             failures.append(f"ordinary-source artifact proof is missing {assertion}")
+    compact = re.sub(r"\s+", "", proof)
+    for required in (
+        "assert_eq!(artifact.schemas().len(), decoded.schemas().len())",
+        "for (left, right) in artifact.schemas().entries().zip(decoded.schemas().entries())",
+        "assert_eq!(left.key(), right.key())",
+        "assert_eq!(left.canonical_bytes(), right.canonical_bytes())",
+        "assert_eq!(artifact.constants().len(), decoded.constants().len())",
+        "for raw in 0..artifact.constants().len()",
+        "artifact.constants().get(id).unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap()",
+        "decoded.constants().get(id).unwrap().canonical_snapshot_bytes(decoded.schemas()).unwrap()",
+        "assert_eq!(artifact_constant, decoded_constant)",
+    ):
+        if re.sub(r"\s+", "", required) not in compact:
+            failures.append(f"ordinary-source artifact proof is missing {required}")
     if proof.count("compiled(source).compile_artifact()") < 2:
         failures.append("ordinary-source artifact proof must compile each fixture independently twice")
     if re.search(

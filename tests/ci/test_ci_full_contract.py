@@ -1282,6 +1282,23 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertLess(block.index(fetch), block.index(command))
         self.assertNotIn("continue-on-error", block)
 
+    def test_syntax_grammar_step_uses_current_targets_and_features(self):
+        block = job_block(FULL, "cargo-language")
+        grammar = block.split("- name: Run syntax grammar suites", 1)[1].split("- name:", 1)[0]
+        self.assertNotRegex(grammar, r"--test\s+grammar_conformance\b")
+        for target in (
+            "canonical_port_registry", "canonical_rule_registry",
+            "canonical_recursive_core_inventory", "canonical_recursive_core_schema",
+            "canonical_grammar", "canonical_mechdown_closed_rules",
+            "canonical_phase_2i_certification", "canonical_phase_2i_recovery",
+        ):
+            self.assertIn(f"--test {target}", grammar)
+            self.assertTrue((ROOT / f"src/syntax/tests/{target}.rs").is_file())
+        for selected in re.findall(r'--features\s+(?:"([^"]*)"|\'(.*?)\'|(\S+))', grammar):
+            features = next(value for value in selected if value)
+            self.assertNotIn("mechdown", features.replace(",", " ").split())
+            self.assertNotIn("formatter", features.replace(",", " ").split())
+
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):
         block = job_block(FULL, "function-system-contracts")
         install = "sudo apt-get install --yes ripgrep"

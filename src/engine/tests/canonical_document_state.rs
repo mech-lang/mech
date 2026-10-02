@@ -60,6 +60,34 @@ fn canonical_documents_emit_complete_equivalent_bytecode_artifacts() {
         let reencoded = mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap();
 
         assert_eq!(bytecode, reencoded);
+        assert_eq!(artifact.schemas().len(), decoded.schemas().len());
+        for (left, right) in artifact
+            .schemas()
+            .entries()
+            .zip(decoded.schemas().entries())
+        {
+            assert_eq!(left.key(), right.key());
+            assert_eq!(left.canonical_bytes(), right.canonical_bytes());
+        }
+        assert_eq!(artifact.constants().len(), decoded.constants().len());
+        for raw in 0..artifact.constants().len() {
+            let id = mech_core::ConstantId::new(raw.try_into().unwrap());
+            let artifact_constant = artifact
+                .constants()
+                .get(id)
+                .unwrap()
+                .canonical_snapshot_bytes(artifact.schemas())
+                .unwrap();
+            let decoded_constant = decoded
+                .constants()
+                .get(id)
+                .unwrap()
+                .canonical_snapshot_bytes(decoded.schemas())
+                .unwrap();
+            assert_eq!(artifact_constant, decoded_constant);
+        }
+        assert_eq!(artifact.requirements(), decoded.requirements());
+        assert_eq!(artifact.compute_regions(), decoded.compute_regions());
         assert_eq!(artifact.contracts(), decoded.contracts());
         assert_eq!(artifact.inputs(), decoded.inputs());
         assert_eq!(artifact.slots(), decoded.slots());
