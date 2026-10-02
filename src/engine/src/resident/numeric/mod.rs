@@ -2761,9 +2761,10 @@ fn snapshot_power_compute_work(
     // Exact integer/rational and integral complex powers use exponentiation by
     // squaring. Charge the maximum number of accumulator multiplies, squares,
     // and (where admitted) one reciprocal before executing the kernel.
-    // The fractional polar path has bounded scalar work and no loop; its
-    // arithmetic/library calls also fit within these conservative complex
-    // bounds. These are admission bounds, not per-invocation operation counts.
+    // The fractional polar path has fixed scalar work and at most twelve phase
+    // doublings in c64; widened c32 phases remain finite without that loop.
+    // Those calls fit within the conservative complex bounds. These are
+    // admission bounds, not per-invocation operation counts.
     let work_per_element = match element {
         SchemaBody::UnsignedInteger(IntegerWidth::W8) => 15,
         SchemaBody::UnsignedInteger(IntegerWidth::W16) => 31,
@@ -8291,6 +8292,12 @@ fn indexed_assign_snapshot_dense(
     let metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
+    let compound_power_work = match kernel.retained_state::<SemanticArithmetic>() {
+        Some(arithmetic) => {
+            snapshot_power_compute_work(*arithmetic, current_schema.body(), positions.len())?
+        }
+        None => 0,
+    };
     let publication_equality_work = super::budget::projected_language_equality_work(
         schemas,
         current,
@@ -8333,6 +8340,7 @@ fn indexed_assign_snapshot_dense(
                 .checked_add(super::budget::checked_u64(output_len)?)
                 .and_then(|work| work.checked_add(super::budget::checked_u64(positions.len()).ok()?))
                 .and_then(|work| work.checked_add(publication_equality_work))
+                .and_then(|work| work.checked_add(super::budget::checked_u64(compound_power_work).ok()?))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             temporary_bytes: current_footprint.retained_bytes
                 .checked_add(container_bytes)
@@ -8526,6 +8534,12 @@ fn indexed_assign_snapshot(
     let metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
+    let compound_power_work = match kernel.retained_state::<SemanticArithmetic>() {
+        Some(arithmetic) => {
+            snapshot_power_compute_work(*arithmetic, current_schema.body(), positions.len())?
+        }
+        None => 0,
+    };
     let publication_equality_work = super::budget::projected_language_equality_work(
         schemas,
         current,
@@ -8544,6 +8558,7 @@ fn indexed_assign_snapshot(
                 positions.len(),
             )?)
             .and_then(|work| work.checked_add(publication_equality_work))
+                .and_then(|work| work.checked_add(super::budget::checked_u64(compound_power_work).ok()?))
             .ok_or(ResidentKernelError::InvalidShape)?,
         temporary_bytes: cloned_bytes
             .checked_mul(2)
@@ -17731,7 +17746,6 @@ fn complex64_from_parts(real: f64, imaginary: f64) -> ValueDataDraft {
     ))
 }
 
-#[cfg(feature = "c64")]
 fn scaled_f64_product(left: f64, right: f64) -> Option<(f64, i32)> {
     if left == 0.0 || right == 0.0 {
         return Some((left * right, 0));
@@ -17741,7 +17755,6 @@ fn scaled_f64_product(left: f64, right: f64) -> Option<(f64, i32)> {
     Some((left * right, left_exponent + right_exponent))
 }
 
-#[cfg(feature = "c64")]
 fn scaled_f64_product_sum(
     first: (f64, f64),
     second: (f64, f64),
@@ -18184,43 +18197,159 @@ fn complex32_integer_power(mut base: (f32, f32), exponent: f32) -> (f32, f32) {
     result
 }
 
-// Bounded polar arithmetic for a finite, nonzero base and finite exponent.
-// Neither the radius nor the common magnitude is materialized. Keep the binary
-// scale separate until each final component has been multiplied by its direction.
-// c32 uses this same calculation in f64 and rounds only the final components.
-fn finite_complex_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
-    let (_, scale) = libm::frexp(base.0.abs().max(base.1.abs()));
-    let x = libm::scalbn(base.0, -scale);
-    let y = libm::scalbn(base.1, -scale);
-    let log_scaled_radius = 0.5 * libm::log(x * x + y * y);
-    let logarithmic_radius = f64::from(scale) * core::f64::consts::LN_2 + log_scaled_radius;
-    let angle = libm::atan2(base.1, base.0);
-    let result_angle = exponent.1 * logarithmic_radius + exponent.0 * angle;
+// Keep the rounding residual when a small logarithmic term is added to a
+// binary scale. In particular, do not discard MAX's fractional log2 radius.
+fn power_log_sum(left: f64, right: f64) -> (f64, f64) {
+    let sum = left + right;
+    let right_part = sum - left;
+    (sum, (left - (sum - right_part)) + (right - right_part))
+}
 
-    // Split before adding the small logarithmic correction: combining them
-    // first loses significant fractional bits near a range boundary (notably
-    // MAX+MAX*i raised to the representable exponent just below one).
-    let exponent_scale = exponent.0 * f64::from(scale);
-    let whole_scale = libm::trunc(exponent_scale);
-    let fractional_scale = (exponent_scale - whole_scale)
-        + (exponent.0 * log_scaled_radius - exponent.1 * angle) * core::f64::consts::LOG2_E;
-    if !fractional_scale.is_finite() {
-        // Extreme exponents can still produce a legitimately nonfinite polar
-        // result. Preserve those floating semantics rather than filtering it.
-        let magnitude = libm::exp(exponent.0 * logarithmic_radius - exponent.1 * angle);
+fn finite_complex_log_radius(base: (f64, f64)) -> (f64, (f64, f64)) {
+    let maximum = base.0.abs().max(base.1.abs());
+    let minimum = base.0.abs().min(base.1.abs());
+    if (0.5..=2.0).contains(&maximum) {
+        // Around unit magnitude, compute |z|^2-1 directly, including product
+        // residuals. log1p retains small imaginary squares which a rounded
+        // norm would erase before a large exponent amplifies them.
+        let axis = (maximum - 1.0) * (maximum + 1.0);
+        let square = minimum * minimum;
+        let (sum, residual) = power_log_sum(axis, square);
+        let difference = sum
+            + (residual
+                + libm::fma(maximum - 1.0, maximum + 1.0, -axis)
+                + libm::fma(minimum, minimum, -square));
+        let logarithm = 0.5 * libm::log1p(difference);
+        let binary = logarithm * core::f64::consts::LOG2_E;
         return (
-            magnitude * libm::cos(result_angle),
-            magnitude * libm::sin(result_angle),
+            logarithm,
+            (
+                binary,
+                libm::fma(logarithm, core::f64::consts::LOG2_E, -binary),
+            ),
         );
     }
+    let (_, scale) = libm::frexp(maximum);
+    let x = libm::scalbn(base.0, -scale);
+    let y = libm::scalbn(base.1, -scale);
+    let square = x * x + y * y;
+    (
+        f64::from(scale) * core::f64::consts::LN_2 + 0.5 * libm::log(square),
+        power_log_sum(f64::from(scale), 0.5 * libm::log2(square)),
+    )
+}
+
+fn power_phase_direction(left: f64, right: f64) -> (f64, f64) {
+    let phase = left * right;
+    if phase.is_finite() {
+        return (libm::cos(phase), libm::sin(phase));
+    }
+    // The right factor is a bounded angle or log radius (at most about 745).
+    // At most twelve halvings make the product finite. Double its direction
+    // afterward, normalizing bounded components to prevent magnitude drift.
+    let (_, left_scale) = libm::frexp(left);
+    let (_, right_scale) = libm::frexp(right);
+    let halvings = (left_scale + right_scale - 1022).max(0);
+    debug_assert!(halvings <= 12);
+    let phase = libm::scalbn(left, -halvings) * right;
+    let mut direction = (libm::cos(phase), libm::sin(phase));
+    for _ in 0..halvings {
+        let real = direction.0 * direction.0 - direction.1 * direction.1;
+        let imaginary = 2.0 * direction.0 * direction.1;
+        let norm = libm::hypot(real, imaginary);
+        direction = (real / norm, imaginary / norm);
+    }
+    direction
+}
+
+fn real_power_direction(base: (f64, f64), exponent: f64, angle: f64) -> (f64, f64) {
+    if libm::trunc(exponent) != exponent {
+        // A nonintegral f64 exponent is too small to overflow this product.
+        return power_phase_direction(exponent, angle);
+    }
+    // Separate exact quarter-turns from the small off-axis angle. Reducing the
+    // integer exponent first preserves both exact axes and tiny deviations
+    // near them; subtracting rounded pi from atan2 would lose those deviations.
+    let (quarter_turns, remainder) = if base.0.abs() >= base.1.abs() {
+        if base.0 >= 0.0 {
+            (0.0, libm::atan2(base.1, base.0))
+        } else {
+            (
+                if base.1.is_sign_negative() { -2.0 } else { 2.0 },
+                -libm::atan2(base.1, -base.0),
+            )
+        }
+    } else {
+        let sign = if base.1.is_sign_negative() { -1.0 } else { 1.0 };
+        (sign, -sign * libm::atan2(base.0, base.1.abs()))
+    };
+    let direction = power_phase_direction(exponent, remainder);
+    let turns = ((exponent % 4.0) * quarter_turns) % 4.0;
+    match turns as i32 {
+        1 | -3 => (-direction.1, direction.0),
+        2 | -2 => (-direction.0, -direction.1),
+        3 | -1 => (direction.1, -direction.0),
+        _ => direction,
+    }
+}
+
+// Finite nonzero complex powers form bounded directions and a net logarithmic
+// magnitude before scaling each component. c32 rounds only the final values.
+fn finite_complex_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
+    let (logarithmic_radius, binary_radius) = finite_complex_log_radius(base);
+    let angle = libm::atan2(base.1, base.0);
+    let real_direction = real_power_direction(base, exponent.0, angle);
+    let imaginary_direction = power_phase_direction(exponent.1, logarithmic_radius);
+    // Combine directions rather than adding potentially overflowing phases.
+    let direction = (
+        real_direction.0 * imaginary_direction.0 - real_direction.1 * imaginary_direction.1,
+        real_direction.0 * imaginary_direction.1 + real_direction.1 * imaginary_direction.0,
+    );
+
+    let binary_angle = angle * core::f64::consts::LOG2_E;
+    let angle_residual = libm::fma(angle, core::f64::consts::LOG2_E, -binary_angle);
+    let real = exponent.0 * binary_radius.0;
+    let imaginary = -exponent.1 * binary_angle;
+    let (high, low) = if real.is_finite() && imaginary.is_finite() && (real + imaginary).is_finite()
+    {
+        let real_residual =
+            libm::fma(exponent.0, binary_radius.0, -real) + exponent.0 * binary_radius.1;
+        let imaginary_residual =
+            libm::fma(-exponent.1, binary_angle, -imaginary) - exponent.1 * angle_residual;
+        let (sum, residual) = power_log_sum(real, imaginary);
+        power_log_sum(sum, residual + real_residual + imaginary_residual)
+    } else {
+        // Scale the logarithmic products themselves if either overflows. Their
+        // sum can still be finite; no overflowing product becomes a NaN sign.
+        let primary = scaled_f64_product_sum(
+            (exponent.0, binary_radius.0),
+            (-exponent.1, binary_angle),
+            false,
+        );
+        let (mantissa, scale) = primary.expect("finite logarithmic factors have a defined sum");
+        let primary = libm::scalbn(mantissa, scale);
+        let residual = exponent.0 * binary_radius.1 - exponent.1 * angle_residual;
+        if primary.is_finite() {
+            power_log_sum(primary, residual)
+        } else {
+            (primary, 0.0)
+        }
+    };
+    if !high.is_finite() {
+        let scale = if high > 0.0 { i32::MAX } else { i32::MIN };
+        return (
+            libm::scalbn(direction.0, scale),
+            libm::scalbn(direction.1, scale),
+        );
+    }
+    let whole_scale = libm::floor(high);
+    let fractional_scale = (high - whole_scale) + low;
     let adjustment = libm::floor(fractional_scale);
     let mantissa = libm::exp2(fractional_scale - adjustment);
-    // Saturating conversion outside i32's range is sufficient for scalbn:
-    // any nonzero f64 component then necessarily overflows or underflows.
     let output_scale = (whole_scale + adjustment) as i32;
     (
-        libm::scalbn(mantissa * libm::cos(result_angle), output_scale),
-        libm::scalbn(mantissa * libm::sin(result_angle), output_scale),
+        libm::scalbn(mantissa * direction.0, output_scale),
+        libm::scalbn(mantissa * direction.1, output_scale),
     )
 }
 
@@ -23209,6 +23338,205 @@ mod tests {
             assert_eq!(
                 complex64_power((f64::INFINITY, 0.0), (1.0, 0.0)),
                 (f64::INFINITY, 0.0)
+            );
+        }
+    }
+
+    #[test]
+    fn complex_review_large_integral_phase_keeps_unit_axis_powers_finite() {
+        for (base, angle) in [
+            ((-1.0_f32, 0.0_f32), core::f64::consts::PI),
+            ((0.0, -1.0), -core::f64::consts::FRAC_PI_2),
+        ] {
+            for imaginary_power in [f32::MIN_POSITIVE, 1.0, -1.0] {
+                let result = complex32_power(base, (f32::MAX, imaginary_power));
+                let expected = libm::exp(-f64::from(imaginary_power) * angle);
+                assert!(result.0.is_finite() && result.1.is_finite(), "{result:?}");
+                assert!((f64::from(result.0) / expected - 1.0).abs() < 4e-7);
+                assert_eq!(result.1, 0.0);
+            }
+        }
+    }
+
+    #[cfg(feature = "c64")]
+    #[test]
+    fn complex_review_c64_large_integral_phase_keeps_unit_axis_powers_finite() {
+        for (base, angle) in [
+            ((-1.0, 0.0), core::f64::consts::PI),
+            ((0.0, -1.0), -core::f64::consts::FRAC_PI_2),
+        ] {
+            for imaginary_power in [f64::MIN_POSITIVE, 1.0, -1.0] {
+                let result = complex64_power(base, (f64::MAX, imaginary_power));
+                let expected = libm::exp(-imaginary_power * angle);
+                assert!(result.0.is_finite() && result.1.is_finite(), "{result:?}");
+                assert!((result.0 / expected - 1.0).abs() < 4e-14);
+                assert_eq!(result.1, 0.0);
+            }
+        }
+        // The imaginary-exponent phase can also overflow while magnitude
+        // remains one. This direction must remain on the unit circle.
+        let result = complex64_power((10.0, 0.0), (0.0, f64::MAX));
+        assert!(result.0.is_finite() && result.1.is_finite());
+        assert!((result.0 * result.0 + result.1 * result.1 - 1.0).abs() < 4e-14);
+    }
+
+    #[cfg(feature = "c64")]
+    #[test]
+    fn complex_review_near_unit_power_avoids_split_magnitude_cancellation() {
+        // Exact binary MAX * 1e-308, evaluated with independent 100-digit
+        // Decimal sine/cosine series. Higher-order log/angle terms are below
+        // binary64 precision for this input.
+        for real_sign in [1.0, -1.0] {
+            for imaginary_sign in [1.0, -1.0] {
+                let result = complex64_power(
+                    (real_sign, imaginary_sign * 1e-308),
+                    (f64::MAX, f64::MIN_POSITIVE),
+                );
+                assert_fractional_components(
+                    result,
+                    (
+                        -0.22495495699442813,
+                        real_sign * imaginary_sign * 0.9743691637791269,
+                    ),
+                    4e-14,
+                );
+            }
+        }
+        let imaginary = 1e-154;
+        let result = complex64_power((1.0, imaginary), (f64::MAX, f64::MIN_POSITIVE));
+        let expected_magnitude = libm::exp((0.5 * f64::MAX * imaginary) * imaginary);
+        assert!(result.0.is_finite() && result.1.is_finite());
+        assert!((libm::hypot(result.0, result.1) / expected_magnitude - 1.0).abs() < 4e-14);
+    }
+
+    #[test]
+    fn linear_indexed_power_charges_each_duplicate_before_publication() {
+        // Leave room for the retained-node accounting, so only the added
+        // iterative arithmetic bound can reject this otherwise valid update.
+        const COUNT: usize = 1024;
+        let scalar_body = SchemaBody::UnsignedInteger(IntegerWidth::W128);
+        let matrix_body = SchemaBody::Matrix {
+            element: Box::new(scalar_body.clone()),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(2),
+            ]
+            .into_boxed_slice(),
+        };
+        let selector_body = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(COUNT as u64),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([matrix_body, scalar_body, selector_body]);
+        let contract = test_contract(
+            &ids,
+            ids[0],
+            OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::IndexedAxis { axis: 0 },
+            },
+            AccessMode::ReadWrite,
+            AliasPolicy::MayAlias { input: 0 },
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_compound_selection::<0, 5>(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                test_layout(
+                    &schemas,
+                    ids[0],
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+                test_layout(
+                    &schemas,
+                    ids[1],
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+                test_layout(
+                    &schemas,
+                    ids[2],
+                    ResidentValueKind::Index,
+                    ResidentShape {
+                        rows: 1,
+                        columns: COUNT as u32,
+                    },
+                ),
+            ],
+            output: test_layout(
+                &schemas,
+                ids[0],
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let original = test_value(
+            &schemas,
+            ids[0],
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U128(1), ValueDataDraft::U128(1)].into_boxed_slice(),
+            ),
+        );
+        let source = [Some(test_value(&schemas, ids[1], ValueDataDraft::U128(1)))];
+        let positions = vec![1_u64; COUNT];
+        let inputs = [
+            ResidentValueRef::Snapshot(&source),
+            ResidentValueRef::Index(&positions),
+        ];
+        let node = mech_core::NodeId::new(0);
+        let program = crate::memory_planner::ProgramMemoryPlan {
+            allocations: vec![mech_core::AllocationPlan {
+                id: mech_core::MemoryObjectId::new(0),
+                owner: mech_core::MemoryObjectOwner::TransactionStage { node, output: 0 },
+                role: mech_core::AllocationRole::TransactionStage,
+                slot: None,
+                space: mech_core::MemorySpace::ResidentCpu,
+                current_bytes: 0,
+                capacity_bytes: 0,
+                payload_block_capacity: 0,
+                alignment: 1,
+                lifetime: mech_core::MemoryLifetime::Transaction {
+                    first: mech_core::MemoryPlanPoint::new(0),
+                    last: mech_core::MemoryPlanPoint::new(1),
+                },
+                placement: mech_core::ArenaPlacement {
+                    arena: mech_core::MemoryArenaId::new(0),
+                    offset: 0,
+                },
+                reuse_group: None,
+            }]
+            .into_boxed_slice(),
+            budget_limits: mech_core::TargetMemoryProfile::current_resident_cpu()
+                .unwrap()
+                .limits,
+            ..Default::default()
+        };
+        let plan =
+            crate::memory_planner::plan_turn_memory(&program, node, &Default::default()).unwrap();
+        for (remaining_work, expected) in [
+            (400_000, Ok(false)),
+            (100_000, Err(ResidentKernelError::InvalidShape)),
+        ] {
+            let mut bounded = plan.clone();
+            bounded.budget_limits.max_compute_work = Some(remaining_work);
+            let mut output = [Some(original.clone())];
+            // Every duplicate executes a power. Charge the conservative u128
+            // bound even when the actual exponent is cheaper; isolate compute
+            // admission from the target's separate retained-node ceiling.
+            let result = super::super::budget::with_resident_turn_plan(bounded, || {
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+            });
+            assert_eq!(result, expected, "compute allowance {remaining_work}");
+            assert_eq!(
+                output[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+                original.canonical_data_draft().unwrap()
             );
         }
     }

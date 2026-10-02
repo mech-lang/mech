@@ -707,6 +707,140 @@ fn public_rejected_late_matrix_update_retains_state_and_recovers() {
 }
 
 #[test]
+fn public_large_complex_power_phases_remain_finite() {
+    let expected = scalar(FloatWidth::W64, 1.0, 0.0);
+    let artifact = bound(
+        "answer := base ^ power\nanswer\n",
+        &[
+            ("base", scalar(FloatWidth::W64, -1.0, 0.0)),
+            (
+                "power",
+                scalar(FloatWidth::W64, f64::MAX, f64::MIN_POSITIVE),
+            ),
+        ],
+    );
+    public_outputs(None, &artifact, &[expected.clone(), expected], Some(4e-14));
+}
+
+#[test]
+fn public_near_unit_complex_powers_preserve_magnitude_and_direction() {
+    let expected = complex_matrix(
+        FloatWidth::W64,
+        1,
+        3,
+        &[
+            (-0.22495495699442813, 0.9743691637791269),
+            (-0.22495495699442813, -0.9743691637791269),
+            (-0.22495495699442813, -0.9743691637791269),
+        ],
+    );
+    let artifact = bound(
+        "answer := base ^ power\nanswer\n",
+        &[
+            (
+                "base",
+                complex_matrix(
+                    FloatWidth::W64,
+                    1,
+                    3,
+                    &[(1.0, 1e-308), (1.0, -1e-308), (-1.0, 1e-308)],
+                ),
+            ),
+            (
+                "power",
+                scalar(FloatWidth::W64, f64::MAX, f64::MIN_POSITIVE),
+            ),
+        ],
+    );
+    public_outputs(None, &artifact, &[expected.clone(), expected], Some(4e-14));
+}
+
+#[test]
+fn public_linear_power_duplicates_keep_exact_values_and_types() {
+    let expected = |first| {
+        matrix(
+            SchemaBody::UnsignedInteger(IntegerWidth::W128),
+            1,
+            2,
+            vec![D::U128(first), D::U128(3)],
+        )
+    };
+    public_source(
+        "~a := [2<u128> 3<u128>]\na[[1 1]] ^= 2<u128>\na\n",
+        &[expected(16), expected(65_536)],
+    );
+}
+
+#[test]
+fn public_linear_power_budget_rejection_preserves_accepted_session() {
+    struct Factory(Value);
+    impl mech_runtime::ResidentReplRuntimeFactory for Factory {
+        fn build(
+            &self,
+            _: mech_runtime::MechEventBuffer,
+        ) -> mech_core::MResult<mech_runtime::MechRuntime> {
+            RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog())
+                .build()
+        }
+        fn activate_document(
+            &self,
+            events: mech_runtime::MechEventBuffer,
+            document: &SourceDocument,
+        ) -> mech_core::MResult<(
+            mech_runtime::MechRuntime,
+            mech_runtime::RuntimeProgramLoadOutcome,
+        )> {
+            let artifact = bound(
+                &document.source().to_contiguous_string(),
+                &[("positions", self.0.clone())],
+            );
+            let mut runtime = self.build(events)?;
+            let outcome =
+                runtime.load_compiled_program(artifact, ResidentDurabilityPolicy::Volatile)?;
+            Ok((runtime, outcome))
+        }
+    }
+    // This large repeated selection exceeds the resident budgets. The kernel
+    // regression separately isolates compute admission from retained-node
+    // admission; this public sequence checks rejection and continued usability.
+    let positions = matrix(SchemaBody::Index, 1, 16_384, vec![D::Index(1); 16_384]);
+    let mut session = mech_runtime::ResidentReplSession::from_source(
+        Factory(positions),
+        "~a := [(1+1i<c64>) (2-1i<c64>)]\na += 1<c64>\n<+ a\na\n".to_owned(),
+    )
+    .unwrap();
+    let accepted = complex_matrix(FloatWidth::W64, 1, 2, &[(2.0, 1.0), (3.0, -1.0)]);
+    assert_value(
+        &session.symbol("a").unwrap().unwrap().to_value(),
+        &accepted,
+        None,
+    );
+    let rejected = SourceDocument::parse_resolved(
+        "linear-power-budget.mec",
+        Revision(1),
+        "~a := [(1+1i<c64>) (2-1i<c64>)]\na[positions] ^= 1<c64>\n<+ a\na\n",
+        ParseConfig::default(),
+    )
+    .unwrap();
+    let error = session.replace_document(rejected).unwrap_err();
+    assert_eq!(error.kind_name(), "ResidentRouteFailure");
+    assert!(format!("{error:?}").contains("InvalidShape"), "{error:?}");
+    assert_value(
+        &session.symbol("a").unwrap().unwrap().to_value(),
+        &accepted,
+        None,
+    );
+    session.step(1).unwrap();
+    let next = complex_matrix(FloatWidth::W64, 1, 2, &[(3.0, 1.0), (4.0, -1.0)]);
+    assert_value(
+        &session.symbol("a").unwrap().unwrap().to_value(),
+        &next,
+        None,
+    );
+}
+
+#[test]
 fn public_session_rejects_candidate_without_replacing_accepted_state() {
     struct Factory;
     impl mech_runtime::ResidentReplRuntimeFactory for Factory {
