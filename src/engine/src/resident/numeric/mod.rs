@@ -17622,16 +17622,16 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
             left.0 * right.1 + left.1 * right.0,
         );
     }
-    if right.1 == 0.0 && right.0.is_finite() {
+    if right.1 == 0.0 && !right.0.is_nan() {
         return (left.0 * right.0, left.1 * right.0);
     }
-    if left.1 == 0.0 && left.0.is_finite() {
+    if left.1 == 0.0 && !left.0.is_nan() {
         return (right.0 * left.0, right.1 * left.0);
     }
-    if right.0 == 0.0 && right.1.is_finite() {
+    if right.0 == 0.0 && !right.1.is_nan() {
         return (-left.1 * right.1, left.0 * right.1);
     }
-    if left.0 == 0.0 && left.1.is_finite() {
+    if left.0 == 0.0 && !left.1.is_nan() {
         return (-right.1 * left.1, right.0 * left.1);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
@@ -17652,10 +17652,10 @@ fn complex32_divide(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
     if right.0 == 1.0 && right.1 == 0.0 {
         return left;
     }
-    if right.1 == 0.0 && right.0.is_finite() && right.0 != 0.0 {
+    if right.1 == 0.0 && !right.0.is_nan() && right.0 != 0.0 {
         return (left.0 / right.0, left.1 / right.0);
     }
-    if right.0 == 0.0 && right.1.is_finite() && right.1 != 0.0 {
+    if right.0 == 0.0 && !right.1.is_nan() && right.1 != 0.0 {
         return (left.1 / right.1, -left.0 / right.1);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_infinite() && right.1.is_infinite() {
@@ -17735,13 +17735,27 @@ fn scaled_f64_product_sum(
             (if subtract_second { -mantissa } else { mantissa }, exponent)
         }
         (Some((first, first_exponent)), Some((second, second_exponent))) => {
-            let exponent = first_exponent.max(second_exponent);
+            // An exact zero has a sign but no scale. Its placeholder exponent
+            // must not force a tiny nonzero product to underflow during alignment.
+            let exponent = if first == 0.0 {
+                second_exponent
+            } else if second == 0.0 {
+                first_exponent
+            } else {
+                first_exponent.max(second_exponent)
+            };
             let second = if subtract_second { -second } else { second };
-            (
+            let first = if first == 0.0 {
+                first
+            } else {
                 libm::scalbn(first, first_exponent - exponent)
-                    + libm::scalbn(second, second_exponent - exponent),
-                exponent,
-            )
+            };
+            let second = if second == 0.0 {
+                second
+            } else {
+                libm::scalbn(second, second_exponent - exponent)
+            };
+            (first + second, exponent)
         }
     };
     let (mantissa, adjustment) = libm::frexp(mantissa);
@@ -17793,16 +17807,16 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
             left.0 * right.1 + left.1 * right.0,
         );
     }
-    if right.1 == 0.0 && right.0.is_finite() {
+    if right.1 == 0.0 && !right.0.is_nan() {
         return (left.0 * right.0, left.1 * right.0);
     }
-    if left.1 == 0.0 && left.0.is_finite() {
+    if left.1 == 0.0 && !left.0.is_nan() {
         return (right.0 * left.0, right.1 * left.0);
     }
-    if right.0 == 0.0 && right.1.is_finite() {
+    if right.0 == 0.0 && !right.1.is_nan() {
         return (-left.1 * right.1, left.0 * right.1);
     }
-    if left.0 == 0.0 && left.1.is_finite() {
+    if left.0 == 0.0 && !left.1.is_nan() {
         return (-right.1 * left.1, right.0 * left.1);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
@@ -17830,10 +17844,10 @@ fn complex64_divide(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
     if right.0 == 1.0 && right.1 == 0.0 {
         return left;
     }
-    if right.1 == 0.0 && right.0.is_finite() && right.0 != 0.0 {
+    if right.1 == 0.0 && !right.0.is_nan() && right.0 != 0.0 {
         return (left.0 / right.0, left.1 / right.0);
     }
-    if right.0 == 0.0 && right.1.is_finite() && right.1 != 0.0 {
+    if right.0 == 0.0 && !right.1.is_nan() && right.1 != 0.0 {
         return (left.1 / right.1, -left.0 / right.1);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_infinite() && right.1.is_infinite() {
@@ -22577,6 +22591,88 @@ mod tests {
                 numeric_divide(rational(1, u64::MAX), rational(1, u64::MAX)),
                 Ok(rational(1, 1))
             );
+        }
+    }
+
+    #[test]
+    fn complex_review_infinite_axial_products_preserve_components() {
+        for (left, right, expected) in [
+            (
+                (f32::INFINITY, 2.0),
+                (0.0, f32::INFINITY),
+                (f32::NEG_INFINITY, f32::INFINITY),
+            ),
+            (
+                (f32::NEG_INFINITY, 2.0),
+                (0.0, f32::NEG_INFINITY),
+                (f32::INFINITY, f32::INFINITY),
+            ),
+            (
+                (2.0, f32::INFINITY),
+                (f32::INFINITY, 0.0),
+                (f32::INFINITY, f32::INFINITY),
+            ),
+            (
+                (2.0, f32::NEG_INFINITY),
+                (f32::NEG_INFINITY, 0.0),
+                (f32::NEG_INFINITY, f32::INFINITY),
+            ),
+        ] {
+            assert_eq!(complex32_multiply(left, right), expected);
+            assert_eq!(complex32_multiply(right, left), expected);
+            #[cfg(feature = "c64")]
+            {
+                let wide = |value: (f32, f32)| (f64::from(value.0), f64::from(value.1));
+                assert_eq!(complex64_multiply(wide(left), wide(right)), wide(expected));
+                assert_eq!(complex64_multiply(wide(right), wide(left)), wide(expected));
+            }
+        }
+    }
+
+    #[cfg(feature = "c64")]
+    #[test]
+    fn complex_review_scaled_division_keeps_tiny_nonzero_terms() {
+        for magnitude in [1.0e-200, 1.0e200, f64::MIN_POSITIVE, f64::from_bits(1)] {
+            for sign in [-1.0, 1.0] {
+                assert_eq!(
+                    complex64_divide((0.0, sign * magnitude), (magnitude, magnitude)),
+                    (sign * 0.5, sign * 0.5),
+                );
+                assert_eq!(
+                    complex64_divide((sign * magnitude, 0.0), (magnitude, magnitude)),
+                    (sign * 0.5, sign * -0.5),
+                );
+            }
+            let zero = complex64_divide((-0.0, -0.0), (magnitude, magnitude));
+            assert_eq!(zero.0.to_bits(), (-0.0_f64).to_bits());
+            assert_eq!(zero.1.to_bits(), 0.0_f64.to_bits());
+        }
+        let negative_zero =
+            materialize_scaled_f64(scaled_f64_product_sum((-0.0, 2.0), (-0.0, 3.0), false));
+        assert_eq!(negative_zero.to_bits(), (-0.0_f64).to_bits());
+        let negative_zero =
+            materialize_scaled_f64(scaled_f64_product_sum((-0.0, 2.0), (0.0, 3.0), true));
+        assert_eq!(negative_zero.to_bits(), (-0.0_f64).to_bits());
+    }
+
+    #[test]
+    fn complex_review_infinite_axial_divisors_preserve_zero_signs() {
+        for (divisor, expected) in [
+            ((f32::NEG_INFINITY, 0.0), (-0.0_f32, -0.0_f32)),
+            ((f32::INFINITY, 0.0), (0.0, 0.0)),
+            ((0.0, f32::NEG_INFINITY), (-0.0, 0.0)),
+            ((0.0, f32::INFINITY), (0.0, -0.0)),
+        ] {
+            let quotient = complex32_divide((1.0, 2.0), divisor);
+            assert_eq!(quotient.0.to_bits(), expected.0.to_bits());
+            assert_eq!(quotient.1.to_bits(), expected.1.to_bits());
+            #[cfg(feature = "c64")]
+            {
+                let quotient =
+                    complex64_divide((1.0, 2.0), (f64::from(divisor.0), f64::from(divisor.1)));
+                assert_eq!(quotient.0.to_bits(), f64::from(expected.0).to_bits());
+                assert_eq!(quotient.1.to_bits(), f64::from(expected.1).to_bits());
+            }
         }
     }
 
