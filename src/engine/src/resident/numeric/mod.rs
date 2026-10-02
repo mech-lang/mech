@@ -2744,6 +2744,12 @@ fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
     }
 }
 
+// Each checked rational multiplication can invoke rational_gcd three times.
+// Euclid's algorithm needs at most 184 modulus steps for u128 inputs; this
+// power-of-two allowance also covers the fixed cross-cancellation arithmetic.
+const RATIONAL_MULTIPLY_COMPUTE_WORK: usize = 1_024;
+const RATIONAL_POWER_ELEMENT_COMPUTE_WORK: usize = 126 * RATIONAL_MULTIPLY_COMPUTE_WORK;
+
 fn snapshot_power_compute_work(
     arithmetic: SemanticArithmetic,
     element: &SchemaBody,
@@ -2777,7 +2783,7 @@ fn snapshot_power_compute_work(
         SchemaBody::SignedInteger(IntegerWidth::W32) => 61,
         SchemaBody::SignedInteger(IntegerWidth::W64) => 125,
         SchemaBody::SignedInteger(IntegerWidth::W128) => 253,
-        SchemaBody::Rational64 if cfg!(feature = "r64") => 126,
+        SchemaBody::Rational64 if cfg!(feature = "r64") => RATIONAL_POWER_ELEMENT_COMPUTE_WORK,
         SchemaBody::Complex(FloatWidth::W32) => 152,
         SchemaBody::Complex(FloatWidth::W64) if cfg!(feature = "c64") => 1_077,
         _ => 0,
@@ -24057,8 +24063,125 @@ mod tests {
         #[cfg(feature = "r64")]
         assert_eq!(
             snapshot_power_compute_work(SemanticArithmetic::Power, &SchemaBody::Rational64, 1,),
-            Ok(126)
+            Ok(RATIONAL_POWER_ELEMENT_COMPUTE_WORK)
         );
+    }
+
+    #[cfg(feature = "r64")]
+    #[test]
+    fn rational_powers_charge_euclidean_work_before_execution() {
+        let (schemas, ids) = test_schema_table([
+            SchemaBody::Rational64,
+            SchemaBody::SignedInteger(IntegerWidth::W32),
+        ]);
+        let [rational_schema, exponent_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let contract = test_contract(
+            &[*rational_schema, *exponent_schema],
+            *rational_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::ExactScalar,
+        );
+        let rational_layout = test_layout(
+            &schemas,
+            *rational_schema,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let exponent_layout = test_layout(
+            &schemas,
+            *exponent_schema,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let kernel = bind_snapshot_numeric_binary(
+            &ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &[rational_layout.clone(), exponent_layout],
+                output: rational_layout,
+            },
+            SemanticArithmetic::Power,
+        )
+        .unwrap();
+        let rational = |numerator, denominator| {
+            test_value(
+                &schemas,
+                *rational_schema,
+                ValueDataDraft::Rational64 {
+                    numerator,
+                    denominator,
+                },
+            )
+        };
+        let base = [Some(rational(1_836_311_903, 2_971_215_073))];
+        let exponent = [Some(test_value(
+            &schemas,
+            *exponent_schema,
+            ValueDataDraft::I32(2),
+        ))];
+        let inputs = [
+            ResidentValueRef::Snapshot(&base),
+            ResidentValueRef::Snapshot(&exponent),
+        ];
+        let prior = rational(0, 1);
+        let expected = rational(3_372_041_405_099_481_409, 8_828_119_010_022_395_329);
+
+        let node = mech_core::NodeId::new(0);
+        let program = crate::memory_planner::ProgramMemoryPlan {
+            allocations: vec![mech_core::AllocationPlan {
+                id: mech_core::MemoryObjectId::new(0),
+                owner: mech_core::MemoryObjectOwner::TransactionStage { node, output: 0 },
+                role: mech_core::AllocationRole::TransactionStage,
+                slot: None,
+                space: mech_core::MemorySpace::ResidentCpu,
+                current_bytes: 0,
+                capacity_bytes: 0,
+                payload_block_capacity: 0,
+                alignment: 1,
+                lifetime: mech_core::MemoryLifetime::Transaction {
+                    first: mech_core::MemoryPlanPoint::new(0),
+                    last: mech_core::MemoryPlanPoint::new(1),
+                },
+                placement: mech_core::ArenaPlacement {
+                    arena: mech_core::MemoryArenaId::new(0),
+                    offset: 0,
+                },
+                reuse_group: None,
+            }]
+            .into_boxed_slice(),
+            budget_limits: mech_core::TargetMemoryProfile::current_resident_cpu()
+                .unwrap()
+                .limits,
+            ..Default::default()
+        };
+        let plan =
+            crate::memory_planner::plan_turn_memory(&program, node, &Default::default()).unwrap();
+        for (remaining_work, expected_result) in [
+            (200_000, Ok(true)),
+            (1_000, Err(ResidentKernelError::InvalidShape)),
+        ] {
+            let mut bounded = plan.clone();
+            bounded.budget_limits.max_compute_work = Some(remaining_work);
+            let mut output = [Some(prior.clone())];
+            let result = super::super::budget::with_resident_turn_plan(bounded, || {
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output))
+            });
+            assert_eq!(
+                result, expected_result,
+                "compute allowance {remaining_work}"
+            );
+            let expected = if result.is_ok() { &expected } else { &prior };
+            assert_eq!(
+                output[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+                expected.canonical_data_draft().unwrap(),
+            );
+        }
     }
 
     #[cfg(feature = "r64")]
