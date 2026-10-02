@@ -2758,11 +2758,12 @@ fn snapshot_power_compute_work(
         SchemaBody::Matrix { element, .. } => element.as_ref(),
         scalar => scalar,
     };
-    // Exact integer/rational and integral complex powers use exponentiation by
-    // squaring. Charge the maximum number of accumulator multiplies, squares,
-    // and (where admitted) one reciprocal before executing the kernel.
-    // The fractional polar path has fixed scalar work and at most twelve phase
-    // doublings in c64; widened c32 phases remain finite without that loop.
+    // Exact integer/rational and selected integral complex powers use
+    // exponentiation by squaring. Charge the maximum number of accumulator
+    // multiplies, squares, and (where admitted) one reciprocal before execution.
+    // The polar path has fixed scalar work, an exact diagonal cycle of at most
+    // eight powers, and at most twelve phase doublings in c64. Widened c32
+    // phases remain finite without the doubling loop.
     // Those calls fit within the conservative complex bounds. These are
     // admission bounds, not per-invocation operation counts.
     let work_per_element = match element {
@@ -18208,6 +18209,16 @@ fn power_log_sum(left: f64, right: f64) -> (f64, f64) {
 fn finite_complex_log_radius(base: (f64, f64)) -> (f64, (f64, f64)) {
     let maximum = base.0.abs().max(base.1.abs());
     let minimum = base.0.abs().min(base.1.abs());
+    let (mantissa, scale) = libm::frexp(maximum);
+    if maximum == minimum && mantissa == 0.5 {
+        // A power-of-two diagonal has an exact half-integral log2 magnitude.
+        // Avoid multiplying a rounded log(2) by its approximate reciprocal.
+        let binary_radius = f64::from(scale) - 0.5;
+        return (
+            binary_radius * core::f64::consts::LN_2,
+            (binary_radius, 0.0),
+        );
+    }
     if (0.5..=2.0).contains(&maximum) {
         // Around unit magnitude, compute |z|^2-1 directly, including product
         // residuals. log1p retains small imaginary squares which a rounded
@@ -18229,7 +18240,6 @@ fn finite_complex_log_radius(base: (f64, f64)) -> (f64, (f64, f64)) {
             ),
         );
     }
-    let (_, scale) = libm::frexp(maximum);
     let x = libm::scalbn(base.0, -scale);
     let y = libm::scalbn(base.1, -scale);
     let square = x * x + y * y;
@@ -18267,6 +18277,47 @@ fn real_power_direction(base: (f64, f64), exponent: f64, angle: f64) -> (f64, f6
         // A nonintegral f64 exponent is too small to overflow this product.
         return power_phase_direction(exponent, angle);
     }
+    if base.0 == 0.0 || base.1 == 0.0 {
+        // Axis phases have an exact four-power cycle. Reuse only that unit
+        // cycle to preserve zero signs, including negative real exponents.
+        let cycle = exponent % 4.0;
+        let cycle = if cycle == 0.0 {
+            4.0_f64.copysign(exponent)
+        } else {
+            cycle
+        };
+        let unit = (
+            if base.0 == 0.0 {
+                base.0
+            } else {
+                base.0.signum()
+            },
+            if base.1 == 0.0 {
+                base.1
+            } else {
+                base.1.signum()
+            },
+        );
+        let direction = complex32_integer_power((unit.0 as f32, unit.1 as f32), cycle as f32);
+        return (f64::from(direction.0), f64::from(direction.1));
+    }
+    if base.0.abs() == base.1.abs() {
+        // Diagonal integer phases repeat every eight powers. Compute only that
+        // exact dyadic cycle, preserving the iterative path's axis zero signs.
+        let cycle = exponent % 8.0;
+        let cycle = if cycle == 0.0 {
+            8.0_f64.copysign(exponent)
+        } else {
+            cycle
+        };
+        let direction = complex32_integer_power(
+            (base.0.signum() as f32, base.1.signum() as f32),
+            cycle as f32,
+        );
+        let direction = (f64::from(direction.0), f64::from(direction.1));
+        let norm = libm::hypot(direction.0, direction.1);
+        return (direction.0 / norm, direction.1 / norm);
+    }
     // Separate exact quarter-turns from the small off-axis angle. Reducing the
     // integer exponent first preserves both exact axes and tiny deviations
     // near them; subtracting rounded pi from atan2 would lose those deviations.
@@ -18299,12 +18350,18 @@ fn finite_complex_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
     let (logarithmic_radius, binary_radius) = finite_complex_log_radius(base);
     let angle = libm::atan2(base.1, base.0);
     let real_direction = real_power_direction(base, exponent.0, angle);
-    let imaginary_direction = power_phase_direction(exponent.1, logarithmic_radius);
-    // Combine directions rather than adding potentially overflowing phases.
-    let direction = (
-        real_direction.0 * imaginary_direction.0 - real_direction.1 * imaginary_direction.1,
-        real_direction.0 * imaginary_direction.1 + real_direction.1 * imaginary_direction.0,
-    );
+    let direction = if exponent.1 == 0.0 {
+        // A zero phase needs no multiplication, which would erase exact zero
+        // signs from the real integer phase's periodic direction.
+        real_direction
+    } else {
+        let imaginary_direction = power_phase_direction(exponent.1, logarithmic_radius);
+        // Combine directions rather than adding potentially overflowing phases.
+        (
+            real_direction.0 * imaginary_direction.0 - real_direction.1 * imaginary_direction.1,
+            real_direction.0 * imaginary_direction.1 + real_direction.1 * imaginary_direction.0,
+        )
+    };
 
     let binary_angle = angle * core::f64::consts::LOG2_E;
     let angle_residual = libm::fma(angle, core::f64::consts::LOG2_E, -binary_angle);
@@ -18353,8 +18410,28 @@ fn finite_complex_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
     )
 }
 
+// Keep the existing small polynomial path with at most five squaring levels.
+// Beyond 32, use polar scaling instead of amplifying rounded components.
+// Power-of-two axes square exactly; zero/nonfinite bases retain their semantics.
+fn use_complex_integer_power(base: (f64, f64), exponent: f64) -> bool {
+    if exponent.abs() <= 32.0 || !base.0.is_finite() || !base.1.is_finite() || base == (0.0, 0.0) {
+        return true;
+    }
+    if base.0 == 0.0 || base.1 == 0.0 {
+        return libm::frexp(base.0.abs().max(base.1.abs())).0 == 0.5;
+    }
+    false
+}
+
 fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
-    if exponent.1 == 0.0 && exponent.0.is_finite() && libm::truncf(exponent.0) == exponent.0 {
+    if exponent.1 == 0.0
+        && exponent.0.is_finite()
+        && libm::truncf(exponent.0) == exponent.0
+        && use_complex_integer_power(
+            (f64::from(base.0), f64::from(base.1)),
+            f64::from(exponent.0),
+        )
+    {
         return complex32_integer_power(base, exponent.0);
     }
     if exponent == (0.0, 0.0) {
@@ -18419,7 +18496,11 @@ fn complex64_integer_power(mut base: (f64, f64), exponent: f64) -> (f64, f64) {
 
 #[cfg(feature = "c64")]
 fn complex64_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
-    if exponent.1 == 0.0 && exponent.0.is_finite() && libm::trunc(exponent.0) == exponent.0 {
+    if exponent.1 == 0.0
+        && exponent.0.is_finite()
+        && libm::trunc(exponent.0) == exponent.0
+        && use_complex_integer_power(base, exponent.0)
+    {
         return complex64_integer_power(base, exponent.0);
     }
     if exponent == (0.0, 0.0) {
@@ -23339,6 +23420,141 @@ mod tests {
                 complex64_power((f64::INFINITY, 0.0), (1.0, 0.0)),
                 (f64::INFINITY, 0.0)
             );
+        }
+    }
+
+    #[test]
+    fn complex_review_c32_large_integral_powers() {
+        // Independent 110-digit Decimal log/atan and Machin-pi sine/cosine
+        // references for exact binary inputs; include reciprocals and quadrants.
+        for (power, expected) in [
+            (
+                68_719_476_736.0_f32,
+                (-0.7447482313713072, 0.7140339843362773),
+            ),
+            (
+                -68_719_476_736.0_f32,
+                (-0.6996262170574587, -0.6707728521782707),
+            ),
+        ] {
+            for real_sign in [-1.0_f32, 1.0] {
+                for imaginary_sign in [-1.0_f32, 1.0] {
+                    for imaginary_power in [0.0, f32::MIN_POSITIVE, -f32::MIN_POSITIVE] {
+                        let result = complex32_power(
+                            (real_sign, imaginary_sign * 2.0_f32.powi(-20)),
+                            (power, imaginary_power),
+                        );
+                        assert_fractional_components(
+                            (f64::from(result.0), f64::from(result.1)),
+                            (
+                                expected.0,
+                                f64::from(real_sign * imaginary_sign) * expected.1,
+                            ),
+                            4e-7,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[cfg(feature = "c64")]
+    #[test]
+    fn complex_review_c64_large_integral_powers() {
+        for (power, expected) in [
+            (
+                2.0_f64.powi(96),
+                (-0.033489846822179365, 1.0311997328731648),
+            ),
+            (
+                -2.0_f64.powi(96),
+                (-0.03146079957637767, -0.9687224994308178),
+            ),
+        ] {
+            for real_sign in [-1.0, 1.0] {
+                for imaginary_sign in [-1.0, 1.0] {
+                    for imaginary_power in [0.0, f64::MIN_POSITIVE, -f64::MIN_POSITIVE] {
+                        assert_fractional_components(
+                            complex64_power(
+                                (real_sign, imaginary_sign * 2.0_f64.powi(-50)),
+                                (power, imaginary_power),
+                            ),
+                            (expected.0, real_sign * imaginary_sign * expected.1),
+                            4e-14,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn complex_review_large_integral_axis_powers() {
+        // Rounded repeated squaring also corrupts purely real near-unit bases.
+        for (power, expected) in [
+            (8_388_608.0_f32, 2.7182816664368402),
+            (-8_388_608.0_f32, 0.36787946309876464),
+        ] {
+            let result = complex32_power((1.0 + 2.0_f32.powi(-23), 0.0), (power, 0.0));
+            assert!(
+                (f64::from(result.0) / expected - 1.0).abs() < 4e-7,
+                "{result:?}"
+            );
+            assert_eq!(result.1.to_bits(), 0.0_f32.to_bits());
+        }
+        #[cfg(feature = "c64")]
+        for (power, expected) in [
+            (2.0_f64.powi(52), 2.718281828459045),
+            (-2.0_f64.powi(52), 0.36787944117144236),
+        ] {
+            let result = complex64_power((1.0 + 2.0_f64.powi(-52), 0.0), (power, 0.0));
+            assert!((result.0 / expected - 1.0).abs() < 4e-14, "{result:?}");
+            assert_eq!(result.1.to_bits(), 0.0_f64.to_bits());
+        }
+    }
+
+    #[test]
+    fn complex_review_large_integral_diagonal_powers() {
+        // Diagonal angles have exact eighth-turn periods. Preserve exact axis
+        // zeros when the stable path replaces repeated squaring at large powers.
+        for power in [32, 33, 64, 65, -32, -33, -64, -65] {
+            let expected_component = 2.0_f64.powi(power / 2);
+            let expected = if power % 2 == 0 {
+                (expected_component, 0.0)
+            } else if power > 0 {
+                (expected_component, expected_component)
+            } else {
+                (expected_component * 0.5, -expected_component * 0.5)
+            };
+            for sign in [-1.0_f32, 1.0] {
+                let result = complex32_power((1.0, sign), (power as f32, 0.0));
+                assert!((f64::from(result.0) / expected.0 - 1.0).abs() < 4e-7);
+                if expected.1 == 0.0 {
+                    assert_eq!(
+                        result.1.to_bits(),
+                        0.0_f32.copysign(-sign * (power as f32).signum()).to_bits()
+                    );
+                } else {
+                    assert!(
+                        (f64::from(result.1) / (f64::from(sign) * expected.1) - 1.0).abs() < 4e-7
+                    );
+                }
+                #[cfg(feature = "c64")]
+                {
+                    let result = complex64_power((1.0, f64::from(sign)), (f64::from(power), 0.0));
+                    assert!((result.0 / expected.0 - 1.0).abs() < 4e-14);
+                    if expected.1 == 0.0 {
+                        assert_eq!(
+                            result.1.to_bits(),
+                            0.0_f64
+                                .copysign(-f64::from(sign) * f64::from(power).signum())
+                                .to_bits()
+                        );
+                    } else {
+                        assert!((result.1 / (f64::from(sign) * expected.1) - 1.0).abs() < 4e-14);
+                    }
+                }
+            }
         }
     }
 

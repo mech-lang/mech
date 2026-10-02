@@ -707,6 +707,68 @@ fn public_rejected_late_matrix_update_retains_state_and_recovers() {
 }
 
 #[test]
+fn public_c32_large_integral_complex_power() {
+    let expected = scalar(FloatWidth::W32, -0.7447482313713072, 0.7140339843362773);
+    let artifact = bound(
+        "answer := base ^ power\nanswer\n",
+        &[
+            ("base", scalar(FloatWidth::W32, 1.0, 2.0_f64.powi(-20))),
+            ("power", scalar(FloatWidth::W32, 2.0_f64.powi(36), 0.0)),
+        ],
+    );
+    public_outputs(None, &artifact, &[expected.clone(), expected], Some(4e-7));
+}
+
+#[test]
+fn public_c64_large_integral_complex_power_layout() {
+    let expected = complex_matrix(
+        FloatWidth::W64,
+        1,
+        4,
+        &[
+            (-0.033489846822179365, 1.0311997328731648),
+            (-0.03146079957637767, -0.9687224994308178),
+            (2.718281828459045, 0.0),
+            (4_294_967_296.0, -0.0),
+        ],
+    );
+    let artifact = bound(
+        "answer := base ^ power\nanswer\n",
+        &[
+            (
+                "base",
+                complex_matrix(
+                    FloatWidth::W64,
+                    1,
+                    4,
+                    &[
+                        (1.0, 2.0_f64.powi(-50)),
+                        (1.0, 2.0_f64.powi(-50)),
+                        (1.0 + 2.0_f64.powi(-52), 0.0),
+                        (1.0, 1.0),
+                    ],
+                ),
+            ),
+            (
+                "power",
+                complex_matrix(
+                    FloatWidth::W64,
+                    1,
+                    4,
+                    &[
+                        (2.0_f64.powi(96), 0.0),
+                        (-2.0_f64.powi(96), 0.0),
+                        (2.0_f64.powi(52), 0.0),
+                        (64.0, 0.0),
+                    ],
+                ),
+            ),
+        ],
+    );
+    public_outputs(None, &artifact, &[expected.clone(), expected], Some(4e-14));
+}
+
+#[test]
 fn public_large_complex_power_phases_remain_finite() {
     let expected = scalar(FloatWidth::W64, 1.0, 0.0);
     let artifact = bound(
