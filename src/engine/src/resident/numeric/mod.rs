@@ -2761,6 +2761,9 @@ fn snapshot_power_compute_work(
     // Exact integer/rational and integral complex powers use exponentiation by
     // squaring. Charge the maximum number of accumulator multiplies, squares,
     // and (where admitted) one reciprocal before executing the kernel.
+    // The fractional polar path has bounded scalar work and no loop; its
+    // arithmetic/library calls also fit within these conservative complex
+    // bounds. These are admission bounds, not per-invocation operation counts.
     let work_per_element = match element {
         SchemaBody::UnsignedInteger(IntegerWidth::W8) => 15,
         SchemaBody::UnsignedInteger(IntegerWidth::W16) => 31,
@@ -17659,9 +17662,27 @@ fn complex32_divide(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
         return (left.1 / right.1, -left.0 / right.1);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_infinite() && right.1.is_infinite() {
-        let real_direction = left.0 * right.0.signum() + left.1 * right.1.signum();
-        let imaginary_direction = left.1 * right.0.signum() - left.0 * right.1.signum();
-        return (0.0 * real_direction, 0.0 * imaginary_direction);
+        // Only the direction's sign is needed. Widen before summing so even
+        // two maximal finite components cannot overflow while deciding it.
+        let left = (f64::from(left.0), f64::from(left.1));
+        let right = (f64::from(right.0.signum()), f64::from(right.1.signum()));
+        let real_direction = left.0 * right.0 + left.1 * right.1;
+        let imaginary_direction = left.1 * right.0 - left.0 * right.1;
+        return (
+            libm::copysignf(0.0, real_direction as f32),
+            libm::copysignf(0.0, imaginary_direction as f32),
+        );
+    }
+    if left.0.is_finite() && left.1.is_finite() {
+        // A finite secondary component vanishes relative to an infinite axis.
+        // Divide along that axis directly: adding opposite-signed zero terms
+        // from the secondary component would erase the dominant zero sign.
+        if right.0.is_infinite() && right.1.is_finite() {
+            return (left.0 / right.0, left.1 / right.0);
+        }
+        if right.1.is_infinite() && right.0.is_finite() {
+            return (left.1 / right.1, -left.0 / right.1);
+        }
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
         // Products of finite f32 values remain representable in f64. Complete
@@ -17851,9 +17872,32 @@ fn complex64_divide(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
         return (left.1 / right.1, -left.0 / right.1);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_infinite() && right.1.is_infinite() {
-        let real_direction = left.0 * right.0.signum() + left.1 * right.1.signum();
-        let imaginary_direction = left.1 * right.0.signum() - left.0 * right.1.signum();
-        return (0.0 * real_direction, 0.0 * imaginary_direction);
+        // Retain the signed mantissa, including exact cancellation and zero
+        // inputs. Materializing its scale would needlessly overflow a direction
+        // whose only observable property is the sign of the resulting zero.
+        let real_direction = scaled_f64_product_sum(
+            (left.0, right.0.signum()),
+            (left.1, right.1.signum()),
+            false,
+        )
+        .expect("finite numerator has a defined direction")
+        .0;
+        let imaginary_direction =
+            scaled_f64_product_sum((left.1, right.0.signum()), (left.0, right.1.signum()), true)
+                .expect("finite numerator has a defined direction")
+                .0;
+        return (
+            libm::copysign(0.0, real_direction),
+            libm::copysign(0.0, imaginary_direction),
+        );
+    }
+    if left.0.is_finite() && left.1.is_finite() {
+        if right.0.is_infinite() && right.1.is_finite() {
+            return (left.0 / right.0, left.1 / right.0);
+        }
+        if right.1.is_infinite() && right.0.is_finite() {
+            return (left.1 / right.1, -left.0 / right.1);
+        }
     }
     if left.0.is_finite()
         && left.1.is_finite()
@@ -18140,6 +18184,46 @@ fn complex32_integer_power(mut base: (f32, f32), exponent: f32) -> (f32, f32) {
     result
 }
 
+// Bounded polar arithmetic for a finite, nonzero base and finite exponent.
+// Neither the radius nor the common magnitude is materialized. Keep the binary
+// scale separate until each final component has been multiplied by its direction.
+// c32 uses this same calculation in f64 and rounds only the final components.
+fn finite_complex_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
+    let (_, scale) = libm::frexp(base.0.abs().max(base.1.abs()));
+    let x = libm::scalbn(base.0, -scale);
+    let y = libm::scalbn(base.1, -scale);
+    let log_scaled_radius = 0.5 * libm::log(x * x + y * y);
+    let logarithmic_radius = f64::from(scale) * core::f64::consts::LN_2 + log_scaled_radius;
+    let angle = libm::atan2(base.1, base.0);
+    let result_angle = exponent.1 * logarithmic_radius + exponent.0 * angle;
+
+    // Split before adding the small logarithmic correction: combining them
+    // first loses significant fractional bits near a range boundary (notably
+    // MAX+MAX*i raised to the representable exponent just below one).
+    let exponent_scale = exponent.0 * f64::from(scale);
+    let whole_scale = libm::trunc(exponent_scale);
+    let fractional_scale = (exponent_scale - whole_scale)
+        + (exponent.0 * log_scaled_radius - exponent.1 * angle) * core::f64::consts::LOG2_E;
+    if !fractional_scale.is_finite() {
+        // Extreme exponents can still produce a legitimately nonfinite polar
+        // result. Preserve those floating semantics rather than filtering it.
+        let magnitude = libm::exp(exponent.0 * logarithmic_radius - exponent.1 * angle);
+        return (
+            magnitude * libm::cos(result_angle),
+            magnitude * libm::sin(result_angle),
+        );
+    }
+    let adjustment = libm::floor(fractional_scale);
+    let mantissa = libm::exp2(fractional_scale - adjustment);
+    // Saturating conversion outside i32's range is sufficient for scalbn:
+    // any nonzero f64 component then necessarily overflows or underflows.
+    let output_scale = (whole_scale + adjustment) as i32;
+    (
+        libm::scalbn(mantissa * libm::cos(result_angle), output_scale),
+        libm::scalbn(mantissa * libm::sin(result_angle), output_scale),
+    )
+}
+
 fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
     if exponent.1 == 0.0 && exponent.0.is_finite() && libm::truncf(exponent.0) == exponent.0 {
         return complex32_integer_power(base, exponent.0);
@@ -18159,6 +18243,18 @@ fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
             0.0 * libm::cosf(result_angle),
             0.0 * libm::sinf(result_angle),
         );
+    }
+    if base.0.is_finite()
+        && base.1.is_finite()
+        && base != (0.0, 0.0)
+        && exponent.0.is_finite()
+        && exponent.1.is_finite()
+    {
+        let result = finite_complex_power(
+            (f64::from(base.0), f64::from(base.1)),
+            (f64::from(exponent.0), f64::from(exponent.1)),
+        );
+        return (result.0 as f32, result.1 as f32);
     }
     let logarithmic_radius = libm::logf(libm::hypotf(base.0, base.1));
     let angle = libm::atan2f(base.1, base.0);
@@ -18207,6 +18303,14 @@ fn complex64_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
         let angle = libm::atan2(base.1, base.0);
         let result_angle = exponent.0 * angle;
         return (0.0 * libm::cos(result_angle), 0.0 * libm::sin(result_angle));
+    }
+    if base.0.is_finite()
+        && base.1.is_finite()
+        && base != (0.0, 0.0)
+        && exponent.0.is_finite()
+        && exponent.1.is_finite()
+    {
+        return finite_complex_power(base, exponent);
     }
     let logarithmic_radius = libm::log(libm::hypot(base.0, base.1));
     let angle = libm::atan2(base.1, base.0);
@@ -22591,6 +22695,186 @@ mod tests {
                 numeric_divide(rational(1, u64::MAX), rational(1, u64::MAX)),
                 Ok(rational(1, 1))
             );
+        }
+    }
+
+    // References use exact binary inputs and 100-digit Decimal log/exp,
+    // with Machin's pi identity and independently summed trigonometric series.
+    fn assert_fractional_components(actual: (f64, f64), expected: (f64, f64), tolerance: f64) {
+        assert!(actual.0.is_finite() && actual.1.is_finite(), "{actual:?}");
+        assert!(
+            (actual.0 / expected.0 - 1.0).abs() < tolerance,
+            "{actual:?}"
+        );
+        assert!(
+            (actual.1 / expected.1 - 1.0).abs() < tolerance,
+            "{actual:?}"
+        );
+    }
+
+    #[test]
+    fn complex_review_c32_fractional_power_radius() {
+        for sign in [-1.0_f32, 1.0] {
+            for real_sign in [-1.0_f32, 1.0] {
+                let expected = if real_sign > 0.0 {
+                    (2.0267144054983168e19, 8.394925938143273e18)
+                } else {
+                    (8.394925938143273e18, 2.0267144054983168e19)
+                };
+                let actual = complex32_power((real_sign * f32::MAX, sign * f32::MAX), (0.5, 0.0));
+                assert_fractional_components(
+                    (f64::from(actual.0), f64::from(actual.1)),
+                    (expected.0, f64::from(sign) * expected.1),
+                    4e-7,
+                );
+            }
+        }
+        let small = complex32_power((1e-30, -1e-30), (0.5, 0.0));
+        assert_fractional_components(
+            (f64::from(small.0), f64::from(small.1)),
+            (1.0986841e-15, -4.5508986e-16),
+            4e-7,
+        );
+    }
+
+    #[test]
+    fn complex_review_c32_fractional_power_common_magnitude() {
+        for sign in [-1.0_f32, 1.0] {
+            let actual = complex32_power(
+                (f32::MAX, sign * f32::MAX),
+                (f32::from_bits(1.0_f32.to_bits() - 1), 0.0),
+            );
+            assert_fractional_components(
+                (f64::from(actual.0), f64::from(actual.1)),
+                (
+                    3.4028055603080294e38,
+                    f64::from(sign) * 3.4028052417143948e38,
+                ),
+                4e-7,
+            );
+        }
+    }
+
+    #[cfg(feature = "c64")]
+    #[test]
+    fn complex_review_c64_fractional_power_radius() {
+        for sign in [-1.0, 1.0] {
+            for real_sign in [-1.0, 1.0] {
+                let expected = if real_sign > 0.0 {
+                    (1.4730945569055654e154, 6.101757441282702e153)
+                } else {
+                    (6.101757441282702e153, 1.4730945569055654e154)
+                };
+                assert_fractional_components(
+                    complex64_power((real_sign * f64::MAX, sign * f64::MAX), (0.5, 0.0)),
+                    (expected.0, sign * expected.1),
+                    4e-14,
+                );
+            }
+        }
+        assert_fractional_components(
+            complex64_power((1e-200, -1e-200), (0.5, 0.0)),
+            (1.09868411346781e-100, -4.550898605622273e-101),
+            4e-14,
+        );
+    }
+
+    #[cfg(feature = "c64")]
+    #[test]
+    fn complex_review_c64_fractional_power_common_magnitude() {
+        for sign in [-1.0, 1.0] {
+            assert_fractional_components(
+                complex64_power(
+                    (f64::MAX, sign * f64::MAX),
+                    (f64::from_bits(1.0_f64.to_bits() - 1), 0.0),
+                ),
+                (1.7976931348621741e308, sign * 1.7976931348621738e308),
+                4e-14,
+            );
+        }
+    }
+
+    #[test]
+    fn complex_review_diagonal_infinity_preserves_zero_directions() {
+        for (a, b) in [
+            (1.0_f32, 1.0_f32),
+            (1.0, -1.0),
+            (-1.0, 1.0),
+            (-1.0, -1.0),
+            (1.0, 0.0),
+            (0.0, -1.0),
+            (-0.0, -0.0),
+            (0.0, -0.0),
+        ] {
+            for real_sign in [-1.0_f32, 1.0] {
+                for imaginary_sign in [-1.0_f32, 1.0] {
+                    let expected = (
+                        0.0_f32.copysign(a * real_sign + b * imaginary_sign),
+                        0.0_f32.copysign(b * real_sign - a * imaginary_sign),
+                    );
+                    for scale in [f32::MAX, f32::MIN_POSITIVE, f32::from_bits(1)] {
+                        let result = complex32_divide(
+                            (a * scale, b * scale),
+                            (real_sign * f32::INFINITY, imaginary_sign * f32::INFINITY),
+                        );
+                        assert_eq!(result.0.to_bits(), expected.0.to_bits());
+                        assert_eq!(result.1.to_bits(), expected.1.to_bits());
+                    }
+                    #[cfg(feature = "c64")]
+                    for scale in [f64::MAX, f64::MIN_POSITIVE, f64::from_bits(1)] {
+                        let result = complex64_divide(
+                            (f64::from(a) * scale, f64::from(b) * scale),
+                            (
+                                f64::from(real_sign) * f64::INFINITY,
+                                f64::from(imaginary_sign) * f64::INFINITY,
+                            ),
+                        );
+                        assert_eq!(result.0.to_bits(), f64::from(expected.0).to_bits());
+                        assert_eq!(result.1.to_bits(), f64::from(expected.1).to_bits());
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn complex_review_off_axis_infinity_preserves_zero_signs() {
+        for numerator in [
+            (1.0_f32, 2.0_f32),
+            (f32::MAX, -f32::MAX),
+            (0.0, -0.0),
+            (-0.0, 0.0),
+        ] {
+            for infinity in [f32::INFINITY, f32::NEG_INFINITY] {
+                for secondary in [1.0_f32, -1.0, f32::MAX, -f32::MAX, f32::from_bits(1)] {
+                    for divisor in [(infinity, secondary), (secondary, infinity)] {
+                        let expected = if divisor.0.is_infinite() {
+                            (numerator.0 / infinity, numerator.1 / infinity)
+                        } else {
+                            (numerator.1 / infinity, -numerator.0 / infinity)
+                        };
+                        let result = complex32_divide(numerator, divisor);
+                        assert_eq!(result.0.to_bits(), expected.0.to_bits());
+                        assert_eq!(result.1.to_bits(), expected.1.to_bits());
+                        #[cfg(feature = "c64")]
+                        {
+                            let widen = |value: f32| {
+                                if value.abs() == f32::MAX {
+                                    f64::MAX.copysign(f64::from(value))
+                                } else if value.abs() == f32::from_bits(1) {
+                                    f64::from_bits(1).copysign(f64::from(value))
+                                } else {
+                                    f64::from(value)
+                                }
+                            };
+                            let wide = |pair: (f32, f32)| (widen(pair.0), widen(pair.1));
+                            let result = complex64_divide(wide(numerator), wide(divisor));
+                            assert_eq!(result.0.to_bits(), f64::from(expected.0).to_bits());
+                            assert_eq!(result.1.to_bits(), f64::from(expected.1).to_bits());
+                        }
+                    }
+                }
+            }
         }
     }
 
