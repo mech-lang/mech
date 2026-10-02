@@ -61,7 +61,12 @@ PY
 "$MECH_BIN" serve --address 127.0.0.1 --port "$port" "$project_dir" >"$server_log" 2>&1 &
 server_pid="$!"
 page_url="http://127.0.0.1:${port}/"
-server_ready_timeout_seconds="${MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS:-60}"
+# The standard debug server compiles the N-body program for both the native
+# workspace and the browser document before it can answer the first request.
+# Allow that startup on slower CI runners; the 600-frame browser proof below
+# retains its own progress watchdog and hard deadline.
+server_ready_timeout_seconds="${MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS:-180}"
+server_started_seconds=$SECONDS
 server_ready_deadline=$((SECONDS + server_ready_timeout_seconds))
 while ((SECONDS < server_ready_deadline)); do
   if curl --fail --silent "$page_url" >"$browser_dir/index.html.pending" 2>/dev/null; then
@@ -71,10 +76,11 @@ while ((SECONDS < server_ready_deadline)); do
   sleep 0.1
 done
 if [[ ! -s "$project_dir/index.html" ]]; then
-  echo "Resident n-body server did not generate its document" >&2
+  echo "Resident n-body server did not generate its document within ${server_ready_timeout_seconds}s" >&2
   sed -n '1,240p' "$server_log" >&2 || true
   exit 1
 fi
+echo "NBODY_SERVER_READY elapsed_seconds=$((SECONDS - server_started_seconds))"
 
 python3 - "$project_dir/index.html" <<'PY'
 from pathlib import Path
