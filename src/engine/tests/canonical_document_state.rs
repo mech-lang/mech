@@ -50,6 +50,12 @@ fn canonical_documents_emit_complete_equivalent_bytecode_artifacts() {
     ] {
         let artifact = compiled(source).compile_artifact().unwrap();
         let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let repeated = compiled(source).compile_artifact().unwrap();
+        assert_eq!(artifact.revision(), repeated.revision());
+        assert_eq!(
+            bytecode,
+            mech_engine::encode_program_artifact_bytecode_v1(&repeated).unwrap()
+        );
         let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytecode).unwrap();
         let reencoded = mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap();
 

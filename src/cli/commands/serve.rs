@@ -77,6 +77,8 @@ fn expand_compilation_roots(paths: impl IntoIterator<Item = PathBuf>) -> MResult
                         crate::source_discovery::MissingPathPolicy::SkipBrokenSymlink,
                 },
             )?;
+            // Serve consumes the source paths without displaying discovery events.
+            drop(discovery.events);
             let mut directory_roots = discovery
                 .entries
                 .into_iter()

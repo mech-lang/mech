@@ -1594,7 +1594,8 @@ jobs:
 
       - name: Run CLI host and context-send regression coverage
         run: |
-          cargo test -p mech-syntax --test context_parser
+          cargo test -p mech-syntax --all-features \
+            --test canonical_declaration_rules --test canonical_phase_2f_typed_views
           cargo test -p mech-terminal --features provider --test provider
           cargo test -p mech-console
           cargo test -p mech-browser

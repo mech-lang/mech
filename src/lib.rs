@@ -48,14 +48,20 @@ pub mod cli;
     feature = "build",
     feature = "formatter",
     feature = "bundle_web_core",
-    feature = "run"
+    feature = "run",
+    feature = "serve"
 ))]
 pub mod fs_paths;
 #[cfg(any(feature = "build", feature = "project"))]
 mod project;
 #[cfg(feature = "serve")]
 mod serve;
-#[cfg(any(feature = "build", feature = "formatter", feature = "run"))]
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
 pub mod source_discovery;
 #[cfg(feature = "web_host")]
 mod web_host;
