@@ -108,10 +108,7 @@ fn render_canonical_html_mode(
     live: bool,
 ) -> MResult<HtmlShimRender> {
     if !live {
-        shim = shim.replace(
-            "data-mech-document-status=\"loading\"",
-            "data-mech-document-status=\"ready\"",
-        );
+        shim = mark_static_document_statuses_ready(&shim);
         shim = shim.replacen(" data-mech-document-controller", "", 1);
     }
     let mut presentation = if live {
@@ -194,6 +191,123 @@ fn render_canonical_html_mode(
     }
     slots.extend(extra_slots.slots.clone());
     Ok(render_html_shim(&shim, &slots, source_slots.as_ref()))
+}
+
+fn mark_static_document_statuses_ready(shim: &str) -> String {
+    let bytes = shim.as_bytes();
+    let lower = shim.to_ascii_lowercase();
+    let mut cursor = 0;
+    let mut edits = Vec::new();
+    while let Some(relative) = shim[cursor..].find('<') {
+        let start = cursor + relative;
+        if shim[start..].starts_with("<!--") {
+            let Some(end) = shim[start + 4..].find("-->") else {
+                break;
+            };
+            cursor = start + 4 + end + 3;
+            continue;
+        }
+        cursor = start + 1;
+        if !bytes.get(cursor).is_some_and(u8::is_ascii_alphabetic) {
+            continue;
+        }
+        let name_start = cursor;
+        while bytes
+            .get(cursor)
+            .is_some_and(|byte| !byte.is_ascii_whitespace() && !matches!(byte, b'/' | b'>'))
+        {
+            cursor += 1;
+        }
+        let tag = &lower[name_start..cursor];
+        while cursor < bytes.len() {
+            while bytes
+                .get(cursor)
+                .is_some_and(|byte| byte.is_ascii_whitespace() || *byte == b'/')
+            {
+                cursor += 1;
+            }
+            if cursor == bytes.len() {
+                break;
+            }
+            if bytes.get(cursor) == Some(&b'>') {
+                cursor += 1;
+                break;
+            }
+            let attribute_start = cursor;
+            while bytes.get(cursor).is_some_and(|byte| {
+                !byte.is_ascii_whitespace() && !matches!(byte, b'=' | b'/' | b'>')
+            }) {
+                cursor += 1;
+            }
+            let attribute_end = cursor;
+            if attribute_start == attribute_end {
+                cursor += 1;
+                continue;
+            }
+            while bytes.get(cursor).is_some_and(u8::is_ascii_whitespace) {
+                cursor += 1;
+            }
+            let mut value_end = attribute_end;
+            if bytes.get(cursor) == Some(&b'=') {
+                cursor += 1;
+                while bytes.get(cursor).is_some_and(u8::is_ascii_whitespace) {
+                    cursor += 1;
+                }
+                if let Some(quote @ (b'\'' | b'"')) = bytes.get(cursor).copied() {
+                    cursor += 1;
+                    while bytes.get(cursor).is_some_and(|byte| *byte != quote) {
+                        cursor += 1;
+                    }
+                    if bytes.get(cursor) == Some(&quote) {
+                        cursor += 1;
+                    }
+                } else {
+                    while bytes
+                        .get(cursor)
+                        .is_some_and(|byte| !byte.is_ascii_whitespace() && *byte != b'>')
+                    {
+                        cursor += 1;
+                    }
+                }
+                value_end = cursor;
+            }
+            if shim[attribute_start..attribute_end]
+                .eq_ignore_ascii_case("data-mech-document-status")
+            {
+                edits.push((attribute_start, value_end));
+            }
+        }
+        // Attribute-looking examples inside raw text and RCDATA are content.
+        if tag == "plaintext" {
+            break;
+        }
+        if matches!(
+            tag,
+            "script" | "style" | "textarea" | "title" | "xmp" | "iframe" | "noembed" | "noframes"
+        ) {
+            let closing = format!("</{tag}");
+            loop {
+                let Some(relative) = lower[cursor..].find(&closing) else {
+                    cursor = bytes.len();
+                    break;
+                };
+                cursor += relative;
+                let after_name = cursor + closing.len();
+                if bytes
+                    .get(after_name)
+                    .is_none_or(|byte| byte.is_ascii_whitespace() || matches!(byte, b'/' | b'>'))
+                {
+                    break;
+                }
+                cursor = after_name;
+            }
+        }
+    }
+    let mut output = shim.to_owned();
+    for (start, end) in edits.into_iter().rev() {
+        output.replace_range(start..end, "data-mech-document-status=\"ready\"");
+    }
+    output
 }
 
 fn complete_presentation_slots(presentation: &mut BTreeMap<String, String>, shim: &str) {
@@ -584,6 +698,52 @@ mod tests {
                 2,
                 "{html}"
             );
+        }
+    }
+
+    #[test]
+    fn static_shim_status_attributes_support_html_spellings_without_rewriting_literals() {
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "bundle:///static.mec",
+            mech_syntax::document::Revision(0),
+            "Plain prose.\n",
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let literals = "<!-- <div data-mech-document-status='loading'> -->\n<script>const sample = \"<div data-mech-document-status='loading'>\";</script>\n<style>/* <div data-mech-document-status='loading'> */</style>\n<textarea><div data-mech-document-status='loading'></textarea>\n<div title=\"data-mech-document-status='loading'\">Literal</div>";
+        for attribute in [
+            "data-mech-document-status='loading'",
+            "data-mech-document-status=\"loading\"",
+            "data-mech-document-status=loading",
+            "DATA-MECH-DOCUMENT-STATUS = 'loading'",
+            "data-mech-document-status\n=\t\"loading\"",
+        ] {
+            let shim = format!(
+                "{literals}<main {attribute}>{{{{CONTENT}}}}</main><aside {attribute}></aside>"
+            );
+            let html = render_canonical_static_html(
+                &document.document(),
+                "".into(),
+                shim.clone(),
+                &HtmlShimExtraSlots::default(),
+            )
+            .unwrap()
+            .html;
+            assert!(html.starts_with(literals), "{html}");
+            assert_eq!(
+                html.matches("data-mech-document-status=\"ready\"").count(),
+                2,
+                "{html}"
+            );
+            let live = render_canonical_html(
+                &document.document(),
+                "".into(),
+                shim,
+                &HtmlShimExtraSlots::default(),
+            )
+            .unwrap()
+            .html;
+            assert!(live.contains(&format!("<main {attribute}>")), "{live}");
         }
     }
 }

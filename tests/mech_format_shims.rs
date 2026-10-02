@@ -144,6 +144,60 @@ fn mech_format_static_custom_shim_emits_no_runtime_assets() {
 }
 
 #[test]
+fn mech_format_static_custom_shim_is_ready_and_repeated_sections_are_navigable() {
+    let directory = TestDirectory::new("static-status-and-anchors");
+    let input = directory.path().join("document.mec");
+    let shim = directory.path().join("custom.html");
+    let output = directory.path().join("formatted.html");
+    std::fs::write(
+        &input,
+        "1. First\n---------\nFirst body.\n\n1. Second\n----------\nSecond body.\n",
+    )
+    .unwrap();
+    for attribute in [
+        "data-mech-document-status='loading'",
+        "DATA-MECH-DOCUMENT-STATUS = loading",
+        "data-mech-document-status\n=\t\"loading\"",
+    ] {
+        std::fs::write(
+            &shim,
+            format!("<main {attribute}>{{{{TOC}}}}{{{{CONTENT}}}}</main>"),
+        )
+        .unwrap();
+        let result = Command::new(env!("CARGO_BIN_EXE_mech"))
+            .arg("format")
+            .arg(&input)
+            .args(["--html", "--shim"])
+            .arg(&shim)
+            .arg("--out")
+            .arg(&output)
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        let html = std::fs::read_to_string(&output).unwrap();
+        assert!(
+            html.contains("<main data-mech-document-status=\"ready\">"),
+            "{html}"
+        );
+        let anchors = html
+            .split("href='#")
+            .skip(1)
+            .map(|link| link.split_once('\'').unwrap().0)
+            .collect::<Vec<_>>();
+        assert_eq!(anchors.len(), 2, "{html}");
+        assert_ne!(anchors[0], anchors[1], "{html}");
+        for anchor in anchors {
+            assert_eq!(html.matches(&format!("id='{anchor}'")).count(), 1, "{html}");
+        }
+        assert!(!directory.path().join("_mech").exists());
+    }
+}
+
+#[test]
 fn mech_format_custom_controller_literal_module_owns_runtime_assets() {
     let directory = TestDirectory::new("literal-module");
     let output = directory.path().join("literal.html");
@@ -571,8 +625,8 @@ fn mech_format_raw_normalizes_reviewed_syntax_families_idempotently() {
     let input = directory.path().join("document.mec");
     let output = directory.path().join("formatted.mec");
     let second = directory.path().join("second.mec");
-    let source = "@io:=cli://stdout{:read(*),:write(line)}\nresult:=make(x:1,y:2,note:\"a,b:c\")\n~~~mech{output:false,color:red}\nvalue:=1..3\n~~~\n![Keep  caption](image.png){width:wide,color:red}\n";
-    let expected = "@io := cli://stdout { :read(*), :write(line) }\nresult := make(x: 1, y: 2, note: \"a,b:c\")\n~~~mech{output: false, color: red}\nvalue := 1..3\n~~~\n![Keep  caption](image.png){width: wide, color: red}\n";
+    let source = "+> math/{sin,cos}\n@io:=cli://stdout{:read(*),:write(line)}\nresult:=make(x:1,y:2,note:\"a,b:c\")\n~~~mech{output:false,color:red}\nvalue:=1..3\n~~~\n![Keep  caption](image.png){width:wide,color:red}\n";
+    let expected = "+> math/{sin, cos}\n@io := cli://stdout { :read(*), :write(line) }\nresult := make(x: 1, y: 2, note: \"a,b:c\")\n~~~mech{output: false, color: red}\nvalue := 1..3\n~~~\n![Keep  caption](image.png){width: wide, color: red}\n";
     std::fs::write(&input, source).unwrap();
     for (source_path, output_path) in [(&input, &output), (&output, &second)] {
         let result = Command::new(env!("CARGO_BIN_EXE_mech"))

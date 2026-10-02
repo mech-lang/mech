@@ -1651,6 +1651,69 @@ fn canonical_pretty_text_normalizes_tuple_value_and_tagged_pattern_separators() 
 }
 
 #[test]
+fn canonical_pretty_text_normalizes_grouped_import_separators() {
+    assert_pretty_roundtrip(&[
+        ("+> math/{sin,cos}\n", "+> math/{sin, cos}\n"),
+        ("+> math/{ sin , cos }\r\n", "+> math/{sin, cos}\r\n"),
+        (
+            "+> math/{sin,cos} -- keep a,b\ntext := \"sin,cos\"\n",
+            "+> math/{sin, cos} -- keep a,b\ntext := \"sin,cos\"\n",
+        ),
+        (
+            "Report\n======\n+> math/{sin,cos}\nauthor: Keep a,b\n======\n",
+            "Report\n======\n+> math/{sin, cos}\nauthor: Keep a,b\n======\n",
+        ),
+    ]);
+}
+
+#[test]
+fn repeated_section_numbers_have_distinct_heading_and_toc_anchors() {
+    let source = "1. First\n---------\nFirst body.\n\n1. Second\n----------\nSecond body.\n\n(1.1) Child A\nChild body.\n\n(1.1) Child B\nOther child body.\n";
+    for ending in ["\n", "\r\n"] {
+        let source = source.replace('\n', ending);
+        for doc in [document(&source), streamed_document(&source)] {
+            let renderer = CanonicalDocumentRenderer;
+            for slots in [
+                renderer.format_browser_html_slots(&doc).unwrap(),
+                renderer.format_static_html_slots(&doc).unwrap(),
+            ] {
+                let links = slots["TOC"]
+                    .split("href='#")
+                    .skip(1)
+                    .map(|link| link.split_once('\'').unwrap().0)
+                    .collect::<Vec<_>>();
+                assert_eq!(links.len(), 4, "{}", slots["TOC"]);
+                assert_eq!(
+                    links
+                        .iter()
+                        .copied()
+                        .collect::<std::collections::HashSet<_>>()
+                        .len(),
+                    4,
+                    "{}",
+                    slots["TOC"]
+                );
+                assert_eq!(links[0], "1");
+                assert_eq!(links[2], "1.1");
+                for html in [
+                    slots["CONTENT"].clone(),
+                    renderer.format_html(&doc).unwrap(),
+                    renderer.format_browser_html(&doc).unwrap(),
+                    renderer.format_html_body_live(&doc, &[]).unwrap(),
+                ] {
+                    for anchor in &links {
+                        assert_eq!(html.matches(&format!("id='{anchor}'")).count(), 1, "{html}");
+                    }
+                    for heading in ["First", "Second", "Child A", "Child B"] {
+                        assert!(html.contains(heading), "{html}");
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn context_source_roles_and_long_capability_rows_survive_canonical_rendering() {
     let source = "@filters:=compute://filters/kernel{:read(sample/result.0),:read(sample/result.2),:read(turns),:write(input/control),:write(input/camera),:write(input/measurement),:write(turn)}\n";
     let expected = "@filters := compute://filters/kernel {\n  :read(sample/result.0),\n  :read(sample/result.2),\n  :read(turns),\n  :write(input/control),\n  :write(input/camera),\n  :write(input/measurement),\n  :write(turn)\n}\n";

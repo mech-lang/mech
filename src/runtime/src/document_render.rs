@@ -305,7 +305,7 @@ impl CanonicalDocumentRenderer {
                         numbered += 1;
                     }
                     if matches!(value.kind(), SyntaxKind::UlSubtitle | SyntaxKind::Subtitle) {
-                        let (number, level) = subtitle_coordinates(&value)?;
+                        let (number, level) = lookup.subtitle_coordinates(&value)?;
                         let paragraph = value
                             .children()
                             .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
@@ -490,6 +490,8 @@ impl CanonicalDocumentRenderer {
             }
         }
         collect_nodes(document.syntax(), SyntaxKind::OptionMap, &mut items);
+        // Title imports sit outside MechCode, but use the same source formatter.
+        collect_nodes(document.syntax(), SyntaxKind::ModuleImport, &mut items);
         let mut edits = Vec::new();
         for value in items {
             let formatted = format_canonical_item(&value)?;
@@ -800,6 +802,7 @@ struct ResultLookup<'a> {
     citations: Cow<'a, [(DocumentScopeId, SyntaxNode)]>,
     footnote_numbers: Cow<'a, HashMap<String, usize>>,
     coordinates: Cow<'a, HashMap<TextRange, RetainedCoordinates>>,
+    subtitle_anchors: Cow<'a, HashMap<TextRange, String>>,
 }
 
 impl<'a> ResultLookup<'a> {
@@ -973,6 +976,7 @@ impl<'a> ResultLookup<'a> {
             citations: Cow::Owned(citations),
             footnote_numbers: Cow::Owned(footnote_numbers),
             coordinates: Cow::Owned(retained_coordinates),
+            subtitle_anchors: Cow::Owned(document_subtitle_anchors(document)?),
         })
     }
 
@@ -991,7 +995,20 @@ impl<'a> ResultLookup<'a> {
             citations: Cow::Borrowed(&self.citations),
             footnote_numbers: Cow::Borrowed(&self.footnote_numbers),
             coordinates: Cow::Borrowed(&self.coordinates),
+            subtitle_anchors: Cow::Borrowed(&self.subtitle_anchors),
         }
+    }
+
+    fn subtitle_coordinates(
+        &self,
+        node: &SyntaxNode,
+    ) -> Result<(&str, usize), CanonicalDocumentRenderError> {
+        let (_, level) = subtitle_coordinates(node)?;
+        let anchor = self
+            .subtitle_anchors
+            .get(&node.range())
+            .ok_or_else(|| range_error(node.range()))?;
+        Ok((anchor, level))
     }
 
     fn inline_value(
@@ -1232,7 +1249,7 @@ fn render_subtitle_html(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    let (section, level) = subtitle_coordinates(node)?;
+    let (section, level) = lookup.subtitle_coordinates(node)?;
     let paragraph = node
         .children()
         .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
@@ -1412,6 +1429,43 @@ fn subtitle_coordinates(
         (section, if depth < 3 { 3 } else { depth + 1 }.min(6))
     };
     Ok((section.to_owned(), level))
+}
+
+fn document_subtitle_anchors(
+    document: &DocumentSyntax,
+) -> Result<HashMap<TextRange, String>, CanonicalDocumentRenderError> {
+    let mut headings = Vec::new();
+    for kind in [SyntaxKind::UlSubtitle, SyntaxKind::Subtitle] {
+        collect_nodes(document.syntax(), kind, &mut headings);
+    }
+    headings.sort_by_key(|heading| heading.range().start);
+    let headings = headings
+        .into_iter()
+        .map(|heading| Ok((heading.range(), subtitle_coordinates(&heading)?.0)))
+        .collect::<Result<Vec<_>, CanonicalDocumentRenderError>>()?;
+    let reserved = headings
+        .iter()
+        .map(|(_, section)| section.clone())
+        .collect::<HashSet<_>>();
+    let mut used = HashSet::new();
+    let mut anchors = HashMap::new();
+    for (range, section) in headings {
+        let mut anchor = section.clone();
+        if used.contains(&anchor) {
+            // Keep the first authored link and distinguish later occurrences
+            // by their retained source position, without changing visible text.
+            let base = format!("{section}-at-{}", range.start.0);
+            anchor = base.clone();
+            let mut suffix = 2;
+            while used.contains(&anchor) || reserved.contains(&anchor) {
+                anchor = format!("{base}-{suffix}");
+                suffix += 1;
+            }
+        }
+        used.insert(anchor.clone());
+        anchors.insert(range, anchor);
+    }
+    Ok(anchors)
 }
 
 fn valid_section_number(value: &str) -> bool {
@@ -3386,6 +3440,7 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
     let mut separator_lists = Vec::new();
     for kind in [
         SyntaxKind::ArgumentList,
+        SyntaxKind::ImportGroupItems,
         SyntaxKind::ContextDeclaration,
         SyntaxKind::OptionMap,
         SyntaxKind::Tuple,
