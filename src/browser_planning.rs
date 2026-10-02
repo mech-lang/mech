@@ -44,7 +44,7 @@ pub(crate) fn compile_browser_document_bundle(
 ) -> MResult<mech_runtime::CanonicalProgramBundle> {
     match compiler.compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri)) {
         Ok(product) => mech_runtime::CanonicalProgramBundle::from_product(uri, document, &product),
-        Err(error) if uses_compute => {
+        Err(_ordinary_error) if uses_compute => {
             #[cfg(feature = "compute_backends_native")]
             {
                 let mixed = compiler.compile_canonical_mixed_root(
@@ -66,7 +66,7 @@ pub(crate) fn compile_browser_document_bundle(
             }
             #[cfg(not(feature = "compute_backends_native"))]
             {
-                Err(error)
+                Err(_ordinary_error)
             }
         }
         Err(error) => Err(error),

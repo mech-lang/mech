@@ -1,5 +1,6 @@
 //! Canonical document rendering from retained syntax and completed scope results.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use mech_engine::{CanonicalSourceProgram, SourceDocumentOutputKind};
@@ -196,16 +197,7 @@ impl CanonicalDocumentRenderer {
             output.push_str("<span class='");
             output.push_str(repl_item_class(&item));
             output.push_str("'>");
-            for token in item.tokens() {
-                let text = token.text().map_err(|_| range_error(token.range()))?;
-                if token.kind() == SyntaxKind::Semicolon {
-                    output.push_str("<span class='mech-code-terminal'>");
-                    output.push_str(&escape_html(&text));
-                    output.push_str("</span>");
-                } else {
-                    output.push_str(&escape_html(&text));
-                }
-            }
+            render_canonical_source_html(&item, None, &mut output)?;
             output.push_str("</span>");
             cursor = range.end;
         }
@@ -275,6 +267,7 @@ impl CanonicalDocumentRenderer {
     ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
         let (fields, hidden_fields) = title_slot_fields(document)?;
         let lookup = ResultLookup::new_with_excluded(document, &[], mode, &hidden_fields)?;
+        let summary_lookup = lookup.without_live_mounts();
         let owner = document.scope_id();
         let mut slots = BTreeMap::new();
         for (name, child) in fields {
@@ -325,7 +318,7 @@ impl CanonicalDocumentRenderer {
                             render_inline_children_html_until(
                                 &paragraph,
                                 owner,
-                                &lookup,
+                                &summary_lookup,
                                 &mut toc,
                                 cutoff,
                                 &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
@@ -334,7 +327,7 @@ impl CanonicalDocumentRenderer {
                             render_inline_children_html(
                                 &paragraph,
                                 owner,
-                                &lookup,
+                                &summary_lookup,
                                 &mut toc,
                                 &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
                             )?;
@@ -410,7 +403,7 @@ impl CanonicalDocumentRenderer {
         output_addresses: &[(TextRange, u64)],
     ) -> Result<String, CanonicalDocumentRenderError> {
         let mut lookup = ResultLookup::new(document, results, mode)?;
-        lookup.output_addresses = output_addresses.iter().copied().collect();
+        lookup.output_addresses = Cow::Owned(output_addresses.iter().copied().collect());
         let mut output = String::new();
         if document_frame {
             output.push_str("<article class='mech-document'>");
@@ -496,6 +489,7 @@ impl CanonicalDocumentRenderer {
                 }
             }
         }
+        collect_nodes(document.syntax(), SyntaxKind::OptionMap, &mut items);
         let mut edits = Vec::new();
         for value in items {
             let formatted = format_canonical_item(&value)?;
@@ -606,6 +600,127 @@ fn repl_item_class(item: &SyntaxNode) -> &'static str {
     }
 }
 
+fn has_syntax_kind(node: &SyntaxNode, kind: SyntaxKind) -> bool {
+    node.kind() == kind || node.children().any(|child| has_syntax_kind(&child, kind))
+}
+
+fn render_canonical_source_html(
+    node: &SyntaxNode,
+    parent_node: Option<&SyntaxNode>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let kind = node.kind();
+    let parent = parent_node.map(SyntaxNode::kind);
+    if kind == SyntaxKind::Identifier
+        && matches!(
+            parent,
+            Some(SyntaxKind::Variable | SyntaxKind::VariableDefine | SyntaxKind::VariableAssign)
+        )
+    {
+        let name = node_text(node)?;
+        output.push_str(&format!(
+            "<span class='mech-var-name' data-mech-var-name='{}'>{}</span>",
+            escape_attribute(name.trim()),
+            escape_html(&name),
+        ));
+        return Ok(());
+    }
+    let long_context = |node: &SyntaxNode| {
+        node.kind() == SyntaxKind::ContextDeclaration
+            && node
+                .children()
+                .filter(|child| child.kind() == SyntaxKind::ContextCapabilityDeclaration)
+                .count()
+                > 3
+    };
+    // A resource URI's grammar owns the scheme/path separator. Treat the
+    // identifier portions as complete roles rather than coloring characters.
+    if kind == SyntaxKind::ContextBaseResourceUri {
+        let text = node_text(node)?;
+        let (provider, path) = text
+            .split_once("://")
+            .ok_or_else(|| range_error(node.range()))?;
+        output.push_str("<span class='mech-context-provider'>");
+        output.push_str(&escape_html(provider));
+        output.push_str("</span><span class='mech-context-scheme-op'>://</span><span class='mech-context-path'>");
+        output.push_str(&escape_html(path));
+        output.push_str("</span>");
+        return Ok(());
+    }
+    let class = match kind {
+        SyntaxKind::Number => Some("mech-number"),
+        SyntaxKind::Comment => Some("mech-comment"),
+        SyntaxKind::PrefixedContextPath => Some("mech-context-reference"),
+        SyntaxKind::AtomLiteral => Some("mech-atom"),
+        SyntaxKind::Identifier if parent == Some(SyntaxKind::ContextDeclaration) => {
+            Some("mech-context-name")
+        }
+        SyntaxKind::Identifier
+            if matches!(
+                parent,
+                Some(SyntaxKind::AtomLiteral | SyntaxKind::ContextCapabilityDeclaration)
+            ) =>
+        {
+            Some("mech-atom-name")
+        }
+        SyntaxKind::ContextCapabilityDeclaration if parent_node.is_some_and(long_context) => {
+            Some("mech-context-capability mech-context-capability-row")
+        }
+        SyntaxKind::ContextCapabilityDeclaration => Some("mech-context-capability"),
+        SyntaxKind::ContextCapabilityPath => Some("mech-context-path"),
+        SyntaxKind::ContextDeclaration if long_context(node) => {
+            Some("mech-context-declaration mech-statement-context-block")
+        }
+        SyntaxKind::ContextDeclaration => Some("mech-context-declaration"),
+        SyntaxKind::FsmDeclare => Some("mech-fsm-declare"),
+        SyntaxKind::VariableDefine if has_syntax_kind(node, SyntaxKind::Table) => {
+            Some("mech-variable-define mech-variable-define-table mech-statement-table-define")
+        }
+        _ => None,
+    };
+    if let Some(class) = class {
+        output.push_str(&format!("<span class='{class}'>"));
+    }
+    for element in node.children_with_tokens() {
+        match element {
+            SyntaxElement::Node(child) => render_canonical_source_html(&child, Some(node), output)?,
+            SyntaxElement::Token(token) => {
+                let class = match token.kind() {
+                    SyntaxKind::Colon
+                        if matches!(
+                            kind,
+                            SyntaxKind::AtomLiteral | SyntaxKind::ContextCapabilityDeclaration
+                        ) =>
+                    {
+                        Some("mech-atom-sigil")
+                    }
+                    SyntaxKind::Colon if kind == SyntaxKind::KindMatrix => {
+                        Some("mech-matrix-size-colon")
+                    }
+                    SyntaxKind::Comma if kind == SyntaxKind::KindMatrix => {
+                        Some("mech-matrix-size-separator")
+                    }
+                    SyntaxKind::Semicolon => Some("mech-code-terminal"),
+                    _ => None,
+                };
+                if let Some(class) = class {
+                    output.push_str(&format!("<span class='{class}'>"));
+                }
+                output.push_str(&escape_html(
+                    &token.text().map_err(|_| range_error(token.range()))?,
+                ));
+                if class.is_some() {
+                    output.push_str("</span>");
+                }
+            }
+        }
+    }
+    if class.is_some() {
+        output.push_str("</span>");
+    }
+    Ok(())
+}
+
 fn render_repl_gap_html(gap: &str, output: &mut String) {
     let mut remaining = gap;
     while !remaining.is_empty() {
@@ -679,12 +794,12 @@ fn title_slot_fields(
 struct ResultLookup<'a> {
     mode: RenderMode,
     root_owner: DocumentScopeId,
-    values: HashMap<ResultKey, &'a RuntimeValueSnapshot>,
-    output_addresses: HashMap<TextRange, u64>,
-    citation_numbers: HashMap<String, usize>,
-    citations: Vec<(DocumentScopeId, SyntaxNode)>,
-    footnote_numbers: HashMap<String, usize>,
-    coordinates: HashMap<TextRange, RetainedCoordinates>,
+    values: Cow<'a, HashMap<ResultKey, &'a RuntimeValueSnapshot>>,
+    output_addresses: Cow<'a, HashMap<TextRange, u64>>,
+    citation_numbers: Cow<'a, HashMap<String, usize>>,
+    citations: Cow<'a, [(DocumentScopeId, SyntaxNode)]>,
+    footnote_numbers: Cow<'a, HashMap<String, usize>>,
+    coordinates: Cow<'a, HashMap<TextRange, RetainedCoordinates>>,
 }
 
 impl<'a> ResultLookup<'a> {
@@ -852,13 +967,31 @@ impl<'a> ResultLookup<'a> {
         Ok(Self {
             mode,
             root_owner: document.scope_id(),
-            values,
-            output_addresses: HashMap::new(),
-            citation_numbers,
-            citations,
-            footnote_numbers,
-            coordinates: retained_coordinates,
+            values: Cow::Owned(values),
+            output_addresses: Cow::Owned(HashMap::new()),
+            citation_numbers: Cow::Owned(citation_numbers),
+            citations: Cow::Owned(citations),
+            footnote_numbers: Cow::Owned(footnote_numbers),
+            coordinates: Cow::Owned(retained_coordinates),
         })
+    }
+
+    // Summary copies retain semantic markup and completed values, but only
+    // the original source occurrence owns a live browser output mount.
+    fn without_live_mounts(&self) -> ResultLookup<'_> {
+        ResultLookup {
+            mode: match self.mode {
+                RenderMode::Live | RenderMode::Browser => RenderMode::Source,
+                mode => mode,
+            },
+            root_owner: self.root_owner,
+            values: Cow::Borrowed(&self.values),
+            output_addresses: Cow::Borrowed(&self.output_addresses),
+            citation_numbers: Cow::Borrowed(&self.citation_numbers),
+            citations: Cow::Borrowed(&self.citations),
+            footnote_numbers: Cow::Borrowed(&self.footnote_numbers),
+            coordinates: Cow::Borrowed(&self.coordinates),
+        }
     }
 
     fn inline_value(
@@ -1144,16 +1277,77 @@ fn subtitle_annotation(
 ) -> Result<Option<(TextSize, String)>, CanonicalDocumentRenderError> {
     let source = node_text(paragraph)?;
     let first_line = source.lines().next().unwrap_or_default();
-    let Some(offset) = first_line.find(" @") else {
+    let line_end = paragraph.range().start.0
+        + first_line
+            .trim_end_matches(mech_syntax::document::parser::terminal::is_horizontal_space)
+            .len() as u32;
+    let tokens = paragraph
+        .tokens()
+        .into_iter()
+        .filter(|token| token.range().end.0 <= line_end)
+        .collect::<Vec<_>>();
+    let mut cursor = tokens.len();
+    let mut annotation_start = None;
+    // Walk complete @identifier groups backward from the end of the heading.
+    // The canonical paragraph's token categories retain the identifier grammar,
+    // including Unicode and its allowed symbols, without reparsing the heading.
+    loop {
+        let end = cursor;
+        while cursor > 0
+            && matches!(
+                tokens[cursor - 1].kind(),
+                SyntaxKind::Alpha
+                    | SyntaxKind::Digit
+                    | SyntaxKind::Emoji
+                    | SyntaxKind::Ampersand
+                    | SyntaxKind::Dollar
+                    | SyntaxKind::Percent
+                    | SyntaxKind::Slash
+                    | SyntaxKind::HashTag
+                    | SyntaxKind::Backslash
+                    | SyntaxKind::Tilde
+                    | SyntaxKind::Plus
+                    | SyntaxKind::Dash
+                    | SyntaxKind::Asterisk
+                    | SyntaxKind::Caret
+            )
+        {
+            cursor -= 1;
+        }
+        if cursor == end
+            || cursor < 2
+            || !matches!(tokens[cursor].kind(), SyntaxKind::Alpha | SyntaxKind::Emoji)
+            || tokens[cursor - 1].kind() != SyntaxKind::At
+            || !matches!(
+                tokens[cursor - 2].kind(),
+                SyntaxKind::Whitespace | SyntaxKind::Tab
+            )
+        {
+            break;
+        }
+        annotation_start = Some(tokens[cursor - 1].range().start);
+        cursor -= 1;
+        while cursor > 0
+            && matches!(
+                tokens[cursor - 1].kind(),
+                SyntaxKind::Whitespace | SyntaxKind::Tab
+            )
+        {
+            cursor -= 1;
+        }
+    }
+    let Some(start) = annotation_start else {
         return Ok(None);
     };
-    let annotation = first_line[offset + 1..].trim().to_owned();
-    if annotation.is_empty() {
-        return Ok(None);
-    }
+    let offset = (start.0 - paragraph.range().start.0) as usize;
+    let cutoff = first_line[..offset]
+        .trim_end_matches(mech_syntax::document::parser::terminal::is_horizontal_space)
+        .len();
     Ok(Some((
-        TextSize(paragraph.range().start.0 + offset as u32),
-        annotation,
+        TextSize(paragraph.range().start.0 + cutoff as u32),
+        first_line[offset..]
+            .trim_end_matches(mech_syntax::document::parser::terminal::is_horizontal_space)
+            .to_owned(),
     )))
 }
 
@@ -1629,6 +1823,7 @@ fn render_figures_html(
         output.push_str("</div>");
     }
     output.push_str("</div><figcaption class='mech-figure-table-caption'>");
+    let summary_lookup = lookup.without_live_mounts();
     for (index, (label, image)) in panels.iter().enumerate() {
         if index > 0 {
             output.push(' ');
@@ -1638,7 +1833,7 @@ fn render_figures_html(
         output.push_str(&escape_html(label));
         output.push_str(")</span> ");
         if let Some(caption) = &image.caption {
-            render_inline_html(caption, owner, lookup, output)?;
+            render_inline_html(caption, owner, &summary_lookup, output)?;
         }
         output.push_str("</span>");
     }
@@ -1716,7 +1911,7 @@ fn append_citations_html(
     output.push_str(
         "<section class='mech-works-cited'><h3 class='mech-backmatter-heading'>Works Cited</h3>",
     );
-    for (owner, citation) in &lookup.citations {
+    for (owner, citation) in lookup.citations.iter() {
         let label = definition_label(citation)?;
         let number = lookup
             .citation_numbers
@@ -1850,7 +2045,7 @@ fn render_inline_html(
                     append_browser_mount(
                         output,
                         "span",
-                        "mech-inline-mech-code",
+                        "class='mech-inline-mech-code'",
                         SourceDocumentOutputKind::Inline,
                         node.range(),
                     );
@@ -2500,6 +2695,9 @@ fn render_code_comments(
     output: &mut String,
     html: bool,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if html {
+        return render_canonical_source_html(code, None, output);
+    }
     if !html && lookup.mode == RenderMode::Source {
         return push_source(code, code.range(), output, false);
     }
@@ -2634,7 +2832,7 @@ fn render_fence_html(
         append_browser_mount(
             output,
             "figcaption",
-            "mech-block-output",
+            "class='mech-block-output'",
             SourceDocumentOutputKind::Fence,
             fence.syntax().range(),
         );
@@ -2825,7 +3023,7 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
 /// Program results keep their document-boundary address across REPL appends.
 pub fn canonical_document_output_id(kind: SourceDocumentOutputKind, range: TextRange) -> u64 {
     if kind == SourceDocumentOutputKind::Program {
-        return mech_core::hash_str("mech/document-program-output/v1");
+        return mech_core::root_document_program_output_id();
     }
     mech_core::hash_str(&format!(
         "mech/canonical-document-output/v1:{kind:?}:{}:{}",
@@ -2970,13 +3168,13 @@ pub fn canonical_document_has_root_program(document: &DocumentSyntax) -> bool {
 fn append_browser_mount(
     output: &mut String,
     tag: &str,
-    class: &str,
+    class_attribute: &str,
     kind: SourceDocumentOutputKind,
     range: TextRange,
 ) {
     let id = canonical_document_output_id(kind, range);
     output.push_str(&format!(
-        "<{tag} class='{class}' id='{id}:0' data-mech-output-address='{id}:0'></{tag}>"
+        "<{tag} {class_attribute} id='{id}:0' data-mech-output-address='{id}:0'></{tag}>"
     ));
 }
 
@@ -2995,7 +3193,7 @@ fn append_program_html(
             append_browser_mount(
                 output,
                 "output",
-                "mech-block-output mech-program-output",
+                "class='mech-block-output mech-program-output'",
                 SourceDocumentOutputKind::Program,
                 range,
             );
@@ -3139,9 +3337,61 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
     let mut context_sends = Vec::new();
     collect_nodes(node, SyntaxKind::ContextSend, &mut context_sends);
     operator_ranges.extend(context_sends.iter().filter_map(context_send_operator_range));
+    let mut context_declarations = Vec::new();
+    collect_nodes(
+        node,
+        SyntaxKind::ContextDeclaration,
+        &mut context_declarations,
+    );
+    let context_braces = context_declarations
+        .iter()
+        .flat_map(|declaration| declaration.children_with_tokens())
+        .filter_map(|element| match element {
+            SyntaxElement::Token(token)
+                if matches!(token.kind(), SyntaxKind::LeftBrace | SyntaxKind::RightBrace) =>
+            {
+                Some(token.range())
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let mut long_group_starts = Vec::new();
+    let mut long_group_ends = Vec::new();
+    for declaration in &context_declarations {
+        if declaration
+            .children()
+            .filter(|child| child.kind() == SyntaxKind::ContextCapabilityDeclaration)
+            .count()
+            > 3
+        {
+            for element in declaration.children_with_tokens() {
+                if let SyntaxElement::Token(token) = element {
+                    match token.kind() {
+                        SyntaxKind::LeftBrace | SyntaxKind::Comma => {
+                            long_group_starts.push(token.range())
+                        }
+                        SyntaxKind::RightBrace => long_group_ends.push(token.range()),
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+    let newline = if node_text(node)?.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    };
+    let mut previous_long_group_start = false;
     let mut separator_lists = Vec::new();
     for kind in [
         SyntaxKind::ArgumentList,
+        SyntaxKind::ContextDeclaration,
+        SyntaxKind::OptionMap,
+        SyntaxKind::Tuple,
+        SyntaxKind::TupleStruct,
+        SyntaxKind::TupleStructPattern,
+        SyntaxKind::AtomStructPattern,
         SyntaxKind::Map,
         SyntaxKind::Record,
         SyntaxKind::Set,
@@ -3155,7 +3405,12 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         .map(|arguments| arguments.range())
         .collect::<Vec<_>>();
     let mut binding_nodes = Vec::new();
-    for kind in [SyntaxKind::MapEntry, SyntaxKind::RecordBinding] {
+    for kind in [
+        SyntaxKind::MapEntry,
+        SyntaxKind::RecordBinding,
+        SyntaxKind::BoundCallArgument,
+        SyntaxKind::OptionMapping,
+    ] {
         collect_nodes(node, kind, &mut binding_nodes);
     }
     let binding_colon_ranges = binding_nodes
@@ -3169,6 +3424,8 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
     let mut output = String::new();
     let mut gap = String::new();
     let mut previous = None;
+    let mut previous_literal = None;
+    let mut previous_context_open = false;
     let mut previous_ended_operator = false;
     let mut previous_was_prefix = false;
     let mut previous_was_separator = false;
@@ -3177,8 +3434,14 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         let text = token.text().map_err(|_| range_error(token.range()))?;
         let literal = protected
             .iter()
-            .any(|range| token.range().start >= range.start && token.range().end <= range.end);
-        if !literal
+            .find(|range| token.range().start >= range.start && token.range().end <= range.end)
+            .copied();
+        if literal.is_some() && literal == previous_literal {
+            output.push_str(&text);
+            previous = Some(kind);
+            continue;
+        }
+        if literal.is_none()
             && matches!(
                 kind,
                 SyntaxKind::Whitespace
@@ -3193,8 +3456,10 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         let operator = operator_ranges
             .iter()
             .find(|range| token.range().start >= range.start && token.range().end <= range.end);
-        let starts_operator = operator.is_some_and(|range| token.range().start == range.start);
-        let ends_operator = operator.is_some_and(|range| token.range().end == range.end);
+        let starts_operator = kind == SyntaxKind::OutputOperator
+            || operator.is_some_and(|range| token.range().start == range.start);
+        let ends_operator = kind == SyntaxKind::OutputOperator
+            || operator.is_some_and(|range| token.range().end == range.end);
         let separator = (kind == SyntaxKind::Comma
             && separator_list_ranges
                 .iter()
@@ -3208,8 +3473,20 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
             previous,
             Some(SyntaxKind::LeftParen | SyntaxKind::LeftBracket | SyntaxKind::LeftBrace)
         );
-        if gap.contains(['\r', '\n']) {
+        if long_group_ends.contains(&token.range()) {
+            output.push_str(newline);
+        } else if previous_long_group_start {
+            output.push_str(newline);
+            output.push_str("  ");
+        } else if gap.contains(['\r', '\n']) {
             output.push_str(&gap);
+        } else if context_braces.contains(&token.range()) && kind == SyntaxKind::LeftBrace
+            || previous_context_open && kind != SyntaxKind::RightBrace
+            || context_braces.contains(&token.range())
+                && kind == SyntaxKind::RightBrace
+                && previous != Some(SyntaxKind::LeftBrace)
+        {
+            output.push(' ');
         } else if separator || closes_delimiter || follows_open_delimiter || previous_was_prefix {
             // Canonical separators and delimiter interiors never retain
             // horizontal padding.
@@ -3235,6 +3512,10 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         gap.clear();
         output.push_str(&text);
         previous = Some(kind);
+        previous_long_group_start = long_group_starts.contains(&token.range());
+        previous_literal = literal;
+        previous_context_open =
+            kind == SyntaxKind::LeftBrace && context_braces.contains(&token.range());
         previous_ended_operator = ends_operator;
         previous_was_prefix =
             ends_operator && operator.is_some_and(|range| prefix_ranges.contains(range));

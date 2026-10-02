@@ -8898,6 +8898,7 @@ mod browser_tests {
         );
     }
 
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     #[wasm_bindgen_test]
     fn generic_timer_table_scene_is_supported_by_the_resident_browser_product() {
         let window = web_sys::window().unwrap();

@@ -496,3 +496,147 @@ fn mech_format_shipped_controller_explains_missing_embedded_runtime_assets() {
     );
     assert!(!directory.path().join("_mech").exists());
 }
+
+#[test]
+fn mech_format_reports_positioned_canonical_errors_without_publication() {
+    for ending in ["\n", "\r\n"] {
+        for malformed in ["value := 1 + )", "résultat := [1 )"] {
+            let directory = TestDirectory::new("positioned-errors");
+            let input = directory.path().join("entrée.mec");
+            let output = directory.path().join("formatted.mec");
+            let shim = directory.path().join("static.html");
+            let source = format!("valid := 1{ending}{malformed}{ending}");
+            std::fs::write(&input, &source).unwrap();
+            std::fs::write(&output, "previous published content").unwrap();
+            std::fs::write(&shim, "<article>{{CONTENT}}</article>").unwrap();
+            let retained = mech_runtime::SourceDocument::parse_resolved(
+                &mech_runtime::SourceRequest::from_filesystem_path(&input)
+                    .unwrap()
+                    .specifier,
+                mech_syntax::document::Revision(0),
+                source.as_str(),
+                mech_syntax::document::ParseConfig::default(),
+            )
+            .unwrap();
+            let snapshot = retained.snapshot();
+            assert!(!snapshot.diagnostics.is_empty());
+            for html in [false, true] {
+                let mut command = Command::new(env!("CARGO_BIN_EXE_mech"));
+                command.arg("format").arg(&input).arg("--out").arg(&output);
+                if html {
+                    command.arg("--html").arg("--shim").arg(&shim);
+                }
+                let result = command.output().unwrap();
+                assert!(
+                    !result.status.success(),
+                    "malformed {source:?} was published"
+                );
+                let stderr = String::from_utf8_lossy(&result.stderr);
+                assert!(stderr.contains(&input.display().to_string()), "{stderr}");
+                assert!(stderr.contains("InvalidFormatSyntax"), "{stderr}");
+                for diagnostic in snapshot.diagnostics.iter() {
+                    let range = diagnostic
+                        .primary
+                        .resolve(snapshot.source.revision(), &snapshot.nodes)
+                        .unwrap();
+                    assert!(range.start.0 >= "valid := 1".len() as u32, "{diagnostic:?}");
+                    let (line, column) = snapshot
+                        .source
+                        .line_index()
+                        .line_and_byte_column(range.start);
+                    assert!(
+                        stderr.contains(&format!("at {}:{}:", line + 1, column.0 + 1)),
+                        "{stderr}"
+                    );
+                    assert!(stderr.contains(&diagnostic.message), "{stderr}");
+                    assert!(
+                        stderr
+                            .contains(&format!("source bytes {}..{}", range.start.0, range.end.0)),
+                        "{stderr}"
+                    );
+                }
+                assert_eq!(std::fs::read_to_string(&input).unwrap(), source);
+                assert_eq!(
+                    std::fs::read_to_string(&output).unwrap(),
+                    "previous published content"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn mech_format_raw_normalizes_reviewed_syntax_families_idempotently() {
+    let directory = TestDirectory::new("canonical-pretty-contract");
+    let input = directory.path().join("document.mec");
+    let output = directory.path().join("formatted.mec");
+    let second = directory.path().join("second.mec");
+    let source = "@io:=cli://stdout{:read(*),:write(line)}\nresult:=make(x:1,y:2,note:\"a,b:c\")\n~~~mech{output:false,color:red}\nvalue:=1..3\n~~~\n![Keep  caption](image.png){width:wide,color:red}\n";
+    let expected = "@io := cli://stdout { :read(*), :write(line) }\nresult := make(x: 1, y: 2, note: \"a,b:c\")\n~~~mech{output: false, color: red}\nvalue := 1..3\n~~~\n![Keep  caption](image.png){width: wide, color: red}\n";
+    std::fs::write(&input, source).unwrap();
+    for (source_path, output_path) in [(&input, &output), (&output, &second)] {
+        let result = Command::new(env!("CARGO_BIN_EXE_mech"))
+            .arg("format")
+            .arg(source_path)
+            .arg("--out")
+            .arg(output_path)
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        assert_eq!(std::fs::read_to_string(output_path).unwrap(), expected);
+    }
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn mech_format_preserves_executable_results_through_public_commands() {
+    let directory = TestDirectory::new("format-execution-contract");
+    for (index, source) in [
+        "pair:=(2,3)\n(left,right):=pair\nleft * 10 + right\n",
+        "record:={left:2,right:3}\nrecord.left * 10 + record.right\n",
+        "answer:=math/sub(left:30,right:7)\nanswer\n",
+    ]
+    .iter()
+    .enumerate()
+    {
+        let input = directory.path().join(format!("input-{index}.mec"));
+        let formatted = directory.path().join(format!("formatted-{index}.mec"));
+        std::fs::write(&input, source).unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_mech"))
+            .args(["--no-config", "format"])
+            .arg(&input)
+            .arg("--out")
+            .arg(&formatted)
+            .current_dir(directory.path())
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        for path in [&input, &formatted] {
+            let output = Command::new(env!("CARGO_BIN_EXE_mech"))
+                .args(["--no-config", "run"])
+                .arg(path)
+                .current_dir(directory.path())
+                .output()
+                .unwrap();
+            assert!(
+                output.status.success(),
+                "{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            assert_eq!(
+                String::from_utf8_lossy(&output.stdout).lines().last(),
+                Some("23"),
+                "{}",
+                String::from_utf8_lossy(&output.stdout)
+            );
+        }
+    }
+}

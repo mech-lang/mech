@@ -3977,3 +3977,100 @@ fn final_review_shared_file_unions_physical_calls_across_package_namespaces() {
 
 #[path = "support/cutover_contract.rs"]
 mod cutover_contract;
+
+// Scan syntax independently of cfg activation: reduced builds must not conceal
+// a restored legacy presentation export, alias, or macro-generated wrapper.
+fn retired_presentation_identifiers(source: &str) -> BTreeSet<String> {
+    const RETIRED: &[&str] = &[
+        "document_presentation",
+        "inline_document_output_id",
+        "configure_root_document_program_output_capture",
+        "insert_root_document_program_output_capture",
+        "root_document_inline_eval_count",
+        "root_document_output_ids",
+        "compiler_document_output_cells",
+        "PROGRAM_OUTPUT_PUBLICATION_ANNOTATION",
+    ];
+    #[derive(Default)]
+    struct Scan(BTreeSet<String>);
+    impl Scan {
+        fn ident(&mut self, name: &str) {
+            let name = name.strip_prefix("r#").unwrap_or(name);
+            if RETIRED.contains(&name) {
+                self.0.insert(name.to_owned());
+            }
+        }
+        fn tokens(&mut self, tokens: proc_macro2::TokenStream) {
+            for token in tokens {
+                match token {
+                    proc_macro2::TokenTree::Ident(ident) => self.ident(&ident.to_string()),
+                    proc_macro2::TokenTree::Group(group) => self.tokens(group.stream()),
+                    _ => {}
+                }
+            }
+        }
+    }
+    impl<'ast> Visit<'ast> for Scan {
+        fn visit_item_mod(&mut self, module: &'ast syn::ItemMod) {
+            if module.ident == "document_outputs" {
+                self.0.insert("document_outputs".into());
+            }
+            syn::visit::visit_item_mod(self, module);
+        }
+        fn visit_ident(&mut self, ident: &'ast proc_macro2::Ident) {
+            self.ident(&ident.to_string());
+        }
+        fn visit_macro(&mut self, mac: &'ast syn::Macro) {
+            syn::visit::visit_path(self, &mac.path);
+            self.tokens(mac.tokens.clone());
+        }
+    }
+    let mut scan = Scan::default();
+    scan.visit_file(&syn::parse_file(source).expect("valid Rust source"));
+    scan.0
+}
+
+#[test]
+fn retired_document_presentation_paths_and_exports_are_absent() {
+    let root = repository_root();
+    for path in [
+        "src/core/src/document_presentation.rs",
+        "src/engine/src/program/document_outputs.rs",
+    ] {
+        assert!(
+            !root.join(path).exists(),
+            "retired presentation path restored: {path}"
+        );
+    }
+    for directory in ["src/core/src", "src/engine/src"] {
+        let mut files = BTreeSet::new();
+        visit_rust_files(&root.join(directory), &mut files);
+        for path in files {
+            let retired = retired_presentation_identifiers(&fs::read_to_string(&path).unwrap());
+            assert!(
+                retired.is_empty(),
+                "retired presentation surface in {}: {retired:?}",
+                path.display()
+            );
+        }
+    }
+}
+
+#[test]
+fn retired_presentation_gate_rejects_inactive_aliases_and_macro_exports() {
+    for source in [
+        "#[cfg(any())] pub mod document_presentation;",
+        "pub use mech_core::{r#document_presentation as current};",
+        "pub use crate::program::{root_document_output_ids as ids};",
+        "exports! { pub fn configure_root_document_program_output_capture() {} }",
+    ] {
+        assert!(
+            !retired_presentation_identifiers(source).is_empty(),
+            "missed {source}"
+        );
+    }
+    assert!(
+        retired_presentation_identifiers("pub use mech_core::root_document_program_output_id;")
+            .is_empty()
+    );
+}

@@ -72,6 +72,26 @@ def main() -> None:
         (source_dir / "fence.mec").write_text("~~~mech\n11\n~~~\n")
         (source_dir / "inline.mec").write_text("anchor := 0\n\nVisible {11}.\n")
         (source_dir / "title.mec").write_text("Document\n========\nsection: {1}\n========\n\nVisible {1}.\n")
+        (source_dir / "figure.mec").write_text("anchor := 0\n\n| ![one {11}](one.png) | ![two {22}](two.png) |\n\nNeighbor {33}.\n")
+        overlap = source_dir / "overlap.mec"
+        overlap.write_text("1. First\n---------\nFirst {11}.\n\n2. Second\n----------\nSecond {22}.\n")
+        overlap_shim = source_dir / "overlap-shim.html"
+        overlap_shim.write_text((ROOT / "include/index.html").read_text().replace(
+            "{{WASM_MODULE_URL}}", "/_mech/pkg/mech_wasm.js",
+        ).replace(
+            "{{CONTENTS}}",
+            "<aside data-mech-copy>{{SECTION1}}</aside><div data-mech-primary>{{CONTENT}}</div><aside data-mech-copy>{{CONTENTS}}{{CONTENT}}</aside>",
+        ))
+        subprocess.run([
+            str(binary), "--no-config", "format", str(overlap), "--html",
+            "--shim", str(overlap_shim), "--out", str(source_dir / "overlap/index.html"),
+        ], cwd=source_dir, check=True, stdout=subprocess.DEVNULL)
+        emitted = (source_dir / "overlap/index.html").read_text()
+        before_primary, primary_and_after = emitted.split("<div data-mech-primary>", 1)
+        primary, after_primary = primary_and_after.split("<aside data-mech-copy>", 1)
+        assert primary.count("data-mech-output-address=") == 2
+        assert "data-mech-output-address=" not in before_primary.split("<aside data-mech-copy>", 1)[1]
+        assert "data-mech-output-address=" not in after_primary.split("</article>", 1)[0]
         (source_dir / "documentation.mec").write_text("answer := 1\nanswer")
         original = "first := 1\nsecond := 2\nsecond\n\nVisible {second}.\n"
         (source_dir / "console.mec").write_text(original)
@@ -184,6 +204,56 @@ def main() -> None:
                 })()""")
                 results.append(result)
                 browser.write_dom(artifacts / "title.dom.html")
+                browser.navigate(url + "/figure.mec")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "figure document readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const controller = globalThis.MechDocumentController;
+                  const panels = [...document.querySelectorAll('.mech-subfigure-caption .mech-inline-mech-code[id]')];
+                  const summary = document.querySelector('.mech-figure-table-caption');
+                  if (panels.length !== 2 || !summary || summary.querySelector('[id], [data-mech-output-address], [data-mech-source]')) throw new Error('Figure summary duplicated a live mount');
+                  const mounts = [...document.querySelectorAll('.mech-inline-mech-code[id]')];
+                  const neighbor = mounts.find(node => !panels.includes(node));
+                  if (mounts.length !== 3 || new Set(mounts.map(node => node.id)).size !== 3) throw new Error('Duplicate caption/neighbor identities');
+                  const addresses = panels.map(node => node.id);
+                  checkSelection(panels[0], addresses[0], '11');
+                  checkSelection(panels[1], addresses[1], '22');
+                  checkSelection(neighbor, neighbor.id, '33');
+                  const start = controller.source().indexOf('{11}') + 1;
+                  controller.applyEdit(start, start + 2, '44');
+                  checkSelection(panels[0], addresses[0], '44');
+                  checkSelection(panels[1], addresses[1], '22');
+                  checkSelection(neighbor, neighbor.id, '33');
+                  controller.replaceSource(controller.source().replace('{44}', '{55}'));
+                  checkSelection(panels[0], addresses[0], '55');
+                  checkSelection(panels[1], addresses[1], '22');
+                  checkSelection(neighbor, neighbor.id, '33');
+                  return {contract:'figure-caption-summary-ownership', liveMounts:mounts.length, distinctMounts:true, initialValues:['11','22','33'], editedValue:'44', replacementValue:'55', originalNodesRetained:true, neighboringValuesPreserved:true, selection:true, summaryNonLive:true};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "figure.dom.html")
+                browser.navigate(url + "/overlap/index.html")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "overlapping shim readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const controller = globalThis.MechDocumentController;
+                  const mounts = Array.from(document.querySelectorAll('[data-mech-output-address]'));
+                  const primary = document.querySelector('[data-mech-primary]');
+                  if (mounts.length !== 2 || new Set(mounts.map(node => node.id)).size !== 2 || (primary && mounts.some(node => !primary.contains(node)))) throw new Error('Overlapping shim duplicates or relocates live output mounts');
+                  const copies = Array.from(document.querySelectorAll('[data-mech-copy]'));
+                  if (copies.some(node => node.querySelector('[data-mech-output-address]'))) throw new Error('Shim copy owns a live mount');
+                  const addresses = mounts.map(node => node.id);
+                  checkSelection(mounts[0], addresses[0], '11');
+                  checkSelection(mounts[1], addresses[1], '22');
+                  const start = controller.source().indexOf('{11}') + 1;
+                  controller.applyEdit(start, start + 2, '44');
+                  checkSelection(mounts[0], addresses[0], '44');
+                  checkSelection(mounts[1], addresses[1], '22');
+                  controller.replaceSource(controller.source().replace('{22}', '{55}'));
+                  checkSelection(mounts[0], addresses[0], '44');
+                  checkSelection(mounts[1], addresses[1], '55');
+                  return {contract:'overlapping-shim-output-ownership', liveMounts:2, distinctMounts:true, selection:true, edit:true, replacement:true, copiesNonLive:true, neighboringValuesPreserved:true};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "overlap.dom.html")
                 browser.navigate(url + "/documentation.mec")
                 browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "documentation document readiness")
                 result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
@@ -236,7 +306,7 @@ def main() -> None:
                 results.append(result)
                 browser.write_dom(artifacts / "console.dom.html")
                 (artifacts / "results.json").write_text(json.dumps(results, indent=2) + "\n")
-                print("browser document lifecycle: 5 operation sequences passed")
+                print(f"browser document lifecycle: {len(results)} operation sequences passed")
             finally:
                 if browser is not None:
                     browser.close()

@@ -1661,7 +1661,6 @@ pub struct InterpreterExecution<'a> {
     // interpreter ID derived from its configuration. Keep that presentation
     // namespace on the execution view so output keys stay compatible with the
     // formatter without changing runtime interpreter identity.
-    presentation_namespace: u64,
     services: StdRefCell<&'a mut dyn MechExecutionServices>,
 }
 
@@ -1685,23 +1684,10 @@ impl MechErrorKind for ExecutionServicesBorrowConflict {
 
 impl<'a> InterpreterExecution<'a> {
     pub fn new(interpreter: &'a Interpreter, services: &'a mut dyn MechExecutionServices) -> Self {
-        Self::with_presentation_namespace(interpreter, 0, services)
-    }
-
-    fn with_presentation_namespace(
-        interpreter: &'a Interpreter,
-        presentation_namespace: u64,
-        services: &'a mut dyn MechExecutionServices,
-    ) -> Self {
         Self {
             interpreter,
-            presentation_namespace,
             services: StdRefCell::new(services),
         }
-    }
-
-    pub(crate) fn presentation_namespace(&self) -> u64 {
-        self.presentation_namespace
     }
 
     /// Owner session shared by ordinary cells created while planning and
@@ -1835,11 +1821,7 @@ impl<'a> InterpreterExecution<'a> {
             )
             .with_compiler_loc()
         })?;
-        let execution = InterpreterExecution::with_presentation_namespace(
-            interpreter,
-            interpreter.id,
-            &mut **services,
-        );
+        let execution = InterpreterExecution::new(interpreter, &mut **services);
         operation(&execution)
     }
 }

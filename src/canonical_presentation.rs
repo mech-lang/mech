@@ -120,42 +120,19 @@ fn render_canonical_html_mode(
         CanonicalDocumentRenderer.format_static_html_slots(document)
     }
     .map_err(|error| presentation_error(error.to_string()))?;
-    // A custom shell may only expose CONTENT. Preserve unplaced regions there,
-    // while shipped shells own their dedicated metadata and intro regions.
-    let mut metadata = String::new();
-    for name in [
-        "AUTHOR", "DATE", "KICKER", "SECTION", "SUMMARY", "HERO", "NEXT", "PREVIOUS",
-    ] {
-        if !shim.contains(&format!("{{{{{name}}}}}")) {
-            if let Some(value) = presentation.get(name).filter(|value| !value.is_empty()) {
-                metadata.push_str(&format!(
-                    "<div class='mech-title-field'><dt>{}</dt><dd>{value}</dd></div>",
-                    name.to_lowercase()
-                ));
-            }
-        }
+    complete_presentation_slots(&mut presentation, &shim);
+    let mut source_slots = if live {
+        Some(
+            CanonicalDocumentRenderer
+                .format_static_html_slots(document)
+                .map_err(|error| presentation_error(error.to_string()))?,
+        )
+    } else {
+        None
+    };
+    if let Some(source_slots) = &mut source_slots {
+        complete_presentation_slots(source_slots, &shim);
     }
-    if !metadata.is_empty() {
-        let intro = presentation.entry("INTRO".to_owned()).or_default();
-        *intro = format!("<dl class='mech-title-front-matter'>{metadata}</dl>{intro}");
-    }
-    for (source, target) in [
-        ("ABSTRACT", "INTRO"),
-        ("INTRO", "CONTENT"),
-        ("FOOTNOTES", "CONTENT"),
-        ("CITED", "CONTENT"),
-    ] {
-        if !shim.contains(&format!("{{{{{source}}}}}")) {
-            let value = presentation.get(source).cloned().unwrap_or_default();
-            let destination = presentation.entry(target.to_owned()).or_default();
-            if source == "ABSTRACT" || source == "INTRO" {
-                *destination = format!("{value}{destination}");
-            } else {
-                destination.push_str(&value);
-            }
-        }
-    }
-    presentation.insert("CONTENTS".to_owned(), presentation["CONTENT"].clone());
     let title = document
         .title()
         .and_then(|title| title.syntax().text().ok())
@@ -216,10 +193,56 @@ fn render_canonical_html_mode(
         slots.insert(name, value);
     }
     slots.extend(extra_slots.slots.clone());
-    Ok(render_html_shim(&shim, &slots))
+    Ok(render_html_shim(&shim, &slots, source_slots.as_ref()))
 }
 
-fn render_html_shim(shim: &str, slots: &BTreeMap<String, String>) -> HtmlShimRender {
+fn complete_presentation_slots(presentation: &mut BTreeMap<String, String>, shim: &str) {
+    // A custom shell may only expose CONTENT. Preserve unplaced regions there,
+    // while shipped shells own their dedicated metadata and intro regions.
+    let mut metadata = String::new();
+    for name in [
+        "AUTHOR", "DATE", "KICKER", "SECTION", "SUMMARY", "HERO", "NEXT", "PREVIOUS",
+    ] {
+        if !shim.contains(&format!("{{{{{name}}}}}")) {
+            if let Some(value) = presentation.get(name).filter(|value| !value.is_empty()) {
+                metadata.push_str(&format!(
+                    "<div class='mech-title-field'><dt>{}</dt><dd>{value}</dd></div>",
+                    name.to_lowercase()
+                ));
+            }
+        }
+    }
+    if !metadata.is_empty() {
+        let intro = presentation.entry("INTRO".to_owned()).or_default();
+        *intro = format!("<dl class='mech-title-front-matter'>{metadata}</dl>{intro}");
+    }
+    for (source, target) in [
+        ("ABSTRACT", "INTRO"),
+        ("INTRO", "CONTENT"),
+        ("FOOTNOTES", "CONTENT"),
+        ("CITED", "CONTENT"),
+    ] {
+        if !shim.contains(&format!("{{{{{source}}}}}")) {
+            let value = presentation.get(source).cloned().unwrap_or_default();
+            let destination = presentation.entry(target.to_owned()).or_default();
+            if source == "ABSTRACT" || source == "INTRO" {
+                *destination = format!("{value}{destination}");
+            } else {
+                destination.push_str(&value);
+            }
+        }
+    }
+    presentation.insert("CONTENTS".to_owned(), presentation["CONTENT"].clone());
+}
+
+fn render_html_shim(
+    shim: &str,
+    slots: &BTreeMap<String, String>,
+    source_slots: Option<&BTreeMap<String, String>>,
+) -> HtmlShimRender {
+    let primary_body = ["CONTENT", "CONTENTS"]
+        .into_iter()
+        .find(|name| shim.contains(&format!("{{{{{name}}}}}")));
     let mut html = String::with_capacity(shim.len());
     let mut consumed_slots = BTreeSet::new();
     let mut unresolved_mech_slots = BTreeSet::new();
@@ -239,6 +262,21 @@ fn render_html_shim(shim: &str, slots: &BTreeMap<String, String>) -> HtmlShimRen
         if name.starts_with("VAR:") {
             html.push_str(&shim[open..token_end]);
         } else if let Some(value) = slots.get(name) {
+            let is_section = name.strip_prefix("SECTION").is_some_and(|suffix| {
+                !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit())
+            });
+            let duplicate_body =
+                matches!(name, "CONTENT" | "CONTENTS") && primary_body != Some(name);
+            let duplicate_region = consumed_slots.contains(name)
+                || duplicate_body
+                || (is_section && primary_body.is_some());
+            let value = if duplicate_region {
+                source_slots
+                    .and_then(|sources| sources.get(name))
+                    .unwrap_or(value)
+            } else {
+                value
+            };
             html.push_str(value);
             consumed_slots.insert(name.to_owned());
         } else {
@@ -315,6 +353,150 @@ fn presentation_error(message: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn canonical_shim_slots_preserve_single_pass_literals_dynamic_bindings_and_layers() {
+        let mut slots = BTreeMap::from([
+            ("TITLE".into(), "Title".into()),
+            ("CONTENT".into(), "{{TITLE}} {{AUTHOR}} {{SECTION1}}".into()),
+            ("CUSTOM".into(), "{{TITLE}}".into()),
+            ("VAR:answer".into(), "must not replace".into()),
+        ]);
+        let render = render_html_shim(
+            "{{TITLE}}|{{CONTENT}}|{{CUSTOM}}|{{VAR:answer}}|{{UNKNOWN}}",
+            &slots,
+            None,
+        );
+        assert_eq!(
+            render.html,
+            "Title|{{TITLE}} {{AUTHOR}} {{SECTION1}}|{{TITLE}}|{{VAR:answer}}|{{UNKNOWN}}"
+        );
+        assert_eq!(
+            render.consumed_slots,
+            BTreeSet::from(["TITLE".into(), "CONTENT".into(), "CUSTOM".into()])
+        );
+        assert_eq!(
+            render.unresolved_mech_slots,
+            BTreeSet::from(["UNKNOWN".into()])
+        );
+        let styles = HtmlStyleSheets {
+            palette: "palette".into(),
+            source: "source".into(),
+            mechdown: "mechdown".into(),
+            page: "page".into(),
+            repl: "repl".into(),
+        };
+        assert_eq!(styles.bundle(), "palette\nsource\nmechdown\npage\nrepl");
+        slots.insert("STYLESHEET".into(), styles.bundle());
+        for (name, value) in [
+            ("PALETTE_STYLESHEET", styles.palette),
+            ("MECH_SOURCE_STYLESHEET", styles.source),
+            ("MECHDOWN_STYLESHEET", styles.mechdown),
+            ("PAGE_STYLESHEET", styles.page),
+            ("MECH_REPL_STYLESHEET", styles.repl),
+        ] {
+            slots.insert(name.into(), value.clone());
+            assert_eq!(
+                render_html_shim(&format!("{{{{{name}}}}}"), &slots, None).html,
+                value
+            );
+        }
+        assert_eq!(
+            render_html_shim("{{STYLESHEET}}|{{MECH_SOURCE_STYLESHEET}}", &slots, None).html,
+            "palette\nsource\nmechdown\npage\nrepl|source"
+        );
+    }
+
+    #[test]
+    fn canonical_shim_overlapping_regions_own_each_live_output_once() {
+        let source = mech_runtime::SourceDocument::parse_resolved(
+            "bundle:///overlap.mec",
+            mech_syntax::document::Revision(0),
+            "1. First\n---------\nFirst {11}.\n\n2. Second\n----------\nSecond {22}.\n",
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(source.is_strictly_clean());
+        let document = source.document();
+        let outputs = mech_runtime::canonical_document_presentation_outputs(&document).unwrap();
+        assert_eq!(outputs.len(), 2);
+        for shim in [
+            "<aside>{{SECTION1}}</aside><main>{{CONTENT}}</main><aside>{{CONTENTS}}{{CONTENT}}{{SECTION1}}</aside>",
+            "<main>{{CONTENTS}}</main><aside>{{CONTENTS}}</aside>",
+            "<main>{{SECTION1}}{{SECTION2}}</main><aside>{{SECTION1}}</aside>",
+        ] {
+            let html = render_canonical_html(
+                &document,
+                "".into(),
+                shim.into(),
+                &HtmlShimExtraSlots::default(),
+            )
+            .unwrap()
+            .html;
+            assert_eq!(
+                html.matches("data-mech-output-address").count(),
+                2,
+                "{html}"
+            );
+            for output in &outputs {
+                assert_eq!(
+                    html.matches(&format!("id='{}:0'", output.output_id))
+                        .count(),
+                    1,
+                    "{html}"
+                );
+            }
+            let (main, copies) = html.split_once("</main>").unwrap();
+            assert_eq!(
+                main.matches("data-mech-output-address").count(),
+                2,
+                "{html}"
+            );
+            assert!(!copies.contains("data-mech-output-address"), "{html}");
+            assert!(html.contains("First"));
+            assert!(html.contains("Second"));
+        }
+    }
+
+    #[test]
+    fn canonical_shim_empty_title_toc_and_indexed_sections_have_explicit_contracts() {
+        for (source, title, headings) in [
+            ("Plain prose.\n", "", 0),
+            (
+                "1. First\n---------\nFirst body.\n\n2. Second\n----------\nSecond body.\n",
+                "",
+                2,
+            ),
+        ] {
+            let source = mech_runtime::SourceDocument::parse_resolved(
+                "bundle:///slots.mec",
+                mech_syntax::document::Revision(0),
+                source,
+                mech_syntax::document::ParseConfig::default(),
+            )
+            .unwrap();
+            assert!(source.is_strictly_clean());
+            let result = render_canonical_static_html(
+                &source.document(),
+                "".into(),
+                "{{TITLE}}|{{TOC}}|{{SECTION1}}|{{SECTION2}}".into(),
+                &HtmlShimExtraSlots::default(),
+            )
+            .unwrap();
+            assert!(
+                result.html.starts_with(&format!("{title}|")),
+                "{}",
+                result.html
+            );
+            if headings == 0 {
+                assert!(!result.html.contains("mech-toc"));
+            } else {
+                assert!(result.html.contains("First body."));
+                assert!(result.html.contains("Second body."));
+                assert!(!result.html.contains("{{SECTION1}}"));
+            }
+        }
+    }
 
     #[test]
     fn stock_shims_own_one_title_and_one_article() {

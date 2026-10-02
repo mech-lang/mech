@@ -46,7 +46,6 @@ pub fn section_compute_placement(section: &Section) -> MResult<Option<ComputePla
             "compute" => ComputePlacement::Compute,
             "cpu" => ComputePlacement::Cpu,
             "gpu" => ComputePlacement::Gpu,
-            crate::program::PROGRAM_OUTPUT_PUBLICATION_ANNOTATION => continue,
             name => {
                 return Err(MechError::new(
                     SectionAnnotationSemanticError::Unsupported { name: name.into() },
@@ -169,7 +168,7 @@ pub fn section_element(
         SectionElement::MechCode(code) => {
             for (c, cmmnt) in code {
                 let value = mech_code(&c, p)?;
-                if crate::program::code_is_program_value(c) {
+                if code_is_program_value(c) {
                     out = value;
                 }
                 match cmmnt {
@@ -189,12 +188,6 @@ pub fn section_element(
             let code_id = block.config.namespace;
             if code_id == 0 {
                 out = eval_fenced_code_block(&block.code, p, false)?;
-                if let Some(out_id) = next_fenced_document_output_id(block, p) {
-                    p.out_values.borrow_mut().insert(
-                        out_id,
-                        crate::interpreter::retained_source_cell(out.clone())?,
-                    );
-                }
             } else {
                 let mut sub_interpreters = p.sub_interpreters.borrow_mut();
 
@@ -209,16 +202,8 @@ pub fn section_element(
                 out = p.with_interpreter(pp.as_ref(), |execution| {
                     eval_fenced_code_block(&block.code, execution, true)
                 })?;
-                if let Some(out_id) = next_fenced_document_output_id(block, pp.as_ref()) {
-                    pp.out_values.borrow_mut().insert(
-                        out_id,
-                        crate::interpreter::retained_source_cell(out.clone())?,
-                    );
-                }
-                // A named fence is a scoped evaluator, but its returned value is
-                // still the latest document result. Mirror it into the parent
-                // `ans` projection so the document-boundary capture observes the
-                // same value the enclosing Mechdown program returns.
+                // Mirror the scoped evaluator result into the parent `ans`
+                // projection used by the retained tree planner.
                 #[cfg(feature = "symbol_table")]
                 update_ans_symbol(&out, p);
             }
@@ -226,73 +211,18 @@ pub fn section_element(
         }
         SectionElement::Subtitle(x) => x.hash(&mut hasher),
         SectionElement::CodeBlock(x) => x.hash(&mut hasher),
-        SectionElement::Comment(par) => {
-            for el in par.paragraph.elements.iter() {
-                let (code_id, value) = match paragraph_element(&el, p) {
-                    Ok(val) => val,
-                    _ => continue,
-                };
-                p.out_values.borrow_mut().insert(
-                    code_id,
-                    crate::interpreter::retained_source_cell(value.clone())?,
-                );
-            }
-            return Ok(SpecializationInput::Absent);
-        }
+        SectionElement::Comment(_) => return Ok(SpecializationInput::Absent),
+        SectionElement::Paragraph(x) => x.hash(&mut hasher),
         SectionElement::Footnote(x) => x.hash(&mut hasher),
-        SectionElement::Paragraph(x) => {
-            for el in x.elements.iter() {
-                let (code_id, value) = match paragraph_element(&el, p) {
-                    Ok(val) => val,
-                    _ => continue,
-                };
-                p.out_values.borrow_mut().insert(
-                    code_id,
-                    crate::interpreter::retained_source_cell(value.clone())?,
-                );
-            }
-        }
         SectionElement::Grammar(x) => x.hash(&mut hasher),
-        SectionElement::Table(x) => {
-            for row in &x.rows {
-                for cell in row {
-                    for el in &cell.elements {
-                        let (code_id, value) = match paragraph_element(&el, p) {
-                            Ok(val) => val,
-                            _ => continue,
-                        };
-                        p.out_values.borrow_mut().insert(
-                            code_id,
-                            crate::interpreter::retained_source_cell(value.clone())?,
-                        );
-                    }
-                }
-            }
-            x.hash(&mut hasher);
-        }
+        SectionElement::Table(x) => x.hash(&mut hasher),
         SectionElement::QuoteBlock(x) => x.hash(&mut hasher),
         SectionElement::ThematicBreak => {
             return Ok(SpecializationInput::Absent);
         }
         SectionElement::List(x) => x.hash(&mut hasher),
         SectionElement::SuccessBlock(x) => x.hash(&mut hasher),
-        SectionElement::FigureTable(x) => {
-            for row in &x.rows {
-                for figure in row {
-                    for el in &figure.caption.elements {
-                        let (code_id, value) = match paragraph_element(el, p) {
-                            Ok(val) => val,
-                            _ => continue,
-                        };
-                        p.out_values.borrow_mut().insert(
-                            code_id,
-                            crate::interpreter::retained_source_cell(value.clone())?,
-                        );
-                    }
-                }
-            }
-            x.hash(&mut hasher);
-        }
+        SectionElement::FigureTable(x) => x.hash(&mut hasher),
         #[cfg(feature = "mika")]
         SectionElement::Mika((m, s)) => {
             if let Some(mika_section) = s {
@@ -332,35 +262,6 @@ pub fn section_element(
     let hash = hasher.finish();
     ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash))
         .map(SpecializationInput::Cell)
-}
-
-#[cfg(feature = "functions")]
-fn next_fenced_document_output_id(
-    block: &FencedMechCode,
-    interpreter: &Interpreter,
-) -> Option<u64> {
-    // Declaration-only fences have no output. The private program capture is
-    // hidden deliberately and always publishes at its fixed boundary address.
-    let base_id = crate::program::fenced_document_output_id(block)?;
-    if base_id == crate::program::root_document_program_output_id() {
-        return Some(base_id);
-    }
-    if block.config.hidden || !block.config.output {
-        return None;
-    }
-    let outputs = interpreter.out_values.borrow();
-    let mut occurrence = 0_u64;
-    loop {
-        let output_id = mech_core::document_presentation::fenced_document_output_occurrence_id(
-            block, occurrence,
-        )?;
-        if !outputs.contains_key(&output_id) {
-            return Some(output_id);
-        }
-        occurrence = occurrence
-            .checked_add(1)
-            .expect("fenced document output occurrence space is exhausted");
-    }
 }
 
 #[cfg(test)]
@@ -439,139 +340,6 @@ mod section_annotation_tests {
     }
 }
 
-#[cfg(all(test, feature = "functions"))]
-mod fenced_output_tests {
-    use super::*;
-
-    #[test]
-    fn fences_without_result_identity_execute_without_publishing() {
-        let interpreter = Interpreter::new(0, 100);
-        let mut services = NoMechExecutionServices;
-        let execution = InterpreterExecution::new(&interpreter, &mut services);
-
-        for (namespace_str, namespace, output) in [
-            ("", 0, false),
-            ("", 0, true),
-            ("worker", 1, false),
-            ("worker", 1, true),
-        ] {
-            let block = FencedMechCode {
-                source: Token::default(),
-                code: Vec::new(),
-                imports: Vec::new(),
-                exports: Vec::new(),
-                config: BlockConfig {
-                    namespace_str: namespace_str.to_owned(),
-                    namespace,
-                    disabled: false,
-                    hidden: false,
-                    output,
-                },
-                options: None,
-            };
-
-            assert!(matches!(
-                section_element(&SectionElement::FencedMechCode(block), &execution).unwrap(),
-                SpecializationInput::Absent
-            ));
-        }
-        assert!(interpreter.out_values.borrow().is_empty());
-        assert!(
-            interpreter.sub_interpreters.borrow()[&1]
-                .borrow()
-                .out_values
-                .borrow()
-                .is_empty()
-        );
-    }
-
-    #[cfg(feature = "f64")]
-    fn value_fence(namespace_str: &str, namespace: u64) -> FencedMechCode {
-        FencedMechCode {
-            source: Token::default(),
-            code: vec![(
-                MechCode::Expression(Expression::Literal(Literal::Number(Number::from_integer(
-                    12,
-                )))),
-                None,
-            )],
-            imports: Vec::new(),
-            exports: Vec::new(),
-            config: BlockConfig {
-                namespace_str: namespace_str.to_owned(),
-                namespace,
-                disabled: false,
-                hidden: false,
-                output: true,
-            },
-            options: None,
-        }
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn hidden_fences_preserve_visible_outputs_and_occurrences_in_each_scope() {
-        for (namespace_str, namespace) in [("", 0), ("worker", 1)] {
-            let interpreter = Interpreter::new(0, 100);
-            let mut services = NoMechExecutionServices;
-            let execution = InterpreterExecution::new(&interpreter, &mut services);
-            let block = value_fence(namespace_str, namespace);
-            let visible = SectionElement::FencedMechCode(block.clone());
-            section_element(&visible, &execution).unwrap();
-            let outputs = if namespace == 0 {
-                interpreter.out_values.clone()
-            } else {
-                interpreter.sub_interpreters.borrow()[&namespace]
-                    .borrow()
-                    .out_values
-                    .clone()
-            };
-            let mut addresses =
-                mech_core::document_presentation::DocumentPresentationAddresses::default();
-            let first_id = addresses.fence(&block, namespace).unwrap();
-            let first = outputs.borrow()[&first_id].clone().unwrap();
-            for (hidden, output) in [(true, true), (false, false)] {
-                let mut hidden_block = block.clone();
-                hidden_block.config.hidden = hidden;
-                hidden_block.config.output = output;
-                assert!(matches!(
-                    section_element(&SectionElement::FencedMechCode(hidden_block), &execution)
-                        .unwrap(),
-                    SpecializationInput::Cell(_)
-                ));
-                assert_eq!(outputs.borrow().len(), 1);
-                assert!(
-                    outputs.borrow()[&first_id]
-                        .as_ref()
-                        .unwrap()
-                        .same_cell(&first)
-                );
-            }
-            section_element(&visible, &execution).unwrap();
-            let second_id = addresses.fence(&block, namespace).unwrap();
-            assert_ne!(first_id, second_id);
-            let outputs = outputs.borrow();
-            assert_eq!(outputs.len(), 2);
-            assert!(outputs[&first_id].as_ref().unwrap().same_cell(&first));
-            assert!(!outputs[&second_id].as_ref().unwrap().same_cell(&first));
-        }
-    }
-
-    #[cfg(feature = "f64")]
-    #[test]
-    fn hidden_program_capture_keeps_its_fixed_output_address() {
-        let interpreter = Interpreter::new(0, 100);
-        let mut services = NoMechExecutionServices;
-        let execution = InterpreterExecution::new(&interpreter, &mut services);
-        let mut block = value_fence("", 0);
-        crate::program::configure_root_document_program_output_capture(&mut block);
-        section_element(&SectionElement::FencedMechCode(block), &execution).unwrap();
-        let outputs = interpreter.out_values.borrow();
-        assert_eq!(outputs.len(), 1);
-        assert!(outputs[&crate::program::root_document_program_output_id()].is_some());
-    }
-}
-
 #[cfg(feature = "functions")]
 fn eval_fenced_code_block(
     code: &Vec<(MechCode, Option<Comment>)>,
@@ -582,7 +350,7 @@ fn eval_fenced_code_block(
     let mut out = SpecializationInput::Absent;
     for (c, cmmnt) in code {
         match mech_code(c, interpreter) {
-            Ok(value) if crate::program::code_is_program_value(c) => out = value,
+            Ok(value) if code_is_program_value(c) => out = value,
             Ok(_) => {}
             Err(err) => {
                 #[cfg(feature = "string")]
@@ -610,61 +378,13 @@ fn eval_fenced_code_block(
     Ok(out)
 }
 
-fn inline_eval_id(expression: &Expression, p: &InterpreterExecution<'_>) -> u64 {
-    let outputs = p.out_values.borrow();
-    let mut occurrence = 0_u64;
-    loop {
-        let output_id =
-            inline_document_output_id(p.presentation_namespace(), expression, occurrence);
-        if !outputs.contains_key(&output_id) {
-            return output_id;
-        }
-        occurrence = occurrence
-            .checked_add(1)
-            .expect("inline document output occurrence space is exhausted");
-    }
-}
-
 #[cfg(feature = "mika")]
 fn mika_interpreter_id(parent_id: u64, mika: &Mika, section: &Option<MikaSection>) -> u64 {
     hash_str(&format!("mika:{}:{:?}", parent_id, (mika, section)))
 }
 
-pub fn paragraph_element(
-    element: &ParagraphElement,
-    p: &InterpreterExecution<'_>,
-) -> MResult<(u64, SpecializationInput)> {
-    let result = match element {
-        ParagraphElement::EvalInlineMechCode(expr) => {
-            let code_id = inline_eval_id(expr, p);
-            match expression(&expr, None, p) {
-                Ok(val) => (code_id, val),
-                // Inline document expressions are opportunistic: unresolved
-                // values remain empty and can be evaluated on a later pass.
-                Err(_) => (code_id, SpecializationInput::Absent),
-            }
-        }
-        _ => {
-            return Err(MechError::new(NotExecutableError {}, None)
-                .with_compiler_loc()
-                .with_tokens(element.tokens()));
-        }
-    };
-    Ok(result)
-}
-
-pub fn comment(cmmt: &Comment, p: &InterpreterExecution<'_>) -> MResult<SpecializationInput> {
-    let par = &cmmt.paragraph;
-    for el in par.elements.iter() {
-        let (code_id, value) = match paragraph_element(&el, p) {
-            Ok(val) => val,
-            _ => continue,
-        };
-        p.out_values.borrow_mut().insert(
-            code_id,
-            crate::interpreter::retained_source_cell(value.clone())?,
-        );
-    }
+pub fn comment(_: &Comment, _: &InterpreterExecution<'_>) -> MResult<SpecializationInput> {
+    // Literal comments do not evaluate presentation expressions.
     Ok(SpecializationInput::Absent)
 }
 
@@ -820,7 +540,7 @@ pub fn mech_code(code: &MechCode, p: &InterpreterExecution<'_>) -> MResult<Speci
             .with_tokens(x.tokens())),
     }?;
     #[cfg(feature = "symbol_table")]
-    if crate::program::code_is_program_value(code) {
+    if code_is_program_value(code) {
         update_ans_symbol(&out, p);
     }
     Ok(out)
@@ -1054,4 +774,35 @@ fn activation_scope(scope: &ActivationScope, p: &InterpreterExecution<'_>) -> MR
     }
     let trigger_cells = activation_trigger_cells(scope, var, p)?;
     elaborate_activation_scope(scope, p, trigger_cells)
+}
+
+pub(crate) fn code_is_program_value(code: &MechCode) -> bool {
+    match code {
+        MechCode::Expression(_) => true,
+        MechCode::Statement(statement) => {
+            #[cfg(feature = "invariant_define")]
+            if matches!(statement, Statement::InvariantDefine(_)) {
+                return false;
+            }
+            !matches!(
+                statement,
+                Statement::ImportDeclaration(_)
+                    | Statement::ExportDeclaration(_)
+                    | Statement::ContextDeclaration(_)
+                    | Statement::ContextSend(_)
+                    | Statement::EnumDefine(_)
+                    | Statement::FsmDeclare(_)
+                    | Statement::KindDefine(_)
+                    | Statement::SplitTable
+                    | Statement::FlattenTable
+            )
+        }
+        MechCode::Comment(_)
+        | MechCode::ActivationScope(_)
+        | MechCode::FsmImplementation(_)
+        | MechCode::FsmSpecification(_)
+        | MechCode::FunctionDefine(_)
+        | MechCode::Import(_)
+        | MechCode::Error(_, _) => false,
+    }
 }

@@ -225,7 +225,7 @@ fn raw_format_preserves_include_directives_without_expanding() {
     let source = read_format_source(&root.join("main.mec")).unwrap();
     let formatted = match source {
         MechSourceCode::String(text) => {
-            let document = canonical_document(&text).unwrap();
+            let document = canonical_document(&root.join("main.mec"), &text).unwrap();
             CanonicalDocumentRenderer
                 .format_pretty_text(&document.document())
                 .unwrap()
@@ -249,7 +249,7 @@ fn raw_format_preserves_include_directives_without_expanding() {
 
 #[test]
 fn raw_format_normalizes_canonical_source_spacing() {
-    let document = canonical_document("answer  :=  40 +  2\nmessage:= \"a   b\"\n").unwrap();
+    let document = canonical_document(Path::new("document.mec"), "answer  :=  40 +  2\nmessage:= \"a   b\"\n").unwrap();
     let formatted = CanonicalDocumentRenderer
         .format_pretty_text(&document.document())
         .unwrap();
