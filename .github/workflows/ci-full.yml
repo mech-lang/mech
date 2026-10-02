@@ -2021,6 +2021,9 @@ jobs:
       - name: Check the supported Windows CLI feature profile
         run: cargo check --bin mech --no-default-features --features distribution-standard
 
+      - name: Verify Windows configured serve root identity
+        run: cargo test --locked -p mech --no-default-features --features serve --lib configured_root_matches_equivalent_snapshot_paths_and_rejects_unserved_files -- --nocapture
+
       - name: Run Windows serve executable HTTP suites
         run: cargo test -p mech --no-default-features --features serve --test mech_serve -- --nocapture
 

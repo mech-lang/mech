@@ -249,7 +249,11 @@ fn raw_format_preserves_include_directives_without_expanding() {
 
 #[test]
 fn raw_format_normalizes_canonical_source_spacing() {
-    let document = canonical_document(Path::new("document.mec"), "answer  :=  40 +  2\nmessage:= \"a   b\"\n").unwrap();
+    let document = canonical_document(
+        Path::new("document.mec"),
+        "answer  :=  40 +  2\nmessage:= \"a   b\"\n",
+    )
+    .unwrap();
     let formatted = CanonicalDocumentRenderer
         .format_pretty_text(&document.document())
         .unwrap();

@@ -403,7 +403,17 @@ impl ServerSourceRegistry {
                     snapshot
                         .sources
                         .values()
-                        .find(|source| source.path.as_ref() == Some(path))
+                        .find(|source| {
+                            source.path.as_ref().is_some_and(|source_path| {
+                                // File URIs use ordinary Windows paths while
+                                // configured roots use canonical verbatim paths.
+                                // Compare their filesystem identity as well.
+                                source_path == path
+                                    || source_path
+                                        .canonicalize()
+                                        .is_ok_and(|canonical| &canonical == path)
+                            })
+                        })
                         .map(|source| source.canonical_uri.clone())
                         .ok_or_else(|| {
                             Error::new(
@@ -2785,6 +2795,65 @@ result\n";
     }
 
     #[test]
+    fn configured_root_matches_equivalent_snapshot_paths_and_rejects_unserved_files() {
+        let root = temp_root("configured-root-ü-#-%-spaces");
+        std::fs::create_dir(root.join("nested")).unwrap();
+        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        let canonical = root.join("main.mec").canonicalize().unwrap();
+        let mut retained = snapshot(&root, "main.mec");
+        let source = retained.sources.values_mut().next().unwrap();
+        let equivalent = std::env::temp_dir()
+            .join(root.file_name().unwrap())
+            .join("nested")
+            .join("..")
+            .join("main.mec");
+        assert_ne!(equivalent, canonical);
+        assert_eq!(equivalent.canonicalize().unwrap(), canonical);
+        source.path = Some(equivalent);
+        // Normalizing path identity must preserve the retained source revision.
+        std::fs::write(root.join("main.mec"), "answer := 99\nanswer\n").unwrap();
+        let mut registry = ServerSourceRegistry {
+            compiler_roots: Some(BTreeSet::from([canonical])),
+            ..ServerSourceRegistry::default()
+        };
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+        assert_eq!(registry.source_roots, ["main.mec"]);
+        let encoded =
+            String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
+        let bundle = CanonicalProgramBundle::decode(&encoded, None).unwrap();
+        assert_eq!(bundle.canonical_uri, "bundle:///main.mec");
+        assert_eq!(
+            registry.get_route("/source/main.mec").unwrap().bytes,
+            b"answer := 42\nanswer\n",
+        );
+
+        let unserved = root.join("other.mec");
+        std::fs::write(&unserved, "answer := 9\n").unwrap();
+        registry.compiler_roots = Some(BTreeSet::from([unserved.canonicalize().unwrap()]));
+        let error = registry
+            .sync_workspace_snapshot(&root, &retained, "", "", &[])
+            .unwrap_err();
+        assert!(
+            error
+                .kind_message()
+                .contains("outside the served source snapshot")
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn configured_served_root_uses_snapshot_dependencies_and_planning_hosts() {
         let root = temp_root("configured-canonical-graph");
         std::fs::write(root.join("main.mec"),
@@ -3365,6 +3434,11 @@ result\n";
 
         let guard = CurrentDirGuard::enter(&root);
         let mut server = initialized_server();
+        server.html_shim = include_str!("../include/index.html").to_string();
+        server.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
         let plan = plan_cli_serve_inputs(&["main.mec".to_string()], Some(&root)).unwrap();
         server
             .load_serve_plan(plan, Some(configured_project_overlay(&root)))
