@@ -17598,16 +17598,35 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
         return right;
     }
     if left.1 == 0.0 && right.1 == 0.0 {
-        return (left.0 * right.0, 0.0);
+        // Keep the signs of zero cross terms without multiplying zero by infinity.
+        return (
+            left.0 * right.0,
+            left.0.signum() * right.1 + left.1 * right.0.signum(),
+        );
+    }
+    if left.0 == 0.0 && right.0 == 0.0 {
+        return (
+            -left.1 * right.1,
+            left.0 * right.1.signum() + left.1.signum() * right.0,
+        );
+    }
+    if left.1 == 0.0 && right.0 == 0.0 {
+        return (
+            left.0.signum() * right.0 - left.1 * right.1.signum(),
+            left.0 * right.1 + left.1 * right.0,
+        );
+    }
+    if left.0 == 0.0 && right.1 == 0.0 {
+        return (
+            left.0 * right.0.signum() - left.1.signum() * right.1,
+            left.0 * right.1 + left.1 * right.0,
+        );
     }
     if right.1 == 0.0 && right.0.is_finite() {
         return (left.0 * right.0, left.1 * right.0);
     }
     if left.1 == 0.0 && left.0.is_finite() {
         return (right.0 * left.0, right.1 * left.0);
-    }
-    if left.0 == 0.0 && right.0 == 0.0 {
-        return (-left.1 * right.1, 0.0);
     }
     if right.0 == 0.0 && right.1.is_finite() {
         return (-left.1 * right.1, left.0 * right.1);
@@ -17750,16 +17769,35 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
         return right;
     }
     if left.1 == 0.0 && right.1 == 0.0 {
-        return (left.0 * right.0, 0.0);
+        // Keep the signs of zero cross terms without multiplying zero by infinity.
+        return (
+            left.0 * right.0,
+            left.0.signum() * right.1 + left.1 * right.0.signum(),
+        );
+    }
+    if left.0 == 0.0 && right.0 == 0.0 {
+        return (
+            -left.1 * right.1,
+            left.0 * right.1.signum() + left.1.signum() * right.0,
+        );
+    }
+    if left.1 == 0.0 && right.0 == 0.0 {
+        return (
+            left.0.signum() * right.0 - left.1 * right.1.signum(),
+            left.0 * right.1 + left.1 * right.0,
+        );
+    }
+    if left.0 == 0.0 && right.1 == 0.0 {
+        return (
+            left.0 * right.0.signum() - left.1.signum() * right.1,
+            left.0 * right.1 + left.1 * right.0,
+        );
     }
     if right.1 == 0.0 && right.0.is_finite() {
         return (left.0 * right.0, left.1 * right.0);
     }
     if left.1 == 0.0 && left.0.is_finite() {
         return (right.0 * left.0, right.1 * left.0);
-    }
-    if left.0 == 0.0 && right.0 == 0.0 {
-        return (-left.1 * right.1, 0.0);
     }
     if right.0 == 0.0 && right.1.is_finite() {
         return (-left.1 * right.1, left.0 * right.1);
@@ -18096,6 +18134,11 @@ fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
         return (1.0, 0.0);
     }
     if base == (0.0, 0.0) && exponent.1 == 0.0 && exponent.0 > 0.0 {
+        if exponent.0 == 0.5 {
+            // The principal square root has a nonnegative real part. Computing
+            // cos(pi/2) from rounded f32 pi can give this exact zero the wrong sign.
+            return (0.0, base.1);
+        }
         let angle = libm::atan2f(base.1, base.0);
         let result_angle = exponent.0 * angle;
         return (
@@ -18144,6 +18187,9 @@ fn complex64_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
         return (1.0, 0.0);
     }
     if base == (0.0, 0.0) && exponent.1 == 0.0 && exponent.0 > 0.0 {
+        if exponent.0 == 0.5 {
+            return (0.0, base.1);
+        }
         let angle = libm::atan2(base.1, base.0);
         let result_angle = exponent.0 * angle;
         return (0.0 * libm::cos(result_angle), 0.0 * libm::sin(result_angle));
@@ -22531,6 +22577,79 @@ mod tests {
                 numeric_divide(rational(1, u64::MAX), rational(1, u64::MAX)),
                 Ok(rational(1, 1))
             );
+        }
+    }
+
+    #[test]
+    fn complex_zero_square_roots_preserve_branch_direction() {
+        for real in [0.0_f32, -0.0] {
+            for imaginary in [0.0_f32, -0.0] {
+                let root = complex32_power((real, imaginary), (0.5, 0.0));
+                assert_eq!(root.0.to_bits(), 0.0_f32.to_bits());
+                assert_eq!(root.1.to_bits(), imaginary.to_bits());
+            }
+        }
+        #[cfg(feature = "c64")]
+        for real in [0.0_f64, -0.0] {
+            for imaginary in [0.0_f64, -0.0] {
+                let root = complex64_power((real, imaginary), (0.5, 0.0));
+                assert_eq!(root.0.to_bits(), 0.0_f64.to_bits());
+                assert_eq!(root.1.to_bits(), imaginary.to_bits());
+            }
+        }
+    }
+
+    #[test]
+    fn complex_axis_products_preserve_signed_zero() {
+        let real = complex32_multiply((2.0, -0.0), (3.0, -0.0));
+        assert_eq!(real.0, 6.0);
+        assert_eq!(real.1.to_bits(), (-0.0_f32).to_bits());
+        let imaginary = complex32_multiply((-0.0, 2.0), (-0.0, 3.0));
+        assert_eq!(imaginary.0, -6.0);
+        assert_eq!(imaginary.1.to_bits(), (-0.0_f32).to_bits());
+
+        #[cfg(feature = "c64")]
+        {
+            let real = complex64_multiply((2.0, -0.0), (3.0, -0.0));
+            assert_eq!(real.0, 6.0);
+            assert_eq!(real.1.to_bits(), (-0.0_f64).to_bits());
+            let imaginary = complex64_multiply((-0.0, 2.0), (-0.0, 3.0));
+            assert_eq!(imaginary.0, -6.0);
+            assert_eq!(imaginary.1.to_bits(), (-0.0_f64).to_bits());
+        }
+    }
+
+    #[test]
+    fn complex_axis_products_with_nonfinite_values_preserve_direction() {
+        for (left, right) in [
+            ((0.0, f32::INFINITY), (f32::NEG_INFINITY, 0.0)),
+            ((f32::NEG_INFINITY, 0.0), (0.0, f32::INFINITY)),
+            ((0.0, f32::NEG_INFINITY), (f32::INFINITY, 0.0)),
+            ((f32::INFINITY, 0.0), (0.0, f32::NEG_INFINITY)),
+        ] {
+            let product = complex32_multiply(left, right);
+            assert_eq!(product.0, 0.0);
+            assert_eq!(product.1, f32::NEG_INFINITY);
+        }
+        let cube = complex32_power((0.0, f32::INFINITY), (3.0, 0.0));
+        assert_eq!(cube.0, 0.0);
+        assert_eq!(cube.1, f32::NEG_INFINITY);
+
+        #[cfg(feature = "c64")]
+        {
+            for (left, right) in [
+                ((0.0, f64::INFINITY), (f64::NEG_INFINITY, 0.0)),
+                ((f64::NEG_INFINITY, 0.0), (0.0, f64::INFINITY)),
+                ((0.0, f64::NEG_INFINITY), (f64::INFINITY, 0.0)),
+                ((f64::INFINITY, 0.0), (0.0, f64::NEG_INFINITY)),
+            ] {
+                let product = complex64_multiply(left, right);
+                assert_eq!(product.0, 0.0);
+                assert_eq!(product.1, f64::NEG_INFINITY);
+            }
+            let cube = complex64_power((0.0, f64::INFINITY), (3.0, 0.0));
+            assert_eq!(cube.0, 0.0);
+            assert_eq!(cube.1, f64::NEG_INFINITY);
         }
     }
 
