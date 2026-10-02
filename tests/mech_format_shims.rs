@@ -132,7 +132,7 @@ fn mech_format_custom_inline_shim_keeps_encoded_source_output_mounts() {
     let source = "```mech\nanswer := 42\nanswer\n```\n";
     std::fs::write(&input, source).unwrap();
     let result = Command::new(env!("CARGO_BIN_EXE_mech"))
-        .arg("--no-config")
+        .current_dir(directory.path())
         .arg("format")
         .arg(&input)
         .arg("--html")
@@ -610,7 +610,14 @@ fn mech_format_reports_positioned_canonical_errors_without_publication() {
     for ending in ["\n", "\r\n"] {
         for malformed in ["value := 1 + )", "résultat := [1 )"] {
             let directory = TestDirectory::new("positioned-errors");
-            let input = directory.path().join("entrée.mec");
+            // Unix permits quotes and backslashes in filenames, so it can
+            // exercise the escaping required by Windows diagnostic paths too.
+            let input_name = if cfg!(windows) {
+                "entrée.mec"
+            } else {
+                "entrée\\\"quoted.mec"
+            };
+            let input = directory.path().join(input_name);
             let output = directory.path().join("formatted.mec");
             let shim = directory.path().join("static.html");
             let source = format!("valid := 1{ending}{malformed}{ending}");
@@ -640,7 +647,10 @@ fn mech_format_reports_positioned_canonical_errors_without_publication() {
                     "malformed {source:?} was published"
                 );
                 let stderr = String::from_utf8_lossy(&result.stderr);
-                assert!(stderr.contains(&input.display().to_string()), "{stderr}");
+                // MechError prints its message as a Rust debug string. Match
+                // that representation while still requiring the full path.
+                let expected_path = format!("{:?}", input.display().to_string());
+                assert!(stderr.contains(expected_path.trim_matches('"')), "{stderr}");
                 assert!(stderr.contains("InvalidFormatSyntax"), "{stderr}");
                 for diagnostic in snapshot.diagnostics.iter() {
                     let range = diagnostic
