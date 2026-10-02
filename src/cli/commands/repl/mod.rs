@@ -32,14 +32,14 @@ use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode};
 use crossterm::{execute, queue};
 #[cfg(feature = "mika")]
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
+#[cfg(feature = "mika")]
+use mech_core::mika::MICROMIKA_WAVE;
 use mech_core::{MResult, MechError};
 use mech_runtime::{
     DiagnosticPhase, MechEvent, OutputContent, REPL_TEXT_LOGO, ReplDispatchControl, ReplEvent,
     ReplHostRequest, ReplResponse, ReplResponseKind, ReplResponseStatus, Severity, TextOutput,
     parse_repl_request,
 };
-#[cfg(feature = "mika")]
-use mech_syntax::mika::MICROMIKA_WAVE;
 
 use self::presentation::{
     MECH_AMBER, capabilities, docs, list_directory, profiling, save_session_source, value,
@@ -91,22 +91,21 @@ fn repl_greeting_at(now: NaiveDateTime) -> ReplGreetingVariant {
 #[cfg(feature = "mika")]
 fn play_mika_farewell(draw_target: ProgressDrawTarget, message: String, frame_delay: Duration) {
     let final_state = ProgressBar::with_draw_target(None, draw_target);
+    // Indicatif reserves the final tick string for the finished state. Both
+    // wave frames must remain animation frames, followed by the resting face.
+    let mut frames = MICROMIKA_WAVE.to_vec();
+    frames.push(ReplGreetingVariant::Standard.mika());
     let animation_style = ProgressStyle::with_template(MIKA_FAREWELL_TEMPLATE)
         .unwrap_or_else(|_| ProgressStyle::default_spinner())
-        .tick_strings(MICROMIKA_WAVE);
+        .tick_strings(&frames);
     final_state.set_style(animation_style);
     final_state.set_message(message);
 
-    for _ in 0..MICROMIKA_WAVE.len().saturating_sub(1) {
+    for _ in 0..MICROMIKA_WAVE.len() * 3 {
         thread::sleep(frame_delay);
         final_state.tick();
     }
 
-    let resting_face = MICROMIKA_WAVE[0];
-    let resting_style = ProgressStyle::with_template(MIKA_FAREWELL_TEMPLATE)
-        .unwrap_or_else(|_| ProgressStyle::default_spinner())
-        .tick_strings(&[resting_face, resting_face]);
-    final_state.set_style(resting_style);
     final_state.finish();
 }
 
@@ -968,6 +967,13 @@ mod tests {
             "Mika farewell did not advance through its wave frames"
         );
         assert!(terminal.contents().contains("╭◉╮ ⸢Okay cya!⸥"));
+        let frames = terminal.moves_since_last_check();
+        for frame in MICROMIKA_WAVE {
+            assert!(
+                frames.contains(frame),
+                "missing wave frame {frame}: {frames}"
+            );
+        }
     }
 
     #[test]

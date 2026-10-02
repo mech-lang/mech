@@ -96,7 +96,12 @@ mod tests {
                 .unwrap();
         assert_eq!(source.render_text().unwrap(), "answer := 42\nanswer\n");
         let html = source.render_html().unwrap();
-        assert!(html.contains("answer := 42"));
+        assert!(
+            html.contains(
+                "data-mech-var-name='answer'>answer</span> := <span class='mech-number'>42</span>"
+            ),
+            "{html}"
+        );
         assert!(!html.contains("class='mech-program-output'"));
     }
 
@@ -119,7 +124,7 @@ mod tests {
                 assert!(html.contains("{answer}"));
             }
             if text.contains("mech:hidden") {
-                assert!(html.contains("secret := 7"), "{html}");
+                assert!(html.contains("data-mech-var-name='secret'>secret</span> := <span class='mech-number'>7</span>"), "{html}");
                 assert!(html.contains("class='mech-code-block hidden'"), "{html}");
             }
         }
@@ -131,7 +136,14 @@ mod tests {
         let text = "╭◉╮⸢answer := 42\nanswer\n⸥\n";
         let source = CanonicalCliSource::retain("cli:format:mika", Revision(0), text).unwrap();
         assert_eq!(source.render_text().unwrap(), text);
-        assert!(source.render_html().unwrap().contains("answer := 42"));
+        let html = source.render_html().unwrap();
+        assert!(html.contains("class='mech-mika'"), "{html}");
+        assert!(
+            html.contains(
+                "data-mech-var-name='answer'>answer</span> := <span class='mech-number'>42</span>"
+            ),
+            "{html}"
+        );
     }
 
     #[cfg(feature = "formatter")]

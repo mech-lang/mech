@@ -1561,39 +1561,3 @@ impl MechErrorKind for CanonicalAggregateTypeInferenceFailure {
         )
     }
 }
-
-#[cfg(all(
-    test,
-    feature = "f64",
-    feature = "kind_annotation",
-    feature = "semantic-compiler",
-    feature = "table"
-))]
-mod canonical_kind_annotation_tests {
-    use super::*;
-
-    #[test]
-    fn wildcard_table_column_uses_the_canonical_dynamic_schema() {
-        let tree = mech_syntax::parser::parse(
-            "value := | payload<*> amount<f64> |\n         | \"item\"     1           |\nvalue",
-        )
-        .unwrap();
-        let mut interpreter = Interpreter::with_function_catalog(
-            0,
-            10_000,
-            crate::test_support::catalog::function_catalog(),
-        );
-        let output = interpreter.interpret(&tree).unwrap().unwrap();
-        let SchemaBody::Table { columns, .. } = output.closed_schema_body().unwrap() else {
-            panic!("source table must retain its canonical table schema")
-        };
-        assert_eq!(columns.len(), 2);
-        assert_eq!(columns[0].name, "payload");
-        assert_eq!(columns[0].schema, SchemaBody::Dynamic);
-        assert_eq!(columns[1].name, "amount");
-        assert_eq!(
-            columns[1].schema,
-            SchemaBody::FloatingPoint(FloatWidth::W64)
-        );
-    }
-}

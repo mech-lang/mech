@@ -354,6 +354,35 @@ fn declared_scalar_aliases_type_kind_extent_literals() {
         .unwrap();
 }
 
+#[test]
+fn canonical_kind_values_preserve_open_axes_and_identity_kinds() {
+    for (source, expected_axes, expected_kind) in [
+        ("<[u8]>", 2, None),
+        ("<{u8:f64}>", 1, None),
+        ("<{u8}>", 1, None),
+        ("<|a<u8>|>", 1, None),
+        ("<id>", 0, Some(mech_core::KindExpr::Id)),
+        ("<ix>", 0, Some(mech_core::KindExpr::Index)),
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        let SourceValue::Constant(id) = compiled.program().outputs[0].source else {
+            panic!("{source}: expected a constant kind value")
+        };
+        let ValueData::Type(mech_core::snapshot::ReifiedType::Kind(kind)) =
+            compiled.constants().get(id).unwrap().data()
+        else {
+            panic!("{source}: expected a reified kind")
+        };
+        let (kind, dimensions, _) = kind.decoded_closed_kind().unwrap();
+        assert_eq!(dimensions.len(), expected_axes, "{source}");
+        if let Some(expected_kind) = expected_kind {
+            assert_eq!(kind, expected_kind, "{source}");
+        }
+    }
+}
+
 #[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_enum_kind_values_reify_the_nominal_kind() {

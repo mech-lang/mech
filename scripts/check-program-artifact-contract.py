@@ -182,6 +182,63 @@ def changed_protected_paths(
     return [line for line in result.stdout.splitlines() if line]
 
 
+def validate_ordinary_source_proof(source: str) -> list[str]:
+    proof = function_body(
+        source, "fn canonical_documents_emit_complete_equivalent_bytecode_artifacts()"
+    )
+    if proof is None:
+        return ["ordinary-source artifact proof is missing its canonical document test"]
+    failures: list[str] = []
+    for required in (
+        "include_str!",
+        "scalar-alias.mec",
+        "state-register.mec",
+        "matrix-literal.mec",
+        "comparison-output.mec",
+        "integrity-constraint.mec",
+        "compiled(source).compile_artifact()",
+        "encode_program_artifact_bytecode_v1(&artifact)",
+        "encode_program_artifact_bytecode_v1(&repeated)",
+        "decode_program_artifact_bytecode_v1(&bytecode)",
+        "encode_program_artifact_bytecode_v1(&decoded)",
+        "assert_eq!(bytecode, reencoded)",
+        "assert_eq!(artifact.revision(), repeated.revision())",
+        "assert_eq!(artifact.revision(), decoded.revision())",
+    ):
+        if required not in proof:
+            failures.append(f"ordinary-source artifact proof is missing {required}")
+    for field in (
+        "requirements", "compute_regions", "contracts", "inputs",
+        "slots", "bindings", "outputs", "constraints", "nodes",
+    ):
+        assertion = f"assert_eq!(artifact.{field}(), decoded.{field}())"
+        if assertion not in proof:
+            failures.append(f"ordinary-source artifact proof is missing {assertion}")
+    compact = re.sub(r"\s+", "", proof)
+    for required in (
+        "assert_eq!(artifact.schemas().len(), decoded.schemas().len())",
+        "for (left, right) in artifact.schemas().entries().zip(decoded.schemas().entries())",
+        "assert_eq!(left.key(), right.key())",
+        "assert_eq!(left.canonical_bytes(), right.canonical_bytes())",
+        "assert_eq!(artifact.constants().len(), decoded.constants().len())",
+        "for raw in 0..artifact.constants().len()",
+        "artifact.constants().get(id).unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap()",
+        "decoded.constants().get(id).unwrap().canonical_snapshot_bytes(decoded.schemas()).unwrap()",
+        "assert_eq!(artifact_constant, decoded_constant)",
+    ):
+        if re.sub(r"\s+", "", required) not in compact:
+            failures.append(f"ordinary-source artifact proof is missing {required}")
+    if proof.count("compiled(source).compile_artifact()") < 2:
+        failures.append("ordinary-source artifact proof must compile each fixture independently twice")
+    if re.search(
+        r"assert_eq!\(\s*bytecode,\s*mech_engine::encode_program_artifact_bytecode_v1"
+        r"\(&repeated\)\.unwrap\(\)\s*\);",
+        proof,
+    ) is None:
+        failures.append("ordinary-source artifact proof must compare independently compiled bytes")
+    return failures
+
+
 def run(root: Path = ROOT) -> list[str]:
     manifest = json.loads((root / MANIFEST.relative_to(ROOT)).read_text())
     failures: list[str] = []
@@ -241,20 +298,8 @@ def run(root: Path = ROOT) -> list[str]:
     ):
         if required not in program:
             failures.append(f"normal compiler path is missing {required}")
-    for required in (
-        "include_str!",
-        "plan_source_for_test",
-        "compile_program_product",
-        "ParsedProgram::from_bytes",
-        "decode_program_artifact_sections",
-        "artifact_a.revision()",
-        "artifact_b.revision()",
-        "comparison-output.mec",
-        "integrity-constraint.mec",
-        "artifact_a.constraints()",
-    ):
-        if required not in program:
-            failures.append(f"ordinary-source artifact proof is missing {required}")
+    source_proof = (root / "src/engine/tests/canonical_document_state.rs").read_text()
+    failures.extend(validate_ordinary_source_proof(source_proof))
     for required in (
         "IntegrityConstraintSchemaMismatch",
         "CompiledTypeBindingMismatch",

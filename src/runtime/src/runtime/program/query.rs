@@ -88,6 +88,28 @@ impl MechRuntime {
         0
     }
 
+    /// Output identities and query names published by the active program, in
+    /// artifact order. Reflective hosts can inspect the accepted source
+    /// revision without recompiling it or repeatedly scanning its interface.
+    pub fn published_outputs(&self) -> Vec<(OutputId, String)> {
+        #[cfg(feature = "resident-routing")]
+        if let Some((artifact, _)) = self.resident_artifact_and_instance() {
+            return artifact
+                .outputs()
+                .iter()
+                .map(|output| {
+                    let name = output
+                        .interactive_binding
+                        .as_ref()
+                        .map(|binding| binding.lexical_name.clone())
+                        .unwrap_or_else(|| output.name.clone());
+                    (output.output, name)
+                })
+                .collect();
+        }
+        Vec::new()
+    }
+
     pub fn output_value(
         &self,
         #[cfg(feature = "resident-routing")] output_id: OutputId,

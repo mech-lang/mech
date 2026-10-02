@@ -88,44 +88,37 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
 }
 
 fn parses_as_executable_run_source(input: &str) -> bool {
-    mech_syntax::parser::parse(input.trim())
-        .map(|program| program_contains_executable_run_source(&program))
-        .unwrap_or(false)
-}
+    use mech_runtime::resolver::SourceDocument;
+    use mech_syntax::document::{
+        AstNode, DocumentId, ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSnapshot,
+    };
 
-fn program_contains_executable_run_source(program: &Program) -> bool {
-    program.body.sections.iter().any(|section| {
-        section
-            .elements
-            .iter()
-            .any(section_element_contains_executable_run_source)
-    })
-}
-
-fn section_element_contains_executable_run_source(element: &SectionElement) -> bool {
-    match element {
-        SectionElement::MechCode(codes) => codes
-            .iter()
-            .any(|(code, _)| mech_code_is_executable_run_source(code)),
-        SectionElement::FencedMechCode(fenced) => fenced
-            .code
-            .iter()
-            .any(|(code, _)| mech_code_is_executable_run_source(code)),
-        _ => false,
+    fn contains_run_source_metadata(root: &SyntaxNode) -> bool {
+        let mut pending = vec![root.clone()];
+        while let Some(node) = pending.pop() {
+            if matches!(
+                node.kind(),
+                SyntaxKind::ContextDeclaration
+                    | SyntaxKind::ExportDeclaration
+                    | SyntaxKind::ImportDeclaration
+                    | SyntaxKind::ModuleImport
+            ) {
+                return true;
+            }
+            pending.extend(node.children());
+        }
+        false
     }
-}
 
-fn mech_code_is_executable_run_source(code: &MechCode) -> bool {
-    match code {
-        MechCode::ActivationScope(_)
-        | MechCode::Statement(_)
-        | MechCode::Expression(_)
-        | MechCode::FunctionDefine(_)
-        | MechCode::FsmImplementation(_)
-        | MechCode::FsmSpecification(_)
-        | MechCode::Import(_) => true,
-        MechCode::Comment(_) | MechCode::Error(_, _) => false,
+    let Ok(source) = TextSnapshot::new(DocumentId(0), Revision(0), input) else {
+        return false;
+    };
+    let document = SourceDocument::parse(source, ParseConfig::default());
+    if !document.is_strictly_clean() {
+        return false;
     }
+    let syntax = document.document();
+    syntax.contains_executable_source() || contains_run_source_metadata(syntax.syntax())
 }
 
 pub fn new_cli_runtime(
@@ -362,6 +355,18 @@ mod tests {
     #[test]
     fn classifies_single_plain_inline_expression_as_inline_source() {
         let mode = classify_run_inputs(vec!["x := 1".to_string()]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_single_source_import_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec!["+> ./dep.mec".to_string()]);
+        assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_split_source_import_with_slashes_as_inline_source() {
+        let mode = classify_run_inputs(vec!["+>".to_string(), "./dep.mec".to_string()]);
         assert!(matches!(mode, RunInputMode::InlineSource(_)));
     }
 

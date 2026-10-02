@@ -113,7 +113,6 @@ use tabled::{builder::Builder, settings::Style};
 
 pub mod browser_document;
 pub mod cell_binding;
-pub mod document_presentation;
 pub mod element;
 pub mod error;
 pub mod execution;
@@ -144,6 +143,7 @@ pub mod stdlib;
 pub mod structures;
 pub mod types;
 
+pub use self::browser_document::root_document_program_output_id;
 pub use self::cell_binding::*;
 pub use self::element::*;
 pub use self::error::*;
@@ -407,26 +407,6 @@ pub fn hash_bytes(input: &[u8]) -> u64 {
 
 pub fn hash_str(input: &str) -> u64 {
     seahash::hash(input.as_bytes()) & 0x00FFFFFFFFFFFFFF
-}
-
-/// Stable presentation identity for an inline document expression.
-///
-/// Source ranges are deliberately excluded so inserting unrelated source
-/// before an expression does not change the browser address of its result.
-pub fn inline_document_output_id(namespace: u64, expression: &Expression, occurrence: u64) -> u64 {
-    let mut identity = format!("mech/inline-document-output/v1/{namespace}");
-    for token in expression.tokens() {
-        let text = token.to_string();
-        identity.push_str(&format!("/{:?}:{}:{text}", token.kind, text.len()));
-    }
-    let base = hash_str(&identity);
-    if occurrence == 0 {
-        base
-    } else {
-        hash_str(&format!(
-            "mech/inline-document-output-occurrence/v1/{base}/{occurrence}"
-        ))
-    }
 }
 
 pub fn emojify_bytes(bytes: &[u8]) -> String {

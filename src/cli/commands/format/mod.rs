@@ -1,15 +1,16 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
 use mech_runtime::{
-    DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel,
+    CanonicalDocumentRenderer, DefaultIdGenerator, FS_READ, HostFilesystemAuthority,
+    MECH_TOOL_SUBJECT, SharedCapabilityKernel, SourceDocument,
 };
-use mech_syntax::formatter::*;
-use mech_syntax::parser;
+use mech_syntax::document::{ParseConfig, Revision};
 
 mod document_bundle;
 mod publication;
@@ -17,6 +18,10 @@ mod publication;
 use document_bundle::resolve_document_source_bundle;
 use publication::{PlannedOutput, publish_outputs_recoverably};
 
+use crate::canonical_presentation::{
+    HtmlShimExtraSlots, render_canonical_html, render_canonical_static_html,
+    validate_shipped_shim_render,
+};
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
     LoadedStylesheets, ResourceEvent, ResourceFallback, Utf8ConversionError, WebResourceDefaults,
@@ -134,9 +139,11 @@ fn document_controller_slots(
     source_url_key: &str,
     wasm_module_url: &str,
     document_sources: &str,
+    encoded_document: &str,
 ) -> MResult<HtmlShimExtraSlots> {
     let mut slots = HtmlShimExtraSlots::default();
     slots.insert("SOURCE_URL_KEY", source_url_key);
+    slots.insert("CODE", encoded_document);
     if !shim.contains("{{DOCUMENT_SCRIPT}}") {
         return Ok(slots);
     }
@@ -170,6 +177,82 @@ fn format_error(message: impl Into<String>) -> MechError {
         None,
     )
     .with_compiler_loc()
+}
+
+#[derive(Clone, Debug)]
+struct InvalidFormatSyntax {
+    source_name: String,
+    document: SourceDocument,
+}
+
+impl MechErrorKind for InvalidFormatSyntax {
+    fn name(&self) -> &str {
+        "InvalidFormatSyntax"
+    }
+
+    fn message(&self) -> String {
+        let snapshot = self.document.snapshot();
+        let mut message = format!("{}: invalid canonical source", self.source_name);
+        for diagnostic in snapshot.diagnostics.iter() {
+            message.push('\n');
+            message.push_str(&mech_syntax::document::render_plain(
+                diagnostic,
+                &snapshot.source,
+                &snapshot.nodes,
+            ));
+            if let Some(range) = diagnostic
+                .primary
+                .resolve(snapshot.source.revision(), &snapshot.nodes)
+            {
+                message.push_str(&format!(
+                    "  source bytes {}..{}",
+                    range.start.0, range.end.0
+                ));
+            }
+        }
+        message
+    }
+}
+
+fn canonical_document(path: &Path, source: &str) -> MResult<SourceDocument> {
+    let source_name = absolute_path(path)?.display().to_string();
+    let identity = mech_runtime::SourceRequest::from_filesystem_path(absolute_path(path)?)?;
+    let document = SourceDocument::parse_resolved(
+        &identity.specifier,
+        Revision(0),
+        Arc::<str>::from(source),
+        ParseConfig::default(),
+    )
+    .map_err(|error| format_error(format!("{source_name}: invalid retained source: {error:?}")))?;
+    if !document.is_strictly_clean() {
+        let snapshot = document.snapshot();
+        let mut error = MechError::new(
+            InvalidFormatSyntax {
+                source_name,
+                document: document.clone(),
+            },
+            None,
+        );
+        if let Some(range) = snapshot.diagnostics.iter().find_map(|diagnostic| {
+            diagnostic
+                .primary
+                .resolve(snapshot.source.revision(), &snapshot.nodes)
+        }) {
+            let location = |offset| {
+                let (line, column) = snapshot.source.line_index().line_and_byte_column(offset);
+                SourceLocation {
+                    row: line + 1,
+                    col: column.0 as usize + 1,
+                }
+            };
+            error.program_range = Some(SourceRange {
+                start: location(range.start),
+                end: location(range.end),
+            });
+        }
+        return Err(error);
+    }
+    Ok(document)
 }
 
 fn common_parent_directory(paths: &[PathBuf]) -> MResult<PathBuf> {
@@ -891,6 +974,9 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
             let html = match src {
                 MechSourceCode::Html(content) => content.clone(),
                 MechSourceCode::String(source) => {
+                    // Reject malformed roots with their positioned diagnostics
+                    // before dependency discovery attempts strict indexing.
+                    canonical_document(&target.path, source)?;
                     let resolved_document = if uses_document_controller {
                         Some(resolve_document_source_bundle(&target.path)?)
                     } else {
@@ -904,6 +990,22 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         .as_ref()
                         .map(|bundle| bundle.root_source.as_str())
                         .unwrap_or(source);
+                    let root_specifier = resolved_document
+                        .as_ref()
+                        .map(|bundle| bundle.root_specifier.as_str())
+                        .unwrap_or("document.mec");
+                    let document = canonical_document(&target.path, authoritative_source)?;
+                    let presentation_output_ids =
+                        mech_runtime::canonical_document_presentation_output_ids(
+                            &document.document(),
+                        )
+                        .map_err(|error| format_error(error.to_string()))?;
+                    let encoded_document = mech_runtime::BrowserDocumentPayload::new(
+                        root_specifier,
+                        authoritative_source,
+                    )?
+                    .with_presentation_output_ids(presentation_output_ids)
+                    .encode()?;
                     let wasm_module_url = runtime_assets
                         .as_ref()
                         .map(|(js, _)| relative_asset_url(&output_file, js))
@@ -915,21 +1017,23 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         "",
                         &wasm_module_url,
                         &document_sources,
+                        &encoded_document,
                     )?;
-                    let tree = parser::parse(authoritative_source.trim())?;
-                    let root_specifier = resolved_document
-                        .as_ref()
-                        .map(|bundle| bundle.root_specifier.as_str())
-                        .unwrap_or("document.mec");
-                    let mut formatter = Formatter::new();
-                    let render = formatter.format_source_html_with_style_sheets_and_slots(
-                        &tree,
-                        root_specifier,
-                        authoritative_source,
-                        html_style_sheets(stylesheet_str.clone()),
-                        shim_str.clone(),
-                        &document_slots,
-                    )?;
+                    let render = if uses_document_controller || shim_str.contains("{{CODE}}") {
+                        render_canonical_html(
+                            &document.document(),
+                            html_style_sheets(stylesheet_str.clone()),
+                            shim_str.clone(),
+                            &document_slots,
+                        )?
+                    } else {
+                        render_canonical_static_html(
+                            &document.document(),
+                            html_style_sheets(stylesheet_str.clone()),
+                            shim_str.clone(),
+                            &document_slots,
+                        )?
+                    };
                     if let Some(shim_name) = shipped_shim {
                         validate_shipped_shim_render(shim_name, &render)?;
                     }
@@ -997,9 +1101,10 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         for (target, mech_src) in loaded_sources {
             let content = match mech_src {
                 MechSourceCode::String(source) => {
-                    let tree = parser::parse(source.trim())?;
-                    let mut formatter = Formatter::new();
-                    formatter.format(&tree)
+                    let document = canonical_document(&target.path, &source)?;
+                    CanonicalDocumentRenderer
+                        .format_pretty_text(&document.document())
+                        .map_err(|error| format_error(error.to_string()))?
                 }
                 MechSourceCode::Html(content) => content,
                 other => {

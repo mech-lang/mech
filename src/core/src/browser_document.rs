@@ -100,3 +100,9 @@ fn payload_error(message: impl Into<String>) -> MechError {
         None,
     )
 }
+
+/// Stable semantic address for the canonical document's implicit program result.
+/// Console overlays do not replace or renumber this document boundary.
+pub fn root_document_program_output_id() -> u64 {
+    crate::hash_str("mech/document-program-output/v1")
+}

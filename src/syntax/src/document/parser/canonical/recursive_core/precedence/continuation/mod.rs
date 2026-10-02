@@ -772,6 +772,16 @@ impl Continuation {
                 Frame::VariableStem(node, allow_comparison) => {
                     if self.result == Attempt::NoMatch {
                         node.abandon(parser);
+                    } else if !final_input
+                        && parser.cursor().starts_with("<")
+                        && parser.cursor().byte_at(1).is_none()
+                    {
+                        // Wait for the second glyph before choosing a kind
+                        // annotation or leaving a compact send to its owner.
+                        self.push(Frame::VariableStem(node, allow_comparison));
+                        return Progress::NeedInput;
+                    } else if parser.cursor().starts_with("<-") {
+                        node.complete(parser, SyntaxKind::Variable);
                     } else if allow_comparison {
                         self.push(Frame::VariableCandidate(node));
                         self.push(Frame::Annotation(false));
@@ -1972,6 +1982,7 @@ mod tests {
             (rules::LITERAL, "!"),
             (rules::VAR, "alpha-beta"),
             (rules::VAR, "@ctx/value"),
+            (rules::VAR, "@ctx/value<-answer"),
             (rules::VAR, "x<u8>"),
             (rules::VAR, "x<"),
             (rules::VAR, "x < y"),

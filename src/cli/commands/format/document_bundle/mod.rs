@@ -186,8 +186,8 @@ pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<ResolvedDoc
     .map_err(|error| format_error(format!("failed to encode document source bundle: {error}")))?;
     Ok(ResolvedDocumentBundle {
         encoded_bundle: base64::engine::general_purpose::STANDARD.encode(encoded),
-        root_source,
         root_specifier,
+        root_source,
     })
 }
 

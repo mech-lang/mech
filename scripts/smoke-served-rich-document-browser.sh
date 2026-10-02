@@ -215,8 +215,10 @@ run_browser_case() {
     "$screenshot_file" \
     "$chrome_log" \
     "$label" <<'PY'
+import base64
 import json
 from pathlib import Path
+import re
 import sys
 import time
 
@@ -4352,6 +4354,31 @@ def assert_repl_termination():
             f"before={terminated_state['frameRequests']!r}, after={frame_requests_after!r}"
         )
     assert_terminal_runtime_mutations_retired("stopped")
+    # /code now publishes a compiled canonical program bundle. The direct
+    # reset API accepts retained source; use the actual formatter producer's
+    # payload so this still proves reset retires both request generations.
+    reset_fixture = None
+    if label != "configured":
+        formatted = Path(profile).parent.parent / "formatted-blog" / "index.html"
+        match = re.search(
+            r"<script\b[^>]*\bdata-mech-document-code[^>]*>(.*?)</script>",
+            formatted.read_text(),
+            re.DOTALL,
+        )
+        reset_payload = match.group(1).strip() if match else ""
+        if not reset_payload.startswith("mech-source-document-v1:"):
+            fail("formatter reset fixture did not publish retained source")
+        bundle_match = re.search(
+            r"<script\b[^>]*\bdata-mech-document-sources[^>]*>(.*?)</script>",
+            formatted.read_text(),
+            re.DOTALL,
+        )
+        if not bundle_match:
+            fail("formatter reset fixture did not publish its source resolver")
+        reset_fixture = {
+            "encoded": reset_payload,
+            "bundle": json.loads(base64.b64decode(bundle_match.group(1).strip())),
+        }
     direct_exports = evaluate("""
 (async () => {
   const { WasmDocument, WasmRepl } = await import('/_mech/pkg/mech_wasm.js');
@@ -4377,36 +4404,18 @@ def assert_repl_termination():
   const stopped = busyRepl.shutdown();
 
   let resetOwnership = null;
-  const configuredDocument = Boolean(document.querySelector(
-    '[data-mech-var-name="configured-answer"]'
-  ));
+  const configuredDocument = __MECH_CONFIGURED_DOCUMENT__;
   if (!configuredDocument) {
-    const sourceKey =
-      document.querySelector('.mech-root')?.dataset.mechSourceUrlKey ||
-      document.documentElement.dataset.mechSourceUrlKey || '';
-    const encoded = sourceKey
-      ? await (await fetch(`/code/${sourceKey}`)).text()
-      : document.querySelector('[data-mech-document-code]')?.textContent?.trim();
-    if (!encoded) throw new Error('direct reset smoke could not locate the encoded document');
-    const embeddedBundle = document.querySelector(
-      'script[data-mech-document-sources]'
-    )?.textContent?.trim();
-    const sourceBundle = embeddedBundle
-      ? JSON.parse(atob(embeddedBundle))
-      : null;
-    const resetDocument = sourceKey
-      ? WasmDocument.fromEncodedWithSources(encoded, sourceKey, {
-          [sourceKey]: await (await fetch(`/source/${sourceKey}`)).text(),
-        })
-      : sourceBundle
-        ? WasmDocument.fromEncodedWithSources(
-            encoded,
-            sourceBundle.rootSpecifier,
-            Object.fromEntries(sourceBundle.sources.map(
-              ({ specifier, source }) => [specifier, source]
-            )),
-          )
-      : WasmDocument.fromEncoded(encoded);
+    const { encoded, bundle: sourceBundle } = __MECH_RETAINED_RESET_FIXTURE__;
+    const resetDocument = WasmDocument.fromEncodedWithBundle(
+      encoded,
+      sourceBundle.rootSpecifier,
+      Object.fromEntries(sourceBundle.sources.map(
+        ({ specifier, source }) => [specifier, source]
+      )),
+      sourceBundle.resolutions,
+      sourceBundle.provenance || {},
+    );
     const oldStep = resetDocument.replInvoke(':step 1000');
     resetDocument.reset(encoded);
     const newStep = resetDocument.replInvoke(':step 1000');
@@ -4495,7 +4504,8 @@ def assert_repl_termination():
     ),
   };
 })()
-""")
+""".replace("__MECH_RETAINED_RESET_FIXTURE__", json.dumps(reset_fixture))
+    .replace("__MECH_CONFIGURED_DOCUMENT__", json.dumps(label == "configured")))
     busy_state = direct_exports.get("busyState", {}) if direct_exports else {}
     failed_busy_checks = sorted(name for name, value in busy_state.items() if not value)
     if failed_busy_checks or len(busy_state) != 7:

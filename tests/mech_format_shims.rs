@@ -75,12 +75,17 @@ fn assert_retained_execution_payload(html: &str) {
     let encoded = tail.split("</script>").next().unwrap().trim();
     let payload = mech_runtime::BrowserDocumentPayload::decode(encoded)
         .expect("formatter execution payload must retain source, never a detached tree");
-    let tree = mech_syntax::parser::parse(payload.source().trim()).unwrap();
-    let mut presentation = mech_syntax::Formatter::new();
-    drop(presentation.format_html(&tree, String::new(), String::new()));
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        payload.root_specifier(),
+        mech_syntax::document::Revision(0),
+        payload.source(),
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .unwrap();
+    document.index().unwrap();
     assert_eq!(
         payload.presentation_output_ids(),
-        presentation.root_presentation_output_ids()
+        mech_runtime::canonical_document_presentation_output_ids(&document.document()).unwrap()
     );
     if let Some(bundle) = html.split("data-mech-document-sources>").nth(1) {
         use base64::Engine as _;
@@ -120,6 +125,42 @@ fn format_fixture(shim: Option<&Path>, stylesheet: Option<&Path>, output: &Path)
 }
 
 #[test]
+fn mech_format_custom_inline_shim_keeps_encoded_source_output_mounts() {
+    let directory = TestDirectory::new("custom-inline-mounts");
+    let input = directory.path().join("main.mec");
+    let output = directory.path().join("main.html");
+    let source = "```mech\nanswer := 42\nanswer\n```\n";
+    std::fs::write(&input, source).unwrap();
+    let result = Command::new(env!("CARGO_BIN_EXE_mech"))
+        .current_dir(directory.path())
+        .arg("format")
+        .arg(&input)
+        .arg("--html")
+        .arg("--shim")
+        .arg(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/serve/inline-shim.html"))
+        .arg("--out")
+        .arg(&output)
+        .output()
+        .unwrap();
+    assert!(result.status.success(), "{result:?}");
+    let html = std::fs::read_to_string(output).unwrap();
+    let encoded = html
+        .split_once("const code = `")
+        .and_then(|(_, suffix)| suffix.split_once("`;"))
+        .map(|(encoded, _)| encoded)
+        .unwrap();
+    let payload = mech_runtime::BrowserDocumentPayload::decode(encoded).unwrap();
+    assert_eq!(payload.source(), source);
+    assert!(!payload.presentation_output_ids().is_empty());
+    assert!(html.contains("class='mech-block-output'"), "{html}");
+    for output_id in payload.presentation_output_ids() {
+        assert!(html.contains(&format!("id='{output_id}:0'")), "{html}");
+    }
+    assert!(html.contains("data-mech-document-status=\"loading\""));
+    assert!(!html.contains("data-mech-document-controller"));
+}
+
+#[test]
 fn mech_format_static_custom_shim_emits_no_runtime_assets() {
     let directory = TestDirectory::new("static-custom");
     let output = directory.path().join("static.html");
@@ -136,6 +177,78 @@ fn mech_format_static_custom_shim_emits_no_runtime_assets() {
             .join("_mech/pkg/mech_wasm_bg.wasm")
             .exists()
     );
+}
+
+#[test]
+fn mech_format_static_custom_shim_is_ready_and_repeated_sections_are_navigable() {
+    let directory = TestDirectory::new("static-status-and-anchors");
+    let input = directory.path().join("document.mec");
+    let shim = directory.path().join("custom.html");
+    let output = directory.path().join("formatted.html");
+    std::fs::write(
+        &input,
+        "1. First\n---------\nFirst body with [BOOK] and [^note].\n\n1. Second\n----------\nSecond body.\n\n[^note]: A footnote.\n\n[BOOK]: A reference.\n",
+    )
+    .unwrap();
+    for (attribute, controller) in [
+        (
+            "data-mech-document-status='loading'",
+            "data-mech-document-controller",
+        ),
+        (
+            "DATA-MECH-DOCUMENT-STATUS = loading",
+            "data-mech-document-controller='document'",
+        ),
+        (
+            "data-mech-document-status\n=\t\"loading\"",
+            "DATA-MECH-DOCUMENT-CONTROLLER\n= \"document\"",
+        ),
+    ] {
+        std::fs::write(
+            &shim,
+            format!("<aside>{{{{SECTION1}}}}</aside><nav>{{{{TOC}}}}</nav><main {controller} data-mech-document-controller-extra='keep' {attribute}>{{{{CONTENT}}}}{{{{FOOTNOTES}}}}{{{{CITED}}}}</main><aside>{{{{CONTENT}}}}{{{{FOOTNOTES}}}}{{{{CITED}}}}</aside>"),
+        )
+        .unwrap();
+        let result = Command::new(env!("CARGO_BIN_EXE_mech"))
+            .arg("format")
+            .arg(&input)
+            .args(["--html", "--shim"])
+            .arg(&shim)
+            .arg("--out")
+            .arg(&output)
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        let html = std::fs::read_to_string(&output).unwrap();
+        assert!(
+            html.contains("data-mech-document-status=\"ready\""),
+            "{html}"
+        );
+        assert!(
+            html.contains("data-mech-document-controller-extra='keep'"),
+            "{html}"
+        );
+        assert!(!html.contains(&format!("{controller} ")), "{html}");
+        let anchors = html
+            .split("href='#")
+            .skip(1)
+            .map(|link| link.split_once('\'').unwrap().0)
+            .collect::<Vec<_>>();
+        let anchors = anchors
+            .into_iter()
+            .filter(|anchor| !anchor.starts_with("footnote-") && !anchor.starts_with("reference-"))
+            .collect::<Vec<_>>();
+        assert_eq!(anchors.len(), 2, "{html}");
+        assert_ne!(anchors[0], anchors[1], "{html}");
+        for anchor in anchors {
+            assert_eq!(html.matches(&format!("id='{anchor}'")).count(), 1, "{html}");
+        }
+        assert!(!directory.path().join("_mech").exists());
+    }
 }
 
 #[test]
@@ -490,4 +603,165 @@ fn mech_format_shipped_controller_explains_missing_embedded_runtime_assets() {
             .contains("embedded mech_wasm_bg.wasm is unavailable"),
     );
     assert!(!directory.path().join("_mech").exists());
+}
+
+#[test]
+fn mech_format_reports_positioned_canonical_errors_without_publication() {
+    for ending in ["\n", "\r\n"] {
+        for malformed in ["value := 1 + )", "résultat := [1 )"] {
+            let directory = TestDirectory::new("positioned-errors");
+            // Unix permits quotes and backslashes in filenames, so it can
+            // exercise the escaping required by Windows diagnostic paths too.
+            let input_name = if cfg!(windows) {
+                "entrée.mec"
+            } else {
+                "entrée\\\"quoted.mec"
+            };
+            let input = directory.path().join(input_name);
+            let output = directory.path().join("formatted.mec");
+            let shim = directory.path().join("static.html");
+            let source = format!("valid := 1{ending}{malformed}{ending}");
+            std::fs::write(&input, &source).unwrap();
+            std::fs::write(&output, "previous published content").unwrap();
+            std::fs::write(&shim, "<article>{{CONTENT}}</article>").unwrap();
+            let retained = mech_runtime::SourceDocument::parse_resolved(
+                &mech_runtime::SourceRequest::from_filesystem_path(&input)
+                    .unwrap()
+                    .specifier,
+                mech_syntax::document::Revision(0),
+                source.as_str(),
+                mech_syntax::document::ParseConfig::default(),
+            )
+            .unwrap();
+            let snapshot = retained.snapshot();
+            assert!(!snapshot.diagnostics.is_empty());
+            for html in [false, true] {
+                let mut command = Command::new(env!("CARGO_BIN_EXE_mech"));
+                command.arg("format").arg(&input).arg("--out").arg(&output);
+                if html {
+                    command.arg("--html").arg("--shim").arg(&shim);
+                }
+                let result = command.output().unwrap();
+                assert!(
+                    !result.status.success(),
+                    "malformed {source:?} was published"
+                );
+                let stderr = String::from_utf8_lossy(&result.stderr);
+                // MechError prints its message as a Rust debug string. Match
+                // that representation while still requiring the full path.
+                let expected_path = format!("{:?}", input.display().to_string());
+                assert!(stderr.contains(expected_path.trim_matches('"')), "{stderr}");
+                assert!(stderr.contains("InvalidFormatSyntax"), "{stderr}");
+                for diagnostic in snapshot.diagnostics.iter() {
+                    let range = diagnostic
+                        .primary
+                        .resolve(snapshot.source.revision(), &snapshot.nodes)
+                        .unwrap();
+                    assert!(range.start.0 >= "valid := 1".len() as u32, "{diagnostic:?}");
+                    let (line, column) = snapshot
+                        .source
+                        .line_index()
+                        .line_and_byte_column(range.start);
+                    assert!(
+                        stderr.contains(&format!("at {}:{}:", line + 1, column.0 + 1)),
+                        "{stderr}"
+                    );
+                    assert!(stderr.contains(&diagnostic.message), "{stderr}");
+                    assert!(
+                        stderr
+                            .contains(&format!("source bytes {}..{}", range.start.0, range.end.0)),
+                        "{stderr}"
+                    );
+                }
+                assert_eq!(std::fs::read_to_string(&input).unwrap(), source);
+                assert_eq!(
+                    std::fs::read_to_string(&output).unwrap(),
+                    "previous published content"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn mech_format_raw_normalizes_reviewed_syntax_families_idempotently() {
+    let directory = TestDirectory::new("canonical-pretty-contract");
+    let input = directory.path().join("document.mec");
+    let output = directory.path().join("formatted.mec");
+    let second = directory.path().join("second.mec");
+    let source = "Report\n======\n+> math/{sin,cos}\nauthor: Keep a,b\n======\n+> math/{trig/sin,trig/cos}\n@io:=cli://stdout{:read(*),:write(line)}\nresult:=make(x:1,y:2,note:\"a,b:c\")\n~~~mech{output:false,color:red}\nvalue:=1..3\n~~~\n![Keep  caption](image.png){width:wide,color:red}\n~~~mech:worker\n+> math/{sin,cos}\n~~~\n";
+    let expected = "Report\n======\n+> math/{sin, cos}\nauthor: Keep a,b\n======\n+> math/{trig/sin, trig/cos}\n@io := cli://stdout { :read(*), :write(line) }\nresult := make(x: 1, y: 2, note: \"a,b:c\")\n~~~mech{output: false, color: red}\nvalue := 1..3\n~~~\n![Keep  caption](image.png){width: wide, color: red}\n~~~mech:worker\n+> math/{sin, cos}\n~~~\n";
+    let source = format!(
+        "{source}add(x<u64>,y<u64>) = out<u64> := out := x + y.\nsplit(x<u64>,y<u64>) = (a<u64>,b<u64>) := a := x; b := y.\n~~~mech:signatures\nchoose(x<u64>,y<u64>) => <u64>\n| 0 => y\n| x => x.\n~~~\n"
+    );
+    let expected = format!(
+        "{expected}add(x<u64>, y<u64>) = out<u64> := out := x + y.\nsplit(x<u64>, y<u64>) = (a<u64>, b<u64>) := a := x; b := y.\n~~~mech:signatures\nchoose(x<u64>, y<u64>) => <u64>\n| 0 => y\n| x => x.\n~~~\n"
+    );
+    std::fs::write(&input, source).unwrap();
+    for (source_path, output_path) in [(&input, &output), (&output, &second)] {
+        let result = Command::new(env!("CARGO_BIN_EXE_mech"))
+            .arg("format")
+            .arg(source_path)
+            .arg("--out")
+            .arg(output_path)
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        assert_eq!(std::fs::read_to_string(output_path).unwrap(), expected);
+    }
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn mech_format_preserves_executable_results_through_public_commands() {
+    let directory = TestDirectory::new("format-execution-contract");
+    for (index, source) in [
+        "pair:=(2,3)\n(left,right):=pair\nleft * 10 + right\n",
+        "record:={left:2,right:3}\nrecord.left * 10 + record.right\n",
+        "answer:=math/sub(left:30,right:7)\nanswer\n",
+        "add(x<u64>,y<u64>) = out<u64> := out := x + y.\nadd(20,3)\n",
+    ]
+    .iter()
+    .enumerate()
+    {
+        let input = directory.path().join(format!("input-{index}.mec"));
+        let formatted = directory.path().join(format!("formatted-{index}.mec"));
+        std::fs::write(&input, source).unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_mech"))
+            .args(["--no-config", "format"])
+            .arg(&input)
+            .arg("--out")
+            .arg(&formatted)
+            .current_dir(directory.path())
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        for path in [&input, &formatted] {
+            let output = Command::new(env!("CARGO_BIN_EXE_mech"))
+                .args(["--no-config", "run"])
+                .arg(path)
+                .current_dir(directory.path())
+                .output()
+                .unwrap();
+            assert!(
+                output.status.success(),
+                "{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            assert_eq!(
+                String::from_utf8_lossy(&output.stdout).lines().last(),
+                Some("23"),
+                "{}",
+                String::from_utf8_lossy(&output.stdout)
+            );
+        }
+    }
 }

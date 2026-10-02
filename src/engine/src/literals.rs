@@ -4354,48 +4354,6 @@ pub fn real(_: &RealNumber, _: &InterpreterExecution<'_>) -> MResult<ValueCell> 
 mod canonical_conversion_tests {
     use super::*;
 
-    #[test]
-    fn interpreter_open_kind_values_declare_their_axes() {
-        for (source, expected_axes) in [
-            ("<[u8]>", 2),
-            ("<{u8:f64}>", 1),
-            ("<{u8}>", 1),
-            ("<|a<u8>|>", 1),
-        ] {
-            let tree = mech_syntax::parser::parse(source).unwrap();
-            let mut interpreter = Interpreter::with_function_catalog(
-                0,
-                10_000,
-                crate::test_support::catalog::function_catalog(),
-            );
-            let output = interpreter.interpret(&tree).unwrap().unwrap();
-            let snapshot = output.snapshot().unwrap();
-            let ValueData::Type(ReifiedType::Kind(kind)) = snapshot.data() else {
-                panic!("{source}: expected a reified kind")
-            };
-            let (_, dimensions, _) = kind.decoded_closed_kind().unwrap();
-            assert_eq!(dimensions.len(), expected_axes, "{source}");
-        }
-    }
-
-    #[test]
-    fn interpreter_identity_kind_values_match_source_kinds() {
-        for (source, expected) in [("<id>", KindExpr::Id), ("<ix>", KindExpr::Index)] {
-            let tree = mech_syntax::parser::parse(source).unwrap();
-            let mut interpreter = Interpreter::with_function_catalog(
-                0,
-                10_000,
-                crate::test_support::catalog::function_catalog(),
-            );
-            let output = interpreter.interpret(&tree).unwrap().unwrap();
-            let snapshot = output.snapshot().unwrap();
-            let ValueData::Type(ReifiedType::Kind(kind)) = snapshot.data() else {
-                panic!("{source}: expected a reified kind")
-            };
-            assert_eq!(kind.decoded_closed_kind().unwrap().0, expected);
-        }
-    }
-
     struct NamedKinds(BTreeMap<KindId, CanonicalNominalPath>);
 
     impl NamedKindPathResolver for NamedKinds {

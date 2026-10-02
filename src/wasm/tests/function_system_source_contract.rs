@@ -138,6 +138,7 @@ fn enabled_standard_profile_is_fully_catalog_owned() {
         "logic/and",
         "range/inclusive",
         "matrix/transpose",
+        #[cfg(feature = "set_union")]
         "set/union",
         "string/concat",
     ] {

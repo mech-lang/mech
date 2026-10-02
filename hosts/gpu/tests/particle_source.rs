@@ -57,13 +57,7 @@ fn compile_source(
     source: &str,
     inputs: impl IntoIterator<Item = (&'static str, RuntimeHostInputValue)>,
 ) -> mech_engine::ProgramArtifact {
-    let document = mech_runtime::SourceDocument::parse_resolved(
-        "test://particle-source",
-        mech_syntax::document::Revision(0),
-        source,
-        mech_syntax::document::ParseConfig::default(),
-    )
-    .expect("source must parse");
+    let document = retained_document(source);
     let inputs = inputs
         .into_iter()
         .map(|(name, value)| (name.to_owned(), value))
@@ -76,6 +70,22 @@ fn compile_source(
         .compile_document_artifact_with_inputs(&document, &inputs, &external_input_names)
         .expect("source must compile")
         .into_artifact()
+}
+
+fn retained_document(source: &str) -> mech_runtime::SourceDocument {
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://particle-source",
+        mech_syntax::document::Revision(0),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .expect("source must parse");
+    assert!(
+        document.is_strictly_clean(),
+        "{:?}",
+        document.snapshot().diagnostics
+    );
+    document
 }
 
 fn compiler() -> ProgramCompiler {
@@ -308,13 +318,13 @@ fn ordinary_compute_host_dispatches_the_compiler_product_after_commit() {
 #[test]
 fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
     let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "64f32", 1);
-    let complete = mech_syntax::parse(&source).expect("complete source must parse");
+    let complete = retained_document(&source);
     assert!(
         complete
-            .body
-            .sections
+            .document()
+            .sections()
             .iter()
-            .any(|section| section.annotations.is_empty())
+            .any(|section| section.subtitle().is_none())
     );
     let artifact = compile_isolated_gpu_source(&source);
 
@@ -641,21 +651,13 @@ result
 
 #[test]
 fn particle_example_is_one_mixed_mech_document() {
-    let tree = mech_syntax::parse(SERVED_PARTICLE_SOURCE).expect("complete source must parse");
-    let regions = tree
-        .body
-        .sections
-        .iter()
-        .filter(|section| !section.annotations.is_empty())
-        .collect::<Vec<_>>();
-    assert_eq!(regions.len(), 1);
+    let document = retained_document(SERVED_PARTICLE_SOURCE);
+    let sections = document.document().sections();
+    assert_eq!(sections.len(), 2);
+    assert!(sections[0].subtitle().is_none());
     assert_eq!(
-        mech_engine::section_compute_placement(regions[0]).unwrap(),
-        Some(ComputePlacement::Compute)
-    );
-    assert_eq!(
-        regions[0].subtitle.as_ref().unwrap().to_string().trim(),
-        "particle-field"
+        sections[1].subtitle().unwrap().title_text().unwrap(),
+        "particle-field @compute"
     );
     assert!(SERVED_PARTICLE_SOURCE.contains("pointer://pointer/frame"));
     assert!(SERVED_PARTICLE_SOURCE.contains("compute://particles/kernel"));
