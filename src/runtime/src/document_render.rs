@@ -3114,6 +3114,15 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         .collect::<Vec<_>>();
     let mut operator_ranges = operator_nodes
         .into_iter()
+        // Range productions require the operator to touch both bounds.
+        .filter(|operator| {
+            !matches!(
+                operator.syntax().kind(),
+                SyntaxKind::RangeOperator
+                    | SyntaxKind::RangeExclusiveOperation
+                    | SyntaxKind::RangeInclusiveOperation
+            )
+        })
         .filter_map(|operator| operator.operator_token_range())
         .collect::<Vec<_>>();
     let mut compound_assignments = Vec::new();
@@ -3127,6 +3136,9 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
             .into_iter()
             .map(|operator| operator.range()),
     );
+    let mut context_sends = Vec::new();
+    collect_nodes(node, SyntaxKind::ContextSend, &mut context_sends);
+    operator_ranges.extend(context_sends.iter().filter_map(context_send_operator_range));
     let mut separator_lists = Vec::new();
     for kind in [
         SyntaxKind::ArgumentList,
@@ -3239,6 +3251,31 @@ fn collect_operator_nodes(node: &SyntaxNode, output: &mut Vec<OperatorSyntax>) {
     for child in node.children() {
         collect_operator_nodes(&child, output);
     }
+}
+
+fn context_send_operator_range(node: &SyntaxNode) -> Option<TextRange> {
+    // The target and expression are child nodes; the transparent send operator
+    // retains its glyphs as direct tokens, including its optional spacing.
+    let mut glyphs = node
+        .children_with_tokens()
+        .into_iter()
+        .filter_map(|element| match element {
+            SyntaxElement::Token(token)
+                if !matches!(
+                    token.kind(),
+                    SyntaxKind::Whitespace
+                        | SyntaxKind::Tab
+                        | SyntaxKind::Newline
+                        | SyntaxKind::CarriageReturn
+                ) =>
+            {
+                Some(token)
+            }
+            _ => None,
+        });
+    let first = glyphs.next()?;
+    let last = glyphs.last().unwrap_or_else(|| first.clone());
+    Some(TextRange::new(first.range().start, last.range().end))
 }
 
 fn range_error(range: TextRange) -> CanonicalDocumentRenderError {

@@ -1079,6 +1079,83 @@ fn canonical_pretty_text_spaces_formula_operators() {
 }
 
 #[test]
+fn canonical_pretty_text_spaces_context_send_operators() {
+    for (source, expected) in [
+        ("@out/line<-answer\n", "@out/line <- answer\n"),
+        ("@out/line  <-\tanswer\r\n", "@out/line <- answer\r\n"),
+        (
+            "@out/line<-\"literal<-arrow\"\n",
+            "@out/line <- \"literal<-arrow\"\n",
+        ),
+        (
+            "```mech:worker\n@out/line<-40+2\n```\n",
+            "```mech:worker\n@out/line <- 40 + 2\n```\n",
+        ),
+        ("@out/line<f64><-answer\n", "@out/line<f64> <- answer\n"),
+        (
+            "Send {{@out/line<-answer}}.\n",
+            "Send {{@out/line <- answer}}.\n",
+        ),
+    ] {
+        let formatted = CanonicalDocumentRenderer
+            .format_pretty_text(&document(source))
+            .unwrap();
+        assert_eq!(formatted, expected, "{source:?}");
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&streamed_document(source))
+                .unwrap(),
+            formatted,
+            "streamed {source:?}"
+        );
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&document(&formatted))
+                .unwrap(),
+            formatted,
+            "{source:?}"
+        );
+    }
+}
+
+#[test]
+fn canonical_pretty_text_keeps_range_operators_attached_to_bounds() {
+    for (source, expected) in [
+        ("values:=1..3\n", "values := 1..3\n"),
+        ("values:=1..=3\r\n", "values := 1..=3\r\n"),
+        ("selected:=values[1..=3]\n", "selected := values[1..=3]\n"),
+        ("values:=(1+2)..(3+4)\n", "values := (1 + 2)..(3 + 4)\n"),
+        (
+            "```mech:worker\nvalues:=1..3\nother:=1..=3\n```\n",
+            "```mech:worker\nvalues := 1..3\nother := 1..=3\n```\n",
+        ),
+        (
+            "Ranges {1..3} and {{1..=3}}.\n",
+            "Ranges {1..3} and {{1..=3}}.\n",
+        ),
+    ] {
+        let formatted = CanonicalDocumentRenderer
+            .format_pretty_text(&document(source))
+            .unwrap();
+        assert_eq!(formatted, expected, "{source:?}");
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&streamed_document(source))
+                .unwrap(),
+            formatted,
+            "streamed {source:?}"
+        );
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&document(&formatted))
+                .unwrap(),
+            formatted,
+            "{source:?}"
+        );
+    }
+}
+
+#[test]
 fn canonical_pretty_text_spaces_record_and_map_separators() {
     let formatted = CanonicalDocumentRenderer
         .format_pretty_text(&document(
