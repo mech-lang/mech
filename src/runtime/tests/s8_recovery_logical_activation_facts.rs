@@ -100,6 +100,32 @@ fn closed_comparison_masks_share_broadcast_and_ordering_semantics() {
 }
 
 #[test]
+fn closed_arithmetic_comparison_operands_publish_exact_populations() {
+    for (arithmetic, comparison, expected) in [
+        ("x + 1", "y > 2", "[2; 3]"),
+        ("x - 1", "y >= 1", "[2; 3]"),
+        ("x * 2", "y > 2", "[2; 3]"),
+        ("x / 2", "y >= 1", "[2; 3]"),
+        ("x % 2", "y == 1", "[1; 3]"),
+        ("x ^ 2", "y > 3", "[2; 3]"),
+        ("-x", "y < -1", "[2; 3]"),
+    ] {
+        exact_closed_mask(
+            &format!("x := [1 2 3]\ny := {arithmetic}\nmask := {comparison}\nx[mask]\n"),
+            expected,
+        );
+    }
+    exact_closed_mask(
+        "x := [1 2 3; 4 5 6]\ny := x + [10 20 30]\nmask := y > 24\nx[mask]\n",
+        "[5; 3; 6]",
+    );
+    exact_closed_mask(
+        "x := [1 2 3; 4 5 6]\ny := x + [10; 20]\nmask := y > 22\nx[mask]\n",
+        "[4; 5; 6]",
+    );
+}
+
+#[test]
 fn closed_binary_logical_masks_publish_exact_populations() {
     exact_closed_mask(
         "x := [42 43]\np := logic/and(1 < 2, 2 < 3)\nmask := [p false]\nx[mask]\n",

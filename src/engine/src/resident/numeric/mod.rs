@@ -336,7 +336,7 @@ enum SemanticComparison {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u64)]
-enum SemanticArithmetic {
+pub(super) enum SemanticArithmetic {
     Add = 0,
     Subtract = 1,
     Multiply = 2,
@@ -2679,7 +2679,7 @@ fn bind_binary(
     )
 }
 
-fn snapshot_arithmetic_element_supported(
+pub(super) fn snapshot_arithmetic_element_supported(
     arithmetic: SemanticArithmetic,
     element: &SchemaBody,
 ) -> bool {
@@ -2750,7 +2750,7 @@ fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
 const RATIONAL_MULTIPLY_COMPUTE_WORK: usize = 1_024;
 const RATIONAL_POWER_ELEMENT_COMPUTE_WORK: usize = 126 * RATIONAL_MULTIPLY_COMPUTE_WORK;
 
-fn snapshot_power_compute_work(
+pub(super) fn snapshot_power_compute_work(
     arithmetic: SemanticArithmetic,
     element: &SchemaBody,
     output_elements: usize,
@@ -2817,7 +2817,7 @@ fn snapshot_reduction_compute_work(
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
-fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
+pub(super) fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
     use mech_core::FloatWidth;
     matches!(
         element,
@@ -18646,7 +18646,7 @@ fn numeric_rational_power(
     }
 }
 
-fn numeric_arithmetic(
+pub(super) fn numeric_arithmetic(
     arithmetic: SemanticArithmetic,
     left: ValueDataDraft,
     right: ValueDataDraft,
@@ -18661,7 +18661,7 @@ fn numeric_arithmetic(
     }
 }
 
-fn numeric_negate(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelError> {
+pub(super) fn numeric_negate(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelError> {
     Ok(match value {
         ValueDataDraft::I8(value) => {
             ValueDataDraft::I8(value.checked_neg().ok_or(ResidentKernelError::Arithmetic)?)
