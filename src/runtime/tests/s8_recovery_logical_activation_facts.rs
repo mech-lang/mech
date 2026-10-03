@@ -268,6 +268,34 @@ fn closed_comparisons_compose_through_supported_producers() {
 }
 
 #[test]
+fn closed_comparisons_compose_through_set_size_and_matrix_access() {
+    exact_closed_mask(
+        "x := [42 43]\ncount := set/size({1, 2})\nmask := [count == 2<u64> false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\ncombined := set/union({1}, {2})\ncount := set/size(combined)\nmask := [count == 2<u64> false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [10 20 30; 40 50 60]\nselected := values[:,2]\nmask := selected > 25\nx[mask]\n",
+        "[43]",
+    );
+    exact_closed_mask(
+        "x := [42 43 44]\nvalues := [10 20 30; 40 50 60]\nselected := values[2,:]\nmask := selected > 45\nx[mask]\n",
+        "[43; 44]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [10 20 30; 40 50 60]\nselected := values[[6 2]]\nmask := selected > 50\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43; 44 45]\nvalues := [10 20 30; 40 50 60]\nselected := values[[2 1],[3 1]]\nmask := selected > 35\nx[mask]\n",
+        "[42; 43]",
+    );
+}
+
+#[test]
 fn closed_comparisons_compose_through_matrix_concatenation() {
     exact_closed_mask(
         "x := [10 20 30 40]\njoined := matrix/horzcat([1 2], [3 4])\nmask := joined > 2\nx[mask]\n",
