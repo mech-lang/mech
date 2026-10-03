@@ -3244,6 +3244,189 @@ fn logical_selector_population(
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ClosedLogicalMask {
+    rows: usize,
+    columns: usize,
+    values: Vec<bool>,
+}
+
+impl ClosedLogicalMask {
+    fn scalar(value: bool) -> Self {
+        Self {
+            rows: 1,
+            columns: 1,
+            values: vec![value],
+        }
+    }
+
+    fn population(&self) -> Option<u64> {
+        u64::try_from(self.values.iter().filter(|value| **value).count()).ok()
+    }
+
+    fn transpose(&self) -> Option<Self> {
+        let count = self.rows.checked_mul(self.columns)?;
+        if count != self.values.len() || count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+            return None;
+        }
+        let mut values = Vec::with_capacity(count);
+        for index in 0..count {
+            let output_row = index % self.columns;
+            let output_column = index / self.columns;
+            values.push(self.values[output_column + output_row * self.rows]);
+        }
+        Some(Self {
+            rows: self.columns,
+            columns: self.rows,
+            values,
+        })
+    }
+
+    fn binary(&self, right: &Self, operation: &str) -> Option<Self> {
+        let broadcast_axis = |left, right| {
+            if left == right {
+                Some(left)
+            } else if left == 1 {
+                Some(right)
+            } else if right == 1 {
+                Some(left)
+            } else {
+                None
+            }
+        };
+        let rows = broadcast_axis(self.rows, right.rows)?;
+        let columns = broadcast_axis(self.columns, right.columns)?;
+        let count = rows.checked_mul(columns)?;
+        if count > MAX_STATIC_SELECTOR_SOURCE_STEPS
+            || self.rows.checked_mul(self.columns)? != self.values.len()
+            || right.rows.checked_mul(right.columns)? != right.values.len()
+        {
+            return None;
+        }
+        let apply = |left, right| match operation {
+            "and" => Some(left && right),
+            "or" => Some(left || right),
+            "xor" => Some(left ^ right),
+            _ => None,
+        };
+        let mut values = Vec::with_capacity(count);
+        for column in 0..columns {
+            for row in 0..rows {
+                let left = self.values[(row % self.rows) + (column % self.columns) * self.rows];
+                let right =
+                    right.values[(row % right.rows) + (column % right.columns) * right.rows];
+                values.push(apply(left, right)?);
+            }
+        }
+        Some(Self {
+            rows,
+            columns,
+            values,
+        })
+    }
+}
+
+fn logical_selector_mask(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+    known: &BTreeMap<ArtifactSource, ClosedLogicalMask>,
+) -> Option<ClosedLogicalMask> {
+    if let Some(mask) = known.get(&source) {
+        return Some(mask.clone());
+    }
+    let ArtifactSource::Constant(id) = source else {
+        return None;
+    };
+    let value = artifact.constants().get(id)?;
+    match value.data() {
+        mech_core::ValueData::Bool(value) => Some(ClosedLogicalMask::scalar(*value)),
+        mech_core::ValueData::Matrix(matrix) => {
+            let mech_core::snapshot::SequenceView::Bool(values) = matrix.elements() else {
+                return None;
+            };
+            let extents = source_extents(artifact, source, facts).ok()?;
+            let [rows, columns] = extents.as_ref() else {
+                return None;
+            };
+            let rows = usize::try_from(*rows).ok()?;
+            let columns = usize::try_from(*columns).ok()?;
+            let count = rows.checked_mul(columns)?;
+            if count != values.len() || count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+                return None;
+            }
+            Some(ClosedLogicalMask {
+                rows,
+                columns,
+                values: values.iter().copied().collect(),
+            })
+        }
+        _ => None,
+    }
+}
+
+fn concatenate_closed_logical_masks(
+    horizontal: bool,
+    masks: &[ClosedLogicalMask],
+) -> Option<ClosedLogicalMask> {
+    let first = masks.first()?;
+    if horizontal {
+        if masks.iter().any(|mask| mask.rows != first.rows) {
+            return None;
+        }
+        let columns = masks
+            .iter()
+            .try_fold(0_usize, |total, mask| total.checked_add(mask.columns))?;
+        let count = first.rows.checked_mul(columns)?;
+        if count > MAX_STATIC_SELECTOR_SOURCE_STEPS
+            || masks
+                .iter()
+                .any(|mask| mask.rows.checked_mul(mask.columns) != Some(mask.values.len()))
+        {
+            return None;
+        }
+        let mut values = Vec::with_capacity(count);
+        for mask in masks {
+            values.extend_from_slice(&mask.values);
+        }
+        Some(ClosedLogicalMask {
+            rows: first.rows,
+            columns,
+            values,
+        })
+    } else {
+        if masks.iter().any(|mask| mask.columns != first.columns) {
+            return None;
+        }
+        let rows = masks
+            .iter()
+            .try_fold(0_usize, |total, mask| total.checked_add(mask.rows))?;
+        let count = rows.checked_mul(first.columns)?;
+        if count > MAX_STATIC_SELECTOR_SOURCE_STEPS
+            || masks
+                .iter()
+                .any(|mask| mask.rows.checked_mul(mask.columns) != Some(mask.values.len()))
+        {
+            return None;
+        }
+        let mut values = vec![false; count];
+        let mut row_base = 0;
+        for mask in masks {
+            for column in 0..first.columns {
+                for row in 0..mask.rows {
+                    values[row_base + row + column * rows] = mask.values[row + column * mask.rows];
+                }
+            }
+            row_base += mask.rows;
+        }
+        Some(ClosedLogicalMask {
+            rows,
+            columns: first.columns,
+            values,
+        })
+    }
+}
+
 struct ConstantComparisonOperand<'a> {
     value: std::borrow::Cow<'a, Value>,
     schema_key: SchemaKey,
@@ -3283,6 +3466,20 @@ fn scalar_comparison_supported(element: &SchemaBody, ordering: bool) -> bool {
 struct ClosedOperandConstructionBudget {
     cloned_bytes: std::cell::Cell<u64>,
     construction_work: std::cell::Cell<u64>,
+}
+
+#[derive(Default)]
+struct ClosedOperandSchemaContext {
+    schemas: std::sync::OnceLock<std::sync::Arc<mech_core::SchemaTable>>,
+}
+
+impl ClosedOperandSchemaContext {
+    fn schemas(&self, artifact: &ProgramArtifact) -> std::sync::Arc<mech_core::SchemaTable> {
+        std::sync::Arc::clone(
+            self.schemas
+                .get_or_init(|| std::sync::Arc::new(artifact.schemas().clone())),
+        )
+    }
 }
 
 impl ClosedOperandConstructionBudget {
@@ -3344,6 +3541,7 @@ fn constant_comparison_operand<'a>(
     source: ArtifactSource,
     facts: &ActivationFacts,
     construction_budget: &ClosedOperandConstructionBudget,
+    schema_context: &ClosedOperandSchemaContext,
     allow_large_direct_dense: bool,
 ) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
     let budget = SnapshotCanonicalizationBudget::new(mech_core::RESIDENT_MAX_COMPARISON_WORK);
@@ -3355,6 +3553,7 @@ fn constant_comparison_operand<'a>(
         0,
         &budget,
         construction_budget,
+        schema_context,
         allow_large_direct_dense,
     )
 }
@@ -3367,6 +3566,7 @@ fn constant_comparison_operand_at_depth<'a>(
     depth: usize,
     budget: &SnapshotCanonicalizationBudget,
     construction_budget: &ClosedOperandConstructionBudget,
+    schema_context: &ClosedOperandSchemaContext,
     allow_large_direct_dense: bool,
 ) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
     const MAX_CLOSED_OPERAND_FOLD_DEPTH: usize = 64;
@@ -3410,6 +3610,7 @@ fn constant_comparison_operand_at_depth<'a>(
                     next_depth,
                     budget,
                     construction_budget,
+                    schema_context,
                     allow_large_direct_dense,
                 )?
                 else {
@@ -3466,6 +3667,7 @@ fn constant_comparison_operand_at_depth<'a>(
                     next_depth,
                     budget,
                     construction_budget,
+                    schema_context,
                     allow_large_direct_dense,
                 )?
                 else {
@@ -3539,6 +3741,7 @@ fn constant_comparison_operand_at_depth<'a>(
                         next_depth,
                         budget,
                         construction_budget,
+                        schema_context,
                         allow_large_direct_dense,
                     )?
                     else {
@@ -3572,12 +3775,11 @@ fn constant_comparison_operand_at_depth<'a>(
                 else {
                     return Ok(None);
                 };
-                let schemas = std::sync::Arc::new(artifact.schemas().clone());
                 let Ok(constructor) = mech_core::snapshot::CompositeSnapshotConstructor::bind(
                     target_schema_id,
                     shape,
                     &children,
-                    schemas,
+                    schema_context.schemas(artifact),
                 ) else {
                     return Ok(None);
                 };
@@ -3777,11 +3979,11 @@ fn closed_snapshot_element_comparison_work(
     }
 }
 
-fn closed_comparison_population(
+fn closed_comparison_mask(
     artifact: &ProgramArtifact,
     node: NodeId,
     facts: &ActivationFacts,
-) -> Result<Option<u64>, ResidentActivationError> {
+) -> Result<Option<ClosedLogicalMask>, ResidentActivationError> {
     // Activation planning may inspect closed constant comparisons, but it must
     // never execute arbitrary turn-dependent nodes to guess a live population.
     let operation = artifact
@@ -3811,12 +4013,14 @@ fn closed_comparison_population(
     };
     let allow_large_direct_dense = scalar_output && matches!(name, "seq" | "sneq");
     let construction_budget = ClosedOperandConstructionBudget::default();
+    let schema_context = ClosedOperandSchemaContext::default();
     let Some(left) = constant_comparison_operand(
         artifact,
         node,
         *left,
         facts,
         &construction_budget,
+        &schema_context,
         allow_large_direct_dense,
     )?
     else {
@@ -3828,6 +4032,7 @@ fn closed_comparison_population(
         *right,
         facts,
         &construction_budget,
+        &schema_context,
         allow_large_direct_dense,
     )?
     else {
@@ -3865,7 +4070,7 @@ fn closed_comparison_population(
         // before inspecting either payload. Mirror that constant-time mismatch
         // result instead of applying snapshot aggregate admission.
         if dense_matrix_shape_mismatch && matches!(name, "seq" | "sneq") {
-            return Ok(Some(u64::from(name == "sneq")));
+            return Ok(Some(ClosedLogicalMask::scalar(name == "sneq")));
         }
         if left.schema_key != right.schema_key && !compatible_matrix_identity {
             let snapshot_strict = snapshot_matrix_strict_path && matches!(name, "seq" | "sneq");
@@ -3883,8 +4088,8 @@ fn closed_comparison_population(
                 }
             }
             return Ok(match name {
-                "eq" | "seq" => Some(0),
-                "neq" | "sneq" => Some(1),
+                "eq" | "seq" => Some(ClosedLogicalMask::scalar(false)),
+                "neq" | "sneq" => Some(ClosedLogicalMask::scalar(true)),
                 _ => None,
             });
         }
@@ -3957,7 +4162,7 @@ fn closed_comparison_population(
             ),
             _ => return Ok(None),
         };
-        return Ok(Some(u64::from(matches)));
+        return Ok(Some(ClosedLogicalMask::scalar(matches)));
     }
     if matches!(name, "seq" | "sneq")
         || !matches!(output_schema.body(), SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool)
@@ -4058,12 +4263,12 @@ fn closed_comparison_population(
             _ => unreachable!("comparison operation checked above"),
         }
     };
-    let mut population = 0_u64;
+    let mut values = Vec::with_capacity(output_len);
     let mut string_comparison_work = 0_u64;
-    for row in 0..rows {
-        for column in 0..columns {
-            let left_index = (row % left.rows) * left.columns + column % left.columns;
-            let right_index = (row % right.rows) * right.columns + column % right.columns;
+    for column in 0..columns {
+        for row in 0..rows {
+            let left_index = (row % left.rows) + (column % left.columns) * left.rows;
+            let right_index = (row % right.rows) + (column % right.columns) * right.rows;
             if aggregate_comparison {
                 let Some(left_work) = closed_snapshot_element_comparison_work(
                     &mut comparison_meter,
@@ -4103,14 +4308,31 @@ fn closed_comparison_population(
                     return Ok(None);
                 }
             }
-            if compare(&left_values[left_index], &right_values[right_index]) {
-                population = population
-                    .checked_add(1)
-                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-            }
+            values.push(compare(
+                &left_values[left_index],
+                &right_values[right_index],
+            ));
         }
     }
-    Ok(Some(population))
+    Ok(Some(ClosedLogicalMask {
+        rows,
+        columns,
+        values,
+    }))
+}
+
+#[cfg(test)]
+fn closed_comparison_population(
+    artifact: &ProgramArtifact,
+    node: NodeId,
+    facts: &ActivationFacts,
+) -> Result<Option<u64>, ResidentActivationError> {
+    closed_comparison_mask(artifact, node, facts)?
+        .map(|mask| {
+            mask.population()
+                .ok_or(ResidentActivationError::RegionSizeOverflow)
+        })
+        .transpose()
 }
 
 fn complete_activation_shape_facts(
@@ -4157,15 +4379,20 @@ fn complete_activation_shape_facts(
                 "horzcat" | "vertcat" | "transpose"
             ))
             || (operation.operation.module_path.as_ref() == ["logic"]
-                && operation.operation.operation_name == "not");
+                && matches!(
+                    operation.operation.operation_name.as_str(),
+                    "not" | "and" | "or" | "xor"
+                ));
         if propagates_population {
             pending_logical_sources.extend(node_inputs(artifact, node)?);
         }
     }
-    // Concatenation, transpose, and negation derive populations from logical
-    // inputs. Track only statically known populations; live masks require an
-    // explicit output shape and are revalidated on every turn.
+    // Closed logical operations retain their exact masks so binary operations
+    // can account for overlap instead of trying to combine populations alone.
+    // Live masks still require an explicit output shape and are revalidated on
+    // every turn.
     let mut logical_populations = BTreeMap::<ArtifactSource, u64>::new();
+    let mut logical_masks = BTreeMap::<ArtifactSource, ClosedLogicalMask>::new();
     for node_id in &schedule.nodes {
         let Some(node) = artifact.nodes()[node_id.get() as usize].as_operation() else {
             continue;
@@ -4177,9 +4404,13 @@ fn complete_activation_shape_facts(
         let output = node_output_slot(artifact, node.node)?;
         if class == NodeClass::Activation
             && required_logical_populations.contains(&ArtifactSource::Slot(output))
-            && let Some(population) = closed_comparison_population(artifact, node.node, &facts)?
+            && let Some(mask) = closed_comparison_mask(artifact, node.node, &facts)?
         {
+            let population = mask
+                .population()
+                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
             logical_populations.insert(ArtifactSource::Slot(output), population);
+            logical_masks.insert(ArtifactSource::Slot(output), mask);
         }
         if node.operation.module_path.as_ref() == ["matrix"]
             && required_logical_populations.contains(&ArtifactSource::Slot(output))
@@ -4188,9 +4419,23 @@ fn complete_activation_shape_facts(
                 "horzcat" | "vertcat"
             )
         {
-            let population = node_inputs(artifact, node.node)?.iter().try_fold(
-                Some(0_u64),
-                |total, source| match (
+            let inputs = node_inputs(artifact, node.node)?;
+            let masks = inputs
+                .iter()
+                .copied()
+                .map(|source| logical_selector_mask(artifact, source, &facts, &logical_masks))
+                .collect::<Option<Vec<_>>>();
+            if let Some(mask) = masks.and_then(|masks| {
+                concatenate_closed_logical_masks(node.operation.operation_name == "horzcat", &masks)
+            }) {
+                let population = mask
+                    .population()
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                logical_populations.insert(ArtifactSource::Slot(output), population);
+                logical_masks.insert(ArtifactSource::Slot(output), mask);
+            }
+            let population = inputs.iter().try_fold(Some(0_u64), |total, source| {
+                match (
                     total,
                     logical_selector_population(artifact, *source, &logical_populations),
                 ) {
@@ -4199,8 +4444,8 @@ fn complete_activation_shape_facts(
                         .map(Some)
                         .ok_or(ResidentActivationError::RegionSizeOverflow),
                     _ => Ok(None),
-                },
-            )?;
+                }
+            })?;
             if let Some(population) = population {
                 logical_populations.insert(ArtifactSource::Slot(output), population);
             }
@@ -4213,6 +4458,15 @@ fn complete_activation_shape_facts(
             let [source] = inputs.as_slice() else {
                 continue;
             };
+            if let Some(mask) = logical_selector_mask(artifact, *source, &facts, &logical_masks)
+                .and_then(|mask| mask.transpose())
+            {
+                let population = mask
+                    .population()
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                logical_populations.insert(ArtifactSource::Slot(output), population);
+                logical_masks.insert(ArtifactSource::Slot(output), mask);
+            }
             if let Some(population) =
                 logical_selector_population(artifact, *source, &logical_populations)
             {
@@ -4227,6 +4481,17 @@ fn complete_activation_shape_facts(
             let [source] = inputs.as_slice() else {
                 continue;
             };
+            if let Some(mut mask) = logical_selector_mask(artifact, *source, &facts, &logical_masks)
+            {
+                for value in &mut mask.values {
+                    *value = !*value;
+                }
+                let population = mask
+                    .population()
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                logical_populations.insert(ArtifactSource::Slot(output), population);
+                logical_masks.insert(ArtifactSource::Slot(output), mask);
+            }
             if let Some(population) =
                 logical_selector_population(artifact, *source, &logical_populations)
             {
@@ -4237,6 +4502,23 @@ fn complete_activation_shape_facts(
                 if let Some(population) = element_count.checked_sub(population) {
                     logical_populations.insert(ArtifactSource::Slot(output), population);
                 }
+            }
+        }
+        if node.operation.module_path.as_ref() == ["logic"]
+            && matches!(node.operation.operation_name.as_str(), "and" | "or" | "xor")
+            && required_logical_populations.contains(&ArtifactSource::Slot(output))
+        {
+            let inputs = node_inputs(artifact, node.node)?;
+            if let [left, right] = inputs.as_slice()
+                && let Some(left) = logical_selector_mask(artifact, *left, &facts, &logical_masks)
+                && let Some(right) = logical_selector_mask(artifact, *right, &facts, &logical_masks)
+                && let Some(mask) = left.binary(&right, node.operation.operation_name.as_str())
+            {
+                let population = mask
+                    .population()
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                logical_populations.insert(ArtifactSource::Slot(output), population);
+                logical_masks.insert(ArtifactSource::Slot(output), mask);
             }
         }
         if facts.slot_shapes.contains_key(&output) {
@@ -8273,6 +8555,7 @@ mod shape_fact_tests {
         let depth = 16;
         let artifact = repeated_composite_pack_artifact(depth);
         let construction_budget = ClosedOperandConstructionBudget::default();
+        let schema_context = ClosedOperandSchemaContext::default();
         assert!(
             constant_comparison_operand(
                 &artifact,
@@ -8280,10 +8563,65 @@ mod shape_fact_tests {
                 ArtifactSource::Slot(CellSlotId::new(depth - 1)),
                 &ActivationFacts::default(),
                 &construction_budget,
+                &schema_context,
                 false,
             )
             .unwrap()
             .is_none()
+        );
+    }
+
+    #[test]
+    fn closed_composite_folding_reuses_one_schema_context() {
+        let depth = 2;
+        let artifact = repeated_composite_pack_artifact(depth);
+        let schema_context = ClosedOperandSchemaContext::default();
+        assert!(schema_context.schemas.get().is_none());
+        for _ in 0..2 {
+            assert!(
+                constant_comparison_operand(
+                    &artifact,
+                    NodeId::new(depth - 1),
+                    ArtifactSource::Slot(CellSlotId::new(depth - 1)),
+                    &ActivationFacts::default(),
+                    &ClosedOperandConstructionBudget::default(),
+                    &schema_context,
+                    false,
+                )
+                .unwrap()
+                .is_some()
+            );
+        }
+        let shared = schema_context.schemas.get().unwrap();
+        assert!(std::sync::Arc::ptr_eq(
+            shared,
+            &schema_context.schemas(&artifact),
+        ));
+    }
+
+    #[test]
+    fn closed_logical_masks_follow_dense_broadcast_order() {
+        let matrix = ClosedLogicalMask {
+            rows: 2,
+            columns: 3,
+            values: vec![true, false, false, true, true, false],
+        };
+        let row = ClosedLogicalMask {
+            rows: 1,
+            columns: 3,
+            values: vec![false, true, false],
+        };
+        assert_eq!(
+            matrix.binary(&row, "and").unwrap().values,
+            [false, false, false, true, false, false],
+        );
+        assert_eq!(
+            matrix.binary(&row, "or").unwrap().values,
+            [true, false, true, true, true, false],
+        );
+        assert_eq!(
+            matrix.binary(&row, "xor").unwrap().values,
+            [true, false, true, false, true, false],
         );
     }
 

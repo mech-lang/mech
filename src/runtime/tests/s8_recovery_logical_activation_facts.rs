@@ -96,6 +96,20 @@ fn closed_comparison_masks_share_broadcast_and_ordering_semantics() {
 }
 
 #[test]
+fn closed_binary_logical_masks_publish_exact_populations() {
+    exact_closed_mask(
+        "x := [42 43]\np := logic/and(1 < 2, 2 < 3)\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    for (operation, expected) in [("and", "[2]"), ("or", "[1; 2; 3]"), ("xor", "[1; 3]")] {
+        exact_closed_mask(
+            &format!("x := [1 2 3]\nmask := logic/{operation}(x > 1, x < 3)\nx[mask]\n"),
+            expected,
+        );
+    }
+}
+
+#[test]
 fn closed_whole_value_comparisons_have_scalar_populations() {
     exact_closed_mask(
         "x := [42 43]\np := [1 2] === [1 2]\nmask := [p false]\nx[mask]\n",
