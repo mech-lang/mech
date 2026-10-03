@@ -1,4 +1,3 @@
-#[cfg(feature = "semantic-compiler")]
 use mech_core::ChangeDetectionPolicy;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -27,14 +26,12 @@ pub enum EkfPredicate {
     CovarianceSymmetric,
 }
 
-#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum FrozenEkfOperation {
     Kernel(EkfKernel),
     Predicate(EkfPredicate),
 }
 
-#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum FrozenEkfValueShape {
     F64,
@@ -43,7 +40,6 @@ pub(crate) enum FrozenEkfValueShape {
     Matrix { rows: usize, columns: usize },
 }
 
-#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct FrozenEkfOperationSpec {
     pub operation: FrozenEkfOperation,
@@ -52,6 +48,70 @@ pub(crate) struct FrozenEkfOperationSpec {
     pub inputs: &'static [FrozenEkfValueShape],
     pub output: FrozenEkfValueShape,
     pub change_detection: ChangeDetectionPolicy,
+}
+
+pub(crate) fn closed_operation(name: &str) -> Option<&'static FrozenEkfOperationSpec> {
+    FROZEN_EKF_OPERATIONS
+        .iter()
+        .find(|spec| spec.module_item == name)
+}
+
+pub(crate) enum ClosedEkfResult {
+    Numbers { values: [f64; 9], count: usize },
+    Bool(bool),
+}
+
+/// Allocation-free adapter to the exact mathematics used by resident kernels.
+/// Callers validate the maintained arity/layout and admit fixed buffers first.
+pub(crate) fn evaluate_closed(
+    operation: FrozenEkfOperation,
+    inputs: &[[f64; 9]; 4],
+) -> Result<ClosedEkfResult, super::math::EkfMathError> {
+    use super::math;
+    fn array<const N: usize>(input: &[f64; 9]) -> [f64; N] {
+        core::array::from_fn(|index| input[index])
+    }
+    fn numbers<const N: usize>(input: [f64; N]) -> ClosedEkfResult {
+        let mut values = [0.0; 9];
+        values[..N].copy_from_slice(&input);
+        ClosedEkfResult::Numbers { values, count: N }
+    }
+    let [a, b, c, d] = inputs;
+    Ok(match operation {
+        Kernel(TrigonometricState) => numbers(math::trigonometric_state(&array(a))),
+        Kernel(MotionJacobian) => numbers(math::motion_jacobian(&array(b), &array(c), d[0])),
+        Kernel(ControlJacobian) => numbers(math::control_jacobian(&array(a), b[0])),
+        Kernel(PredictedState) => {
+            numbers(math::predicted_state(&array(a), &array(b), &array(c), d[0]))
+        }
+        Kernel(PredictedCovariance) => {
+            numbers(math::predicted_covariance(a, b, &array(c), &array(d)))
+        }
+        Kernel(LandmarkDeltaAndRange) => {
+            numbers(math::landmark_delta_and_range(&array(a), &array(b))?)
+        }
+        Kernel(PredictedMeasurement) => numbers(math::predicted_measurement(&array(a), &array(b))),
+        Kernel(MeasurementJacobian) => numbers(math::measurement_jacobian(&array(a))),
+        Kernel(InnovationCovariance) => {
+            numbers(math::innovation_covariance(a, &array(b), &array(c)))
+        }
+        Kernel(Solve2x2) => numbers(math::solve_2x2(&array(a))?),
+        Kernel(KalmanGain) => numbers(math::kalman_gain(a, &array(b), &array(c))),
+        Kernel(Innovation) => numbers(math::innovation(&array(a), &array(b))),
+        Kernel(CorrectedState) => numbers(math::corrected_state(&array(a), &array(b), &array(c))),
+        Kernel(JosephCovarianceUpdate) => numbers(math::joseph_covariance_update(
+            a,
+            &array(b),
+            &array(c),
+            &array(d),
+        )),
+        Kernel(CovarianceSymmetrization) => numbers(math::covariance_symmetrization(a)),
+        Predicate(CandidateFinite) => ClosedEkfResult::Bool(math::candidate_finite(&array(a), b)),
+        Predicate(CovariancePositiveDiagonal) => {
+            ClosedEkfResult::Bool(math::covariance_positive_diagonal(a))
+        }
+        Predicate(CovarianceSymmetric) => ClosedEkfResult::Bool(math::covariance_symmetric(a)),
+    })
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -81,45 +141,32 @@ pub(crate) struct EkfScratch {
     pub symmetrized_covariance: [f64; 9],
 }
 
-#[cfg(feature = "semantic-compiler")]
 use ChangeDetectionPolicy::{ExactScalar, KernelReported};
-#[cfg(feature = "semantic-compiler")]
 use EkfKernel::*;
-#[cfg(feature = "semantic-compiler")]
 use EkfPredicate::*;
-#[cfg(feature = "semantic-compiler")]
 use FrozenEkfOperation::{Kernel, Predicate};
-#[cfg(feature = "semantic-compiler")]
 use FrozenEkfValueShape::{Bool, F64, Matrix, Vector};
 
-#[cfg(feature = "semantic-compiler")]
 const V2: FrozenEkfValueShape = Vector(2);
-#[cfg(feature = "semantic-compiler")]
 const V3: FrozenEkfValueShape = Vector(3);
-#[cfg(feature = "semantic-compiler")]
 const V4: FrozenEkfValueShape = Vector(4);
-#[cfg(feature = "semantic-compiler")]
 const M2: FrozenEkfValueShape = Matrix {
     rows: 2,
     columns: 2,
 };
-#[cfg(feature = "semantic-compiler")]
 const M3: FrozenEkfValueShape = Matrix {
     rows: 3,
     columns: 3,
 };
-#[cfg(feature = "semantic-compiler")]
 const M2X3: FrozenEkfValueShape = Matrix {
     rows: 2,
     columns: 3,
 };
-#[cfg(feature = "semantic-compiler")]
 const M3X2: FrozenEkfValueShape = Matrix {
     rows: 3,
     columns: 2,
 };
 
-#[cfg(feature = "semantic-compiler")]
 macro_rules! spec {
     ($operation:expr, $item:literal, $inputs:expr, $output:expr, $change:expr $(,)?) => {
         FrozenEkfOperationSpec {
@@ -133,7 +180,6 @@ macro_rules! spec {
     };
 }
 
-#[cfg(feature = "semantic-compiler")]
 pub(crate) const FROZEN_EKF_OPERATIONS: [FrozenEkfOperationSpec; 18] = [
     spec!(
         Kernel(TrigonometricState),

@@ -562,6 +562,7 @@ pub(crate) struct AdmittedMutationPlan<P> {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(crate) struct ResidentBudgetMeter {
     accumulated: KernelCostEstimate,
+    analysis_allowance: Option<(u64, u64)>,
 }
 
 /// Authority proving one complete checked estimate passed central resident
@@ -587,6 +588,20 @@ pub(crate) struct AdmittedKernel<P> {
 }
 
 impl KernelCostEstimate {
+    pub(crate) fn check_analysis_limits(self) -> Result<(), ResidentKernelError> {
+        if self.demand.output_elements > mech_core::RESIDENT_MAX_OUTPUT_ELEMENTS as u64
+            || self.demand.persistent_bytes > mech_core::RESIDENT_MAX_BYTES
+            || self.temporary_bytes() > mech_core::RESIDENT_MAX_BYTES
+            || self.cloned_bytes() > mech_core::RESIDENT_MAX_BYTES
+            || self.retained_nodes() > mech_core::RESIDENT_MAX_RETAINED_NODES
+            || self.compute_work() > MAX_RESIDENT_COMPUTE_WORK
+            || self.comparison_work() > MAX_RESIDENT_COMPARISON_WORK
+        {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(())
+    }
+
     pub(crate) const fn comparison_work(self) -> u64 {
         self.demand.work.comparison
     }
@@ -811,6 +826,17 @@ impl<P> PreparedKernel<P> {
         })
     }
 
+    /// Reserve a closed construction under analysis authority, without
+    /// manufacturing a turn permit or invoking a resident executor.
+    pub(crate) fn prepare_for_analysis(
+        self,
+        admit: impl FnOnce(KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    ) -> Result<P, ResidentKernelError> {
+        self.cost.check_analysis_limits()?;
+        admit(self.cost)?;
+        Ok(self.plan)
+    }
+
     /// Admit work performed by a control node outside an ordinary kernel
     /// call. Match result conversion owns its payload through the control
     /// write scope, while this permit validates and accumulates the complete
@@ -867,6 +893,18 @@ impl<P> PreparedMutationPlan<P> {
             operation: self.operation,
             _permit: self.cost.turn_plan(Some(self.final_output))?,
         })
+    }
+
+    /// Analysis owns a separate cumulative allowance. This authorizes only
+    /// closed-value construction, never a resident turn or publication.
+    #[cfg(feature = "table")]
+    pub(crate) fn prepare_for_analysis(
+        self,
+        admit: impl FnOnce(KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    ) -> Result<P, ResidentKernelError> {
+        self.cost.check_analysis_limits()?;
+        admit(self.cost)?;
+        Ok(self.operation)
     }
 }
 
@@ -979,7 +1017,7 @@ pub(crate) fn preflight_canonical_data_finalization(
     data: &ValueData,
 ) -> Result<u64, ResidentKernelError> {
     measure_canonical_data_comparison_work(meter, schema, data)?;
-    let remaining = meter.estimate().remaining_incremental_work()?;
+    let remaining = meter.remaining_incremental_work()?;
     let budget = SnapshotCanonicalizationBudget::new(remaining);
     let work = mech_core::snapshot::canonical_data_draft_finalization_work_with_budget(
         schema, data, &budget,
@@ -1123,13 +1161,59 @@ impl<P> AdmittedMutationPlan<P> {
 }
 
 impl ResidentBudgetMeter {
+    /// Explicit borrowed measurement outside a turn. Default meters retain
+    /// their turn-only authority in both production and test builds.
+    pub(crate) fn for_closed_analysis(compute: u64, comparison: u64) -> Self {
+        Self {
+            accumulated: KernelCostEstimate::default(),
+            analysis_allowance: Some((compute, comparison)),
+        }
+    }
+
+    pub(crate) fn preflight_meter(&self) -> Result<Self, ResidentKernelError> {
+        Ok(match self.analysis_allowance {
+            Some((compute, comparison)) => Self::for_closed_analysis(
+                compute
+                    .checked_sub(self.accumulated.compute_work())
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                comparison
+                    .checked_sub(self.accumulated.comparison_work())
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            ),
+            None => Self::default(),
+        })
+    }
+
+    pub(crate) fn remaining_incremental_work(&self) -> Result<u64, ResidentKernelError> {
+        if let Some((compute, comparison)) = self.analysis_allowance {
+            self.accumulated.check_analysis_limits()?;
+            Ok(compute
+                .checked_sub(self.accumulated.compute_work())
+                .ok_or(ResidentKernelError::InvalidShape)?
+                .min(
+                    comparison
+                        .checked_sub(self.accumulated.comparison_work())
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                ))
+        } else {
+            self.accumulated.remaining_incremental_work()
+        }
+    }
+
     fn charge(
         &mut self,
         update: impl FnOnce(&mut KernelCostEstimate) -> Result<(), ResidentKernelError>,
     ) -> Result<(), ResidentKernelError> {
         let mut next = self.accumulated;
         update(&mut next)?;
-        next.check_planning_progress()?;
+        if let Some((compute, comparison)) = self.analysis_allowance {
+            next.check_analysis_limits()?;
+            if next.compute_work() > compute || next.comparison_work() > comparison {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+        } else {
+            next.check_planning_progress()?;
+        }
         self.accumulated = next;
         Ok(())
     }

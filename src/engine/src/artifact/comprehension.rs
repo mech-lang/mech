@@ -799,7 +799,7 @@ fn validate_pattern(
 }
 
 impl<S, V> CollectionPattern<S, V> {
-    #[cfg(feature = "source")]
+    #[cfg(any(feature = "source", feature = "resident-artifact"))]
     pub(crate) fn map<T, W>(
         &self,
         schema: &impl Fn(&S) -> T,

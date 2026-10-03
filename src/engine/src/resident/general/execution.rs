@@ -1,7 +1,7 @@
 //! Candidate execution for the schema-driven resident plan.
 
 #[path = "comprehension_execution.rs"]
-mod comprehension_execution;
+pub(super) mod comprehension_execution;
 
 pub(super) use comprehension_execution::StructuralProjectionTable;
 

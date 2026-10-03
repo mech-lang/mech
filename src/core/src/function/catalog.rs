@@ -1026,6 +1026,14 @@ impl FunctionCatalog {
     pub fn resident_factory_count(&self) -> usize {
         self.resident_factories.len()
     }
+
+    /// Inspect the selected resident profile for qualification. Entries are
+    /// metadata only; enumerating them does not bind or execute custom code.
+    pub fn resident_factories(
+        &self,
+    ) -> impl ExactSizeIterator<Item = (&ResidentOperationKey, &ResidentKernelFactoryEntry)> {
+        self.resident_factories.iter()
+    }
 }
 
 pub(crate) fn runtime_input_storage_mismatch(

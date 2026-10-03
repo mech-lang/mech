@@ -6234,7 +6234,7 @@ impl SemanticBuilder {
         let mut inputs = Vec::new();
         let mut counts = Vec::new();
         let mut scalar = Vec::new();
-        for selector in &selectors {
+        for (selector_ordinal, selector) in selectors.iter().enumerate() {
             match selector {
                 None => {
                     counts.push(None);
@@ -6282,13 +6282,27 @@ impl SemanticBuilder {
                     // A logical selector's extent bounds its population; it does
                     // not determine how many source elements are selected.
                     let count = if logical {
+                        // Valid matrix masks must match the selected source
+                        // axis (or its linear cardinality). Bound population
+                        // by that geometry, not an otherwise unobserved mask
+                        // extent parameter from a lexical control result.
+                        let upper_bound = match &body {
+                            SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => {
+                                if selectors.len() == 1 {
+                                    DimensionExpr::Multiply(dimensions.clone())
+                                } else {
+                                    dimensions[selector_ordinal].clone()
+                                }
+                            }
+                            _ => count,
+                        };
                         let id = DimensionParameterId::new(parameters.len() as u32);
                         parameters.push(DimensionParameterDeclaration {
                             id,
                             origin: DimensionParameterOrigin::Inferred,
                             lifetime: DimensionLifetime::Turn,
                             lower_bound: DimensionExpr::Constant(0),
-                            upper_bound: Some(count),
+                            upper_bound: Some(upper_bound),
                         });
                         DimensionExpr::Parameter(id)
                     } else {

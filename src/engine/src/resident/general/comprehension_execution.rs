@@ -23,7 +23,7 @@ struct ComprehensionLiveLocalFootprint {
 }
 
 #[derive(Clone, Copy)]
-pub(super) enum Item {
+pub(in crate::resident::general) enum Item {
     Bool(bool),
     Index(u64),
     F64(f64),
@@ -77,6 +77,42 @@ fn completed_set_shape_values(
         .map_err(|_| ResidentKernelError::InvalidShape)
 }
 
+/// The resident and closed-analysis paths publish the same component-derived
+/// witness. In particular, matching extents do not authorize retaining a
+/// different parameter assignment supplied to the enclosing control.
+pub(in crate::resident::general) fn completed_matrix_shape(
+    schema: &Schema,
+    element: SchemaBody,
+    dimensions: Box<[DimensionExpr]>,
+) -> Result<mech_core::ShapeInstance, ResidentKernelError> {
+    let actual = SchemaBody::Matrix {
+        element: Box::new(element),
+        dimensions,
+    };
+    mech_core::shape_for_schema_components(schema, &[(schema.body(), actual)], None)
+        .map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+pub(in crate::resident::general) fn normalize_collection_set(
+    element: &SchemaBody,
+    values: &mut Vec<ValueDataDraft>,
+) -> Result<(), ResidentKernelError> {
+    if values.iter().any(|value| Item::from_draft(value).is_none()) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let compare = |left: &ValueDataDraft, right: &ValueDataDraft| {
+        mech_core::snapshot::compare_key_data(
+            element,
+            &Item::from_draft(left).expect("checked primitive").data(),
+            &Item::from_draft(right).expect("checked primitive").data(),
+        )
+        .expect("validated primitive collection element")
+    };
+    values.sort_unstable_by(compare);
+    values.dedup_by(|left, right| compare(left, right).is_eq());
+    Ok(())
+}
+
 fn closed_yield_body(
     value: ResidentValueRef<'_>,
     region: ResidentRegion,
@@ -106,7 +142,7 @@ fn closed_yield_body(
         .map_err(|_| ResidentKernelError::InvalidShape)
 }
 
-fn lower_bound_yield_body(
+pub(in crate::resident::general) fn lower_bound_yield_body(
     schema: SchemaId,
     schemas: &SchemaTable,
 ) -> Result<SchemaBody, ResidentKernelError> {
@@ -121,7 +157,7 @@ fn lower_bound_yield_body(
 }
 
 #[derive(Clone, Debug)]
-pub(super) enum PatternItem {
+pub(in crate::resident::general) enum PatternItem {
     Plain(ValueDataDraft),
     Dynamic(Option<Box<ValueDraft>>),
     Component {
@@ -143,7 +179,7 @@ pub(super) enum PatternItem {
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct SourceSchemaContext {
+pub(in crate::resident::general) struct SourceSchemaContext {
     owner: Arc<SchemaTable>,
     schemas: Arc<SchemaTable>,
     projections: StructuralProjectionTable,
@@ -151,11 +187,11 @@ pub(super) struct SourceSchemaContext {
     binding_schema_index: Arc<[(SchemaKey, SchemaId)]>,
 }
 
-pub(super) struct PatternBindingItem {
-    pub(super) shape_values: Box<[u64]>,
-    pub(super) data: ValueDataDraft,
-    pub(super) schemas: Option<std::sync::Arc<SchemaTable>>,
-    pub(super) schema_index: Option<Arc<[(SchemaKey, SchemaId)]>>,
+pub(in crate::resident::general) struct PatternBindingItem {
+    pub(in crate::resident::general) shape_values: Box<[u64]>,
+    pub(in crate::resident::general) data: ValueDataDraft,
+    pub(in crate::resident::general) schemas: Option<std::sync::Arc<SchemaTable>>,
+    pub(in crate::resident::general) schema_index: Option<Arc<[(SchemaKey, SchemaId)]>>,
     footprint: BindingFootprint,
 }
 
@@ -381,7 +417,10 @@ impl StructuralProjectionTable {
             .flatten()
     }
 
-    fn matrix_element(&self, parent: SchemaId) -> Option<SchemaId> {
+    pub(in crate::resident::general) fn matrix_element(
+        &self,
+        parent: SchemaId,
+    ) -> Option<SchemaId> {
         self.entries.get(parent.get() as usize)?.matrix_element
     }
 
@@ -492,7 +531,7 @@ fn collect_projection_schemas(
     Ok(())
 }
 
-pub(super) fn structural_projection_schema_context(
+pub(in crate::resident::general) fn structural_projection_schema_context(
     schemas: &SchemaTable,
 ) -> Result<(SchemaTable, StructuralProjectionTable), SemanticModelError> {
     let mut projections = SchemaTableBuilder::new();
@@ -531,16 +570,28 @@ fn indexed_schema_id(index: &[(SchemaKey, SchemaId)], key: SchemaKey) -> Option<
         .map(|position| index[position].1)
 }
 
+#[cfg(test)]
 fn source_schema_contexts(
     value: &mech_core::snapshot::Value,
     plan_schemas: &SchemaTable,
 ) -> Option<(Arc<SourceSchemaContext>, Arc<[Arc<SourceSchemaContext>]>)> {
-    let root_owner = value.schemas()?;
     let mut discovery_meter = ResidentBudgetMeter::default();
+    source_schema_contexts_with_admission(value, plan_schemas, &mut discovery_meter, &mut None)
+}
+
+fn source_schema_contexts_with_admission(
+    value: &Value,
+    plan_schemas: &SchemaTable,
+    discovery_meter: &mut ResidentBudgetMeter,
+    admit: &mut Option<
+        &mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    >,
+) -> Option<(Arc<SourceSchemaContext>, Arc<[Arc<SourceSchemaContext>]>)> {
+    let root_owner = value.schemas()?;
     // The same admitted collector is used by the preflight and by actual
     // context construction. It stores every occurrence once, sorts by Arc
     // identity, and deduplicates before any owner closure is built.
-    let owners = distinct_source_owners(value, &mut discovery_meter).ok()?;
+    let owners = distinct_source_owners(value, discovery_meter, admit).ok()?;
     let projected = owners
         .owners
         .into_iter()
@@ -618,6 +669,9 @@ struct DistinctSourceOwners {
 fn distinct_source_owners(
     value: &Value,
     meter: &mut ResidentBudgetMeter,
+    admit: &mut Option<
+        &mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    >,
 ) -> Result<DistinctSourceOwners, ResidentKernelError> {
     let mut occurrences = 0_u64;
     visit_value_schema_owners(value, meter, &mut |_, _| {
@@ -634,15 +688,13 @@ fn distinct_source_owners(
         .checked_mul(occurrences.max(1).ilog2() as u64 + 1)
         .ok_or(ResidentKernelError::InvalidShape)?;
     meter.charge_comparison_work(sort_work)?;
-    PreparedKernel::new(
-        (),
+    admit_source_context_scratch(
         budget::resident_cost! {
             temporary_bytes: minimum_bytes,
             ..meter.estimate()
         },
-    )
-    .admit_control()?
-    .into_plan();
+        admit,
+    )?;
 
     let mut owners = Vec::new();
     owners
@@ -651,15 +703,13 @@ fn distinct_source_owners(
     let allocation_bytes = budget::checked_u64(owners.capacity())?
         .checked_mul(core::mem::size_of::<Arc<SchemaTable>>() as u64)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    PreparedKernel::new(
-        (),
+    admit_source_context_scratch(
         budget::resident_cost! {
             temporary_bytes: allocation_bytes,
             ..meter.estimate()
         },
-    )
-    .admit_control()?
-    .into_plan();
+        admit,
+    )?;
     visit_value_schema_owners(value, meter, &mut |owner, _| {
         owners.push(Arc::clone(owner));
         Ok(())
@@ -670,6 +720,20 @@ fn distinct_source_owners(
         owners,
         allocation_bytes,
     })
+}
+
+fn admit_source_context_scratch(
+    cost: budget::KernelCostEstimate,
+    admit: &mut Option<
+        &mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    >,
+) -> Result<(), ResidentKernelError> {
+    if let Some(admit) = admit {
+        PreparedKernel::new((), cost).prepare_for_analysis(admit)?;
+    } else {
+        PreparedKernel::new((), cost).admit_control()?.into_plan();
+    }
+    Ok(())
 }
 
 impl SourceContextMaterializationBound {
@@ -687,7 +751,7 @@ impl SourceContextMaterializationBound {
                 .saturating_add(1),
         );
         meter.charge_comparison_work(budget::checked_u64(owner.len())?)?;
-        let remaining = meter.estimate().remaining_incremental_work()?;
+        let remaining = meter.remaining_incremental_work()?;
         let closure_budget = SnapshotCanonicalizationBudget::new(remaining);
         let (retained, construction, schema_nodes) = owner
             .component_closure_bounds_with_budget(&closure_budget)
@@ -753,9 +817,12 @@ fn source_context_materialization_bound(
     value: &mech_core::snapshot::Value,
     plan_schemas: &SchemaTable,
     meter: &mut ResidentBudgetMeter,
+    admit: &mut Option<
+        &mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    >,
 ) -> Result<SourceContextMaterializationBound, ResidentKernelError> {
     let mut bound = SourceContextMaterializationBound::default();
-    let owners = distinct_source_owners(value, meter)?;
+    let owners = distinct_source_owners(value, meter, admit)?;
     bound.temporary_bytes = owners.allocation_bytes;
     for owner in &owners.owners {
         bound.add_owner(owner, meter)?;
@@ -1122,7 +1189,7 @@ fn binding_shape_observation(target: &SchemaBody, actual: &SchemaBody) -> Option
     }
 }
 
-pub(super) fn binding_schema_owner(
+pub(in crate::resident::general) fn binding_schema_owner(
     schema: SchemaId,
     plan_schemas: &std::sync::Arc<SchemaTable>,
     source_schemas: Option<std::sync::Arc<SchemaTable>>,
@@ -1141,7 +1208,7 @@ pub(super) fn binding_schema_owner(
     Ok((schema, source_schemas))
 }
 
-pub(super) fn finalize_pattern_binding(
+pub(in crate::resident::general) fn finalize_pattern_binding(
     schema: SchemaId,
     shape_values: &[u64],
     data: ValueDataDraft,
@@ -1289,14 +1356,14 @@ impl PatternItem {
             .ok_or(ResidentKernelError::InvalidShape)
     }
 
-    pub(super) fn new(data: ValueDataDraft) -> Self {
+    pub(in crate::resident::general) fn new(data: ValueDataDraft) -> Self {
         match data {
             ValueDataDraft::Dynamic(value) => Self::Dynamic(value),
             data => Self::Plain(data),
         }
     }
 
-    pub(super) fn enum_variant(
+    pub(in crate::resident::general) fn enum_variant(
         &self,
         schemas: &SchemaTable,
     ) -> Result<Option<(u32, Option<Self>)>, ResidentKernelError> {
@@ -1462,7 +1529,7 @@ impl PatternItem {
         Ok(Some(data))
     }
 
-    pub(super) fn data(&self) -> Option<&ValueDataDraft> {
+    pub(in crate::resident::general) fn data(&self) -> Option<&ValueDataDraft> {
         match self {
             Self::Plain(data) => Some(data),
             Self::Dynamic(Some(value)) => Self::dynamic_data(value),
@@ -1472,11 +1539,11 @@ impl PatternItem {
         }
     }
 
-    pub(super) fn scalar(&self) -> Option<Item> {
+    pub(in crate::resident::general) fn scalar(&self) -> Option<Item> {
         self.data().and_then(Item::from_draft)
     }
 
-    pub(super) fn structural_len(&self, tuple: bool) -> Option<usize> {
+    pub(in crate::resident::general) fn structural_len(&self, tuple: bool) -> Option<usize> {
         match (tuple, self.data()?) {
             (true, ValueDataDraft::Tuple(items)) | (false, ValueDataDraft::Matrix(items)) => {
                 Some(items.len())
@@ -1485,7 +1552,7 @@ impl PatternItem {
         }
     }
 
-    pub(super) fn child(
+    pub(in crate::resident::general) fn child(
         &self,
         index: usize,
         schemas: &mech_core::SchemaTable,
@@ -1583,7 +1650,7 @@ impl PatternItem {
         }
     }
 
-    pub(super) fn middle(
+    pub(in crate::resident::general) fn middle(
         &self,
         prefix: usize,
         suffix: usize,
@@ -1745,7 +1812,7 @@ impl PatternItem {
         Ok(workspace)
     }
 
-    pub(super) fn into_binding(
+    pub(in crate::resident::general) fn into_binding(
         self,
         binding_schema: SchemaId,
         source_shape_values: &[u64],
@@ -1904,12 +1971,12 @@ impl PatternItem {
     }
 
     #[cfg(test)]
-    pub(super) fn is_atom(&self) -> bool {
+    pub(in crate::resident::general) fn is_atom(&self) -> bool {
         matches!(self.data(), Some(ValueDataDraft::Atom))
     }
 
     #[cfg(test)]
-    pub(super) fn atom_matches(
+    pub(in crate::resident::general) fn atom_matches(
         &self,
         peer: &mech_core::Value,
         schemas: &mech_core::SchemaTable,
@@ -1950,7 +2017,7 @@ impl PatternItem {
         }
     }
 
-    pub(super) fn language_equals(
+    pub(in crate::resident::general) fn language_equals(
         &self,
         peer: ResidentValueRef<'_>,
 
@@ -1973,7 +2040,7 @@ impl PatternItem {
         )
     }
 
-    fn language_equals_with_budget(
+    pub(in crate::resident::general) fn language_equals_with_budget(
         &self,
         peer: ResidentValueRef<'_>,
         peer_region: ResidentRegion,
@@ -2177,7 +2244,7 @@ fn sequence_item(
     ))
 }
 
-fn collection_item(
+pub(in crate::resident::general) fn collection_item(
     value: ResidentValueRef<'_>,
     region: ResidentRegion,
     element_schema: SchemaId,
@@ -2235,7 +2302,10 @@ fn collection_item(
     ))
 }
 
-pub(super) fn dense_collection_offset(region: ResidentRegion, ordinal: usize) -> Option<usize> {
+pub(in crate::resident::general) fn dense_collection_offset(
+    region: ResidentRegion,
+    ordinal: usize,
+) -> Option<usize> {
     let columns = region.shape.columns as usize;
     let rows = region.shape.rows as usize;
     if columns == 0 {
@@ -2517,7 +2587,7 @@ fn generator_shape_values(
     Ok(shape.parameter_values().to_vec().into_boxed_slice())
 }
 
-fn generator_element(
+pub(in crate::resident::general) fn generator_element(
     source_schema: SchemaId,
     element_schema: SchemaId,
     source_shape_values: &[u64],
@@ -2580,13 +2650,37 @@ pub(super) fn retained_item(value: ResidentValueRef<'_>) -> Option<ValueDataDraf
     }
 }
 
-pub(super) fn resident_pattern_item(
+pub(in crate::resident::general) fn resident_pattern_item(
     value: ResidentValueRef<'_>,
     region: ResidentRegion,
     schema: SchemaId,
     shape_values: &[u64],
     schemas: &mech_core::SchemaTable,
     array: bool,
+) -> Option<PatternItem> {
+    resident_pattern_item_with_admission(
+        value,
+        region,
+        schema,
+        shape_values,
+        schemas,
+        array,
+        &mut ResidentBudgetMeter::default(),
+        &mut None,
+    )
+}
+
+pub(in crate::resident::general) fn resident_pattern_item_with_admission(
+    value: ResidentValueRef<'_>,
+    region: ResidentRegion,
+    schema: SchemaId,
+    shape_values: &[u64],
+    schemas: &mech_core::SchemaTable,
+    array: bool,
+    meter: &mut ResidentBudgetMeter,
+    admit: &mut Option<
+        &mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    >,
 ) -> Option<PatternItem> {
     if let ResidentValueRef::Snapshot([Some(value)]) = value {
         let definition = schemas.entry(schema)?;
@@ -2595,7 +2689,8 @@ pub(super) fn resident_pattern_item(
         if value.schema_key() != definition.key() || source != definition.schema() {
             return None;
         }
-        let (context, contexts) = source_schema_contexts(value, schemas)?;
+        let (context, contexts) =
+            source_schema_contexts_with_admission(value, schemas, meter, admit)?;
         let source_schema = value.schema();
         let body = context
             .schemas
@@ -2634,7 +2729,7 @@ pub(super) fn resident_pattern_item(
     ))
 }
 
-pub(super) fn pattern_dynamic_target_depth(
+pub(in crate::resident::general) fn pattern_dynamic_target_depth(
     pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
     schemas: &SchemaTable,
 ) -> Result<u64, ResidentKernelError> {
@@ -2729,6 +2824,38 @@ fn pattern_item_metadata_bound(
 
 pub(super) fn admit_pattern_item_materialization(
     value: ResidentValueRef<'_>,
+    region: ResidentRegion,
+    schema: SchemaId,
+    array: bool,
+    pattern_work: u64,
+    binding_count: u64,
+    equality_count: u64,
+    snapshot_finalization_count: u64,
+    clone_multiplicity: u64,
+    dynamic_target_depth: u64,
+    schemas: &mech_core::SchemaTable,
+) -> Result<u64, ResidentKernelError> {
+    Ok(prepare_pattern_item_materialization(
+        value,
+        region,
+        schema,
+        array,
+        pattern_work,
+        binding_count,
+        equality_count,
+        snapshot_finalization_count,
+        clone_multiplicity,
+        dynamic_target_depth,
+        schemas,
+        ResidentBudgetMeter::default(),
+        None,
+    )?
+    .admit_control()?
+    .into_plan())
+}
+
+pub(in crate::resident::general) fn prepare_pattern_item_materialization(
+    value: ResidentValueRef<'_>,
     _region: ResidentRegion,
     schema: SchemaId,
     array: bool,
@@ -2739,8 +2866,11 @@ pub(super) fn admit_pattern_item_materialization(
     clone_multiplicity: u64,
     dynamic_target_depth: u64,
     schemas: &mech_core::SchemaTable,
-) -> Result<u64, ResidentKernelError> {
-    let mut meter = ResidentBudgetMeter::default();
+    mut meter: ResidentBudgetMeter,
+    mut admit: Option<
+        &mut dyn FnMut(budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    >,
+) -> Result<PreparedKernel<u64>, ResidentKernelError> {
     meter.charge_compute_work(pattern_work)?;
     meter.charge_comparison_work(pattern_work)?;
     let mut canonical_finalization_work = 0;
@@ -2776,11 +2906,11 @@ pub(super) fn admit_pattern_item_materialization(
                 return Err(ResidentKernelError::InvalidInput);
             }
             source_context_bound =
-                source_context_materialization_bound(value, schemas, &mut meter)?;
+                source_context_materialization_bound(value, schemas, &mut meter, &mut admit)?;
             pattern_metadata_bytes = pattern_item_metadata_bound(value, &mut meter)?;
             let footprint = budget::measure_canonical_value_footprint(&mut meter, value, &owner)?;
             if finalization_count > 0 {
-                let mut finalization_meter = ResidentBudgetMeter::default();
+                let mut finalization_meter = meter.preflight_meter()?;
                 canonical_finalization_work = budget::preflight_canonical_data_finalization(
                     &mut finalization_meter,
                     source.body(),
@@ -3015,10 +3145,10 @@ pub(super) fn admit_pattern_item_materialization(
             .and_then(|nodes| adapted_candidate_nodes.checked_mul(3)?.checked_add(nodes))
             .ok_or(ResidentKernelError::InvalidShape)?,
     )?;
-    PreparedKernel::new((), meter.estimate())
-        .admit_control()?
-        .into_plan();
-    Ok(canonical_finalization_work)
+    Ok(PreparedKernel::new(
+        canonical_finalization_work,
+        meter.estimate(),
+    ))
 }
 
 fn pattern_item_copy_multiplicity(
@@ -4722,16 +4852,7 @@ impl ReactiveInstance {
                     ]
                     .into_boxed_slice()
                 };
-                let actual = SchemaBody::Matrix {
-                    element: Box::new(element),
-                    dimensions,
-                };
-                let shape = mech_core::shape_for_schema_components(
-                    schema,
-                    &[(schema.body(), actual)],
-                    None,
-                )
-                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+                let shape = completed_matrix_shape(schema, element, dimensions).map_err(fail)?;
                 (
                     draft_count,
                     footprint,
@@ -4757,18 +4878,7 @@ impl ReactiveInstance {
                 };
                 // The core key relation owns float normalization and set identity.
                 // Admission above covers sorting and finalization before either runs.
-                let compare = |left: &ValueDataDraft, right: &ValueDataDraft| {
-                    let left = Item::from_draft(left)
-                        .expect("binding limits set comprehensions to primitive elements")
-                        .data();
-                    let right = Item::from_draft(right)
-                        .expect("binding limits set comprehensions to primitive elements")
-                        .data();
-                    mech_core::snapshot::compare_key_data(element, &left, &right)
-                        .expect("validated primitive collection element")
-                };
-                values.sort_unstable_by(compare);
-                values.dedup_by(|left, right| compare(left, right).is_eq());
+                normalize_collection_set(element, &mut values).map_err(fail)?;
                 let footprint = values
                     .iter()
                     .try_fold(ValueFootprint::zero(), |total, value| {

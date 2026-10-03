@@ -1,6 +1,6 @@
 //! Borrowed table joins with one admitted staging buffer and atomic canonical publication.
 use super::budget::{
-    self, MutationRetainedNodeFootprint, PreparedKernel, PreparedMutationPlan,
+    self, KernelCostEstimate, MutationRetainedNodeFootprint, PreparedKernel, PreparedMutationPlan,
     PublishedOutputFootprint, ResidentBudgetMeter, checked_cost_product, checked_cost_sum,
     checked_u64,
 };
@@ -13,6 +13,21 @@ use mech_core::{
     ResolvedOperationContract, SchemaBody, SchemaField, SchemaId, SchemaTable, Value, ValueData,
 };
 use std::sync::Arc;
+
+pub(crate) fn closed_join_mode(operation: &crate::OperationReference) -> Option<JoinMode> {
+    if operation.module_path.as_ref() != ["table"] {
+        return None;
+    }
+    Some(match operation.operation_name.as_str() {
+        "join" => JoinMode::Inner,
+        "left-outer-join" => JoinMode::LeftOuter,
+        "right-outer-join" => JoinMode::RightOuter,
+        "full-outer-join" => JoinMode::FullOuter,
+        "left-semi-join" => JoinMode::LeftSemi,
+        "left-anti-join" => JoinMode::LeftAnti,
+        _ => return None,
+    })
+}
 
 type Result<T> = std::result::Result<T, ResidentKernelError>;
 type RowPair = (Option<usize>, Option<usize>);
@@ -109,11 +124,31 @@ fn bind(
     let left = fields(&request.inputs[0])?;
     let right = fields(&request.inputs[1])?;
     let output = fields(&request.output)?;
+    let plan = build_plan(
+        mode,
+        Arc::new(request.schemas.clone()),
+        [request.inputs[0].schema_id, request.inputs[1].schema_id],
+        request.output.schema_id,
+        left,
+        right,
+        output,
+    )?;
+    Ok(BoundResidentKernel::new(execute, Box::new([])).with_retained_state(Arc::new(plan)))
+}
+
+fn build_plan(
+    mode: JoinMode,
+    schemas: Arc<SchemaTable>,
+    input_schemas: [SchemaId; 2],
+    output_schema_id: SchemaId,
+    left: Box<[SchemaField]>,
+    right: Box<[SchemaField]>,
+    output: Box<[SchemaField]>,
+) -> std::result::Result<TableJoinPlan, ResidentKernelBindError> {
     let derived = joined_table_fields(&left, &right, mode)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let output_schema = request
-        .schemas
-        .get(request.output.schema_id)
+    let output_schema = schemas
+        .get(output_schema_id)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let SchemaBody::Table { columns, .. } = output_schema.body() else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -154,21 +189,17 @@ fn bind(
         })
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    Ok(
-        BoundResidentKernel::new(execute, Box::new([])).with_retained_state(Arc::new(
-            TableJoinPlan {
-                mode,
-                input_schemas: [request.inputs[0].schema_id, request.inputs[1].schema_id],
-                output_schema: request.output.schema_id,
-                left,
-                right,
-                output,
-                common,
-                projections,
-                schemas: Arc::new(request.schemas.clone()),
-            },
-        )),
-    )
+    Ok(TableJoinPlan {
+        mode,
+        input_schemas,
+        output_schema: output_schema_id,
+        left,
+        right,
+        output,
+        common,
+        projections,
+        schemas,
+    })
 }
 
 struct CurrentTableSchemas {
@@ -185,6 +216,8 @@ fn current_schemas(
     left: &Value,
     right: &Value,
     previous: Option<&Value>,
+    mut meter: ResidentBudgetMeter,
+    admit: impl FnOnce(KernelCostEstimate) -> Result<()>,
 ) -> Result<CurrentTableSchemas> {
     let mut units = 0u64;
     let mut parameters = 0u64;
@@ -227,7 +260,6 @@ fn current_schemas(
             checked_cost_product(&[parameters + 1, parameters + 1])?,
         ])?,
     ])?;
-    let mut meter = ResidentBudgetMeter::default();
     for value in [Some(left), Some(right), previous].into_iter().flatten() {
         budget::measure_canonical_value_footprint(&mut meter, value, &plan.schemas)?;
     }
@@ -236,7 +268,7 @@ fn current_schemas(
     cost.set_cloned_bytes(bytes);
     cost.set_retained_nodes(checked_cost_sum(&[cost.retained_nodes(), nodes])?);
     cost.set_compute_work(checked_cost_sum(&[cost.compute_work(), work])?)?;
-    PreparedKernel::new((), cost).admit()?.into_plan();
+    admit(cost)?;
     let fields = |value: &Value| match plan
         .schemas
         .get(value.schema())
@@ -425,8 +457,8 @@ fn prepare(
     right: &Table<'_>,
     previous: Option<&Value>,
     current: &CurrentTableSchemas,
-) -> Result<JoinMaterialization> {
-    let mut meter = ResidentBudgetMeter::default();
+    mut meter: ResidentBudgetMeter,
+) -> Result<PreparedMutationPlan<JoinMaterialization>> {
     let left_footprint =
         budget::measure_canonical_value_footprint(&mut meter, left.value, &plan.schemas)?;
     let right_footprint =
@@ -580,9 +612,7 @@ fn prepare(
             normalized_plan: current.nodes,
         },
         cost,
-    )?
-    .admit()
-    .map(|admitted| admitted.into_plan())
+    )
 }
 
 fn execute(
@@ -606,10 +636,63 @@ fn execute(
     let ResidentValueMut::Snapshot([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let current = current_schemas(plan, left_value, right_value, target.as_ref())?;
+    let current = current_schemas(
+        plan,
+        left_value,
+        right_value,
+        target.as_ref(),
+        ResidentBudgetMeter::default(),
+        |cost| {
+            PreparedKernel::new((), cost).admit()?.into_plan();
+            Ok(())
+        },
+    )?;
     let left = Table::new(left_value, &current.left)?;
     let right = Table::new(right_value, &current.right)?;
-    let prepared = prepare(plan, &left, &right, target.as_ref(), &current)?;
+    let prepared = prepare(
+        plan,
+        &left,
+        &right,
+        target.as_ref(),
+        &current,
+        ResidentBudgetMeter::default(),
+    )?
+    .admit()?
+    .into_plan();
+    let next = materialize(
+        plan,
+        left_value,
+        right_value,
+        &current,
+        &left,
+        &right,
+        prepared,
+        ResidentBudgetMeter::default(),
+    )?;
+    let changed = target
+        .as_ref()
+        .map(|previous| {
+            previous
+                .snapshot_eq(&plan.schemas, &next, &plan.schemas)
+                .map(|equal| !equal)
+        })
+        .transpose()
+        .map_err(|_| ResidentKernelError::InvalidOutput)?
+        .unwrap_or(true);
+    *target = Some(next);
+    Ok(changed)
+}
+
+fn materialize(
+    plan: &TableJoinPlan,
+    left_value: &Value,
+    right_value: &Value,
+    current: &CurrentTableSchemas,
+    left: &Table<'_>,
+    right: &Table<'_>,
+    prepared: JoinMaterialization,
+    mut meter: ResidentBudgetMeter,
+) -> Result<Value> {
     let schema = plan
         .schemas
         .get(plan.output_schema)
@@ -623,8 +706,8 @@ fn execute(
     };
     let components = declared
         .iter()
-        .zip(current.output)
-        .map(|(expected, actual)| (&expected.schema, actual.schema))
+        .zip(current.output.iter())
+        .map(|(expected, actual)| (&expected.schema, actual.schema.clone()))
         .collect::<Vec<_>>();
     let shape =
         mech_core::shape_for_schema_components(schema, &components, Some((rows, prepared.rows)))
@@ -638,42 +721,97 @@ fn execute(
         &sources,
     )
     .map_err(|_| ResidentKernelError::InvalidOutput)?;
-    visit_pairs(
-        plan,
+    visit_pairs(plan, left, right, &mut meter, |pair, _| {
+        for (output_column, projection) in plan.projections.iter().enumerate() {
+            let source = selected(projection, pair, left, right).map(|(table, column, row)| {
+                let input = if std::ptr::eq(table.value, left_value) {
+                    0
+                } else {
+                    1
+                };
+                (input, column, row)
+            });
+            builder
+                .push(output_column, source)
+                .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        }
+        Ok(())
+    })?;
+    builder
+        .finish()
+        .map_err(|_| ResidentKernelError::InvalidOutput)
+}
+
+/// The same borrowed preparation and canonical materializer as execution,
+/// with explicit analysis authority instead of an installed turn executor.
+pub(crate) fn fold_closed_join(
+    mode: JoinMode,
+    schema_table: &SchemaTable,
+    shared_schemas: impl FnOnce() -> Arc<SchemaTable>,
+    left_value: &Value,
+    right_value: &Value,
+    output_schema: SchemaId,
+    output_shape: &mech_core::ShapeInstance,
+    meter: impl Fn() -> ResidentBudgetMeter,
+    admit: impl Fn(KernelCostEstimate) -> Result<()>,
+) -> Result<Value> {
+    // The immutable schema owner and plan metadata are created only after
+    // their complete clone/closure bound is admitted. Encoded bytes bound
+    // schema nodes, fields and dimension-expression containers.
+    let units = schema_table.entries().try_fold(0u64, |sum, entry| {
+        checked_cost_sum(&[sum, checked_u64(entry.canonical_bytes().len())?])
+    })?;
+    let bytes = checked_cost_product(&[
+        units,
+        8,
+        checked_u64(
+            std::mem::size_of::<SchemaBody>()
+                + std::mem::size_of::<SchemaField>()
+                + std::mem::size_of::<mech_core::DimensionExpr>()
+                + std::mem::size_of::<Vec<u64>>(),
+        )?,
+    ])?;
+    let mut metadata = KernelCostEstimate::default();
+    metadata.add_temporary_bytes(bytes)?;
+    metadata.set_cloned_bytes(bytes);
+    metadata.set_retained_nodes(checked_cost_product(&[units, 8])?);
+    metadata.set_compute_work(checked_cost_product(&[units, units.max(1), 8])?)?;
+    admit(metadata)?;
+    let schemas = shared_schemas();
+    let fields = |schema_id, shape: &mech_core::ShapeInstance| match schemas
+        .get(schema_id)
+        .and_then(|schema| schema.closed_body(shape).ok())
+    {
+        Some(SchemaBody::Table { columns, .. }) => Ok(columns),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let left = fields(left_value.schema(), left_value.shape())?;
+    let right = fields(right_value.schema(), right_value.shape())?;
+    let output = fields(output_schema, output_shape)?;
+    let plan = build_plan(
+        mode,
+        schemas,
+        [left_value.schema(), right_value.schema()],
+        output_schema,
+        left,
+        right,
+        output,
+    )
+    .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let current = current_schemas(&plan, left_value, right_value, None, meter(), &admit)?;
+    let left = Table::new(left_value, &current.left)?;
+    let right = Table::new(right_value, &current.right)?;
+    let construction_meter = meter();
+    let prepared =
+        prepare(&plan, &left, &right, None, &current, meter())?.prepare_for_analysis(admit)?;
+    materialize(
+        &plan,
+        left_value,
+        right_value,
+        &current,
         &left,
         &right,
-        &mut ResidentBudgetMeter::default(),
-        |pair, _| {
-            for (output_column, projection) in plan.projections.iter().enumerate() {
-                let source =
-                    selected(projection, pair, &left, &right).map(|(table, column, row)| {
-                        let input = if std::ptr::eq(table.value, left_value) {
-                            0
-                        } else {
-                            1
-                        };
-                        (input, column, row)
-                    });
-                builder
-                    .push(output_column, source)
-                    .map_err(|_| ResidentKernelError::InvalidOutput)?;
-            }
-            Ok(())
-        },
-    )?;
-    let next = builder
-        .finish()
-        .map_err(|_| ResidentKernelError::InvalidOutput)?;
-    let changed = target
-        .as_ref()
-        .map(|previous| {
-            previous
-                .snapshot_eq(&plan.schemas, &next, &plan.schemas)
-                .map(|equal| !equal)
-        })
-        .transpose()
-        .map_err(|_| ResidentKernelError::InvalidOutput)?
-        .unwrap_or(true);
-    *target = Some(next);
-    Ok(changed)
+        prepared,
+        construction_meter,
+    )
 }

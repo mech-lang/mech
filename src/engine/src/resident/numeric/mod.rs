@@ -15764,6 +15764,181 @@ fn snapshot_access_source_dimensions(
     }
 }
 
+fn table_column_output_cost(
+    table: &mech_core::snapshot::TableValue,
+    columns: &[mech_core::SchemaField],
+    index: usize,
+    meter: &mut super::budget::ResidentBudgetMeter,
+) -> Result<SnapshotAccessOutputCost, ResidentKernelError> {
+    let values = table
+        .column(index)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let mut footprint = ValueFootprint::zero();
+    let mut finalization_work = 0_u64;
+    for row in 0..values.len() {
+        selected_sequence_footprint_with_finalization(
+            &mut footprint,
+            &mut finalization_work,
+            meter,
+            &columns[index].schema,
+            values,
+            row,
+        )?;
+    }
+    Ok(SnapshotAccessOutputCost {
+        footprint,
+        count: values.len(),
+        index_elements: 0,
+        selected_ordinal: Some(index),
+        finalization_work,
+        output_dimensions: Some((values.len(), 1)),
+    })
+}
+
+fn table_column_data(
+    table: &mech_core::snapshot::TableValue,
+    columns: &[mech_core::SchemaField],
+    index: usize,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    let values = table
+        .column(index)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output = (0..values.len())
+        .map(|row| sequence_data_draft_at(&columns[index].schema, values, row))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(ValueDataDraft::Matrix(output.into_boxed_slice()))
+}
+
+/// Closed table-column access shares the resident's name interpretation,
+/// recursive finalization preflight and selected-cell materialization.
+/// No turn executor or live publication is invoked during analysis.
+pub(crate) fn fold_closed_named_access(
+    schemas: &mech_core::SchemaTable,
+    source: &mech_core::Value,
+    selector: &mech_core::Value,
+    output_schema: SchemaId,
+    supplied_shape: &ShapeInstance,
+    snapshot_output: bool,
+    mut meter: super::budget::ResidentBudgetMeter,
+    admit: impl FnOnce(super::budget::KernelCostEstimate) -> Result<(), ResidentKernelError>,
+) -> Result<mech_core::Value, ResidentKernelError> {
+    use super::budget::{checked_cost_product, checked_cost_sum, checked_u64};
+    let source_schema = schemas
+        .get(source.schema())
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let fields = match (source_schema.body(), source.data()) {
+        (SchemaBody::Table { columns, .. }, ValueData::Table(_)) => columns.as_ref(),
+        (SchemaBody::Record(fields), ValueData::Record(_)) => fields.as_ref(),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let ValueData::Id(selected) = selector.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let source_footprint =
+        super::budget::measure_canonical_value_footprint(&mut meter, source, schemas)?;
+    let selector_footprint =
+        super::budget::measure_canonical_value_footprint(&mut meter, selector, schemas)?;
+    let index = named_schema_ordinal_with_meter(
+        fields.iter().map(|field| field.name.as_str()),
+        *selected,
+        &mut meter,
+    )?;
+    let target = schemas
+        .get(output_schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let output = match source.data() {
+        ValueData::Table(table) => {
+            let SchemaBody::Matrix {
+                element,
+                dimensions,
+            } = target.body()
+            else {
+                return Err(ResidentKernelError::InvalidOutput);
+            };
+            if dimensions.len() != 2 || element.as_ref() != &fields[index].schema {
+                return Err(ResidentKernelError::InvalidOutput);
+            }
+            table_column_output_cost(table, fields, index, &mut meter)?
+        }
+        ValueData::Record(record) => {
+            if target.body() != &fields[index].schema {
+                return Err(ResidentKernelError::InvalidOutput);
+            }
+            snapshot_scalar_access_cost(
+                &mut meter,
+                &fields[index].schema,
+                record
+                    .fields()
+                    .get(index)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let published = super::budget::projected_canonical_value_footprint(
+        output.footprint,
+        target.dimension_parameters().len(),
+    )?;
+    let work = meter.estimate();
+    let publication_work = checked_cost_sum(&[
+        output.finalization_work,
+        if snapshot_output {
+            0
+        } else {
+            checked_u64(output.count)?
+        },
+    ])?;
+    let draft_bytes = checked_cost_product(&[
+        checked_u64(output.count)?,
+        core::mem::size_of::<ValueDataDraft>() as u64,
+    ])?;
+    let cost = super::budget::resident_cost! {
+        output_elements: output.count,
+        output_bytes: published.retained_bytes,
+        temporary_bytes: checked_cost_sum(&[
+            checked_cost_product(&[published.retained_bytes, 2])?,
+            draft_bytes,
+            checked_cost_product(&[target.dimension_parameters().len() as u64, 16])?,
+        ])?,
+        cloned_bytes: output.footprint.retained_bytes,
+        retained_nodes: checked_cost_sum(&[
+            source_footprint.node_count, selector_footprint.node_count,
+            checked_cost_product(&[published.node_count, 3])?,
+        ])?,
+        compute_work: checked_cost_sum(&[work.compute_work(), checked_u64(output.count)?, publication_work])?,
+        comparison_work: checked_cost_sum(&[work.comparison_work(), publication_work])?,
+        ..super::budget::KernelCostEstimate::default()
+    };
+    super::budget::PreparedKernel::new((), cost).prepare_for_analysis(admit)?;
+    let (shape, data) = match source.data() {
+        ValueData::Table(table) => (
+            mech_core::shape_for_resolved_extents(target, &[output.count as u64, 1])
+                .map_err(|_| ResidentKernelError::InvalidShape)?,
+            table_column_data(table, fields, index)?,
+        ),
+        ValueData::Record(record) => (
+            supplied_shape.clone(),
+            canonical_snapshot_data_draft(
+                &fields[index].schema,
+                record
+                    .fields()
+                    .get(index)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )
+            .map_err(|_| ResidentKernelError::InvalidInput)?,
+        ),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let budget = SnapshotCanonicalizationBudget::new(output.finalization_work);
+    ValueDraft {
+        schema: output_schema,
+        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+        data,
+    }
+    .finalize(&SnapshotValidationContext::new(schemas).with_canonicalization_budget(&budget))
+    .map_err(|_| ResidentKernelError::InvalidOutput)
+}
+
 fn snapshot_access_output_cost(
     source: &mech_core::Value,
     source_schema: &SchemaBody,
@@ -15836,29 +16011,7 @@ fn snapshot_access_output_cost(
             if index != live_ordinal {
                 return Err(ResidentKernelError::InvalidInput);
             }
-            let values = table
-                .column(index)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            let mut footprint = ValueFootprint::zero();
-            let mut finalization_work = 0_u64;
-            for row in 0..values.len() {
-                selected_sequence_footprint_with_finalization(
-                    &mut footprint,
-                    &mut finalization_work,
-                    meter,
-                    &columns[index].schema,
-                    values,
-                    row,
-                )?;
-            }
-            Ok(SnapshotAccessOutputCost {
-                footprint,
-                count: values.len(),
-                index_elements: 0,
-                selected_ordinal: Some(index),
-                finalization_work,
-                output_dimensions: Some((values.len(), 1)),
-            })
+            table_column_output_cost(table, columns, index, meter)
         }
         (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) => {
             let (rows, columns) = snapshot_access_source_dimensions(source, source_schema, plan)?;
@@ -16148,14 +16301,7 @@ fn snapshot_access_data(
             let ValueData::Table(table) = source.data() else {
                 return Err(ResidentKernelError::InvalidInput);
             };
-            let values = table
-                .column(index)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            let element = &columns[index].schema;
-            let output = (0..values.len())
-                .map(|index| sequence_data_draft_at(element, values, index))
-                .collect::<Result<Vec<_>, _>>()?;
-            Ok(ValueDataDraft::Matrix(output.into_boxed_slice()))
+            table_column_data(table, columns, index)
         }
         SchemaBody::Matrix { element, .. } => {
             let (rows, columns) = snapshot_access_source_dimensions(source, source_schema, plan)?;

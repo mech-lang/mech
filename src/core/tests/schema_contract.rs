@@ -510,6 +510,43 @@ fn canonical_environment_rejects_forward_references_and_cycles() {
 }
 
 #[test]
+fn inferred_population_bounds_retain_dependencies_before_the_consumer() {
+    let schema = SchemaDraft {
+        dimension_parameters: vec![
+            DimensionParameterDeclaration {
+                id: DimensionParameterId::new(0),
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+            DimensionParameterDeclaration {
+                id: DimensionParameterId::new(1),
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: Some(DimensionExpr::Parameter(DimensionParameterId::new(0))),
+            },
+        ]
+        .into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(1))]
+                .into_boxed_slice(),
+        },
+    }
+    .finalize()
+    .unwrap();
+    assert_eq!(schema.dimension_parameters().len(), 2);
+    assert_eq!(
+        schema.dimension_parameters()[1].upper_bound(),
+        Some(&DimensionExpr::Parameter(DimensionParameterId::new(0)))
+    );
+    schema.instantiate_shape(Box::new([3, 2])).unwrap();
+    assert!(schema.instantiate_shape(Box::new([3, 4])).is_err());
+}
+
+#[test]
 fn cardinality_and_extent_evaluation_are_checked() {
     let schema = SchemaDraft {
         dimension_parameters: vec![DimensionParameterDeclaration {
