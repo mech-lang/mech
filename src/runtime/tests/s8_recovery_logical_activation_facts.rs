@@ -249,6 +249,10 @@ fn closed_comparisons_compose_through_supported_producers() {
         "x := [42 43]\npresent := :some(7)\nq := present == :some(7)\nmask := [q false]\nx[mask]\n",
         "[42]",
     );
+    exact_closed_mask(
+        "+> string\nx := [42 43]\njoined := string/concat(\"ab\", \"cd\")\nq := joined == \"abcd\"\nmask := [q false]\nx[mask]\n",
+        "[42]",
+    );
 }
 
 #[test]
