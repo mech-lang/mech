@@ -3532,7 +3532,7 @@ fn admit_dense_transpose_layout(
     Ok(())
 }
 
-fn is_transpose_snapshot_schema(body: &SchemaBody) -> bool {
+pub(crate) fn is_transpose_snapshot_schema(body: &SchemaBody) -> bool {
     matches!(
         body,
         SchemaBody::Bool
@@ -15719,7 +15719,7 @@ pub(crate) fn selected_sequence_footprint(
     checked_footprint_add(total, footprint)
 }
 
-fn selected_sequence_footprint_with_finalization(
+pub(crate) fn selected_sequence_footprint_with_finalization(
     total: &mut ValueFootprint,
     finalization_work: &mut u64,
     meter: &mut super::budget::ResidentBudgetMeter,

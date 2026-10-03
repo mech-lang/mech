@@ -3966,6 +3966,26 @@ impl ClosedActivationAnalysisContext {
 }
 
 impl ClosedOperandSchemaContext {
+    fn admitted_schemas(
+        &self,
+        artifact: &ProgramArtifact,
+        construction: &ClosedOperandConstructionBudget,
+    ) -> Option<std::sync::Arc<mech_core::SchemaTable>> {
+        if self.schemas.get().is_none() {
+            let work = artifact
+                .schemas()
+                .entries()
+                .try_fold(0_u64, |work, entry| {
+                    work.checked_add(entry.canonical_bytes().len() as u64)
+                })?;
+            let bytes = artifact.schemas().clone_allocation_bound_bytes()?;
+            if !construction.charge_compute_chunk(bytes, work, 1) {
+                return None;
+            }
+        }
+        Some(self.schemas(artifact))
+    }
+
     fn schemas(&self, artifact: &ProgramArtifact) -> std::sync::Arc<mech_core::SchemaTable> {
         std::sync::Arc::clone(
             self.schemas
@@ -3975,6 +3995,28 @@ impl ClosedOperandSchemaContext {
 }
 
 impl ClosedOperandConstructionBudget {
+    fn preparation_meter(&self) -> super::budget::ResidentBudgetMeter {
+        super::budget::ResidentBudgetMeter::for_closed_analysis(
+            mech_core::RESIDENT_MAX_COMPUTE_WORK.saturating_sub(self.compute_work.get()),
+            mech_core::RESIDENT_MAX_COMPARISON_WORK.saturating_sub(self.comparison_work.get()),
+        )
+    }
+
+    fn admit_preparation(
+        &self,
+        cost: super::budget::KernelCostEstimate,
+    ) -> Result<(), ResidentKernelError> {
+        if self.charge_compute_with_comparison(
+            cost.temporary_bytes(),
+            cost.compute_work(),
+            cost.comparison_work(),
+        ) {
+            Ok(())
+        } else {
+            Err(ResidentKernelError::InvalidShape)
+        }
+    }
+
     fn charge_comparison_work(&self, comparison_work: u64) -> bool {
         let Some(comparison_work) = self.comparison_work.get().checked_add(comparison_work) else {
             return false;
@@ -4128,6 +4170,25 @@ std::thread_local! {
     // analysis admission counters. A restored full-source draft must not hide
     // behind a demand-sized cost estimate.
     static CLOSED_OPERAND_DRAFT_ENTRIES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    static CLOSED_PUBLICATION_DRAFT_ENTRIES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+fn closed_publication_draft(
+    value: &Value,
+) -> Result<ValueDataDraft, mech_core::snapshot::SnapshotValueError> {
+    #[cfg(test)]
+    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(entries.get().saturating_add(1)));
+    value.canonical_data_draft()
+}
+
+fn closed_selected_publication_draft(
+    element: &SchemaBody,
+    values: mech_core::snapshot::SequenceView<'_>,
+    index: usize,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    #[cfg(test)]
+    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(entries.get().saturating_add(1)));
+    super::numeric::sequence_data_draft_at(element, values, index)
 }
 
 fn closed_operand_draft_values(
@@ -4592,6 +4653,77 @@ fn closed_publication_comparison_work(
         output_count,
         None,
     )
+}
+
+/// Access's snapshot fallback measures its source, snapshot selectors, selected
+/// payloads and recursive finalization under one allowance, just like runtime.
+fn closed_access_preparation_meter(
+    artifact: &ProgramArtifact,
+    source: &ConstantComparisonOperand<'_>,
+    selectors: &[ConstantComparisonOperand<'_>],
+    facts: &ActivationFacts,
+    analysis: &ClosedActivationAnalysisContext,
+) -> Result<Option<super::budget::ResidentBudgetMeter>, ResidentActivationError> {
+    let mut meter = analysis.construction.preparation_meter();
+    if super::budget::measure_canonical_value_footprint(
+        &mut meter,
+        &source.value,
+        artifact.schemas(),
+    )
+    .is_err()
+    {
+        return Ok(None);
+    }
+    for selector in selectors {
+        if closed_operand_resident_kind(artifact, selector, facts)? == ResidentValueKind::Snapshot
+            && super::budget::measure_canonical_value_footprint(
+                &mut meter,
+                &selector.value,
+                artifact.schemas(),
+            )
+            .is_err()
+        {
+            return Ok(None);
+        }
+    }
+    Ok(Some(meter))
+}
+
+/// Copying snapshot constructors and transpose reuse the resident borrowed
+/// finalization preflight, not an independent budget after payload cloning.
+fn closed_copy_preparation(
+    artifact: &ProgramArtifact,
+    operands: &[&ConstantComparisonOperand<'_>],
+    facts: &ActivationFacts,
+    analysis: &ClosedActivationAnalysisContext,
+) -> Result<Option<(u64, u64)>, ResidentActivationError> {
+    let mut meter = analysis.construction.preparation_meter();
+    let mut finalization = 0_u64;
+    for operand in operands {
+        if super::budget::measure_canonical_value_footprint(
+            &mut meter,
+            &operand.value,
+            artifact.schemas(),
+        )
+        .is_err()
+        {
+            return Ok(None);
+        }
+        if closed_operand_resident_kind(artifact, operand, facts)? == ResidentValueKind::Snapshot {
+            let Ok(work) = super::budget::preflight_canonical_data_finalization(
+                &mut meter,
+                &operand.schema,
+                operand.value.data(),
+            ) else {
+                return Ok(None);
+            };
+            let Some(work) = finalization.checked_add(work) else {
+                return Ok(None);
+            };
+            finalization = work;
+        }
+    }
+    Ok(Some((meter.estimate().comparison_work(), finalization)))
 }
 
 fn closed_publication_comparison_work_measured(
@@ -5394,6 +5526,7 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 if inputs.len() != count || count as u64 > mech_core::RESIDENT_MAX_OUTPUT_ELEMENTS {
                     return Ok(None);
                 }
+                let literal_kind = closed_slot_resident_kind(artifact, slot, facts)?;
                 // Admit both operand descriptors and output draft containers
                 // before constructing either collection.
                 let Some(bytes) = u64::try_from(count).ok().and_then(|count| {
@@ -5419,23 +5552,54 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     else {
                         return Ok(None);
                     };
-                    if operand.schema != **element || operand.rows != 1 || operand.columns != 1 {
+                    if operand.schema != **element
+                        || closed_operand_resident_kind(artifact, &operand, facts)? != literal_kind
+                        || artifact
+                            .schemas()
+                            .get(operand.value.schema())
+                            .is_none_or(|schema| !schema.dimension_parameters().is_empty())
+                        || (literal_kind != ResidentValueKind::Snapshot
+                            && (operand.rows != 1 || operand.columns != 1))
+                    {
                         return Ok(None);
                     }
-                    if !analysis
-                        .construction
-                        .charge_clone(&operand.value, artifact.schemas(), 2)
+                    if literal_kind != ResidentValueKind::Snapshot
+                        && !analysis.construction.charge_clone(
+                            &operand.value,
+                            artifact.schemas(),
+                            2,
+                        )
                     {
                         return Ok(None);
                     }
                     operands.push(operand);
                 }
+                let literal_finalization = if literal_kind == ResidentValueKind::Snapshot {
+                    let prepared = super::matrix_literal::prepare_snapshot_literal(
+                        artifact.schemas(),
+                        count,
+                        |index| Ok(&*operands[index].value),
+                        None,
+                        analysis.construction.preparation_meter(),
+                    )
+                    .and_then(|prepared| {
+                        prepared.prepare_for_analysis(|cost| {
+                            analysis.construction.admit_preparation(cost)
+                        })
+                    });
+                    let Ok((_, work)) = prepared else {
+                        return Ok(None);
+                    };
+                    Some(SnapshotCanonicalizationBudget::new(work))
+                } else {
+                    None
+                };
                 if !analysis.record_materialized_operand_values(count) {
                     return Ok(None);
                 }
                 let data = operands
                     .iter()
-                    .map(|operand| operand.value.canonical_data_draft())
+                    .map(|operand| closed_publication_draft(&operand.value))
                     .collect::<Result<Vec<_>, _>>();
                 match data {
                     Ok(data) => ValueDraft {
@@ -5443,7 +5607,12 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                         shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
                         data: ValueDataDraft::Matrix(data.into_boxed_slice()),
                     }
-                    .finalize(&SnapshotValidationContext::new(artifact.schemas())),
+                    .finalize(
+                        &SnapshotValidationContext::new(artifact.schemas())
+                            .with_canonicalization_budget(
+                                literal_finalization.as_ref().unwrap_or(budget),
+                            ),
+                    ),
                     Err(error) => Err(error),
                 }
             } else if let Some(spec) = closed_ekf_operation(operation.operation) {
@@ -5614,7 +5783,24 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 ) {
                     return Ok(None);
                 }
-                let publication_work = if source.element == SchemaBody::String {
+                let snapshot_copy = closed_operand_resident_kind(artifact, &source, facts)?
+                    == ResidentValueKind::Snapshot
+                    && closed_slot_resident_kind(artifact, slot, facts)?
+                        == ResidentValueKind::Snapshot;
+                let copy_preparation = if snapshot_copy {
+                    if !super::numeric::is_transpose_snapshot_schema(&source.element) {
+                        return Ok(None);
+                    }
+                    let Some(prepared) =
+                        closed_copy_preparation(artifact, &[&source], facts, analysis)?
+                    else {
+                        return Ok(None);
+                    };
+                    Some(prepared)
+                } else {
+                    None
+                };
+                let publication_work = if !snapshot_copy && source.element == SchemaBody::String {
                     let Some(publication_work) = closed_string_payload_bytes(&source.value) else {
                         return Ok(None);
                     };
@@ -5628,7 +5814,9 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 } else {
                     0
                 };
-                let comparison_work = if source.element == SchemaBody::String {
+                let comparison_work = if let Some((work, _)) = copy_preparation {
+                    work
+                } else if source.element == SchemaBody::String {
                     0
                 } else {
                     let Some(work) = closed_publication_comparison_work_measured(
@@ -5672,6 +5860,9 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     .ok()
                     .and_then(|count| count.checked_mul(3))
                     .and_then(|work| work.checked_add(publication_work))
+                    .and_then(|work| {
+                        work.checked_add(copy_preparation.map_or(0, |(work, _)| work))
+                    })
                 else {
                     return Ok(None);
                 };
@@ -5683,7 +5874,7 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 {
                     return Ok(None);
                 }
-                let Ok(ValueDataDraft::Matrix(elements)) = source.value.canonical_data_draft()
+                let Ok(ValueDataDraft::Matrix(elements)) = closed_publication_draft(&source.value)
                 else {
                     return Ok(None);
                 };
@@ -5707,6 +5898,8 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 else {
                     return Ok(None);
                 };
+                let copy_finalization =
+                    copy_preparation.map(|(_, work)| SnapshotCanonicalizationBudget::new(work));
                 ValueDraft {
                     schema: target_schema_id,
                     shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
@@ -5714,7 +5907,7 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 }
                 .finalize(
                     &SnapshotValidationContext::new(artifact.schemas())
-                        .with_canonicalization_budget(budget),
+                        .with_canonicalization_budget(copy_finalization.as_ref().unwrap_or(budget)),
                 )
             } else if closed_scalar_access_operation(operation.operation) {
                 let Some((source_input, selector_inputs)) = inputs.split_first() else {
@@ -5802,12 +5995,53 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 if source_values.len() != source_count {
                     return Ok(None);
                 }
-                let Ok(output_footprint) = canonical_sequence_element_retained_footprint(
-                    &source.element,
-                    source_values,
-                    selected,
-                ) else {
-                    return Ok(None);
+                let mut access_preparation = if direct_dense_access {
+                    None
+                } else {
+                    let Some(meter) = closed_access_preparation_meter(
+                        artifact, &source, &selectors, facts, analysis,
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    Some(meter)
+                };
+                let mut finalization_work = 0;
+                let output_footprint = if let Some(meter) = &mut access_preparation {
+                    let mut footprint = mech_core::snapshot::ValueFootprint::zero();
+                    if super::numeric::selected_sequence_footprint_with_finalization(
+                        &mut footprint,
+                        &mut finalization_work,
+                        meter,
+                        &source.element,
+                        source_values,
+                        selected,
+                    )
+                    .is_err()
+                    {
+                        return Ok(None);
+                    }
+                    // Runtime adds actual canonicalization to first-publication
+                    // work as well as reserving it during borrowed preflight.
+                    if meter
+                        .charge_comparison_work(
+                            finalization_work
+                                + u64::from(target_kind != ResidentValueKind::Snapshot),
+                        )
+                        .is_err()
+                    {
+                        return Ok(None);
+                    }
+                    footprint
+                } else {
+                    let Ok(footprint) = canonical_sequence_element_retained_footprint(
+                        &source.element,
+                        source_values,
+                        selected,
+                    ) else {
+                        return Ok(None);
+                    };
+                    footprint
                 };
                 if output_footprint
                     .node_count
@@ -5862,12 +6096,15 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     .and_then(|work| work.checked_add(1))
                     .and_then(|work| u64::try_from(work).ok())
                     .and_then(|work| {
-                        work.checked_add(
-                            output_footprint
-                                .encoded_bytes
-                                .max(output_footprint.node_count)
-                                .max(1),
-                        )
+                        work.checked_add(access_preparation.as_ref().map_or_else(
+                            || {
+                                output_footprint
+                                    .encoded_bytes
+                                    .max(output_footprint.node_count)
+                                    .max(1)
+                            },
+                            |meter| meter.estimate().compute_work(),
+                        ))
                     })
                 else {
                     return Ok(None);
@@ -5877,18 +6114,23 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     publication_operands.push(&source);
                 }
                 publication_operands.extend(selectors.iter());
-                let Some(comparison_work) = closed_publication_comparison_work_measured(
-                    artifact,
-                    &publication_operands,
-                    slot,
-                    facts,
-                    target_schema_id,
-                    target_schema,
-                    1,
-                    output_footprint.node_count.checked_add(2),
-                )?
-                else {
-                    return Ok(None);
+                let comparison_work = if let Some(meter) = &access_preparation {
+                    meter.estimate().comparison_work()
+                } else {
+                    let Some(work) = closed_publication_comparison_work_measured(
+                        artifact,
+                        &publication_operands,
+                        slot,
+                        facts,
+                        target_schema_id,
+                        target_schema,
+                        1,
+                        output_footprint.node_count.checked_add(2),
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    work
                 };
                 let Some(materialized_values) = materialized_source_values.checked_add(1) else {
                     return Ok(None);
@@ -5901,14 +6143,15 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 {
                     return Ok(None);
                 }
-                let Ok(data) = super::numeric::sequence_data_draft_at(
-                    &source.element,
-                    source_values,
-                    selected,
-                ) else {
+                let Ok(data) =
+                    closed_selected_publication_draft(&source.element, source_values, selected)
+                else {
                     return Ok(None);
                 };
                 let target_shape = slot_shape(artifact, slot, facts)?;
+                let access_finalization = access_preparation
+                    .as_ref()
+                    .map(|_| SnapshotCanonicalizationBudget::new(finalization_work));
                 ValueDraft {
                     schema: target_schema_id,
                     shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
@@ -5916,7 +6159,9 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 }
                 .finalize(
                     &SnapshotValidationContext::new(artifact.schemas())
-                        .with_canonicalization_budget(budget),
+                        .with_canonicalization_budget(
+                            access_finalization.as_ref().unwrap_or(budget),
+                        ),
                 )
             } else if let Some(access) = closed_matrix_access_operation(operation.operation) {
                 let Some((source_input, selector_inputs)) = inputs.split_first() else {
@@ -6186,18 +6431,71 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 let mut output_payload_bytes = 0_u64;
                 let mut output_nodes = 0_u64;
                 let mut output_work = 0_u64;
+                let mut access_preparation = if dense_kernel {
+                    None
+                } else {
+                    let Some(meter) = closed_access_preparation_meter(
+                        artifact,
+                        &source,
+                        &selector_operands,
+                        facts,
+                        analysis,
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    Some(meter)
+                };
+                let mut finalization_work = 0_u64;
+                if preserves_bound_snapshot_witness {
+                    // The resident all-axis constructor copies already canonical
+                    // cells. It scans the complete data for token construction,
+                    // but does not normalize every nested cell again.
+                    let meter = access_preparation
+                        .as_mut()
+                        .expect("snapshot access preparation");
+                    let Ok(footprint) = super::budget::measure_canonical_data_footprint(
+                        meter,
+                        &source.schema,
+                        source.value.data(),
+                    ) else {
+                        return Ok(None);
+                    };
+                    let Some(work) = footprint.encoded_bytes.checked_add(footprint.node_count)
+                    else {
+                        return Ok(None);
+                    };
+                    finalization_work = work;
+                }
                 let footprint_result = visit_closed_matrix_access_indices(
                     access,
                     source.rows,
                     source.columns,
                     &selections,
                     |index| {
-                        let footprint = canonical_sequence_element_retained_footprint(
-                            source_element,
-                            source_values,
-                            index,
-                        )
-                        .map_err(|_| ())?;
+                        let footprint = if let Some(meter) = access_preparation
+                            .as_mut()
+                            .filter(|_| !preserves_bound_snapshot_witness)
+                        {
+                            let mut footprint = mech_core::snapshot::ValueFootprint::zero();
+                            super::numeric::selected_sequence_footprint_with_finalization(
+                                &mut footprint,
+                                &mut finalization_work,
+                                meter,
+                                source_element,
+                                source_values,
+                                index,
+                            )
+                            .map_err(|_| ())?;
+                            footprint
+                        } else {
+                            canonical_sequence_element_retained_footprint(
+                                source_element,
+                                source_values,
+                                index,
+                            )
+                            .map_err(|_| ())?
+                        };
                         output_payload_bytes = output_payload_bytes
                             .checked_add(footprint.retained_bytes)
                             .ok_or(())?;
@@ -6215,6 +6513,20 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                         .is_none_or(|nodes| nodes > mech_core::RESIDENT_MAX_RETAINED_NODES)
                 {
                     return Ok(None);
+                }
+                if let Some(meter) = &mut access_preparation {
+                    let Some(work) = finalization_work.checked_add(
+                        if target_kind == ResidentValueKind::Snapshot {
+                            0
+                        } else {
+                            output_count as u64
+                        },
+                    ) else {
+                        return Ok(None);
+                    };
+                    if meter.charge_comparison_work(work).is_err() {
+                        return Ok(None);
+                    }
                 }
                 // The dense gather kernels borrow the source and selectors and
                 // touch only selected output lanes. Do not make their admission
@@ -6266,7 +6578,13 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 let Some(compute_work) = materialized_source_values
                     .checked_add(output_count)
                     .and_then(|work| u64::try_from(work).ok())
-                    .and_then(|work| work.checked_add(output_work))
+                    .and_then(|work| {
+                        work.checked_add(
+                            access_preparation
+                                .as_ref()
+                                .map_or(output_work, |meter| meter.estimate().compute_work()),
+                        )
+                    })
                 else {
                     return Ok(None);
                 };
@@ -6275,18 +6593,23 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     publication_operands.push(&source);
                 }
                 publication_operands.extend(selector_operands.iter());
-                let Some(comparison_work) = closed_publication_comparison_work_measured(
-                    artifact,
-                    &publication_operands,
-                    slot,
-                    facts,
-                    target_schema_id,
-                    target_schema,
-                    output_count,
-                    output_nodes.checked_add(3),
-                )?
-                else {
-                    return Ok(None);
+                let comparison_work = if let Some(meter) = &access_preparation {
+                    meter.estimate().comparison_work()
+                } else {
+                    let Some(work) = closed_publication_comparison_work_measured(
+                        artifact,
+                        &publication_operands,
+                        slot,
+                        facts,
+                        target_schema_id,
+                        target_schema,
+                        output_count,
+                        output_nodes.checked_add(3),
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    work
                 };
                 let Some(materialized_values) =
                     materialized_source_values.checked_add(output_count)
@@ -6301,35 +6624,67 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 {
                     return Ok(None);
                 }
-                let mut output = Vec::with_capacity(output_count);
-                let materialized = visit_closed_matrix_access_indices(
-                    access,
-                    source.rows,
-                    source.columns,
-                    &selections,
-                    |index| {
-                        let value = super::numeric::sequence_data_draft_at(
-                            source_element,
-                            source_values,
-                            index,
-                        )
-                        .map_err(|_| ())?;
-                        output.push(value);
-                        Ok::<(), ()>(())
-                    },
-                );
-                if materialized.is_err() || output.len() != output_count {
-                    return Ok(None);
+                if preserves_bound_snapshot_witness {
+                    let Some(schemas) = analysis
+                        .schemas
+                        .admitted_schemas(artifact, &analysis.construction)
+                    else {
+                        return Ok(None);
+                    };
+                    let constructor = mech_core::snapshot::MatrixSnapshotConstructor::bind(
+                        target_schema_id,
+                        target_shape,
+                        (source.value.schema(), source.value.shape().clone()),
+                        schemas,
+                    );
+                    let Ok(constructor) = constructor else {
+                        return Ok(None);
+                    };
+                    #[cfg(test)]
+                    CLOSED_PUBLICATION_DRAFT_ENTRIES
+                        .with(|entries| entries.set(entries.get().saturating_add(output_count)));
+                    let positions = (0..source_count).map(|linear| {
+                        let row = linear % source.rows;
+                        let column = linear / source.rows;
+                        row * source.columns + column
+                    });
+                    constructor.construct(&source.value, positions)
+                } else {
+                    let mut output = Vec::with_capacity(output_count);
+                    let materialized = visit_closed_matrix_access_indices(
+                        access,
+                        source.rows,
+                        source.columns,
+                        &selections,
+                        |index| {
+                            let value = closed_selected_publication_draft(
+                                source_element,
+                                source_values,
+                                index,
+                            )
+                            .map_err(|_| ())?;
+                            output.push(value);
+                            Ok::<(), ()>(())
+                        },
+                    );
+                    if materialized.is_err() || output.len() != output_count {
+                        return Ok(None);
+                    }
+                    let access_finalization = access_preparation
+                        .as_ref()
+                        .map(|_| SnapshotCanonicalizationBudget::new(finalization_work));
+                    ValueDraft {
+                        schema: target_schema_id,
+                        shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                        data: ValueDataDraft::Matrix(output.into_boxed_slice()),
+                    }
+                    .finalize(
+                        &SnapshotValidationContext::new(artifact.schemas())
+                            .with_canonicalization_budget(
+                                access_finalization.as_ref().unwrap_or(budget),
+                            ),
+                    )
                 }
-                ValueDraft {
-                    schema: target_schema_id,
-                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
-                    data: ValueDataDraft::Matrix(output.into_boxed_slice()),
-                }
-                .finalize(
-                    &SnapshotValidationContext::new(artifact.schemas())
-                        .with_canonicalization_budget(budget),
-                )
             } else if closed_table_column_operation(operation.operation) {
                 let [input, selector] = inputs.as_slice() else {
                     return Ok(None);
@@ -6728,21 +7083,28 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 else {
                     return Ok(None);
                 };
-                let comparison_work = if target_element.as_ref() == &SchemaBody::String {
-                    if closed_slot_resident_kind(artifact, slot, facts)?
-                        == ResidentValueKind::Snapshot
-                    {
-                        let Some(work) = operands.iter().try_fold(0_u64, |work, operand| {
-                            let (next, _) =
-                                closed_value_comparison_measurement(artifact, &operand.value)?;
-                            work.checked_add(next)
-                        }) else {
-                            return Ok(None);
-                        };
-                        work
-                    } else {
-                        0
-                    }
+                let copy_preparation = if closed_slot_resident_kind(artifact, slot, facts)?
+                    == ResidentValueKind::Snapshot
+                {
+                    let operand_refs = operands.iter().collect::<Vec<_>>();
+                    let Some(prepared) =
+                        closed_copy_preparation(artifact, &operand_refs, facts, analysis)?
+                    else {
+                        return Ok(None);
+                    };
+                    Some(prepared)
+                } else {
+                    None
+                };
+                let Some(compute_work) =
+                    compute_work.checked_add(copy_preparation.map_or(0, |(work, _)| work))
+                else {
+                    return Ok(None);
+                };
+                let comparison_work = if let Some((work, _)) = copy_preparation {
+                    work
+                } else if target_element.as_ref() == &SchemaBody::String {
+                    0
                 } else {
                     let operand_refs = operands.iter().collect::<Vec<_>>();
                     let measured_output_nodes = operands.iter().try_fold(3u64, |nodes, operand| {
@@ -6815,6 +7177,8 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 else {
                     return Ok(None);
                 };
+                let copy_finalization =
+                    copy_preparation.map(|(_, work)| SnapshotCanonicalizationBudget::new(work));
                 ValueDraft {
                     schema: target_schema_id,
                     shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
@@ -6822,7 +7186,7 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 }
                 .finalize(
                     &SnapshotValidationContext::new(artifact.schemas())
-                        .with_canonicalization_budget(budget),
+                        .with_canonicalization_budget(copy_finalization.as_ref().unwrap_or(budget)),
                 )
             } else if let Some((inclusive, incremented)) =
                 closed_range_operation(operation.operation)
@@ -17312,6 +17676,676 @@ mod shape_fact_tests {
                         .snapshot_eq(executable.schemas(), &folded.value, artifact.schemas())
                         .unwrap()
                 );
+            }
+        }
+    }
+
+    fn closed_copy_artifact(
+        module: &str,
+        name: &str,
+        inputs: Vec<(SchemaBody, ValueDataDraft)>,
+        output_body: SchemaBody,
+    ) -> ProgramArtifact {
+        let schema = |body| {
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap()
+        };
+        let mut schemas = SchemaTableBuilder::new();
+        let input_schemas = inputs
+            .iter()
+            .map(|(body, _)| schemas.insert(schema(body.clone())).unwrap())
+            .collect::<Vec<_>>();
+        let output = schemas.insert(schema(output_body)).unwrap();
+        let build = schemas.finish().unwrap();
+        let input_schemas = input_schemas
+            .into_iter()
+            .map(|id| build.resolve(id).unwrap())
+            .collect::<Vec<_>>();
+        let output = build.resolve(output).unwrap();
+        let (schemas, _) = build.into_parts();
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let values = inputs
+            .into_iter()
+            .zip(&input_schemas)
+            .map(|((_, data), schema)| {
+                constants
+                    .insert(
+                        ValueDraft {
+                            schema: *schema,
+                            shape_values: Box::new([]),
+                            data,
+                        }
+                        .finalize(&SnapshotValidationContext::new(&schemas))
+                        .unwrap(),
+                    )
+                    .unwrap()
+            })
+            .collect::<Vec<_>>();
+        let build = constants.finish().unwrap();
+        let values = values
+            .into_iter()
+            .map(|id| build.resolve(id).unwrap())
+            .collect::<Vec<_>>();
+        let (constants, _) = build.into_parts();
+        let mut contracts = OperationContractTableBuilder::new();
+        let contract = contracts
+            .insert(ResolvedOperationContract::Declared(
+                DeclaredOperationContract {
+                    inputs: input_schemas
+                        .into_iter()
+                        .map(|schema| ResolvedInputPort {
+                            schema,
+                            access: AccessMode::Read,
+                            delivery: DeliveryMode::Signal,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                    outputs: vec![ResolvedOutputPort {
+                        schema: output,
+                        access: AccessMode::Write,
+                        delivery: DeliveryMode::Signal,
+                        construction: if matches!(name, "horzcat" | "vertcat") {
+                            OutputConstruction::Build {
+                                postcondition: mech_core::ShapeContractReference {
+                                    module_path: vec![
+                                        "matrix".to_owned(),
+                                        "concatenate".to_owned(),
+                                    ]
+                                    .into_boxed_slice(),
+                                    contract_name: if name == "horzcat" {
+                                        "horizontal-output"
+                                    } else {
+                                        "vertical-output"
+                                    }
+                                    .to_owned(),
+                                },
+                            }
+                        } else {
+                            OutputConstruction::FullWrite {
+                                shape: if name == "transpose" {
+                                    ShapeRule::TransposeOf { input: 0 }
+                                } else {
+                                    ShapeRule::Declared
+                                },
+                            }
+                        },
+                        alias: AliasPolicy::NoAlias,
+                        change_detection: if name == "literal" {
+                            ChangeDetectionPolicy::AlwaysChanged
+                        } else {
+                            ChangeDetectionPolicy::KernelReported
+                        },
+                    }]
+                    .into_boxed_slice(),
+                    interaction: ExternalInteraction::Pure,
+                },
+            ))
+            .unwrap();
+        let build = contracts.finish().unwrap();
+        let contract = build.resolve(contract).unwrap();
+        let (contracts, _) = build.into_parts();
+        let mut bindings = values
+            .into_iter()
+            .enumerate()
+            .map(|(index, value)| BindingDeclaration::Input {
+                id: BindingId::new(index as u32),
+                node: NodeId::new(0),
+                port_ordinal: index as u16,
+                source: ArtifactSource::Constant(value),
+            })
+            .collect::<Vec<_>>();
+        let input_end = bindings.len() as u32;
+        bindings.push(BindingDeclaration::Output {
+            id: BindingId::new(input_end),
+            node: NodeId::new(0),
+            port_ordinal: 0,
+            target: CellSlotId::new(0),
+        });
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: vec![
+                SlotDeclaration {
+                    slot: CellSlotId::new(0),
+                    schema: output,
+                    role: SlotRole::Derived,
+                    producer: ProducerReference::NodeOutput {
+                        node: NodeId::new(0),
+                        output_ordinal: 0,
+                    },
+                    initializer: None,
+                },
+                SlotDeclaration {
+                    slot: CellSlotId::new(1),
+                    schema: output,
+                    role: SlotRole::Output,
+                    producer: ProducerReference::Output {
+                        source: ArtifactSource::Slot(CellSlotId::new(0)),
+                        output: mech_core::OutputId::new(0),
+                    },
+                    initializer: None,
+                },
+            ]
+            .into_boxed_slice(),
+            nodes: vec![NodeDeclaration {
+                node: NodeId::new(0),
+                body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                    operation: OperationReference {
+                        module_path: vec![module.to_owned()].into_boxed_slice(),
+                        operation_name: name.to_owned(),
+                    },
+                    contract,
+                    requirement: None,
+                }),
+                input_bindings: 0..input_end,
+                output_bindings: input_end..input_end + 1,
+            }]
+            .into_boxed_slice(),
+            bindings: bindings.into_boxed_slice(),
+            outputs: vec![crate::OutputDeclaration {
+                output: mech_core::OutputId::new(0),
+                name: "result".to_owned(),
+                interactive_binding: None,
+                source: CellSlotId::new(1),
+                schema: output,
+            }]
+            .into_boxed_slice(),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn snapshot_copy_preparation_matches_resident_cumulative_work() {
+        let tuple = SchemaBody::Tuple(
+            vec![
+                SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                SchemaBody::String,
+            ]
+            .into_boxed_slice(),
+        );
+        let matrix = |rows, columns| SchemaBody::Matrix {
+            element: Box::new(tuple.clone()),
+            dimensions: vec![
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let cell = |id, bytes| {
+            ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::U8(id),
+                    ValueDataDraft::String("x".repeat(bytes)),
+                ]
+                .into_boxed_slice(),
+            )
+        };
+        for large in [false, true] {
+            for (module, case) in [
+                ("matrix", "literal"),
+                ("matrix", "encoded-literal"),
+                ("access", "scalar"),
+                ("access", "rows"),
+                ("access", "columns"),
+                ("access", "range"),
+                ("access", "rectangle"),
+                ("access", "all-axis"),
+                ("matrix", "transpose"),
+                ("matrix", "horzcat"),
+                ("matrix", "vertcat"),
+            ] {
+                let name = match case {
+                    "all-axis" => "range",
+                    "encoded-literal" => "literal",
+                    _ => case,
+                };
+                let source = (
+                    matrix(2, 1),
+                    ValueDataDraft::Matrix(
+                        vec![
+                            cell(1, if large { 15_000 } else { 50 }),
+                            cell(2, if large { 25_000 } else { 70 }),
+                        ]
+                        .into_boxed_slice(),
+                    ),
+                );
+                let (inputs, output) = match case {
+                    "literal" | "encoded-literal" => (
+                        // Each input fits independently. Input scan plus the
+                        // canonicalization preflight exceeds the shared limit.
+                        vec![(
+                            tuple.clone(),
+                            cell(
+                                2,
+                                if large {
+                                    if case == "encoded-literal" {
+                                        65_537
+                                    } else {
+                                        33_000
+                                    }
+                                } else {
+                                    70
+                                },
+                            ),
+                        )],
+                        matrix(1, 1),
+                    ),
+                    "scalar" => (
+                        vec![source, (SchemaBody::Index, ValueDataDraft::Index(2))],
+                        tuple.clone(),
+                    ),
+                    "rows" | "range" => (
+                        vec![source, (SchemaBody::Index, ValueDataDraft::Index(2))],
+                        matrix(1, 1),
+                    ),
+                    "columns" => (
+                        vec![source, (SchemaBody::Index, ValueDataDraft::Index(1))],
+                        matrix(2, 1),
+                    ),
+                    "rectangle" => (
+                        vec![
+                            source,
+                            (SchemaBody::Index, ValueDataDraft::Index(2)),
+                            (SchemaBody::Index, ValueDataDraft::Index(1)),
+                        ],
+                        matrix(1, 1),
+                    ),
+                    "transpose" => {
+                        let columns = if large { 20_000 } else { 1 };
+                        let numeric_matrix = |rows, columns| SchemaBody::Matrix {
+                            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                            dimensions: vec![
+                                DimensionExpr::Constant(rows),
+                                DimensionExpr::Constant(columns),
+                            ]
+                            .into_boxed_slice(),
+                        };
+                        (
+                            vec![(
+                                numeric_matrix(2, columns),
+                                ValueDataDraft::Matrix(
+                                    (0..2 * columns)
+                                        .map(|value| ValueDataDraft::U8(value as u8))
+                                        .collect::<Vec<_>>()
+                                        .into_boxed_slice(),
+                                ),
+                            )],
+                            numeric_matrix(columns, 2),
+                        )
+                    }
+                    _ => (vec![source], matrix(2, 1)),
+                };
+                let artifact = closed_copy_artifact(module, name, inputs, output);
+                let decoded = crate::decode_program_artifact_bytecode_v1(
+                    &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+                )
+                .unwrap();
+                for artifact in [&artifact, &decoded] {
+                    let analysis = ClosedActivationAnalysisContext::default();
+                    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
+                    CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.set(0));
+                    let folded = constant_comparison_operand(
+                        artifact,
+                        NodeId::new(0),
+                        ArtifactSource::Slot(CellSlotId::new(0)),
+                        &ActivationFacts::default(),
+                        &analysis,
+                        false,
+                    )
+                    .unwrap();
+                    if large {
+                        assert_eq!(
+                            CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
+                            0,
+                            "payload copy before refusal: {case}"
+                        );
+                        assert_eq!(
+                            CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.get()),
+                            0,
+                            "whole source copy before refusal: {case}"
+                        );
+                    } else {
+                        let insufficient = ClosedActivationAnalysisContext::default();
+                        insufficient
+                            .construction
+                            .comparison_work
+                            .set(mech_core::RESIDENT_MAX_COMPARISON_WORK);
+                        CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
+                        CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.set(0));
+                        assert!(
+                            constant_comparison_operand(
+                                artifact,
+                                NodeId::new(0),
+                                ArtifactSource::Slot(CellSlotId::new(0)),
+                                &ActivationFacts::default(),
+                                &insufficient,
+                                false
+                            )
+                            .unwrap()
+                            .is_none(),
+                            "exhausted preparation: {case}"
+                        );
+                        assert_eq!(
+                            CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
+                            0,
+                            "payload copy after exhaustion: {case}"
+                        );
+                        assert_eq!(
+                            CLOSED_OPERAND_DRAFT_ENTRIES.with(|entries| entries.get()),
+                            0,
+                            "whole source copy after exhaustion: {case}"
+                        );
+                    }
+                    let mut catalog = mech_core::FunctionCatalogBuilder::new();
+                    crate::install_intrinsic_resident(&mut catalog).unwrap();
+                    let instance = activate(
+                        mech_core::ReactiveInstanceId::new(606, 0),
+                        artifact,
+                        &catalog.build().unwrap(),
+                        &ActivationFacts::default(),
+                    );
+                    let mut instance = match instance {
+                        Ok(instance) => instance,
+                        Err(ResidentActivationError::ActivationKernelExecution {
+                            error: ResidentKernelError::InvalidShape,
+                            ..
+                        }) if large => {
+                            assert!(
+                                folded.is_none(),
+                                "analysis accepted runtime preparation refusal: {case}"
+                            );
+                            continue;
+                        }
+                        Err(error) => panic!("resident bind {module}/{name}: {error:?}"),
+                    };
+                    let actual = instance.turn(&[]);
+                    assert_eq!(
+                        actual.is_ok(),
+                        !large,
+                        "resident {module}/{name}: {actual:?}"
+                    );
+                    assert_eq!(
+                        folded.is_some(),
+                        !large,
+                        "analysis must share cumulative preparation for {module}/{name}"
+                    );
+                    if let Some(folded) = folded {
+                        assert!(
+                            instance
+                                .copied_output(0)
+                                .unwrap()
+                                .snapshot_eq(artifact.schemas(), &folded.value, artifact.schemas())
+                                .unwrap(),
+                            "{module}/{name}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn snapshot_copy_reserves_nested_set_finalization_on_the_shared_meter() {
+        let set = SchemaBody::Set {
+            element: Box::new(SchemaBody::String),
+            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+        };
+        let matrix = |rows| SchemaBody::Matrix {
+            element: Box::new(set.clone()),
+            dimensions: vec![DimensionExpr::Constant(rows), DimensionExpr::Constant(1)]
+                .into_boxed_slice(),
+        };
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        for (module, operation) in [
+            ("matrix", "literal"),
+            ("access", "scalar"),
+            ("access", "range"),
+        ] {
+            let mut admitted = 0;
+            let mut refused = 0;
+            for bytes in [8, 5_000, 7_000, 14_000] {
+                let data = || {
+                    ValueDataDraft::Set(
+                        vec![
+                            ValueDataDraft::String(format!("{}a", "x".repeat(bytes))),
+                            ValueDataDraft::String(format!("{}b", "x".repeat(bytes))),
+                        ]
+                        .into_boxed_slice(),
+                    )
+                };
+                let (inputs, output) = if operation == "literal" {
+                    (vec![(set.clone(), data())], matrix(1))
+                } else {
+                    (
+                        vec![
+                            (
+                                matrix(2),
+                                ValueDataDraft::Matrix(vec![data(), data()].into_boxed_slice()),
+                            ),
+                            (SchemaBody::Index, ValueDataDraft::Index(2)),
+                        ],
+                        if operation == "scalar" {
+                            set.clone()
+                        } else {
+                            matrix(1)
+                        },
+                    )
+                };
+                let artifact = closed_copy_artifact(module, operation, inputs, output);
+                let decoded = crate::decode_program_artifact_bytecode_v1(
+                    &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+                )
+                .unwrap();
+                for artifact in [&artifact, &decoded] {
+                    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
+                    let folded = constant_comparison_operand(
+                        artifact,
+                        NodeId::new(0),
+                        ArtifactSource::Slot(CellSlotId::new(0)),
+                        &ActivationFacts::default(),
+                        &ClosedActivationAnalysisContext::default(),
+                        false,
+                    )
+                    .unwrap();
+                    let mut actual = None;
+                    match activate(
+                        mech_core::ReactiveInstanceId::new(606, 42),
+                        artifact,
+                        &catalog,
+                        &ActivationFacts::default(),
+                    ) {
+                        Ok(mut instance) => match instance.turn(&[]) {
+                            Ok(_) => actual = Some(instance.copied_output(0).unwrap()),
+                            Err(ResidentExecutionError::Kernel {
+                                error: ResidentKernelError::InvalidShape,
+                                ..
+                            }) => {}
+                            Err(error) => panic!("unexpected nested-set execution: {error:?}"),
+                        },
+                        Err(ResidentActivationError::ActivationKernelExecution {
+                            error: ResidentKernelError::InvalidShape,
+                            ..
+                        }) => {}
+                        Err(error) => panic!("unsupported nested-set fixture: {error:?}"),
+                    }
+                    assert_eq!(
+                        folded.is_some(),
+                        actual.is_some(),
+                        "nested set {module}/{operation}, payload {bytes}"
+                    );
+                    if let Some(actual) = actual {
+                        admitted += 1;
+                        assert!(
+                            actual
+                                .snapshot_eq(
+                                    artifact.schemas(),
+                                    &folded.unwrap().value,
+                                    artifact.schemas()
+                                )
+                                .unwrap()
+                        );
+                    } else {
+                        refused += 1;
+                        assert_eq!(
+                            CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
+                            0,
+                            "nested-set materialization before refusal"
+                        );
+                    }
+                }
+            }
+            assert!(
+                admitted > 0 && refused > 0,
+                "both sides of the admission boundary must be exercised: {operation}"
+            );
+        }
+    }
+
+    #[test]
+    fn snapshot_gather_counts_repeated_occurrences_and_reuses_only_complete_values() {
+        let tuple = SchemaBody::Tuple(
+            vec![
+                SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                SchemaBody::String,
+            ]
+            .into_boxed_slice(),
+        );
+        let matrix = |rows, element| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![DimensionExpr::Constant(rows), DimensionExpr::Constant(1)]
+                .into_boxed_slice(),
+        };
+        let cell = |id, bytes| {
+            ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::U8(id),
+                    ValueDataDraft::String("x".repeat(bytes)),
+                ]
+                .into_boxed_slice(),
+            )
+        };
+        for repeats in [2, 3] {
+            let artifact = closed_copy_artifact(
+                "access",
+                "rows",
+                vec![
+                    (
+                        matrix(2, tuple.clone()),
+                        ValueDataDraft::Matrix(
+                            vec![cell(1, 9_000), cell(2, 11_000)].into_boxed_slice(),
+                        ),
+                    ),
+                    (
+                        matrix(repeats, SchemaBody::Index),
+                        ValueDataDraft::Matrix(
+                            vec![ValueDataDraft::Index(2); repeats as usize].into_boxed_slice(),
+                        ),
+                    ),
+                ],
+                matrix(repeats, tuple.clone()),
+            );
+            let analysis = ClosedActivationAnalysisContext::default();
+            CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.set(0));
+            let source = ArtifactSource::Slot(CellSlotId::new(0));
+            let operand = constant_comparison_operand(
+                &artifact,
+                NodeId::new(0),
+                source,
+                &ActivationFacts::default(),
+                &analysis,
+                false,
+            )
+            .unwrap();
+            assert_eq!(
+                operand.is_some(),
+                repeats == 2,
+                "each selected occurrence must fit cumulative preparation"
+            );
+            if repeats == 2 {
+                let before = analysis.construction.comparison_work.get();
+                let copies = CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get());
+                let reused = constant_comparison_operand(
+                    &artifact,
+                    NodeId::new(0),
+                    source,
+                    &ActivationFacts::default(),
+                    &analysis,
+                    false,
+                )
+                .unwrap()
+                .unwrap();
+                assert_eq!(before, analysis.construction.comparison_work.get());
+                assert_eq!(
+                    copies,
+                    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get())
+                );
+                assert!(
+                    operand
+                        .unwrap()
+                        .value
+                        .snapshot_eq(artifact.schemas(), &reused.value, artifact.schemas())
+                        .unwrap()
+                );
+            } else {
+                assert!(
+                    !analysis.values.borrow().contains_key(&source),
+                    "a refused result must not enter the usable cache"
+                );
+                assert_eq!(
+                    CLOSED_PUBLICATION_DRAFT_ENTRIES.with(|entries| entries.get()),
+                    0
+                );
+                let retry = closed_copy_artifact(
+                    "access",
+                    "scalar",
+                    vec![
+                        (
+                            matrix(1, tuple.clone()),
+                            ValueDataDraft::Matrix(vec![cell(1, 70)].into_boxed_slice()),
+                        ),
+                        (SchemaBody::Index, ValueDataDraft::Index(1)),
+                    ],
+                    tuple.clone(),
+                );
+                assert!(
+                    constant_comparison_operand(
+                        &retry,
+                        NodeId::new(0),
+                        source,
+                        &ActivationFacts::default(),
+                        &ClosedActivationAnalysisContext::default(),
+                        false
+                    )
+                    .unwrap()
+                    .is_some()
+                );
+            }
+            let mut catalog = mech_core::FunctionCatalogBuilder::new();
+            crate::install_intrinsic_resident(&mut catalog).unwrap();
+            match activate(
+                mech_core::ReactiveInstanceId::new(606, 44),
+                &artifact,
+                &catalog.build().unwrap(),
+                &ActivationFacts::default(),
+            ) {
+                Ok(mut instance) => assert_eq!(instance.turn(&[]).is_ok(), repeats == 2),
+                Err(ResidentActivationError::ActivationKernelExecution {
+                    error: ResidentKernelError::InvalidShape,
+                    ..
+                }) if repeats == 3 => {}
+                Err(error) => panic!("unsupported repeated-access fixture: {error:?}"),
             }
         }
     }
