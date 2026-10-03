@@ -15593,7 +15593,7 @@ fn access_indices(
     }
 }
 
-fn sequence_data_draft_at(
+pub(super) fn sequence_data_draft_at(
     schema: &SchemaBody,
     values: SequenceView<'_>,
     index: usize,

@@ -296,6 +296,22 @@ fn closed_comparisons_compose_through_set_size_and_matrix_access() {
 }
 
 #[test]
+fn closed_boolean_access_is_equivalent_across_selector_routes() {
+    for mask in [
+        "values[:]",
+        "values[:] == true",
+        "logic/and(values[:], true)",
+    ] {
+        exact_closed_mask(
+            &format!(
+                "x := [40 41 42 43 44 45]\nvalues := [false false false; true false true]\nmask := {mask}\nx[mask]\n"
+            ),
+            "[41; 45]",
+        );
+    }
+}
+
+#[test]
 fn closed_comparisons_compose_through_matrix_concatenation() {
     exact_closed_mask(
         "x := [10 20 30 40]\njoined := matrix/horzcat([1 2], [3 4])\nmask := joined > 2\nx[mask]\n",

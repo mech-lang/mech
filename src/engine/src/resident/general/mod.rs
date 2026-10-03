@@ -3884,6 +3884,8 @@ struct ClosedActivationAnalysisContext {
     comparison_scanned_work: std::cell::Cell<u64>,
     materialized_logical_mask_values: std::cell::Cell<u64>,
     materialized_operand_values: std::cell::Cell<u64>,
+    access_position_buffer_values: std::cell::Cell<u64>,
+    index_conversion_values: std::cell::Cell<u64>,
 }
 
 impl ClosedActivationAnalysisContext {
@@ -3915,6 +3917,28 @@ impl ClosedActivationAnalysisContext {
             return false;
         };
         self.materialized_operand_values.set(total);
+        true
+    }
+
+    fn record_access_position_buffer_values(&self, count: usize) -> bool {
+        let Some(total) = u64::try_from(count)
+            .ok()
+            .and_then(|count| self.access_position_buffer_values.get().checked_add(count))
+        else {
+            return false;
+        };
+        self.access_position_buffer_values.set(total);
+        true
+    }
+
+    fn record_index_conversion_values(&self, count: usize) -> bool {
+        let Some(total) = u64::try_from(count)
+            .ok()
+            .and_then(|count| self.index_conversion_values.get().checked_add(count))
+        else {
+            return false;
+        };
+        self.index_conversion_values.set(total);
         true
     }
 }
@@ -4089,25 +4113,26 @@ fn closed_operand_draft_values(
 }
 
 fn closed_scalar_selector_index(operand: &ConstantComparisonOperand<'_>) -> Option<usize> {
-    let values = closed_operand_draft_values(operand)?;
-    let [value] = values.as_slice() else {
-        return None;
+    let one_based = match operand.value.data() {
+        mech_core::ValueData::Matrix(matrix) if matrix.elements().len() == 1 => {
+            mech_core::canonical_positional_ordinal_at(matrix.elements(), 0).ok()?
+        }
+        value if operand.rows == 1 && operand.columns == 1 => {
+            mech_core::canonical_positional_ordinal(value).ok()?
+        }
+        _ => return None,
     };
-    usize::try_from(
-        mech_core::canonical_positional_ordinal_draft(value)
-            .ok()?
-            .checked_sub(1)?,
-    )
-    .ok()
+    usize::try_from(one_based.checked_sub(1)?).ok()
 }
 
-fn closed_access_selector_indices(
+fn visit_closed_access_selector_indices(
     artifact: &ProgramArtifact,
     operand: &ConstantComparisonOperand<'_>,
     facts: &ActivationFacts,
     upper: usize,
     resident_order: bool,
-) -> Result<Option<Vec<usize>>, ResidentActivationError> {
+    mut visit: impl FnMut(usize),
+) -> Result<Option<(usize, usize)>, ResidentActivationError> {
     let selector_uses_resident_order = resident_order
         && closed_operand_resident_kind(artifact, operand, facts)? != ResidentValueKind::Snapshot
         && matches!(operand.schema, SchemaBody::Matrix { .. });
@@ -4135,19 +4160,21 @@ fn closed_access_selector_indices(
                 if values.len() != upper {
                     return Ok(None);
                 }
-                let mut selected = Vec::new();
+                let mut selected = 0usize;
                 for resident_ordinal in 0..values.len() {
                     let canonical_ordinal = canonical_ordinal(resident_ordinal)?;
                     if values[canonical_ordinal] {
-                        selected.push(resident_ordinal);
+                        visit(resident_ordinal);
+                        selected = selected
+                            .checked_add(1)
+                            .ok_or(ResidentActivationError::RegionSizeOverflow)?;
                     }
                 }
-                return Ok(Some(selected));
+                return Ok(Some((selected, values.len())));
             }
             if !mech_core::is_positional_selector_schema(&operand.element) {
                 return Ok(None);
             }
-            let mut selected = Vec::with_capacity(values.len());
             for resident_ordinal in 0..values.len() {
                 let canonical_ordinal = canonical_ordinal(resident_ordinal)?;
                 let Ok(one_based) =
@@ -4162,22 +4189,29 @@ fn closed_access_selector_indices(
                 else {
                     return Ok(None);
                 };
-                selected.push(position);
+                visit(position);
             }
-            Ok(Some(selected))
+            Ok(Some((values.len(), values.len())))
         }
         value if mech_core::is_positional_selector_schema(&operand.schema) => {
             let Ok(one_based) = mech_core::canonical_positional_ordinal(value) else {
                 return Ok(None);
             };
-            Ok(one_based
+            let Some(position) = one_based
                 .checked_sub(1)
                 .and_then(|position| usize::try_from(position).ok())
                 .filter(|position| *position < upper)
-                .map(|position| vec![position]))
+            else {
+                return Ok(None);
+            };
+            visit(position);
+            Ok(Some((1, 1)))
         }
         mech_core::ValueData::Bool(selected) if upper == 1 => {
-            Ok(Some(if *selected { vec![0] } else { Vec::new() }))
+            if *selected {
+                visit(0);
+            }
+            Ok(Some((usize::from(*selected), 1)))
         }
         _ => Ok(None),
     }
@@ -4400,11 +4434,6 @@ fn closed_set_membership_operation(operation: &OperationReference) -> Option<boo
 
 fn closed_set_size_operation(operation: &OperationReference) -> bool {
     operation.module_path.as_ref() == ["set"] && operation.operation_name == "size"
-}
-
-fn closed_set_boolean_operation(operation: &OperationReference) -> bool {
-    closed_set_relation_operation(operation).is_some()
-        || closed_set_membership_operation(operation).is_some()
 }
 
 fn closed_scalar_access_operation(operation: &OperationReference) -> bool {
@@ -5251,7 +5280,7 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     next_depth,
                     budget,
                     analysis,
-                    allow_large_direct_dense,
+                    true,
                 )?
                 else {
                     return Ok(None);
@@ -5308,25 +5337,53 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 let Some(source_count) = source.rows.checked_mul(source.columns) else {
                     return Err(ResidentActivationError::RegionSizeOverflow);
                 };
-                if !closed_dense_fold_count_admitted(
-                    source_count,
-                    &source.element,
-                    allow_large_direct_dense,
-                ) {
+                let source_kind = closed_operand_resident_kind(artifact, &source, facts)?;
+                let target_kind = closed_slot_resident_kind(artifact, slot, facts)?;
+                let direct_dense_access = source_kind == target_kind
+                    && matches!(
+                        source_kind,
+                        ResidentValueKind::F64 | ResidentValueKind::String
+                    );
+                let mech_core::ValueData::Matrix(source_matrix) = source.value.data() else {
+                    return Ok(None);
+                };
+                let source_values = source_matrix.elements();
+                if source_values.len() != source_count {
                     return Ok(None);
                 }
-                let mut cloned_bytes = closed_operand_retained_bytes(artifact, &source, analysis)
-                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-                for selector in &selectors {
-                    let Some(bytes) = closed_operand_retained_bytes(artifact, selector, analysis)
-                    else {
-                        return Ok(None);
-                    };
-                    let Some(next) = cloned_bytes.checked_add(bytes) else {
-                        return Ok(None);
-                    };
-                    cloned_bytes = next;
+                let Ok(output_footprint) = canonical_sequence_element_retained_footprint(
+                    &source.element,
+                    source_values,
+                    selected,
+                ) else {
+                    return Ok(None);
+                };
+                if output_footprint
+                    .node_count
+                    .checked_mul(2)
+                    .and_then(|nodes| nodes.checked_add(2))
+                    .is_none_or(|nodes| nodes > mech_core::RESIDENT_MAX_RETAINED_NODES)
+                {
+                    return Ok(None);
                 }
+                let cloned_bytes = if direct_dense_access {
+                    0
+                } else {
+                    let mut bytes = closed_operand_retained_bytes(artifact, &source, analysis)
+                        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                    for selector in &selectors {
+                        let Some(selector_bytes) =
+                            closed_operand_retained_bytes(artifact, selector, analysis)
+                        else {
+                            return Ok(None);
+                        };
+                        let Some(next) = bytes.checked_add(selector_bytes) else {
+                            return Ok(None);
+                        };
+                        bytes = next;
+                    }
+                    bytes
+                };
                 let Some(shape_bytes) = target_schema
                     .dimension_parameters()
                     .len()
@@ -5335,10 +5392,13 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 else {
                     return Ok(None);
                 };
-                let Some(construction_bytes) = source_count
-                    .checked_mul(core::mem::size_of::<ValueDataDraft>())
+                let materialized_source_values = if direct_dense_access { 0 } else { source_count };
+                let Some(construction_bytes) = materialized_source_values
+                    .checked_add(1)
+                    .and_then(|count| count.checked_mul(core::mem::size_of::<ValueDataDraft>()))
                     .and_then(|bytes| u64::try_from(bytes).ok())
                     .and_then(|bytes| bytes.checked_add(cloned_bytes))
+                    .and_then(|bytes| bytes.checked_add(output_footprint.retained_bytes))
                     .and_then(|bytes| bytes.checked_add(shape_bytes))
                     .and_then(|bytes| {
                         bytes.checked_add(u64::try_from(core::mem::size_of::<Value>()).ok()?)
@@ -5346,14 +5406,25 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 else {
                     return Ok(None);
                 };
-                let Some(compute_work) = u64::try_from(source_count)
-                    .ok()
-                    .and_then(|count| count.checked_add(selectors.len() as u64))
+                let Some(compute_work) = materialized_source_values
+                    .checked_add(selectors.len())
+                    .and_then(|work| work.checked_add(1))
+                    .and_then(|work| u64::try_from(work).ok())
+                    .and_then(|work| {
+                        work.checked_add(
+                            output_footprint
+                                .encoded_bytes
+                                .max(output_footprint.node_count)
+                                .max(1),
+                        )
+                    })
                 else {
                     return Ok(None);
                 };
                 let mut publication_operands = Vec::with_capacity(selectors.len() + 1);
-                publication_operands.push(&source);
+                if !direct_dense_access {
+                    publication_operands.push(&source);
+                }
                 publication_operands.extend(selectors.iter());
                 let Some(comparison_work) = closed_publication_comparison_work(
                     artifact,
@@ -5367,18 +5438,22 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 else {
                     return Ok(None);
                 };
+                let Some(materialized_values) = materialized_source_values.checked_add(1) else {
+                    return Ok(None);
+                };
                 if !analysis.construction.charge_compute_with_comparison(
                     construction_bytes,
                     compute_work,
                     comparison_work,
-                ) || !analysis.record_materialized_operand_values(source_count)
+                ) || !analysis.record_materialized_operand_values(materialized_values)
                 {
                     return Ok(None);
                 }
-                let Some(values) = closed_operand_draft_values(&source) else {
-                    return Ok(None);
-                };
-                let Some(data) = values.into_iter().nth(selected) else {
+                let Ok(data) = super::numeric::sequence_data_draft_at(
+                    &source.element,
+                    source_values,
+                    selected,
+                ) else {
                     return Ok(None);
                 };
                 let target_shape = slot_shape(artifact, slot, facts)?;
@@ -5413,7 +5488,7 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     next_depth,
                     budget,
                     analysis,
-                    allow_large_direct_dense,
+                    true,
                 )?
                 else {
                     return Ok(None);
@@ -5438,13 +5513,6 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 let Some(source_count) = source.rows.checked_mul(source.columns) else {
                     return Err(ResidentActivationError::RegionSizeOverflow);
                 };
-                if !closed_dense_fold_count_admitted(
-                    source_count,
-                    source_element,
-                    allow_large_direct_dense,
-                ) {
-                    return Ok(None);
-                }
                 let mut selector_operands = Vec::with_capacity(selector_inputs.len());
                 for input in selector_inputs {
                     let Some(selector) = constant_comparison_operand_at_depth(
@@ -5501,6 +5569,71 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                         || (matches!(access, ClosedMatrixAccessOperation::Range)
                             && selector_inputs.len() <= 1
                             && source_kind == ResidentValueKind::String));
+                let mut selector_counts = [0usize; 2];
+                let mut inspected_selector_values = 0usize;
+                for (index, selector) in selector_operands.iter().enumerate() {
+                    let upper = match access {
+                        ClosedMatrixAccessOperation::Rows => source.rows,
+                        ClosedMatrixAccessOperation::Columns => source.columns,
+                        ClosedMatrixAccessOperation::Range if selector_operands.len() == 1 => {
+                            source_count
+                        }
+                        ClosedMatrixAccessOperation::Range
+                        | ClosedMatrixAccessOperation::Rectangle
+                            if index == 0 =>
+                        {
+                            source.rows
+                        }
+                        ClosedMatrixAccessOperation::Range
+                        | ClosedMatrixAccessOperation::Rectangle => source.columns,
+                    };
+                    let Some((selected, inspected)) = visit_closed_access_selector_indices(
+                        artifact,
+                        selector,
+                        facts,
+                        upper,
+                        dense_kernel,
+                        |_| {},
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    selector_counts[index] = selected;
+                    let Some(inspected) = inspected_selector_values.checked_add(inspected) else {
+                        return Ok(None);
+                    };
+                    inspected_selector_values = inspected;
+                }
+                let Some(selector_values) = selector_counts[..selector_operands.len()]
+                    .iter()
+                    .try_fold(0usize, |total, selected| total.checked_add(*selected))
+                else {
+                    return Ok(None);
+                };
+                let Some(selector_buffer_bytes) = selector_values
+                    .checked_mul(core::mem::size_of::<usize>())
+                    .and_then(|bytes| {
+                        selector_operands
+                            .len()
+                            .checked_mul(core::mem::size_of::<Vec<usize>>())
+                            .and_then(|containers| bytes.checked_add(containers))
+                    })
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                else {
+                    return Ok(None);
+                };
+                let Some(selector_work) = u64::try_from(inspected_selector_values).ok() else {
+                    return Ok(None);
+                };
+                if !analysis.construction.charge_compute_chunk(
+                    selector_buffer_bytes,
+                    selector_work,
+                    1,
+                ) || !analysis.record_materialized_operand_values(selector_values)
+                    || !analysis.record_access_position_buffer_values(selector_values)
+                {
+                    return Ok(None);
+                }
                 let mut selections = Vec::with_capacity(selector_operands.len());
                 for (index, selector) in selector_operands.iter().enumerate() {
                     let upper = match access {
@@ -5518,16 +5651,21 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                         ClosedMatrixAccessOperation::Range
                         | ClosedMatrixAccessOperation::Rectangle => source.columns,
                     };
-                    let Some(selected) = closed_access_selector_indices(
+                    let mut selected = Vec::with_capacity(selector_counts[index]);
+                    let Some((count, _)) = visit_closed_access_selector_indices(
                         artifact,
                         selector,
                         facts,
                         upper,
                         dense_kernel,
+                        |position| selected.push(position),
                     )?
                     else {
                         return Ok(None);
                     };
+                    if count != selector_counts[index] || selected.len() != count {
+                        return Ok(None);
+                    }
                     selections.push(selected);
                 }
                 let (output_rows, output_columns) = match access {
@@ -5626,21 +5764,31 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 {
                     return Ok(None);
                 }
-                let Some(mut cloned_bytes) =
-                    closed_operand_retained_bytes(artifact, &source, analysis)
-                else {
-                    return Ok(None);
-                };
-                for selector in &selector_operands {
-                    let Some(bytes) = closed_operand_retained_bytes(artifact, selector, analysis)
+                // The dense gather kernels borrow the source and selectors and
+                // touch only selected output lanes. Do not make their admission
+                // depend on cloning or materializing the complete source. The
+                // snapshot fallback retains its broader source/selector costs.
+                let cloned_bytes = if dense_kernel {
+                    0
+                } else {
+                    let Some(mut bytes) =
+                        closed_operand_retained_bytes(artifact, &source, analysis)
                     else {
                         return Ok(None);
                     };
-                    let Some(next) = cloned_bytes.checked_add(bytes) else {
-                        return Ok(None);
-                    };
-                    cloned_bytes = next;
-                }
+                    for selector in &selector_operands {
+                        let Some(selector_bytes) =
+                            closed_operand_retained_bytes(artifact, selector, analysis)
+                        else {
+                            return Ok(None);
+                        };
+                        let Some(next) = bytes.checked_add(selector_bytes) else {
+                            return Ok(None);
+                        };
+                        bytes = next;
+                    }
+                    bytes
+                };
                 let Some(shape_bytes) = target_schema
                     .dimension_parameters()
                     .len()
@@ -5649,20 +5797,10 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 else {
                     return Ok(None);
                 };
-                let Some(selector_values) = selections
-                    .iter()
-                    .try_fold(0usize, |total, selected| total.checked_add(selected.len()))
-                else {
-                    return Ok(None);
-                };
-                let Some(construction_bytes) = source_count
+                let materialized_source_values = if dense_kernel { 0 } else { source_count };
+                let Some(construction_bytes) = materialized_source_values
                     .checked_add(output_count)
                     .and_then(|count| count.checked_mul(core::mem::size_of::<ValueDataDraft>()))
-                    .and_then(|bytes| {
-                        selector_values
-                            .checked_mul(core::mem::size_of::<usize>())
-                            .and_then(|selector_bytes| bytes.checked_add(selector_bytes))
-                    })
                     .and_then(|bytes| u64::try_from(bytes).ok())
                     .and_then(|bytes| bytes.checked_add(cloned_bytes))
                     .and_then(|bytes| bytes.checked_add(output_payload_bytes))
@@ -5673,16 +5811,17 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 else {
                     return Ok(None);
                 };
-                let Some(compute_work) = source_count
-                    .checked_add(selector_values)
-                    .and_then(|work| work.checked_add(output_count))
+                let Some(compute_work) = materialized_source_values
+                    .checked_add(output_count)
                     .and_then(|work| u64::try_from(work).ok())
                     .and_then(|work| work.checked_add(output_work))
                 else {
                     return Ok(None);
                 };
                 let mut publication_operands = Vec::with_capacity(selector_operands.len() + 1);
-                publication_operands.push(&source);
+                if !dense_kernel {
+                    publication_operands.push(&source);
+                }
                 publication_operands.extend(selector_operands.iter());
                 let Some(comparison_work) = closed_publication_comparison_work(
                     artifact,
@@ -5696,9 +5835,8 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 else {
                     return Ok(None);
                 };
-                let Some(materialized_values) = source_count
-                    .checked_add(selector_values)
-                    .and_then(|count| count.checked_add(output_count))
+                let Some(materialized_values) =
+                    materialized_source_values.checked_add(output_count)
                 else {
                     return Ok(None);
                 };
@@ -5710,9 +5848,6 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 {
                     return Ok(None);
                 }
-                let Some(source_values) = closed_operand_draft_values(&source) else {
-                    return Ok(None);
-                };
                 let mut output = Vec::with_capacity(output_count);
                 let materialized = visit_closed_matrix_access_indices(
                     access,
@@ -5720,10 +5855,13 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     source.columns,
                     &selections,
                     |index| {
-                        let Some(value) = source_values.get(index) else {
-                            return Err(());
-                        };
-                        output.push(value.clone());
+                        let value = super::numeric::sequence_data_draft_at(
+                            source_element,
+                            source_values,
+                            index,
+                        )
+                        .map_err(|_| ())?;
+                        output.push(value);
                         Ok::<(), ()>(())
                     },
                 );
@@ -5794,39 +5932,45 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     return Ok(None);
                 };
                 let input_kind = closed_operand_resident_kind(artifact, &input, facts)?;
-                let Some(input_values) = closed_operand_draft_values(&input) else {
-                    return Ok(None);
+                let input_sequence = match input.value.data() {
+                    mech_core::ValueData::Matrix(matrix) if matrix.elements().len() == count => {
+                        Some(matrix.elements())
+                    }
+                    _ if count == 1 => None,
+                    _ => return Ok(None),
                 };
-                if input_values.len() != count {
+                let canonical_index = |resident_index: usize| {
+                    if input_kind != ResidentValueKind::Snapshot && input_sequence.is_some() {
+                        let row = resident_index % input.rows;
+                        let column = resident_index / input.rows;
+                        row * input.columns + column
+                    } else {
+                        resident_index
+                    }
+                };
+                let validation_work = u64::try_from(count)
+                    .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+                if !analysis
+                    .construction
+                    .charge_compute_chunk(0, validation_work, 1)
+                {
                     return Ok(None);
                 }
-                // Dense matrices are consumed in resident (column-major)
-                // order. Snapshot matrices are consumed in canonical
-                // (row-major) order. Preserve that observable ordering before
-                // flattening either representation into an index column.
-                let ordered_values = if input_kind != ResidentValueKind::Snapshot
-                    && matches!(input.schema, SchemaBody::Matrix { .. })
-                {
-                    let mut ordered = Vec::with_capacity(count);
-                    for column in 0..input.columns {
-                        for row in 0..input.rows {
-                            ordered.push(input_values[row * input.columns + column].clone());
-                        }
+                // Validate the borrowed input before admission without
+                // constructing canonical drafts or resident-order buffers.
+                for resident_index in 0..count {
+                    let valid = match input_sequence {
+                        Some(values) => mech_core::canonical_positional_ordinal_at(
+                            values,
+                            canonical_index(resident_index),
+                        )
+                        .is_ok(),
+                        None => mech_core::canonical_positional_ordinal(input.value.data()).is_ok(),
+                    };
+                    if !valid {
+                        return Ok(None);
                     }
-                    ordered
-                } else {
-                    input_values
-                };
-                let Ok(mut converted) = ordered_values
-                    .iter()
-                    .map(|value| {
-                        mech_core::canonical_positional_ordinal_draft(value)
-                            .map(ValueDataDraft::Index)
-                    })
-                    .collect::<Result<Vec<_>, _>>()
-                else {
-                    return Ok(None);
-                };
+                }
                 let Some(cloned_bytes) = closed_operand_retained_bytes(artifact, &input, analysis)
                 else {
                     return Ok(None);
@@ -5864,6 +6008,7 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     .checked_mul(2)
                     .and_then(|work| work.checked_add(draft_nodes))
                     .and_then(|work| u64::try_from(work).ok())
+                    .and_then(|work| work.checked_sub(validation_work))
                 else {
                     return Ok(None);
                 };
@@ -5896,6 +6041,23 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 ) || !analysis.record_materialized_operand_values(draft_nodes)
                 {
                     return Ok(None);
+                }
+                if !analysis.record_index_conversion_values(count) {
+                    return Ok(None);
+                }
+                let mut converted = Vec::with_capacity(count);
+                for resident_index in 0..count {
+                    let one_based = match input_sequence {
+                        Some(values) => mech_core::canonical_positional_ordinal_at(
+                            values,
+                            canonical_index(resident_index),
+                        ),
+                        None => mech_core::canonical_positional_ordinal(input.value.data()),
+                    };
+                    let Ok(one_based) = one_based else {
+                        return Ok(None);
+                    };
+                    converted.push(ValueDataDraft::Index(one_based));
                 }
                 let data = if matches!(target_schema.body(), SchemaBody::Matrix { .. }) {
                     ValueDataDraft::Matrix(converted.into_boxed_slice())
@@ -9121,18 +9283,43 @@ fn closed_boolean_producer_mask(
     else {
         return Ok(None);
     };
-    let mech_core::ValueData::Bool(value) = operand.value.data() else {
-        return Ok(None);
+    let mask = match operand.value.data() {
+        mech_core::ValueData::Bool(value) if operand.rows == 1 && operand.columns == 1 => {
+            ClosedLogicalMask::scalar(*value)
+        }
+        mech_core::ValueData::Matrix(matrix) => {
+            let mech_core::snapshot::SequenceView::Bool(values) = matrix.elements() else {
+                return Ok(None);
+            };
+            let Some(count) = operand.rows.checked_mul(operand.columns) else {
+                return Err(ResidentActivationError::RegionSizeOverflow);
+            };
+            if values.len() != count {
+                return Ok(None);
+            }
+            let mut dense_values = Vec::with_capacity(count);
+            for column in 0..operand.columns {
+                for row in 0..operand.rows {
+                    dense_values.push(values[row * operand.columns + column]);
+                }
+            }
+            ClosedLogicalMask {
+                rows: operand.rows,
+                columns: operand.columns,
+                values: dense_values,
+            }
+        }
+        _ => return Ok(None),
     };
     if analysis
         .logical_masks
-        .projected_retained_bytes(source, 1)
+        .projected_retained_bytes(source, mask.values.capacity())
         .is_none()
-        || !analysis.record_materialized_logical_mask_values(1)
+        || !analysis.record_materialized_logical_mask_values(mask.values.len())
     {
         return Ok(None);
     }
-    Ok(Some(ClosedLogicalMask::scalar(*value)))
+    Ok(Some(mask))
 }
 
 fn closed_comparison_mask(
@@ -9646,6 +9833,15 @@ fn complete_activation_shape_facts(
             continue;
         }
         let output = node_output_slot(artifact, node.node)?;
+        let output_schema = artifact
+            .schemas()
+            .get(artifact.slots()[output.get() as usize].schema)
+            .ok_or(ResidentActivationError::InvalidNodeOutput { node: node.node })?;
+        let boolean_output = matches!(output_schema.body(), SchemaBody::Bool)
+            || matches!(
+                output_schema.body(),
+                SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool
+            );
         if class == NodeClass::Activation
             && required_logical_populations.contains(&ArtifactSource::Slot(output))
             && let Some(mask) = closed_comparison_mask(artifact, node.node, &facts, &analysis)?
@@ -9660,7 +9856,12 @@ fn complete_activation_shape_facts(
         }
         if class == NodeClass::Activation
             && required_logical_populations.contains(&ArtifactSource::Slot(output))
-            && closed_set_boolean_operation(node.operation)
+            && boolean_output
+            && closed_iterative_operand_producer(node.operation)
+            && analysis
+                .logical_masks
+                .get(&ArtifactSource::Slot(output))
+                .is_none()
             && let Some(mask) = closed_boolean_producer_mask(
                 artifact,
                 node.node,
@@ -9679,6 +9880,10 @@ fn complete_activation_shape_facts(
         }
         if node.operation.module_path.as_ref() == ["matrix"]
             && required_logical_populations.contains(&ArtifactSource::Slot(output))
+            && analysis
+                .logical_masks
+                .get(&ArtifactSource::Slot(output))
+                .is_none()
             && matches!(
                 node.operation.operation_name.as_str(),
                 "horzcat" | "vertcat"
@@ -9719,6 +9924,10 @@ fn complete_activation_shape_facts(
         if node.operation.module_path.as_ref() == ["matrix"]
             && node.operation.operation_name == "transpose"
             && required_logical_populations.contains(&ArtifactSource::Slot(output))
+            && analysis
+                .logical_masks
+                .get(&ArtifactSource::Slot(output))
+                .is_none()
         {
             let inputs = node_inputs(artifact, node.node)?;
             let [source] = inputs.as_slice() else {
@@ -15460,6 +15669,7 @@ mod shape_fact_tests {
 
     fn closed_matrix_access_artifact(
         operation_name: &str,
+        source_extents: [u64; 2],
         selectors: &[Vec<u64>],
         output_extents: [u64; 2],
         expected: &[u64],
@@ -15482,7 +15692,9 @@ mod shape_fact_tests {
             .unwrap()
         };
         let mut schemas = SchemaTableBuilder::new();
-        let source = schemas.insert(matrix(element.clone(), [2, 3])).unwrap();
+        let source = schemas
+            .insert(matrix(element.clone(), source_extents))
+            .unwrap();
         let selector_schemas = selectors
             .iter()
             .map(|selector| {
@@ -15518,7 +15730,7 @@ mod shape_fact_tests {
         };
         let source_value = value(
             source,
-            (1..=6)
+            (1..=source_extents[0].checked_mul(source_extents[1]).unwrap())
                 .map(&value_draft)
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
@@ -15708,6 +15920,238 @@ mod shape_fact_tests {
         .unwrap()
     }
 
+    fn closed_scalar_access_artifact(source_count: u64, selected: u64) -> ProgramArtifact {
+        let mut schemas = SchemaTableBuilder::new();
+        let source = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: [
+                            DimensionExpr::Constant(source_count),
+                            DimensionExpr::Constant(1),
+                        ]
+                        .into(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let index = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Index,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let scalar = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let boolean = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Bool,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let source = build.resolve(source).unwrap();
+        let index = build.resolve(index).unwrap();
+        let scalar = build.resolve(scalar).unwrap();
+        let boolean = build.resolve(boolean).unwrap();
+        let (schemas, _) = build.into_parts();
+        let source_value = ValueDraft {
+            schema: source,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                (1..=source_count)
+                    .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value as f64)))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let scalar_value = |schema, data| {
+            ValueDraft {
+                schema,
+                shape_values: Box::new([]),
+                data,
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let selector_value = scalar_value(index, ValueDataDraft::Index(selected));
+        let expected_value = scalar_value(
+            scalar,
+            ValueDataDraft::F64(F64Bits::from_f64(selected as f64)),
+        );
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let source_value = constants.insert(source_value).unwrap();
+        let selector_value = constants.insert(selector_value).unwrap();
+        let expected_value = constants.insert(expected_value).unwrap();
+        let build = constants.finish().unwrap();
+        let source_value = build.resolve(source_value).unwrap();
+        let selector_value = build.resolve(selector_value).unwrap();
+        let expected_value = build.resolve(expected_value).unwrap();
+        let (constants, _) = build.into_parts();
+        let contract = |inputs: &[SchemaId], output| {
+            ResolvedOperationContract::Declared(DeclaredOperationContract {
+                inputs: inputs
+                    .iter()
+                    .copied()
+                    .map(|schema| ResolvedInputPort {
+                        schema,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                outputs: vec![ResolvedOutputPort {
+                    schema: output,
+                    access: AccessMode::Write,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::FullWrite {
+                        shape: ShapeRule::Declared,
+                    },
+                    alias: AliasPolicy::NoAlias,
+                    change_detection: ChangeDetectionPolicy::KernelReported,
+                }]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            })
+        };
+        let mut contracts = OperationContractTableBuilder::new();
+        let access = contracts
+            .insert(contract(&[source, index], scalar))
+            .unwrap();
+        let compare = contracts
+            .insert(contract(&[scalar, scalar], boolean))
+            .unwrap();
+        let build = contracts.finish().unwrap();
+        let access = build.resolve(access).unwrap();
+        let compare = build.resolve(compare).unwrap();
+        let (contracts, _) = build.into_parts();
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: vec![
+                SlotDeclaration {
+                    slot: CellSlotId::new(0),
+                    schema: scalar,
+                    role: SlotRole::Derived,
+                    producer: ProducerReference::NodeOutput {
+                        node: NodeId::new(0),
+                        output_ordinal: 0,
+                    },
+                    initializer: None,
+                },
+                SlotDeclaration {
+                    slot: CellSlotId::new(1),
+                    schema: boolean,
+                    role: SlotRole::Derived,
+                    producer: ProducerReference::NodeOutput {
+                        node: NodeId::new(1),
+                        output_ordinal: 0,
+                    },
+                    initializer: None,
+                },
+            ]
+            .into_boxed_slice(),
+            nodes: vec![
+                NodeDeclaration {
+                    node: NodeId::new(0),
+                    body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                        operation: OperationReference {
+                            module_path: vec!["access".to_owned()].into_boxed_slice(),
+                            operation_name: "scalar".to_owned(),
+                        },
+                        contract: access,
+                        requirement: None,
+                    }),
+                    input_bindings: 0..2,
+                    output_bindings: 2..3,
+                },
+                NodeDeclaration {
+                    node: NodeId::new(1),
+                    body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                        operation: OperationReference {
+                            module_path: vec!["compare".to_owned()].into_boxed_slice(),
+                            operation_name: "eq".to_owned(),
+                        },
+                        contract: compare,
+                        requirement: None,
+                    }),
+                    input_bindings: 3..5,
+                    output_bindings: 5..6,
+                },
+            ]
+            .into_boxed_slice(),
+            bindings: vec![
+                BindingDeclaration::Input {
+                    id: BindingId::new(0),
+                    node: NodeId::new(0),
+                    port_ordinal: 0,
+                    source: ArtifactSource::Constant(source_value),
+                },
+                BindingDeclaration::Input {
+                    id: BindingId::new(1),
+                    node: NodeId::new(0),
+                    port_ordinal: 1,
+                    source: ArtifactSource::Constant(selector_value),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(2),
+                    node: NodeId::new(0),
+                    port_ordinal: 0,
+                    target: CellSlotId::new(0),
+                },
+                BindingDeclaration::Input {
+                    id: BindingId::new(3),
+                    node: NodeId::new(1),
+                    port_ordinal: 0,
+                    source: ArtifactSource::Slot(CellSlotId::new(0)),
+                },
+                BindingDeclaration::Input {
+                    id: BindingId::new(4),
+                    node: NodeId::new(1),
+                    port_ordinal: 1,
+                    source: ArtifactSource::Constant(expected_value),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(5),
+                    node: NodeId::new(1),
+                    port_ordinal: 0,
+                    target: CellSlotId::new(1),
+                },
+            ]
+            .into_boxed_slice(),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
     #[test]
     fn closed_matrix_access_family_folds_before_comparison() {
         let cases = [
@@ -15733,6 +16177,7 @@ mod shape_fact_tests {
         for (operation_name, selectors, extents, expected) in cases {
             let artifact = closed_matrix_access_artifact(
                 operation_name,
+                [2, 3],
                 &selectors,
                 extents,
                 &expected,
@@ -15774,10 +16219,492 @@ mod shape_fact_tests {
     }
 
     #[test]
+    fn bounded_dense_gather_does_not_materialize_its_large_source() {
+        let source_count = u64::try_from(MAX_STATIC_SELECTOR_SOURCE_STEPS).unwrap() + 1;
+        let artifact = closed_matrix_access_artifact(
+            "range",
+            [source_count, 1],
+            &[vec![source_count]],
+            [1, 1],
+            &[source_count],
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            |value| ValueDataDraft::F64(F64Bits::from_f64(value as f64)),
+        );
+        let decoded = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        for artifact in [&artifact, &decoded] {
+            let facts = ActivationFacts::default();
+            let analysis = ClosedActivationAnalysisContext::default();
+            let inputs = node_inputs(artifact, NodeId::new(0)).unwrap();
+            assert!(
+                constant_comparison_operand(
+                    artifact,
+                    NodeId::new(0),
+                    inputs[0],
+                    &facts,
+                    &ClosedActivationAnalysisContext::default(),
+                    true,
+                )
+                .unwrap()
+                .is_some(),
+                "large dense source should be borrowable for access",
+            );
+            assert!(
+                constant_comparison_operand(
+                    artifact,
+                    NodeId::new(0),
+                    inputs[1],
+                    &facts,
+                    &ClosedActivationAnalysisContext::default(),
+                    false,
+                )
+                .unwrap()
+                .is_some(),
+                "small selector should fold",
+            );
+            let operand = constant_comparison_operand(
+                artifact,
+                NodeId::new(0),
+                ArtifactSource::Slot(CellSlotId::new(0)),
+                &facts,
+                &analysis,
+                false,
+            )
+            .unwrap();
+            assert!(
+                operand.is_some(),
+                "a bounded dense gather should fold independently of source cardinality; bytes={} compute={} comparison={} materialized={}",
+                analysis.construction.construction_bytes.get(),
+                analysis.construction.compute_work.get(),
+                analysis.construction.comparison_work.get(),
+                analysis.materialized_operand_values.get(),
+            );
+            let operand = operand.unwrap();
+            assert_eq!(
+                closed_operand_draft_values(&operand).unwrap(),
+                [ValueDataDraft::F64(F64Bits::from_f64(source_count as f64))],
+            );
+            assert_eq!(analysis.materialized_operand_values.get(), 2);
+            assert_eq!(analysis.access_position_buffer_values.get(), 1);
+            assert_eq!(
+                closed_comparison_population(artifact, NodeId::new(1), &facts).unwrap(),
+                Some(1),
+            );
+        }
+    }
+
+    #[test]
+    fn bounded_scalar_access_does_not_materialize_its_large_source() {
+        let source_count = u64::try_from(MAX_STATIC_SELECTOR_SOURCE_STEPS).unwrap() + 1;
+        let artifact = closed_scalar_access_artifact(source_count, source_count);
+        let decoded = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        for artifact in [&artifact, &decoded] {
+            let analysis = ClosedActivationAnalysisContext::default();
+            let operand = constant_comparison_operand(
+                artifact,
+                NodeId::new(0),
+                ArtifactSource::Slot(CellSlotId::new(0)),
+                &ActivationFacts::default(),
+                &analysis,
+                false,
+            )
+            .unwrap()
+            .expect("bounded scalar access should fold independently of source cardinality");
+            assert!(matches!(
+                operand.value.data(),
+                mech_core::ValueData::F64(value)
+                    if value.to_f64().to_bits() == (source_count as f64).to_bits()
+            ));
+            assert_eq!(analysis.materialized_operand_values.get(), 1);
+            assert_eq!(
+                closed_comparison_population(
+                    artifact,
+                    NodeId::new(1),
+                    &ActivationFacts::default(),
+                )
+                .unwrap(),
+                Some(1),
+            );
+        }
+    }
+
+    #[test]
+    fn full_large_dense_gather_keeps_the_output_limit() {
+        let source_count = u64::try_from(MAX_STATIC_SELECTOR_SOURCE_STEPS).unwrap() + 1;
+        let artifact = closed_matrix_access_artifact(
+            "range",
+            [source_count, 1],
+            &[],
+            [source_count, 1],
+            &(1..=source_count).collect::<Vec<_>>(),
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            |value| ValueDataDraft::F64(F64Bits::from_f64(value as f64)),
+        );
+        assert!(
+            constant_comparison_operand(
+                &artifact,
+                NodeId::new(0),
+                ArtifactSource::Slot(CellSlotId::new(0)),
+                &ActivationFacts::default(),
+                &ClosedActivationAnalysisContext::default(),
+                false,
+            )
+            .unwrap()
+            .is_none(),
+        );
+    }
+
+    fn boolean_access_selector_artifact(route: &str) -> ProgramArtifact {
+        let matrix = |element, rows, columns| {
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: [
+                        DimensionExpr::Constant(rows),
+                        DimensionExpr::Constant(columns),
+                    ]
+                    .into(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let mut schemas = SchemaTableBuilder::new();
+        let boolean_source = schemas.insert(matrix(SchemaBody::Bool, 2, 3)).unwrap();
+        let boolean_row = schemas.insert(matrix(SchemaBody::Bool, 6, 1)).unwrap();
+        let numeric_source = schemas
+            .insert(matrix(SchemaBody::FloatingPoint(FloatWidth::W64), 6, 1))
+            .unwrap();
+        let numeric_output = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Explicit,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: Some(DimensionExpr::Constant(6)),
+                    }]
+                    .into_boxed_slice(),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: [
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Constant(1),
+                        ]
+                        .into(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let boolean_source = build.resolve(boolean_source).unwrap();
+        let boolean_row = build.resolve(boolean_row).unwrap();
+        let numeric_source = build.resolve(numeric_source).unwrap();
+        let numeric_output = build.resolve(numeric_output).unwrap();
+        let (schemas, _) = build.into_parts();
+        let matrix_value = |schema, values| {
+            ValueDraft {
+                schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Matrix(values),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let boolean_value = matrix_value(
+            boolean_source,
+            [false, false, false, true, false, true]
+                .into_iter()
+                .map(ValueDataDraft::Bool)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        let numeric_value = matrix_value(
+            numeric_source,
+            [40.0, 41.0, 42.0, 43.0, 44.0, 45.0]
+                .into_iter()
+                .map(F64Bits::from_f64)
+                .map(ValueDataDraft::F64)
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        let true_value = matrix_value(
+            boolean_row,
+            vec![ValueDataDraft::Bool(true); 6].into_boxed_slice(),
+        );
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let boolean_value = constants.insert(boolean_value).unwrap();
+        let numeric_value = constants.insert(numeric_value).unwrap();
+        let true_value = constants.insert(true_value).unwrap();
+        let build = constants.finish().unwrap();
+        let boolean_value = build.resolve(boolean_value).unwrap();
+        let numeric_value = build.resolve(numeric_value).unwrap();
+        let true_value = build.resolve(true_value).unwrap();
+        let (constants, _) = build.into_parts();
+        let contract = |inputs: &[SchemaId], output| {
+            ResolvedOperationContract::Declared(DeclaredOperationContract {
+                inputs: inputs
+                    .iter()
+                    .copied()
+                    .map(|schema| ResolvedInputPort {
+                        schema,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                outputs: vec![ResolvedOutputPort {
+                    schema: output,
+                    access: AccessMode::Write,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::FullWrite {
+                        shape: ShapeRule::Declared,
+                    },
+                    alias: AliasPolicy::NoAlias,
+                    change_detection: ChangeDetectionPolicy::KernelReported,
+                }]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            })
+        };
+        let mut contracts = OperationContractTableBuilder::new();
+        let boolean_access = contracts
+            .insert(contract(&[boolean_source], boolean_row))
+            .unwrap();
+        let numeric_access = contracts
+            .insert(contract(&[numeric_source, boolean_row], numeric_output))
+            .unwrap();
+        let boolean_binary = contracts
+            .insert(contract(&[boolean_row, boolean_row], boolean_row))
+            .unwrap();
+        let build = contracts.finish().unwrap();
+        let boolean_access = build.resolve(boolean_access).unwrap();
+        let numeric_access = build.resolve(numeric_access).unwrap();
+        let boolean_binary = build.resolve(boolean_binary).unwrap();
+        let (contracts, _) = build.into_parts();
+        let mut slots = vec![SlotDeclaration {
+            slot: CellSlotId::new(0),
+            schema: boolean_row,
+            role: SlotRole::Derived,
+            producer: ProducerReference::NodeOutput {
+                node: NodeId::new(0),
+                output_ordinal: 0,
+            },
+            initializer: None,
+        }];
+        let mut nodes = vec![NodeDeclaration {
+            node: NodeId::new(0),
+            body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["access".to_owned()].into_boxed_slice(),
+                    operation_name: "range".to_owned(),
+                },
+                contract: boolean_access,
+                requirement: None,
+            }),
+            input_bindings: 0..1,
+            output_bindings: 1..2,
+        }];
+        let mut bindings = vec![
+            BindingDeclaration::Input {
+                id: BindingId::new(0),
+                node: NodeId::new(0),
+                port_ordinal: 0,
+                source: ArtifactSource::Constant(boolean_value),
+            },
+            BindingDeclaration::Output {
+                id: BindingId::new(1),
+                node: NodeId::new(0),
+                port_ordinal: 0,
+                target: CellSlotId::new(0),
+            },
+        ];
+        let selector_slot = if route == "direct" {
+            CellSlotId::new(0)
+        } else {
+            let operation = match route {
+                "comparison" => OperationReference {
+                    module_path: vec!["compare".to_owned()].into_boxed_slice(),
+                    operation_name: "eq".to_owned(),
+                },
+                "logic" => OperationReference {
+                    module_path: vec!["logic".to_owned()].into_boxed_slice(),
+                    operation_name: "and".to_owned(),
+                },
+                _ => panic!("unknown Boolean selector route: {route}"),
+            };
+            slots.push(SlotDeclaration {
+                slot: CellSlotId::new(1),
+                schema: boolean_row,
+                role: SlotRole::Derived,
+                producer: ProducerReference::NodeOutput {
+                    node: NodeId::new(1),
+                    output_ordinal: 0,
+                },
+                initializer: None,
+            });
+            nodes.push(NodeDeclaration {
+                node: NodeId::new(1),
+                body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                    operation,
+                    contract: boolean_binary,
+                    requirement: None,
+                }),
+                input_bindings: 2..4,
+                output_bindings: 4..5,
+            });
+            bindings.extend([
+                BindingDeclaration::Input {
+                    id: BindingId::new(2),
+                    node: NodeId::new(1),
+                    port_ordinal: 0,
+                    source: ArtifactSource::Slot(CellSlotId::new(0)),
+                },
+                BindingDeclaration::Input {
+                    id: BindingId::new(3),
+                    node: NodeId::new(1),
+                    port_ordinal: 1,
+                    source: ArtifactSource::Constant(true_value),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(4),
+                    node: NodeId::new(1),
+                    port_ordinal: 0,
+                    target: CellSlotId::new(1),
+                },
+            ]);
+            CellSlotId::new(1)
+        };
+        let numeric_node = NodeId::new(u32::try_from(nodes.len()).unwrap());
+        let numeric_slot = CellSlotId::new(u32::try_from(slots.len()).unwrap());
+        let binding_start = u32::try_from(bindings.len()).unwrap();
+        slots.push(SlotDeclaration {
+            slot: numeric_slot,
+            schema: numeric_output,
+            role: SlotRole::Derived,
+            producer: ProducerReference::NodeOutput {
+                node: numeric_node,
+                output_ordinal: 0,
+            },
+            initializer: None,
+        });
+        nodes.push(NodeDeclaration {
+            node: numeric_node,
+            body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["access".to_owned()].into_boxed_slice(),
+                    operation_name: "rows".to_owned(),
+                },
+                contract: numeric_access,
+                requirement: None,
+            }),
+            input_bindings: binding_start..binding_start + 2,
+            output_bindings: binding_start + 2..binding_start + 3,
+        });
+        bindings.extend([
+            BindingDeclaration::Input {
+                id: BindingId::new(binding_start),
+                node: numeric_node,
+                port_ordinal: 0,
+                source: ArtifactSource::Constant(numeric_value),
+            },
+            BindingDeclaration::Input {
+                id: BindingId::new(binding_start + 1),
+                node: numeric_node,
+                port_ordinal: 1,
+                source: ArtifactSource::Slot(selector_slot),
+            },
+            BindingDeclaration::Output {
+                id: BindingId::new(binding_start + 2),
+                node: numeric_node,
+                port_ordinal: 0,
+                target: numeric_slot,
+            },
+        ]);
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: slots.into_boxed_slice(),
+            nodes: nodes.into_boxed_slice(),
+            bindings: bindings.into_boxed_slice(),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn boolean_access_output_drives_a_downstream_selector_shape() {
+        for route in ["direct", "comparison", "logic"] {
+            let artifact = boolean_access_selector_artifact(route);
+            let decoded = crate::decode_program_artifact_bytecode_v1(
+                &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            for artifact in [&artifact, &decoded] {
+                let classes = vec![NodeClass::Activation; artifact.nodes().len()];
+                let schedule = build_activation_schedule(artifact, &classes).unwrap();
+                let facts = complete_activation_shape_facts(
+                    artifact,
+                    &ActivationFacts::default(),
+                    &classes,
+                    &schedule,
+                )
+                .unwrap();
+                let output = CellSlotId::new(u32::try_from(artifact.slots().len() - 1).unwrap());
+                assert_eq!(
+                    source_extents(artifact, ArtifactSource::Slot(output), &facts,)
+                        .unwrap()
+                        .as_ref(),
+                    &[2, 1],
+                    "Boolean selector route {route}",
+                );
+                if route == "direct" {
+                    let output_node =
+                        NodeId::new(u32::try_from(artifact.nodes().len() - 1).unwrap());
+                    let selected = constant_comparison_operand(
+                        artifact,
+                        output_node,
+                        ArtifactSource::Slot(output),
+                        &facts,
+                        &ClosedActivationAnalysisContext::default(),
+                        false,
+                    )
+                    .unwrap()
+                    .expect("the direct Boolean route should preserve semantic positions");
+                    assert_eq!(
+                        closed_operand_draft_values(&selected).unwrap(),
+                        [41.0, 45.0]
+                            .into_iter()
+                            .map(F64Bits::from_f64)
+                            .map(ValueDataDraft::F64)
+                            .collect::<Vec<_>>(),
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn closed_snapshot_matrix_access_matches_canonical_order() {
         let expected = [3, 1, 6, 4];
         let artifact = closed_matrix_access_artifact(
             "columns",
+            [2, 3],
             &[vec![3, 1]],
             [2, 2],
             &expected,
@@ -15812,6 +16739,39 @@ mod shape_fact_tests {
                 Some(4),
             );
         }
+    }
+
+    #[test]
+    fn exhausted_access_budget_refuses_before_position_buffer_allocation() {
+        let artifact = closed_matrix_access_artifact(
+            "columns",
+            [2, 3],
+            &[vec![3, 1]],
+            [2, 2],
+            &[3, 1, 6, 4],
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            |value| ValueDataDraft::F64(F64Bits::from_f64(value as f64)),
+        );
+        let analysis = ClosedActivationAnalysisContext::default();
+        assert!(
+            analysis
+                .construction
+                .charge_compute_chunk(mech_core::RESIDENT_MAX_BYTES, 1, 1)
+        );
+        assert!(
+            constant_comparison_operand(
+                &artifact,
+                NodeId::new(0),
+                ArtifactSource::Slot(CellSlotId::new(0)),
+                &ActivationFacts::default(),
+                &analysis,
+                false,
+            )
+            .unwrap()
+            .is_none(),
+        );
+        assert_eq!(analysis.access_position_buffer_values.get(), 0);
+        assert_eq!(analysis.materialized_operand_values.get(), 0);
     }
 
     fn closed_enum_pack_artifact() -> ProgramArtifact {
@@ -17953,10 +18913,6 @@ mod shape_fact_tests {
             (&["combinatorics"], "n-choose-k"),
             (&["access"], "index"),
             (&["access"], "scalar"),
-            (&["access"], "rows"),
-            (&["access"], "columns"),
-            (&["access"], "range"),
-            (&["access"], "rectangle"),
             (&["range"], "exclusive"),
             (&["range"], "exclusive-increment"),
             (&["range"], "inclusive"),
@@ -17971,15 +18927,6 @@ mod shape_fact_tests {
             (&["set"], "intersection"),
             (&["set"], "difference"),
             (&["set"], "symmetric-difference"),
-            (&["set"], "disjoint"),
-            (&["set"], "equals"),
-            (&["set"], "not_equals"),
-            (&["set"], "proper_subset"),
-            (&["set"], "proper-superset"),
-            (&["set"], "subset"),
-            (&["set"], "superset"),
-            (&["set"], "element-of"),
-            (&["set"], "not-element-of"),
             (&["set"], "size"),
             (&["math"], "add"),
             (&["math"], "sub"),
@@ -18035,6 +18982,21 @@ mod shape_fact_tests {
             (&["math", "bessel"], "y1"),
             (&["math", "bessel"], "jn"),
             (&["math", "bessel"], "yn"),
+        ];
+        const BOOLEAN_VALUE_PRODUCERS: &[(&[&str], &str)] = &[
+            (&["access"], "rows"),
+            (&["access"], "columns"),
+            (&["access"], "range"),
+            (&["access"], "rectangle"),
+            (&["set"], "disjoint"),
+            (&["set"], "equals"),
+            (&["set"], "not_equals"),
+            (&["set"], "proper_subset"),
+            (&["set"], "proper-superset"),
+            (&["set"], "subset"),
+            (&["set"], "superset"),
+            (&["set"], "element-of"),
+            (&["set"], "not-element-of"),
         ];
         const MASK_PRODUCERS: &[(&[&str], &str)] = &[
             (&["logic"], "not"),
@@ -18121,6 +19083,17 @@ mod shape_fact_tests {
             }
         };
         for &(module_path, operation_name) in VALUE_PRODUCERS {
+            assert_registered(module_path, operation_name);
+            let operation = operation(module_path, operation_name);
+            assert_eq!(
+                closed_producer_disposition(&operation),
+                Some(ClosedProducerDisposition::Value),
+                "{module_path:?}/{operation_name}",
+            );
+            assert!(closed_iterative_operand_producer(&operation));
+            assert!(closed_activation_producer_supported(&operation));
+        }
+        for &(module_path, operation_name) in BOOLEAN_VALUE_PRODUCERS {
             assert_registered(module_path, operation_name);
             let operation = operation(module_path, operation_name);
             assert_eq!(
@@ -19396,12 +20369,13 @@ mod shape_fact_tests {
                 &schedule,
             )
             .unwrap();
+            let analysis = ClosedActivationAnalysisContext::default();
             let operand = constant_comparison_operand(
                 artifact,
                 NodeId::new(0),
                 ArtifactSource::Slot(CellSlotId::new(0)),
                 &facts,
-                &ClosedActivationAnalysisContext::default(),
+                &analysis,
                 false,
             )
             .unwrap()
@@ -19414,7 +20388,42 @@ mod shape_fact_tests {
                     .map(ValueDataDraft::Index)
                     .collect::<Vec<_>>(),
             );
+            assert_eq!(analysis.index_conversion_values.get(), 6);
         }
+    }
+
+    #[test]
+    fn exhausted_index_budget_refuses_before_reorder_or_conversion_allocation() {
+        let artifact = canonical_index_artifact(Some([2, 3]));
+        let classes = [NodeClass::Activation];
+        let schedule = build_activation_schedule(&artifact, &classes).unwrap();
+        let facts = complete_activation_shape_facts(
+            &artifact,
+            &ActivationFacts::default(),
+            &classes,
+            &schedule,
+        )
+        .unwrap();
+        let analysis = ClosedActivationAnalysisContext::default();
+        assert!(
+            analysis
+                .construction
+                .charge_compute_chunk(mech_core::RESIDENT_MAX_BYTES, 1, 1)
+        );
+        assert!(
+            constant_comparison_operand(
+                &artifact,
+                NodeId::new(0),
+                ArtifactSource::Slot(CellSlotId::new(0)),
+                &facts,
+                &analysis,
+                false,
+            )
+            .unwrap()
+            .is_none(),
+        );
+        assert_eq!(analysis.index_conversion_values.get(), 0);
+        assert_eq!(analysis.materialized_operand_values.get(), 0);
     }
 }
 
