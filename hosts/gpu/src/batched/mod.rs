@@ -1438,6 +1438,7 @@ struct BatchCompiler<'a> {
     artifact: &'a ProgramArtifact,
     instances: u32,
     resolved_dimensions: BTreeMap<CellSlotId, Box<[u64]>>,
+    published_slots: BTreeSet<CellSlotId>,
     shapes: BTreeMap<CellSlotId, FixedShape>,
     register_offsets: BTreeMap<CellSlotId, usize>,
     register_count: usize,
@@ -1531,6 +1532,7 @@ impl<'a> BatchCompiler<'a> {
             activation: mech_compute::ComputeActivationValues::new(artifact),
             instances,
             resolved_dimensions: resolve_compute_slot_dimensions(artifact),
+            published_slots: BTreeSet::new(),
             shapes: BTreeMap::new(),
             register_offsets: BTreeMap::new(),
             register_count: 0,
@@ -1561,6 +1563,12 @@ impl<'a> BatchCompiler<'a> {
                 "the outer batch must contain at least one instance",
             );
         }
+        // The interface owner resolves aliases and recursively expands tuple
+        // publications. Use its physical leaves before deciding which static
+        // selectors may be erased, and retain that exact interface for storage.
+        let interface =
+            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
+        self.published_slots = interface.outputs.iter().map(|output| output.slot).collect();
         self.collect_slots();
         self.collect_inputs();
         self.lower_nodes();
@@ -1637,8 +1645,6 @@ impl<'a> BatchCompiler<'a> {
                 diagnostics: self.diagnostics,
             });
         }
-        let interface =
-            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
         let mut published = BTreeSet::new();
         let publications = interface
             .outputs
@@ -3104,15 +3110,17 @@ impl<'a> BatchCompiler<'a> {
                     .is_some_and(|node| {
                         (*port_ordinal > 0 && node.operation.module_path.as_ref() == ["access"])
                             || display_operation(&node.operation) == "convert/kind"
+                            // A pack carrying a published leaf is structural,
+                            // not an arithmetic consumer. That leaf is retained
+                            // and materialized rather than selector-only erased.
+                            || (display_operation(&node.operation) == "core/composite-pack"
+                                && self.published_slot(slot))
                     })
             })
     }
 
     fn published_slot(&self, slot: CellSlotId) -> bool {
-        self.artifact
-            .outputs()
-            .iter()
-            .any(|output| physical_publication_slot(self.artifact, output.source) == Some(slot))
+        self.published_slots.contains(&slot)
     }
 
     fn lower_published_static_selector(&mut self, slot: CellSlotId) -> Result<(), String> {
@@ -3807,6 +3815,138 @@ mod axis_tests {
                 assert_eq!(session.state()[&selector], expected.repeat(2), "{range}");
                 let selected_values = expected.map(|index| index * 10.0).repeat(2);
                 assert_eq!(session.state()[&selected], selected_values, "{range}");
+            }
+        }
+    }
+
+    #[test]
+    fn tuple_published_static_selectors_share_the_interface_publication_contract() {
+        for (range, operation_name, expected) in [
+            ("1f32..=2f32", "range/inclusive", [1.0, 2.0]),
+            ("1f32..3f32", "range/exclusive", [1.0, 2.0]),
+            ("1f32..2f32..=3f32", "range/inclusive-increment", [1.0, 3.0]),
+            ("1f32..2f32..4f32", "range/exclusive-increment", [1.0, 3.0]),
+        ] {
+            for (publication, positions, publishes_input) in [
+                ("(selected, selector)", 2, false),
+                ("((selected, selector), (selector, extra))", 4, true),
+                ("(selector, (selected, selector))", 3, false),
+            ] {
+                let artifact = compile_fixed_source(&format!(
+                    "extra := sample<f32>\nselector := {range}\nvalues := [10f32; 20f32; 30f32]\nselected := values[selector]\n{publication}\n"
+                ));
+                assert!(
+                    artifact
+                        .nodes()
+                        .iter()
+                        .any(
+                            |node| node
+                                .as_operation()
+                                .is_some_and(|node| display_operation(&node.operation)
+                                    == "core/composite-pack")
+                        )
+                );
+                let selector = artifact
+                    .nodes()
+                    .iter()
+                    .find_map(|node| {
+                        let node = node.as_operation()?;
+                        if display_operation(&node.operation) != operation_name {
+                            return None;
+                        }
+                        node.output_bindings.clone().find_map(|binding| {
+                            match artifact.bindings().get(binding as usize)? {
+                                BindingDeclaration::Output { target, .. } => Some(*target),
+                                _ => None,
+                            }
+                        })
+                    })
+                    .expect("source must retain the range producer");
+                let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+                    &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+                )
+                .unwrap();
+                for artifact in [&artifact, &decoded] {
+                    let interface = build_compute_region_interface(artifact, None).unwrap();
+                    assert_eq!(interface.outputs.len(), positions, "{publication}");
+                    let selected = interface
+                        .outputs
+                        .iter()
+                        .find(|output| output.slot != selector && !output.dimensions.is_empty())
+                        .expect("selected matrix must have a physical publication")
+                        .slot;
+                    for output in &interface.outputs {
+                        if output.slot == selector {
+                            assert_eq!(output.dimensions.as_ref(), [1, 2]);
+                        } else if output.slot == selected {
+                            assert_eq!(output.dimensions.as_ref(), [2, 1]);
+                        }
+                    }
+                    let kernel = crate::ComputeLowerer.compile_batched(artifact, 2).unwrap();
+                    assert_eq!(kernel.compute_program().interface(), &interface);
+                    let storage = kernel.compute_program().fixed_shape_storage().unwrap();
+                    assert_eq!(
+                        storage.publications.len(),
+                        if publishes_input { 3 } else { 2 }
+                    );
+                    assert_eq!(
+                        storage
+                            .publications
+                            .iter()
+                            .filter(|value| value.slot == selector)
+                            .count(),
+                        1
+                    );
+                    assert!(
+                        storage
+                            .publications
+                            .iter()
+                            .any(|value| value.slot == selector
+                                && value.shape
+                                    == FixedShape {
+                                        rows: 1,
+                                        columns: 2
+                                    })
+                    );
+                    assert!(
+                        storage
+                            .publications
+                            .iter()
+                            .any(|value| value.slot == selected
+                                && value.shape
+                                    == FixedShape {
+                                        rows: 2,
+                                        columns: 1
+                                    })
+                    );
+                    let inputs = BTreeMap::from([("sample".to_owned(), vec![7.0, 11.0])]);
+                    let mut session = kernel.prepare_cpu(&inputs).unwrap();
+                    session.dispatch_turns(1).unwrap();
+                    assert_eq!(
+                        session.state()[&selector],
+                        expected.repeat(2),
+                        "{publication}: {range}"
+                    );
+                    assert_eq!(
+                        session.state()[&selected],
+                        expected.map(|index| index * 10.0).repeat(2),
+                        "{publication}: {range}"
+                    );
+                    if publishes_input {
+                        let input = interface
+                            .inputs
+                            .iter()
+                            .find(|input| input.name.as_ref() == "sample")
+                            .unwrap();
+                        assert!(
+                            interface
+                                .outputs
+                                .iter()
+                                .any(|output| output.slot == input.slot)
+                        );
+                        assert_eq!(session.state()[&input.slot], [7.0, 11.0]);
+                    }
+                }
             }
         }
     }

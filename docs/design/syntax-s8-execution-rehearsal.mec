@@ -253,6 +253,48 @@ Proceed in this order, repairing concrete failures in their shared owner:
    review note, then obtain a clean review and green exact-head CI. Re-run affected
    checks after a correction; do not add optional cleanup or new language features.
 
+R26 physical publication correction, 2026-10-03
+----------------------------------------------
+
+The correction starts from R26 `3f1f23772a588c980c2a84c3acc5bb73ecc60fee`
+on R06 `e5101287f1c2436d6fdb8a00566274f92ba3d0d0`. Review 5402937177
+identified that the direct-output selector regression did not cover ordinary
+tuple publications. A source-level `(selected, selector)` reproduction failed
+before the fix with unsupported `range/inclusive` lowering; that nonempty test
+passed after the correction.
+
+The batch compiler now obtains the existing compute interface before selector
+classification and retains that same interface for final publication storage.
+Its physical output leaves already resolve aliases and recursively expand
+composite packs. Selector retention uses those leaves, not a second incomplete
+publication traversal. A pack carrying a published selector is a structural
+consumer; the selector remains admitted, materialized and published. Existing
+range, scalar-instruction and selector-source limits remain unchanged.
+
+The added source/decoded regression exercises all four inclusive/exclusive range
+forms with and without increments. Ordinary tuples, nested tuples, repeated
+selector publications and a directly published input run across two batch lanes.
+Assertions cover complete interface equality, selector 1x2 and selected-value
+2x1 geometry, one physical buffer for repeated publications, exact selector and
+selected values, and input publication. It constructs normal canonical source
+artifacts rather than adding a manual OutputDeclaration to avoid tuple packing.
+
+Fresh locked nightly-2026-03-03 checks passed:
+
+- GPU native library: 56 tests, including the strengthened full-shape regression.
+- `parallel_ekf`: 22 tests.
+- `particle_source`: 32 tests.
+- Default GPU library: 26 tests before strengthening its explicit axis assertions;
+  the final stronger case ran in the native library profile above.
+- CI impact/full-contract Python suites: 75 tests.
+- Warning policy, formatting and whitespace checks.
+
+Earlier 55/22/32 results belong to `3f1f23772a`; they are not substituted for
+the new run. The direct-publication and persisted matrix/multiply regressions
+remain in place. This is owner correction evidence, not final product-matrix or
+landing qualification. R26 CI remains paused and the correcting head requests
+another review; no R15 or S8C changes are part of this correction.
+
 Type coverage audit
 -------------------------------------------------------------------------------
 
