@@ -3508,6 +3508,16 @@ fn admit_dense_transpose_layout(
     kind: ResidentValueKind,
     shape: ResidentShape,
 ) -> Result<(), ResidentKernelError> {
+    prepare_dense_transpose_layout(kind, shape)?
+        .admit()?
+        .into_plan();
+    Ok(())
+}
+
+pub(crate) fn prepare_dense_transpose_layout(
+    kind: ResidentValueKind,
+    shape: ResidentShape,
+) -> Result<super::budget::PreparedKernel<()>, ResidentKernelError> {
     let elements = shape.len().ok_or(ResidentKernelError::InvalidShape)?;
     let element_bytes = match kind {
         ResidentValueKind::Bool => core::mem::size_of::<u8>(),
@@ -3518,7 +3528,7 @@ fn admit_dense_transpose_layout(
     let output_bytes = elements
         .checked_mul(element_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    super::budget::PreparedKernel::new(
+    Ok(super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
             compute_work: elements,
@@ -3526,10 +3536,7 @@ fn admit_dense_transpose_layout(
             output_bytes,
             ..super::budget::KernelCostEstimate::default()
         },
-    )
-    .admit()?
-    .into_plan();
-    Ok(())
+    ))
 }
 
 pub(crate) fn is_transpose_snapshot_schema(body: &SchemaBody) -> bool {
@@ -12768,6 +12775,17 @@ fn admit_dense_concatenation(
     output_len: usize,
     string_payload_bytes: usize,
 ) -> Result<(), ResidentKernelError> {
+    prepare_dense_concatenation(kind, output_len, string_payload_bytes)?
+        .admit()?
+        .into_plan();
+    Ok(())
+}
+
+pub(crate) fn prepare_dense_concatenation(
+    kind: ResidentValueKind,
+    output_len: usize,
+    string_payload_bytes: usize,
+) -> Result<super::budget::PreparedKernel<()>, ResidentKernelError> {
     let element_bytes = match kind {
         ResidentValueKind::Bool => core::mem::size_of::<u8>(),
         ResidentValueKind::Index => core::mem::size_of::<u64>(),
@@ -12779,7 +12797,7 @@ fn admit_dense_concatenation(
         .checked_mul(element_bytes)
         .and_then(|bytes| bytes.checked_add(string_payload_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    super::budget::PreparedKernel::new(
+    Ok(super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
             compute_work: output_len
@@ -12803,10 +12821,7 @@ fn admit_dense_concatenation(
             retained_nodes: output_len,
             ..super::budget::KernelCostEstimate::default()
         },
-    )
-    .admit()?
-    .into_plan();
-    Ok(())
+    ))
 }
 
 fn concat_string_payload(inputs: &dyn ResidentKernelInputs) -> Result<usize, ResidentKernelError> {

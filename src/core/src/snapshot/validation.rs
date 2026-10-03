@@ -2749,15 +2749,51 @@ impl CompositeSnapshotConstructor {
         children: &[SchemaId],
         schemas: &SchemaTable,
     ) -> Option<super::CompositeBindingCost> {
+        Self::binding_cost_for_inputs(
+            schema,
+            children.len(),
+            |index| Some(children[index]),
+            schemas,
+        )
+    }
+
+    /// Borrowed, allocation-free preflight for the same shape/binding metadata.
+    /// Callers need not collect child identities before admitting their storage.
+    pub fn binding_cost_for_inputs(
+        schema: SchemaId,
+        child_count: usize,
+        child_schema: impl Fn(usize) -> Option<SchemaId>,
+        schemas: &SchemaTable,
+    ) -> Option<super::CompositeBindingCost> {
         let output = schemas.get(schema)?;
-        let layout = composite_schema_components(output.body(), children.len())?;
-        let components = layout
-            .children
-            .into_iter()
-            .zip(children)
-            .map(|(expected, child)| Some((expected, schemas.get(*child)?)))
-            .collect::<Option<Vec<_>>>()?;
-        super::composite_cost::binding_cost(output, &components)
+        match output.body() {
+            SchemaBody::Tuple(items) if items.len() == child_count => {}
+            SchemaBody::Record(fields) if fields.len() == child_count => {}
+            SchemaBody::Map { .. } if child_count % 2 == 0 => {}
+            SchemaBody::Table { columns, .. }
+                if (columns.is_empty() && child_count == 0)
+                    || (!columns.is_empty() && child_count % columns.len() == 0) => {}
+            _ => return None,
+        }
+        let components = (0..child_count).map(|index| {
+            let expected = match output.body() {
+                SchemaBody::Tuple(items) => &items[index],
+                SchemaBody::Record(fields) => &fields[index].schema,
+                SchemaBody::Map { key, value, .. } => {
+                    if index % 2 == 0 {
+                        key.as_ref()
+                    } else {
+                        value.as_ref()
+                    }
+                }
+                SchemaBody::Table { columns, .. } => {
+                    &columns[index / (child_count / columns.len())].schema
+                }
+                _ => return None,
+            };
+            Some((expected, schemas.get(child_schema(index)?)?))
+        });
+        super::composite_cost::binding_cost(output, components)
     }
     /// Derives the aggregate's shape from the canonical child schemas in
     /// constructor order. Each child shape belongs to its own parameter arena.

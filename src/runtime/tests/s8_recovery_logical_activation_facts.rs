@@ -963,6 +963,463 @@ fn closed_strict_selector_artifact(
     closed_strict_selector_artifact_with_shape(producer, expected, None)
 }
 
+// A genuine snapshot-valued first publication, followed by a repeated copy.
+// Constants alone use dense Bool residents; the dynamic producer is necessary
+// to exercise the snapshot constructor's cumulative finalization admission.
+fn repeated_snapshot_boolean_copy_artifacts(
+    operation: &str,
+    large: bool,
+) -> (ProgramArtifact, ProgramArtifact) {
+    use mech_core::*;
+    use mech_engine::*;
+    let (rows, columns) = if large { (200, 100) } else { (2, 3) };
+    let matrix = |dimensions| SchemaBody::Matrix {
+        element: Box::new(SchemaBody::Bool),
+        dimensions,
+    };
+    let parameter = |id, upper| DimensionParameterDeclaration {
+        id: DimensionParameterId::new(id),
+        origin: DimensionParameterOrigin::Explicit,
+        lifetime: DimensionLifetime::Turn,
+        lower_bound: DimensionExpr::Constant(0),
+        upper_bound: Some(DimensionExpr::Constant(upper)),
+    };
+    let mut schemas = SchemaTableBuilder::new();
+    let mut insert = |body, dimension_parameters| {
+        schemas
+            .insert(
+                SchemaDraft {
+                    body,
+                    dimension_parameters,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap()
+    };
+    let boolean = insert(SchemaBody::Bool, Box::new([]));
+    let source_column = insert(
+        matrix(vec![DimensionExpr::Constant(rows), DimensionExpr::Constant(1)].into_boxed_slice()),
+        Box::new([]),
+    );
+    let source_row = insert(
+        matrix(
+            vec![DimensionExpr::Constant(1), DimensionExpr::Constant(columns)].into_boxed_slice(),
+        ),
+        Box::new([]),
+    );
+    let output_column = source_column;
+    let output_row = source_row;
+    let output = insert(
+        matrix(
+            vec![
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                DimensionExpr::Parameter(DimensionParameterId::new(1)),
+            ]
+            .into_boxed_slice(),
+        ),
+        vec![parameter(0, 2 * rows), parameter(1, 2 * columns)].into_boxed_slice(),
+    );
+    let build = schemas.finish().unwrap();
+    let [
+        boolean,
+        source_column,
+        source_row,
+        output_column,
+        output_row,
+        output,
+    ] = [
+        boolean,
+        source_column,
+        source_row,
+        output_column,
+        output_row,
+        output,
+    ]
+    .map(|id| build.resolve(id).unwrap());
+    let (schemas, _) = build.into_parts();
+    let mut constants = ConstantStoreBuilder::new(&schemas);
+    let mut constant = |schema, count, selected| {
+        constants
+            .insert(
+                ValueDraft {
+                    schema,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::Matrix(
+                        (0..count)
+                            .map(|index| ValueDataDraft::Bool(index == selected))
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    ),
+                }
+                .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                    &schemas,
+                ))
+                .unwrap(),
+            )
+            .unwrap()
+    };
+    let source_column_value = constant(source_column, rows, 1);
+    let source_row_value = constant(source_row, columns, 2);
+    let build = constants.finish().unwrap();
+    let [source_column_value, source_row_value] =
+        [source_column_value, source_row_value].map(|id| build.resolve(id).unwrap());
+    let (constants, _) = build.into_parts();
+    let input = |schema| ResolvedInputPort {
+        schema,
+        access: AccessMode::Read,
+        delivery: DeliveryMode::Signal,
+    };
+    let output_port = |construction| ResolvedOutputPort {
+        schema: output,
+        access: AccessMode::Write,
+        delivery: DeliveryMode::Signal,
+        construction,
+        alias: AliasPolicy::NoAlias,
+        change_detection: ChangeDetectionPolicy::KernelReported,
+    };
+    let mut contracts = OperationContractTableBuilder::new();
+    let logic = contracts
+        .insert(ResolvedOperationContract::Declared(
+            DeclaredOperationContract {
+                inputs: vec![input(output_column), input(output_row)].into_boxed_slice(),
+                outputs: vec![output_port(OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                })]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            },
+        ))
+        .unwrap();
+    let copied = contracts
+        .insert(ResolvedOperationContract::Declared(
+            DeclaredOperationContract {
+                inputs: vec![input(output); 2].into_boxed_slice(),
+                outputs: vec![output_port(OutputConstruction::Build {
+                    postcondition: ShapeContractReference {
+                        module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
+                            .into_boxed_slice(),
+                        contract_name: if operation == "horzcat" {
+                            "horizontal-output"
+                        } else {
+                            "vertical-output"
+                        }
+                        .to_owned(),
+                    },
+                })]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            },
+        ))
+        .unwrap();
+    let build = contracts.finish().unwrap();
+    let logic = build.resolve(logic).unwrap();
+    let copied = build.resolve(copied).unwrap();
+    let (contracts, _) = build.into_parts();
+    let derived = |slot, schema, node| SlotDeclaration {
+        slot: CellSlotId::new(slot),
+        schema,
+        role: SlotRole::Derived,
+        producer: ProducerReference::NodeOutput {
+            node: NodeId::new(node),
+            output_ordinal: 0,
+        },
+        initializer: None,
+    };
+    let mut slots = vec![
+        derived(0, output_column, 0),
+        derived(1, output_row, 1),
+        derived(2, output, 2),
+        SlotDeclaration {
+            slot: CellSlotId::new(3),
+            schema: output,
+            role: SlotRole::Output,
+            producer: ProducerReference::Output {
+                source: ArtifactSource::Slot(CellSlotId::new(2)),
+                output: OutputId::new(0),
+            },
+            initializer: None,
+        },
+    ];
+    let mut bindings = Vec::new();
+    let mut nodes = Vec::new();
+    for (index, value) in [source_column_value, source_row_value]
+        .into_iter()
+        .enumerate()
+    {
+        let start = bindings.len() as u32;
+        let node = NodeId::new(index as u32);
+        bindings.push(BindingDeclaration::Input {
+            id: BindingId::new(start),
+            node,
+            port_ordinal: 0,
+            source: ArtifactSource::Constant(value),
+        });
+        bindings.push(BindingDeclaration::Output {
+            id: BindingId::new(start + 1),
+            node,
+            port_ordinal: 0,
+            target: CellSlotId::new(index as u32),
+        });
+        nodes.push(NodeDeclaration {
+            node,
+            body: ExecutableNodeBody::Comprehension(ComprehensionDeclaration {
+                id: ControlBlockId(0),
+                kind: ComprehensionKind::MatrixPreserveShape,
+                steps: vec![ComprehensionStep::Generator {
+                    source: ComprehensionValue::Input(0),
+                    pattern: CollectionPattern::Bind {
+                        local: 0,
+                        schema: boolean,
+                    },
+                }]
+                .into_boxed_slice(),
+                yield_value: ComprehensionValue::Local(0),
+            }),
+            input_bindings: start..start + 1,
+            output_bindings: start + 1..start + 2,
+        });
+    }
+    let mut append = |module: &str, name: &str, contract, sources: [ArtifactSource; 2], target| {
+        let node = NodeId::new(nodes.len() as u32);
+        let start = bindings.len() as u32;
+        for (ordinal, source) in sources.into_iter().enumerate() {
+            bindings.push(BindingDeclaration::Input {
+                id: BindingId::new(start + ordinal as u32),
+                node,
+                port_ordinal: ordinal as u16,
+                source,
+            });
+        }
+        bindings.push(BindingDeclaration::Output {
+            id: BindingId::new(start + 2),
+            node,
+            port_ordinal: 0,
+            target,
+        });
+        nodes.push(NodeDeclaration {
+            node,
+            body: ExecutableNodeBody::Operation(OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec![module.to_owned()].into_boxed_slice(),
+                    operation_name: name.to_owned(),
+                },
+                contract,
+                requirement: None,
+            }),
+            input_bindings: start..start + 2,
+            output_bindings: start + 2..start + 3,
+        });
+    };
+    append(
+        "logic",
+        "and",
+        logic,
+        [
+            ArtifactSource::Slot(CellSlotId::new(0)),
+            ArtifactSource::Slot(CellSlotId::new(1)),
+        ],
+        CellSlotId::new(2),
+    );
+    let finish = |slots: Vec<SlotDeclaration>,
+                  nodes: Vec<NodeDeclaration>,
+                  bindings: Vec<BindingDeclaration>| {
+        ProgramArtifactDraft {
+            schemas: schemas.clone(),
+            constants: constants.clone(),
+            contracts: contracts.clone(),
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: slots.into_boxed_slice(),
+            nodes: nodes.into_boxed_slice(),
+            bindings: bindings.into_boxed_slice(),
+            outputs: vec![OutputDeclaration {
+                output: OutputId::new(0),
+                name: "mask".to_owned(),
+                interactive_binding: None,
+                source: CellSlotId::new(3),
+                schema: output,
+            }]
+            .into_boxed_slice(),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    };
+    // Release the mutable graph borrow before constructing the first artifact.
+    drop(append);
+    let first = finish(slots.clone(), nodes.clone(), bindings.clone());
+    slots[3].producer = ProducerReference::Output {
+        source: ArtifactSource::Slot(CellSlotId::new(4)),
+        output: OutputId::new(0),
+    };
+    slots.push(derived(4, output, 3));
+    let start = bindings.len() as u32;
+    for ordinal in 0..2 {
+        bindings.push(BindingDeclaration::Input {
+            id: BindingId::new(start + ordinal),
+            node: NodeId::new(3),
+            port_ordinal: ordinal as u16,
+            source: ArtifactSource::Slot(CellSlotId::new(2)),
+        });
+    }
+    bindings.push(BindingDeclaration::Output {
+        id: BindingId::new(start + 2),
+        node: NodeId::new(3),
+        port_ordinal: 0,
+        target: CellSlotId::new(4),
+    });
+    nodes.push(NodeDeclaration {
+        node: NodeId::new(3),
+        body: ExecutableNodeBody::Operation(OperationNodeBody {
+            operation: OperationReference {
+                module_path: vec!["matrix".to_owned()].into_boxed_slice(),
+                operation_name: operation.to_owned(),
+            },
+            contract: copied,
+            requirement: None,
+        }),
+        input_bindings: start..start + 2,
+        output_bindings: start + 2..start + 3,
+    });
+    let repeated = finish(slots, nodes, bindings);
+    (first, repeated)
+}
+
+#[test]
+fn refused_snapshot_boolean_copy_cannot_publish_selector_facts_through_masks() {
+    let catalog = mech_stdlib::source_catalog();
+    for operation in ["horzcat", "vertcat"] {
+        for large in [false, true] {
+            let (rows, columns) = if large { (200, 100) } else { (2, 3) };
+            let (first, repeated) = repeated_snapshot_boolean_copy_artifacts(operation, large);
+            for first in [&first, &roundtrip(&first)] {
+                let mut instance = activate(
+                    ReactiveInstanceId::new(0x606, 51),
+                    first,
+                    &catalog,
+                    &ActivationFacts::default(),
+                )
+                .unwrap();
+                instance.turn(&[]).unwrap();
+                assert!(matches!(
+                    instance.output_borrow(0),
+                    Some(mech_engine::resident::ResidentValueBorrow::Snapshot { .. })
+                ));
+                let actual = instance.copied_output(0).unwrap();
+                assert_eq!(
+                    actual.shape(),
+                    &mech_core::shape_for_resolved_extents(
+                        first.schemas().get(actual.schema()).unwrap(),
+                        &[rows, columns],
+                    )
+                    .unwrap()
+                );
+            }
+            for producer in [&repeated, &roundtrip(&repeated)] {
+                let mut instance = match activate(
+                    ReactiveInstanceId::new(0x606, 52),
+                    producer,
+                    &catalog,
+                    &ActivationFacts::default(),
+                ) {
+                    Ok(instance) => instance,
+                    Err(ResidentActivationError::ActivationKernelExecution {
+                        error: mech_core::ResidentKernelError::InvalidShape,
+                        ..
+                    }) if large => continue,
+                    Err(error) => panic!("genuine {operation} binder: {error:?}"),
+                };
+                let result = instance.turn(&[]);
+                assert_eq!(result.is_ok(), !large, "resident {operation}: {result:?}");
+                if !large {
+                    let actual = instance.copied_output(0).unwrap();
+                    let extents = if operation == "horzcat" {
+                        [rows, 2 * columns]
+                    } else {
+                        [2 * rows, columns]
+                    };
+                    assert_eq!(actual.schema(), producer.outputs()[0].schema);
+                    assert_eq!(
+                        actual.shape(),
+                        &mech_core::shape_for_resolved_extents(
+                            producer.schemas().get(actual.schema()).unwrap(),
+                            &extents,
+                        )
+                        .unwrap()
+                    );
+                    let mech_core::ValueData::Matrix(matrix) = actual.data() else {
+                        panic!("matrix")
+                    };
+                    let mech_core::snapshot::SequenceView::Bool(values) = matrix.elements() else {
+                        panic!("Bool")
+                    };
+                    let expected = (0..extents[0])
+                        .flat_map(|row| {
+                            (0..extents[1])
+                                .map(move |column| row % rows == 1 && column % columns == 2)
+                        })
+                        .collect::<Vec<_>>();
+                    assert_eq!(values, expected);
+                }
+            }
+            for comparison in ["seq", "sneq"] {
+                let artifact = closed_strict_selector_artifact_with_comparison(
+                    &repeated,
+                    mech_core::ValueDataDraft::Bool(false),
+                    None,
+                    Some(SchemaBody::Bool),
+                    comparison,
+                );
+                for artifact in [&artifact, &roundtrip(&artifact)] {
+                    let result = activate(
+                        ReactiveInstanceId::new(0x606, 53),
+                        artifact,
+                        &catalog,
+                        &ActivationFacts::default(),
+                    );
+                    if large {
+                        assert!(
+                            matches!(result, Err(ResidentActivationError::UnresolvedShape { .. })),
+                            "refused snapshot {operation} supplied {comparison} mask facts"
+                        );
+                    } else {
+                        let mut instance = result.unwrap();
+                        instance.turn(&[]).unwrap();
+                        assert_selected_identity(
+                            artifact,
+                            &instance.copied_output(1).unwrap(),
+                            u64::from(comparison == "sneq"),
+                            1,
+                        );
+                    }
+                }
+                let mut runtime = RuntimeBuilder::new()
+                    .function_catalog(catalog.clone())
+                    .build()
+                    .unwrap();
+                let result = runtime.load_bytecode_program(
+                    &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+                    ResidentDurabilityPolicy::Volatile,
+                );
+                if large {
+                    assert!(
+                        format!("{:?}", result.err().expect("resident refusal"))
+                            .contains("UnresolvedShape")
+                    );
+                    runtime
+                        .load_source_program("[42]\n", ResidentDurabilityPolicy::Volatile)
+                        .unwrap();
+                } else {
+                    result.unwrap();
+                }
+                runtime.step_active_program().unwrap();
+            }
+        }
+    }
+}
+
 fn closed_strict_selector_artifact_with_shape(
     producer: &ProgramArtifact,
     expected: mech_core::ValueDataDraft,
@@ -1216,6 +1673,22 @@ fn closed_strict_selector_artifact_with_comparison(
     for node in &mut nodes {
         if let ExecutableNodeBody::Operation(operation) = &mut node.body {
             operation.contract = remapped_contracts[operation.contract.get() as usize];
+        } else if let ExecutableNodeBody::Comprehension(control) = &mut node.body {
+            for step in &mut control.steps {
+                let mech_engine::ComprehensionStep::Generator { source, pattern } = step else {
+                    panic!("identity comprehension fixture")
+                };
+                if let mech_engine::ComprehensionValue::Constant(id) = source {
+                    *id = remapped[id.get() as usize];
+                }
+                let mech_engine::CollectionPattern::Bind { schema, .. } = pattern else {
+                    panic!("identity binding")
+                };
+                *schema = remapped_schemas[schema.get() as usize];
+            }
+            if let mech_engine::ComprehensionValue::Constant(id) = &mut control.yield_value {
+                *id = remapped[id.get() as usize];
+            }
         }
     }
     let first_slot = slots.len() as u32;

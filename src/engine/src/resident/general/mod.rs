@@ -3767,16 +3767,75 @@ fn concatenate_closed_logical_sources(
     plan.materialize(&masks, analysis)
 }
 
+fn closed_logical_copy_uses_snapshots(
+    artifact: &ProgramArtifact,
+    output: CellSlotId,
+    inputs: &[ArtifactSource],
+    facts: &ActivationFacts,
+) -> Result<bool, ResidentActivationError> {
+    if closed_slot_resident_kind(artifact, output, facts)? == ResidentValueKind::Snapshot {
+        return Ok(true);
+    }
+    for source in inputs {
+        let kind = match forwarded_output_source(artifact, *source)? {
+            ArtifactSource::Constant(id) => {
+                let value = artifact
+                    .constants()
+                    .get(id)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                value_layout(artifact, value)?.0
+            }
+            ArtifactSource::Slot(slot) => closed_slot_resident_kind(artifact, slot, facts)?,
+        };
+        if kind == ResidentValueKind::Snapshot {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn closed_dense_logical_copy_admitted(
+    artifact: &ProgramArtifact,
+    horizontal: Option<bool>,
+    inputs: &[ArtifactSource],
+    facts: &ActivationFacts,
+    analysis: &ClosedActivationAnalysisContext,
+) -> Option<()> {
+    let prepared = if let Some(horizontal) = horizontal {
+        let plan = ClosedLogicalConcatenationPlan::from_dimensions(
+            horizontal,
+            inputs
+                .iter()
+                .map(|source| logical_selector_mask_dimensions(artifact, *source, facts, analysis))
+                .collect::<Option<Vec<_>>>()?,
+        )?;
+        super::numeric::prepare_dense_concatenation(ResidentValueKind::Bool, plan.count, 0).ok()?
+    } else {
+        let [source] = inputs else {
+            return None;
+        };
+        let (rows, columns) = logical_selector_mask_dimensions(artifact, *source, facts, analysis)?;
+        super::numeric::prepare_dense_transpose_layout(
+            ResidentValueKind::Bool,
+            ResidentShape {
+                rows: u32::try_from(columns).ok()?,
+                columns: u32::try_from(rows).ok()?,
+            },
+        )
+        .ok()?
+    };
+    prepared
+        .prepare_for_analysis(|cost| analysis.construction.admit_preparation(cost))
+        .ok()?;
+    Some(())
+}
+
 enum ClosedComparisonValue<'a> {
     Borrowed(&'a Value),
     Shared(std::sync::Arc<Value>),
 }
 
 impl ClosedComparisonValue<'_> {
-    fn is_borrowed(&self) -> bool {
-        matches!(self, Self::Borrowed(_))
-    }
-
     fn into_owned(self) -> Value {
         match self {
             Self::Borrowed(value) => value.clone(),
@@ -3978,15 +4037,24 @@ impl ClosedOperandSchemaContext {
                 .try_fold(0_u64, |work, entry| {
                     work.checked_add(entry.canonical_bytes().len() as u64)
                 })?;
-            let bytes = artifact.schemas().clone_allocation_bound_bytes()?;
+            let bytes = artifact
+                .schemas()
+                .clone_allocation_bound_bytes()?
+                .checked_add(2 * core::mem::size_of::<usize>() as u64)?;
             if !construction.charge_compute_chunk(bytes, work, 1) {
                 return None;
             }
         }
-        Some(self.schemas(artifact))
+        Some(self.schemas_after_admission(artifact))
     }
 
-    fn schemas(&self, artifact: &ProgramArtifact) -> std::sync::Arc<mech_core::SchemaTable> {
+    // Only for a caller whose shared owner preparation has already admitted
+    // the entire schema table (the join owner). All other callers use the
+    // checked entry point above, including when another producer primed it.
+    fn schemas_after_admission(
+        &self,
+        artifact: &ProgramArtifact,
+    ) -> std::sync::Arc<mech_core::SchemaTable> {
         std::sync::Arc::clone(
             self.schemas
                 .get_or_init(|| std::sync::Arc::new(artifact.schemas().clone())),
@@ -4171,6 +4239,7 @@ std::thread_local! {
     // behind a demand-sized cost estimate.
     static CLOSED_OPERAND_DRAFT_ENTRIES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
     static CLOSED_PUBLICATION_DRAFT_ENTRIES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    static CLOSED_COMPOSITE_INPUT_COPIES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
 fn closed_publication_draft(
@@ -5467,7 +5536,7 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     let folded = super::table::fold_closed_join(
                         mode,
                         artifact.schemas(),
-                        || analysis.schemas.schemas(artifact),
+                        || analysis.schemas.schemas_after_admission(artifact),
                         &left.value,
                         &right.value,
                         target_schema_id,
@@ -9887,6 +9956,45 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                         | SchemaBody::Table { .. }
                 )
             {
+                let Some(metadata) =
+                    mech_core::snapshot::CompositeSnapshotConstructor::binding_cost_for_inputs(
+                        target_schema_id,
+                        inputs.len(),
+                        |index| match inputs[index] {
+                            ArtifactSource::Constant(id) => {
+                                artifact.constants().get(id).map(Value::schema)
+                            }
+                            ArtifactSource::Slot(slot) => artifact
+                                .slots()
+                                .get(slot.get() as usize)
+                                .map(|slot| slot.schema),
+                        },
+                        artifact.schemas(),
+                    )
+                else {
+                    return Ok(None);
+                };
+                let Some(metadata_bytes) = (inputs.len() as u64)
+                    .checked_mul(core::mem::size_of::<Value>() as u64)
+                    .and_then(|bytes| bytes.checked_add(metadata.temporary_bytes))
+                else {
+                    return Ok(None);
+                };
+                if metadata.metadata_nodes > mech_core::RESIDENT_MAX_RETAINED_NODES
+                    || !analysis.construction.charge_compute_chunk(
+                        metadata_bytes,
+                        metadata.compute_work,
+                        1,
+                    )
+                {
+                    return Ok(None);
+                }
+                let Some(schemas) = analysis
+                    .schemas
+                    .admitted_schemas(artifact, &analysis.construction)
+                else {
+                    return Ok(None);
+                };
                 let mut values = Vec::with_capacity(inputs.len());
                 for input in inputs {
                     let Some(value) = constant_comparison_operand_at_depth(
@@ -9902,18 +10010,17 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     else {
                         return Ok(None);
                     };
-                    // `into_owned` clones direct constants and the composite
-                    // constructor clones every child payload once more. Owned
-                    // recursive results move into the constructor, so they
-                    // require only the constructor copy. Charge the complete
-                    // retained footprint before either allocation can occur.
-                    let copies = if value.value.is_borrowed() { 2 } else { 1 };
+                    // Both direct constants and Arc-cached recursive results
+                    // are cloned by `into_owned`; the constructor copies their
+                    // payload once more. Shared cache ownership is not a move.
                     if !analysis
                         .construction
-                        .charge_clone(&value.value, artifact.schemas(), copies)
+                        .charge_clone(&value.value, artifact.schemas(), 2)
                     {
                         return Ok(None);
                     }
+                    #[cfg(test)]
+                    CLOSED_COMPOSITE_INPUT_COPIES.with(|copies| copies.set(copies.get() + 1));
                     values.push(value.value.into_owned());
                 }
                 let children = values
@@ -9933,11 +10040,45 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     target_schema_id,
                     shape,
                     &children,
-                    analysis.schemas.schemas(artifact),
+                    schemas,
                 ) else {
                     return Ok(None);
                 };
-                constructor.construct(values.into_boxed_slice(), Some(budget))
+                let Some((containers, scratch)) = constructor.allocation_containers() else {
+                    return Ok(None);
+                };
+                let Some(bytes) = containers
+                    .checked_add(scratch)
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                else {
+                    return Ok(None);
+                };
+                if !analysis
+                    .construction
+                    .charge_compute_chunk(bytes, values.len() as u64, 1)
+                {
+                    return Ok(None);
+                }
+                // Map normalization performs bounded incremental key work.
+                // Reserve from the shared remaining allowances, then retain
+                // actual consumption even if the constructor declines.
+                let remaining = mech_core::RESIDENT_MAX_COMPARISON_WORK
+                    .saturating_sub(analysis.construction.comparison_work.get())
+                    .min(
+                        mech_core::RESIDENT_MAX_COMPUTE_WORK
+                            .saturating_sub(analysis.construction.compute_work.get()),
+                    );
+                let normalization = SnapshotCanonicalizationBudget::new(remaining);
+                let converted =
+                    constructor.construct(values.into_boxed_slice(), Some(&normalization));
+                if normalization.consumed() != 0
+                    && !analysis
+                        .construction
+                        .charge_comparison_compute_work(normalization.consumed())
+                {
+                    return Ok(None);
+                }
+                converted
             } else {
                 return Ok(None);
             };
@@ -10951,7 +11092,9 @@ fn complete_activation_shape_facts_with_analysis(
                 .logical_masks
                 .insert(ArtifactSource::Slot(output), mask);
         }
-        if node.operation.module_path.as_ref() == ["matrix"]
+        if class == NodeClass::Activation
+            && boolean_output
+            && node.operation.module_path.as_ref() == ["matrix"]
             && required_logical_populations.contains(&ArtifactSource::Slot(output))
             && analysis
                 .logical_masks
@@ -10963,13 +11106,26 @@ fn complete_activation_shape_facts_with_analysis(
             )
         {
             let inputs = node_inputs(artifact, node.node)?;
-            if let Some(mask) = concatenate_closed_logical_sources(
-                artifact,
-                node.operation.operation_name == "horzcat",
-                &inputs,
-                &facts,
-                &analysis,
-            ) {
+            // Snapshot copying must succeed through the admitted value-to-mask
+            // path above. A declined resident preflight is not permission to
+            // reconstruct the same result from independently cached masks.
+            if !closed_logical_copy_uses_snapshots(artifact, output, &inputs, &facts)?
+                && closed_dense_logical_copy_admitted(
+                    artifact,
+                    Some(node.operation.operation_name == "horzcat"),
+                    &inputs,
+                    &facts,
+                    &analysis,
+                )
+                .is_some()
+                && let Some(mask) = concatenate_closed_logical_sources(
+                    artifact,
+                    node.operation.operation_name == "horzcat",
+                    &inputs,
+                    &facts,
+                    &analysis,
+                )
+            {
                 let population = mask
                     .population()
                     .ok_or(ResidentActivationError::RegionSizeOverflow)?;
@@ -10978,23 +11134,10 @@ fn complete_activation_shape_facts_with_analysis(
                     .logical_masks
                     .insert(ArtifactSource::Slot(output), mask);
             }
-            let population = inputs.iter().try_fold(Some(0_u64), |total, source| {
-                match (
-                    total,
-                    logical_selector_population(artifact, *source, &logical_populations),
-                ) {
-                    (Some(total), Some(count)) => total
-                        .checked_add(count)
-                        .map(Some)
-                        .ok_or(ResidentActivationError::RegionSizeOverflow),
-                    _ => Ok(None),
-                }
-            })?;
-            if let Some(population) = population {
-                logical_populations.insert(ArtifactSource::Slot(output), population);
-            }
         }
-        if node.operation.module_path.as_ref() == ["matrix"]
+        if class == NodeClass::Activation
+            && boolean_output
+            && node.operation.module_path.as_ref() == ["matrix"]
             && node.operation.operation_name == "transpose"
             && required_logical_populations.contains(&ArtifactSource::Slot(output))
             && analysis
@@ -11006,8 +11149,11 @@ fn complete_activation_shape_facts_with_analysis(
             let [source] = inputs.as_slice() else {
                 continue;
             };
-            if let Some(mask) = logical_selector_mask(artifact, *source, &facts, &analysis)
-                .and_then(|mask| mask.transpose(&analysis))
+            if !closed_logical_copy_uses_snapshots(artifact, output, &inputs, &facts)?
+                && closed_dense_logical_copy_admitted(artifact, None, &inputs, &facts, &analysis)
+                    .is_some()
+                && let Some(mask) = logical_selector_mask(artifact, *source, &facts, &analysis)
+                    .and_then(|mask| mask.transpose(&analysis))
             {
                 let population = mask
                     .population()
@@ -11016,11 +11162,6 @@ fn complete_activation_shape_facts_with_analysis(
                 analysis
                     .logical_masks
                     .insert(ArtifactSource::Slot(output), mask);
-            }
-            if let Some(population) =
-                logical_selector_population(artifact, *source, &logical_populations)
-            {
-                logical_populations.insert(ArtifactSource::Slot(output), population);
             }
         }
         if node.operation.module_path.as_ref() == ["logic"]
@@ -20594,7 +20735,32 @@ mod shape_fact_tests {
     }
 
     fn repeated_composite_pack_artifact(depth: u32) -> ProgramArtifact {
+        repeated_composite_pack_artifact_with_unused_schema(depth, 0)
+    }
+
+    fn repeated_composite_pack_artifact_with_unused_schema(
+        depth: u32,
+        unused_name_bytes: usize,
+    ) -> ProgramArtifact {
         let mut schemas = SchemaTableBuilder::new();
+        if unused_name_bytes != 0 {
+            schemas
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: Box::new([]),
+                        body: SchemaBody::Record(
+                            vec![mech_core::SchemaField {
+                                name: "unused".repeat(unused_name_bytes / 6 + 1),
+                                schema: SchemaBody::Bool,
+                            }]
+                            .into_boxed_slice(),
+                        ),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+        }
         let string = schemas
             .insert(
                 SchemaDraft {
@@ -20798,8 +20964,218 @@ mod shape_fact_tests {
         let shared = analysis.schemas.schemas.get().unwrap();
         assert!(std::sync::Arc::ptr_eq(
             shared,
-            &analysis.schemas.schemas(&artifact),
+            &analysis
+                .schemas
+                .admitted_schemas(&artifact, &analysis.construction)
+                .unwrap(),
         ));
+    }
+
+    #[test]
+    fn closed_composite_schema_and_metadata_are_admitted_before_cloning() {
+        let artifact = repeated_composite_pack_artifact_with_unused_schema(1, 8_192);
+        let decoded = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        for artifact in [&artifact, &decoded] {
+            let schemas_bytes = artifact.schemas().clone_allocation_bound_bytes().unwrap();
+            let output = artifact.slots()[0].schema;
+            let inputs = node_inputs(artifact, NodeId::new(0)).unwrap();
+            let metadata =
+                mech_core::snapshot::CompositeSnapshotConstructor::binding_cost_for_inputs(
+                    output,
+                    inputs.len(),
+                    |index| match inputs[index] {
+                        ArtifactSource::Constant(id) => {
+                            artifact.constants().get(id).map(Value::schema)
+                        }
+                        ArtifactSource::Slot(_) => unreachable!(),
+                    },
+                    artifact.schemas(),
+                )
+                .unwrap();
+            assert!(schemas_bytes > metadata.temporary_bytes * 2);
+            for exhaust_metadata in [false, true] {
+                let analysis = ClosedActivationAnalysisContext::default();
+                CLOSED_COMPOSITE_INPUT_COPIES.with(|copies| copies.set(0));
+                if exhaust_metadata {
+                    assert!(
+                        analysis
+                            .schemas
+                            .admitted_schemas(artifact, &analysis.construction)
+                            .is_some()
+                    );
+                    analysis
+                        .construction
+                        .compute_work
+                        .set(mech_core::RESIDENT_MAX_COMPUTE_WORK - metadata.compute_work + 1);
+                } else {
+                    analysis
+                        .construction
+                        .construction_bytes
+                        .set(mech_core::RESIDENT_MAX_BYTES - schemas_bytes / 2);
+                }
+                assert!(
+                    constant_comparison_operand(
+                        artifact,
+                        NodeId::new(0),
+                        ArtifactSource::Slot(CellSlotId::new(0)),
+                        &ActivationFacts::default(),
+                        &analysis,
+                        false,
+                    )
+                    .unwrap()
+                    .is_none()
+                );
+                assert_eq!(
+                    analysis.schemas.schemas.get().is_some(),
+                    exhaust_metadata,
+                    "only a previously admitted schema table may remain cached after refusal"
+                );
+                assert!(analysis.values.borrow().is_empty());
+                assert_eq!(CLOSED_COMPOSITE_INPUT_COPIES.with(|copies| copies.get()), 0);
+            }
+            let admitted = ClosedActivationAnalysisContext::default();
+            assert!(
+                constant_comparison_operand(
+                    artifact,
+                    NodeId::new(0),
+                    ArtifactSource::Slot(CellSlotId::new(0)),
+                    &ActivationFacts::default(),
+                    &admitted,
+                    false,
+                )
+                .unwrap()
+                .is_some()
+            );
+            assert!(
+                admitted.construction.construction_bytes.get()
+                    >= schemas_bytes + metadata.temporary_bytes
+            );
+            let before = admitted.construction.construction_bytes.get();
+            let schemas = admitted
+                .schemas
+                .admitted_schemas(artifact, &admitted.construction)
+                .unwrap();
+            assert!(std::sync::Arc::ptr_eq(
+                &schemas,
+                admitted.schemas.schemas.get().unwrap()
+            ));
+            assert_eq!(admitted.construction.construction_bytes.get(), before);
+        }
+    }
+
+    #[test]
+    fn closed_composite_cached_children_still_admit_both_payload_copies() {
+        let artifact = repeated_composite_pack_artifact(2);
+        let analysis = ClosedActivationAnalysisContext::default();
+        let leaf = constant_comparison_operand(
+            &artifact,
+            NodeId::new(0),
+            ArtifactSource::Slot(CellSlotId::new(0)),
+            &ActivationFacts::default(),
+            &analysis,
+            false,
+        )
+        .unwrap()
+        .unwrap();
+        let copies = ClosedOperandConstructionBudget::default();
+        assert!(copies.charge_clone(&leaf.value, artifact.schemas(), 2));
+        let minimum_payload_bytes = copies.construction_bytes.get() * 2;
+        let before = analysis.construction.construction_bytes.get();
+        assert!(
+            constant_comparison_operand(
+                &artifact,
+                NodeId::new(1),
+                ArtifactSource::Slot(CellSlotId::new(1)),
+                &ActivationFacts::default(),
+                &analysis,
+                false,
+            )
+            .unwrap()
+            .is_some()
+        );
+        assert!(analysis.construction.construction_bytes.get() - before >= minimum_payload_bytes);
+    }
+
+    #[test]
+    fn closed_composite_metadata_preparation_preserves_resident_family_outputs() {
+        let boolean = |value| (SchemaBody::Bool, ValueDataDraft::Bool(value));
+        let string = |value: &str| (SchemaBody::String, ValueDataDraft::String(value.to_owned()));
+        let fields = || {
+            vec![
+                mech_core::SchemaField {
+                    name: "a".to_owned(),
+                    schema: SchemaBody::Bool,
+                },
+                mech_core::SchemaField {
+                    name: "b".to_owned(),
+                    schema: SchemaBody::String,
+                },
+            ]
+            .into_boxed_slice()
+        };
+        for (inputs, output) in [
+            (
+                vec![boolean(false), string("x")],
+                SchemaBody::Tuple(vec![SchemaBody::Bool, SchemaBody::String].into_boxed_slice()),
+            ),
+            (
+                vec![boolean(false), string("x")],
+                SchemaBody::Record(fields()),
+            ),
+            (
+                vec![boolean(false), string("x"), boolean(true), string("y")],
+                SchemaBody::Map {
+                    key: Box::new(SchemaBody::Bool),
+                    value: Box::new(SchemaBody::String),
+                    cardinality: mech_core::CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+                },
+            ),
+            (
+                vec![boolean(false), boolean(true), string("x"), string("y")],
+                SchemaBody::Table {
+                    columns: fields(),
+                    rows: mech_core::CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+                },
+            ),
+        ] {
+            let artifact = closed_copy_artifact("core", "composite-pack", inputs, output);
+            let decoded = crate::decode_program_artifact_bytecode_v1(
+                &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            for artifact in [&artifact, &decoded] {
+                let folded = constant_comparison_operand(
+                    artifact,
+                    NodeId::new(0),
+                    ArtifactSource::Slot(CellSlotId::new(0)),
+                    &ActivationFacts::default(),
+                    &ClosedActivationAnalysisContext::default(),
+                    false,
+                )
+                .unwrap()
+                .unwrap();
+                let mut catalog = mech_core::FunctionCatalogBuilder::new();
+                crate::install_intrinsic_resident(&mut catalog).unwrap();
+                let mut instance = activate(
+                    mech_core::ReactiveInstanceId::new(606, 54),
+                    artifact,
+                    &catalog.build().unwrap(),
+                    &ActivationFacts::default(),
+                )
+                .unwrap();
+                instance.turn(&[]).unwrap();
+                assert!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .snapshot_eq(artifact.schemas(), &folded.value, artifact.schemas())
+                        .unwrap()
+                );
+            }
+        }
     }
 
     #[test]
@@ -21971,6 +22347,47 @@ mod shape_fact_tests {
             .expect("closed snapshot product should fold");
             assert_eq!(operand.value.shape(), &runtime_shape);
             assert_eq!((operand.rows, operand.columns), (1, 1));
+        }
+    }
+
+    #[test]
+    fn dense_logical_copy_fallback_obeys_resident_caps_before_mask_construction() {
+        for count in [3, MAX_STATIC_SELECTOR_SOURCE_STEPS + 1] {
+            let (artifact, source) =
+                closed_boolean_constant_artifact(1, count as u64, std::iter::repeat_n(true, count));
+            for horizontal in [Some(true), Some(false), None] {
+                let analysis = ClosedActivationAnalysisContext::default();
+                assert_eq!(
+                    closed_dense_logical_copy_admitted(
+                        &artifact,
+                        horizontal,
+                        &[source],
+                        &ActivationFacts::default(),
+                        &analysis
+                    )
+                    .is_some(),
+                    count == 3
+                );
+                assert_eq!(analysis.materialized_logical_mask_values.get(), 0);
+                assert_eq!(analysis.copied_mask_values.get(), 0);
+                assert!(analysis.logical_masks.masks.borrow().is_empty());
+                let insufficient = ClosedActivationAnalysisContext::default();
+                insufficient
+                    .construction
+                    .compute_work
+                    .set(mech_core::RESIDENT_MAX_COMPUTE_WORK - 1);
+                assert!(
+                    closed_dense_logical_copy_admitted(
+                        &artifact,
+                        horizontal,
+                        &[source],
+                        &ActivationFacts::default(),
+                        &insufficient
+                    )
+                    .is_none()
+                );
+                assert_eq!(insufficient.materialized_logical_mask_values.get(), 0);
+            }
         }
     }
 
