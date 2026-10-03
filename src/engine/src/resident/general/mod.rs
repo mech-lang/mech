@@ -3428,9 +3428,9 @@ fn logical_selector_mask<'a>(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
     facts: &ActivationFacts,
-    known: &'a ClosedLogicalMaskStore,
+    analysis: &'a ClosedActivationAnalysisContext,
 ) -> Option<std::borrow::Cow<'a, ClosedLogicalMask>> {
-    if let Some(mask) = known.get(&source) {
+    if let Some(mask) = analysis.logical_masks.get(&source) {
         return Some(std::borrow::Cow::Borrowed(mask));
     }
     let ArtifactSource::Constant(id) = source else {
@@ -3439,6 +3439,9 @@ fn logical_selector_mask<'a>(
     let value = artifact.constants().get(id)?;
     match value.data() {
         mech_core::ValueData::Bool(value) => {
+            if !analysis.record_materialized_logical_mask_values(1) {
+                return None;
+            }
             Some(std::borrow::Cow::Owned(ClosedLogicalMask::scalar(*value)))
         }
         mech_core::ValueData::Matrix(matrix) => {
@@ -3453,6 +3456,9 @@ fn logical_selector_mask<'a>(
             let columns = usize::try_from(*columns).ok()?;
             let count = rows.checked_mul(columns)?;
             if count != values.len() || count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+                return None;
+            }
+            if !analysis.record_materialized_logical_mask_values(count) {
                 return None;
             }
             let mut dense_values = Vec::with_capacity(count);
@@ -3471,79 +3477,176 @@ fn logical_selector_mask<'a>(
     }
 }
 
+fn logical_selector_mask_dimensions(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+    analysis: &ClosedActivationAnalysisContext,
+) -> Option<(usize, usize)> {
+    if let Some(mask) = analysis.logical_masks.get(&source) {
+        return Some((mask.rows, mask.columns));
+    }
+    let ArtifactSource::Constant(id) = source else {
+        return None;
+    };
+    let value = artifact.constants().get(id)?;
+    match value.data() {
+        mech_core::ValueData::Bool(_) => Some((1, 1)),
+        mech_core::ValueData::Matrix(matrix)
+            if matches!(
+                matrix.elements(),
+                mech_core::snapshot::SequenceView::Bool(_)
+            ) =>
+        {
+            let extents = source_extents(artifact, source, facts).ok()?;
+            let [rows, columns] = extents.as_ref() else {
+                return None;
+            };
+            let rows = usize::try_from(*rows).ok()?;
+            let columns = usize::try_from(*columns).ok()?;
+            let count = rows.checked_mul(columns)?;
+            (count == matrix.elements().len() && count <= MAX_STATIC_SELECTOR_SOURCE_STEPS)
+                .then_some((rows, columns))
+        }
+        _ => None,
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ClosedLogicalConcatenationPlan {
+    horizontal: bool,
+    rows: usize,
+    columns: usize,
+    count: usize,
+}
+
+impl ClosedLogicalConcatenationPlan {
+    fn from_dimensions(
+        horizontal: bool,
+        dimensions: impl IntoIterator<Item = (usize, usize)>,
+    ) -> Option<Self> {
+        let mut dimensions = dimensions.into_iter();
+        let (first_rows, first_columns) = dimensions.next()?;
+        let (rows, columns) = if horizontal {
+            let columns = dimensions.try_fold(first_columns, |total, (rows, columns)| {
+                (rows == first_rows)
+                    .then(|| total.checked_add(columns))
+                    .flatten()
+            })?;
+            (first_rows, columns)
+        } else {
+            let rows = dimensions.try_fold(first_rows, |total, (rows, columns)| {
+                (columns == first_columns)
+                    .then(|| total.checked_add(rows))
+                    .flatten()
+            })?;
+            (rows, first_columns)
+        };
+        let count = rows.checked_mul(columns)?;
+        (count <= MAX_STATIC_SELECTOR_SOURCE_STEPS).then_some(Self {
+            horizontal,
+            rows,
+            columns,
+            count,
+        })
+    }
+
+    fn admit(self, analysis: &ClosedActivationAnalysisContext) -> Option<Self> {
+        let count = u64::try_from(self.count).ok()?;
+        analysis
+            .construction
+            .charge_compute_chunk(count, count, 1)
+            .then_some(self)
+    }
+
+    fn materialize(
+        self,
+        masks: &[std::borrow::Cow<'_, ClosedLogicalMask>],
+        analysis: &ClosedActivationAnalysisContext,
+    ) -> Option<ClosedLogicalMask> {
+        let actual = Self::from_dimensions(
+            self.horizontal,
+            masks.iter().map(|mask| (mask.rows, mask.columns)),
+        )?;
+        if actual.rows != self.rows
+            || actual.columns != self.columns
+            || actual.count != self.count
+            || masks
+                .iter()
+                .any(|mask| mask.rows.checked_mul(mask.columns) != Some(mask.values.len()))
+        {
+            return None;
+        }
+        let count = u64::try_from(self.count).ok()?;
+        let copied = count.checked_add(analysis.copied_mask_values.get())?;
+        analysis.copied_mask_values.set(copied);
+        if self.horizontal {
+            let mut values = Vec::with_capacity(self.count);
+            for mask in masks {
+                values.extend_from_slice(&mask.values);
+            }
+            Some(ClosedLogicalMask {
+                rows: self.rows,
+                columns: self.columns,
+                values,
+            })
+        } else {
+            let mut values = vec![false; self.count];
+            let mut row_base = 0;
+            for mask in masks {
+                for column in 0..self.columns {
+                    for row in 0..mask.rows {
+                        values[row_base + row + column * self.rows] =
+                            mask.values[row + column * mask.rows];
+                    }
+                }
+                row_base += mask.rows;
+            }
+            Some(ClosedLogicalMask {
+                rows: self.rows,
+                columns: self.columns,
+                values,
+            })
+        }
+    }
+}
+
+#[cfg(test)]
 fn concatenate_closed_logical_masks(
     horizontal: bool,
     masks: &[std::borrow::Cow<'_, ClosedLogicalMask>],
     analysis: &ClosedActivationAnalysisContext,
 ) -> Option<ClosedLogicalMask> {
-    let first = masks.first()?;
-    if horizontal {
-        if masks.iter().any(|mask| mask.rows != first.rows) {
-            return None;
-        }
-        let columns = masks
+    ClosedLogicalConcatenationPlan::from_dimensions(
+        horizontal,
+        masks.iter().map(|mask| (mask.rows, mask.columns)),
+    )?
+    .admit(analysis)?
+    .materialize(masks, analysis)
+}
+
+fn concatenate_closed_logical_sources(
+    artifact: &ProgramArtifact,
+    horizontal: bool,
+    sources: &[ArtifactSource],
+    facts: &ActivationFacts,
+    analysis: &ClosedActivationAnalysisContext,
+) -> Option<ClosedLogicalMask> {
+    let plan = ClosedLogicalConcatenationPlan::from_dimensions(
+        horizontal,
+        sources
             .iter()
-            .try_fold(0_usize, |total, mask| total.checked_add(mask.columns))?;
-        let count = first.rows.checked_mul(columns)?;
-        if count > MAX_STATIC_SELECTOR_SOURCE_STEPS
-            || masks
-                .iter()
-                .any(|mask| mask.rows.checked_mul(mask.columns) != Some(mask.values.len()))
-        {
-            return None;
-        }
-        let count = u64::try_from(count).ok()?;
-        if !analysis.construction.charge_compute_chunk(count, count, 1) {
-            return None;
-        }
-        let copied = count.checked_add(analysis.copied_mask_values.get())?;
-        analysis.copied_mask_values.set(copied);
-        let mut values = Vec::with_capacity(usize::try_from(count).ok()?);
-        for mask in masks {
-            values.extend_from_slice(&mask.values);
-        }
-        Some(ClosedLogicalMask {
-            rows: first.rows,
-            columns,
-            values,
-        })
-    } else {
-        if masks.iter().any(|mask| mask.columns != first.columns) {
-            return None;
-        }
-        let rows = masks
-            .iter()
-            .try_fold(0_usize, |total, mask| total.checked_add(mask.rows))?;
-        let count = rows.checked_mul(first.columns)?;
-        if count > MAX_STATIC_SELECTOR_SOURCE_STEPS
-            || masks
-                .iter()
-                .any(|mask| mask.rows.checked_mul(mask.columns) != Some(mask.values.len()))
-        {
-            return None;
-        }
-        let count = u64::try_from(count).ok()?;
-        if !analysis.construction.charge_compute_chunk(count, count, 1) {
-            return None;
-        }
-        let copied = count.checked_add(analysis.copied_mask_values.get())?;
-        analysis.copied_mask_values.set(copied);
-        let mut values = vec![false; usize::try_from(count).ok()?];
-        let mut row_base = 0;
-        for mask in masks {
-            for column in 0..first.columns {
-                for row in 0..mask.rows {
-                    values[row_base + row + column * rows] = mask.values[row + column * mask.rows];
-                }
-            }
-            row_base += mask.rows;
-        }
-        Some(ClosedLogicalMask {
-            rows,
-            columns: first.columns,
-            values,
-        })
-    }
+            .copied()
+            .map(|source| logical_selector_mask_dimensions(artifact, source, facts, analysis))
+            .collect::<Option<Vec<_>>>()?,
+    )?
+    .admit(analysis)?;
+    let masks = sources
+        .iter()
+        .copied()
+        .map(|source| logical_selector_mask(artifact, source, facts, analysis))
+        .collect::<Option<Vec<_>>>()?;
+    plan.materialize(&masks, analysis)
 }
 
 enum ClosedComparisonValue<'a> {
@@ -3629,10 +3732,23 @@ struct ClosedActivationAnalysisContext {
     logical_masks: ClosedLogicalMaskStore,
     values: std::cell::RefCell<BTreeMap<ArtifactSource, std::sync::Arc<Value>>>,
     copied_mask_values: std::cell::Cell<u64>,
+    materialized_logical_mask_values: std::cell::Cell<u64>,
     materialized_operand_values: std::cell::Cell<u64>,
 }
 
 impl ClosedActivationAnalysisContext {
+    fn record_materialized_logical_mask_values(&self, count: usize) -> bool {
+        let Some(total) = u64::try_from(count).ok().and_then(|count| {
+            self.materialized_logical_mask_values
+                .get()
+                .checked_add(count)
+        }) else {
+            return false;
+        };
+        self.materialized_logical_mask_values.set(total);
+        true
+    }
+
     fn record_materialized_operand_values(&self, count: usize) -> bool {
         let Some(total) = u64::try_from(count)
             .ok()
@@ -4909,7 +5025,10 @@ fn closed_comparison_mask(
                 if matches!(left.schema, SchemaBody::String) && matches!(name, "eq" | "neq") {
                     closed_scalar_string_equality_admitted(&left.value, &right.value)
                 } else if compatible_matrix_identity && matches!(name, "seq" | "sneq") {
-                    true
+                    left.rows
+                        .checked_mul(left.columns)
+                        .and_then(|count| u64::try_from(count).ok())
+                        .is_some_and(|work| analysis.construction.charge_compute_chunk(0, work, 1))
                 } else if !scalar_comparison_supported(&left.schema, false) {
                     closed_aggregate_equality_admitted(
                         artifact,
@@ -4924,9 +5043,14 @@ fn closed_comparison_mask(
                 return Ok(None);
             }
         }
-        let same_shape = if matches!(left.schema, SchemaBody::Matrix { .. })
-            && matches!(right.schema, SchemaBody::Matrix { .. })
-        {
+        let dense_matrix_shapes = matches!(
+            (&left.schema, &right.schema),
+            (
+                SchemaBody::Matrix { element: left_element, .. },
+                SchemaBody::Matrix { element: right_element, .. },
+            ) if left_element == right_element && dense_resident_kind(left_element).is_some()
+        );
+        let same_shape = if dense_matrix_shapes {
             left.rows == right.rows && left.columns == right.columns
         } else {
             left.value.shape() == right.value.shape()
@@ -5254,20 +5378,13 @@ fn complete_activation_shape_facts(
             )
         {
             let inputs = node_inputs(artifact, node.node)?;
-            let masks = inputs
-                .iter()
-                .copied()
-                .map(|source| {
-                    logical_selector_mask(artifact, source, &facts, &analysis.logical_masks)
-                })
-                .collect::<Option<Vec<_>>>();
-            if let Some(mask) = masks.and_then(|masks| {
-                concatenate_closed_logical_masks(
-                    node.operation.operation_name == "horzcat",
-                    &masks,
-                    &analysis,
-                )
-            }) {
+            if let Some(mask) = concatenate_closed_logical_sources(
+                artifact,
+                node.operation.operation_name == "horzcat",
+                &inputs,
+                &facts,
+                &analysis,
+            ) {
                 let population = mask
                     .population()
                     .ok_or(ResidentActivationError::RegionSizeOverflow)?;
@@ -5300,9 +5417,8 @@ fn complete_activation_shape_facts(
             let [source] = inputs.as_slice() else {
                 continue;
             };
-            if let Some(mask) =
-                logical_selector_mask(artifact, *source, &facts, &analysis.logical_masks)
-                    .and_then(|mask| mask.transpose(&analysis))
+            if let Some(mask) = logical_selector_mask(artifact, *source, &facts, &analysis)
+                .and_then(|mask| mask.transpose(&analysis))
             {
                 let population = mask
                     .population()
@@ -5326,9 +5442,8 @@ fn complete_activation_shape_facts(
             let [source] = inputs.as_slice() else {
                 continue;
             };
-            if let Some(mask) =
-                logical_selector_mask(artifact, *source, &facts, &analysis.logical_masks)
-                    .and_then(|mask| mask.negated(&analysis))
+            if let Some(mask) = logical_selector_mask(artifact, *source, &facts, &analysis)
+                .and_then(|mask| mask.negated(&analysis))
             {
                 let population = mask
                     .population()
@@ -5356,10 +5471,8 @@ fn complete_activation_shape_facts(
         {
             let inputs = node_inputs(artifact, node.node)?;
             if let [left, right] = inputs.as_slice()
-                && let Some(left) =
-                    logical_selector_mask(artifact, *left, &facts, &analysis.logical_masks)
-                && let Some(right) =
-                    logical_selector_mask(artifact, *right, &facts, &analysis.logical_masks)
+                && let Some(left) = logical_selector_mask(artifact, *left, &facts, &analysis)
+                && let Some(right) = logical_selector_mask(artifact, *right, &facts, &analysis)
                 && let Some(mask) =
                     left.binary(&right, node.operation.operation_name.as_str(), &analysis)
             {
@@ -9468,6 +9581,7 @@ mod shape_fact_tests {
         right_extents: [u64; 2],
         element_value: ValueDataDraft,
         shared_parameterized_schema: bool,
+        combined_parameter_axis: bool,
     ) -> ProgramArtifact {
         let mut schemas = SchemaTableBuilder::new();
         let (left, right) = if shared_parameterized_schema {
@@ -9488,11 +9602,25 @@ mod shape_fact_tests {
                             .into_boxed_slice(),
                         body: SchemaBody::Matrix {
                             element: Box::new(element.clone()),
-                            dimensions: vec![
-                                DimensionExpr::Parameter(DimensionParameterId::new(0)),
-                                DimensionExpr::Parameter(DimensionParameterId::new(1)),
-                            ]
-                            .into_boxed_slice(),
+                            dimensions: if combined_parameter_axis {
+                                vec![
+                                    DimensionExpr::Add(
+                                        vec![
+                                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                                            DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                                        ]
+                                        .into_boxed_slice(),
+                                    ),
+                                    DimensionExpr::Constant(1),
+                                ]
+                                .into_boxed_slice()
+                            } else {
+                                vec![
+                                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                                ]
+                                .into_boxed_slice()
+                            },
                         },
                     }
                     .finalize()
@@ -9546,6 +9674,11 @@ mod shape_fact_tests {
         let (schemas, _) = build.into_parts();
 
         let value = |schema, extents: [u64; 2]| {
+            let element_count = if combined_parameter_axis {
+                extents[0] + extents[1]
+            } else {
+                extents[0] * extents[1]
+            };
             ValueDraft {
                 schema,
                 shape_values: if shared_parameterized_schema {
@@ -9554,8 +9687,7 @@ mod shape_fact_tests {
                     Box::new([])
                 },
                 data: ValueDataDraft::Matrix(
-                    vec![element_value.clone(); (extents[0] * extents[1]) as usize]
-                        .into_boxed_slice(),
+                    vec![element_value.clone(); element_count as usize].into_boxed_slice(),
                 ),
             }
             .finalize(&SnapshotValidationContext::new(&schemas))
@@ -9671,11 +9803,72 @@ mod shape_fact_tests {
             [1, 65_537],
             ValueDataDraft::F64(F64Bits::from_f64(1.0)),
             false,
+            false,
         );
         assert_eq!(
             closed_comparison_population(&artifact, NodeId::new(0), &ActivationFacts::default())
                 .unwrap(),
             Some(1),
+        );
+    }
+
+    #[test]
+    fn repeated_dense_strict_comparisons_share_compute_admission() {
+        let element_count = 65_537_u64;
+        let artifact = strict_matrix_comparison_artifact(
+            "seq",
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            [1, element_count],
+            [1, element_count],
+            ValueDataDraft::F64(F64Bits::from_f64(1.0)),
+            false,
+            false,
+        );
+        let analysis = ClosedActivationAnalysisContext::default();
+        let admitted = mech_core::RESIDENT_MAX_COMPUTE_WORK / element_count;
+        for _ in 0..admitted {
+            assert!(
+                closed_comparison_mask(
+                    &artifact,
+                    NodeId::new(0),
+                    &ActivationFacts::default(),
+                    &analysis,
+                )
+                .unwrap()
+                .is_some()
+            );
+        }
+        assert!(
+            closed_comparison_mask(
+                &artifact,
+                NodeId::new(0),
+                &ActivationFacts::default(),
+                &analysis,
+            )
+            .unwrap()
+            .is_none()
+        );
+        assert_eq!(
+            analysis.construction.compute_work.get(),
+            admitted * element_count,
+        );
+    }
+
+    #[test]
+    fn snapshot_strict_comparison_uses_full_shape_instance_identity() {
+        let artifact = strict_matrix_comparison_artifact(
+            "seq",
+            SchemaBody::UnsignedInteger(IntegerWidth::W128),
+            [1, 2],
+            [2, 1],
+            ValueDataDraft::U128(1),
+            true,
+            true,
+        );
+        assert_eq!(
+            closed_comparison_population(&artifact, NodeId::new(0), &ActivationFacts::default())
+                .unwrap(),
+            Some(0),
         );
     }
 
@@ -9687,6 +9880,7 @@ mod shape_fact_tests {
             [1, 5_000],
             [5_000, 1],
             ValueDataDraft::U128(1),
+            false,
             false,
         );
         assert_eq!(
@@ -9706,6 +9900,7 @@ mod shape_fact_tests {
                 [65_537, 1],
                 ValueDataDraft::F64(F64Bits::from_f64(1.0)),
                 true,
+                false,
             );
             assert_eq!(
                 closed_comparison_population(
@@ -9727,6 +9922,7 @@ mod shape_fact_tests {
             [1, 5_000],
             [5_000, 1],
             ValueDataDraft::U128(1),
+            false,
             false,
         );
         assert_eq!(
@@ -10003,8 +10199,11 @@ mod shape_fact_tests {
         );
     }
 
-    #[test]
-    fn closed_boolean_constants_translate_from_canonical_to_dense_order() {
+    fn closed_boolean_constant_artifact(
+        rows: u64,
+        columns: u64,
+        values: impl IntoIterator<Item = bool>,
+    ) -> (ProgramArtifact, ArtifactSource) {
         let mut schemas = SchemaTableBuilder::new();
         let matrix = schemas
             .insert(
@@ -10012,8 +10211,11 @@ mod shape_fact_tests {
                     dimension_parameters: Box::new([]),
                     body: SchemaBody::Matrix {
                         element: Box::new(SchemaBody::Bool),
-                        dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)]
-                            .into_boxed_slice(),
+                        dimensions: vec![
+                            DimensionExpr::Constant(rows),
+                            DimensionExpr::Constant(columns),
+                        ]
+                        .into_boxed_slice(),
                     },
                 }
                 .finalize()
@@ -10027,9 +10229,11 @@ mod shape_fact_tests {
             schema: matrix,
             shape_values: Box::new([]),
             data: ValueDataDraft::Matrix(
-                [false, true, false, false, false, false]
+                values
+                    .into_iter()
                     .map(ValueDataDraft::Bool)
-                    .into(),
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
             ),
         }
         .finalize(&SnapshotValidationContext::new(&schemas))
@@ -10056,15 +10260,18 @@ mod shape_fact_tests {
         }
         .finalize()
         .unwrap();
-        let known = ClosedLogicalMaskStore::default();
-        let mask = logical_selector_mask(
-            &artifact,
-            ArtifactSource::Constant(value),
-            &ActivationFacts::default(),
-            &known,
-        )
-        .unwrap();
+        (artifact, ArtifactSource::Constant(value))
+    }
+
+    #[test]
+    fn closed_boolean_constants_translate_from_canonical_to_dense_order() {
+        let (artifact, source) =
+            closed_boolean_constant_artifact(2, 3, [false, true, false, false, false, false]);
+        let analysis = ClosedActivationAnalysisContext::default();
+        let mask = logical_selector_mask(&artifact, source, &ActivationFacts::default(), &analysis)
+            .unwrap();
         assert_eq!(mask.values, [false, false, true, false, false, false]);
+        assert_eq!(analysis.materialized_logical_mask_values.get(), 6);
         let row = ClosedLogicalMask {
             rows: 1,
             columns: 3,
@@ -10076,6 +10283,31 @@ mod shape_fact_tests {
                 .population(),
             Some(1),
         );
+    }
+
+    #[test]
+    fn repeated_constant_masks_are_rejected_before_materialization() {
+        let count = MAX_STATIC_SELECTOR_SOURCE_STEPS;
+        let (artifact, source) = closed_boolean_constant_artifact(
+            1,
+            u64::try_from(count).unwrap(),
+            std::iter::repeat_n(true, count),
+        );
+        let analysis = ClosedActivationAnalysisContext::default();
+        assert!(
+            concatenate_closed_logical_sources(
+                &artifact,
+                true,
+                &[source, source],
+                &ActivationFacts::default(),
+                &analysis,
+            )
+            .is_none()
+        );
+        assert_eq!(analysis.materialized_logical_mask_values.get(), 0);
+        assert_eq!(analysis.copied_mask_values.get(), 0);
+        assert_eq!(analysis.construction.construction_bytes.get(), 0);
+        assert_eq!(analysis.construction.compute_work.get(), 0);
     }
 
     #[test]
