@@ -293,7 +293,7 @@ pub fn maintained_operation_contract(
         }
         "option/some" => Some(full(ShapeRule::Declared)),
         "convert/kind" | "core/assign" => Some(full(ShapeRule::SameAsInput { input: 0 })),
-        "matrix/matmul" | "matrix/multiply" | "matrix/dot" => Some(declaration(
+        "matrix/matmul" | "matrix/dot" => Some(declaration(
             fixed(),
             OutputConstruction::FullWrite {
                 shape: if matrix_output {

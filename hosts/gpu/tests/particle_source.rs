@@ -20,20 +20,18 @@ use mech_runtime::{
 use std::num::NonZeroU32;
 
 const PARTICLE_SOURCE: &str = r#"
-positions := host-positions
-velocities := host-velocities
-~position-state := positions
-~velocity-state := velocities
+~positions := host-positions
+~velocities := host-velocities
 origin := host-origin
 attraction := host-attraction
 drag := host-drag
 dt := host-dt
-acceleration := (origin - position-state) * attraction
-next-velocities := (velocity-state + acceleration * dt) * drag
-next-positions := position-state + next-velocities * dt
-velocity-state = next-velocities
-position-state = next-positions
-(position-state, velocity-state)
+acceleration := (origin - positions) * attraction
+next-velocities := (velocities + acceleration * dt) * drag
+next-positions := positions + next-velocities * dt
+velocities = next-velocities
+positions = next-positions
+(positions, velocities)
 "#;
 
 const STANDALONE_PARTICLE_SOURCE: &str = r#"
@@ -64,7 +62,10 @@ fn compile_source(
         .collect::<BTreeMap<_, _>>();
     let external_input_names = inputs
         .keys()
-        .map(|name| name.strip_prefix("host-").unwrap_or(name).to_owned())
+        .filter_map(|name| {
+            let exposed = name.strip_prefix("host-").unwrap_or(name);
+            (!source.contains(&format!("~{exposed} := {name}"))).then(|| exposed.to_owned())
+        })
         .collect();
     compiler()
         .compile_document_artifact_with_inputs(&document, &inputs, &external_input_names)
@@ -96,8 +97,24 @@ fn compiler() -> ProgramCompiler {
 }
 
 fn compile_isolated_gpu_source(source: &str) -> mech_engine::ProgramArtifact {
+    let start = [
+        "particle-field @compute\n",
+        "particle-field @cpu\n",
+        "particle-field @gpu\n",
+    ]
+    .into_iter()
+    .find_map(|heading| source.find(heading))
+    .expect("mixed source must contain its compute region");
+    let document = retained_document(&format!(
+        "+> math\n@particles := compute://particles/kernel{{:write(input/force-point), :write(input/force-strength), :write(input/dt), :write(turn)}}\n\
+         @particles/input/force-point <- [0f32; 0f32]\n\
+         @particles/input/force-strength <- 0f32\n\
+         @particles/input/dt <- 0.016666667<f32>\n\
+         @particles/turn <- 1\n\n{}",
+        &source[start..]
+    ));
     compiler()
-        .compile_mixed_source(source)
+        .compile_mixed_document(&document)
         .expect("isolated GPU source must compile")
         .compute
         .artifact
@@ -163,6 +180,37 @@ fn lowered_program_exposes_exact_typed_region_ports() {
     assert_eq!(left.dimensions.as_ref(), [2, 3]);
     assert_eq!(left.layout(), TensorLayout::RowMajor);
     assert_eq!(interface.outputs[0].dimensions.as_ref(), [2, 3]);
+}
+
+#[test]
+fn published_input_keeps_its_pre_dispatch_value_when_it_updates_state() {
+    let artifact = compile_source(
+        "~state := 1f32\nx := host-x\nstate = x\nx\n",
+        [("host-x", RuntimeHostInputValue::F32(7.0))],
+    );
+    let program = ComputeLowerer
+        .compile(&artifact)
+        .expect("input-fed state must lower");
+    let inputs = BTreeMap::from([("x".to_owned(), vec![7.0])]);
+    let mut cpu = program.prepare_cpu(&inputs).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![7.0]);
+    cpu.dispatch_turns(1).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![7.0]);
+}
+
+#[test]
+fn published_state_prefers_its_own_committed_generation() {
+    let artifact = compile_source(
+        "~first := 1f32\n~second := 9f32\nnext-first := first + 1f32\nfirst = next-first\nsecond = first\nfirst\n",
+        [],
+    );
+    let program = ComputeLowerer
+        .compile(&artifact)
+        .expect("dependent state updates must lower");
+    let mut cpu = program.prepare_cpu(&BTreeMap::new()).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![1.0]);
+    cpu.dispatch_turns(1).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![2.0]);
 }
 
 #[test]
@@ -555,8 +603,8 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
 #[test]
 fn particle_execution_plan_groups_logical_output_aliases_once() {
     let source = PARTICLE_SOURCE.replacen(
-        "(position-state, velocity-state)",
-        "(position-state, position-state, velocity-state)",
+        "(positions, velocities)",
+        "(positions, positions, velocities)",
         1,
     );
     let artifact = compile_source(&source, particle_inputs());
@@ -1081,7 +1129,7 @@ result
         })
         .collect::<std::collections::BTreeSet<_>>();
 
-    assert!(operations.contains("matrix/multiply"));
+    assert!(operations.contains("matrix/matmul"));
     assert!(operations.contains("core/assign"));
     assert!(operations.iter().all(|name| !name.starts_with("runtime/")));
 }
