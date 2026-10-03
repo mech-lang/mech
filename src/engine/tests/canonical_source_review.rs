@@ -1401,10 +1401,9 @@ fn c32_invalid_kind_combinations_remain_source_semantic_errors() {
 #[cfg(all(feature = "resident-artifact", feature = "full_source"))]
 #[test]
 fn c32_arithmetic_availability_is_a_resident_target_capability() {
-    use mech_core::{ExecutionTarget, FunctionCatalogBuilder, NodeId, ResidentKernelBindError};
+    use mech_core::{ExecutionTarget, FunctionCatalogBuilder, NodeId};
     use mech_engine::resident::{
-        ActivationFacts, ResidentActivationError, ResidentActivationOptions, preflight_activation,
-        preflight_resident_target,
+        ActivationFacts, ResidentActivationOptions, preflight_activation, preflight_resident_target,
     };
     let mut builder = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut builder).unwrap();
@@ -1432,40 +1431,35 @@ fn c32_arithmetic_availability_is_a_resident_target_capability() {
                 &ActivationFacts::default(),
                 ResidentActivationOptions::default(),
             )
-            .unwrap_err();
-            assert_eq!(
-                binding,
-                ResidentActivationError::KernelBind {
-                    node,
-                    // Multiplication's final row-form fallback reports its
-                    // contract mismatch after rejecting the scalar layout.
-                    error: if operation == "math/mul" {
-                        ResidentKernelBindError::UnsupportedContract
-                    } else {
-                        ResidentKernelBindError::UnsupportedLayout
-                    }
-                },
-                "{source}"
-            );
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
             let capability = preflight_resident_target(
                 artifact,
                 &catalog,
                 &ActivationFacts::default(),
                 ResidentActivationOptions::default(),
             )
-            .unwrap_err();
-            assert_eq!(capability.target, ExecutionTarget::ResidentCpu);
-            assert_eq!(capability.node, Some(node));
-            assert_eq!(capability.operation.unwrap().canonical_name(), operation);
-            assert_eq!(capability.reason, format!("{binding:?}"));
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+            assert_eq!(binding.concrete_cases, capability.concrete_cases);
+            let case = capability
+                .concrete_cases
+                .iter()
+                .find(|case| case.node == node)
+                .expect("arithmetic node must retain its concrete capability");
+            assert_eq!(case.operation.canonical_name(), operation, "{source}");
+            assert!(
+                case.targets.contains(ExecutionTarget::ResidentCpu),
+                "{source}"
+            );
         }
     }
 }
 
 #[cfg(all(feature = "resident-artifact", feature = "full_source"))]
 #[test]
-fn resident_supports_c32_literal_storage_and_c64_arithmetic_execution() {
-    use mech_core::snapshot::{Complex64Bits, F64Bits, SnapshotValidationContext};
+fn resident_supports_complex_literal_storage_and_arithmetic_execution() {
+    use mech_core::snapshot::{
+        Complex32Bits, Complex64Bits, F32Bits, F64Bits, SnapshotValidationContext,
+    };
     use mech_core::{
         FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueData, ValueDataDraft,
         ValueDraft,
@@ -1479,6 +1473,9 @@ fn resident_supports_c32_literal_storage_and_c64_arithmetic_execution() {
     let catalog = builder.build().unwrap();
     for (source, literal, scale, offset) in [
         ("1+2i<c32>", true, 1.0, 0.0),
+        ("signal<c32> + 1<c32>", false, 1.0, 1.0),
+        ("signal<c32> * 2<c32>", false, 2.0, 0.0),
+        ("-(signal<c32>)", false, -1.0, 0.0),
         ("signal<c64> + 1<c64>", false, 1.0, 1.0),
         ("signal<c64> * 2<c64>", false, 2.0, 0.0),
     ] {
@@ -1509,10 +1506,17 @@ fn resident_supports_c32_literal_storage_and_c64_arithmetic_execution() {
                         ValueDraft {
                             schema: artifact.inputs()[0].schema,
                             shape_values: Box::new([]),
-                            data: ValueDataDraft::Complex64(Complex64Bits::new(
-                                F64Bits::from_f64(number),
-                                F64Bits::from_f64(2.0),
-                            )),
+                            data: if source.contains("<c32>") {
+                                ValueDataDraft::Complex32(Complex32Bits::new(
+                                    F32Bits::from_f32(number as f32),
+                                    F32Bits::from_f32(2.0),
+                                ))
+                            } else {
+                                ValueDataDraft::Complex64(Complex64Bits::new(
+                                    F64Bits::from_f64(number),
+                                    F64Bits::from_f64(2.0),
+                                ))
+                            },
                         }
                         .finalize(&SnapshotValidationContext::new(artifact.schemas()))
                         .unwrap(),
@@ -1532,6 +1536,10 @@ fn resident_supports_c32_literal_storage_and_c64_arithmetic_execution() {
                 if literal {
                     assert!(
                         matches!(result.data(), ValueData::Complex32(value) if value.real().to_f32() == 1.0 && value.imaginary().to_f32() == 2.0)
+                    );
+                } else if source.contains("<c32>") {
+                    assert!(
+                        matches!(result.data(), ValueData::Complex32(value) if f64::from(value.real().to_f32()) == number * scale + offset && f64::from(value.imaginary().to_f32()) == 2.0 * scale)
                     );
                 } else {
                     assert!(
