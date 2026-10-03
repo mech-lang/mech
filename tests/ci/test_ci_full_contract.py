@@ -514,6 +514,12 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertFalse(accepts(FULL_REQUIRED="true"))
         self.assertTrue(accepts(FULL_REQUIRED="true", FULL_RESULT="success", NATIVE_PLAN_RESULT="success"))
 
+    def test_cancelled_impact_skips_aggregate_gates(self):
+        guard = "if: always() && needs.impact.result != 'cancelled'"
+        for job in ("browser-compute-canary", "browser-canary", "pr-gate"):
+            with self.subTest(job=job):
+                self.assertIn(guard, job_block(CI, job))
+
     def test_architecture_mutations_are_bounded_parallel_exact_head_shards(self):
         normal = job_block(CI, "static-mutations")
         full = job_block(FULL, "architecture-mutations")

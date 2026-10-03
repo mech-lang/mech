@@ -812,7 +812,7 @@ jobs:
       - browser-ekf-cpu
       - browser-ekf-wgpu
       - browser-ekf-parity
-    if: always()
+    if: always() && needs.impact.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -847,7 +847,7 @@ jobs:
       - browser-standard-canary
       - browser-nbody-reference
       - browser-compute-canary
-    if: always()
+    if: always() && needs.impact.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -900,7 +900,7 @@ jobs:
 
   pr-gate:
     name: PR gate
-    if: always()
+    if: always() && needs.impact.result != 'cancelled'
     needs:
       - impact
       - static-contracts
