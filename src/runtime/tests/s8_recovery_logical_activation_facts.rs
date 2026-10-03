@@ -268,6 +268,110 @@ fn closed_comparisons_compose_through_absolute_value() {
 }
 
 #[test]
+fn closed_comparisons_compose_through_resident_unary_float_operations() {
+    exact_closed_mask(
+        "+> math\nx := [42 43]\nrounded := math/floor([1.5 3.5])\nmask := rounded > 2\nx[mask]\n",
+        "[43]",
+    );
+    exact_closed_mask(
+        "+> math\nx := [42 43]\nrounded := math/floor([1.5<f32> 3.5<f32>])\nmask := rounded > 2f32\nx[mask]\n",
+        "[43]",
+    );
+    for operation in [
+        "acos",
+        "acosh",
+        "acot",
+        "acsc",
+        "asec",
+        "asin",
+        "asinh",
+        "atan",
+        "atanh",
+        "cbrt",
+        "ceil",
+        "cos",
+        "cosh",
+        "cot",
+        "csc",
+        "erf",
+        "erfc",
+        "floor",
+        "lgamma",
+        "log",
+        "log10",
+        "log1p",
+        "log2",
+        "rint",
+        "round",
+        "roundeven",
+        "sec",
+        "sin",
+        "sinh",
+        "sqrt",
+        "tan",
+        "tanh",
+        "tgamma",
+        "trunc",
+    ] {
+        exact_closed_mask(
+            &format!(
+                "+> math\nx := [42 43]\ny := math/{operation}([1.0 1.0])\nmask := y == y\nx[mask]\n"
+            ),
+            "[42; 43]",
+        );
+    }
+    for operation in ["j0", "j1", "y0", "y1"] {
+        exact_closed_mask(
+            &format!(
+                "+> math\nx := [42 43]\ny := math/bessel/{operation}([1.0 1.0])\nmask := y == y\nx[mask]\n"
+            ),
+            "[42; 43]",
+        );
+    }
+}
+
+#[test]
+fn closed_comparisons_compose_through_resident_binary_float_operations() {
+    for operation in [
+        "atan2",
+        "copysign",
+        "fdim",
+        "fmod",
+        "nextafter",
+        "remainder",
+    ] {
+        exact_closed_mask(
+            &format!(
+                "+> math\nx := [42 43]\ny := math/{operation}([2.0 2.0], [1.0 1.0])\nmask := y == y\nx[mask]\n"
+            ),
+            "[42; 43]",
+        );
+    }
+    for operation in ["jn", "yn"] {
+        exact_closed_mask(
+            &format!(
+                "+> math\nx := [42 43]\ny := math/bessel/{operation}([1.0 1.0], [2.0 2.0])\nmask := y == y\nx[mask]\n"
+            ),
+            "[42; 43]",
+        );
+    }
+    exact_closed_mask(
+        "+> math\nx := [42 43]\ny := math/fmod([5.3<f32> 5.3<f32>], [2f32 2f32])\nmask := y == y\nx[mask]\n",
+        "[42; 43]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_all_range_modes() {
+    for range in ["1..4", "1..=3", "1..2..6", "1..2..=5"] {
+        exact_closed_mask(
+            &format!("x := [10 20 30]\nr := {range}\nmask := r > 1\nx[mask]\n"),
+            "[20; 30]",
+        );
+    }
+}
+
+#[test]
 fn closed_whole_value_comparisons_have_scalar_populations() {
     exact_closed_mask(
         "x := [42 43]\np := [1 2] === [1 2]\nmask := [p false]\nx[mask]\n",

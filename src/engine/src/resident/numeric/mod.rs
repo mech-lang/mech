@@ -345,6 +345,246 @@ pub(super) enum SemanticArithmetic {
     Power = 5,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum SemanticFloatUnary {
+    Acos,
+    Acosh,
+    Acot,
+    Acsc,
+    Asec,
+    Asin,
+    Asinh,
+    Atan,
+    Atanh,
+    Cbrt,
+    Ceil,
+    Cos,
+    Cosh,
+    Cot,
+    Csc,
+    Erf,
+    Erfc,
+    Floor,
+    Lgamma,
+    Log,
+    Log10,
+    Log1p,
+    Log2,
+    Rint,
+    Round,
+    RoundEven,
+    Sec,
+    Sin,
+    Sinh,
+    Sqrt,
+    Tan,
+    Tanh,
+    Tgamma,
+    Trunc,
+    BesselJ0,
+    BesselJ1,
+    BesselY0,
+    BesselY1,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum SemanticFloatBinary {
+    Atan2,
+    CopySign,
+    PositiveDifference,
+    Modulus,
+    NextAfter,
+    Remainder,
+    BesselJn,
+    BesselYn,
+}
+
+pub(super) fn semantic_float_binary_operation(
+    module_path: &[String],
+    operation_name: &str,
+) -> Option<SemanticFloatBinary> {
+    use SemanticFloatBinary::*;
+    Some(match (module_path, operation_name) {
+        ([module], "atan2") if module == "math" => Atan2,
+        ([module], "copysign") if module == "math" => CopySign,
+        ([module], "fdim") if module == "math" => PositiveDifference,
+        ([module], "fmod") if module == "math" => Modulus,
+        ([module], "nextafter") if module == "math" => NextAfter,
+        ([module], "remainder") if module == "math" => Remainder,
+        ([math, bessel], "jn") if math == "math" && bessel == "bessel" => BesselJn,
+        ([math, bessel], "yn") if math == "math" && bessel == "bessel" => BesselYn,
+        _ => return None,
+    })
+}
+
+impl SemanticFloatBinary {
+    fn apply_f64(self, left: f64, right: f64) -> f64 {
+        use SemanticFloatBinary::*;
+        match self {
+            Atan2 => left.atan2(right),
+            CopySign => libm::copysign(left, right),
+            PositiveDifference => libm::fdim(left, right),
+            Modulus => libm::fmod(left, right),
+            NextAfter => libm::nextafter(left, right),
+            Remainder => libm::remainder(left, right),
+            BesselJn => libm::jn(left as i32, right),
+            BesselYn => libm::yn(left as i32, right),
+        }
+    }
+
+    fn apply_f32(self, left: f32, right: f32) -> f32 {
+        use SemanticFloatBinary::*;
+        match self {
+            Atan2 => libm::atan2f(left, right),
+            CopySign => libm::copysignf(left, right),
+            PositiveDifference => libm::fdimf(left, right),
+            Modulus => libm::fmodf(left, right),
+            NextAfter => libm::nextafterf(left, right),
+            Remainder => libm::remainderf(left, right),
+            BesselJn => libm::jnf(left as i32, right),
+            BesselYn => libm::ynf(left as i32, right),
+        }
+    }
+}
+
+pub(super) fn semantic_float_unary_operation(
+    module_path: &[String],
+    operation_name: &str,
+) -> Option<SemanticFloatUnary> {
+    use SemanticFloatUnary::*;
+    Some(match (module_path, operation_name) {
+        ([module], "acos") if module == "math" => Acos,
+        ([module], "acosh") if module == "math" => Acosh,
+        ([module], "acot") if module == "math" => Acot,
+        ([module], "acsc") if module == "math" => Acsc,
+        ([module], "asec") if module == "math" => Asec,
+        ([module], "asin") if module == "math" => Asin,
+        ([module], "asinh") if module == "math" => Asinh,
+        ([module], "atan") if module == "math" => Atan,
+        ([module], "atanh") if module == "math" => Atanh,
+        ([module], "cbrt") if module == "math" => Cbrt,
+        ([module], "ceil") if module == "math" => Ceil,
+        ([module], "cos") if module == "math" => Cos,
+        ([module], "cosh") if module == "math" => Cosh,
+        ([module], "cot") if module == "math" => Cot,
+        ([module], "csc") if module == "math" => Csc,
+        ([module], "erf") if module == "math" => Erf,
+        ([module], "erfc") if module == "math" => Erfc,
+        ([module], "floor") if module == "math" => Floor,
+        ([module], "lgamma") if module == "math" => Lgamma,
+        ([module], "log") if module == "math" => Log,
+        ([module], "log10") if module == "math" => Log10,
+        ([module], "log1p") if module == "math" => Log1p,
+        ([module], "log2") if module == "math" => Log2,
+        ([module], "rint") if module == "math" => Rint,
+        ([module], "round") if module == "math" => Round,
+        ([module], "roundeven") if module == "math" => RoundEven,
+        ([module], "sec") if module == "math" => Sec,
+        ([module], "sin") if module == "math" => Sin,
+        ([module], "sinh") if module == "math" => Sinh,
+        ([module], "sqrt") if module == "math" => Sqrt,
+        ([module], "tan") if module == "math" => Tan,
+        ([module], "tanh") if module == "math" => Tanh,
+        ([module], "tgamma") if module == "math" => Tgamma,
+        ([module], "trunc") if module == "math" => Trunc,
+        ([math, bessel], "j0") if math == "math" && bessel == "bessel" => BesselJ0,
+        ([math, bessel], "j1") if math == "math" && bessel == "bessel" => BesselJ1,
+        ([math, bessel], "y0") if math == "math" && bessel == "bessel" => BesselY0,
+        ([math, bessel], "y1") if math == "math" && bessel == "bessel" => BesselY1,
+        _ => return None,
+    })
+}
+
+impl SemanticFloatUnary {
+    fn apply_f64(self, value: f64) -> f64 {
+        use SemanticFloatUnary::*;
+        match self {
+            Acos => libm::acos(value),
+            Acosh => libm::acosh(value),
+            Acot => libm::atan(1.0 / value),
+            Acsc => libm::asin(1.0 / value),
+            Asec => libm::acos(1.0 / value),
+            Asin => libm::asin(value),
+            Asinh => libm::asinh(value),
+            Atan => libm::atan(value),
+            Atanh => libm::atanh(value),
+            Cbrt => libm::cbrt(value),
+            Ceil => libm::ceil(value),
+            Cos => value.cos(),
+            Cosh => libm::cosh(value),
+            Cot => 1.0 / libm::tan(value),
+            Csc => 1.0 / libm::sin(value),
+            Erf => libm::erf(value),
+            Erfc => libm::erfc(value),
+            Floor => value.floor(),
+            Lgamma => libm::lgamma(value),
+            Log => libm::log(value),
+            Log10 => libm::log10(value),
+            Log1p => libm::log1p(value),
+            Log2 => libm::log2(value),
+            Rint => libm::rint(value),
+            Round => libm::round(value),
+            RoundEven => libm::roundeven(value),
+            Sec => 1.0 / libm::cos(value),
+            Sin => value.sin(),
+            Sinh => libm::sinh(value),
+            Sqrt => value.sqrt(),
+            Tan => libm::tan(value),
+            Tanh => libm::tanh(value),
+            Tgamma => libm::tgamma(value),
+            Trunc => libm::trunc(value),
+            BesselJ0 => libm::j0(value),
+            BesselJ1 => libm::j1(value),
+            BesselY0 => libm::y0(value),
+            BesselY1 => libm::y1(value),
+        }
+    }
+
+    fn apply_f32(self, value: f32) -> f32 {
+        use SemanticFloatUnary::*;
+        match self {
+            Acos => libm::acosf(value),
+            Acosh => libm::acoshf(value),
+            Acot => libm::atanf(1.0 / value),
+            Acsc => libm::asinf(1.0 / value),
+            Asec => libm::acosf(1.0 / value),
+            Asin => libm::asinf(value),
+            Asinh => libm::asinhf(value),
+            Atan => libm::atanf(value),
+            Atanh => libm::atanhf(value),
+            Cbrt => libm::cbrtf(value),
+            Ceil => libm::ceilf(value),
+            Cos => libm::cosf(value),
+            Cosh => libm::coshf(value),
+            Cot => 1.0 / libm::tanf(value),
+            Csc => 1.0 / libm::sinf(value),
+            Erf => libm::erff(value),
+            Erfc => libm::erfcf(value),
+            Floor => libm::floorf(value),
+            Lgamma => libm::lgammaf(value),
+            Log => libm::logf(value),
+            Log10 => libm::log10f(value),
+            Log1p => libm::log1pf(value),
+            Log2 => libm::log2f(value),
+            Rint => libm::rintf(value),
+            Round => libm::roundf(value),
+            RoundEven => libm::roundevenf(value),
+            Sec => 1.0 / libm::cosf(value),
+            Sin => libm::sinf(value),
+            Sinh => libm::sinhf(value),
+            Sqrt => libm::sqrtf(value),
+            Tan => libm::tanf(value),
+            Tanh => libm::tanhf(value),
+            Tgamma => libm::tgammaf(value),
+            Trunc => libm::truncf(value),
+            BesselJ0 => libm::j0f(value),
+            BesselJ1 => libm::j1f(value),
+            BesselY0 => libm::y0f(value),
+            BesselY1 => libm::y1f(value),
+        }
+    }
+}
+
 impl SemanticArithmetic {
     fn from_parameter(value: u64) -> Option<Self> {
         Some(match value {
@@ -13753,11 +13993,80 @@ pub(super) fn canonical_range_cardinality(
     inclusive: bool,
     incremented: bool,
 ) -> Option<usize> {
-    let numbers = values
-        .iter()
-        .map(|value| snapshot_range_number(value.data()))
-        .collect::<Option<Vec<_>>>()?;
-    snapshot_range_size(&numbers, inclusive, incremented)
+    match (values, incremented) {
+        ([first, second], false) => snapshot_range_size(
+            &[
+                snapshot_range_number(first.data())?,
+                snapshot_range_number(second.data())?,
+            ],
+            inclusive,
+            false,
+        ),
+        ([first, second, third], true) => snapshot_range_size(
+            &[
+                snapshot_range_number(first.data())?,
+                snapshot_range_number(second.data())?,
+                snapshot_range_number(third.data())?,
+            ],
+            inclusive,
+            true,
+        ),
+        _ => None,
+    }
+}
+
+pub(super) fn canonical_range_draft_cardinality(
+    values: &[ValueDataDraft],
+    inclusive: bool,
+    incremented: bool,
+) -> Option<usize> {
+    match (values, incremented) {
+        ([first, second], false) => snapshot_range_size(
+            &[draft_range_number(first)?, draft_range_number(second)?],
+            inclusive,
+            false,
+        ),
+        ([first, second, third], true) => snapshot_range_size(
+            &[
+                draft_range_number(first)?,
+                draft_range_number(second)?,
+                draft_range_number(third)?,
+            ],
+            inclusive,
+            true,
+        ),
+        _ => None,
+    }
+}
+
+pub(super) fn canonical_range_draft_values(
+    values: &[ValueDataDraft],
+    element: &SchemaBody,
+    inclusive: bool,
+    incremented: bool,
+    expected_count: usize,
+) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
+    let count = canonical_range_draft_cardinality(values, inclusive, incremented)
+        .filter(|count| *count != 0 && *count == expected_count)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let expected_inputs = if incremented { 3 } else { 2 };
+    if values.len() != expected_inputs {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let mut current = values[0].clone();
+    let step = if incremented {
+        values[1].clone()
+    } else {
+        range_one(element)?
+    };
+    let mut elements = Vec::with_capacity(count);
+    for index in 0..count {
+        elements.push(current.clone());
+        if index + 1 < count {
+            current = range_add(current, step.clone())?;
+        }
+    }
+    Ok(elements)
 }
 
 fn range_input_draft(
@@ -13851,14 +14160,11 @@ fn range_snapshot(
     } else {
         second.clone()
     };
-    let numbers = [
-        draft_range_number(&first).ok_or(ResidentKernelError::InvalidInput)?,
-        draft_range_number(&second).ok_or(ResidentKernelError::InvalidInput)?,
-        draft_range_number(&third).ok_or(ResidentKernelError::InvalidInput)?,
-    ];
-    let count = snapshot_range_size(&numbers[..expected_inputs], inclusive, incremented)
-        .filter(|count| *count != 0)
-        .ok_or(ResidentKernelError::InvalidInput)?;
+    let values = [first, second, third];
+    let count =
+        canonical_range_draft_cardinality(&values[..expected_inputs], inclusive, incremented)
+            .filter(|count| *count != 0)
+            .ok_or(ResidentKernelError::InvalidInput)?;
     if *declared_count != 0 && u64::try_from(count).ok() != Some(*declared_count) {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -13882,19 +14188,13 @@ fn range_snapshot(
         .and_then(|call| call.inputs().first())
         .ok_or(ResidentKernelError::InvalidInput)?
         .schema();
-    let mut current = first;
-    let step = if incremented {
-        second
-    } else {
-        range_one(input_schema.body())?
-    };
-    let mut elements = Vec::with_capacity(count);
-    for index in 0..count {
-        elements.push(current.clone());
-        if index + 1 < count {
-            current = range_add(current, step.clone())?;
-        }
-    }
+    let elements = canonical_range_draft_values(
+        &values[..expected_inputs],
+        input_schema.body(),
+        inclusive,
+        incremented,
+        count,
+    )?;
     let output_shape = resolved_snapshot_output_shape(kernel, 1, count)?;
     write_snapshot_data_for_shape_with_work_budget(
         kernel,
@@ -18730,6 +19030,37 @@ pub(super) fn numeric_abs(value: ValueDataDraft) -> Result<ValueDataDraft, Resid
         value @ ValueDataDraft::Complex64(_) => complex_to_draft(complex_from_draft(value)?.abs()),
         _ => return Err(ResidentKernelError::InvalidInput),
     })
+}
+
+pub(super) fn numeric_float_unary(
+    operation: SemanticFloatUnary,
+    value: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match value {
+        ValueDataDraft::F32(value) => Ok(ValueDataDraft::F32(F32Bits::from_f32(
+            operation.apply_f32(value.to_f32()),
+        ))),
+        ValueDataDraft::F64(value) => Ok(ValueDataDraft::F64(F64Bits::from_f64(
+            operation.apply_f64(value.to_f64()),
+        ))),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+pub(super) fn numeric_float_binary(
+    operation: SemanticFloatBinary,
+    left: ValueDataDraft,
+    right: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match (left, right) {
+        (ValueDataDraft::F32(left), ValueDataDraft::F32(right)) => Ok(ValueDataDraft::F32(
+            F32Bits::from_f32(operation.apply_f32(left.to_f32(), right.to_f32())),
+        )),
+        (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
+            F64Bits::from_f64(operation.apply_f64(left.to_f64(), right.to_f64())),
+        )),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
 }
 
 fn snapshot_numeric_elements(

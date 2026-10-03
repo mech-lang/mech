@@ -3963,36 +3963,54 @@ fn closed_arithmetic_compute_work(
 enum ClosedUnaryNumericOperation {
     Negate,
     Absolute,
+    Float(super::numeric::SemanticFloatUnary),
 }
 
-fn closed_binary_arithmetic_operation(
+#[derive(Clone, Copy)]
+enum ClosedBinaryNumericOperation {
+    Arithmetic(super::numeric::SemanticArithmetic),
+    Float(super::numeric::SemanticFloatBinary),
+}
+
+fn closed_binary_numeric_operation(
     operation: &OperationReference,
-) -> Option<super::numeric::SemanticArithmetic> {
-    if operation.module_path.as_ref() != ["math"] {
-        return None;
+) -> Option<ClosedBinaryNumericOperation> {
+    if operation.module_path.as_ref() == ["math"] {
+        let arithmetic = match operation.operation_name.as_str() {
+            "add" => Some(super::numeric::SemanticArithmetic::Add),
+            "sub" => Some(super::numeric::SemanticArithmetic::Subtract),
+            "mul" => Some(super::numeric::SemanticArithmetic::Multiply),
+            "div" => Some(super::numeric::SemanticArithmetic::Divide),
+            "mod" => Some(super::numeric::SemanticArithmetic::Remainder),
+            "pow" => Some(super::numeric::SemanticArithmetic::Power),
+            _ => None,
+        };
+        if let Some(arithmetic) = arithmetic {
+            return Some(ClosedBinaryNumericOperation::Arithmetic(arithmetic));
+        }
     }
-    Some(match operation.operation_name.as_str() {
-        "add" => super::numeric::SemanticArithmetic::Add,
-        "sub" => super::numeric::SemanticArithmetic::Subtract,
-        "mul" => super::numeric::SemanticArithmetic::Multiply,
-        "div" => super::numeric::SemanticArithmetic::Divide,
-        "mod" => super::numeric::SemanticArithmetic::Remainder,
-        "pow" => super::numeric::SemanticArithmetic::Power,
-        _ => return None,
-    })
+    super::numeric::semantic_float_binary_operation(
+        operation.module_path.as_ref(),
+        operation.operation_name.as_str(),
+    )
+    .map(ClosedBinaryNumericOperation::Float)
 }
 
 fn closed_unary_numeric_operation(
     operation: &OperationReference,
 ) -> Option<ClosedUnaryNumericOperation> {
-    if operation.module_path.as_ref() != ["math"] {
-        return None;
+    if operation.module_path.as_ref() == ["math"] {
+        match operation.operation_name.as_str() {
+            "neg" => return Some(ClosedUnaryNumericOperation::Negate),
+            "abs" => return Some(ClosedUnaryNumericOperation::Absolute),
+            _ => {}
+        }
     }
-    match operation.operation_name.as_str() {
-        "neg" => Some(ClosedUnaryNumericOperation::Negate),
-        "abs" => Some(ClosedUnaryNumericOperation::Absolute),
-        _ => None,
-    }
+    super::numeric::semantic_float_unary_operation(
+        operation.module_path.as_ref(),
+        operation.operation_name.as_str(),
+    )
+    .map(ClosedUnaryNumericOperation::Float)
 }
 
 fn closed_matrix_concatenation(operation: &OperationReference) -> Option<bool> {
@@ -4004,6 +4022,15 @@ fn closed_matrix_concatenation(operation: &OperationReference) -> Option<bool> {
         "vertcat" => Some(false),
         _ => None,
     }
+}
+
+fn closed_range_operation(operation: &OperationReference) -> Option<(bool, bool)> {
+    Some(match operation.resolved_range_mode()? {
+        ResolvedRangeMode::Exclusive => (false, false),
+        ResolvedRangeMode::ExclusiveIncrement => (false, true),
+        ResolvedRangeMode::Inclusive => (true, false),
+        ResolvedRangeMode::InclusiveIncrement => (true, true),
+    })
 }
 
 fn closed_transformed_operand_count(rows: usize, columns: usize) -> Option<usize> {
@@ -4545,8 +4572,163 @@ fn constant_comparison_operand_at_depth<'a>(
                     &SnapshotValidationContext::new(artifact.schemas())
                         .with_canonicalization_budget(budget),
                 )
-            } else if let Some(arithmetic) = closed_binary_arithmetic_operation(operation.operation)
+            } else if let Some((inclusive, incremented)) =
+                closed_range_operation(operation.operation)
             {
+                let SchemaBody::Matrix {
+                    element: target_element,
+                    ..
+                } = target_schema.body()
+                else {
+                    return Ok(None);
+                };
+                let expected_inputs = if incremented { 3 } else { 2 };
+                if inputs.len() != expected_inputs {
+                    return Ok(None);
+                }
+                let Some(first) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    inputs[0],
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let Some(second) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    inputs[1],
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let third = if incremented {
+                    let Some(third) = constant_comparison_operand_at_depth(
+                        artifact,
+                        node,
+                        inputs[2],
+                        facts,
+                        next_depth,
+                        budget,
+                        analysis,
+                        allow_large_direct_dense,
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    Some(third)
+                } else {
+                    None
+                };
+                for operand in [&first, &second].into_iter().chain(third.as_ref()) {
+                    if operand.rows != 1
+                        || operand.columns != 1
+                        || operand.element != **target_element
+                    {
+                        return Ok(None);
+                    }
+                }
+                let count = if incremented {
+                    let third = third.as_ref().expect("incremented range input");
+                    super::numeric::canonical_range_cardinality(
+                        &[&*first.value, &*second.value, &*third.value],
+                        inclusive,
+                        true,
+                    )
+                } else {
+                    super::numeric::canonical_range_cardinality(
+                        &[&*first.value, &*second.value],
+                        inclusive,
+                        false,
+                    )
+                };
+                let Some(count) =
+                    count.filter(|count| *count != 0 && *count <= MAX_STATIC_SELECTOR_SOURCE_STEPS)
+                else {
+                    return Ok(None);
+                };
+                let Some(draft_nodes) = expected_inputs.checked_add(count) else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                let Some(shape_bytes) = target_schema
+                    .dimension_parameters()
+                    .len()
+                    .checked_mul(core::mem::size_of::<u64>())
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                else {
+                    return Ok(None);
+                };
+                let Some(construction_bytes) = draft_nodes
+                    .checked_mul(core::mem::size_of::<ValueDataDraft>())
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                    .and_then(|bytes| bytes.checked_add(shape_bytes))
+                    .and_then(|bytes| {
+                        bytes.checked_add(u64::try_from(core::mem::size_of::<Value>()).ok()?)
+                    })
+                else {
+                    return Ok(None);
+                };
+                let Some(compute_work) = count
+                    .checked_mul(2)
+                    .and_then(|work| work.checked_add(expected_inputs))
+                    .and_then(|work| u64::try_from(work).ok())
+                else {
+                    return Ok(None);
+                };
+                if !analysis
+                    .construction
+                    .charge_compute_chunk(construction_bytes, compute_work, 1)
+                    || !analysis.record_materialized_operand_values(draft_nodes)
+                {
+                    return Ok(None);
+                }
+                let mut input_values = Vec::with_capacity(expected_inputs);
+                for operand in [&first, &second].into_iter().chain(third.as_ref()) {
+                    let Some(mut values) = closed_operand_draft_values(operand) else {
+                        return Ok(None);
+                    };
+                    if values.len() != 1 {
+                        return Ok(None);
+                    }
+                    input_values.push(values.pop().expect("one closed scalar range input"));
+                }
+                let Ok(values) = super::numeric::canonical_range_draft_values(
+                    &input_values,
+                    target_element,
+                    inclusive,
+                    incremented,
+                    count,
+                ) else {
+                    return Ok(None);
+                };
+                let target_shape = matrix_shape_for_extents(
+                    target_schema,
+                    &[
+                        1,
+                        u64::try_from(count)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                    ],
+                )?;
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data: ValueDataDraft::Matrix(values.into_boxed_slice()),
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
+            } else if let Some(numeric) = closed_binary_numeric_operation(operation.operation) {
                 // Closed comparison operands use the resident numeric
                 // evaluator itself, but only after aggregate construction and
                 // operation work fit the same activation-side budgets.
@@ -4607,26 +4789,56 @@ fn constant_comparison_operand_at_depth<'a>(
                     body => body,
                 };
                 let rational_power = cfg!(feature = "r64")
-                    && arithmetic == super::numeric::SemanticArithmetic::Power
+                    && matches!(
+                        numeric,
+                        ClosedBinaryNumericOperation::Arithmetic(
+                            super::numeric::SemanticArithmetic::Power
+                        )
+                    )
                     && rows == 1
                     && columns == 1
                     && left.element == SchemaBody::Rational64
                     && right.element == SchemaBody::SignedInteger(mech_core::IntegerWidth::W32)
                     && target_element == &SchemaBody::Rational64;
-                if !rational_power
-                    && (left.element != *target_element
-                        || right.element != *target_element
-                        || !super::numeric::snapshot_arithmetic_element_supported(
-                            arithmetic,
-                            target_element,
-                        ))
-                {
+                let supported = match numeric {
+                    ClosedBinaryNumericOperation::Arithmetic(arithmetic) => {
+                        rational_power
+                            || (left.element == *target_element
+                                && right.element == *target_element
+                                && super::numeric::snapshot_arithmetic_element_supported(
+                                    arithmetic,
+                                    target_element,
+                                ))
+                    }
+                    ClosedBinaryNumericOperation::Float(_) => {
+                        left.element == *target_element
+                            && right.element == *target_element
+                            && matches!(
+                                target_element,
+                                SchemaBody::FloatingPoint(
+                                    mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64
+                                )
+                            )
+                    }
+                };
+                if !supported {
                     return Ok(None);
                 }
-                let Some(compute_work) =
-                    closed_arithmetic_compute_work(arithmetic, target_element, count)
-                else {
-                    return Ok(None);
+                let compute_work = match numeric {
+                    ClosedBinaryNumericOperation::Arithmetic(arithmetic) => {
+                        let Some(work) =
+                            closed_arithmetic_compute_work(arithmetic, target_element, count)
+                        else {
+                            return Ok(None);
+                        };
+                        work
+                    }
+                    ClosedBinaryNumericOperation::Float(_) => {
+                        let Some(work) = u64::try_from(count).ok() else {
+                            return Ok(None);
+                        };
+                        work
+                    }
                 };
                 let Some(draft_nodes) = left
                     .rows
@@ -4646,14 +4858,14 @@ fn constant_comparison_operand_at_depth<'a>(
                 }) else {
                     return Err(ResidentActivationError::RegionSizeOverflow);
                 };
-                let Some(arithmetic_work) =
+                let Some(numeric_work) =
                     compute_work.checked_add(u64::try_from(draft_nodes).ok().unwrap_or(u64::MAX))
                 else {
                     return Ok(None);
                 };
                 if !analysis
                     .construction
-                    .charge_compute_chunk(draft_bytes, arithmetic_work, 1)
+                    .charge_compute_chunk(draft_bytes, numeric_work, 1)
                 {
                     return Ok(None);
                 }
@@ -4669,17 +4881,27 @@ fn constant_comparison_operand_at_depth<'a>(
                         let left_index = (row % left.rows) * left.columns + column % left.columns;
                         let right_index =
                             (row % right.rows) * right.columns + column % right.columns;
-                        let value = if rational_power {
-                            super::numeric::numeric_rational_power(
-                                left_values[left_index].clone(),
-                                right_values[right_index].clone(),
-                            )
-                        } else {
-                            super::numeric::numeric_arithmetic(
-                                arithmetic,
-                                left_values[left_index].clone(),
-                                right_values[right_index].clone(),
-                            )
+                        let value = match numeric {
+                            ClosedBinaryNumericOperation::Arithmetic(_) if rational_power => {
+                                super::numeric::numeric_rational_power(
+                                    left_values[left_index].clone(),
+                                    right_values[right_index].clone(),
+                                )
+                            }
+                            ClosedBinaryNumericOperation::Arithmetic(arithmetic) => {
+                                super::numeric::numeric_arithmetic(
+                                    arithmetic,
+                                    left_values[left_index].clone(),
+                                    right_values[right_index].clone(),
+                                )
+                            }
+                            ClosedBinaryNumericOperation::Float(operation) => {
+                                super::numeric::numeric_float_binary(
+                                    operation,
+                                    left_values[left_index].clone(),
+                                    right_values[right_index].clone(),
+                                )
+                            }
                         };
                         let Ok(value) = value else {
                             return Ok(None);
@@ -4751,6 +4973,12 @@ fn constant_comparison_operand_at_depth<'a>(
                     ClosedUnaryNumericOperation::Absolute => {
                         super::numeric::snapshot_abs_element_supported(target_element)
                     }
+                    ClosedUnaryNumericOperation::Float(_) => matches!(
+                        target_element,
+                        SchemaBody::FloatingPoint(
+                            mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64
+                        )
+                    ),
                 };
                 if input.element != *target_element || !supported {
                     return Ok(None);
@@ -4783,13 +5011,17 @@ fn constant_comparison_operand_at_depth<'a>(
                 let Some(input_values) = closed_operand_draft_values(&input) else {
                     return Ok(None);
                 };
-                let evaluate = match unary {
-                    ClosedUnaryNumericOperation::Negate => super::numeric::numeric_negate,
-                    ClosedUnaryNumericOperation::Absolute => super::numeric::numeric_abs,
-                };
                 let Ok(mut values) = input_values
                     .into_iter()
-                    .map(evaluate)
+                    .map(|value| match unary {
+                        ClosedUnaryNumericOperation::Negate => {
+                            super::numeric::numeric_negate(value)
+                        }
+                        ClosedUnaryNumericOperation::Absolute => super::numeric::numeric_abs(value),
+                        ClosedUnaryNumericOperation::Float(operation) => {
+                            super::numeric::numeric_float_unary(operation, value)
+                        }
+                    })
                     .collect::<Result<Vec<_>, _>>()
                 else {
                     return Ok(None);
@@ -5226,8 +5458,51 @@ fn closed_operand_retained_bytes(
     Some(bytes)
 }
 
+fn closed_data_comparison_measurement(
+    schema: &SchemaBody,
+    data: &mech_core::ValueData,
+) -> Option<(u64, u64)> {
+    // Shape completion runs before a turn plan exists. Traverse the immutable
+    // canonical value directly under the activation limits; the turn-time
+    // ResidentBudgetMeter correctly rejects use without an active plan.
+    let mut work = 0_u64;
+    let mut nodes = 0_u64;
+    mech_core::snapshot::visit_canonical_data_work(schema, data, |chunk| {
+        work = work
+            .checked_add(chunk.encoded_bytes.max(chunk.node_count).max(1))
+            .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+            .ok_or(())?;
+        nodes = nodes
+            .checked_add(chunk.node_count)
+            .filter(|nodes| *nodes <= mech_core::RESIDENT_MAX_RETAINED_NODES)
+            .ok_or(())?;
+        Ok::<(), ()>(())
+    })
+    .ok()?;
+    Some((work, nodes))
+}
+
+fn closed_value_comparison_measurement(
+    artifact: &ProgramArtifact,
+    value: &Value,
+) -> Option<(u64, u64)> {
+    let schema = artifact.schemas().get(value.schema())?;
+    let shape_work = u64::try_from(value.shape().parameter_values().len())
+        .ok()?
+        .checked_mul(u64::try_from(core::mem::size_of::<u64>()).ok()?)?
+        .max(1);
+    let (data_work, data_nodes) = closed_data_comparison_measurement(schema.body(), value.data())?;
+    Some((
+        shape_work
+            .checked_add(data_work)
+            .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)?,
+        data_nodes
+            .checked_add(1)
+            .filter(|nodes| *nodes <= mech_core::RESIDENT_MAX_RETAINED_NODES)?,
+    ))
+}
+
 fn closed_snapshot_element_comparison_work(
-    meter: &mut super::budget::ResidentBudgetMeter,
     operand: &ConstantComparisonOperand<'_>,
     index: usize,
 ) -> Option<u64> {
@@ -5235,12 +5510,8 @@ fn closed_snapshot_element_comparison_work(
         (SchemaBody::Matrix { element, .. }, mech_core::ValueData::Matrix(matrix)) => {
             match matrix.elements() {
                 mech_core::snapshot::SequenceView::Values(values) => {
-                    super::budget::measure_canonical_data_comparison_work(
-                        meter,
-                        element,
-                        values.get(index)?,
-                    )
-                    .ok()
+                    closed_data_comparison_measurement(element, values.get(index)?)
+                        .map(|(work, _)| work)
                 }
                 values => canonical_sequence_element_retained_footprint(element, values, index)
                     .ok()
@@ -5248,10 +5519,25 @@ fn closed_snapshot_element_comparison_work(
             }
         }
         (body, data) if index == 0 => {
-            super::budget::measure_canonical_data_comparison_work(meter, body, data).ok()
+            closed_data_comparison_measurement(body, data).map(|(work, _)| work)
         }
         _ => None,
     }
+}
+
+fn closed_string_element_comparison_work(
+    operand: &ConstantComparisonOperand<'_>,
+    index: usize,
+) -> Option<u64> {
+    let length = match operand.value.data() {
+        mech_core::ValueData::Matrix(matrix) => match matrix.elements() {
+            mech_core::snapshot::SequenceView::String(values) => values.get(index)?.len(),
+            _ => return None,
+        },
+        mech_core::ValueData::String(value) if index == 0 => value.len(),
+        _ => return None,
+    };
+    u64::try_from(length).ok().map(|length| length.max(1))
 }
 
 fn closed_comparison_mask(
@@ -5511,48 +5797,115 @@ fn closed_comparison_mask(
     if cloned_bytes > mech_core::RESIDENT_MAX_BYTES {
         return Ok(None);
     }
+    let Some(materialized_input_values) = left.rows.checked_mul(left.columns).and_then(|left| {
+        right
+            .rows
+            .checked_mul(right.columns)
+            .and_then(|right| left.checked_add(right))
+    }) else {
+        return Err(ResidentActivationError::RegionSizeOverflow);
+    };
+    let Some(materialized_input_bytes) = materialized_input_values
+        .checked_mul(core::mem::size_of::<mech_core::ValueData>())
+        .and_then(|bytes| u64::try_from(bytes).ok())
+    else {
+        return Err(ResidentActivationError::RegionSizeOverflow);
+    };
     let output_work =
         u64::try_from(output_len).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
     let construction_bytes = cloned_bytes
-        .checked_add(output_work)
+        .checked_add(materialized_input_bytes)
+        .and_then(|bytes| bytes.checked_add(output_work))
         .ok_or(ResidentActivationError::RegionSizeOverflow)?;
     if !analysis
         .construction
         .charge_compute_chunk(construction_bytes, output_work, 1)
+        || !analysis.record_materialized_operand_values(materialized_input_values)
     {
         return Ok(None);
     }
     let aggregate_comparison = dense_resident_kind(&left.element).is_none();
-    let mut comparison_meter = super::budget::ResidentBudgetMeter::default();
+    let element = &left.element;
     if aggregate_comparison {
-        if super::budget::measure_canonical_value_footprint(
-            &mut comparison_meter,
-            &left.value,
-            artifact.schemas(),
-        )
-        .is_err()
-            || super::budget::measure_canonical_value_footprint(
-                &mut comparison_meter,
-                &right.value,
-                artifact.schemas(),
-            )
-            .is_err()
+        let Some((left_measure, left_nodes)) =
+            closed_value_comparison_measurement(artifact, &left.value)
+        else {
+            return Ok(None);
+        };
+        let Some((right_measure, right_nodes)) =
+            closed_value_comparison_measurement(artifact, &right.value)
+        else {
+            return Ok(None);
+        };
+        if left_nodes
+            .checked_add(right_nodes)
+            .is_none_or(|nodes| nodes > mech_core::RESIDENT_MAX_RETAINED_NODES)
         {
             return Ok(None);
         }
-        let publication_work =
-            u64::try_from(output_len).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
-        if comparison_meter
-            .charge_comparison_work(publication_work)
-            .is_err()
-        {
+        let Some(mut admitted_work) = left_measure
+            .checked_add(right_measure)
+            .and_then(|work| work.checked_add(output_work))
+            .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+        else {
             return Ok(None);
+        };
+        let mut measured_work = admitted_work;
+        let mut string_work = 0_u64;
+        for column in 0..columns {
+            for row in 0..rows {
+                let left_index = (row % left.rows) * left.columns + column % left.columns;
+                let right_index = (row % right.rows) * right.columns + column % right.columns;
+                let Some(left_work) = closed_snapshot_element_comparison_work(&left, left_index)
+                else {
+                    return Ok(None);
+                };
+                let Some(right_work) = closed_snapshot_element_comparison_work(&right, right_index)
+                else {
+                    return Ok(None);
+                };
+                let comparison_work = left_work.max(right_work).max(1);
+                let Some(next_measured) = measured_work
+                    .checked_add(left_work)
+                    .and_then(|measured| measured.checked_add(right_work))
+                    .and_then(|measured| measured.checked_add(comparison_work))
+                    .filter(|measured| *measured <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+                else {
+                    return Ok(None);
+                };
+                measured_work = next_measured;
+                let Some(next_admitted) = admitted_work
+                    .checked_add(comparison_work)
+                    .filter(|admitted| *admitted <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+                else {
+                    return Ok(None);
+                };
+                admitted_work = next_admitted;
+                if matches!(element, SchemaBody::String) {
+                    let Some(work) = closed_string_element_comparison_work(&left, left_index)
+                        .zip(closed_string_element_comparison_work(&right, right_index))
+                        .map(|(left, right)| left.max(right))
+                    else {
+                        return Ok(None);
+                    };
+                    let Some(next_string) = string_work
+                        .checked_add(work)
+                        .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+                    else {
+                        return Ok(None);
+                    };
+                    string_work = next_string;
+                    let Some(next_admitted) = admitted_work
+                        .checked_add(work)
+                        .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+                    else {
+                        return Ok(None);
+                    };
+                    admitted_work = next_admitted;
+                }
+            }
         }
-        if !admit_closed_comparison_scan(
-            analysis,
-            comparison_meter.estimate().comparison_work(),
-            true,
-        ) {
+        if !admit_closed_comparison_scan(analysis, admitted_work, true) {
             return Ok(None);
         }
     }
@@ -5562,7 +5915,6 @@ fn closed_comparison_mask(
     };
     let left_values = values(&left);
     let right_values = values(&right);
-    let element = &left.element;
     let compare = |left: &mech_core::ValueData, right: &mech_core::ValueData| {
         let order = || schema_data_partial_cmp(element, left, right);
         match name {
@@ -5584,7 +5936,6 @@ fn closed_comparison_mask(
         }
     };
     let mut values = Vec::with_capacity(output_len);
-    let mut string_comparison_work = 0_u64;
     for column in 0..columns {
         for row in 0..rows {
             // Canonical matrix values are row-major even when the resident
@@ -5592,48 +5943,6 @@ fn closed_comparison_mask(
             // output coordinate before applying either operand's broadcast.
             let left_index = (row % left.rows) * left.columns + column % left.columns;
             let right_index = (row % right.rows) * right.columns + column % right.columns;
-            if aggregate_comparison {
-                let Some(left_work) = closed_snapshot_element_comparison_work(
-                    &mut comparison_meter,
-                    &left,
-                    left_index,
-                ) else {
-                    return Ok(None);
-                };
-                let Some(right_work) = closed_snapshot_element_comparison_work(
-                    &mut comparison_meter,
-                    &right,
-                    right_index,
-                ) else {
-                    return Ok(None);
-                };
-                let work = left_work.max(right_work).max(1);
-                if comparison_meter.charge_comparison_work(work).is_err()
-                    || !admit_closed_comparison_scan(analysis, work, true)
-                {
-                    return Ok(None);
-                }
-            }
-            if matches!(element, SchemaBody::String) {
-                let (
-                    mech_core::ValueData::String(left_string),
-                    mech_core::ValueData::String(right_string),
-                ) = (&left_values[left_index], &right_values[right_index])
-                else {
-                    return Ok(None);
-                };
-                let work = u64::try_from(left_string.len().max(right_string.len()).max(1))
-                    .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
-                string_comparison_work = string_comparison_work
-                    .checked_add(work)
-                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-                if string_comparison_work > mech_core::RESIDENT_MAX_COMPARISON_WORK {
-                    return Ok(None);
-                }
-                if !admit_closed_comparison_scan(analysis, work, true) {
-                    return Ok(None);
-                }
-            }
             values.push(compare(
                 &left_values[left_index],
                 &right_values[right_index],
@@ -5672,10 +5981,11 @@ fn closed_activation_producer_supported(operation: &OperationReference) -> bool 
     // after shape completion has already skipped the facts it depends on.
     (operation.module_path.as_ref() == ["matrix"] && operation.operation_name == "transpose")
         || closed_matrix_concatenation(operation).is_some()
+        || closed_range_operation(operation).is_some()
         || (operation.module_path.as_ref() == ["core"]
             && operation.operation_name == "composite-pack")
         || (operation.module_path.as_ref() == ["convert"] && operation.operation_name == "kind")
-        || closed_binary_arithmetic_operation(operation).is_some()
+        || closed_binary_numeric_operation(operation).is_some()
         || closed_unary_numeric_operation(operation).is_some()
         || (operation.module_path.as_ref() == ["logic"]
             && matches!(
