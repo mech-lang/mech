@@ -1793,7 +1793,7 @@ impl<'a> BatchCompiler<'a> {
                     continue;
                 }
             }
-            if self.static_selector_slot(slot.slot) {
+            if self.static_selector_slot(slot.slot) && !self.published_slot(slot.slot) {
                 continue;
             }
             let shape = match self
@@ -1888,6 +1888,20 @@ impl<'a> BatchCompiler<'a> {
                     .iter()
                     .all(|output| self.static_selector_slot(*output))
             {
+                let published_outputs = outputs
+                    .iter()
+                    .copied()
+                    .filter(|output| self.published_slot(*output))
+                    .collect::<Vec<_>>();
+                for output in published_outputs {
+                    if let Err(detail) = self.lower_published_static_selector(output) {
+                        self.reject(
+                            Some(node.node),
+                            Some(display_operation(&node.operation)),
+                            detail,
+                        );
+                    }
+                }
                 continue;
             }
             if outputs.iter().any(|slot| self.states.contains_key(slot)) {
@@ -3094,6 +3108,109 @@ impl<'a> BatchCompiler<'a> {
             })
     }
 
+    fn published_slot(&self, slot: CellSlotId) -> bool {
+        self.artifact
+            .outputs()
+            .iter()
+            .any(|output| physical_publication_slot(self.artifact, output.source) == Some(slot))
+    }
+
+    fn lower_published_static_selector(&mut self, slot: CellSlotId) -> Result<(), String> {
+        let declaration = self
+            .artifact
+            .slots()
+            .get(slot.get() as usize)
+            .ok_or_else(|| format!("published selector slot {} does not exist", slot.get()))?;
+        let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+            return Err("published static selector has no operation producer".to_owned());
+        };
+        let producer = self
+            .artifact
+            .nodes()
+            .get(node.get() as usize)
+            .and_then(mech_engine::NodeDeclaration::as_operation)
+            .ok_or_else(|| "published static selector producer does not exist".to_owned())?;
+        let operation = display_operation(&producer.operation);
+        let values = if matches!(
+            operation.as_str(),
+            "range/exclusive"
+                | "range/exclusive-increment"
+                | "range/inclusive"
+                | "range/inclusive-increment"
+        ) {
+            let (inclusive, incremented, expected) = match operation.as_str() {
+                "range/exclusive" => (false, false, 2),
+                "range/exclusive-increment" => (false, true, 3),
+                "range/inclusive" => (true, false, 2),
+                "range/inclusive-increment" => (true, true, 3),
+                _ => unreachable!(),
+            };
+            let inputs = producer
+                .input_bindings
+                .clone()
+                .filter_map(
+                    |binding| match self.artifact.bindings().get(binding as usize) {
+                        Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                        _ => None,
+                    },
+                )
+                .collect::<Vec<_>>();
+            if inputs.len() != expected {
+                return Err(format!(
+                    "published static {operation} must have {expected} inputs"
+                ));
+            }
+            let mut endpoints = Vec::with_capacity(expected);
+            for source in inputs {
+                let Some(endpoint) = self.static_range_endpoint(source)? else {
+                    return Err(format!("published static {operation} has a live endpoint"));
+                };
+                endpoints.push(endpoint);
+            }
+            let mut values = Vec::new();
+            mech_core::visit_canonical_value_range(
+                &endpoints,
+                inclusive,
+                incremented,
+                MAX_STATIC_SELECTOR_ELEMENTS,
+                |value| {
+                    let value = match value {
+                        ValueData::F32(value) => value.to_f32(),
+                        ValueData::F64(value) => value.to_f64() as f32,
+                        value => mech_core::canonical_positional_ordinal(&value)? as f32,
+                    };
+                    values.push(value);
+                    Ok::<(), mech_core::CanonicalSelectorError>(())
+                },
+            )
+            .map_err(|error| format!("invalid published static {operation}: {error:?}"))?;
+            values
+        } else {
+            self.static_selector_indices(ArtifactSource::Slot(slot), MAX_STATIC_SELECTOR_ELEMENTS)?
+                .ok_or_else(|| "published selector is not compile-time constant".to_owned())?
+                .iter()
+                .map(|value| *value as f32)
+                .collect::<Vec<_>>()
+        };
+        let shape = self.shape(slot)?;
+        if values.len() != shape.elements() {
+            return Err(format!(
+                "published static selector has {} values but shape {shape:?} contains {}",
+                values.len(),
+                shape.elements()
+            ));
+        }
+        self.reserve_scalar_instructions(values.len(), 1, 1)?;
+        for (component, value) in values.into_iter().enumerate() {
+            self.emit(
+                slot,
+                component,
+                ScalarComputation::Copy(ScalarOperand::Constant(value)),
+            );
+        }
+        Ok(())
+    }
+
     fn source_shape(&self, source: ArtifactSource) -> Result<FixedShape, String> {
         match source {
             ArtifactSource::Slot(slot) => self.shape(slot),
@@ -3463,7 +3580,9 @@ fn shader_binding_count(inputs: &[BatchedInput], states: &[BatchedState]) -> u32
 #[cfg(test)]
 mod axis_tests {
     use super::*;
-    use mech_engine::{ExecutableNodeBody, ProgramArtifactDraft};
+    use mech_engine::{
+        ExecutableNodeBody, OutputDeclaration, ProgramArtifactDraft, SlotDeclaration,
+    };
 
     fn compile_fixed_source(source: &str) -> ProgramArtifact {
         mech_runtime::RuntimeBuilder::new()
@@ -3586,9 +3705,7 @@ mod axis_tests {
     fn directly_published_inputs_define_fixed_shape_batch_storage() {
         let artifact = compile_fixed_source("value := signal<f32>\nvalue\n");
         let inputs = BTreeMap::from([("signal".to_owned(), vec![1.0, 2.0, 3.0])]);
-        let kernel = crate::ComputeLowerer
-            .compile_broadcast(&artifact, &inputs)
-            .unwrap();
+        let kernel = crate::ComputeLowerer.compile_batched(&artifact, 3).unwrap();
 
         assert_eq!(kernel.instances(), 3);
         assert_eq!(kernel.inputs().collect::<Vec<_>>(), vec![("signal", 1)]);
@@ -3600,6 +3717,81 @@ mod axis_tests {
                 .values()
                 .any(|values| values == &[1.0, 2.0, 3.0])
         );
+    }
+
+    #[test]
+    fn published_static_selector_remains_materialized() {
+        let source_artifact = compile_fixed_source(
+            "selector := 1f32..=2f32\nvalues := [10f32; 20f32]\nselected := values[selector]\nselected\n",
+        );
+        let selector = source_artifact
+            .nodes()
+            .iter()
+            .find_map(|node| {
+                let operation = node.as_operation()?;
+                (display_operation(&operation.operation) == "range/inclusive")
+                    .then(|| operation.output_bindings.clone())
+            })
+            .and_then(|bindings| {
+                bindings.into_iter().find_map(|binding| {
+                    let BindingDeclaration::Output { target, .. } =
+                        source_artifact.bindings().get(binding as usize)?
+                    else {
+                        return None;
+                    };
+                    Some(*target)
+                })
+            })
+            .expect("the inclusive range must have an output slot");
+        let selector_schema = source_artifact.slots()[selector.get() as usize].schema;
+        let mut outputs = source_artifact.outputs().to_vec();
+        let output_id = mech_core::OutputId(outputs.len() as u32);
+        let mut slots = source_artifact.slots().to_vec();
+        let output_slot = CellSlotId(slots.len() as u32);
+        slots.push(SlotDeclaration {
+            slot: output_slot,
+            schema: selector_schema,
+            role: SlotRole::Output,
+            producer: ProducerReference::Output {
+                output: output_id,
+                source: ArtifactSource::Slot(selector),
+            },
+            initializer: None,
+        });
+        outputs.push(OutputDeclaration {
+            output: output_id,
+            name: "selector".to_owned(),
+            interactive_binding: None,
+            source: output_slot,
+            schema: selector_schema,
+        });
+        let artifact = ProgramArtifactDraft {
+            schemas: source_artifact.schemas().clone(),
+            constants: source_artifact.constants().clone(),
+            contracts: source_artifact.contracts().clone(),
+            requirements: source_artifact.requirements().clone(),
+            inputs: source_artifact.inputs().into(),
+            slots: slots.into_boxed_slice(),
+            nodes: source_artifact.nodes().into(),
+            bindings: source_artifact.bindings().into(),
+            outputs: outputs.into_boxed_slice(),
+            constraints: source_artifact.constraints().into(),
+            compute_regions: source_artifact.compute_regions().into(),
+        }
+        .finalize()
+        .unwrap();
+        assert!(artifact.outputs().iter().any(|output| {
+            physical_publication_slot(&artifact, output.source) == Some(selector)
+        }));
+
+        let kernel = crate::ComputeLowerer.compile_batched(&artifact, 1).unwrap();
+        let storage = kernel.compute_program().fixed_shape_storage().unwrap();
+        assert!(storage.publications.iter().any(|publication| {
+            publication.slot == selector && publication.shape.elements() == 2
+        }));
+        let mut session = kernel.prepare_cpu(&BTreeMap::new()).unwrap();
+        session.dispatch_turns(1).unwrap();
+        assert_eq!(session.state()[&selector], [1.0, 2.0]);
     }
 
     #[test]
