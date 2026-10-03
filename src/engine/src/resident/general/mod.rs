@@ -3393,8 +3393,7 @@ impl ClosedLogicalMask {
         let rows = broadcast_axis(self.rows, right.rows)?;
         let columns = broadcast_axis(self.columns, right.columns)?;
         let count = rows.checked_mul(columns)?;
-        if count > MAX_STATIC_SELECTOR_SOURCE_STEPS
-            || self.rows.checked_mul(self.columns)? != self.values.len()
+        if self.rows.checked_mul(self.columns)? != self.values.len()
             || right.rows.checked_mul(right.columns)? != right.values.len()
         {
             return None;
@@ -3467,13 +3466,18 @@ fn logical_selector_mask(
             let rows = usize::try_from(*rows).ok()?;
             let columns = usize::try_from(*columns).ok()?;
             let count = rows.checked_mul(columns)?;
-            if count != values.len() || count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+            if count != values.len() {
                 return None;
             }
             analysis
                 .logical_masks
                 .projected_retained_bytes(source, count)?;
-            if !analysis.record_materialized_logical_mask_values(count) {
+            let count_u64 = u64::try_from(count).ok()?;
+            if !analysis
+                .construction
+                .charge_compute_chunk(count_u64, count_u64, 1)
+                || !analysis.record_materialized_logical_mask_values(count)
+            {
                 return None;
             }
             let mut dense_values = Vec::with_capacity(count);
@@ -3845,6 +3849,37 @@ impl ClosedOperandConstructionBudget {
         true
     }
 
+    fn charge_compute_with_comparison(
+        &self,
+        construction_bytes: u64,
+        compute_work: u64,
+        comparison_work: u64,
+    ) -> bool {
+        let Some(construction_bytes) = self
+            .construction_bytes
+            .get()
+            .checked_add(construction_bytes)
+        else {
+            return false;
+        };
+        let Some(compute_work) = self.compute_work.get().checked_add(compute_work.max(1)) else {
+            return false;
+        };
+        let Some(comparison_work) = self.comparison_work.get().checked_add(comparison_work) else {
+            return false;
+        };
+        if construction_bytes > mech_core::RESIDENT_MAX_BYTES
+            || compute_work > mech_core::RESIDENT_MAX_COMPUTE_WORK
+            || comparison_work > mech_core::RESIDENT_MAX_COMPARISON_WORK
+        {
+            return false;
+        }
+        self.construction_bytes.set(construction_bytes);
+        self.compute_work.set(compute_work);
+        self.comparison_work.set(comparison_work);
+        true
+    }
+
     fn charge_chunk(&self, construction_bytes: u64, comparison_work: u64, copies: u64) -> bool {
         let Some(construction_bytes) = construction_bytes.checked_mul(copies) else {
             return false;
@@ -4022,6 +4057,76 @@ fn closed_matrix_concatenation(operation: &OperationReference) -> Option<bool> {
         "vertcat" => Some(false),
         _ => None,
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ClosedMatrixProductOperation {
+    Multiply,
+    Dot,
+}
+
+fn closed_matrix_product_operation(
+    operation: &OperationReference,
+) -> Option<ClosedMatrixProductOperation> {
+    if operation.module_path.as_ref() != ["matrix"] {
+        return None;
+    }
+    match operation.operation_name.as_str() {
+        "matmul" | "multiply" => Some(ClosedMatrixProductOperation::Multiply),
+        "dot" => Some(ClosedMatrixProductOperation::Dot),
+        _ => None,
+    }
+}
+
+fn closed_matrix_product_snapshot_comparison_work(
+    artifact: &ProgramArtifact,
+    left: &ConstantComparisonOperand<'_>,
+    right: &ConstantComparisonOperand<'_>,
+    target_schema_id: SchemaId,
+    target_schema: &mech_core::Schema,
+    output_count: usize,
+) -> Option<u64> {
+    if dense_resident_kind(&left.element).is_some() {
+        return Some(0);
+    }
+    let (left_work, left_nodes) = closed_value_comparison_measurement(artifact, &left.value)?;
+    let (right_work, right_nodes) = closed_value_comparison_measurement(artifact, &right.value)?;
+    let output_nodes = if matches!(target_schema.body(), SchemaBody::Matrix { .. }) {
+        3_u64
+    } else {
+        2_u64
+    };
+    let encoded_bytes = u64::try_from(output_count.checked_mul(
+        super::numeric::snapshot_fixed_element_encoded_bytes(&left.element)?,
+    )?)
+    .ok()?;
+    let output_data_work = encoded_bytes.max(output_nodes);
+    let shape_parameters = u64::try_from(target_schema.dimension_parameters().len()).ok()?;
+    let shape_work = shape_parameters
+        .checked_mul(u64::try_from(core::mem::size_of::<u64>()).ok()?)?
+        .max(1);
+    let schema_work = u64::try_from(
+        artifact
+            .schemas()
+            .entry(target_schema_id)?
+            .canonical_bytes()
+            .len(),
+    )
+    .ok()?;
+    let publication_work = schema_work
+        .checked_add(shape_parameters)?
+        .checked_add(output_data_work.checked_mul(2)?)?;
+    let retained_nodes = left_nodes
+        .checked_add(right_nodes)?
+        .checked_add(output_nodes.checked_mul(3)?)?;
+    if retained_nodes > mech_core::RESIDENT_MAX_RETAINED_NODES {
+        return None;
+    }
+    left_work
+        .checked_add(right_work)?
+        .checked_add(shape_work)?
+        .checked_add(output_data_work)?
+        .checked_add(publication_work)
 }
 
 fn closed_range_operation(operation: &OperationReference) -> Option<(bool, bool)> {
@@ -4723,6 +4828,210 @@ fn constant_comparison_operand_at_depth<'a>(
                     schema: target_schema_id,
                     shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
                     data: ValueDataDraft::Matrix(values.into_boxed_slice()),
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
+            } else if let Some(product) = closed_matrix_product_operation(operation.operation) {
+                let [left, right] = inputs.as_slice() else {
+                    return Ok(None);
+                };
+                let Some(left) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *left,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let Some(right) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *right,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                if left.element != right.element
+                    || !super::numeric::matrix_product_element_supported(&left.element)
+                {
+                    return Ok(None);
+                }
+                let Some(left_count) = left.rows.checked_mul(left.columns) else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                let Some(right_count) = right.rows.checked_mul(right.columns) else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                let (rows, columns, output_count, terms) = match product {
+                    ClosedMatrixProductOperation::Multiply => {
+                        if !matches!(left.schema, SchemaBody::Matrix { .. })
+                            || !matches!(right.schema, SchemaBody::Matrix { .. })
+                            || left.columns != right.rows
+                            || !matches!(
+                                target_schema.body(),
+                                SchemaBody::Matrix { element, .. }
+                                    if element.as_ref() == &left.element
+                            )
+                        {
+                            return Ok(None);
+                        }
+                        let Some(output_count) = left.rows.checked_mul(right.columns) else {
+                            return Err(ResidentActivationError::RegionSizeOverflow);
+                        };
+                        let Some(terms) = output_count.checked_mul(left.columns) else {
+                            return Err(ResidentActivationError::RegionSizeOverflow);
+                        };
+                        (left.rows, right.columns, output_count, terms)
+                    }
+                    ClosedMatrixProductOperation::Dot => {
+                        if left.rows != right.rows
+                            || left.columns != right.columns
+                            || target_schema.body() != &left.element
+                        {
+                            return Ok(None);
+                        }
+                        (1, 1, 1, left_count)
+                    }
+                };
+                if output_count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+                    return Ok(None);
+                }
+                let reduction_work =
+                    match super::numeric::snapshot_reduction_compute_work(&left.element, terms) {
+                        Ok(work) => work,
+                        Err(_) => return Ok(None),
+                    };
+                let Some(cloned_bytes) = closed_operand_retained_bytes(artifact, &left, analysis)
+                    .and_then(|left| {
+                        closed_operand_retained_bytes(artifact, &right, analysis)
+                            .and_then(|right| left.checked_add(right))
+                    })
+                else {
+                    return Ok(None);
+                };
+                let Some(draft_nodes) = left_count
+                    .checked_add(right_count)
+                    .and_then(|inputs| inputs.checked_add(output_count))
+                else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                let Some(shape_bytes) = target_schema
+                    .dimension_parameters()
+                    .len()
+                    .checked_mul(core::mem::size_of::<u64>())
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                else {
+                    return Ok(None);
+                };
+                let Some(construction_bytes) = draft_nodes
+                    .checked_mul(core::mem::size_of::<ValueDataDraft>())
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                    .and_then(|bytes| bytes.checked_add(cloned_bytes))
+                    .and_then(|bytes| bytes.checked_add(shape_bytes))
+                    .and_then(|bytes| {
+                        bytes.checked_add(u64::try_from(core::mem::size_of::<Value>()).ok()?)
+                    })
+                else {
+                    return Ok(None);
+                };
+                let Some(compute_work) = reduction_work
+                    .checked_add(draft_nodes)
+                    .and_then(|work| u64::try_from(work).ok())
+                else {
+                    return Ok(None);
+                };
+                let Some(comparison_work) = closed_matrix_product_snapshot_comparison_work(
+                    artifact,
+                    &left,
+                    &right,
+                    target_schema_id,
+                    target_schema,
+                    output_count,
+                ) else {
+                    return Ok(None);
+                };
+                if !analysis.construction.charge_compute_with_comparison(
+                    construction_bytes,
+                    compute_work,
+                    comparison_work,
+                ) || !analysis.record_materialized_operand_values(draft_nodes)
+                {
+                    return Ok(None);
+                }
+                let Some(left_values) = closed_operand_draft_values(&left) else {
+                    return Ok(None);
+                };
+                let Some(right_values) = closed_operand_draft_values(&right) else {
+                    return Ok(None);
+                };
+                let multiply = |left: ValueDataDraft, right: ValueDataDraft| {
+                    super::numeric::numeric_arithmetic(
+                        super::numeric::SemanticArithmetic::Multiply,
+                        left,
+                        right,
+                    )
+                };
+                let (target_shape, data) = match product {
+                    ClosedMatrixProductOperation::Multiply => {
+                        let mut values = Vec::with_capacity(output_count);
+                        for row in 0..rows {
+                            for column in 0..columns {
+                                let value = super::numeric::numeric_sum(
+                                    &left.element,
+                                    (0..left.columns).map(|offset| {
+                                        multiply(
+                                            left_values[row * left.columns + offset].clone(),
+                                            right_values[offset * right.columns + column].clone(),
+                                        )
+                                    }),
+                                );
+                                let Ok(value) = value else {
+                                    return Ok(None);
+                                };
+                                values.push(value);
+                            }
+                        }
+                        let shape = matrix_shape_for_extents(
+                            target_schema,
+                            &[
+                                u64::try_from(rows)
+                                    .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                                u64::try_from(columns)
+                                    .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                            ],
+                        )?;
+                        (shape, ValueDataDraft::Matrix(values.into_boxed_slice()))
+                    }
+                    ClosedMatrixProductOperation::Dot => {
+                        let value = super::numeric::numeric_sum(
+                            &left.element,
+                            left_values
+                                .into_iter()
+                                .zip(right_values)
+                                .map(|(left, right)| multiply(left, right)),
+                        );
+                        let Ok(value) = value else {
+                            return Ok(None);
+                        };
+                        (matrix_shape_for_extents(target_schema, &[])?, value)
+                    }
+                };
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data,
                 }
                 .finalize(
                     &SnapshotValidationContext::new(artifact.schemas())
@@ -6002,6 +6311,7 @@ fn closed_activation_producer_supported(operation: &OperationReference) -> bool 
     // after shape completion has already skipped the facts it depends on.
     (operation.module_path.as_ref() == ["matrix"] && operation.operation_name == "transpose")
         || closed_matrix_concatenation(operation).is_some()
+        || closed_matrix_product_operation(operation).is_some()
         || closed_range_operation(operation).is_some()
         || (operation.module_path.as_ref() == ["core"]
             && operation.operation_name == "composite-pack")
@@ -11313,6 +11623,58 @@ mod shape_fact_tests {
         .finalize()
         .unwrap();
         (artifact, values)
+    }
+
+    #[test]
+    fn large_binary_logical_masks_use_compute_and_memory_admission() {
+        let count = MAX_STATIC_SELECTOR_SOURCE_STEPS + 1;
+        let (artifact, source) = closed_boolean_constant_artifact(
+            1,
+            u64::try_from(count).unwrap(),
+            std::iter::once(true).chain(std::iter::repeat_n(false, count - 1)),
+        );
+        let decoded = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        for artifact in [&artifact, &decoded] {
+            let analysis = ClosedActivationAnalysisContext::default();
+            let left =
+                logical_selector_mask(artifact, source, &ActivationFacts::default(), &analysis)
+                    .expect("compute-bounded logical constant should be retained");
+            let mask = left
+                .binary(&ClosedLogicalMask::scalar(true), "and", &analysis)
+                .expect("binary logical work must not consume the comparison limit");
+            assert_eq!((mask.rows, mask.columns), (1, count));
+            assert_eq!(mask.population(), Some(1));
+            assert!(
+                analysis
+                    .logical_masks
+                    .insert(ArtifactSource::Slot(CellSlotId::new(0)), mask)
+            );
+            assert_eq!(analysis.construction.comparison_work.get(), 0);
+            assert_eq!(
+                analysis.construction.compute_work.get(),
+                u64::try_from(count * 2).unwrap(),
+            );
+        }
+    }
+
+    #[test]
+    fn closed_matrix_product_classifier_covers_resident_names() {
+        for (name, expected) in [
+            ("matmul", ClosedMatrixProductOperation::Multiply),
+            ("multiply", ClosedMatrixProductOperation::Multiply),
+            ("dot", ClosedMatrixProductOperation::Dot),
+        ] {
+            assert_eq!(
+                closed_matrix_product_operation(&OperationReference {
+                    module_path: vec!["matrix".to_owned()].into_boxed_slice(),
+                    operation_name: name.to_owned(),
+                }),
+                Some(expected),
+            );
+        }
     }
 
     #[test]

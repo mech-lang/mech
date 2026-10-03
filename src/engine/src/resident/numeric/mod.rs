@@ -2959,7 +2959,7 @@ pub(super) fn snapshot_arithmetic_element_supported(
     }
 }
 
-fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
+pub(super) fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
     use mech_core::{FloatWidth, IntegerWidth};
     match element {
         SchemaBody::Bool
@@ -3039,7 +3039,7 @@ pub(super) fn snapshot_power_compute_work(
 // Keep fixed arithmetic inside the same conservative power-of-two allowance.
 const RATIONAL_REDUCTION_TERM_COMPUTE_WORK: usize = 2_048;
 
-fn snapshot_reduction_compute_work(
+pub(super) fn snapshot_reduction_compute_work(
     element: &SchemaBody,
     terms: usize,
 ) -> Result<usize, ResidentKernelError> {
@@ -6233,7 +6233,7 @@ fn bind_matmul(
         || rhs.shape != ResidentShape::SCALAR
         || request.output.shape != ResidentShape::SCALAR
         || lhs_element != rhs_element
-        || !is_dot_numeric_schema(lhs_element)
+        || !matrix_product_element_supported(lhs_element)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -6285,7 +6285,7 @@ fn dot_element_schema(body: &SchemaBody) -> &SchemaBody {
     }
 }
 
-fn is_dot_numeric_schema(body: &SchemaBody) -> bool {
+pub(super) fn matrix_product_element_supported(body: &SchemaBody) -> bool {
     matches!(
         body,
         SchemaBody::UnsignedInteger(_)
@@ -6324,7 +6324,7 @@ fn bind_matrix_dot(
     let right_element = dot_element_schema(right_schema.body());
     if left_element != right_element
         || left_element != output_schema.body()
-        || !is_dot_numeric_schema(left_element)
+        || !matrix_product_element_supported(left_element)
         || request.output.shape != ResidentShape::SCALAR
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -17618,7 +17618,7 @@ fn snapshot_numeric_abs(
 // Complex zero signs are observable in canonical values. A nonempty complex
 // reduction starts with its first term; other numeric families retain their
 // existing positive-zero seed. Empty reductions retain their typed zero.
-fn numeric_sum(
+pub(super) fn numeric_sum(
     body: &SchemaBody,
     terms: impl IntoIterator<Item = Result<ValueDataDraft, ResidentKernelError>>,
 ) -> Result<ValueDataDraft, ResidentKernelError> {

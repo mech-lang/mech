@@ -260,6 +260,34 @@ fn closed_comparisons_compose_through_matrix_concatenation() {
 }
 
 #[test]
+fn closed_comparisons_compose_through_matrix_products() {
+    exact_closed_mask(
+        "x := [42 43; 44 45]\nproduct := matrix/matmul([1 2; 3 4], [5 6; 7 8])\nmask := product > 20\nx[mask]\n",
+        "[44; 43; 45]",
+    );
+    exact_closed_mask(
+        "x := [42 43; 44 45]\nproduct := matrix/matmul([1f32 2f32; 3f32 4f32], [5f32 6f32; 7f32 8f32])\nmask := product > 20f32\nx[mask]\n",
+        "[44; 43; 45]",
+    );
+    exact_closed_mask(
+        "x := [42 43; 44 45]\nproduct := matrix/matmul([1u8 2u8; 3u8 4u8], [5u8 6u8; 7u8 8u8])\nmask := product > 20u8\nx[mask]\n",
+        "[44; 43; 45]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nproduct := matrix/dot([1 2], [3 4])\nmask := [product == 11 false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nproduct := matrix/dot([1f32 2f32], [3f32 4f32])\nmask := [product == 11f32 false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nproduct := matrix/dot([1u8 2u8], [3u8 4u8])\nmask := [product == 11u8 false]\nx[mask]\n",
+        "[42]",
+    );
+}
+
+#[test]
 fn closed_comparisons_compose_through_absolute_value() {
     exact_closed_mask(
         "+> math\nx := [42 43]\nmagnitude := math/abs([-2.0 3.0])\nmask := magnitude > 2.5\nx[mask]\n",
