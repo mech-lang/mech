@@ -2828,7 +2828,7 @@ pub(super) fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
         || (cfg!(feature = "c64") && matches!(element, SchemaBody::Complex(FloatWidth::W64)))
 }
 
-fn snapshot_abs_element_supported(element: &SchemaBody) -> bool {
+pub(super) fn snapshot_abs_element_supported(element: &SchemaBody) -> bool {
     use mech_core::FloatWidth;
     matches!(
         element,
@@ -18694,7 +18694,7 @@ pub(super) fn numeric_negate(value: ValueDataDraft) -> Result<ValueDataDraft, Re
     })
 }
 
-fn numeric_abs(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelError> {
+pub(super) fn numeric_abs(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelError> {
     Ok(match value {
         value @ (ValueDataDraft::U8(_)
         | ValueDataDraft::U16(_)

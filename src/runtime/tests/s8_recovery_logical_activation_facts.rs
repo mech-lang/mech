@@ -248,6 +248,26 @@ fn closed_comparisons_compose_through_supported_producers() {
 }
 
 #[test]
+fn closed_comparisons_compose_through_matrix_concatenation() {
+    exact_closed_mask(
+        "x := [10 20 30 40]\njoined := matrix/horzcat([1 2], [3 4])\nmask := joined > 2\nx[mask]\n",
+        "[30; 40]",
+    );
+    exact_closed_mask(
+        "x := [10 20; 30 40]\njoined := matrix/vertcat([1 2], [3 4])\nmask := joined > 2\nx[mask]\n",
+        "[30; 40]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_absolute_value() {
+    exact_closed_mask(
+        "+> math\nx := [42 43]\nmagnitude := math/abs([-2.0 3.0])\nmask := magnitude > 2.5\nx[mask]\n",
+        "[43]",
+    );
+}
+
+#[test]
 fn closed_whole_value_comparisons_have_scalar_populations() {
     exact_closed_mask(
         "x := [42 43]\np := [1 2] === [1 2]\nmask := [p false]\nx[mask]\n",

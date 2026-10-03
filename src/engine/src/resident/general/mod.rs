@@ -3959,6 +3959,53 @@ fn closed_arithmetic_compute_work(
     u64::try_from(work.max(count)).ok()
 }
 
+#[derive(Clone, Copy)]
+enum ClosedUnaryNumericOperation {
+    Negate,
+    Absolute,
+}
+
+fn closed_binary_arithmetic_operation(
+    operation: &OperationReference,
+) -> Option<super::numeric::SemanticArithmetic> {
+    if operation.module_path.as_ref() != ["math"] {
+        return None;
+    }
+    Some(match operation.operation_name.as_str() {
+        "add" => super::numeric::SemanticArithmetic::Add,
+        "sub" => super::numeric::SemanticArithmetic::Subtract,
+        "mul" => super::numeric::SemanticArithmetic::Multiply,
+        "div" => super::numeric::SemanticArithmetic::Divide,
+        "mod" => super::numeric::SemanticArithmetic::Remainder,
+        "pow" => super::numeric::SemanticArithmetic::Power,
+        _ => return None,
+    })
+}
+
+fn closed_unary_numeric_operation(
+    operation: &OperationReference,
+) -> Option<ClosedUnaryNumericOperation> {
+    if operation.module_path.as_ref() != ["math"] {
+        return None;
+    }
+    match operation.operation_name.as_str() {
+        "neg" => Some(ClosedUnaryNumericOperation::Negate),
+        "abs" => Some(ClosedUnaryNumericOperation::Absolute),
+        _ => None,
+    }
+}
+
+fn closed_matrix_concatenation(operation: &OperationReference) -> Option<bool> {
+    if operation.module_path.as_ref() != ["matrix"] {
+        return None;
+    }
+    match operation.operation_name.as_str() {
+        "horzcat" => Some(true),
+        "vertcat" => Some(false),
+        _ => None,
+    }
+}
+
 fn closed_transformed_operand_count(rows: usize, columns: usize) -> Option<usize> {
     rows.checked_mul(columns)
         .filter(|count| *count <= MAX_STATIC_SELECTOR_SOURCE_STEPS)
@@ -4345,11 +4392,160 @@ fn constant_comparison_operand_at_depth<'a>(
                     &SnapshotValidationContext::new(artifact.schemas())
                         .with_canonicalization_budget(budget),
                 )
-            } else if operation.operation.module_path.as_ref() == ["math"]
-                && matches!(
-                    operation.operation.operation_name.as_str(),
-                    "add" | "sub" | "mul" | "div" | "mod" | "pow"
+            } else if let Some(horizontal) = closed_matrix_concatenation(operation.operation) {
+                let SchemaBody::Matrix {
+                    element: target_element,
+                    ..
+                } = target_schema.body()
+                else {
+                    return Ok(None);
+                };
+                if inputs.is_empty() {
+                    return Ok(None);
+                }
+                let mut operands = Vec::with_capacity(inputs.len());
+                for input in inputs {
+                    let Some(operand) = constant_comparison_operand_at_depth(
+                        artifact,
+                        node,
+                        input,
+                        facts,
+                        next_depth,
+                        budget,
+                        analysis,
+                        allow_large_direct_dense,
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    if operand.element != **target_element {
+                        return Ok(None);
+                    }
+                    operands.push(operand);
+                }
+                let first = operands.first().expect("nonempty closed concatenation");
+                let (rows, columns) = if horizontal {
+                    let Some(columns) = operands.iter().try_fold(0_usize, |columns, operand| {
+                        (operand.rows == first.rows)
+                            .then(|| columns.checked_add(operand.columns))
+                            .flatten()
+                    }) else {
+                        return Ok(None);
+                    };
+                    (first.rows, columns)
+                } else {
+                    let Some(rows) = operands.iter().try_fold(0_usize, |rows, operand| {
+                        (operand.columns == first.columns)
+                            .then(|| rows.checked_add(operand.rows))
+                            .flatten()
+                    }) else {
+                        return Ok(None);
+                    };
+                    (rows, first.columns)
+                };
+                let Some(count) = closed_transformed_operand_count(rows, columns) else {
+                    return Ok(None);
+                };
+                let Some(input_count) = operands.iter().try_fold(0_usize, |count, operand| {
+                    operand
+                        .rows
+                        .checked_mul(operand.columns)
+                        .and_then(|operand| count.checked_add(operand))
+                }) else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                if input_count != count {
+                    return Ok(None);
+                }
+                let Some(cloned_bytes) = operands.iter().try_fold(0_u64, |bytes, operand| {
+                    closed_operand_retained_bytes(artifact, operand, analysis)
+                        .and_then(|operand| bytes.checked_add(operand))
+                }) else {
+                    return Ok(None);
+                };
+                let Some(draft_nodes) = input_count.checked_add(count) else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                let Some(construction_bytes) = u64::try_from(draft_nodes)
+                    .ok()
+                    .and_then(|nodes| {
+                        nodes.checked_mul(
+                            u64::try_from(core::mem::size_of::<ValueDataDraft>()).ok()?,
+                        )
+                    })
+                    .and_then(|bytes| bytes.checked_add(cloned_bytes))
+                    .and_then(|bytes| {
+                        bytes.checked_add(u64::try_from(core::mem::size_of::<Value>()).ok()?)
+                    })
+                else {
+                    return Ok(None);
+                };
+                let Some(compute_work) = count
+                    .checked_mul(2)
+                    .and_then(|work| work.checked_add(draft_nodes))
+                    .and_then(|work| u64::try_from(work).ok())
+                else {
+                    return Ok(None);
+                };
+                if !analysis
+                    .construction
+                    .charge_compute_chunk(construction_bytes, compute_work, 1)
+                    || !analysis.record_materialized_operand_values(draft_nodes)
+                {
+                    return Ok(None);
+                }
+                let mut values = Vec::with_capacity(count);
+                if horizontal {
+                    let mut staged = Vec::with_capacity(operands.len());
+                    for operand in &operands {
+                        let Some(input_values) = closed_operand_draft_values(operand) else {
+                            return Ok(None);
+                        };
+                        staged.push((operand.columns, input_values.into_iter()));
+                    }
+                    for _ in 0..rows {
+                        for (columns, input_values) in &mut staged {
+                            for _ in 0..*columns {
+                                let Some(value) = input_values.next() else {
+                                    return Ok(None);
+                                };
+                                values.push(value);
+                            }
+                        }
+                    }
+                    if staged.iter_mut().any(|(_, values)| values.next().is_some()) {
+                        return Ok(None);
+                    }
+                } else {
+                    for operand in &operands {
+                        let Some(mut input_values) = closed_operand_draft_values(operand) else {
+                            return Ok(None);
+                        };
+                        values.append(&mut input_values);
+                    }
+                }
+                if values.len() != count {
+                    return Ok(None);
+                }
+                let target_shape = matrix_shape_for_extents(
+                    target_schema,
+                    &[
+                        u64::try_from(rows)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                        u64::try_from(columns)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                    ],
+                )?;
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data: ValueDataDraft::Matrix(values.into_boxed_slice()),
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
                 )
+            } else if let Some(arithmetic) = closed_binary_arithmetic_operation(operation.operation)
             {
                 // Closed comparison operands use the resident numeric
                 // evaluator itself, but only after aggregate construction and
@@ -4406,15 +4602,6 @@ fn constant_comparison_operand_at_depth<'a>(
                 if count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
                     return Ok(None);
                 }
-                let arithmetic = match operation.operation.operation_name.as_str() {
-                    "add" => super::numeric::SemanticArithmetic::Add,
-                    "sub" => super::numeric::SemanticArithmetic::Subtract,
-                    "mul" => super::numeric::SemanticArithmetic::Multiply,
-                    "div" => super::numeric::SemanticArithmetic::Divide,
-                    "mod" => super::numeric::SemanticArithmetic::Remainder,
-                    "pow" => super::numeric::SemanticArithmetic::Power,
-                    _ => unreachable!("matched closed arithmetic operation"),
-                };
                 let target_element = match target_schema.body() {
                     SchemaBody::Matrix { element, .. } => element.as_ref(),
                     body => body,
@@ -4530,9 +4717,7 @@ fn constant_comparison_operand_at_depth<'a>(
                     &SnapshotValidationContext::new(artifact.schemas())
                         .with_canonicalization_budget(budget),
                 )
-            } else if operation.operation.module_path.as_ref() == ["math"]
-                && operation.operation.operation_name == "neg"
-            {
+            } else if let Some(unary) = closed_unary_numeric_operation(operation.operation) {
                 let [input] = inputs.as_slice() else {
                     return Ok(None);
                 };
@@ -4559,9 +4744,15 @@ fn constant_comparison_operand_at_depth<'a>(
                     SchemaBody::Matrix { element, .. } => element.as_ref(),
                     body => body,
                 };
-                if input.element != *target_element
-                    || !super::numeric::snapshot_negate_element_supported(target_element)
-                {
+                let supported = match unary {
+                    ClosedUnaryNumericOperation::Negate => {
+                        super::numeric::snapshot_negate_element_supported(target_element)
+                    }
+                    ClosedUnaryNumericOperation::Absolute => {
+                        super::numeric::snapshot_abs_element_supported(target_element)
+                    }
+                };
+                if input.element != *target_element || !supported {
                     return Ok(None);
                 }
                 let work_per_element = if matches!(target_element, SchemaBody::Rational64) {
@@ -4592,9 +4783,13 @@ fn constant_comparison_operand_at_depth<'a>(
                 let Some(input_values) = closed_operand_draft_values(&input) else {
                     return Ok(None);
                 };
+                let evaluate = match unary {
+                    ClosedUnaryNumericOperation::Negate => super::numeric::numeric_negate,
+                    ClosedUnaryNumericOperation::Absolute => super::numeric::numeric_abs,
+                };
                 let Ok(mut values) = input_values
                     .into_iter()
-                    .map(super::numeric::numeric_negate)
+                    .map(evaluate)
                     .collect::<Result<Vec<_>, _>>()
                 else {
                     return Ok(None);
@@ -5475,19 +5670,13 @@ fn closed_activation_producer_supported(operation: &OperationReference) -> bool 
     // Keep backward dependency discovery aligned with the closed operand and
     // mask evaluators. Otherwise a supported producer can be evaluated only
     // after shape completion has already skipped the facts it depends on.
-    (operation.module_path.as_ref() == ["matrix"]
-        && matches!(
-            operation.operation_name.as_str(),
-            "horzcat" | "vertcat" | "transpose"
-        ))
+    (operation.module_path.as_ref() == ["matrix"] && operation.operation_name == "transpose")
+        || closed_matrix_concatenation(operation).is_some()
         || (operation.module_path.as_ref() == ["core"]
             && operation.operation_name == "composite-pack")
         || (operation.module_path.as_ref() == ["convert"] && operation.operation_name == "kind")
-        || (operation.module_path.as_ref() == ["math"]
-            && matches!(
-                operation.operation_name.as_str(),
-                "add" | "sub" | "mul" | "div" | "mod" | "pow" | "neg"
-            ))
+        || closed_binary_arithmetic_operation(operation).is_some()
+        || closed_unary_numeric_operation(operation).is_some()
         || (operation.module_path.as_ref() == ["logic"]
             && matches!(
                 operation.operation_name.as_str(),
