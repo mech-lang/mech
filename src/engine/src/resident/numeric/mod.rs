@@ -18631,7 +18631,7 @@ fn numeric_rational_power_impl(
     numeric_rational_power_with_exponent(left, i64::from(exponent))
 }
 
-fn numeric_rational_power(
+pub(super) fn numeric_rational_power(
     left: ValueDataDraft,
     right: ValueDataDraft,
 ) -> Result<ValueDataDraft, ResidentKernelError> {

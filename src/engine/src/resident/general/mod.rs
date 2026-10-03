@@ -3530,8 +3530,9 @@ fn scalar_comparison_supported(element: &SchemaBody, ordering: bool) -> bool {
 
 #[derive(Default)]
 struct ClosedOperandConstructionBudget {
-    cloned_bytes: std::cell::Cell<u64>,
-    construction_work: std::cell::Cell<u64>,
+    construction_bytes: std::cell::Cell<u64>,
+    comparison_work: std::cell::Cell<u64>,
+    compute_work: std::cell::Cell<u64>,
 }
 
 #[derive(Default)]
@@ -3549,27 +3550,62 @@ impl ClosedOperandSchemaContext {
 }
 
 impl ClosedOperandConstructionBudget {
-    fn charge_chunk(&self, cloned_bytes: u64, construction_work: u64, copies: u64) -> bool {
-        let Some(cloned_bytes) = cloned_bytes.checked_mul(copies) else {
+    fn charge_chunk(&self, construction_bytes: u64, comparison_work: u64, copies: u64) -> bool {
+        let Some(construction_bytes) = construction_bytes.checked_mul(copies) else {
             return false;
         };
-        let Some(cloned_bytes) = self.cloned_bytes.get().checked_add(cloned_bytes) else {
-            return false;
-        };
-        let Some(construction_work) = construction_work.max(1).checked_mul(copies) else {
-            return false;
-        };
-        let Some(construction_work) = self.construction_work.get().checked_add(construction_work)
+        let Some(construction_bytes) = self
+            .construction_bytes
+            .get()
+            .checked_add(construction_bytes)
         else {
             return false;
         };
-        if cloned_bytes > mech_core::RESIDENT_MAX_BYTES
-            || construction_work > mech_core::RESIDENT_MAX_COMPARISON_WORK
+        let Some(comparison_work) = comparison_work.max(1).checked_mul(copies) else {
+            return false;
+        };
+        let Some(comparison_work) = self.comparison_work.get().checked_add(comparison_work) else {
+            return false;
+        };
+        if construction_bytes > mech_core::RESIDENT_MAX_BYTES
+            || comparison_work > mech_core::RESIDENT_MAX_COMPARISON_WORK
         {
             return false;
         }
-        self.cloned_bytes.set(cloned_bytes);
-        self.construction_work.set(construction_work);
+        self.construction_bytes.set(construction_bytes);
+        self.comparison_work.set(comparison_work);
+        true
+    }
+
+    fn charge_compute_chunk(
+        &self,
+        construction_bytes: u64,
+        compute_work: u64,
+        copies: u64,
+    ) -> bool {
+        let Some(construction_bytes) = construction_bytes.checked_mul(copies) else {
+            return false;
+        };
+        let Some(construction_bytes) = self
+            .construction_bytes
+            .get()
+            .checked_add(construction_bytes)
+        else {
+            return false;
+        };
+        let Some(compute_work) = compute_work.max(1).checked_mul(copies) else {
+            return false;
+        };
+        let Some(compute_work) = self.compute_work.get().checked_add(compute_work) else {
+            return false;
+        };
+        if construction_bytes > mech_core::RESIDENT_MAX_BYTES
+            || compute_work > mech_core::RESIDENT_MAX_COMPUTE_WORK
+        {
+            return false;
+        }
+        self.construction_bytes.set(construction_bytes);
+        self.compute_work.set(compute_work);
         true
     }
 
@@ -3626,6 +3662,64 @@ fn closed_arithmetic_compute_work(
         count
     };
     u64::try_from(work.max(count)).ok()
+}
+
+fn closed_transformed_operand_count(rows: usize, columns: usize) -> Option<usize> {
+    rows.checked_mul(columns)
+        .filter(|count| *count <= MAX_STATIC_SELECTOR_SOURCE_STEPS)
+}
+
+fn closed_conversion_output_payload_bytes(
+    source: &SchemaBody,
+    target: &SchemaBody,
+    count: usize,
+) -> Option<u64> {
+    use mech_core::{FloatWidth, IntegerWidth};
+
+    let bytes_per_element = match target {
+        SchemaBody::Bool
+        | SchemaBody::UnsignedInteger(IntegerWidth::W8)
+        | SchemaBody::SignedInteger(IntegerWidth::W8) => 1,
+        SchemaBody::UnsignedInteger(IntegerWidth::W16)
+        | SchemaBody::SignedInteger(IntegerWidth::W16) => 2,
+        SchemaBody::UnsignedInteger(IntegerWidth::W32)
+        | SchemaBody::SignedInteger(IntegerWidth::W32)
+        | SchemaBody::FloatingPoint(FloatWidth::W32) => 4,
+        SchemaBody::UnsignedInteger(IntegerWidth::W64)
+        | SchemaBody::SignedInteger(IntegerWidth::W64)
+        | SchemaBody::FloatingPoint(FloatWidth::W64)
+        | SchemaBody::Index
+        | SchemaBody::Id => 8,
+        SchemaBody::UnsignedInteger(IntegerWidth::W128)
+        | SchemaBody::SignedInteger(IntegerWidth::W128)
+        | SchemaBody::Complex(FloatWidth::W64)
+        | SchemaBody::Rational64 => 16,
+        SchemaBody::Complex(FloatWidth::W32) => 8,
+        SchemaBody::String => match source {
+            SchemaBody::Bool => 5,
+            SchemaBody::UnsignedInteger(IntegerWidth::W8) => 3,
+            SchemaBody::UnsignedInteger(IntegerWidth::W16) => 5,
+            SchemaBody::UnsignedInteger(IntegerWidth::W32) => 10,
+            SchemaBody::UnsignedInteger(IntegerWidth::W64) | SchemaBody::Index | SchemaBody::Id => {
+                20
+            }
+            SchemaBody::UnsignedInteger(IntegerWidth::W128) => 39,
+            SchemaBody::SignedInteger(IntegerWidth::W8) => 4,
+            SchemaBody::SignedInteger(IntegerWidth::W16) => 6,
+            SchemaBody::SignedInteger(IntegerWidth::W32) => 11,
+            SchemaBody::SignedInteger(IntegerWidth::W64) => 20,
+            SchemaBody::SignedInteger(IntegerWidth::W128) => 40,
+            SchemaBody::FloatingPoint(FloatWidth::W32) => 48,
+            SchemaBody::FloatingPoint(FloatWidth::W64) => 328,
+            SchemaBody::Complex(FloatWidth::W32) => 98,
+            SchemaBody::Complex(FloatWidth::W64) => 658,
+            SchemaBody::Rational64 => 41,
+            SchemaBody::String => 0,
+            _ => return None,
+        },
+        _ => return None,
+    };
+    u64::try_from(count).ok()?.checked_mul(bytes_per_element)
 }
 
 fn constant_comparison_operand<'a>(
@@ -3822,12 +3916,20 @@ fn constant_comparison_operand_at_depth<'a>(
                     SchemaBody::Matrix { element, .. } => element.as_ref(),
                     body => body,
                 };
-                if left.element != *target_element
-                    || right.element != *target_element
-                    || !super::numeric::snapshot_arithmetic_element_supported(
-                        arithmetic,
-                        target_element,
-                    )
+                let rational_power = cfg!(feature = "r64")
+                    && arithmetic == super::numeric::SemanticArithmetic::Power
+                    && rows == 1
+                    && columns == 1
+                    && left.element == SchemaBody::Rational64
+                    && right.element == SchemaBody::SignedInteger(mech_core::IntegerWidth::W32)
+                    && target_element == &SchemaBody::Rational64;
+                if !rational_power
+                    && (left.element != *target_element
+                        || right.element != *target_element
+                        || !super::numeric::snapshot_arithmetic_element_supported(
+                            arithmetic,
+                            target_element,
+                        ))
                 {
                     return Ok(None);
                 }
@@ -3854,12 +3956,12 @@ fn constant_comparison_operand_at_depth<'a>(
                 }) else {
                     return Err(ResidentActivationError::RegionSizeOverflow);
                 };
-                let Some(construction_work) =
+                let Some(arithmetic_work) =
                     compute_work.checked_add(u64::try_from(draft_nodes).ok().unwrap_or(u64::MAX))
                 else {
                     return Ok(None);
                 };
-                if !construction_budget.charge_chunk(draft_bytes, construction_work, 1) {
+                if !construction_budget.charge_compute_chunk(draft_bytes, arithmetic_work, 1) {
                     return Ok(None);
                 }
                 let Some(left_values) = closed_operand_draft_values(&left) else {
@@ -3874,11 +3976,19 @@ fn constant_comparison_operand_at_depth<'a>(
                         let left_index = (row % left.rows) * left.columns + column % left.columns;
                         let right_index =
                             (row % right.rows) * right.columns + column % right.columns;
-                        let Ok(value) = super::numeric::numeric_arithmetic(
-                            arithmetic,
-                            left_values[left_index].clone(),
-                            right_values[right_index].clone(),
-                        ) else {
+                        let value = if rational_power {
+                            super::numeric::numeric_rational_power(
+                                left_values[left_index].clone(),
+                                right_values[right_index].clone(),
+                            )
+                        } else {
+                            super::numeric::numeric_arithmetic(
+                                arithmetic,
+                                left_values[left_index].clone(),
+                                right_values[right_index].clone(),
+                            )
+                        };
+                        let Ok(value) = value else {
                             return Ok(None);
                         };
                         values.push(value);
@@ -3954,7 +4064,7 @@ fn constant_comparison_operand_at_depth<'a>(
                 } else {
                     1
                 };
-                let Some(construction_work) = count
+                let Some(arithmetic_work) = count
                     .checked_mul(work_per_element)
                     .and_then(|work| work.checked_add(count))
                     .and_then(|work| u64::try_from(work).ok())
@@ -3968,7 +4078,7 @@ fn constant_comparison_operand_at_depth<'a>(
                 else {
                     return Err(ResidentActivationError::RegionSizeOverflow);
                 };
-                if !construction_budget.charge_chunk(draft_bytes, construction_work, 1) {
+                if !construction_budget.charge_compute_chunk(draft_bytes, arithmetic_work, 1) {
                     return Ok(None);
                 }
                 let Some(input_values) = closed_operand_draft_values(&input) else {
@@ -4042,6 +4152,39 @@ fn constant_comparison_operand_at_depth<'a>(
                 let Ok(conversion) = plan_explicit_cast(&source_type, &target_type) else {
                     return Ok(None);
                 };
+                let Some(count) = closed_transformed_operand_count(source.rows, source.columns)
+                else {
+                    return Ok(None);
+                };
+                if !construction_budget.charge_clone(&source.value, artifact.schemas(), 1) {
+                    return Ok(None);
+                }
+                let Some(draft_bytes) = count
+                    .checked_mul(2)
+                    .and_then(|nodes| nodes.checked_mul(core::mem::size_of::<ValueDataDraft>()))
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                    .and_then(|bytes| {
+                        bytes.checked_add(closed_conversion_output_payload_bytes(
+                            &source.element,
+                            target_element,
+                            count,
+                        )?)
+                    })
+                    .and_then(|bytes| {
+                        bytes.checked_add(u64::try_from(core::mem::size_of::<Value>()).ok()?)
+                    })
+                else {
+                    return Ok(None);
+                };
+                let Some(conversion_work) = u64::try_from(count)
+                    .ok()
+                    .and_then(|count| count.checked_mul(3))
+                else {
+                    return Ok(None);
+                };
+                if !construction_budget.charge_compute_chunk(draft_bytes, conversion_work, 1) {
+                    return Ok(None);
+                }
                 let Ok(draft) = source.value.canonical_data_draft() else {
                     return Ok(None);
                 };
@@ -8483,6 +8626,309 @@ mod shape_fact_tests {
         }
         assert!(accepted > 1);
         assert!(rejected, "reused child footprints must accumulate");
+    }
+
+    fn closed_dense_add_artifact(count: usize) -> ProgramArtifact {
+        let mut schemas = SchemaTableBuilder::new();
+        let matrix = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Constant(u64::try_from(count).unwrap()),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: matrix,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::F64(F64Bits::from_f64(1.0)); count].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let value = constants.insert(value).unwrap();
+        let build = constants.finish().unwrap();
+        let value = build.resolve(value).unwrap();
+        let (constants, _) = build.into_parts();
+
+        let mut contracts = OperationContractTableBuilder::new();
+        let contract = contracts
+            .insert(ResolvedOperationContract::Declared(
+                DeclaredOperationContract {
+                    inputs: vec![matrix; 2]
+                        .into_iter()
+                        .map(|schema| ResolvedInputPort {
+                            schema,
+                            access: AccessMode::Read,
+                            delivery: DeliveryMode::Signal,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                    outputs: vec![ResolvedOutputPort {
+                        schema: matrix,
+                        access: AccessMode::Write,
+                        delivery: DeliveryMode::Signal,
+                        construction: OutputConstruction::FullWrite {
+                            shape: ShapeRule::Declared,
+                        },
+                        alias: AliasPolicy::NoAlias,
+                        change_detection: ChangeDetectionPolicy::KernelReported,
+                    }]
+                    .into_boxed_slice(),
+                    interaction: ExternalInteraction::Pure,
+                },
+            ))
+            .unwrap();
+        let build = contracts.finish().unwrap();
+        let contract = build.resolve(contract).unwrap();
+        let (contracts, _) = build.into_parts();
+        let node = NodeId::new(0);
+        let slot = CellSlotId::new(0);
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: vec![SlotDeclaration {
+                slot,
+                schema: matrix,
+                role: SlotRole::Derived,
+                producer: ProducerReference::NodeOutput {
+                    node,
+                    output_ordinal: 0,
+                },
+                initializer: None,
+            }]
+            .into_boxed_slice(),
+            nodes: vec![NodeDeclaration {
+                node,
+                body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                    operation: OperationReference {
+                        module_path: vec!["math".to_owned()].into_boxed_slice(),
+                        operation_name: "add".to_owned(),
+                    },
+                    contract,
+                    requirement: None,
+                }),
+                input_bindings: 0..2,
+                output_bindings: 2..3,
+            }]
+            .into_boxed_slice(),
+            bindings: vec![
+                BindingDeclaration::Input {
+                    id: BindingId::new(0),
+                    node,
+                    port_ordinal: 0,
+                    source: ArtifactSource::Constant(value),
+                },
+                BindingDeclaration::Input {
+                    id: BindingId::new(1),
+                    node,
+                    port_ordinal: 1,
+                    source: ArtifactSource::Constant(value),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(2),
+                    node,
+                    port_ordinal: 0,
+                    target: slot,
+                },
+            ]
+            .into_boxed_slice(),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn closed_dense_arithmetic_uses_compute_instead_of_comparison_work() {
+        let count = 17_000;
+        let artifact = closed_dense_add_artifact(count);
+        let construction_budget = ClosedOperandConstructionBudget::default();
+        let operand = constant_comparison_operand(
+            &artifact,
+            NodeId::new(0),
+            ArtifactSource::Slot(CellSlotId::new(0)),
+            &ActivationFacts::default(),
+            &construction_budget,
+            &ClosedOperandSchemaContext::default(),
+            false,
+        )
+        .unwrap()
+        .expect("closed dense addition should fit the compute budget");
+        assert_eq!((operand.rows, operand.columns), (1, count));
+        assert_eq!(construction_budget.comparison_work.get(), 0);
+        assert_eq!(construction_budget.compute_work.get(), 68_000);
+    }
+
+    #[test]
+    fn oversized_closed_conversion_stops_before_draft_construction() {
+        let count = MAX_STATIC_SELECTOR_SOURCE_STEPS + 1;
+        let matrix = |element| {
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Constant(u64::try_from(count).unwrap()),
+                    ]
+                    .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let mut schemas = SchemaTableBuilder::new();
+        let source = schemas
+            .insert(matrix(SchemaBody::FloatingPoint(FloatWidth::W64)))
+            .unwrap();
+        let target = schemas
+            .insert(matrix(SchemaBody::FloatingPoint(FloatWidth::W32)))
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let source = build.resolve(source).unwrap();
+        let target = build.resolve(target).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: source,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::F64(F64Bits::from_f64(1.0)); count].into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let value = constants.insert(value).unwrap();
+        let build = constants.finish().unwrap();
+        let value = build.resolve(value).unwrap();
+        let (constants, _) = build.into_parts();
+        let mut contracts = OperationContractTableBuilder::new();
+        let contract = contracts
+            .insert(ResolvedOperationContract::Declared(
+                DeclaredOperationContract {
+                    inputs: vec![ResolvedInputPort {
+                        schema: source,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    }]
+                    .into_boxed_slice(),
+                    outputs: vec![ResolvedOutputPort {
+                        schema: target,
+                        access: AccessMode::Write,
+                        delivery: DeliveryMode::Signal,
+                        construction: OutputConstruction::FullWrite {
+                            shape: ShapeRule::SameAsInput { input: 0 },
+                        },
+                        alias: AliasPolicy::NoAlias,
+                        change_detection: ChangeDetectionPolicy::KernelReported,
+                    }]
+                    .into_boxed_slice(),
+                    interaction: ExternalInteraction::Pure,
+                },
+            ))
+            .unwrap();
+        let build = contracts.finish().unwrap();
+        let contract = build.resolve(contract).unwrap();
+        let (contracts, _) = build.into_parts();
+        let node = NodeId::new(0);
+        let slot = CellSlotId::new(0);
+        let artifact = ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: vec![SlotDeclaration {
+                slot,
+                schema: target,
+                role: SlotRole::Derived,
+                producer: ProducerReference::NodeOutput {
+                    node,
+                    output_ordinal: 0,
+                },
+                initializer: None,
+            }]
+            .into_boxed_slice(),
+            nodes: vec![NodeDeclaration {
+                node,
+                body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                    operation: OperationReference {
+                        module_path: vec!["convert".to_owned()].into_boxed_slice(),
+                        operation_name: "kind".to_owned(),
+                    },
+                    contract,
+                    requirement: None,
+                }),
+                input_bindings: 0..1,
+                output_bindings: 1..2,
+            }]
+            .into_boxed_slice(),
+            bindings: vec![
+                BindingDeclaration::Input {
+                    id: BindingId::new(0),
+                    node,
+                    port_ordinal: 0,
+                    source: ArtifactSource::Constant(value),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(1),
+                    node,
+                    port_ordinal: 0,
+                    target: slot,
+                },
+            ]
+            .into_boxed_slice(),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        let construction_budget = ClosedOperandConstructionBudget::default();
+        assert!(
+            constant_comparison_operand(
+                &artifact,
+                node,
+                ArtifactSource::Slot(slot),
+                &ActivationFacts::default(),
+                &construction_budget,
+                &ClosedOperandSchemaContext::default(),
+                true,
+            )
+            .unwrap()
+            .is_none()
+        );
+        assert_eq!(construction_budget.construction_bytes.get(), 0);
+        assert_eq!(construction_budget.comparison_work.get(), 0);
+        assert_eq!(construction_budget.compute_work.get(), 0);
+        assert!(
+            closed_conversion_output_payload_bytes(
+                &SchemaBody::FloatingPoint(FloatWidth::W64),
+                &SchemaBody::String,
+                MAX_STATIC_SELECTOR_SOURCE_STEPS,
+            )
+            .is_some_and(|bytes| bytes > mech_core::RESIDENT_MAX_BYTES)
+        );
     }
 
     fn strict_matrix_comparison_artifact(

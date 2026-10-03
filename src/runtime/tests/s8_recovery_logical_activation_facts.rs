@@ -123,6 +123,10 @@ fn closed_arithmetic_comparison_operands_publish_exact_populations() {
         "x := [1 2 3; 4 5 6]\ny := x + [10; 20]\nmask := y > 22\nx[mask]\n",
         "[4; 5; 6]",
     );
+    exact_closed_mask(
+        "x := [42 43]\np := (1/2 ^ 2<i32>) == 1/4\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
 }
 
 #[test]
