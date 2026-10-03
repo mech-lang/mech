@@ -1428,6 +1428,7 @@ jobs:
           --test canonical_document_render --test canonical_source_index
           --test source_document --test canonical_config_profile --test config_profile
           --test s8_recovery_index_range
+          --test s8_recovery_numeric_targets
 
       - name: Verify canonical compiler execution contracts
         run: >-
@@ -1515,6 +1516,7 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features source --test canonical_source_profile --test canonical_source_review --test canonical_source_collections --test canonical_boolean_match
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_document_state --test canonical_document_streaming --test canonical_source_semantics --test canonical_source_review --test canonical_source_structures --test canonical_source_collections --test canonical_boolean_match --test canonical_source_completion --test canonical_phase_2i_semantic_certification
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --lib source_semantics::frontend::
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --lib resident::numeric::tests::
 
       - name: Run retained non-UTF-8 source-root regression
         run: >-

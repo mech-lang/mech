@@ -10,6 +10,7 @@ struct Plan {
     mode: u8,
     arithmetic: SemanticArithmetic,
     rational_power: bool,
+    power_work_per_write: usize,
     target_dimensions: Option<(usize, usize)>,
     source_dimensions: Option<(usize, usize)>,
     logical_selector: bool,
@@ -68,6 +69,16 @@ pub(super) fn bind(
         && arithmetic == SemanticArithmetic::Power
         && destination.as_ref() == &SchemaBody::Rational64
         && incoming == &SchemaBody::SignedInteger(mech_core::IntegerWidth::W32);
+    let power_work_per_write = snapshot_power_compute_work(
+        arithmetic,
+        if rational_power {
+            destination.as_ref()
+        } else {
+            incoming
+        },
+        1,
+    )
+    .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     if !rational_power && !snapshot_arithmetic_element_supported(arithmetic, incoming) {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -114,6 +125,7 @@ pub(super) fn bind(
             mode,
             arithmetic,
             rational_power,
+            power_work_per_write,
             target_dimensions,
             source_dimensions,
             logical_selector,
@@ -264,14 +276,20 @@ fn execute(
             )
         })
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let power_work = max_writes
+        .checked_mul(plan.power_work_per_write)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     super::super::budget::PreparedKernel::new(
         (),
         super::super::budget::resident_cost! {
             compute_work: measured.compute_work()
                 .checked_add(super::super::budget::checked_u64(
-                    elements.checked_mul(if plan.rational_power { 128 } else { 8 })
+                    elements.checked_mul(8)
                         .ok_or(ResidentKernelError::InvalidShape)?,
                 )?)
+                .and_then(|work| {
+                    work.checked_add(super::super::budget::checked_u64(power_work).ok()?)
+                })
                 .ok_or(ResidentKernelError::InvalidShape)?,
             comparison_work: measured.comparison_work()
                 .checked_add(super::super::budget::checked_u64(count)?)
