@@ -598,6 +598,10 @@ jobs:
             -o /tmp/wasm-pack.tar.gz
           tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
           sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
+      - name: Install Node for browser-package source admission
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
       - name: Build mixed compute WASM and refresh the server
         run: |
           node --test scripts/tests/static-project.test.mjs

@@ -485,3 +485,97 @@ admission, ordered roots, formatted output ownership, pattern functions, collect
 shape/control/initializers, and both N-body application references. The N-body
 numerical, trajectory and display-bound assertions remain unchanged. These are
 open qualification failures, not ignored tests or a completed cutover seal.
+
+S8C browser source-boundary correction, 2026-10-03
+-------------------------------------------------
+
+This correction starts from C `d0d1f4d2840cea6f559b5823b9fa987ed0cb1122`,
+on R15 `54a0397e126a3b21616b8ccad728d293d884c96e`, with R26 `3f1f23772a`
+and R06 `e5101287f1` below it. The newer stack identities include the R26
+selector regression but do not replace C's preceding fixes. Historical suite
+results above are retained as history, not attributed to this correction.
+
+The four current review obligations are closed at their shared owners:
+
+1. Static sources retain their defining nominal origin and transported package
+   identity in the manifest. The bootstrap passes those values to the same
+   provenance-aware source resolver used by served documents. The regression
+   compares complete enum nominal and schema identities with native compilation,
+   not just printed values. Old static nominal sources without provenance are
+   refused with a regeneration instruction rather than assigned a new identity.
+
+2. Publication invokes the selected package's actual WASM compiler and shared
+   resident target preflight. `ProgramCompiler::preflight_resident_artifact`
+   reuses the loader's effect-free provider planning facts and resident admission
+   owner. It does not activate an instance, start drivers, run turns, or deliver
+   effects. There is no duplicate scalar/operator feature checklist. Node.js 22+
+   is an explicit publication dependency, and the relevant CI jobs install it.
+   Native planning and target admission finish before any output is published.
+   The admitted JS/WASM/snippet bytes and configuration text are frozen and those
+   same bytes are published, including when the original inputs change during
+   the probe. The child uses its stable package directory, bounded diagnostics
+   and a 60-second admission deadline.
+
+3. Every ordinary WasmProject construction path retains the same pointer handle
+   installed in its input driver. Readiness reflects the running driver, not
+   merely a configured host. Static bootstrap events deliver normalized position,
+   primary-button state and elapsed time; stop, unload and error detach listeners.
+   The existing WasmDocument lifecycle remains unchanged.
+
+4. Rich comment parsing is bounded by the physical line. An incomplete opener
+   rewinds speculative markup and consumes inert literal text without refunding
+   work. LF, CRLF, bare CR, EOF, scalar chunk boundaries and exhausted processing
+   fuel are covered; completed rich markup remains structured. Public bundle
+   execution and rendered HTML preserve the following program and escape markup.
+
+Fresh executed checks, all using nightly-2026-03-03 and locked Rust dependencies:
+
+- `mech-syntax --no-default-features --features full --lib`: 131 passed.
+- `mech-wasm --no-default-features --features browser_project,browser_compute
+  --lib project::tests::`: 60 passed. This includes live static pointer delivery,
+  start/stop readiness, duplicate-host rejection, nominal regeneration and
+  admission-versus-loading comparisons for scalar and operation cases.
+- `mech --no-default-features --features
+  full_source,bundle_web,formatter,serve,compute_backends_native --lib`:
+  303 passed, one environment-dependent actual-package test separately executed.
+  The native server lifecycle check used a permitted temporary loopback port.
+- `scripts/tests/static-project.test.mjs`: 6 passed.
+- CI impact/full-contract Python suites: 75 passed.
+- Actual `browser_project` package built with wasm-pack for wasm32, then exercised
+  by the publisher: native-supported `math/fmod` is rejected by this narrower
+  package before creating output; a compatible enum/u8/i32-source retry succeeds.
+  The ignored-by-default actual-package case ran and passed separately, using
+  the final native test executable. Full CI now selects it while the freshly
+  built browser package is still present.
+- Actual browser admission matches actual source loading for the checked scalar
+  cases. Valid u8/i32 annotations are accepted by this package; invalid literal
+  spellings are not used as evidence of a feature gap. A console-writing source
+  passes the compiler probe without logging an effect.
+- Maintained `browser_compute_canary` wasm32 check passed. An ad-hoc
+  `browser_project_core,browser_compute` native combination remains unqualified:
+  existing compare macro warnings in its incomplete vector feature closure are
+  not suppressed or repaired as part of this patch.
+- Canonical evidence imports, warning policy, compiler-planning quarantine,
+  runtime-factory safety, production resident routing, interactive architecture,
+  retired-value-system absence, formatting and whitespace checks passed.
+
+The initial broader native run exposed stale server tests decoding retained
+source as a native artifact, an empty compute-host configuration, missing
+controller setup, and CLI mocks lacking the new target API. Those fixtures now
+assert the current retained-source contract, exact dependency routes/resolutions,
+native execution and valid configured hosts. The final 303-test run is green;
+initial failed runs are not counted as qualification.
+
+Four deterministic negative controls were executed and restored:
+
+- Removing nominal provenance delivery fails the exact bootstrap provenance test.
+- Omitting pointer listener installation fails the normalized-sample test.
+- Disabling literal comment fallback fails the physical-line test (`-- use { here`
+  stops at byte 7 instead of byte 13).
+- Bypassing the real target compiler lets missing `math/fmod` escape admission
+  and fails the actual-package refusal assertion. Restored admission rejects it.
+
+Each mutation ran a nonempty decisive case. Restored Node, syntax and real-package
+checks pass. These suite counts overlap and are not added into a coverage total.
+C is not sealed. CI remains paused; the published correcting head is submitted
+for review before returning to the outstanding R26 review finding.

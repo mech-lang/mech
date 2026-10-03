@@ -1,5 +1,3 @@
-#[cfg(test)]
-use mech_runtime::CanonicalProgramBundle;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::future::Future;
 use std::io::{Error, ErrorKind};
@@ -662,7 +660,8 @@ impl ServerSourceRegistry {
             let mut extra_slots = HtmlShimExtraSlots::default();
             // Custom inline bootstraps own their CODE payload. Preserve the
             // retained-source transport used by the public fromEncoded API.
-            // The shipped controller obtains its compiled bundle from /code.
+            // The shipped controller obtains retained source from /code and
+            // compiles it against the browser's configured target catalog.
             if document_error.is_none()
                 && !shim.contains("{{DOCUMENT_SCRIPT}}")
                 && shim.contains("{{CODE}}")
@@ -2623,9 +2622,9 @@ mod tests {
         );
         let encoded =
             String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
-        let bundle = CanonicalProgramBundle::decode(&encoded, Some(source)).unwrap();
-        assert_eq!(bundle.canonical_uri, "bundle:///main.mec");
-        assert_eq!(bundle.source, source);
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), source);
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -2747,7 +2746,10 @@ result\n",
             compiler_hosts: vec![mech_runtime::HostInstanceConfig {
                 name: "compute".into(),
                 provider: "compute".into(),
-                settings: mech_runtime::ConfigValue::Map(Default::default()),
+                settings: mech_runtime::ConfigValue::Map(BTreeMap::from([(
+                    "region".into(),
+                    mech_runtime::ConfigValue::String("calculation".into()),
+                )])),
             }],
             compiler_roots: Some(BTreeSet::from([path.canonicalize().unwrap()])),
             ..ServerSourceRegistry::default()
@@ -2775,12 +2777,12 @@ result\n",
         } else {
             result.unwrap();
             let code = registry.get_route("/code/main.mec").unwrap();
-            let bundle =
-                CanonicalProgramBundle::decode(std::str::from_utf8(&code.bytes).unwrap(), None)
-                    .unwrap();
-            bundle
-                .validate_dependency_sources(|_| Some(source))
-                .unwrap();
+            let payload = mech_runtime::BrowserDocumentPayload::decode(
+                std::str::from_utf8(&code.bytes).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(payload.root_specifier(), "main.mec");
+            assert_eq!(payload.source(), source);
             let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
             assert!(html.contains("fetch(`/code/${sourceUrlKey}`)"), "{html}");
         }
@@ -2793,9 +2795,15 @@ result\n",
         let source = "answer := 42\nanswer\n";
         std::fs::write(root.join("my report.mec"), source).unwrap();
         let snapshot = snapshot(&root, "my report.mec");
-        let mut registry = ServerSourceRegistry::default();
+        let mut registry = document_registry();
         registry
-            .sync_workspace_snapshot(&root, &snapshot, "", "", &[])
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
             .unwrap();
 
         let encoded = String::from_utf8(
@@ -2879,8 +2887,9 @@ result\n",
         assert_eq!(registry.source_roots, ["main.mec"]);
         let encoded =
             String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
-        let bundle = CanonicalProgramBundle::decode(&encoded, None).unwrap();
-        assert_eq!(bundle.canonical_uri, "bundle:///main.mec");
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), "answer := 42\nanswer\n");
         assert_eq!(
             registry.get_route("/source/main.mec").unwrap().bytes,
             b"answer := 42\nanswer\n",
@@ -2939,14 +2948,20 @@ result\n",
             .unwrap();
         let encoded =
             String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
-        let bundle = CanonicalProgramBundle::decode(&encoded, None).unwrap();
-        assert_eq!(bundle.canonical_uri, "bundle:///main.mec");
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
         assert_eq!(
-            bundle.source_dependencies,
-            BTreeMap::from([(
-                "bundle:///dep.mec".into(),
-                mech_core::hash_str("value := 41.0\n<+ value\n")
-            ),])
+            registry.get_route("/source/dep.mec").unwrap().bytes,
+            b"value := 41.0\n<+ value\n",
+        );
+        assert!(payload.source().contains("timer://clock/tick"));
+        assert!(
+            registry
+                .source_resolutions
+                .iter()
+                .any(|entry| entry.referrer == "main.mec"
+                    && entry.specifier == "./dep.mec"
+                    && entry.target == "dep.mec")
         );
         assert!(registry.get_route("/source/dep.mec").is_some());
         assert!(
@@ -2972,9 +2987,6 @@ result\n",
             registry.get_route("/code/dep.mec").is_none(),
             "dependencies are rendered, not implicit run roots"
         );
-        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bundle.bytecode).unwrap();
-        assert!(artifact.requirements().iter().any(|(_, requirement)| matches!(requirement,
-            mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick")));
 
         // Serving a retained revision must not read ahead to unrelated disk edits.
         std::fs::write(root.join("dep.mec"), "value := 43.0\n<+ value\n").unwrap();
@@ -3003,12 +3015,13 @@ result\n",
             .unwrap();
         let current = registry.get_route("/source/dep.mec").unwrap();
         let text = std::str::from_utf8(&current.bytes).unwrap();
-        assert!(bundle.validate_dependency_sources(|_| Some(text)).is_err());
+        assert_eq!(text, "value := 43.0\n<+ value\n");
         let changed =
             String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
-        let changed = CanonicalProgramBundle::decode(&changed, None).unwrap();
-        changed.validate_dependency_sources(|_| Some(text)).unwrap();
-        assert_ne!(changed.artifact_revision, bundle.artifact_revision);
+        let changed = mech_runtime::BrowserDocumentPayload::decode(&changed).unwrap();
+        // A dependency edit updates its source route; the unchanged root is
+        // still transported exactly, not replaced with a native artifact.
+        assert_eq!(changed, payload);
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -3942,14 +3955,15 @@ result\n",
         let encoded = String::from_utf8(code.bytes).unwrap();
         assert_ne!(encoded, source_text);
         assert!(!encoded.contains("x := 1"));
-        let bundle = CanonicalProgramBundle::decode(&encoded, None).unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
         let mut runtime = mech_runtime::RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_catalog())
             .build()
             .unwrap();
         let durability = runtime.config().resident_durability;
         let loaded = runtime
-            .load_bytecode_program(&bundle.bytecode, durability)
+            .load_source_program(payload.source(), durability)
             .unwrap();
         assert_eq!(loaded.initial_value.format_canonical_inline(), "1");
         std::fs::remove_dir_all(root).unwrap();

@@ -178,6 +178,44 @@ pub struct ProgramCompiler {
     max_source_bytes: Option<u64>,
 }
 
+#[cfg(feature = "resident-routing")]
+impl ProgramCompiler {
+    /// Validate the concrete target kernels/layouts using the loader's own
+    /// resident admission boundary. No instance, driver, turn or effect is
+    /// published; external shapes come from provider-owned planning snapshots.
+    pub fn preflight_resident_artifact(
+        &self,
+        artifact: &ProgramArtifact,
+    ) -> MResult<mech_engine::resident::ResidentActivationPreflight> {
+        use mech_engine::resident::{
+            ResidentActivationOptions, ResidentExternalAdmission, preflight_resident_target,
+        };
+        let facts = super::loading::plan_resident_activation_facts(&self.resources, artifact)?;
+        let options = ResidentActivationOptions {
+            integrity: ResidentIntegrityMode::Checked,
+            external: if artifact.requirements().is_empty() {
+                ResidentExternalAdmission::Deny
+            } else {
+                ResidentExternalAdmission::StructuralOnly
+            },
+            memory_budget: None,
+        };
+        with_canonical_planning_step_limit(self.program_config.limits.max_planning_steps, || {
+            preflight_resident_target(artifact, &self.function_catalog, &facts, options).map_err(
+                |error| {
+                    route_failure(
+                        ResidentRouteFailureClass::SemanticUnsupported,
+                        format!(
+                            "OperationUnavailableForTarget({:?}) at {:?} ({:?}): {}",
+                            error.target, error.node, error.operation, error.reason
+                        ),
+                    )
+                },
+            )
+        })
+    }
+}
+
 #[cfg(feature = "compute")]
 #[derive(Debug)]
 pub struct MixedProgramCompilation {

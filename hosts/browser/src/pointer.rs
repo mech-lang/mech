@@ -60,6 +60,13 @@ impl PointerInputHandle {
         }
     }
 
+    /// Whether the runtime started this handle's relevant input driver.
+    pub fn is_running(&self) -> bool {
+        self.state
+            .lock()
+            .is_ok_and(|state| state.live && state.ingress.is_some())
+    }
+
     pub fn submit(&self, x: f64, y: f64, pressed: bool, delta_seconds: f64) -> MResult<()> {
         let mut state = self
             .state

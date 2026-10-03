@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn default_document_shim_embeds_decodable_standalone_payload() {
     let source = "answer := 41\nanswer\n";
-    let document = canonical_document(source).unwrap();
+    let document = canonical_document(Path::new("document.mec"), source).unwrap();
     let encoded = mech_runtime::BrowserDocumentPayload::new("document.mec", source)
         .unwrap()
         .encode()

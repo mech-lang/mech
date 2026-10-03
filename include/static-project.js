@@ -24,6 +24,60 @@ const script = findBootstrapScript(document, import.meta.url);
 const { projectBase, maxInputsPerFrame } = readBootstrapOptions(script, window.location.href);
 let project;
 let running = false;
+let releasePointerInput = () => {};
+
+function initializePointerInput() {
+  if (typeof project.hasPointerInput !== "function" || !project.hasPointerInput()) return;
+  if (typeof project.pointerInput !== "function") {
+    throw new Error("static bundle WASM profile is missing the live pointer input API");
+  }
+  let pressed = false;
+  let timestamp = null;
+  const submit = event => {
+    if (!running) return;
+    const bounds = document.documentElement.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0 ||
+        !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY) ||
+        !Number.isFinite(event.timeStamp)) return;
+    const x = Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width) * 2 - 1));
+    const y = Math.max(-1, Math.min(1, 1 - ((event.clientY - bounds.top) / bounds.height) * 2));
+    const deltaSeconds = timestamp === null ? 0 : Math.max(0, Math.min(1, (event.timeStamp - timestamp) / 1000));
+    timestamp = event.timeStamp;
+    try {
+      project.pointerInput(x, y, pressed, deltaSeconds);
+    } catch (error) {
+      stopProject(error);
+    }
+  };
+  const down = event => {
+    if (event.button !== 0) return;
+    pressed = true;
+    submit(event);
+  };
+  const release = event => {
+    if (!pressed) return;
+    pressed = false;
+    submit(event);
+  };
+  const up = event => {
+    if (event.button === 0) release(event);
+  };
+  const listeners = [["pointermove", submit], ["pointerdown", down], ["pointerup", up], ["pointercancel", release]];
+  for (const [name, listener] of listeners) window.addEventListener(name, listener);
+  releasePointerInput = () => {
+    for (const [name, listener] of listeners) window.removeEventListener(name, listener);
+    releasePointerInput = () => {};
+  };
+}
+
+function stopProject(error) {
+  running = false;
+  releasePointerInput();
+  if (project) {
+    try { project.stop(); } catch (stopError) { console.error(stopError); }
+  }
+  if (error) console.error(error);
+}
 
 async function fetchText(path) {
   const response = await fetch(new URL(path, projectBase));
@@ -56,7 +110,13 @@ async function readProjectSourceManifest(moduleUrl) {
       source =>
         typeof source?.specifier !== "string" ||
         typeof source?.url !== "string" ||
-        (source.documentUrl !== undefined && typeof source.documentUrl !== "string"),
+        (source.documentUrl !== undefined && typeof source.documentUrl !== "string") ||
+        (source.nominalOrigin !== undefined &&
+          (!Array.isArray(source.nominalOrigin?.segments) ||
+           source.nominalOrigin.segments.length === 0 ||
+           source.nominalOrigin.segments.some(segment => typeof segment !== "string"))) ||
+        (source.nominalPackageId !== undefined &&
+          (source.nominalOrigin === undefined || typeof source.nominalPackageId !== "string")),
     ) ||
     !Array.isArray(manifest.resolutions) ||
     manifest.resolutions.some(
@@ -84,19 +144,28 @@ async function main() {
     typeof WasmProject.supportsServedAuthority !== "function" ||
     WasmProject.supportsServedAuthority() !== true ||
     typeof WasmProject.supportsServedDocumentResolutions !== "function" ||
-    WasmProject.supportsServedDocumentResolutions() !== true
+    WasmProject.supportsServedDocumentResolutions() !== true ||
+    typeof WasmProject.supportsServedDocumentProvenance !== "function" ||
+    WasmProject.supportsServedDocumentProvenance() !== true
   ) {
     throw new Error("static bundle WASM profile mismatch: rebuild with browser_project support");
   }
   const config = await fetchText("mech.mcfg");
   const manifest = await readProjectSourceManifest(import.meta.url);
-  const sources = {};
-  const documents = {};
+  const sources = Object.create(null);
+  const documents = Object.create(null);
+  const provenance = Object.create(null);
 
   for (const source of manifest.sources) {
     sources[source.specifier] = await fetchText(source.url);
     if (source.documentUrl !== undefined) {
       documents[source.specifier] = await fetchText(source.documentUrl);
+    }
+    if (source.nominalOrigin !== undefined) {
+      provenance[source.specifier] = {
+        nominalOrigin: source.nominalOrigin,
+        nominalPackageId: source.nominalPackageId ?? null,
+      };
     }
   }
 
@@ -110,9 +179,11 @@ async function main() {
     documents,
     manifest.roots,
     manifest.resolutions,
+    provenance,
   );
   project.start();
   running = true;
+  initializePointerInput();
   requestAnimationFrame(frame);
 }
 
@@ -123,30 +194,16 @@ function frame() {
   try {
     project.frame(maxInputsPerFrame);
   } catch (error) {
-    running = false;
-    try {
-      project.stop();
-    } catch (stopError) {
-      console.error(stopError);
-    }
-    console.error(error);
+    stopProject(error);
     return;
   }
   requestAnimationFrame(frame);
 }
 
 window.addEventListener("beforeunload", () => {
-  running = false;
-  if (project) {
-    try {
-      project.stop();
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  stopProject();
 });
 
 main().catch((error) => {
-  running = false;
-  console.error(error);
+  stopProject(error);
 });

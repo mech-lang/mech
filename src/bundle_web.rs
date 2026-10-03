@@ -3,7 +3,10 @@ mod planning;
 
 use std::collections::BTreeSet;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 use mech_core::*;
 #[cfg(test)]
@@ -14,6 +17,7 @@ use crate::fs_paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig, resolve_config_path};
 
 const STATIC_PROJECT_BOOTSTRAP: &str = include_str!("../include/static-project.js");
+const STATIC_PROJECT_ADMISSION: &str = include_str!("../include/static-project-admission.mjs");
 const STATIC_PROJECT_SCRIPT: &str =
     r#"<script type="module" src="./_mech/project.js" data-mech-project="."></script>"#;
 
@@ -46,6 +50,8 @@ struct BundledSource {
     specifier: String,
     url: String,
     document_url: Option<String>,
+    nominal_origin: Option<CanonicalNominalPath>,
+    nominal_package_id: Option<String>,
 }
 
 pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult> {
@@ -59,19 +65,13 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     let project_dir = options.project_dir.canonicalize()?;
     let base_dir = options.loaded_config.base_dir.canonicalize()?;
     let wasm_pkg = options.wasm_pkg.canonicalize()?;
-    fs::create_dir_all(&options.output_dir)?;
-    let output_dir = options.output_dir.canonicalize()?;
-    if output_dir == project_dir {
-        return Err(validation_error(format!(
-            "bundle-web output directory must not be the project root: {}. Use a subdirectory such as dist/<name>.",
-            output_dir.display(),
-        )));
-    }
-    if output_dir == base_dir {
-        return Err(validation_error(format!(
-            "bundle-web output directory must not be the config base directory: {}. Use a subdirectory such as dist/<name>.",
-            output_dir.display(),
-        )));
+    let config_source = fs::read_to_string(&options.loaded_config.path)?;
+    if options.output_dir.exists() {
+        validate_bundle_output_directory(
+            &options.output_dir.canonicalize()?,
+            &project_dir,
+            &base_dir,
+        )?;
     }
     if options
         .loaded_config
@@ -104,20 +104,6 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     validate_static_web_shim(&shim_string)?;
     let shim_string = ensure_static_project_bootstrap(&shim_string);
 
-    copy_project_static_assets(
-        &project_dir,
-        &output_dir,
-        &[output_dir.clone(), wasm_pkg.clone()],
-    )?;
-    fs::write(output_dir.join("style.css"), &stylesheet_string)?;
-    copy_wasm_package(&wasm_pkg, &output_dir.join("pkg"))?;
-    fs::copy(&options.loaded_config.path, output_dir.join("mech.mcfg"))?;
-    fs::create_dir_all(output_dir.join("_mech"))?;
-    fs::write(
-        output_dir.join("_mech/project.js"),
-        STATIC_PROJECT_BOOTSTRAP,
-    )?;
-
     let runtime_config = crate::apply_runtime_config_patch(
         mech_runtime::RuntimeConfig::default(),
         &options.loaded_config.document.runtime,
@@ -126,13 +112,11 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         &options.loaded_config.document,
         &runtime_config,
     )?;
-    let index_html = output_dir.join("index.html");
     let injection = options
         .host_config_injection
         .unwrap_or_else(|| HostAuthorityInjection::BrowserUnsigned(host_config));
     let root_shim_with_config =
         crate::inject_host_authority_injection_script(&shim_string, &injection)?;
-    fs::write(&index_html, &root_shim_with_config)?;
 
     let root_paths = options
         .loaded_config
@@ -145,6 +129,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         .map(|path| resolve_config_path(&base_dir, path).canonicalize())
         .collect::<std::io::Result<BTreeSet<_>>>()?;
     let mut bundled_sources = Vec::with_capacity(options.source_paths.len());
+    let mut prepared_files = Vec::new();
     let (resolver, documents, resolutions) =
         planning::retained_sources(&options.source_paths, &base_dir, &project_dir)?;
     let mut compiler = crate::configured_browser_compiler_builder(
@@ -169,9 +154,11 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             document_url: root_paths
                 .contains(&read_source_path)
                 .then(|| format!("code/{}", percent_encode_url_path(&specifier))),
+            nominal_origin: document.nominal_origin().cloned(),
+            nominal_package_id: document.nominal_package_id().map(str::to_owned),
         });
 
-        write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
+        prepared_files.push(("source", relative.clone(), source_text.into_bytes()));
 
         if root_paths.contains(&read_source_path) {
             let encoded = crate::browser_planning::compile_browser_document_payload(
@@ -181,7 +168,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
                 document,
             )?
             .encode()?;
-            write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
+            prepared_files.push(("code", relative.clone(), encoded.into_bytes()));
         }
 
         let html_relative = relative.with_extension("html");
@@ -195,7 +182,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             &HtmlShimExtraSlots::default(),
         )?
         .html;
-        write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
+        prepared_files.push(("html", html_relative, html.into_bytes()));
     }
     let mut roots = Vec::with_capacity(
         options
@@ -220,6 +207,69 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             })?;
         roots.push(source.specifier.clone());
     }
+    let sources = bundled_sources
+        .iter()
+        .map(|source| {
+            let document = &documents[&format!("bundle:///{}", source.specifier)];
+            (
+                source.specifier.clone(),
+                document.source().to_contiguous_string(),
+            )
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let provenance = bundled_sources
+        .iter()
+        .filter_map(|source| {
+            source.nominal_origin.as_ref().map(|origin| {
+                (
+                    source.specifier.clone(),
+                    serde_json::json!({
+                        "nominalOrigin": origin,
+                        "nominalPackageId": source.nominal_package_id,
+                    }),
+                )
+            })
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    // Freeze the supplied package before asking it to admit sources, then
+    // publish those same bytes. A concurrent rebuild cannot replace the
+    // validated compiler with a different package between check and copy.
+    let admitted_package = tempfile::tempdir()?;
+    copy_wasm_package(&wasm_pkg, admitted_package.path())?;
+    validate_static_source_closure(
+        admitted_package.path(),
+        &serde_json::json!({
+            "config": config_source,
+            "sources": sources,
+            "roots": roots,
+            "resolutions": resolutions,
+            "provenance": provenance,
+        }),
+    )?;
+
+    // Both native planning and the exact browser package have admitted the
+    // retained closure before publishing any project or source files.
+    fs::create_dir_all(&options.output_dir)?;
+    let output_dir = options.output_dir.canonicalize()?;
+    validate_bundle_output_directory(&output_dir, &project_dir, &base_dir)?;
+    copy_project_static_assets(
+        &project_dir,
+        &output_dir,
+        &[output_dir.clone(), wasm_pkg.clone()],
+    )?;
+    fs::write(output_dir.join("style.css"), &stylesheet_string)?;
+    copy_wasm_package(admitted_package.path(), &output_dir.join("pkg"))?;
+    fs::write(output_dir.join("mech.mcfg"), &config_source)?;
+    fs::create_dir_all(output_dir.join("_mech"))?;
+    fs::write(
+        output_dir.join("_mech/project.js"),
+        STATIC_PROJECT_BOOTSTRAP,
+    )?;
+    let index_html = output_dir.join("index.html");
+    fs::write(&index_html, &root_shim_with_config)?;
+    for (directory, relative, bytes) in prepared_files {
+        write_bundle_file(&output_dir, directory, &relative, &bytes)?;
+    }
     let source_entries = bundled_sources
         .iter()
         .map(|source| {
@@ -229,6 +279,12 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             });
             if let Some(url) = &source.document_url {
                 entry["documentUrl"] = serde_json::json!(url);
+            }
+            if let Some(origin) = &source.nominal_origin {
+                entry["nominalOrigin"] = serde_json::json!(origin);
+            }
+            if let Some(package) = &source.nominal_package_id {
+                entry["nominalPackageId"] = serde_json::json!(package);
             }
             entry
         })
@@ -241,12 +297,31 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     }))
     .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
     fs::write(output_dir.join("_mech/project-sources.json"), manifest)?;
-
     Ok(BundleWebResult {
         output_dir,
         index_html,
         source_count: options.source_paths.len(),
     })
+}
+
+fn validate_bundle_output_directory(
+    output_dir: &Path,
+    project_dir: &Path,
+    base_dir: &Path,
+) -> MResult<()> {
+    if output_dir == project_dir {
+        return Err(validation_error(format!(
+            "bundle-web output directory must not be the project root: {}. Use a subdirectory such as dist/<name>.",
+            output_dir.display(),
+        )));
+    }
+    if output_dir == base_dir {
+        return Err(validation_error(format!(
+            "bundle-web output directory must not be the config base directory: {}. Use a subdirectory such as dist/<name>.",
+            output_dir.display(),
+        )));
+    }
+    Ok(())
 }
 
 pub(crate) fn validate_static_bundle_wasm_package(path: &Path) -> MResult<()> {
@@ -272,10 +347,69 @@ pub(crate) fn validate_static_bundle_wasm_package(path: &Path) -> MResult<()> {
     if !wrapper.contains("WasmProject")
         || !wrapper.contains("fromServedDocuments")
         || !wrapper.contains("supportsServedDocumentResolutions")
+        || !wrapper.contains("supportsServedDocumentProvenance")
+        || !wrapper.contains("validateStaticSources")
     {
         return Err(static_wasm_profile_error());
     }
 
+    Ok(())
+}
+
+fn validate_static_source_closure(package: &Path, request: &serde_json::Value) -> MResult<()> {
+    let mut child = Command::new("node")
+        .args(["--input-type=module", "--eval", STATIC_PROJECT_ADMISSION])
+        .arg(package)
+        // The admitted package is owned and stable for this entire probe.
+        // Do not inherit a caller's unrelated or concurrently removed cwd.
+        .current_dir(package)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| {
+            validation_error(format!(
+                "bundle-web requires Node.js to validate the supplied browser package: {error}"
+            ))
+        })?;
+    // Read stderr concurrently so a compiler diagnostic cannot fill the pipe.
+    let mut stderr = child.stderr.take().expect("piped child stderr");
+    let diagnostics = std::thread::spawn(move || {
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        let _ = stderr.by_ref().take(64 * 1024).read_to_end(&mut bytes);
+        // Continue draining after the diagnostic limit without retaining it.
+        let _ = std::io::copy(&mut stderr, &mut std::io::sink());
+        String::from_utf8_lossy(&bytes).into_owned()
+    });
+    let input = serde_json::to_vec(request).map_err(|error| validation_error(error.to_string()))?;
+    let write_result = child
+        .stdin
+        .take()
+        .expect("piped child stdin")
+        .write_all(&input);
+    let started = Instant::now();
+    let status = loop {
+        if let Some(status) = child.try_wait()? {
+            break status;
+        }
+        if started.elapsed() >= Duration::from_secs(60) {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = diagnostics.join();
+            return Err(validation_error(
+                "browser package source admission exceeded 60 seconds",
+            ));
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    let diagnostic = diagnostics.join().unwrap_or_default();
+    if !status.success() || write_result.is_err() {
+        return Err(validation_error(format!(
+            "serve.wasm cannot compile this project's retained source closure: {}",
+            diagnostic.trim()
+        )));
+    }
     Ok(())
 }
 
@@ -670,6 +804,26 @@ fn copy_wasm_package(wasm_pkg: &Path, output_pkg: &Path) -> MResult<()> {
         wasm_pkg.join("mech_wasm_bg.wasm"),
         output_pkg.join("mech_wasm_bg.wasm"),
     )?;
+    let snippets = wasm_pkg.join("snippets");
+    if snippets.exists() {
+        copy_wasm_snippets(&snippets, &output_pkg.join("snippets"))?;
+    }
+    Ok(())
+}
+
+fn copy_wasm_snippets(source: &Path, destination: &Path) -> MResult<()> {
+    if fs::symlink_metadata(source)?.file_type().is_symlink() {
+        return Err(validation_error("WASM snippets must not contain symlinks"));
+    }
+    if source.is_dir() {
+        fs::create_dir_all(destination)?;
+        for entry in fs::read_dir(source)? {
+            let entry = entry?;
+            copy_wasm_snippets(&entry.path(), &destination.join(entry.file_name()))?;
+        }
+    } else {
+        fs::copy(source, destination)?;
+    }
     Ok(())
 }
 
@@ -739,6 +893,8 @@ mod tests {
   static fromServedDocuments() {}
   static supportsServedAuthority() { return true; }
   static supportsServedDocumentResolutions() { return true; }
+  static supportsServedDocumentProvenance() { return true; }
+  static validateStaticSources() { return true; }
 }
 export default async function init() {}
 "#;
@@ -1383,6 +1539,240 @@ export default async function init() {}
 
         assert!(error.contains("static served-project support"));
         assert!(!out.exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn browser_source_admission_decline_does_not_publish_any_files() {
+        let root = temp_root("browser-language-no-output");
+        let loaded = write_demo_project(&root);
+        // A package probe, not a native compiler failure. The ordinary source
+        // and native catalog are valid, but the selected target declines them.
+        fs::write(root.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER.replace(
+            "static validateStaticSources() { return true; }",
+            "static validateStaticSources() { throw new Error('target language does not support u8'); }",
+        )).unwrap();
+        let out = root.join("out");
+        let error = format!(
+            "{:?}",
+            bundle_web_project(options(&root, &out, loaded.clone())).unwrap_err()
+        );
+        assert!(
+            error.contains("target language does not support u8"),
+            "{error}"
+        );
+        assert!(!out.exists());
+        fs::create_dir_all(&out).unwrap();
+        fs::write(out.join("accepted.txt"), "previous accepted output").unwrap();
+        assert!(bundle_web_project(options(&root, &out, loaded)).is_err());
+        assert_eq!(
+            fs::read_to_string(out.join("accepted.txt")).unwrap(),
+            "previous accepted output"
+        );
+        assert_eq!(fs::read_dir(&out).unwrap().count(), 1);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn publication_uses_the_admitted_package_and_retained_config_bytes() {
+        let root = temp_root("frozen-browser-package");
+        let loaded = write_demo_project(&root);
+        let config = fs::read_to_string(&loaded.path).unwrap();
+        let js = root.join("pkg/mech_wasm.js");
+        fs::create_dir_all(root.join("pkg/snippets/fixture")).unwrap();
+        fs::write(
+            root.join("pkg/snippets/fixture/helper.js"),
+            "export const answer = 42;\n",
+        )
+        .unwrap();
+        let admission = format!(
+            "static validateStaticSources() {{ if (answer !== 42) throw new Error('missing helper'); writeFileSync({}, 'rebuilt package'); writeFileSync({}, 'changed configuration'); return true; }}",
+            serde_json::to_string(&js).unwrap(),
+            serde_json::to_string(&loaded.path).unwrap(),
+        );
+        let wrapper = format!(
+            "import {{writeFileSync}} from 'node:fs';\nimport {{answer}} from './snippets/fixture/helper.js';\n{}",
+            STATIC_WASM_WRAPPER.replace(
+                "static validateStaticSources() { return true; }",
+                &admission
+            )
+        );
+        fs::write(&js, &wrapper).unwrap();
+        let out = root.join("out");
+        bundle_web_project(options(&root, &out, loaded)).unwrap();
+        assert_eq!(fs::read_to_string(js).unwrap(), "rebuilt package");
+        assert_eq!(
+            fs::read_to_string(out.join("pkg/mech_wasm.js")).unwrap(),
+            wrapper
+        );
+        assert_eq!(
+            fs::read_to_string(out.join("pkg/snippets/fixture/helper.js")).unwrap(),
+            "export const answer = 42;\n"
+        );
+        assert_eq!(fs::read_to_string(out.join("mech.mcfg")).unwrap(), config);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    #[ignore = "requires an actual browser_project WASM package in MECH_STATIC_TEST_WASM_PKG"]
+    fn actual_browser_package_admits_compatible_source_and_refuses_missing_language() {
+        let root = temp_root("actual-target-language");
+        let loaded = write_demo_project(&root);
+        fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = 'published-package'\nversion = '1.0.0'\n",
+        )
+        .unwrap();
+        let package = PathBuf::from(
+            std::env::var_os("MECH_STATIC_TEST_WASM_PKG").expect("actual browser package path"),
+        );
+        let out = root.join("out");
+        // Native full-source admission is deliberately broader than this
+        // stock package. The actual publisher must expose the target decline.
+        fs::write(
+            root.join("demo.mec"),
+            "+> math\nvalue := math/fmod(5.3, 2.0)\n",
+        )
+        .unwrap();
+        compile_test_bundle(&root, &loaded, &[root.join("demo.mec")]);
+        let mut requested = options(&root, &out, loaded.clone());
+        requested.wasm_pkg = package.clone();
+        let error = format!("{:?}", bundle_web_project(requested).unwrap_err());
+        assert!(error.contains("source closure"), "{error}");
+        assert!(error.contains("math/fmod"), "{error}");
+        assert!(!out.exists());
+        // A compatible retry succeeds using this same selected package,
+        // including nominal metadata and non-default scalar schemas.
+        fs::write(root.join("demo.mec"), "<event> := :idle | :busy\nstate<event> := :idle\nvalue<u8> := 7\nother<i32> := -7\nvalue\n").unwrap();
+        let mut requested = options(&root, &out, loaded);
+        requested.wasm_pkg = package;
+        bundle_web_project(requested).unwrap();
+        assert!(out.join("_mech/project-sources.json").is_file());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn static_manifest_transports_retained_nominal_provenance() {
+        let root = temp_root("static-nominal-origin");
+        let loaded = write_demo_project(&root);
+        fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = 'published-package'\nversion = '1.0.0'\n",
+        )
+        .unwrap();
+        let out = root.join("out");
+        fs::write(
+            root.join("demo.mec"),
+            "<event> := :idle | :busy\nstate<event> := :idle\nstate\n",
+        )
+        .unwrap();
+        let (_, retained, _) =
+            planning::retained_sources(&[root.join("demo.mec")], &root, &root).unwrap();
+        let document = &retained["bundle:///demo.mec"];
+        bundle_web_project(options(&root, &out, loaded)).unwrap();
+        let manifest: serde_json::Value =
+            serde_json::from_slice(&fs::read(out.join("_mech/project-sources.json")).unwrap())
+                .unwrap();
+        let source = &manifest["sources"][0];
+        assert_eq!(
+            source["nominalOrigin"],
+            serde_json::to_value(document.nominal_origin().unwrap()).unwrap()
+        );
+        assert_eq!(
+            source["nominalPackageId"],
+            document.nominal_package_id().unwrap()
+        );
+        assert!(!manifest.to_string().contains(root.to_str().unwrap()));
+        let native = compile_test_bundle(
+            &root,
+            &crate::load_mech_config_path(root.join("demo.mcfg"), Some(root.clone())).unwrap(),
+            &[root.join("demo.mec")],
+        );
+        let native = mech_engine::decode_program_artifact_bytecode_v1(&native.bytecode).unwrap();
+        let origins = source["nominalOrigin"].clone();
+        let origin: CanonicalNominalPath = serde_json::from_value(origins).unwrap();
+        let mut resolver = mech_runtime::InMemorySourceResolver::new();
+        resolver
+            .insert_source(
+                "demo.mec",
+                mech_runtime::ResolvedSource::new(
+                    "demo.mec",
+                    "memory:demo.mec",
+                    MechSourceCode::String(fs::read_to_string(root.join("demo.mec")).unwrap()),
+                )
+                .with_nominal_origin(origin)
+                .with_nominal_package_id(source["nominalPackageId"].as_str().unwrap())
+                .retain_source_document(mech_syntax::document::Revision(0), Default::default())
+                .unwrap()
+                .admit_canonical_document()
+                .unwrap(),
+            )
+            .unwrap();
+        let product = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap()
+            .compile_canonical_interactive_root(mech_runtime::SourceRequest::new("demo.mec"))
+            .unwrap();
+        let nominal = |artifact: &mech_engine::ProgramArtifact| {
+            artifact
+                .schemas()
+                .entries()
+                .filter_map(|entry| {
+                    if let SchemaBody::Enum { key, .. } = entry.schema().body() {
+                        Some((*key, entry.key()))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>()
+        };
+        assert!(!nominal(&native).is_empty());
+        assert_eq!(nominal(&native), nominal(product.artifact()));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn incomplete_comment_markup_does_not_hide_the_following_program() {
+        let root = temp_root("incomplete-comments");
+        let loaded = write_demo_project(&root);
+        let source = "-- use { here\n// unmatched `code\n-- TODO [ <script>alert(1)</script>\nanswer := 42\nanswer\n";
+        fs::write(root.join("demo.mec"), source).unwrap();
+        let bundle = compile_test_bundle(&root, &loaded, &[root.join("demo.mec")]);
+        let mut runtime = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        runtime
+            .load_bytecode_program(&bundle.bytecode, runtime.config().resident_durability)
+            .unwrap();
+        assert_eq!(
+            runtime
+                .root_symbol_value("answer")
+                .unwrap()
+                .format_canonical_inline(),
+            "42"
+        );
+        let out = root.join("out");
+        bundle_web_project(options(&root, &out, loaded)).unwrap();
+        assert_eq!(decode_browser_payload(&out).source(), source);
+        let html = fs::read_to_string(out.join("html/demo.html")).unwrap();
+        assert!(!html.contains("<script>alert(1)</script>"));
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "demo.mec",
+            mech_syntax::document::Revision(0),
+            source,
+            Default::default(),
+        )
+        .unwrap();
+        let highlighted = mech_runtime::CanonicalDocumentRenderer
+            .render_repl_source_html(&document.document())
+            .unwrap()
+            .expect("complete root source must render");
+        assert!(highlighted.contains("here"));
+        assert!(highlighted.contains("&lt;script&gt;"));
+        assert!(!highlighted.contains("<script>alert(1)</script>"));
         fs::remove_dir_all(root).unwrap();
     }
 

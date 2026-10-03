@@ -8,7 +8,7 @@ pub mod canonical_source;
 pub mod capabilities;
 #[cfg(feature = "cli_core")]
 pub mod commands;
-#[cfg(feature = "compute_backends_native")]
+#[cfg(all(feature = "compute_backends_native", feature = "run"))]
 pub(crate) mod compute;
 #[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 pub mod config;

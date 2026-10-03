@@ -149,9 +149,9 @@ project = ["mech-runtime", "mech-runtime/source"]
 cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
 bundle_web_core = [
-      "project", "web_host", "formatter_core", "serde", "dep:sha2",
+      "project", "web_host", "formatter_core", "serde", "dep:sha2", "dep:tempfile",
       "mech-engine/compiler", "mech-syntax/program", "mech-stdlib/standard_compiler",
-      "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source", "mech-runtime/pretty_print",
       ]
 bundle_web = ["cli_core", "bundle_web_core"]
 # `mech serve` owns the same retained source-to-resident compilation boundary as
@@ -427,6 +427,7 @@ mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false
 windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
 
 [dependencies]
+tempfile = { version = "3.26.0", optional = true }
 mech-core        = { version = "0.3.5", path = "src/core", default-features = false }
 mech-syntax      = { version = "0.3.5", path = "src/syntax", default-features = false }
 mech-engine = { version = "0.3.5", path = "src/engine", default-features = false }

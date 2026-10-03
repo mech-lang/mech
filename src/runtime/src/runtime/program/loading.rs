@@ -830,95 +830,110 @@ impl MechRuntime {
         &self,
         artifact: &ProgramArtifact,
     ) -> MResult<ActivationFacts> {
-        let mut facts = ActivationFacts::default();
-        for node in artifact.nodes() {
-            let Some(requirement) = node
-                .as_operation()
-                .and_then(|operation| operation.requirement)
-            else {
-                continue;
-            };
-            let Some(ApplicationRequirement::Resource(request)) =
-                artifact.requirements().get(requirement)
-            else {
-                continue;
-            };
-            if request.intent != ResourceIntent::Read {
-                continue;
-            }
-            let mut dynamic_outputs = Vec::new();
-            for binding_index in node.output_bindings.clone() {
-                let Some(BindingDeclaration::Output { target, .. }) =
-                    artifact.bindings().get(binding_index as usize)
-                else {
-                    return Err(route_failure(
-                        ResidentRouteFailureClass::InvalidArtifact,
-                        "resident observation has an invalid output binding",
-                    ));
-                };
-                let declaration = artifact.slots().get(target.get() as usize).ok_or_else(|| {
-                    route_failure(
-                        ResidentRouteFailureClass::InvalidArtifact,
-                        "resident observation output slot is out of range",
-                    )
-                })?;
-                let schema = artifact
-                    .schemas()
-                    .entry(declaration.schema)
-                    .ok_or_else(|| {
-                        route_failure(
-                            ResidentRouteFailureClass::InvalidArtifact,
-                            "resident observation output schema is out of range",
-                        )
-                    })?;
-                if !schema.schema().dimension_parameters().is_empty() {
-                    dynamic_outputs.push((*target, schema));
-                }
-            }
-            if dynamic_outputs.is_empty() {
-                continue;
-            }
-            let binding = self
-                .resources
-                .resident_provider_binding(&request.base_uri)
-                .map_err(classify_provider_preflight)?;
-            let planned = binding
-                .plan_read(RuntimeResourceReadRequest {
-                    base_uri: request.base_uri.clone(),
-                    path: request.path.clone(),
-                    context_name: request.context_name.clone(),
-                })
-                .map_err(classify_provider_preflight)?;
-            for (target, schema) in dynamic_outputs {
-                if schema.key() != planned.schema_key() {
-                    return Err(route_failure(
-                        ResidentRouteFailureClass::ProviderContractMismatch,
-                        "provider planning value does not match the declared observation schema",
-                    ));
-                }
-                schema
-                    .schema()
-                    .instantiate_shape(planned.shape().parameter_values().to_vec().into_boxed_slice())
-                    .map_err(|error| {
-                        route_failure(
-                            ResidentRouteFailureClass::ProviderContractMismatch,
-                            format!("provider planning value has an invalid observation shape: {error:?}"),
-                        )
-                    })?;
-                if let Some(existing) = facts.slot_shapes.insert(target, planned.shape().clone())
-                    && existing != *planned.shape()
-                {
-                    return Err(route_failure(
-                        ResidentRouteFailureClass::ProviderContractMismatch,
-                        "provider planning values disagree about an observation slot shape",
-                    ));
-                }
-            }
-        }
-        Ok(facts)
+        plan_resident_activation_facts(&self.resources, artifact)
     }
 }
 
+/// Provider-owned planning snapshots shared by loading and target preflight.
+/// This reads only the provider's effect-free plan_read boundary.
+pub(super) fn plan_resident_activation_facts(
+    resources: &crate::RuntimeResourceRegistry,
+    artifact: &ProgramArtifact,
+) -> MResult<ActivationFacts> {
+    let mut facts = ActivationFacts::default();
+    for node in artifact.nodes() {
+        let Some(requirement) = node
+            .as_operation()
+            .and_then(|operation| operation.requirement)
+        else {
+            continue;
+        };
+        let Some(ApplicationRequirement::Resource(request)) =
+            artifact.requirements().get(requirement)
+        else {
+            continue;
+        };
+        if request.intent != ResourceIntent::Read {
+            continue;
+        }
+        let mut dynamic_outputs = Vec::new();
+        for binding_index in node.output_bindings.clone() {
+            let Some(BindingDeclaration::Output { target, .. }) =
+                artifact.bindings().get(binding_index as usize)
+            else {
+                return Err(route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    "resident observation has an invalid output binding",
+                ));
+            };
+            let declaration = artifact.slots().get(target.get() as usize).ok_or_else(|| {
+                route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    "resident observation output slot is out of range",
+                )
+            })?;
+            let schema = artifact
+                .schemas()
+                .entry(declaration.schema)
+                .ok_or_else(|| {
+                    route_failure(
+                        ResidentRouteFailureClass::InvalidArtifact,
+                        "resident observation output schema is out of range",
+                    )
+                })?;
+            if !schema.schema().dimension_parameters().is_empty() {
+                dynamic_outputs.push((*target, schema));
+            }
+        }
+        if dynamic_outputs.is_empty() {
+            continue;
+        }
+        let binding = resources
+            .resident_provider_binding(&request.base_uri)
+            .map_err(classify_provider_preflight)?;
+        let planned = binding
+            .plan_read(RuntimeResourceReadRequest {
+                base_uri: request.base_uri.clone(),
+                path: request.path.clone(),
+                context_name: request.context_name.clone(),
+            })
+            .map_err(classify_provider_preflight)?;
+        for (target, schema) in dynamic_outputs {
+            if schema.key() != planned.schema_key() {
+                return Err(route_failure(
+                    ResidentRouteFailureClass::ProviderContractMismatch,
+                    "provider planning value does not match the declared observation schema",
+                ));
+            }
+            schema
+                .schema()
+                .instantiate_shape(
+                    planned
+                        .shape()
+                        .parameter_values()
+                        .to_vec()
+                        .into_boxed_slice(),
+                )
+                .map_err(|error| {
+                    route_failure(
+                        ResidentRouteFailureClass::ProviderContractMismatch,
+                        format!(
+                            "provider planning value has an invalid observation shape: {error:?}"
+                        ),
+                    )
+                })?;
+            if let Some(existing) = facts.slot_shapes.insert(target, planned.shape().clone())
+                && existing != *planned.shape()
+            {
+                return Err(route_failure(
+                    ResidentRouteFailureClass::ProviderContractMismatch,
+                    "provider planning values disagree about an observation slot shape",
+                ));
+            }
+        }
+    }
+    Ok(facts)
+}
 fn classify_provider_preflight(error: MechError) -> MechError {
     let kind = error.kind_name();
     let class = match kind.as_str() {

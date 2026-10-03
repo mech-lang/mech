@@ -12,13 +12,15 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "src" / "wasm" / "pkg"
 PROFILES = {
-    "browser": ("browser_project", ("export class WasmDocument",)),
+    "browser": ("browser_project", ("export class WasmDocument", "static validateStaticSources(", "static supportsServedDocumentProvenance(")),
     "browser-compute": (
         "browser_project,browser_compute",
         (
             "export class WasmDocument",
             "export class WasmMixedComputeProject",
             "static fromSource(",
+            "static validateStaticSources(",
+            "static supportsServedDocumentProvenance(",
         ),
     ),
     "browser-compute-canary": (
@@ -27,6 +29,8 @@ PROFILES = {
             "export class WasmDocument",
             "export class WasmMixedComputeProject",
             "static fromSource(",
+            "static validateStaticSources(",
+            "static supportsServedDocumentProvenance(",
         ),
     ),
 }

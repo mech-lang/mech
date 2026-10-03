@@ -15,6 +15,15 @@ mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
 
 `bundle-web` requires nonempty `run.paths` and `serve.paths` in the project config. The HTML shim and wasm package may be supplied through `serve.shim` and `serve.wasm` or through the `--shim` and `--wasm` command-line options.
 
+Node.js 22 or newer must be available when publishing. Before writing bundle
+files, the supplied WASM package compiles the retained root and imports using
+its own language and host features, without activating a program or starting
+input drivers. A package that cannot compile the source is rejected; native
+compiler acceptance alone does not prove browser compatibility. Rebuild older
+packages with `python scripts/build-wasm.py --profile browser` (or the selected
+compute profile) to obtain this admission API. Custom packages may remain narrow
+provided they support the actual source closure.
+
 ```mech
 config := {
   serve: {

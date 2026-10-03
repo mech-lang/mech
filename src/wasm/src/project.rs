@@ -93,6 +93,8 @@ use crate::mixed_compute::{
 pub struct WasmProject {
     runtime: MechRuntime,
     events: MechEventBus,
+    #[cfg(feature = "browser_compute")]
+    pointer: Option<PointerInputHandle>,
     #[cfg(feature = "browser_host_scene")]
     scenes: BrowserSceneRegistry,
     started: bool,
@@ -119,6 +121,33 @@ impl WasmProject {
     #[wasm_bindgen(js_name = supportsServedDocumentResolutions)]
     pub fn supports_served_document_resolutions() -> bool {
         cfg!(feature = "served_project_authority")
+    }
+
+    #[wasm_bindgen(js_name = supportsServedDocumentProvenance)]
+    pub fn supports_served_document_provenance() -> bool {
+        cfg!(feature = "served_project_authority")
+    }
+
+    /// Compile with this package's actual language and host closure. This is
+    /// planning only: no program activation or input-driver startup occurs.
+    #[cfg(feature = "served_project_authority")]
+    #[wasm_bindgen(js_name = validateStaticSources)]
+    pub fn validate_static_sources(
+        config_source: &str,
+        sources: JsValue,
+        roots: JsValue,
+        resolutions: JsValue,
+        provenance: JsValue,
+    ) -> Result<bool, JsValue> {
+        let mut document = parse_project_config(config_source)?;
+        let sources = source_map_from_js(sources)?;
+        let roots = bundle_roots_from_js(roots)?;
+        let resolutions = document_resolutions_from_js(resolutions, &sources)?;
+        let provenance = served_provenance_from_js(provenance, &sources)?;
+        replace_bundle_run_paths(&mut document, roots)?;
+        validate_static_project_sources(&document, &sources, &resolutions, &provenance)
+            .map_err(to_js_error)?;
+        Ok(true)
     }
 
     #[wasm_bindgen(js_name = fromSources)]
@@ -149,6 +178,8 @@ impl WasmProject {
         provenance: HashMap<String, ServedSourceProvenance>,
     ) -> Result<WasmProject, JsValue> {
         validate_compiled_host_providers(&document).map_err(to_js_error)?;
+        #[cfg(feature = "browser_compute")]
+        let pointer = configured_project_pointer(&document).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
         let source_resolver = project_source_resolver_with_resolutions_and_provenance(
@@ -162,12 +193,16 @@ impl WasmProject {
             source_resolver,
             #[cfg(feature = "browser_host_scene")]
             scenes.clone(),
+            #[cfg(feature = "browser_compute")]
+            pointer.clone(),
         )?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
         Ok(Self::from_runtime(
             runtime,
             #[cfg(feature = "browser_host_scene")]
             scenes,
+            #[cfg(feature = "browser_compute")]
+            pointer,
         ))
     }
 
@@ -234,6 +269,8 @@ impl WasmProject {
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
+        #[cfg(feature = "browser_compute")]
+        let pointer = configured_project_pointer(&document).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
         let source_resolver = project_source_resolver_with_provenance(&source_map, &provenance)
@@ -244,6 +281,8 @@ impl WasmProject {
             source_resolver,
             #[cfg(feature = "browser_host_scene")]
             scenes.clone(),
+            #[cfg(feature = "browser_compute")]
+            pointer.clone(),
         )?;
         let [root] = roots.as_slice() else {
             return Err(to_js_error(MechError::new(
@@ -295,6 +334,8 @@ impl WasmProject {
             runtime,
             #[cfg(feature = "browser_host_scene")]
             scenes,
+            #[cfg(feature = "browser_compute")]
+            pointer,
         ))
     }
 
@@ -306,14 +347,23 @@ impl WasmProject {
         documents: JsValue,
         roots: JsValue,
         resolutions: JsValue,
+        provenance: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         let document_map = source_map_from_js(documents)?;
         let roots = bundle_roots_from_js(roots)?;
         let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+        let provenance = served_provenance_from_js(provenance, &source_map)?;
         replace_bundle_run_paths(&mut document, roots.clone())?;
-        Self::from_served_project_documents(document, source_map, document_map, roots, resolutions)
+        Self::from_served_project_documents(
+            document,
+            source_map,
+            document_map,
+            roots,
+            resolutions,
+            provenance,
+        )
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -323,6 +373,7 @@ impl WasmProject {
         document_map: HashMap<String, String>,
         roots: Vec<String>,
         resolutions: Vec<SourceResolutionEntry>,
+        provenance: HashMap<String, ServedSourceProvenance>,
     ) -> Result<WasmProject, JsValue> {
         let [root] = roots.as_slice() else {
             return Err(to_js_error(MechError::new(
@@ -339,7 +390,8 @@ impl WasmProject {
         })?;
         let payload = decode_document_payload(encoded)?;
         validate_document_payload(&payload, root, &source_map)?;
-        Self::from_served_project(document, source_map, resolutions, HashMap::new())
+        validate_static_nominal_provenance(&source_map, &provenance).map_err(to_js_error)?;
+        Self::from_served_project(document, source_map, resolutions, provenance)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -352,6 +404,8 @@ impl WasmProject {
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
+        #[cfg(feature = "browser_compute")]
+        let pointer = configured_project_pointer(&document).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
         let source_resolver = project_source_resolver_with_resolutions_and_provenance(
@@ -366,22 +420,29 @@ impl WasmProject {
             source_resolver,
             #[cfg(feature = "browser_host_scene")]
             scenes.clone(),
+            #[cfg(feature = "browser_compute")]
+            pointer.clone(),
         )?;
         run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
         Ok(Self::from_runtime(
             runtime,
             #[cfg(feature = "browser_host_scene")]
             scenes,
+            #[cfg(feature = "browser_compute")]
+            pointer,
         ))
     }
 
     fn from_runtime(
         runtime: MechRuntime,
         #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+        #[cfg(feature = "browser_compute")] pointer: Option<PointerInputHandle>,
     ) -> Self {
         Self {
             runtime,
             events: MechEventBus::default(),
+            #[cfg(feature = "browser_compute")]
+            pointer,
             #[cfg(feature = "browser_host_scene")]
             scenes,
             started: false,
@@ -422,6 +483,36 @@ impl WasmProject {
         self.started = true;
         self.stopped = false;
         Ok(())
+    }
+
+    #[wasm_bindgen(js_name = hasPointerInput)]
+    pub fn has_pointer_input(&self) -> bool {
+        #[cfg(feature = "browser_compute")]
+        {
+            self.pointer
+                .as_ref()
+                .is_some_and(PointerInputHandle::is_running)
+        }
+        #[cfg(not(feature = "browser_compute"))]
+        {
+            false
+        }
+    }
+
+    #[cfg(feature = "browser_compute")]
+    #[wasm_bindgen(js_name = pointerInput)]
+    pub fn pointer_input(
+        &self,
+        x: f64,
+        y: f64,
+        pressed: bool,
+        delta_seconds: f64,
+    ) -> Result<(), JsValue> {
+        self.pointer
+            .as_ref()
+            .ok_or_else(|| js_error("project has no pointer host"))?
+            .submit(x, y, pressed, delta_seconds)
+            .map_err(to_js_error)
     }
 
     /// Reconciles drivers against the retained runtime's current live input
@@ -1073,6 +1164,13 @@ fn configured_document_pointer(
         &served.config_source,
         ConfigProfileOptions::default(),
     )?;
+    configured_project_pointer(&document)
+}
+
+#[cfg(feature = "browser_compute")]
+fn configured_project_pointer(
+    document: &MechConfigDocument,
+) -> MResult<Option<PointerInputHandle>> {
     let mut pointers = document
         .hosts
         .iter()
@@ -1080,7 +1178,7 @@ fn configured_document_pointer(
     let pointer = pointers.next();
     if pointers.next().is_some() {
         return Err(document_runtime_error(
-            "a served document supports one pointer host instance",
+            "a browser project supports one pointer host instance",
         ));
     }
     Ok(pointer.map(|host| PointerInputHandle::new(&host.name)))
@@ -4273,6 +4371,7 @@ fn build_runtime(
     document: &MechConfigDocument,
     source_resolver: InMemorySourceResolver,
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+    #[cfg(feature = "browser_compute")] pointer: Option<PointerInputHandle>,
 ) -> Result<MechRuntime, JsValue> {
     let runtime_config = mech_runtime::RuntimeConfig::default()
         .apply_patch(&document.runtime)
@@ -4282,7 +4381,7 @@ fn build_runtime(
         #[cfg(feature = "browser_host_scene")]
         scenes,
         #[cfg(feature = "browser_compute")]
-        None,
+        pointer,
     )?
     .config(runtime_config)
     .source_resolver(source_resolver);
@@ -4302,6 +4401,7 @@ fn build_runtime_from_authority(
     authority: &BrowserRuntimeInjectionConfig,
     source_resolver: InMemorySourceResolver,
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+    #[cfg(feature = "browser_compute")] pointer: Option<PointerInputHandle>,
 ) -> Result<MechRuntime, JsValue> {
     let runtime_config = authority.into_runtime_config().map_err(to_js_error)?;
     let mut builder = runtime_builder_with_factories(
@@ -4309,7 +4409,7 @@ fn build_runtime_from_authority(
         #[cfg(feature = "browser_host_scene")]
         scenes,
         #[cfg(feature = "browser_compute")]
-        None,
+        pointer,
     )?
     // The served authority already contains the project patch that the server
     // verified and signed. Keep that runtime environment authoritative here.
@@ -4830,6 +4930,77 @@ fn run_project_sources(
         .map(|path| path.to_string_lossy().to_string())
         .collect::<Vec<_>>();
     run_source_roots(runtime, roots.iter().map(String::as_str))
+}
+
+#[cfg(feature = "served_project_authority")]
+fn validate_static_project_sources(
+    document: &MechConfigDocument,
+    sources: &HashMap<String, String>,
+    resolutions: &[SourceResolutionEntry],
+    provenance: &HashMap<String, ServedSourceProvenance>,
+) -> MResult<()> {
+    validate_compiled_host_providers(document)?;
+    validate_static_nominal_provenance(sources, provenance)?;
+    let resolver =
+        project_source_resolver_with_resolutions_and_provenance(sources, resolutions, provenance)?;
+    let mut builder = runtime_builder_with_factories(
+        None,
+        #[cfg(feature = "browser_host_scene")]
+        BrowserSceneRegistry::new(),
+        #[cfg(feature = "browser_compute")]
+        None,
+    )
+    .map_err(js_value_to_mech_error)?
+    .config(mech_runtime::RuntimeConfig::default().apply_patch(&document.runtime)?)
+    .source_resolver(resolver);
+    for host in &document.hosts {
+        builder = builder.host_instance(host.clone());
+    }
+    let run = require_run(document)?;
+    if run.paths.len() != 1 {
+        return Err(document_runtime_error(
+            "static browser projects require exactly one root",
+        ));
+    }
+    for grant in &run.grants {
+        builder = builder.run_resource_grant(grant.clone());
+    }
+    // Use the same interactive root compiler as WasmProject's source loader,
+    // not the native publisher's broader catalog or a second feature list.
+    let mut compiler = builder.build_compiler()?;
+    let product = compiler.compile_canonical_interactive_root_with_options(
+        SourceRequest::new(run.paths[0].to_string_lossy()),
+        browser_module_options(),
+    )?;
+    compiler.preflight_resident_artifact(product.artifact())?;
+    Ok(())
+}
+
+#[cfg(feature = "served_project_authority")]
+fn validate_static_nominal_provenance(
+    sources: &HashMap<String, String>,
+    provenance: &HashMap<String, ServedSourceProvenance>,
+) -> MResult<()> {
+    for (specifier, source) in sources {
+        let document = SourceDocument::parse_resolved(
+            specifier,
+            mech_syntax::document::Revision(0),
+            source.as_str(),
+            Default::default(),
+        )
+        .map_err(|error| document_runtime_error(format!("invalid static source: {error:?}")))?;
+        if !CanonicalSourceFrontend
+            .declared_enum_names(&document.document())
+            .map_err(|error| document_runtime_error(error.to_string()))?
+            .is_empty()
+            && !provenance.contains_key(specifier)
+        {
+            return Err(document_runtime_error(format!(
+                "static source {specifier} is missing nominal provenance; regenerate the bundle"
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn run_source_roots<'a>(
@@ -6780,6 +6951,126 @@ phase"#;
             .unwrap()
             .1;
         assert_eq!(pulse.format_canonical_inline(), "1");
+    }
+
+    #[cfg(all(feature = "served_project_authority", feature = "browser_compute"))]
+    #[test]
+    fn static_project_retains_the_pointer_handle_used_by_its_driver() {
+        let config_source = r#"config := {
+  hosts: [{ name: "mouse" provider: "pointer" settings: {} }]
+  run: {
+    paths: ["main.mec"]
+    grants: [{ target: "mouse/frame" operations: ["read"] paths: ["pulse", "position", "pressed", "delta-seconds"] }]
+  }
+}"#;
+        let document =
+            parse_config_document("mech.mcfg", config_source, ConfigProfileOptions::default())
+                .unwrap();
+        let sources = HashMap::from([(
+            "main.mec".to_owned(),
+            "@mouse := pointer://mouse/frame{:read(pulse)}\npulse := @mouse/pulse\npulse\n"
+                .to_owned(),
+        )]);
+        let pointer = configured_project_pointer(&document).unwrap().unwrap();
+        assert!(pointer.submit(0.5, -0.25, true, 0.016).is_err());
+        let authority = authority_config(
+            document.hosts.clone(),
+            document.run.as_ref().unwrap().grants.clone(),
+        );
+        let scenes = BrowserSceneRegistry::new();
+        let mut runtime = build_runtime_from_authority(
+            &document,
+            &authority,
+            project_source_resolver(&sources).unwrap(),
+            scenes.clone(),
+            Some(pointer.clone()),
+        )
+        .unwrap();
+        run_project_sources(&mut runtime, &document).unwrap();
+        let mut project = WasmProject::from_runtime(runtime, scenes, Some(pointer.clone()));
+        assert!(!project.has_pointer_input());
+        project.start().unwrap();
+        assert!(project.has_pointer_input());
+        project.pointer_input(0.5, -0.25, true, 0.016).unwrap();
+        assert_eq!(project.runtime.pending_host_input_count().unwrap(), 1);
+        project.runtime.drain_host_inputs(1).unwrap();
+        assert_eq!(
+            project
+                .runtime
+                .root_symbol_value("pulse")
+                .unwrap()
+                .format_canonical_inline(),
+            "1"
+        );
+        project.stop().unwrap();
+        assert!(!project.has_pointer_input());
+        assert!(pointer.submit(0.5, -0.25, true, 0.016).is_err());
+        let mut duplicate = document.clone();
+        duplicate.hosts.push(HostInstanceConfig {
+            name: "second".into(),
+            provider: "pointer".into(),
+            settings: ConfigValue::Map(Default::default()),
+        });
+        assert!(configured_project_pointer(&duplicate).is_err());
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn static_source_admission_uses_the_compiled_scalar_closure() {
+        let document = parse_config_document(
+            "mech.mcfg",
+            "config := { run: { paths: [\"main.mec\"] } }",
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        for source in [
+            "value := 7u8\n",
+            "value := -7i32\n",
+            "value<u8> := 7\n",
+            "value<i32> := -7\n",
+            "value := 7u8 + 2u8\n",
+            "value := 7i32 + 2i32\n",
+            "value := 7\n",
+            "+> math\nvalue := math/fmod(5.3, 2.0)\n",
+        ] {
+            let sources = HashMap::from([("main.mec".to_owned(), source.to_owned())]);
+            let accepted = project_source_resolver(&sources)
+                .and_then(|resolver| {
+                    let mut runtime = browser_runtime_builder()
+                        .source_resolver(resolver)
+                        .build()?;
+                    run_project_sources(&mut runtime, &document)
+                })
+                .is_ok();
+            assert_eq!(
+                validate_static_project_sources(&document, &sources, &[], &HashMap::new()).is_ok(),
+                accepted,
+                "{source}"
+            );
+        }
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    #[test]
+    fn old_static_nominal_sources_require_regeneration_instead_of_new_identity() {
+        let sources = HashMap::from([(
+            "main.mec".to_owned(),
+            "<event> := :idle | :busy\n".to_owned(),
+        )]);
+        let error = validate_static_nominal_provenance(&sources, &HashMap::new()).unwrap_err();
+        assert!(error.kind_message().contains("missing nominal provenance"));
+        let provenance = HashMap::from([(
+            "main.mec".to_owned(),
+            ServedSourceProvenance {
+                nominal_origin: mech_core::CanonicalNominalPath::new([
+                    "test-package".to_owned(),
+                    "main".to_owned(),
+                ])
+                .unwrap(),
+                nominal_package_id: Some("sha256:fixture".to_owned()),
+            },
+        )]);
+        validate_static_nominal_provenance(&sources, &provenance).unwrap();
     }
 
     #[cfg(all(feature = "served_project_authority", feature = "browser_host_scene"))]

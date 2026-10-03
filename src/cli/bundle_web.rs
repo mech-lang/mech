@@ -692,6 +692,8 @@ mod tests {
   static fromServedDocuments() {}
   static supportsServedAuthority() { return true; }
   static supportsServedDocumentResolutions() { return true; }
+  static supportsServedDocumentProvenance() { return true; }
+  static validateStaticSources() { return true; }
 }
 export default async function init() {}
 "#;

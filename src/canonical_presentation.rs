@@ -10,7 +10,7 @@ pub(crate) struct HtmlShimExtraSlots {
 }
 
 impl HtmlShimExtraSlots {
-    #[cfg(any(test, feature = "serve", feature = "formatter"))]
+    #[cfg(any(feature = "serve", feature = "formatter"))]
     pub(crate) fn insert(&mut self, name: impl Into<String>, value: impl Into<String>) {
         self.slots.insert(name.into(), value.into());
     }
@@ -410,7 +410,7 @@ fn render_html_shim(
     }
 }
 
-#[cfg(any(test, feature = "serve", feature = "formatter"))]
+#[cfg(any(feature = "serve", feature = "formatter"))]
 pub(crate) fn validate_shipped_shim_render(
     shim_name: &str,
     render: &HtmlShimRender,

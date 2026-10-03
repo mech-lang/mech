@@ -1381,6 +1381,11 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
           rustup default nightly-2026-03-03
 
+      - name: Install Node for browser-package source admission
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+
       - name: Verify static project bootstrap
         run: node --test scripts/tests/static-project.test.mjs
 
@@ -1782,6 +1787,11 @@ jobs:
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
 
+      - name: Install Node for browser-package source admission
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+
       - name: Install Rust nightly-2026-03-03
         run: |
           rustup show
@@ -1862,6 +1872,15 @@ jobs:
         run: |
           MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-bundle-web.sh
+
+      - name: Verify actual browser-package admission before publication
+        env:
+          MECH_STATIC_TEST_WASM_PKG: ${{ github.workspace }}/src/wasm/pkg
+        run: >-
+          cargo test --locked -p mech --no-default-features
+          --features full_source,bundle_web_core
+          --lib bundle_web::tests::actual_browser_package_admits_compatible_source_and_refuses_missing_language
+          -- --ignored --exact --nocapture
 
       - name: Remove generated browser package
         run: rm -rf src/wasm/pkg
