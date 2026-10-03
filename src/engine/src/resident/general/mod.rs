@@ -3252,16 +3252,16 @@ struct ClosedLogicalMask {
 }
 
 struct ClosedLogicalMaskStore {
-    masks: BTreeMap<ArtifactSource, ClosedLogicalMask>,
-    retained_bytes: u64,
+    masks: std::cell::RefCell<BTreeMap<ArtifactSource, std::sync::Arc<ClosedLogicalMask>>>,
+    retained_bytes: std::cell::Cell<u64>,
     byte_limit: u64,
 }
 
 impl Default for ClosedLogicalMaskStore {
     fn default() -> Self {
         Self {
-            masks: BTreeMap::new(),
-            retained_bytes: 0,
+            masks: std::cell::RefCell::new(BTreeMap::new()),
+            retained_bytes: std::cell::Cell::new(0),
             byte_limit: mech_core::RESIDENT_MAX_BYTES,
         }
     }
@@ -3276,37 +3276,42 @@ impl ClosedLogicalMaskStore {
         }
     }
 
-    fn get(&self, source: &ArtifactSource) -> Option<&ClosedLogicalMask> {
-        self.masks.get(source)
+    fn get(&self, source: &ArtifactSource) -> Option<std::sync::Arc<ClosedLogicalMask>> {
+        self.masks.borrow().get(source).cloned()
     }
 
-    fn insert(&mut self, source: ArtifactSource, mask: ClosedLogicalMask) -> bool {
+    fn projected_retained_bytes(
+        &self,
+        source: ArtifactSource,
+        value_capacity: usize,
+    ) -> Option<u64> {
+        if self.masks.borrow().contains_key(&source) {
+            return Some(self.retained_bytes.get());
+        }
+        let mask_bytes = u64::try_from(value_capacity)
+            .ok()?
+            .checked_mul(u64::try_from(core::mem::size_of::<bool>()).ok()?)?;
+        self.retained_bytes
+            .get()
+            .checked_add(mask_bytes)
+            .filter(|retained| *retained <= self.byte_limit)
+    }
+
+    fn insert(&self, source: ArtifactSource, mask: ClosedLogicalMask) -> bool {
         // Per-mask cardinality bounds the work of one fold. This cumulative
         // byte bound also prevents a long closed logic graph from retaining
         // one maximum-size Vec<bool> for every intermediate artifact slot.
-        let Some(mask_bytes) = u64::try_from(mask.values.capacity())
-            .ok()
-            .and_then(|count| count.checked_mul(u64::try_from(core::mem::size_of::<bool>()).ok()?))
-        else {
-            return false;
-        };
-        let previous_bytes = self
-            .masks
-            .get(&source)
-            .and_then(|previous| u64::try_from(previous.values.capacity()).ok())
-            .unwrap_or(0);
-        let Some(retained_bytes) = self
-            .retained_bytes
-            .checked_sub(previous_bytes)
-            .and_then(|bytes| bytes.checked_add(mask_bytes))
-        else {
-            return false;
-        };
-        if retained_bytes > self.byte_limit {
-            return false;
+        if let Some(existing) = self.masks.borrow().get(&source) {
+            return existing.as_ref() == &mask;
         }
-        self.masks.insert(source, mask);
-        self.retained_bytes = retained_bytes;
+        let Some(retained_bytes) = self.projected_retained_bytes(source, mask.values.capacity())
+        else {
+            return false;
+        };
+        self.masks
+            .borrow_mut()
+            .insert(source, std::sync::Arc::new(mask));
+        self.retained_bytes.set(retained_bytes);
         true
     }
 }
@@ -3424,14 +3429,14 @@ impl ClosedLogicalMask {
     }
 }
 
-fn logical_selector_mask<'a>(
+fn logical_selector_mask(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
     facts: &ActivationFacts,
-    analysis: &'a ClosedActivationAnalysisContext,
-) -> Option<std::borrow::Cow<'a, ClosedLogicalMask>> {
+    analysis: &ClosedActivationAnalysisContext,
+) -> Option<std::sync::Arc<ClosedLogicalMask>> {
     if let Some(mask) = analysis.logical_masks.get(&source) {
-        return Some(std::borrow::Cow::Borrowed(mask));
+        return Some(mask);
     }
     let ArtifactSource::Constant(id) = source else {
         return None;
@@ -3439,10 +3444,17 @@ fn logical_selector_mask<'a>(
     let value = artifact.constants().get(id)?;
     match value.data() {
         mech_core::ValueData::Bool(value) => {
+            analysis.logical_masks.projected_retained_bytes(source, 1)?;
             if !analysis.record_materialized_logical_mask_values(1) {
                 return None;
             }
-            Some(std::borrow::Cow::Owned(ClosedLogicalMask::scalar(*value)))
+            let mask = ClosedLogicalMask::scalar(*value);
+            analysis.logical_masks.insert(source, mask).then(|| {
+                analysis
+                    .logical_masks
+                    .get(&source)
+                    .expect("inserted closed logical scalar")
+            })
         }
         mech_core::ValueData::Matrix(matrix) => {
             let mech_core::snapshot::SequenceView::Bool(values) = matrix.elements() else {
@@ -3458,6 +3470,9 @@ fn logical_selector_mask<'a>(
             if count != values.len() || count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
                 return None;
             }
+            analysis
+                .logical_masks
+                .projected_retained_bytes(source, count)?;
             if !analysis.record_materialized_logical_mask_values(count) {
                 return None;
             }
@@ -3467,11 +3482,17 @@ fn logical_selector_mask<'a>(
                     dense_values.push(values[row * columns + column]);
                 }
             }
-            Some(std::borrow::Cow::Owned(ClosedLogicalMask {
+            let mask = ClosedLogicalMask {
                 rows,
                 columns,
                 values: dense_values,
-            }))
+            };
+            analysis.logical_masks.insert(source, mask).then(|| {
+                analysis
+                    .logical_masks
+                    .get(&source)
+                    .expect("inserted closed logical matrix")
+            })
         }
         _ => None,
     }
@@ -3561,7 +3582,7 @@ impl ClosedLogicalConcatenationPlan {
 
     fn materialize(
         self,
-        masks: &[std::borrow::Cow<'_, ClosedLogicalMask>],
+        masks: &[std::sync::Arc<ClosedLogicalMask>],
         analysis: &ClosedActivationAnalysisContext,
     ) -> Option<ClosedLogicalMask> {
         let actual = Self::from_dimensions(
@@ -3614,7 +3635,7 @@ impl ClosedLogicalConcatenationPlan {
 #[cfg(test)]
 fn concatenate_closed_logical_masks(
     horizontal: bool,
-    masks: &[std::borrow::Cow<'_, ClosedLogicalMask>],
+    masks: &[std::sync::Arc<ClosedLogicalMask>],
     analysis: &ClosedActivationAnalysisContext,
 ) -> Option<ClosedLogicalMask> {
     ClosedLogicalConcatenationPlan::from_dimensions(
@@ -3679,12 +3700,24 @@ impl core::ops::Deref for ClosedComparisonValue<'_> {
 }
 
 struct ConstantComparisonOperand<'a> {
+    source: ArtifactSource,
     value: ClosedComparisonValue<'a>,
     schema_key: SchemaKey,
     schema: SchemaBody,
     element: SchemaBody,
     rows: usize,
     columns: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct ClosedScalarComparisonKey {
+    // Artifact sources are immutable within one analysis and identify their
+    // schema, complete shape instance, and storage layout. Retain the ordered
+    // pair and operation so a cache hit reuses an evaluated result (including
+    // NaN behavior) instead of inferring equality from source identity.
+    operation: String,
+    left: ArtifactSource,
+    right: ArtifactSource,
 }
 
 fn scalar_comparison_supported(element: &SchemaBody, ordering: bool) -> bool {
@@ -3731,12 +3764,24 @@ struct ClosedActivationAnalysisContext {
     schemas: ClosedOperandSchemaContext,
     logical_masks: ClosedLogicalMaskStore,
     values: std::cell::RefCell<BTreeMap<ArtifactSource, std::sync::Arc<Value>>>,
+    scalar_comparisons: std::cell::RefCell<BTreeMap<ClosedScalarComparisonKey, Option<bool>>>,
+    retained_operand_bytes: std::cell::RefCell<BTreeMap<ArtifactSource, u64>>,
+    projected_string_payloads: std::cell::RefCell<BTreeMap<ArtifactSource, u64>>,
     copied_mask_values: std::cell::Cell<u64>,
+    comparison_scanned_work: std::cell::Cell<u64>,
     materialized_logical_mask_values: std::cell::Cell<u64>,
     materialized_operand_values: std::cell::Cell<u64>,
 }
 
 impl ClosedActivationAnalysisContext {
+    fn record_comparison_scan(&self, work: u64) -> bool {
+        let Some(total) = self.comparison_scanned_work.get().checked_add(work) else {
+            return false;
+        };
+        self.comparison_scanned_work.set(total);
+        true
+    }
+
     fn record_materialized_logical_mask_values(&self, count: usize) -> bool {
         let Some(total) = u64::try_from(count).ok().and_then(|count| {
             self.materialized_logical_mask_values
@@ -3779,6 +3824,24 @@ impl ClosedOperandConstructionBudget {
             return false;
         }
         self.comparison_work.set(comparison_work);
+        true
+    }
+
+    fn charge_comparison_compute_work(&self, work: u64) -> bool {
+        let work = work.max(1);
+        let Some(comparison_work) = self.comparison_work.get().checked_add(work) else {
+            return false;
+        };
+        let Some(compute_work) = self.compute_work.get().checked_add(work) else {
+            return false;
+        };
+        if comparison_work > mech_core::RESIDENT_MAX_COMPARISON_WORK
+            || compute_work > mech_core::RESIDENT_MAX_COMPUTE_WORK
+        {
+            return false;
+        }
+        self.comparison_work.set(comparison_work);
+        self.compute_work.set(compute_work);
         true
     }
 
@@ -4090,6 +4153,7 @@ fn closed_comparison_operand_from_value<'a>(
         (body, _) => (body.clone(), 1, 1),
     };
     Ok(Some(ConstantComparisonOperand {
+        source,
         schema_key: value.schema_key(),
         value,
         schema: schema.body().clone(),
@@ -4168,7 +4232,7 @@ fn constant_comparison_operand_at_depth<'a>(
                 .ok_or(ResidentActivationError::RegionSizeOverflow)?;
             let converted = if let Some(mask) = analysis.logical_masks.get(&source) {
                 let Some(value) =
-                    closed_logical_mask_value(artifact, source, mask, budget, analysis)?
+                    closed_logical_mask_value(artifact, source, &mask, budget, analysis)?
                 else {
                     return Ok(None);
                 };
@@ -4605,19 +4669,29 @@ fn constant_comparison_operand_at_depth<'a>(
                 {
                     return Ok(None);
                 }
-                let Some(output_payload) =
-                    closed_conversion_output_payload_bytes(&source.element, target_element, count)
-                else {
-                    return Ok(None);
-                };
                 let publishes_strings = target_element == &SchemaBody::String;
                 let publication_work = if publishes_strings {
-                    let Ok(bytes) = super::budget::projected_snapshot_string_payload(&source.value)
-                    else {
-                        return Ok(None);
-                    };
-                    let Ok(bytes) = u64::try_from(bytes) else {
-                        return Ok(None);
+                    let bytes = if let Some(bytes) = analysis
+                        .projected_string_payloads
+                        .borrow()
+                        .get(&source.source)
+                        .copied()
+                    {
+                        bytes
+                    } else {
+                        let Ok(bytes) =
+                            super::budget::projected_snapshot_string_payload(&source.value)
+                        else {
+                            return Ok(None);
+                        };
+                        let Ok(bytes) = u64::try_from(bytes) else {
+                            return Ok(None);
+                        };
+                        analysis
+                            .projected_string_payloads
+                            .borrow_mut()
+                            .insert(source.source, bytes);
+                        bytes
                     };
                     if !analysis.construction.charge_comparison_work(bytes) {
                         return Ok(None);
@@ -4625,6 +4699,18 @@ fn constant_comparison_operand_at_depth<'a>(
                     bytes
                 } else {
                     0
+                };
+                let output_payload = if publishes_strings {
+                    publication_work
+                } else {
+                    let Some(bytes) = closed_conversion_output_payload_bytes(
+                        &source.element,
+                        target_element,
+                        count,
+                    ) else {
+                        return Ok(None);
+                    };
+                    bytes
                 };
                 let Some(draft_bytes) = count
                     .checked_mul(2)
@@ -4764,12 +4850,12 @@ fn constant_comparison_operand_at_depth<'a>(
     closed_comparison_operand_from_value(artifact, source, facts, value, allow_large_direct_dense)
 }
 
-fn closed_aggregate_equality_admitted(
+fn closed_aggregate_equality_work(
     artifact: &ProgramArtifact,
     left: &Value,
     right: &Value,
     materializes_canonical_bytes: bool,
-) -> bool {
+) -> Option<u64> {
     // Activation has no turn plan, so mirror the resident equality admission
     // with a local fail-closed counter instead of manufacturing a turn permit.
     let mut comparison_work = 0_u64;
@@ -4808,17 +4894,17 @@ fn closed_aggregate_equality_admitted(
         Some(footprint)
     };
     let Some(left_footprint) = measure(left) else {
-        return false;
+        return None;
     };
     let Some(right_footprint) = measure(right) else {
-        return false;
+        return None;
     };
     let schema_work = if left.schema_key() == right.schema_key() {
         let Some(left_schema) = artifact.schemas().entry(left.schema()) else {
-            return false;
+            return None;
         };
         let Some(right_schema) = artifact.schemas().entry(right.schema()) else {
-            return false;
+            return None;
         };
         let Ok(work) = u64::try_from(
             left_schema
@@ -4826,7 +4912,7 @@ fn closed_aggregate_equality_admitted(
                 .len()
                 .max(right_schema.canonical_bytes().len()),
         ) else {
-            return false;
+            return None;
         };
         work
     } else {
@@ -4836,7 +4922,7 @@ fn closed_aggregate_equality_admitted(
         .encoded_bytes
         .checked_add(right_footprint.encoded_bytes)
     else {
-        return false;
+        return None;
     };
     let data_equality_work = if materializes_canonical_bytes {
         encoded_bytes.checked_add(
@@ -4851,34 +4937,98 @@ fn closed_aggregate_equality_admitted(
             .map(|nodes| encoded_bytes.max(nodes))
     };
     let Some(data_equality_work) = data_equality_work else {
-        return false;
+        return None;
     };
     if materializes_canonical_bytes && encoded_bytes > mech_core::RESIDENT_MAX_BYTES {
-        return false;
+        return None;
     }
     let Some(retained_nodes) = left_footprint
         .node_count
         .checked_add(right_footprint.node_count)
     else {
-        return false;
+        return None;
     };
     if retained_nodes > mech_core::RESIDENT_MAX_RETAINED_NODES {
-        return false;
+        return None;
     }
     schema_work
         .checked_add(data_equality_work)
         .and_then(|work| comparison_work.checked_add(work))
-        .is_some_and(|work| work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+        .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
 }
 
-fn closed_scalar_string_equality_admitted(left: &Value, right: &Value) -> bool {
+fn closed_scalar_string_equality_work(left: &Value, right: &Value) -> Option<u64> {
     let (mech_core::ValueData::String(left), mech_core::ValueData::String(right)) =
         (left.data(), right.data())
     else {
-        return false;
+        return None;
     };
-    u64::try_from(left.len().max(right.len()).max(1))
-        .is_ok_and(|work| work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+    u64::try_from(left.len().max(right.len()).max(1)).ok()
+}
+
+fn admit_closed_comparison_scan(
+    analysis: &ClosedActivationAnalysisContext,
+    work: u64,
+    comparison_limited: bool,
+) -> bool {
+    let admitted = if comparison_limited {
+        analysis.construction.charge_comparison_compute_work(work)
+    } else {
+        analysis.construction.charge_compute_chunk(0, work, 1)
+    };
+    admitted && analysis.record_comparison_scan(work.max(1))
+}
+
+fn closed_dense_strict_comparison_work(
+    left: &ConstantComparisonOperand<'_>,
+    right: &ConstantComparisonOperand<'_>,
+) -> Option<u64> {
+    let count = left.rows.checked_mul(left.columns)?;
+    match (left.value.data(), right.value.data()) {
+        (mech_core::ValueData::Matrix(left), mech_core::ValueData::Matrix(right)) => {
+            match (left.elements(), right.elements()) {
+                (
+                    mech_core::snapshot::SequenceView::String(left),
+                    mech_core::snapshot::SequenceView::String(right),
+                ) if left.len() == right.len() => {
+                    left.iter()
+                        .zip(right.iter())
+                        .try_fold(0_u64, |work, (left, right)| {
+                            work.checked_add(
+                                u64::try_from(left.len().max(right.len()).max(1)).ok()?,
+                            )
+                        })
+                }
+                _ => u64::try_from(count).ok(),
+            }
+        }
+        _ => u64::try_from(count).ok(),
+    }
+}
+
+fn closed_operand_retained_bytes(
+    artifact: &ProgramArtifact,
+    operand: &ConstantComparisonOperand<'_>,
+    analysis: &ClosedActivationAnalysisContext,
+) -> Option<u64> {
+    if let Some(bytes) = analysis
+        .retained_operand_bytes
+        .borrow()
+        .get(&operand.source)
+        .copied()
+    {
+        return Some(bytes);
+    }
+    let bytes = operand
+        .value
+        .retained_footprint(artifact.schemas())
+        .ok()?
+        .retained_bytes;
+    analysis
+        .retained_operand_bytes
+        .borrow_mut()
+        .insert(operand.source, bytes);
+    Some(bytes)
 }
 
 fn closed_snapshot_element_comparison_work(
@@ -4942,6 +5092,26 @@ fn closed_comparison_mask(
     let [left, right] = inputs.as_slice() else {
         return Ok(None);
     };
+    let scalar_key = scalar_output.then(|| ClosedScalarComparisonKey {
+        operation: name.to_owned(),
+        left: *left,
+        right: *right,
+    });
+    if let Some(result) = scalar_key
+        .as_ref()
+        .and_then(|key| analysis.scalar_comparisons.borrow().get(key).copied())
+    {
+        return Ok(result.map(ClosedLogicalMask::scalar));
+    }
+    let retain_scalar = |result: Option<bool>| {
+        if let Some(key) = scalar_key.as_ref() {
+            analysis
+                .scalar_comparisons
+                .borrow_mut()
+                .insert(key.clone(), result);
+        }
+        result.map(ClosedLogicalMask::scalar)
+    };
     let allow_large_direct_dense = scalar_output && matches!(name, "seq" | "sneq");
     let Some(left) = constant_comparison_operand(
         artifact,
@@ -4952,7 +5122,7 @@ fn closed_comparison_mask(
         allow_large_direct_dense,
     )?
     else {
-        return Ok(None);
+        return Ok(retain_scalar(None));
     };
     let Some(right) = constant_comparison_operand(
         artifact,
@@ -4963,7 +5133,7 @@ fn closed_comparison_mask(
         allow_large_direct_dense,
     )?
     else {
-        return Ok(None);
+        return Ok(retain_scalar(None));
     };
     if scalar_output {
         let compatible_matrix_identity = matches!(
@@ -4997,7 +5167,7 @@ fn closed_comparison_mask(
         // before inspecting either payload. Mirror that constant-time mismatch
         // result instead of applying snapshot aggregate admission.
         if dense_matrix_shape_mismatch && matches!(name, "seq" | "sneq") {
-            return Ok(Some(ClosedLogicalMask::scalar(name == "sneq")));
+            return Ok(retain_scalar(Some(name == "sneq")));
         }
         if left.schema_key != right.schema_key && !compatible_matrix_identity {
             let snapshot_strict = snapshot_matrix_strict_path && matches!(name, "seq" | "sneq");
@@ -5005,42 +5175,45 @@ fn closed_comparison_mask(
                 && !scalar_comparison_supported(&left.schema, false)
                 && !scalar_comparison_supported(&right.schema, false);
             if snapshot_strict || snapshot_ordinary {
-                if !closed_aggregate_equality_admitted(
+                let Some(work) = closed_aggregate_equality_work(
                     artifact,
                     &left.value,
                     &right.value,
                     snapshot_ordinary,
-                ) {
-                    return Ok(None);
+                ) else {
+                    return Ok(retain_scalar(None));
+                };
+                if !admit_closed_comparison_scan(analysis, work, true) {
+                    return Ok(retain_scalar(None));
                 }
             }
-            return Ok(match name {
-                "eq" | "seq" => Some(ClosedLogicalMask::scalar(false)),
-                "neq" | "sneq" => Some(ClosedLogicalMask::scalar(true)),
+            return Ok(retain_scalar(match name {
+                "eq" | "seq" => Some(false),
+                "neq" | "sneq" => Some(true),
                 _ => None,
-            });
+            }));
         }
         if matches!(name, "eq" | "neq" | "seq" | "sneq") {
-            let admitted =
-                if matches!(left.schema, SchemaBody::String) && matches!(name, "eq" | "neq") {
-                    closed_scalar_string_equality_admitted(&left.value, &right.value)
-                } else if compatible_matrix_identity && matches!(name, "seq" | "sneq") {
-                    left.rows
-                        .checked_mul(left.columns)
-                        .and_then(|count| u64::try_from(count).ok())
-                        .is_some_and(|work| analysis.construction.charge_compute_chunk(0, work, 1))
-                } else if !scalar_comparison_supported(&left.schema, false) {
-                    closed_aggregate_equality_admitted(
-                        artifact,
-                        &left.value,
-                        &right.value,
-                        matches!(name, "eq" | "neq"),
-                    )
-                } else {
-                    true
-                };
+            let admitted = if matches!(left.schema, SchemaBody::String) {
+                closed_scalar_string_equality_work(&left.value, &right.value).is_some_and(|work| {
+                    admit_closed_comparison_scan(analysis, work, matches!(name, "eq" | "neq"))
+                })
+            } else if compatible_matrix_identity && matches!(name, "seq" | "sneq") {
+                closed_dense_strict_comparison_work(&left, &right)
+                    .is_some_and(|work| admit_closed_comparison_scan(analysis, work, false))
+            } else if !scalar_comparison_supported(&left.schema, false) {
+                closed_aggregate_equality_work(
+                    artifact,
+                    &left.value,
+                    &right.value,
+                    matches!(name, "eq" | "neq"),
+                )
+                .is_some_and(|work| admit_closed_comparison_scan(analysis, work, true))
+            } else {
+                admit_closed_comparison_scan(analysis, 1, false)
+            };
             if !admitted {
-                return Ok(None);
+                return Ok(retain_scalar(None));
             }
         }
         let dense_matrix_shapes = matches!(
@@ -5074,6 +5247,11 @@ fn closed_comparison_mask(
                 })
                 .flatten()
         };
+        if matches!(name, "lt" | "lte" | "gt" | "gte")
+            && !admit_closed_comparison_scan(analysis, 1, false)
+        {
+            return Ok(retain_scalar(None));
+        }
         let matches = match name {
             "eq" => ordinary_equal(),
             "neq" => !ordinary_equal(),
@@ -5095,9 +5273,9 @@ fn closed_comparison_mask(
                 order(),
                 Some(std::cmp::Ordering::Greater | std::cmp::Ordering::Equal)
             ),
-            _ => return Ok(None),
+            _ => return Ok(retain_scalar(None)),
         };
-        return Ok(Some(ClosedLogicalMask::scalar(matches)));
+        return Ok(retain_scalar(Some(matches)));
     }
     if matches!(name, "seq" | "sneq")
         || !matches!(output_schema.body(), SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool)
@@ -5128,20 +5306,25 @@ fn closed_comparison_mask(
     if output_len > MAX_STATIC_SELECTOR_SOURCE_STEPS {
         return Ok(None);
     }
-    let left_bytes = left
-        .value
-        .retained_footprint(artifact.schemas())
-        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?
-        .retained_bytes;
-    let right_bytes = right
-        .value
-        .retained_footprint(artifact.schemas())
-        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?
-        .retained_bytes;
+    let left_bytes = closed_operand_retained_bytes(artifact, &left, analysis)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+    let right_bytes = closed_operand_retained_bytes(artifact, &right, analysis)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
     let cloned_bytes = left_bytes
         .checked_add(right_bytes)
         .ok_or(ResidentActivationError::RegionSizeOverflow)?;
     if cloned_bytes > mech_core::RESIDENT_MAX_BYTES {
+        return Ok(None);
+    }
+    let output_work =
+        u64::try_from(output_len).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+    let construction_bytes = cloned_bytes
+        .checked_add(output_work)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+    if !analysis
+        .construction
+        .charge_compute_chunk(construction_bytes, output_work, 1)
+    {
         return Ok(None);
     }
     let aggregate_comparison = dense_resident_kind(&left.element).is_none();
@@ -5168,6 +5351,13 @@ fn closed_comparison_mask(
             .charge_comparison_work(publication_work)
             .is_err()
         {
+            return Ok(None);
+        }
+        if !admit_closed_comparison_scan(
+            analysis,
+            comparison_meter.estimate().comparison_work(),
+            true,
+        ) {
             return Ok(None);
         }
     }
@@ -5198,14 +5388,6 @@ fn closed_comparison_mask(
             _ => unreachable!("comparison operation checked above"),
         }
     };
-    let output_work =
-        u64::try_from(output_len).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
-    if !analysis
-        .construction
-        .charge_compute_chunk(output_work, output_work, 1)
-    {
-        return Ok(None);
-    }
     let mut values = Vec::with_capacity(output_len);
     let mut string_comparison_work = 0_u64;
     for column in 0..columns {
@@ -5230,9 +5412,9 @@ fn closed_comparison_mask(
                 ) else {
                     return Ok(None);
                 };
-                if comparison_meter
-                    .charge_comparison_work(left_work.max(right_work).max(1))
-                    .is_err()
+                let work = left_work.max(right_work).max(1);
+                if comparison_meter.charge_comparison_work(work).is_err()
+                    || !admit_closed_comparison_scan(analysis, work, true)
                 {
                     return Ok(None);
                 }
@@ -5251,6 +5433,9 @@ fn closed_comparison_mask(
                     .checked_add(work)
                     .ok_or(ResidentActivationError::RegionSizeOverflow)?;
                 if string_comparison_work > mech_core::RESIDENT_MAX_COMPARISON_WORK {
+                    return Ok(None);
+                }
+                if !admit_closed_comparison_scan(analysis, work, true) {
                     return Ok(None);
                 }
             }
@@ -5284,6 +5469,35 @@ fn closed_comparison_population(
             .ok_or(ResidentActivationError::RegionSizeOverflow)
     })
     .transpose()
+}
+
+fn closed_activation_producer_supported(operation: &OperationReference) -> bool {
+    // Keep backward dependency discovery aligned with the closed operand and
+    // mask evaluators. Otherwise a supported producer can be evaluated only
+    // after shape completion has already skipped the facts it depends on.
+    (operation.module_path.as_ref() == ["matrix"]
+        && matches!(
+            operation.operation_name.as_str(),
+            "horzcat" | "vertcat" | "transpose"
+        ))
+        || (operation.module_path.as_ref() == ["core"]
+            && operation.operation_name == "composite-pack")
+        || (operation.module_path.as_ref() == ["convert"] && operation.operation_name == "kind")
+        || (operation.module_path.as_ref() == ["math"]
+            && matches!(
+                operation.operation_name.as_str(),
+                "add" | "sub" | "mul" | "div" | "mod" | "pow" | "neg"
+            ))
+        || (operation.module_path.as_ref() == ["logic"]
+            && matches!(
+                operation.operation_name.as_str(),
+                "not" | "and" | "or" | "xor"
+            ))
+        || (operation.module_path.as_ref() == ["compare"]
+            && matches!(
+                operation.operation_name.as_str(),
+                "eq" | "neq" | "seq" | "sneq" | "lt" | "lte" | "gt" | "gte"
+            ))
 }
 
 fn complete_activation_shape_facts(
@@ -5324,22 +5538,7 @@ fn complete_activation_shape_facts(
         let Some(operation) = artifact.nodes()[node.get() as usize].as_operation() else {
             continue;
         };
-        let propagates_population = (operation.operation.module_path.as_ref() == ["matrix"]
-            && matches!(
-                operation.operation.operation_name.as_str(),
-                "horzcat" | "vertcat" | "transpose"
-            ))
-            || (operation.operation.module_path.as_ref() == ["logic"]
-                && matches!(
-                    operation.operation.operation_name.as_str(),
-                    "not" | "and" | "or" | "xor"
-                ))
-            || (operation.operation.module_path.as_ref() == ["compare"]
-                && matches!(
-                    operation.operation.operation_name.as_str(),
-                    "eq" | "neq" | "seq" | "sneq" | "lt" | "lte" | "gt" | "gte"
-                ));
-        if propagates_population {
+        if closed_activation_producer_supported(operation.operation) {
             pending_logical_sources.extend(node_inputs(artifact, node)?);
         }
     }
@@ -5348,7 +5547,7 @@ fn complete_activation_shape_facts(
     // Live masks still require an explicit output shape and are revalidated on
     // every turn.
     let mut logical_populations = BTreeMap::<ArtifactSource, u64>::new();
-    let mut analysis = ClosedActivationAnalysisContext::default();
+    let analysis = ClosedActivationAnalysisContext::default();
     for node_id in &schedule.nodes {
         let Some(node) = artifact.nodes()[node_id.get() as usize].as_operation() else {
             continue;
@@ -9418,7 +9617,7 @@ mod shape_fact_tests {
             vec![ValueDataDraft::F64(F64Bits::from_f64(value)); count],
         );
         let analysis = ClosedActivationAnalysisContext::default();
-        assert!(
+        let convert = || {
             constant_comparison_operand(
                 &artifact,
                 NodeId::new(0),
@@ -9429,9 +9628,42 @@ mod shape_fact_tests {
             )
             .unwrap()
             .is_none()
-        );
+        };
+        assert!(convert());
+        assert_eq!(analysis.projected_string_payloads.borrow().len(), 1);
+        assert!(convert());
+        assert_eq!(analysis.projected_string_payloads.borrow().len(), 1);
         assert_eq!(analysis.construction.compute_work.get(), 0);
         assert_eq!(analysis.materialized_operand_values.get(), 0);
+    }
+
+    #[test]
+    fn closed_string_conversion_constructs_the_exact_projected_payload() {
+        let count = 50_000;
+        let artifact = closed_unary_matrix_artifact(
+            "convert",
+            "kind",
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            SchemaBody::String,
+            [1, u64::try_from(count).unwrap()],
+            [1, u64::try_from(count).unwrap()],
+            vec![ValueDataDraft::F64(F64Bits::from_f64(0.0)); count],
+        );
+        let analysis = ClosedActivationAnalysisContext::default();
+        let operand = constant_comparison_operand(
+            &artifact,
+            NodeId::new(0),
+            ArtifactSource::Slot(CellSlotId::new(0)),
+            &ActivationFacts::default(),
+            &analysis,
+            true,
+        )
+        .unwrap()
+        .expect("short projected strings should fit exact construction admission");
+        assert_eq!((operand.rows, operand.columns), (1, count));
+        assert_eq!(analysis.construction.comparison_work.get(), 50_003);
+        assert_eq!(analysis.materialized_operand_values.get(), 50_000);
+        assert!(analysis.construction.construction_bytes.get() < mech_core::RESIDENT_MAX_BYTES);
     }
 
     #[test]
@@ -9511,8 +9743,9 @@ mod shape_fact_tests {
             columns: MAX_STATIC_SELECTOR_SOURCE_STEPS,
             values: vec![true; MAX_STATIC_SELECTOR_SOURCE_STEPS],
         };
+        let large = std::sync::Arc::new(large);
         let repeated = (0..1_024)
-            .map(|_| std::borrow::Cow::Borrowed(&large))
+            .map(|_| std::sync::Arc::clone(&large))
             .collect::<Vec<_>>();
         let analysis = ClosedActivationAnalysisContext::default();
         assert!(concatenate_closed_logical_masks(true, &repeated, &analysis).is_none());
@@ -9524,10 +9757,8 @@ mod shape_fact_tests {
             columns: 2,
             values: vec![true, false],
         };
-        let repeated = [
-            std::borrow::Cow::Borrowed(&small),
-            std::borrow::Cow::Borrowed(&small),
-        ];
+        let small = std::sync::Arc::new(small);
+        let repeated = [std::sync::Arc::clone(&small), std::sync::Arc::clone(&small)];
         let mask = concatenate_closed_logical_masks(true, &repeated, &analysis).unwrap();
         assert_eq!((mask.rows, mask.columns), (1, 4));
         assert_eq!(mask.values, [true, false, true, false]);
@@ -9572,6 +9803,137 @@ mod shape_fact_tests {
             )
             .is_some_and(|bytes| bytes > mech_core::RESIDENT_MAX_BYTES)
         );
+    }
+
+    fn scalar_string_comparison_artifact(operation_name: &str, value: String) -> ProgramArtifact {
+        let mut schemas = SchemaTableBuilder::new();
+        let string = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::String,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let boolean = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Bool,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let string = build.resolve(string).unwrap();
+        let boolean = build.resolve(boolean).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: string,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::String(value),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let value = constants.insert(value).unwrap();
+        let build = constants.finish().unwrap();
+        let value = build.resolve(value).unwrap();
+        let (constants, _) = build.into_parts();
+        let mut contracts = OperationContractTableBuilder::new();
+        let contract = contracts
+            .insert(ResolvedOperationContract::Declared(
+                DeclaredOperationContract {
+                    inputs: vec![string, string]
+                        .into_iter()
+                        .map(|schema| ResolvedInputPort {
+                            schema,
+                            access: AccessMode::Read,
+                            delivery: DeliveryMode::Signal,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                    outputs: vec![ResolvedOutputPort {
+                        schema: boolean,
+                        access: AccessMode::Write,
+                        delivery: DeliveryMode::Signal,
+                        construction: OutputConstruction::FullWrite {
+                            shape: ShapeRule::Declared,
+                        },
+                        alias: AliasPolicy::NoAlias,
+                        change_detection: ChangeDetectionPolicy::ExactScalar,
+                    }]
+                    .into_boxed_slice(),
+                    interaction: ExternalInteraction::Pure,
+                },
+            ))
+            .unwrap();
+        let build = contracts.finish().unwrap();
+        let contract = build.resolve(contract).unwrap();
+        let (contracts, _) = build.into_parts();
+        let node = NodeId::new(0);
+        let slot = CellSlotId::new(0);
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: vec![SlotDeclaration {
+                slot,
+                schema: boolean,
+                role: SlotRole::Derived,
+                producer: ProducerReference::NodeOutput {
+                    node,
+                    output_ordinal: 0,
+                },
+                initializer: None,
+            }]
+            .into_boxed_slice(),
+            nodes: vec![NodeDeclaration {
+                node,
+                body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                    operation: OperationReference {
+                        module_path: vec!["compare".to_owned()].into_boxed_slice(),
+                        operation_name: operation_name.to_owned(),
+                    },
+                    contract,
+                    requirement: None,
+                }),
+                input_bindings: 0..2,
+                output_bindings: 2..3,
+            }]
+            .into_boxed_slice(),
+            bindings: vec![
+                BindingDeclaration::Input {
+                    id: BindingId::new(0),
+                    node,
+                    port_ordinal: 0,
+                    source: ArtifactSource::Constant(value),
+                },
+                BindingDeclaration::Input {
+                    id: BindingId::new(1),
+                    node,
+                    port_ordinal: 1,
+                    source: ArtifactSource::Constant(value),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(2),
+                    node,
+                    port_ordinal: 0,
+                    target: slot,
+                },
+            ]
+            .into_boxed_slice(),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
     }
 
     fn strict_matrix_comparison_artifact(
@@ -9813,7 +10175,7 @@ mod shape_fact_tests {
     }
 
     #[test]
-    fn repeated_dense_strict_comparisons_share_compute_admission() {
+    fn repeated_dense_strict_comparisons_reuse_one_accounted_scan() {
         let element_count = 65_537_u64;
         let artifact = strict_matrix_comparison_artifact(
             "seq",
@@ -9825,9 +10187,51 @@ mod shape_fact_tests {
             false,
         );
         let analysis = ClosedActivationAnalysisContext::default();
-        let admitted = mech_core::RESIDENT_MAX_COMPUTE_WORK / element_count;
-        for _ in 0..admitted {
-            assert!(
+        let compare = || {
+            closed_comparison_mask(
+                &artifact,
+                NodeId::new(0),
+                &ActivationFacts::default(),
+                &analysis,
+            )
+            .unwrap()
+            .is_some()
+        };
+        assert!(compare());
+        assert_eq!(analysis.construction.compute_work.get(), element_count);
+        assert_eq!(analysis.comparison_scanned_work.get(), element_count);
+        for _ in 0..1_024 {
+            assert!(compare());
+        }
+        assert_eq!(analysis.construction.compute_work.get(), element_count);
+        assert_eq!(analysis.comparison_scanned_work.get(), element_count);
+        assert_eq!(analysis.scalar_comparisons.borrow().len(), 1);
+    }
+
+    #[test]
+    fn repeated_string_and_snapshot_comparisons_reuse_accounted_scans() {
+        for artifact in [
+            strict_matrix_comparison_artifact(
+                "seq",
+                SchemaBody::String,
+                [1, 2],
+                [1, 2],
+                ValueDataDraft::String("x".repeat(20_000)),
+                false,
+                false,
+            ),
+            strict_matrix_comparison_artifact(
+                "seq",
+                SchemaBody::UnsignedInteger(IntegerWidth::W128),
+                [1, 100],
+                [1, 100],
+                ValueDataDraft::U128(1),
+                false,
+                false,
+            ),
+        ] {
+            let analysis = ClosedActivationAnalysisContext::default();
+            let compare = || {
                 closed_comparison_mask(
                     &artifact,
                     NodeId::new(0),
@@ -9836,9 +10240,25 @@ mod shape_fact_tests {
                 )
                 .unwrap()
                 .is_some()
-            );
+            };
+            assert!(compare());
+            let scanned = analysis.comparison_scanned_work.get();
+            let comparison = analysis.construction.comparison_work.get();
+            let compute = analysis.construction.compute_work.get();
+            assert!(scanned > 0);
+            assert!(compare());
+            assert_eq!(analysis.comparison_scanned_work.get(), scanned);
+            assert_eq!(analysis.construction.comparison_work.get(), comparison);
+            assert_eq!(analysis.construction.compute_work.get(), compute);
         }
-        assert!(
+    }
+
+    #[test]
+    fn repeated_large_scalar_string_strict_comparisons_reuse_one_compute_scan() {
+        let payload = usize::try_from(mech_core::RESIDENT_MAX_COMPARISON_WORK).unwrap() + 1;
+        let artifact = scalar_string_comparison_artifact("seq", "x".repeat(payload));
+        let analysis = ClosedActivationAnalysisContext::default();
+        let compare = || {
             closed_comparison_mask(
                 &artifact,
                 NodeId::new(0),
@@ -9846,30 +10266,121 @@ mod shape_fact_tests {
                 &analysis,
             )
             .unwrap()
-            .is_none()
-        );
+        };
+        assert_eq!(compare(), Some(ClosedLogicalMask::scalar(true)));
         assert_eq!(
-            analysis.construction.compute_work.get(),
-            admitted * element_count,
+            analysis.comparison_scanned_work.get(),
+            u64::try_from(payload).unwrap(),
         );
+        assert_eq!(analysis.construction.comparison_work.get(), 0);
+        let compute = analysis.construction.compute_work.get();
+        for _ in 0..1_024 {
+            assert_eq!(compare(), Some(ClosedLogicalMask::scalar(true)));
+        }
+        assert_eq!(analysis.construction.compute_work.get(), compute);
+        assert_eq!(
+            analysis.comparison_scanned_work.get(),
+            u64::try_from(payload).unwrap(),
+        );
+
+        let ordinary = scalar_string_comparison_artifact("eq", "x".repeat(payload));
+        let ordinary_analysis = ClosedActivationAnalysisContext::default();
+        let compare_ordinary = || {
+            closed_comparison_mask(
+                &ordinary,
+                NodeId::new(0),
+                &ActivationFacts::default(),
+                &ordinary_analysis,
+            )
+            .unwrap()
+        };
+        assert_eq!(compare_ordinary(), None);
+        assert_eq!(ordinary_analysis.scalar_comparisons.borrow().len(), 1);
+        assert!(
+            ordinary_analysis
+                .scalar_comparisons
+                .borrow()
+                .values()
+                .all(Option::is_none)
+        );
+        for _ in 0..1_024 {
+            assert_eq!(compare_ordinary(), None);
+        }
+        assert_eq!(ordinary_analysis.scalar_comparisons.borrow().len(), 1);
     }
 
     #[test]
     fn snapshot_strict_comparison_uses_full_shape_instance_identity() {
-        let artifact = strict_matrix_comparison_artifact(
-            "seq",
-            SchemaBody::UnsignedInteger(IntegerWidth::W128),
-            [1, 2],
-            [2, 1],
-            ValueDataDraft::U128(1),
-            true,
-            true,
-        );
-        assert_eq!(
-            closed_comparison_population(&artifact, NodeId::new(0), &ActivationFacts::default())
+        let assert_core_value_relation = |artifact: &ProgramArtifact, expected: bool| {
+            let inputs = node_inputs(artifact, NodeId::new(0)).unwrap();
+            let [
+                ArtifactSource::Constant(left),
+                ArtifactSource::Constant(right),
+            ] = inputs.as_slice()
+            else {
+                panic!("comparison fixture inputs must be constants");
+            };
+            let left = artifact.constants().get(*left).unwrap();
+            let right = artifact.constants().get(*right).unwrap();
+            assert_eq!(
+                left.language_eq(artifact.schemas(), right, artifact.schemas())
+                    .unwrap(),
+                expected,
+            );
+            assert_eq!(
+                left.snapshot_eq(artifact.schemas(), right, artifact.schemas())
+                    .unwrap(),
+                expected,
+            );
+        };
+        for (operation, expected) in [("seq", 0), ("sneq", 1), ("eq", 0), ("neq", 1)] {
+            let artifact = strict_matrix_comparison_artifact(
+                operation,
+                SchemaBody::UnsignedInteger(IntegerWidth::W128),
+                [1, 2],
+                [2, 1],
+                ValueDataDraft::U128(1),
+                true,
+                true,
+            );
+            let decoded = crate::decode_program_artifact_bytecode_v1(
+                &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            for artifact in [&artifact, &decoded] {
+                assert_core_value_relation(artifact, false);
+                assert_eq!(
+                    closed_comparison_population(
+                        artifact,
+                        NodeId::new(0),
+                        &ActivationFacts::default(),
+                    )
+                    .unwrap(),
+                    Some(expected),
+                );
+            }
+        }
+        for (operation, expected) in [("seq", 1), ("sneq", 0), ("eq", 1), ("neq", 0)] {
+            let artifact = strict_matrix_comparison_artifact(
+                operation,
+                SchemaBody::UnsignedInteger(IntegerWidth::W128),
+                [1, 2],
+                [1, 2],
+                ValueDataDraft::U128(1),
+                true,
+                true,
+            );
+            assert_core_value_relation(&artifact, true);
+            assert_eq!(
+                closed_comparison_population(
+                    &artifact,
+                    NodeId::new(0),
+                    &ActivationFacts::default(),
+                )
                 .unwrap(),
-            Some(0),
-        );
+                Some(expected),
+            );
+        }
     }
 
     #[test]
@@ -9902,15 +10413,18 @@ mod shape_fact_tests {
                 true,
                 false,
             );
+            let analysis = ClosedActivationAnalysisContext::default();
             assert_eq!(
-                closed_comparison_population(
+                closed_comparison_mask(
                     &artifact,
                     NodeId::new(0),
                     &ActivationFacts::default(),
+                    &analysis,
                 )
                 .unwrap(),
-                Some(expected),
+                Some(ClosedLogicalMask::scalar(expected != 0)),
             );
+            assert_eq!(analysis.comparison_scanned_work.get(), 0);
         }
     }
 
@@ -10176,7 +10690,7 @@ mod shape_fact_tests {
             values: vec![true, false],
         };
         let first_bytes = u64::try_from(first.values.capacity()).unwrap();
-        let mut masks = ClosedLogicalMaskStore::with_byte_limit(first_bytes);
+        let masks = ClosedLogicalMaskStore::with_byte_limit(first_bytes);
         assert!(masks.insert(ArtifactSource::Slot(CellSlotId::new(0)), first));
         assert!(!masks.insert(
             ArtifactSource::Slot(CellSlotId::new(1)),
@@ -10186,7 +10700,7 @@ mod shape_fact_tests {
                 values: vec![true],
             },
         ));
-        assert_eq!(masks.retained_bytes, first_bytes);
+        assert_eq!(masks.retained_bytes.get(), first_bytes);
         assert!(
             masks
                 .get(&ArtifactSource::Slot(CellSlotId::new(0)))
@@ -10204,6 +10718,16 @@ mod shape_fact_tests {
         columns: u64,
         values: impl IntoIterator<Item = bool>,
     ) -> (ProgramArtifact, ArtifactSource) {
+        let (artifact, sources) =
+            closed_boolean_constants_artifact(rows, columns, vec![values.into_iter().collect()]);
+        (artifact, sources[0])
+    }
+
+    fn closed_boolean_constants_artifact(
+        rows: u64,
+        columns: u64,
+        values: Vec<Vec<bool>>,
+    ) -> (ProgramArtifact, Vec<ArtifactSource>) {
         let mut schemas = SchemaTableBuilder::new();
         let matrix = schemas
             .insert(
@@ -10225,23 +10749,31 @@ mod shape_fact_tests {
         let build = schemas.finish().unwrap();
         let matrix = build.resolve(matrix).unwrap();
         let (schemas, _) = build.into_parts();
-        let value = ValueDraft {
-            schema: matrix,
-            shape_values: Box::new([]),
-            data: ValueDataDraft::Matrix(
-                values
-                    .into_iter()
-                    .map(ValueDataDraft::Bool)
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-            ),
-        }
-        .finalize(&SnapshotValidationContext::new(&schemas))
-        .unwrap();
         let mut constants = ConstantStoreBuilder::new(&schemas);
-        let value = constants.insert(value).unwrap();
+        let values = values
+            .into_iter()
+            .map(|values| {
+                let value = ValueDraft {
+                    schema: matrix,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::Matrix(
+                        values
+                            .into_iter()
+                            .map(ValueDataDraft::Bool)
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    ),
+                }
+                .finalize(&SnapshotValidationContext::new(&schemas))
+                .unwrap();
+                constants.insert(value).unwrap()
+            })
+            .collect::<Vec<_>>();
         let build = constants.finish().unwrap();
-        let value = build.resolve(value).unwrap();
+        let values = values
+            .into_iter()
+            .map(|value| ArtifactSource::Constant(build.resolve(value).unwrap()))
+            .collect::<Vec<_>>();
         let (constants, _) = build.into_parts();
         let build = OperationContractTableBuilder::new().finish().unwrap();
         let (contracts, _) = build.into_parts();
@@ -10260,7 +10792,7 @@ mod shape_fact_tests {
         }
         .finalize()
         .unwrap();
-        (artifact, ArtifactSource::Constant(value))
+        (artifact, values)
     }
 
     #[test]
@@ -10308,6 +10840,73 @@ mod shape_fact_tests {
         assert_eq!(analysis.copied_mask_values.get(), 0);
         assert_eq!(analysis.construction.construction_bytes.get(), 0);
         assert_eq!(analysis.construction.compute_work.get(), 0);
+    }
+
+    #[test]
+    fn admitted_repeated_constant_mask_is_prepared_once_without_deduplication() {
+        let (artifact, source) = closed_boolean_constant_artifact(1, 2, [true, false]);
+        let analysis = ClosedActivationAnalysisContext::default();
+        let mask = concatenate_closed_logical_sources(
+            &artifact,
+            true,
+            &[source, source],
+            &ActivationFacts::default(),
+            &analysis,
+        )
+        .unwrap();
+        assert_eq!((mask.rows, mask.columns), (1, 4));
+        assert_eq!(mask.values, [true, false, true, false]);
+        assert_eq!(analysis.materialized_logical_mask_values.get(), 2);
+        assert_eq!(analysis.copied_mask_values.get(), 4);
+    }
+
+    #[test]
+    fn distinct_constant_masks_are_preflighted_before_bulk_preparation() {
+        let width = MAX_STATIC_SELECTOR_SOURCE_STEPS / 2 + 1;
+        let (artifact, sources) = closed_boolean_constants_artifact(
+            1,
+            u64::try_from(width).unwrap(),
+            vec![vec![true; width], vec![false; width]],
+        );
+        let analysis = ClosedActivationAnalysisContext::default();
+        assert!(
+            concatenate_closed_logical_sources(
+                &artifact,
+                true,
+                &sources,
+                &ActivationFacts::default(),
+                &analysis,
+            )
+            .is_none()
+        );
+        assert_eq!(analysis.materialized_logical_mask_values.get(), 0);
+        assert_eq!(analysis.copied_mask_values.get(), 0);
+    }
+
+    #[test]
+    fn admitted_repeated_cached_mask_shares_prepared_input() {
+        let (artifact, _) = closed_boolean_constant_artifact(1, 1, [true]);
+        let source = ArtifactSource::Slot(CellSlotId::new(99));
+        let analysis = ClosedActivationAnalysisContext::default();
+        assert!(analysis.logical_masks.insert(
+            source,
+            ClosedLogicalMask {
+                rows: 1,
+                columns: 2,
+                values: vec![false, true],
+            },
+        ));
+        let mask = concatenate_closed_logical_sources(
+            &artifact,
+            true,
+            &[source, source],
+            &ActivationFacts::default(),
+            &analysis,
+        )
+        .unwrap();
+        assert_eq!(mask.values, [false, true, false, true]);
+        assert_eq!(analysis.materialized_logical_mask_values.get(), 0);
+        assert_eq!(analysis.copied_mask_values.get(), 4);
     }
 
     #[test]

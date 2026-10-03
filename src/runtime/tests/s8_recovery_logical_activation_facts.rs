@@ -236,6 +236,18 @@ fn closed_binary_logical_masks_publish_exact_populations() {
 }
 
 #[test]
+fn closed_comparisons_compose_through_supported_producers() {
+    exact_closed_mask(
+        "x := [42 43]\np := 1 < 2\nt := (p, 7)\nq := t == (true, 7)\nmask := [q false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := 1 < 2\ntext<string> := p\nq := text == \"true\"\nmask := [q false]\nx[mask]\n",
+        "[42]",
+    );
+}
+
+#[test]
 fn closed_whole_value_comparisons_have_scalar_populations() {
     exact_closed_mask(
         "x := [42 43]\np := [1 2] === [1 2]\nmask := [p false]\nx[mask]\n",
