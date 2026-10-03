@@ -3578,7 +3578,7 @@ fn bind_sum_rows(
     bind_snapshot_sum(request, false)
 }
 
-fn is_snapshot_sum_element(body: &SchemaBody) -> bool {
+pub(super) fn matrix_sum_element_supported(body: &SchemaBody) -> bool {
     match body {
         SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
@@ -3629,7 +3629,7 @@ fn bind_snapshot_sum(
         && output_element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
         && request.output.shape.len().is_some();
     if input_element != output_element
-        || !is_snapshot_sum_element(input_element)
+        || !matrix_sum_element_supported(input_element)
         || (!snapshot_output && !dense_f64_output)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);

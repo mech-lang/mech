@@ -288,6 +288,26 @@ fn closed_comparisons_compose_through_matrix_products() {
 }
 
 #[test]
+fn closed_comparisons_compose_through_row_and_column_reductions() {
+    exact_closed_mask(
+        "+> stats\nx := [42 43 44]\nreduced := stats/sum/row([1 2 3; 4 5 6])\nmask := reduced > 6\nx[mask]\n",
+        "[43; 44]",
+    );
+    exact_closed_mask(
+        "+> stats\nx := [42 43]\nreduced := stats/sum/column([1 2 3; 4 5 6])\nmask := reduced > 10\nx[mask]\n",
+        "[43]",
+    );
+    exact_closed_mask(
+        "+> stats\nx := [42 43 44]\nreduced := stats/sum/row([1f32 2f32 3f32; 4f32 5f32 6f32])\nmask := reduced > 6f32\nx[mask]\n",
+        "[43; 44]",
+    );
+    exact_closed_mask(
+        "+> stats\nx := [42 43]\nreduced := stats/sum/column([1u8 2u8 3u8; 4u8 5u8 6u8])\nmask := reduced > 10u8\nx[mask]\n",
+        "[43]",
+    );
+}
+
+#[test]
 fn closed_comparisons_compose_through_absolute_value() {
     exact_closed_mask(
         "+> math\nx := [42 43]\nmagnitude := math/abs([-2.0 3.0])\nmask := magnitude > 2.5\nx[mask]\n",
