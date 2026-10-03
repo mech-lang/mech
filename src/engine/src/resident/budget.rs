@@ -4,7 +4,8 @@ use mech_core::snapshot::{
     SequenceView, SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint,
 };
 use mech_core::{
-    ResidentKernelError, ResourceDemand, SchemaBody, SchemaId, SchemaTable, Value, ValueData,
+    ResidentKernelError, ResidentValueKind, ResourceDemand, SchemaBody, SchemaId, SchemaTable,
+    Value, ValueData,
 };
 
 use crate::memory_planner::{
@@ -137,6 +138,55 @@ pub(super) fn projected_snapshot_string_payload(
             }
         },
         value => projected_string_value_bytes(value),
+    }
+}
+
+pub(super) fn projected_dense_string_payload(
+    value: &Value,
+    kind: ResidentValueKind,
+) -> Result<usize, ResidentKernelError> {
+    match (kind, value.data()) {
+        (ResidentValueKind::Bool, ValueData::Bool(value)) => Ok(if *value { 4 } else { 5 }),
+        (ResidentValueKind::Bool, ValueData::Matrix(matrix)) => {
+            let SequenceView::Bool(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(if *value { 4 } else { 5 })
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+        }
+        (ResidentValueKind::Index, ValueData::Index(value)) => displayed_bytes(value),
+        (ResidentValueKind::Index, ValueData::Matrix(matrix)) => {
+            let SequenceView::Index(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            projected_display_sequence(values)
+        }
+        (ResidentValueKind::F64, ValueData::F64(value)) => displayed_bytes(value.to_f64()),
+        (ResidentValueKind::F64, ValueData::Matrix(matrix)) => {
+            let SequenceView::F64(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(displayed_bytes(value.to_f64())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+        }
+        (ResidentValueKind::String, ValueData::String(value)) => Ok(value.len()),
+        (ResidentValueKind::String, ValueData::Matrix(matrix)) => {
+            let SequenceView::String(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(value.len())
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
     }
 }
 

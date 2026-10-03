@@ -4282,6 +4282,45 @@ fn closed_set_relation_operation(operation: &OperationReference) -> Option<SetVa
     })
 }
 
+#[derive(Clone, Copy, Debug)]
+enum ClosedSetAlgebraOperation {
+    Union,
+    Intersection,
+    Difference,
+    SymmetricDifference,
+}
+
+fn closed_set_algebra_operation(
+    operation: &OperationReference,
+) -> Option<ClosedSetAlgebraOperation> {
+    if operation.module_path.as_ref() != ["set"] {
+        return None;
+    }
+    Some(match operation.operation_name.as_str() {
+        "union" => ClosedSetAlgebraOperation::Union,
+        "intersection" => ClosedSetAlgebraOperation::Intersection,
+        "difference" => ClosedSetAlgebraOperation::Difference,
+        "symmetric-difference" => ClosedSetAlgebraOperation::SymmetricDifference,
+        _ => return None,
+    })
+}
+
+fn closed_set_membership_operation(operation: &OperationReference) -> Option<bool> {
+    if operation.module_path.as_ref() != ["set"] {
+        return None;
+    }
+    match operation.operation_name.as_str() {
+        "element-of" => Some(false),
+        "not-element-of" => Some(true),
+        _ => None,
+    }
+}
+
+fn closed_set_boolean_operation(operation: &OperationReference) -> bool {
+    closed_set_relation_operation(operation).is_some()
+        || closed_set_membership_operation(operation).is_some()
+}
+
 fn closed_scalar_access_operation(operation: &OperationReference) -> bool {
     operation.module_path.as_ref() == ["access"] && operation.operation_name == "scalar"
 }
@@ -4673,7 +4712,9 @@ fn closed_iterative_operand_producer(operation: &OperationReference) -> bool {
         || closed_present_option_operation(operation)
         || closed_string_concat_operation(operation)
         || closed_set_definition_operation(operation)
+        || closed_set_algebra_operation(operation).is_some()
         || closed_set_relation_operation(operation).is_some()
+        || closed_set_membership_operation(operation).is_some()
         || closed_binary_numeric_operation(operation).is_some()
         || closed_unary_numeric_operation(operation).is_some()
 }
@@ -6740,6 +6781,12 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 if !supported {
                     return Ok(None);
                 }
+                let snapshot_numeric_semantics =
+                    matches!(numeric, ClosedBinaryNumericOperation::Float(_))
+                        && (closed_operand_resident_kind(artifact, &left, facts)?
+                            == ResidentValueKind::Snapshot
+                            || closed_operand_resident_kind(artifact, &right, facts)?
+                                == ResidentValueKind::Snapshot);
                 let compute_work = match numeric {
                     ClosedBinaryNumericOperation::Arithmetic(arithmetic) => {
                         let Some(work) =
@@ -6825,11 +6872,19 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                                 )
                             }
                             ClosedBinaryNumericOperation::Float(operation) => {
-                                super::numeric::numeric_float_binary(
-                                    operation,
-                                    left_values[left_index].clone(),
-                                    right_values[right_index].clone(),
-                                )
+                                if snapshot_numeric_semantics {
+                                    super::numeric::numeric_float_binary_snapshot(
+                                        operation,
+                                        left_values[left_index].clone(),
+                                        right_values[right_index].clone(),
+                                    )
+                                } else {
+                                    super::numeric::numeric_float_binary(
+                                        operation,
+                                        left_values[left_index].clone(),
+                                        right_values[right_index].clone(),
+                                    )
+                                }
                             }
                         };
                         let Ok(value) = value else {
@@ -6927,6 +6982,9 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                 if input.element != *target_element || !supported {
                     return Ok(None);
                 }
+                let snapshot_numeric_semantics =
+                    closed_operand_resident_kind(artifact, &input, facts)?
+                        == ResidentValueKind::Snapshot;
                 let work_per_element = if matches!(target_element, SchemaBody::Rational64) {
                     1_024
                 } else {
@@ -6976,7 +7034,11 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                         }
                         ClosedUnaryNumericOperation::Absolute => super::numeric::numeric_abs(value),
                         ClosedUnaryNumericOperation::Float(operation) => {
-                            super::numeric::numeric_float_unary(operation, value)
+                            if snapshot_numeric_semantics {
+                                super::numeric::numeric_float_unary_snapshot(operation, value)
+                            } else {
+                                super::numeric::numeric_float_unary(operation, value)
+                            }
                         }
                     })
                     .collect::<Result<Vec<_>, _>>()
@@ -7325,9 +7387,16 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     {
                         bytes
                     } else {
-                        let Ok(bytes) =
+                        let source_kind = closed_operand_resident_kind(artifact, &source, facts)?;
+                        let bytes = if source_kind == ResidentValueKind::Snapshot {
                             super::budget::projected_snapshot_string_payload(&source.value)
-                        else {
+                        } else {
+                            super::budget::projected_dense_string_payload(
+                                &source.value,
+                                source_kind,
+                            )
+                        };
+                        let Ok(bytes) = bytes else {
                             return Ok(None);
                         };
                         let Ok(bytes) = u64::try_from(bytes) else {
@@ -7492,6 +7561,220 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     &SnapshotValidationContext::new(artifact.schemas())
                         .with_canonicalization_budget(budget),
                 )
+            } else if let Some(algebra) = closed_set_algebra_operation(operation.operation) {
+                let [left, right] = inputs.as_slice() else {
+                    return Ok(None);
+                };
+                let Some(left) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *left,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let Some(right) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *right,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let (
+                    SchemaBody::Set {
+                        element: left_element,
+                        ..
+                    },
+                    SchemaBody::Set {
+                        element: right_element,
+                        ..
+                    },
+                    SchemaBody::Set {
+                        element: target_element,
+                        ..
+                    },
+                    mech_core::ValueData::Set(left_set),
+                    mech_core::ValueData::Set(right_set),
+                ) = (
+                    &left.schema,
+                    &right.schema,
+                    target_schema.body(),
+                    left.value.data(),
+                    right.value.data(),
+                )
+                else {
+                    return Ok(None);
+                };
+                if left_element != right_element
+                    || left_element != target_element
+                    || closed_slot_resident_kind(artifact, slot, facts)?
+                        != ResidentValueKind::Snapshot
+                {
+                    return Ok(None);
+                }
+                let left_count = left_set.elements().len();
+                let right_count = right_set.elements().len();
+                let maximum_output = match algebra {
+                    ClosedSetAlgebraOperation::Union
+                    | ClosedSetAlgebraOperation::SymmetricDifference => {
+                        left_count.checked_add(right_count)
+                    }
+                    ClosedSetAlgebraOperation::Intersection => Some(left_count.min(right_count)),
+                    ClosedSetAlgebraOperation::Difference => Some(left_count),
+                };
+                let Some(maximum_output) = maximum_output else {
+                    return Ok(None);
+                };
+                let Some(left_bytes) = closed_operand_retained_bytes(artifact, &left, analysis)
+                else {
+                    return Ok(None);
+                };
+                let Some(right_bytes) = closed_operand_retained_bytes(artifact, &right, analysis)
+                else {
+                    return Ok(None);
+                };
+                let Some((left_work, left_nodes)) =
+                    closed_value_comparison_measurement(artifact, &left.value)
+                else {
+                    return Ok(None);
+                };
+                let Some((right_work, right_nodes)) =
+                    closed_value_comparison_measurement(artifact, &right.value)
+                else {
+                    return Ok(None);
+                };
+                let Some(borrowed_nodes) = left_nodes.checked_add(right_nodes) else {
+                    return Ok(None);
+                };
+                if borrowed_nodes
+                    .checked_mul(4)
+                    .is_none_or(|nodes| nodes > mech_core::RESIDENT_MAX_RETAINED_NODES)
+                {
+                    return Ok(None);
+                }
+                let Some(payload_bytes) = left_bytes.checked_add(right_bytes) else {
+                    return Ok(None);
+                };
+                let Some(container_bytes) = maximum_output
+                    .checked_mul(core::mem::size_of::<ValueDataDraft>())
+                    .and_then(|bytes| bytes.checked_mul(2))
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                else {
+                    return Ok(None);
+                };
+                let Some(construction_bytes) = payload_bytes
+                    .checked_mul(2)
+                    .and_then(|bytes| bytes.checked_add(container_bytes))
+                    .and_then(|bytes| {
+                        bytes.checked_add(u64::try_from(core::mem::size_of::<Value>()).ok()?)
+                    })
+                else {
+                    return Ok(None);
+                };
+                let Some(fixed_work) = left_work.checked_add(right_work) else {
+                    return Ok(None);
+                };
+                let Some(compute_work) = left_count
+                    .checked_add(right_count)
+                    .and_then(|work| work.checked_add(maximum_output))
+                    .and_then(|work| u64::try_from(work).ok())
+                    .and_then(|work| work.checked_add(fixed_work))
+                else {
+                    return Ok(None);
+                };
+                let Some(materialized_values) = left_count
+                    .checked_add(right_count)
+                    .and_then(|count| count.checked_add(maximum_output.checked_mul(2)?))
+                else {
+                    return Ok(None);
+                };
+                if !analysis.construction.charge_compute_with_comparison(
+                    construction_bytes,
+                    compute_work,
+                    fixed_work,
+                ) || !analysis.record_materialized_operand_values(materialized_values)
+                {
+                    return Ok(None);
+                }
+                let Some(remaining_work) = mech_core::RESIDENT_MAX_COMPARISON_WORK
+                    .checked_sub(analysis.construction.comparison_work.get())
+                else {
+                    return Ok(None);
+                };
+                let merge_budget = SnapshotCanonicalizationBudget::new(remaining_work);
+                let elements = match algebra {
+                    ClosedSetAlgebraOperation::Union => left.value.set_union_elements_with_budget(
+                        artifact.schemas(),
+                        &right.value,
+                        artifact.schemas(),
+                        &merge_budget,
+                    ),
+                    ClosedSetAlgebraOperation::Intersection => {
+                        left.value.set_intersection_elements_with_budget(
+                            artifact.schemas(),
+                            &right.value,
+                            artifact.schemas(),
+                            &merge_budget,
+                        )
+                    }
+                    ClosedSetAlgebraOperation::Difference => {
+                        left.value.set_difference_elements_with_budget(
+                            artifact.schemas(),
+                            &right.value,
+                            artifact.schemas(),
+                            &merge_budget,
+                        )
+                    }
+                    ClosedSetAlgebraOperation::SymmetricDifference => {
+                        left.value.set_symmetric_difference_elements_with_budget(
+                            artifact.schemas(),
+                            &right.value,
+                            artifact.schemas(),
+                            &merge_budget,
+                        )
+                    }
+                };
+                let Ok(elements) = elements else {
+                    return Ok(None);
+                };
+                if !analysis
+                    .construction
+                    .charge_comparison_compute_work(merge_budget.consumed())
+                {
+                    return Ok(None);
+                }
+                let Ok(elements) = left
+                    .value
+                    .set_element_data_drafts(artifact.schemas(), &elements)
+                else {
+                    return Ok(None);
+                };
+                let data = ValueDataDraft::Set(elements);
+                let Ok(target_shape) =
+                    mech_core::shape_for_value_data(target_schema, &data, &[], None)
+                else {
+                    return Ok(None);
+                };
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data,
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
             } else if let Some(relation) = closed_set_relation_operation(operation.operation) {
                 let [left, right] = inputs.as_slice() else {
                     return Ok(None);
@@ -7613,6 +7896,116 @@ fn constant_comparison_operand_at_depth_impl<'a>(
                     schema: target_schema_id,
                     shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
                     data: ValueDataDraft::Bool(matches),
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
+            } else if let Some(negated) = closed_set_membership_operation(operation.operation) {
+                let [candidate, set] = inputs.as_slice() else {
+                    return Ok(None);
+                };
+                let Some(candidate) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *candidate,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let Some(set) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *set,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let (SchemaBody::Set { element, .. }, mech_core::ValueData::Set(set_value)) =
+                    (&set.schema, set.value.data())
+                else {
+                    return Ok(None);
+                };
+                if target_schema.body() != &SchemaBody::Bool
+                    || closed_slot_resident_kind(artifact, slot, facts)? != ResidentValueKind::Bool
+                {
+                    return Ok(None);
+                }
+                let matches = if &candidate.schema != element.as_ref() {
+                    false
+                } else {
+                    if closed_operand_resident_kind(artifact, &candidate, facts)?
+                        != ResidentValueKind::Snapshot
+                        && candidate.rows.checked_mul(candidate.columns) != Some(1)
+                    {
+                        return Ok(None);
+                    }
+                    let Some((candidate_work, candidate_nodes)) =
+                        closed_value_comparison_measurement(artifact, &candidate.value)
+                    else {
+                        return Ok(None);
+                    };
+                    let Some((set_work, set_nodes)) =
+                        closed_value_comparison_measurement(artifact, &set.value)
+                    else {
+                        return Ok(None);
+                    };
+                    if candidate_nodes
+                        .checked_mul(2)
+                        .and_then(|nodes| nodes.checked_add(set_nodes))
+                        .and_then(|nodes| nodes.checked_add(1))
+                        .is_none_or(|nodes| nodes > mech_core::RESIDENT_MAX_RETAINED_NODES)
+                    {
+                        return Ok(None);
+                    }
+                    let Some(candidate_bytes) =
+                        closed_operand_retained_bytes(artifact, &candidate, analysis)
+                    else {
+                        return Ok(None);
+                    };
+                    let Some(comparison_work) = u64::try_from(set_value.elements().len())
+                        .ok()
+                        .and_then(|count| count.checked_add(1))
+                        .and_then(|count| count.checked_mul(candidate_work))
+                        .and_then(|work| work.checked_add(set_work))
+                    else {
+                        return Ok(None);
+                    };
+                    if !analysis.construction.charge_compute_with_comparison(
+                        candidate_bytes,
+                        comparison_work,
+                        comparison_work,
+                    ) || !analysis.record_materialized_operand_values(1)
+                    {
+                        return Ok(None);
+                    }
+                    let membership_budget =
+                        SnapshotCanonicalizationBudget::new(comparison_work.max(1));
+                    let Ok(matches) = set.value.set_contains_with_budget(
+                        artifact.schemas(),
+                        &candidate.value,
+                        artifact.schemas(),
+                        &membership_budget,
+                    ) else {
+                        return Ok(None);
+                    };
+                    matches
+                };
+                let target_shape = slot_shape(artifact, slot, facts)?;
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data: ValueDataDraft::Bool(matches ^ negated),
                 }
                 .finalize(
                     &SnapshotValidationContext::new(artifact.schemas())
@@ -8586,7 +8979,9 @@ fn closed_activation_producer_supported(operation: &OperationReference) -> bool 
         || closed_present_option_operation(operation)
         || closed_string_concat_operation(operation)
         || closed_set_definition_operation(operation)
+        || closed_set_algebra_operation(operation).is_some()
         || closed_set_relation_operation(operation).is_some()
+        || closed_set_membership_operation(operation).is_some()
         || closed_binary_numeric_operation(operation).is_some()
         || closed_unary_numeric_operation(operation).is_some()
         || (operation.module_path.as_ref() == ["logic"]
@@ -8672,7 +9067,7 @@ fn complete_activation_shape_facts(
         }
         if class == NodeClass::Activation
             && required_logical_populations.contains(&ArtifactSource::Slot(output))
-            && closed_set_relation_operation(node.operation).is_some()
+            && closed_set_boolean_operation(node.operation)
             && let Some(mask) = closed_boolean_producer_mask(
                 artifact,
                 node.node,
@@ -13336,7 +13731,12 @@ mod shape_fact_tests {
         }
     }
 
-    fn closed_set_relation_artifact(relation_name: &str) -> ProgramArtifact {
+    fn closed_set_operation_artifact(operation_name: &str) -> ProgramArtifact {
+        let algebra = matches!(
+            operation_name,
+            "union" | "intersection" | "difference" | "symmetric-difference"
+        );
+        let membership = matches!(operation_name, "element-of" | "not-element-of");
         let mut schemas = SchemaTableBuilder::new();
         let scalar = schemas
             .insert(
@@ -13354,7 +13754,9 @@ mod shape_fact_tests {
                     dimension_parameters: Box::new([]),
                     body: SchemaBody::Set {
                         element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-                        cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+                        cardinality: CardinalitySpec::Dynamic {
+                            upper_bound: Some(DimensionExpr::Constant(2)),
+                        },
                     },
                 }
                 .finalize()
@@ -13416,41 +13818,84 @@ mod shape_fact_tests {
                 },
             ))
             .unwrap();
-        let relation = contracts
+        let operation = contracts
             .insert(ResolvedOperationContract::Declared(
                 DeclaredOperationContract {
-                    inputs: vec![set; 2]
-                        .into_iter()
-                        .map(|schema| ResolvedInputPort {
-                            schema,
-                            access: AccessMode::Read,
-                            delivery: DeliveryMode::Signal,
-                        })
-                        .collect::<Vec<_>>()
-                        .into_boxed_slice(),
+                    inputs: if membership {
+                        vec![scalar, set]
+                    } else {
+                        vec![set; 2]
+                    }
+                    .into_iter()
+                    .map(|schema| ResolvedInputPort {
+                        schema,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
                     outputs: vec![ResolvedOutputPort {
-                        schema: boolean,
+                        schema: if algebra { set } else { boolean },
                         access: AccessMode::Write,
                         delivery: DeliveryMode::Signal,
                         construction: OutputConstruction::FullWrite {
                             shape: ShapeRule::Declared,
                         },
                         alias: AliasPolicy::NoAlias,
-                        change_detection: ChangeDetectionPolicy::ExactScalar,
+                        change_detection: if algebra {
+                            ChangeDetectionPolicy::AlwaysChanged
+                        } else {
+                            ChangeDetectionPolicy::ExactScalar
+                        },
                     }]
                     .into_boxed_slice(),
                     interaction: ExternalInteraction::Pure,
                 },
             ))
             .unwrap();
+        let relation = algebra
+            .then(|| {
+                contracts.insert(ResolvedOperationContract::Declared(
+                    DeclaredOperationContract {
+                        inputs: vec![set; 2]
+                            .into_iter()
+                            .map(|schema| ResolvedInputPort {
+                                schema,
+                                access: AccessMode::Read,
+                                delivery: DeliveryMode::Signal,
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                        outputs: vec![ResolvedOutputPort {
+                            schema: boolean,
+                            access: AccessMode::Write,
+                            delivery: DeliveryMode::Signal,
+                            construction: OutputConstruction::FullWrite {
+                                shape: ShapeRule::Declared,
+                            },
+                            alias: AliasPolicy::NoAlias,
+                            change_detection: ChangeDetectionPolicy::ExactScalar,
+                        }]
+                        .into_boxed_slice(),
+                        interaction: ExternalInteraction::Pure,
+                    },
+                ))
+            })
+            .transpose()
+            .unwrap();
         let build = contracts.finish().unwrap();
         let define = build.resolve(define).unwrap();
-        let relation = build.resolve(relation).unwrap();
+        let operation_contract = build.resolve(operation).unwrap();
+        let relation_contract = relation.map(|contract| build.resolve(contract).unwrap());
         let (contracts, _) = build.into_parts();
-        let slots = (0..3)
+        let slots = (0..if algebra { 4 } else { 3 })
             .map(|raw| SlotDeclaration {
                 slot: CellSlotId::new(raw),
-                schema: if raw < 2 { set } else { boolean },
+                schema: if raw < 2 || (algebra && raw == 2) {
+                    set
+                } else {
+                    boolean
+                },
                 role: SlotRole::Derived,
                 producer: ProducerReference::NodeOutput {
                     node: NodeId::new(raw),
@@ -13472,6 +13917,82 @@ mod shape_fact_tests {
             input_bindings: inputs,
             output_bindings: outputs,
         };
+        let mut nodes = vec![
+            operation(0, "define", define, 0..1, 1..2),
+            operation(1, "define", define, 2..3, 3..4),
+            operation(2, operation_name, operation_contract, 4..6, 6..7),
+        ];
+        let mut bindings = vec![
+            BindingDeclaration::Input {
+                id: BindingId::new(0),
+                node: NodeId::new(0),
+                port_ordinal: 0,
+                source: ArtifactSource::Constant(value),
+            },
+            BindingDeclaration::Output {
+                id: BindingId::new(1),
+                node: NodeId::new(0),
+                port_ordinal: 0,
+                target: CellSlotId::new(0),
+            },
+            BindingDeclaration::Input {
+                id: BindingId::new(2),
+                node: NodeId::new(1),
+                port_ordinal: 0,
+                source: ArtifactSource::Constant(value),
+            },
+            BindingDeclaration::Output {
+                id: BindingId::new(3),
+                node: NodeId::new(1),
+                port_ordinal: 0,
+                target: CellSlotId::new(1),
+            },
+            BindingDeclaration::Input {
+                id: BindingId::new(4),
+                node: NodeId::new(2),
+                port_ordinal: 0,
+                source: if membership {
+                    ArtifactSource::Constant(value)
+                } else {
+                    ArtifactSource::Slot(CellSlotId::new(0))
+                },
+            },
+            BindingDeclaration::Input {
+                id: BindingId::new(5),
+                node: NodeId::new(2),
+                port_ordinal: 1,
+                source: ArtifactSource::Slot(CellSlotId::new(1)),
+            },
+            BindingDeclaration::Output {
+                id: BindingId::new(6),
+                node: NodeId::new(2),
+                port_ordinal: 0,
+                target: CellSlotId::new(2),
+            },
+        ];
+        if let Some(contract) = relation_contract {
+            nodes.push(operation(3, "equals", contract, 7..9, 9..10));
+            bindings.extend([
+                BindingDeclaration::Input {
+                    id: BindingId::new(7),
+                    node: NodeId::new(3),
+                    port_ordinal: 0,
+                    source: ArtifactSource::Slot(CellSlotId::new(2)),
+                },
+                BindingDeclaration::Input {
+                    id: BindingId::new(8),
+                    node: NodeId::new(3),
+                    port_ordinal: 1,
+                    source: ArtifactSource::Slot(CellSlotId::new(0)),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(9),
+                    node: NodeId::new(3),
+                    port_ordinal: 0,
+                    target: CellSlotId::new(3),
+                },
+            ]);
+        }
         ProgramArtifactDraft {
             schemas,
             constants,
@@ -13479,57 +14000,8 @@ mod shape_fact_tests {
             requirements: Default::default(),
             inputs: Box::new([]),
             slots: slots.into_boxed_slice(),
-            nodes: vec![
-                operation(0, "define", define, 0..1, 1..2),
-                operation(1, "define", define, 2..3, 3..4),
-                operation(2, relation_name, relation, 4..6, 6..7),
-            ]
-            .into_boxed_slice(),
-            bindings: vec![
-                BindingDeclaration::Input {
-                    id: BindingId::new(0),
-                    node: NodeId::new(0),
-                    port_ordinal: 0,
-                    source: ArtifactSource::Constant(value),
-                },
-                BindingDeclaration::Output {
-                    id: BindingId::new(1),
-                    node: NodeId::new(0),
-                    port_ordinal: 0,
-                    target: CellSlotId::new(0),
-                },
-                BindingDeclaration::Input {
-                    id: BindingId::new(2),
-                    node: NodeId::new(1),
-                    port_ordinal: 0,
-                    source: ArtifactSource::Constant(value),
-                },
-                BindingDeclaration::Output {
-                    id: BindingId::new(3),
-                    node: NodeId::new(1),
-                    port_ordinal: 0,
-                    target: CellSlotId::new(1),
-                },
-                BindingDeclaration::Input {
-                    id: BindingId::new(4),
-                    node: NodeId::new(2),
-                    port_ordinal: 0,
-                    source: ArtifactSource::Slot(CellSlotId::new(0)),
-                },
-                BindingDeclaration::Input {
-                    id: BindingId::new(5),
-                    node: NodeId::new(2),
-                    port_ordinal: 1,
-                    source: ArtifactSource::Slot(CellSlotId::new(1)),
-                },
-                BindingDeclaration::Output {
-                    id: BindingId::new(6),
-                    node: NodeId::new(2),
-                    port_ordinal: 0,
-                    target: CellSlotId::new(2),
-                },
-            ]
-            .into_boxed_slice(),
+            nodes: nodes.into_boxed_slice(),
+            bindings: bindings.into_boxed_slice(),
             outputs: Box::new([]),
             constraints: Box::new([]),
             compute_regions: Box::new([]),
@@ -13549,7 +14021,7 @@ mod shape_fact_tests {
             ("subset", true),
             ("superset", true),
         ] {
-            let artifact = closed_set_relation_artifact(relation_name);
+            let artifact = closed_set_operation_artifact(relation_name);
             let decoded = crate::decode_program_artifact_bytecode_v1(
                 &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
             )
@@ -13580,6 +14052,92 @@ mod shape_fact_tests {
                 .unwrap()
                 .expect("closed set relation should produce an exact logical mask");
                 assert_eq!(mask.population(), Some(u64::from(expected)));
+            }
+        }
+    }
+
+    #[test]
+    fn closed_set_membership_folds_into_exact_masks() {
+        for (operation_name, expected) in [("element-of", true), ("not-element-of", false)] {
+            let artifact = closed_set_operation_artifact(operation_name);
+            let decoded = crate::decode_program_artifact_bytecode_v1(
+                &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            for artifact in [&artifact, &decoded] {
+                let analysis = ClosedActivationAnalysisContext::default();
+                let source = ArtifactSource::Slot(CellSlotId::new(2));
+                let operand = constant_comparison_operand(
+                    artifact,
+                    NodeId::new(2),
+                    source,
+                    &ActivationFacts::default(),
+                    &analysis,
+                    false,
+                )
+                .unwrap()
+                .expect("closed set membership should fold");
+                assert_eq!(
+                    operand.value.canonical_data_draft().unwrap(),
+                    ValueDataDraft::Bool(expected),
+                );
+                let mask = closed_boolean_producer_mask(
+                    artifact,
+                    NodeId::new(2),
+                    source,
+                    &ActivationFacts::default(),
+                    &analysis,
+                )
+                .unwrap()
+                .expect("closed set membership should produce an exact logical mask");
+                assert_eq!(mask.population(), Some(u64::from(expected)));
+            }
+        }
+    }
+
+    #[test]
+    fn closed_set_algebra_folds_before_relations() {
+        for (operation_name, expected_count, expected_relation) in [
+            ("union", 1, true),
+            ("intersection", 1, true),
+            ("difference", 0, false),
+            ("symmetric-difference", 0, false),
+        ] {
+            let artifact = closed_set_operation_artifact(operation_name);
+            let decoded = crate::decode_program_artifact_bytecode_v1(
+                &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            for artifact in [&artifact, &decoded] {
+                let operand = constant_comparison_operand(
+                    artifact,
+                    NodeId::new(2),
+                    ArtifactSource::Slot(CellSlotId::new(2)),
+                    &ActivationFacts::default(),
+                    &ClosedActivationAnalysisContext::default(),
+                    false,
+                )
+                .unwrap()
+                .expect("closed set algebra should fold");
+                let ValueDataDraft::Set(elements) = operand.value.canonical_data_draft().unwrap()
+                else {
+                    panic!("set algebra must construct a set")
+                };
+                assert_eq!(elements.len(), expected_count);
+                let relation = constant_comparison_operand(
+                    artifact,
+                    NodeId::new(3),
+                    ArtifactSource::Slot(CellSlotId::new(3)),
+                    &ActivationFacts::default(),
+                    &ClosedActivationAnalysisContext::default(),
+                    false,
+                )
+                .unwrap()
+                .expect("relation consuming closed set algebra should fold");
+                assert_eq!(
+                    relation.value.canonical_data_draft().unwrap(),
+                    ValueDataDraft::Bool(expected_relation),
+                );
             }
         }
     }
@@ -14032,6 +14590,247 @@ mod shape_fact_tests {
         assert_eq!(analysis.construction.comparison_work.get(), 50_003);
         assert_eq!(analysis.materialized_operand_values.get(), 50_000);
         assert!(analysis.construction.construction_bytes.get() < mech_core::RESIDENT_MAX_BYTES);
+    }
+
+    #[test]
+    fn closed_dense_index_to_string_uses_dense_payload_projection() {
+        let mut schemas = SchemaTableBuilder::new();
+        let matrix = |element, rows, columns| {
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: vec![
+                        DimensionExpr::Constant(rows),
+                        DimensionExpr::Constant(columns),
+                    ]
+                    .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let source = schemas
+            .insert(matrix(SchemaBody::FloatingPoint(FloatWidth::W64), 1, 2))
+            .unwrap();
+        let index = schemas.insert(matrix(SchemaBody::Index, 2, 1)).unwrap();
+        let string = schemas.insert(matrix(SchemaBody::String, 2, 1)).unwrap();
+        let build = schemas.finish().unwrap();
+        let source = build.resolve(source).unwrap();
+        let index = build.resolve(index).unwrap();
+        let string = build.resolve(string).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: source,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![
+                    ValueDataDraft::F64(F64Bits::from_f64(12.0)),
+                    ValueDataDraft::F64(F64Bits::from_f64(34.0)),
+                ]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let value = constants.insert(value).unwrap();
+        let build = constants.finish().unwrap();
+        let value = build.resolve(value).unwrap();
+        let (constants, _) = build.into_parts();
+        let contract = |input, output| {
+            ResolvedOperationContract::Declared(DeclaredOperationContract {
+                inputs: vec![ResolvedInputPort {
+                    schema: input,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                }]
+                .into_boxed_slice(),
+                outputs: vec![ResolvedOutputPort {
+                    schema: output,
+                    access: AccessMode::Write,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::FullWrite {
+                        shape: ShapeRule::Declared,
+                    },
+                    alias: AliasPolicy::NoAlias,
+                    change_detection: ChangeDetectionPolicy::KernelReported,
+                }]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            })
+        };
+        let mut contracts = OperationContractTableBuilder::new();
+        let access = contracts.insert(contract(source, index)).unwrap();
+        let convert = contracts.insert(contract(index, string)).unwrap();
+        let build = contracts.finish().unwrap();
+        let access = build.resolve(access).unwrap();
+        let convert = build.resolve(convert).unwrap();
+        let (contracts, _) = build.into_parts();
+        let artifact = ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: vec![
+                SlotDeclaration {
+                    slot: CellSlotId::new(0),
+                    schema: index,
+                    role: SlotRole::Derived,
+                    producer: ProducerReference::NodeOutput {
+                        node: NodeId::new(0),
+                        output_ordinal: 0,
+                    },
+                    initializer: None,
+                },
+                SlotDeclaration {
+                    slot: CellSlotId::new(1),
+                    schema: string,
+                    role: SlotRole::Derived,
+                    producer: ProducerReference::NodeOutput {
+                        node: NodeId::new(1),
+                        output_ordinal: 0,
+                    },
+                    initializer: None,
+                },
+            ]
+            .into_boxed_slice(),
+            nodes: vec![
+                NodeDeclaration {
+                    node: NodeId::new(0),
+                    body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                        operation: OperationReference {
+                            module_path: vec!["access".to_owned()].into_boxed_slice(),
+                            operation_name: "index".to_owned(),
+                        },
+                        contract: access,
+                        requirement: None,
+                    }),
+                    input_bindings: 0..1,
+                    output_bindings: 1..2,
+                },
+                NodeDeclaration {
+                    node: NodeId::new(1),
+                    body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                        operation: OperationReference {
+                            module_path: vec!["convert".to_owned()].into_boxed_slice(),
+                            operation_name: "kind".to_owned(),
+                        },
+                        contract: convert,
+                        requirement: None,
+                    }),
+                    input_bindings: 2..3,
+                    output_bindings: 3..4,
+                },
+            ]
+            .into_boxed_slice(),
+            bindings: vec![
+                BindingDeclaration::Input {
+                    id: BindingId::new(0),
+                    node: NodeId::new(0),
+                    port_ordinal: 0,
+                    source: ArtifactSource::Constant(value),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(1),
+                    node: NodeId::new(0),
+                    port_ordinal: 0,
+                    target: CellSlotId::new(0),
+                },
+                BindingDeclaration::Input {
+                    id: BindingId::new(2),
+                    node: NodeId::new(1),
+                    port_ordinal: 0,
+                    source: ArtifactSource::Slot(CellSlotId::new(0)),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(3),
+                    node: NodeId::new(1),
+                    port_ordinal: 0,
+                    target: CellSlotId::new(1),
+                },
+            ]
+            .into_boxed_slice(),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        let facts = ActivationFacts::default();
+        let operand = constant_comparison_operand(
+            &artifact,
+            NodeId::new(0),
+            ArtifactSource::Slot(CellSlotId::new(0)),
+            &facts,
+            &ClosedActivationAnalysisContext::default(),
+            false,
+        )
+        .unwrap()
+        .expect("closed access/index should fold");
+        assert_eq!(
+            operand.value.canonical_data_draft().unwrap(),
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::Index(12), ValueDataDraft::Index(34)].into_boxed_slice(),
+            ),
+        );
+        let kind = closed_operand_resident_kind(&artifact, &operand, &facts).unwrap();
+        assert_eq!(kind, ResidentValueKind::Index);
+        assert!(super::super::budget::projected_snapshot_string_payload(&operand.value).is_err());
+        assert_eq!(
+            super::super::budget::projected_dense_string_payload(&operand.value, kind).unwrap(),
+            4,
+        );
+    }
+
+    #[test]
+    fn closed_snapshot_float_unary_uses_snapshot_math_semantics() {
+        let operation =
+            super::super::numeric::semantic_float_unary_operation(&["math".to_owned()], "cos")
+                .unwrap();
+        let value = 96_002.768_567_674_05;
+        let dense = super::super::numeric::numeric_float_unary(
+            operation,
+            ValueDataDraft::F64(F64Bits::from_f64(value)),
+        )
+        .unwrap();
+        let snapshot = super::super::numeric::numeric_float_unary_snapshot(
+            operation,
+            ValueDataDraft::F64(F64Bits::from_f64(value)),
+        )
+        .unwrap();
+        assert_eq!(
+            snapshot,
+            ValueDataDraft::F64(F64Bits::from_f64(libm::cos(value))),
+        );
+        assert_eq!(dense, ValueDataDraft::F64(F64Bits::from_f64(value.cos())),);
+
+        let operation =
+            super::super::numeric::semantic_float_binary_operation(&["math".to_owned()], "atan2")
+                .unwrap();
+        let left = 96_002.768_567_674_05;
+        let right = -31_337.125;
+        let dense = super::super::numeric::numeric_float_binary(
+            operation,
+            ValueDataDraft::F64(F64Bits::from_f64(left)),
+            ValueDataDraft::F64(F64Bits::from_f64(right)),
+        )
+        .unwrap();
+        let snapshot = super::super::numeric::numeric_float_binary_snapshot(
+            operation,
+            ValueDataDraft::F64(F64Bits::from_f64(left)),
+            ValueDataDraft::F64(F64Bits::from_f64(right)),
+        )
+        .unwrap();
+        assert_eq!(
+            snapshot,
+            ValueDataDraft::F64(F64Bits::from_f64(libm::atan2(left, right))),
+        );
+        assert_eq!(
+            dense,
+            ValueDataDraft::F64(F64Bits::from_f64(left.atan2(right))),
+        );
     }
 
     #[test]

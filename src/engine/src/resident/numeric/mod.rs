@@ -445,6 +445,15 @@ impl SemanticFloatBinary {
             BesselYn => libm::ynf(left as i32, right),
         }
     }
+
+    fn apply_snapshot_f64(self, left: f64, right: f64) -> f64 {
+        match self {
+            // The mixed/snapshot resident uses libm while the all-dense F64
+            // kernel deliberately uses the platform method.
+            Self::Atan2 => libm::atan2(left, right),
+            _ => self.apply_f64(left, right),
+        }
+    }
 }
 
 pub(super) fn semantic_float_unary_operation(
@@ -581,6 +590,19 @@ impl SemanticFloatUnary {
             BesselJ1 => libm::j1f(value),
             BesselY0 => libm::y0f(value),
             BesselY1 => libm::y1f(value),
+        }
+    }
+
+    fn apply_snapshot_f64(self, value: f64) -> f64 {
+        use SemanticFloatUnary::*;
+        match self {
+            // These dense F64 kernels deliberately use the platform methods,
+            // while their snapshot peers use libm alongside the F32 path.
+            Cos => libm::cos(value),
+            Floor => libm::floor(value),
+            Sin => libm::sin(value),
+            Sqrt => libm::sqrt(value),
+            _ => self.apply_f64(value),
         }
     }
 }
@@ -19088,6 +19110,21 @@ pub(super) fn numeric_float_unary(
     }
 }
 
+pub(super) fn numeric_float_unary_snapshot(
+    operation: SemanticFloatUnary,
+    value: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match value {
+        ValueDataDraft::F32(value) => Ok(ValueDataDraft::F32(F32Bits::from_f32(
+            operation.apply_f32(value.to_f32()),
+        ))),
+        ValueDataDraft::F64(value) => Ok(ValueDataDraft::F64(F64Bits::from_f64(
+            operation.apply_snapshot_f64(value.to_f64()),
+        ))),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
 pub(super) fn numeric_float_binary(
     operation: SemanticFloatBinary,
     left: ValueDataDraft,
@@ -19099,6 +19136,22 @@ pub(super) fn numeric_float_binary(
         )),
         (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
             F64Bits::from_f64(operation.apply_f64(left.to_f64(), right.to_f64())),
+        )),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+pub(super) fn numeric_float_binary_snapshot(
+    operation: SemanticFloatBinary,
+    left: ValueDataDraft,
+    right: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match (left, right) {
+        (ValueDataDraft::F32(left), ValueDataDraft::F32(right)) => Ok(ValueDataDraft::F32(
+            F32Bits::from_f32(operation.apply_f32(left.to_f32(), right.to_f32())),
+        )),
+        (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
+            F64Bits::from_f64(operation.apply_snapshot_f64(left.to_f64(), right.to_f64())),
         )),
         _ => Err(ResidentKernelError::InvalidInput),
     }

@@ -99,9 +99,36 @@ impl Value {
         candidate: &Value,
         candidate_schemas: &SchemaTable,
     ) -> Result<bool, SnapshotValueError> {
+        self.set_contains_with_optional_budget(self_schemas, candidate, candidate_schemas, None)
+    }
+
+    /// Tests set membership while charging every recursive ordered-key
+    /// comparison against one caller-owned canonicalization allowance.
+    pub fn set_contains_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        candidate: &Value,
+        candidate_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<bool, SnapshotValueError> {
+        self.set_contains_with_optional_budget(
+            self_schemas,
+            candidate,
+            candidate_schemas,
+            Some(budget),
+        )
+    }
+
+    fn set_contains_with_optional_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        candidate: &Value,
+        candidate_schemas: &SchemaTable,
+        budget: Option<&SnapshotCanonicalizationBudget>,
+    ) -> Result<bool, SnapshotValueError> {
         let (element, elements, candidate) =
             self.validated_set_candidate(self_schemas, candidate, candidate_schemas)?;
-        Ok(set_key_search(element, elements, &candidate)?.is_ok())
+        Ok(set_key_search_with_budget(element, elements, &candidate, budget)?.is_ok())
     }
 
     pub fn set_elements_after_insert(
@@ -463,11 +490,20 @@ fn set_key_search(
     elements: &[CanonicalKeyValue],
     candidate: &ValueData,
 ) -> Result<core::result::Result<usize, usize>, SnapshotValueError> {
+    set_key_search_with_budget(element, elements, candidate, None)
+}
+
+fn set_key_search_with_budget(
+    element: &SchemaBody,
+    elements: &[CanonicalKeyValue],
+    candidate: &ValueData,
+    budget: Option<&SnapshotCanonicalizationBudget>,
+) -> Result<core::result::Result<usize, usize>, SnapshotValueError> {
     let mut lower = 0usize;
     let mut upper = elements.len();
     while lower < upper {
         let middle = lower + (upper - lower) / 2;
-        match compare_key_data(element, elements[middle].data(), candidate)? {
+        match compare_key_data_with_budget(element, elements[middle].data(), candidate, budget)? {
             Ordering::Less => lower = middle + 1,
             Ordering::Greater => upper = middle,
             Ordering::Equal => return Ok(Ok(middle)),
