@@ -857,18 +857,6 @@ pub(super) fn has_mixed_document_region(
     Ok(false)
 }
 
-fn logical_underlined_section_title(heading: &str) -> &str {
-    heading
-        .split_once('.')
-        .filter(|(section, title)| {
-            !section.is_empty()
-                && section.chars().all(char::is_alphanumeric)
-                && title.chars().next().is_some_and(char::is_whitespace)
-        })
-        .map(|(_, title)| title.trim_start())
-        .unwrap_or(heading)
-}
-
 fn collect_document_units(
     node: &SyntaxNode,
     output: &mut Vec<DocumentUnit>,

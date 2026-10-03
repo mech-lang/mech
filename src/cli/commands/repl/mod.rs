@@ -106,7 +106,6 @@ fn play_mika_farewell(draw_target: ProgressDrawTarget, message: String, frame_de
         final_state.tick();
     }
 
-
     final_state.finish();
 }
 

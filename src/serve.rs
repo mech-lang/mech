@@ -473,10 +473,6 @@ impl ServerSourceRegistry {
                 })
             })
             .collect::<BTreeSet<_>>();
-        let has_compute_host = self
-            .compiler_hosts
-            .iter()
-            .any(|host| host.provider == "compute");
         let mut module_specifiers = BTreeMap::new();
         // The workspace snapshot is the source authority, including expanded
         // includes and resolver-specific import edges. A browser transport owns
