@@ -5214,7 +5214,7 @@ fn bind_n_choose_k(
     )
 }
 
-fn is_n_choose_k_snapshot_element(body: &SchemaBody) -> bool {
+pub(super) fn n_choose_k_element_supported(body: &SchemaBody) -> bool {
     match body {
         SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
@@ -5256,7 +5256,7 @@ fn bind_snapshot_n_choose_k_scalar(
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     if n_schema.body() != k_schema.body()
         || n_schema.body() != output_schema.body()
-        || !is_n_choose_k_snapshot_element(n_schema.body())
+        || !n_choose_k_element_supported(n_schema.body())
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -5325,7 +5325,7 @@ fn bind_snapshot_n_choose_k_matrix(
         || (input_snapshot && input.shape != ResidentShape::SCALAR)
         || (!selection_snapshot && !selection_dense_f64)
         || (selection_snapshot && selection_schema.body() != input_element.as_ref())
-        || !is_n_choose_k_snapshot_element(input_element)
+        || !n_choose_k_element_supported(input_element)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -14480,6 +14480,71 @@ fn numeric_from_u128(
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub(super) struct CanonicalNChooseKScalarPlan {
+    n: u128,
+    k: u128,
+    result_maximum: Option<u128>,
+    steps: usize,
+}
+
+impl CanonicalNChooseKScalarPlan {
+    pub(super) fn steps(self) -> usize {
+        self.steps
+    }
+
+    pub(super) fn evaluate(
+        self,
+        n_value: &mech_core::Value,
+        body: &SchemaBody,
+    ) -> Result<ValueDataDraft, ResidentKernelError> {
+        if self.k > self.n {
+            return numeric_zero(body);
+        }
+        if let Some(maximum) = self.result_maximum {
+            let result = checked_integer_n_choose_k(self.n, self.k)
+                .filter(|result| *result <= maximum)
+                .ok_or(ResidentKernelError::Arithmetic)?;
+            return numeric_from_u128(body, result);
+        }
+        let mut result = numeric_one(body)?;
+        let n_draft = n_value
+            .canonical_data_draft()
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
+        for index in 0..u128::try_from(self.steps).map_err(|_| ResidentKernelError::InvalidShape)? {
+            let numerator = numeric_subtract(n_draft.clone(), numeric_from_u128(body, index)?)?;
+            let denominator = numeric_from_u128(
+                body,
+                index
+                    .checked_add(1)
+                    .ok_or(ResidentKernelError::Arithmetic)?,
+            )?;
+            result = numeric_divide(numeric_multiply(result, numerator)?, denominator)?;
+        }
+        Ok(result)
+    }
+}
+
+pub(super) fn canonical_n_choose_k_scalar_plan(
+    n_value: &mech_core::Value,
+    k_value: &mech_core::Value,
+) -> Result<CanonicalNChooseKScalarPlan, ResidentKernelError> {
+    let (n, result_maximum) =
+        canonical_n_choose_k_selection(n_value.data()).ok_or(ResidentKernelError::InvalidInput)?;
+    let (k, _) =
+        canonical_n_choose_k_selection(k_value.data()).ok_or(ResidentKernelError::InvalidInput)?;
+    let steps = if k > n { 0 } else { k.min(n - k) };
+    if steps > 1_000_000 {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(CanonicalNChooseKScalarPlan {
+        n,
+        k,
+        result_maximum,
+        steps: usize::try_from(steps).map_err(|_| ResidentKernelError::InvalidShape)?,
+    })
+}
+
 fn n_choose_k_scalar_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -14504,14 +14569,7 @@ fn n_choose_k_scalar_snapshot(
     if n_schema.body() != k_schema.body() {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let (n, result_maximum) =
-        canonical_n_choose_k_selection(n_value.data()).ok_or(ResidentKernelError::InvalidInput)?;
-    let (k, _) =
-        canonical_n_choose_k_selection(k_value.data()).ok_or(ResidentKernelError::InvalidInput)?;
-    let steps = if k > n { 0 } else { k.min(n - k) };
-    if steps > 1_000_000 {
-        return Err(ResidentKernelError::InvalidShape);
-    }
+    let plan = canonical_n_choose_k_scalar_plan(n_value, k_value)?;
     preflight_snapshot_arithmetic(
         kernel,
         schemas,
@@ -14519,33 +14577,9 @@ fn n_choose_k_scalar_snapshot(
         &output,
         2,
         1,
-        usize::try_from(steps).map_err(|_| ResidentKernelError::InvalidShape)?,
+        plan.steps(),
     )?;
-    let result = if k > n {
-        numeric_zero(n_schema.body())?
-    } else if let Some(maximum) = result_maximum {
-        let result = checked_integer_n_choose_k(n, k)
-            .filter(|result| *result <= maximum)
-            .ok_or(ResidentKernelError::Arithmetic)?;
-        numeric_from_u128(n_schema.body(), result)?
-    } else {
-        let mut result = numeric_one(n_schema.body())?;
-        let n_draft = n_value
-            .canonical_data_draft()
-            .map_err(|_| ResidentKernelError::InvalidInput)?;
-        for index in 0..steps {
-            let numerator =
-                numeric_subtract(n_draft.clone(), numeric_from_u128(n_schema.body(), index)?)?;
-            let denominator = numeric_from_u128(
-                n_schema.body(),
-                index
-                    .checked_add(1)
-                    .ok_or(ResidentKernelError::Arithmetic)?,
-            )?;
-            result = numeric_divide(numeric_multiply(result, numerator)?, denominator)?;
-        }
-        result
-    };
+    let result = plan.evaluate(n_value, n_schema.body())?;
     write_snapshot_data_with_work_budget(kernel, output, result, Some(0))
 }
 
@@ -14694,7 +14728,7 @@ fn n_choose_k_snapshot(
             return Err(ResidentKernelError::IncompleteOutput);
         }
     }
-    if !is_n_choose_k_snapshot_element(element) {
+    if !n_choose_k_element_supported(element) {
         return Err(ResidentKernelError::IncompleteOutput);
     }
     write_snapshot_data_for_shape_with_work_budget(
@@ -14706,7 +14740,7 @@ fn n_choose_k_snapshot(
     )
 }
 
-fn advance_combination_indices(selected: &mut [usize], available: usize) -> bool {
+pub(super) fn advance_combination_indices(selected: &mut [usize], available: usize) -> bool {
     let Some(pivot) = (0..selected.len())
         .rev()
         .find(|index| selected[*index] < available - selected.len() + *index)

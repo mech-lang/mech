@@ -3221,16 +3221,17 @@ fn matrix_shape_for_extents(
         .map_err(|_| ResidentActivationError::RegionSizeOverflow)
 }
 
-fn slot_shape_matching_extents(
+fn closed_output_shape_for_extents(
     artifact: &ProgramArtifact,
     slot: CellSlotId,
     facts: &ActivationFacts,
     expected_extents: &[u64],
 ) -> Result<Option<ShapeInstance>, ResidentActivationError> {
-    // A shape's parameter vector is part of snapshot identity. Closed folds
-    // must retain the exact witness the resident output slot will publish,
-    // even when another parameter vector resolves to the same matrix extents.
-    let shape = slot_shape(artifact, slot, facts)?;
+    // Snapshot numeric and conversion kernels resolve a fresh output witness
+    // from the live extents. Validate those extents against the activation
+    // slot, then use the same canonical witness solver as runtime so strict
+    // comparisons observe identical shape identity.
+    let supplied = slot_shape(artifact, slot, facts)?;
     let schema = artifact
         .schemas()
         .get(artifact.slots()[slot.get() as usize].schema)
@@ -3241,13 +3242,13 @@ fn slot_shape_matching_extents(
                 return Ok(None);
             }
             for (dimension, expected) in dimensions.iter().zip(expected_extents) {
-                if evaluate_dimension(dimension, shape.parameter_values())? != *expected {
+                if evaluate_dimension(dimension, supplied.parameter_values())? != *expected {
                     return Ok(None);
                 }
             }
-            Ok(Some(shape))
+            Ok(Some(matrix_shape_for_extents(schema, expected_extents)?))
         }
-        _ if expected_extents.is_empty() => Ok(Some(shape)),
+        _ if expected_extents.is_empty() => Ok(Some(supplied)),
         _ => Ok(None),
     }
 }
@@ -4102,6 +4103,15 @@ enum ClosedMatrixReductionOperation {
     SumRows,
 }
 
+enum ClosedNChooseKFoldPlan {
+    Matrix {
+        available: usize,
+        requested: usize,
+        combinations: usize,
+    },
+    Scalar(super::numeric::CanonicalNChooseKScalarPlan),
+}
+
 fn closed_matrix_product_operation(
     operation: &OperationReference,
 ) -> Option<ClosedMatrixProductOperation> {
@@ -4126,6 +4136,10 @@ fn closed_matrix_reduction_operation(
         "row" => Some(ClosedMatrixReductionOperation::SumRows),
         _ => None,
     }
+}
+
+fn closed_n_choose_k_operation(operation: &OperationReference) -> bool {
+    operation.module_path.as_ref() == ["combinatorics"] && operation.operation_name == "n-choose-k"
 }
 
 fn closed_snapshot_publication_comparison_work(
@@ -4271,6 +4285,7 @@ fn closed_logical_mask_value(
     facts: &ActivationFacts,
     budget: &SnapshotCanonicalizationBudget,
     analysis: &ClosedActivationAnalysisContext,
+    allow_large_dense: bool,
 ) -> Result<Option<Value>, ResidentActivationError> {
     let ArtifactSource::Slot(slot) = source else {
         return Ok(None);
@@ -4283,7 +4298,9 @@ fn closed_logical_mask_value(
     let Some(count) = mask.rows.checked_mul(mask.columns) else {
         return Err(ResidentActivationError::RegionSizeOverflow);
     };
-    if count != mask.values.len() || count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+    if count != mask.values.len()
+        || (count > MAX_STATIC_SELECTOR_SOURCE_STEPS && !allow_large_dense)
+    {
         return Ok(None);
     }
     let shape_bytes = schema
@@ -4312,7 +4329,7 @@ fn closed_logical_mask_value(
     }
     let (shape, data) = match schema.body() {
         SchemaBody::Bool if count == 1 => {
-            let Some(shape) = slot_shape_matching_extents(artifact, slot, facts, &[])? else {
+            let Some(shape) = closed_output_shape_for_extents(artifact, slot, facts, &[])? else {
                 return Ok(None);
             };
             (shape, ValueDataDraft::Bool(mask.values[0]))
@@ -4324,7 +4341,8 @@ fn closed_logical_mask_value(
                 u64::try_from(mask.columns)
                     .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
             ];
-            let Some(shape) = slot_shape_matching_extents(artifact, slot, facts, &extents)? else {
+            let Some(shape) = closed_output_shape_for_extents(artifact, slot, facts, &extents)?
+            else {
                 return Ok(None);
             };
             if !analysis.record_materialized_operand_values(count) {
@@ -4358,7 +4376,6 @@ fn closed_comparison_operand_from_value<'a>(
     value: ClosedComparisonValue<'a>,
     allow_large_direct_dense: bool,
 ) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
-    let direct_constant = value.is_borrowed();
     let schema = artifact
         .schemas()
         .entry(value.schema())
@@ -4377,9 +4394,8 @@ fn closed_comparison_operand_from_value<'a>(
             let Some(count) = rows.checked_mul(columns) else {
                 return Err(ResidentActivationError::RegionSizeOverflow);
             };
-            let large_direct_dense_allowed = allow_large_direct_dense
-                && direct_constant
-                && dense_resident_kind(element).is_some();
+            let large_direct_dense_allowed =
+                allow_large_direct_dense && dense_resident_kind(element).is_some();
             if count != matrix.elements().len()
                 || (count > MAX_STATIC_SELECTOR_SOURCE_STEPS && !large_direct_dense_allowed)
             {
@@ -4468,8 +4484,15 @@ fn constant_comparison_operand_at_depth<'a>(
                 .get(target_schema_id)
                 .ok_or(ResidentActivationError::RegionSizeOverflow)?;
             let converted = if let Some(mask) = analysis.logical_masks.get(&source) {
-                let Some(value) =
-                    closed_logical_mask_value(artifact, source, &mask, facts, budget, analysis)?
+                let Some(value) = closed_logical_mask_value(
+                    artifact,
+                    source,
+                    &mask,
+                    facts,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
                 else {
                     return Ok(None);
                 };
@@ -4570,7 +4593,7 @@ fn constant_comparison_operand_at_depth<'a>(
                     u64::try_from(rows).map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
                 ];
                 let Some(target_shape) =
-                    slot_shape_matching_extents(artifact, slot, facts, &extents)?
+                    closed_output_shape_for_extents(artifact, slot, facts, &extents)?
                 else {
                     return Ok(None);
                 };
@@ -4724,7 +4747,7 @@ fn constant_comparison_operand_at_depth<'a>(
                         .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
                 ];
                 let Some(target_shape) =
-                    slot_shape_matching_extents(artifact, slot, facts, &extents)?
+                    closed_output_shape_for_extents(artifact, slot, facts, &extents)?
                 else {
                     return Ok(None);
                 };
@@ -4882,7 +4905,7 @@ fn constant_comparison_operand_at_depth<'a>(
                         .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
                 ];
                 let Some(target_shape) =
-                    slot_shape_matching_extents(artifact, slot, facts, &extents)?
+                    closed_output_shape_for_extents(artifact, slot, facts, &extents)?
                 else {
                     return Ok(None);
                 };
@@ -4890,6 +4913,244 @@ fn constant_comparison_operand_at_depth<'a>(
                     schema: target_schema_id,
                     shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
                     data: ValueDataDraft::Matrix(values.into_boxed_slice()),
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
+            } else if closed_n_choose_k_operation(operation.operation) {
+                let [values, selection] = inputs.as_slice() else {
+                    return Ok(None);
+                };
+                let Some(values) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *values,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let Some(selection) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *selection,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                if values.element != selection.element
+                    || selection.rows != 1
+                    || selection.columns != 1
+                    || !super::numeric::n_choose_k_element_supported(&values.element)
+                {
+                    return Ok(None);
+                }
+                let Some(cloned_bytes) = closed_operand_retained_bytes(artifact, &values, analysis)
+                    .and_then(|values| {
+                        closed_operand_retained_bytes(artifact, &selection, analysis)
+                            .and_then(|selection| values.checked_add(selection))
+                    })
+                else {
+                    return Ok(None);
+                };
+                let (target_shape, output_count, draft_nodes, compute_work, fold_plan) = if let (
+                    SchemaBody::Matrix { .. },
+                    SchemaBody::Matrix {
+                        element: target_element,
+                        ..
+                    },
+                ) =
+                    (&values.schema, target_schema.body())
+                {
+                    if values.element != **target_element {
+                        return Ok(None);
+                    }
+                    let Some(available) = values.rows.checked_mul(values.columns) else {
+                        return Err(ResidentActivationError::RegionSizeOverflow);
+                    };
+                    let Some(requested) =
+                        super::numeric::canonical_n_choose_k_cardinality(&selection.value)
+                    else {
+                        return Ok(None);
+                    };
+                    let Some(combinations) =
+                        super::numeric::checked_combination_count(available, requested)
+                    else {
+                        return Ok(None);
+                    };
+                    if requested == 0 || requested > available {
+                        return Ok(None);
+                    }
+                    let Some(output_count) = requested.checked_mul(combinations) else {
+                        return Err(ResidentActivationError::RegionSizeOverflow);
+                    };
+                    if output_count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+                        return Ok(None);
+                    }
+                    let extents = [
+                        u64::try_from(requested)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                        u64::try_from(combinations)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                    ];
+                    let Some(target_shape) =
+                        closed_output_shape_for_extents(artifact, slot, facts, &extents)?
+                    else {
+                        return Ok(None);
+                    };
+                    let Some(draft_nodes) = available
+                        .checked_add(1)
+                        .and_then(|inputs| inputs.checked_add(output_count))
+                    else {
+                        return Err(ResidentActivationError::RegionSizeOverflow);
+                    };
+                    let Some(compute_work) = output_count
+                        .checked_mul(2)
+                        .and_then(|work| work.checked_add(draft_nodes))
+                        .and_then(|work| u64::try_from(work).ok())
+                    else {
+                        return Ok(None);
+                    };
+                    (
+                        target_shape,
+                        output_count,
+                        draft_nodes,
+                        compute_work,
+                        ClosedNChooseKFoldPlan::Matrix {
+                            available,
+                            requested,
+                            combinations,
+                        },
+                    )
+                } else {
+                    if matches!(values.schema, SchemaBody::Matrix { .. })
+                        || target_schema.body() != &values.element
+                    {
+                        return Ok(None);
+                    }
+                    let plan = match super::numeric::canonical_n_choose_k_scalar_plan(
+                        &values.value,
+                        &selection.value,
+                    ) {
+                        Ok(plan) => plan,
+                        Err(_) => return Ok(None),
+                    };
+                    let Some(target_shape) =
+                        closed_output_shape_for_extents(artifact, slot, facts, &[])?
+                    else {
+                        return Ok(None);
+                    };
+                    let draft_nodes = 3;
+                    let Some(compute_work) = plan
+                        .steps()
+                        .checked_add(draft_nodes)
+                        .and_then(|work| u64::try_from(work).ok())
+                    else {
+                        return Ok(None);
+                    };
+                    (
+                        target_shape,
+                        1,
+                        draft_nodes,
+                        compute_work,
+                        ClosedNChooseKFoldPlan::Scalar(plan),
+                    )
+                };
+                let Some(shape_bytes) = target_schema
+                    .dimension_parameters()
+                    .len()
+                    .checked_mul(core::mem::size_of::<u64>())
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                else {
+                    return Ok(None);
+                };
+                let Some(index_bytes) = (match &fold_plan {
+                    ClosedNChooseKFoldPlan::Matrix { requested, .. } => requested
+                        .checked_mul(core::mem::size_of::<usize>())
+                        .and_then(|bytes| u64::try_from(bytes).ok()),
+                    ClosedNChooseKFoldPlan::Scalar(_) => Some(0),
+                }) else {
+                    return Ok(None);
+                };
+                let Some(construction_bytes) = draft_nodes
+                    .checked_mul(core::mem::size_of::<ValueDataDraft>())
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                    .and_then(|bytes| bytes.checked_add(cloned_bytes))
+                    .and_then(|bytes| bytes.checked_add(shape_bytes))
+                    .and_then(|bytes| bytes.checked_add(index_bytes))
+                    .and_then(|bytes| {
+                        bytes.checked_add(u64::try_from(core::mem::size_of::<Value>()).ok()?)
+                    })
+                else {
+                    return Ok(None);
+                };
+                let Some(comparison_work) = closed_snapshot_publication_comparison_work(
+                    artifact,
+                    &[&values, &selection],
+                    target_schema_id,
+                    target_schema,
+                    output_count,
+                ) else {
+                    return Ok(None);
+                };
+                if !analysis.construction.charge_compute_with_comparison(
+                    construction_bytes,
+                    compute_work,
+                    comparison_work,
+                ) || !analysis.record_materialized_operand_values(draft_nodes)
+                {
+                    return Ok(None);
+                }
+                let data = match fold_plan {
+                    ClosedNChooseKFoldPlan::Matrix {
+                        available,
+                        requested,
+                        combinations,
+                    } => {
+                        let Some(input_values) = closed_operand_draft_values(&values) else {
+                            return Ok(None);
+                        };
+                        if input_values.len() != available {
+                            return Ok(None);
+                        }
+                        let mut indices = (0..requested).collect::<Vec<_>>();
+                        let mut next = vec![input_values[0].clone(); output_count];
+                        for column in 0..combinations {
+                            for (row, index) in indices.iter().copied().enumerate() {
+                                next[row * combinations + column] = input_values[index].clone();
+                            }
+                            if column + 1 < combinations
+                                && !super::numeric::advance_combination_indices(
+                                    &mut indices,
+                                    available,
+                                )
+                            {
+                                return Ok(None);
+                            }
+                        }
+                        ValueDataDraft::Matrix(next.into_boxed_slice())
+                    }
+                    ClosedNChooseKFoldPlan::Scalar(plan) => {
+                        match plan.evaluate(&values.value, &values.element) {
+                            Ok(data) => data,
+                            Err(_) => return Ok(None),
+                        }
+                    }
+                };
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data,
                 }
                 .finalize(
                     &SnapshotValidationContext::new(artifact.schemas())
@@ -4941,7 +5202,7 @@ fn constant_comparison_operand_at_depth<'a>(
                         .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
                 ];
                 let Some(target_shape) =
-                    slot_shape_matching_extents(artifact, slot, facts, &expected_extents)?
+                    closed_output_shape_for_extents(artifact, slot, facts, &expected_extents)?
                 else {
                     return Ok(None);
                 };
@@ -5135,10 +5396,10 @@ fn constant_comparison_operand_at_depth<'a>(
                             u64::try_from(columns)
                                 .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
                         ];
-                        slot_shape_matching_extents(artifact, slot, facts, &expected_extents)?
+                        closed_output_shape_for_extents(artifact, slot, facts, &expected_extents)?
                     }
                     ClosedMatrixProductOperation::Dot => {
-                        slot_shape_matching_extents(artifact, slot, facts, &[])?
+                        closed_output_shape_for_extents(artifact, slot, facts, &[])?
                     }
                 };
                 let Some(target_shape) = target_shape else {
@@ -5453,7 +5714,7 @@ fn constant_comparison_operand_at_depth<'a>(
                                 .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
                         ];
                         let Some(target_shape) =
-                            slot_shape_matching_extents(artifact, slot, facts, &extents)?
+                            closed_output_shape_for_extents(artifact, slot, facts, &extents)?
                         else {
                             return Ok(None);
                         };
@@ -5466,7 +5727,7 @@ fn constant_comparison_operand_at_depth<'a>(
                             return Ok(None);
                         }
                         let Some(target_shape) =
-                            slot_shape_matching_extents(artifact, slot, facts, &[])?
+                            closed_output_shape_for_extents(artifact, slot, facts, &[])?
                         else {
                             return Ok(None);
                         };
@@ -5580,7 +5841,7 @@ fn constant_comparison_operand_at_depth<'a>(
                                 .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
                         ];
                         let Some(target_shape) =
-                            slot_shape_matching_extents(artifact, slot, facts, &extents)?
+                            closed_output_shape_for_extents(artifact, slot, facts, &extents)?
                         else {
                             return Ok(None);
                         };
@@ -5593,7 +5854,7 @@ fn constant_comparison_operand_at_depth<'a>(
                             return Ok(None);
                         }
                         let Some(target_shape) =
-                            slot_shape_matching_extents(artifact, slot, facts, &[])?
+                            closed_output_shape_for_extents(artifact, slot, facts, &[])?
                         else {
                             return Ok(None);
                         };
@@ -5643,6 +5904,22 @@ fn constant_comparison_operand_at_depth<'a>(
                 };
                 let Some(count) = closed_transformed_operand_count(source.rows, source.columns)
                 else {
+                    return Ok(None);
+                };
+                let target_shape = if matches!(target_schema.body(), SchemaBody::Matrix { .. }) {
+                    let extents = [
+                        u64::try_from(source.rows)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                        u64::try_from(source.columns)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                    ];
+                    closed_output_shape_for_extents(artifact, slot, facts, &extents)?
+                } else if count == 1 {
+                    closed_output_shape_for_extents(artifact, slot, facts, &[])?
+                } else {
+                    None
+                };
+                let Some(target_shape) = target_shape else {
                     return Ok(None);
                 };
                 if !analysis
@@ -5741,9 +6018,6 @@ fn constant_comparison_operand_at_depth<'a>(
                         };
                         converted
                     }
-                };
-                let Ok(target_shape) = slot_shape(artifact, slot, facts) else {
-                    return Ok(None);
                 };
                 ValueDraft {
                     schema: target_schema_id,
@@ -6559,6 +6833,7 @@ fn closed_activation_producer_supported(operation: &OperationReference) -> bool 
         || closed_matrix_concatenation(operation).is_some()
         || closed_matrix_product_operation(operation).is_some()
         || closed_matrix_reduction_operation(operation).is_some()
+        || closed_n_choose_k_operation(operation)
         || closed_range_operation(operation).is_some()
         || (operation.module_path.as_ref() == ["core"]
             && operation.operation_name == "composite-pack")
@@ -10324,7 +10599,7 @@ mod shape_fact_tests {
         DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
         IntegerWidth, ManagedMemoryBudget, OperationContractTableBuilder, ResolvedInputPort,
         ResolvedOperationContract, ResolvedOutputPort, SchemaDraft, SchemaTableBuilder,
-        ValueDataDraft, ValueDraft,
+        ShapeContractReference, ValueDataDraft, ValueDraft,
         snapshot::{F64Bits, SnapshotValidationContext},
     };
 
@@ -10516,13 +10791,12 @@ mod shape_fact_tests {
         assert_eq!(analysis.construction.compute_work.get(), 68_000);
     }
 
-    fn closed_unary_matrix_artifact(
+    fn closed_unary_matrix_artifact_with_target_schema(
         module: &str,
         operation_name: &str,
         source_element: SchemaBody,
-        target_element: SchemaBody,
         source_extents: [u64; 2],
-        target_extents: [u64; 2],
+        target_schema: mech_core::Schema,
         elements: Vec<ValueDataDraft>,
     ) -> ProgramArtifact {
         let matrix = |element, extents: [u64; 2]| {
@@ -10544,9 +10818,7 @@ mod shape_fact_tests {
         let source = schemas
             .insert(matrix(source_element, source_extents))
             .unwrap();
-        let target = schemas
-            .insert(matrix(target_element, target_extents))
-            .unwrap();
+        let target = schemas.insert(target_schema).unwrap();
         let build = schemas.finish().unwrap();
         let source = build.resolve(source).unwrap();
         let target = build.resolve(target).unwrap();
@@ -10647,6 +10919,37 @@ mod shape_fact_tests {
         .unwrap()
     }
 
+    fn closed_unary_matrix_artifact(
+        module: &str,
+        operation_name: &str,
+        source_element: SchemaBody,
+        target_element: SchemaBody,
+        source_extents: [u64; 2],
+        target_extents: [u64; 2],
+        elements: Vec<ValueDataDraft>,
+    ) -> ProgramArtifact {
+        closed_unary_matrix_artifact_with_target_schema(
+            module,
+            operation_name,
+            source_element,
+            source_extents,
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(target_element),
+                    dimensions: target_extents
+                        .into_iter()
+                        .map(DimensionExpr::Constant)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap(),
+            elements,
+        )
+    }
+
     #[test]
     fn closed_string_transpose_obeys_publication_comparison_admission() {
         let payload = usize::try_from(mech_core::RESIDENT_MAX_COMPARISON_WORK).unwrap() + 1;
@@ -10741,6 +11044,76 @@ mod shape_fact_tests {
         assert_eq!(analysis.construction.comparison_work.get(), 50_003);
         assert_eq!(analysis.materialized_operand_values.get(), 50_000);
         assert!(analysis.construction.construction_bytes.get() < mech_core::RESIDENT_MAX_BYTES);
+    }
+
+    #[test]
+    fn closed_conversion_matches_the_runtime_shape_witness() {
+        let target = SchemaDraft {
+            dimension_parameters: (0..2)
+                .map(|index| DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(index),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: Some(DimensionExpr::Constant(1)),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::String),
+                dimensions: vec![
+                    DimensionExpr::Add(
+                        vec![
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                        ]
+                        .into_boxed_slice(),
+                    ),
+                    DimensionExpr::Constant(1),
+                ]
+                .into_boxed_slice(),
+            },
+        }
+        .finalize()
+        .unwrap();
+        let artifact = closed_unary_matrix_artifact_with_target_schema(
+            "convert",
+            "kind",
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            [1, 1],
+            target,
+            vec![ValueDataDraft::F64(F64Bits::from_f64(7.0))],
+        );
+        let decoded = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        for artifact in [&artifact, &decoded] {
+            let slot = CellSlotId::new(0);
+            let schema = artifact.schemas().get(artifact.slots()[0].schema).unwrap();
+            let supplied = schema
+                .instantiate_shape(vec![0, 1].into_boxed_slice())
+                .unwrap();
+            let runtime_shape = matrix_shape_for_extents(schema, &[1, 1]).unwrap();
+            assert_ne!(
+                runtime_shape.parameter_values(),
+                supplied.parameter_values()
+            );
+            let mut facts = ActivationFacts::default();
+            facts.slot_shapes.insert(slot, supplied);
+            let operand = constant_comparison_operand(
+                artifact,
+                NodeId::new(0),
+                ArtifactSource::Slot(slot),
+                &facts,
+                &ClosedActivationAnalysisContext::default(),
+                false,
+            )
+            .unwrap()
+            .expect("closed conversion should fold");
+            assert_eq!(operand.value.shape(), &runtime_shape);
+            assert_eq!((operand.rows, operand.columns), (1, 1));
+        }
     }
 
     #[test]
@@ -11800,6 +12173,64 @@ mod shape_fact_tests {
         (artifact, sources[0])
     }
 
+    fn closed_boolean_input_artifact(rows: u64, columns: u64) -> ProgramArtifact {
+        let mut schemas = SchemaTableBuilder::new();
+        let matrix = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Bool),
+                        dimensions: vec![
+                            DimensionExpr::Constant(rows),
+                            DimensionExpr::Constant(columns),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let (schemas, _) = build.into_parts();
+        let build = ConstantStoreBuilder::new(&schemas).finish().unwrap();
+        let (constants, _) = build.into_parts();
+        let build = OperationContractTableBuilder::new().finish().unwrap();
+        let (contracts, _) = build.into_parts();
+        let input = InputId::new(0);
+        let slot = CellSlotId::new(0);
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: vec![crate::InputDeclaration {
+                input,
+                name: "mask".to_owned(),
+                slot,
+                schema: matrix,
+            }]
+            .into_boxed_slice(),
+            slots: vec![SlotDeclaration {
+                slot,
+                schema: matrix,
+                role: SlotRole::Input,
+                producer: ProducerReference::Input(input),
+                initializer: None,
+            }]
+            .into_boxed_slice(),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
     fn closed_boolean_constants_artifact(
         rows: u64,
         columns: u64,
@@ -11897,12 +12328,50 @@ mod shape_fact_tests {
             assert!(
                 analysis
                     .logical_masks
-                    .insert(ArtifactSource::Slot(CellSlotId::new(0)), mask)
+                    .insert(ArtifactSource::Slot(CellSlotId::new(0)), mask.clone())
             );
             assert_eq!(analysis.construction.comparison_work.get(), 0);
             assert_eq!(
                 analysis.construction.compute_work.get(),
                 u64::try_from(count * 2).unwrap(),
+            );
+            let slot_artifact = closed_boolean_input_artifact(1, u64::try_from(count).unwrap());
+            let slot_source = ArtifactSource::Slot(CellSlotId::new(0));
+            let value = closed_logical_mask_value(
+                &slot_artifact,
+                slot_source,
+                &mask,
+                &ActivationFacts::default(),
+                &SnapshotCanonicalizationBudget::new(mech_core::RESIDENT_MAX_COMPARISON_WORK),
+                &analysis,
+                true,
+            )
+            .unwrap()
+            .expect("scalar strict comparison must materialize the computed logical result");
+            let shared = std::sync::Arc::new(value);
+            assert!(
+                closed_comparison_operand_from_value(
+                    &slot_artifact,
+                    slot_source,
+                    &ActivationFacts::default(),
+                    ClosedComparisonValue::Shared(std::sync::Arc::clone(&shared)),
+                    true,
+                )
+                .unwrap()
+                .is_some(),
+                "scalar strict comparison must admit an already retained large dense result",
+            );
+            assert!(
+                closed_comparison_operand_from_value(
+                    &slot_artifact,
+                    slot_source,
+                    &ActivationFacts::default(),
+                    ClosedComparisonValue::Shared(shared),
+                    false,
+                )
+                .unwrap()
+                .is_none(),
+                "elementwise comparison keeps the bounded source-step limit",
             );
         }
     }
@@ -11936,6 +12405,207 @@ mod shape_fact_tests {
                     operation_name: name.to_owned(),
                 }),
                 Some(expected),
+            );
+        }
+    }
+
+    #[test]
+    fn closed_n_choose_k_classifier_covers_the_resident_name() {
+        let operation = OperationReference {
+            module_path: vec!["combinatorics".to_owned()].into_boxed_slice(),
+            operation_name: "n-choose-k".to_owned(),
+        };
+        assert!(closed_n_choose_k_operation(&operation));
+        assert!(closed_activation_producer_supported(&operation));
+    }
+
+    fn closed_n_choose_k_artifact() -> ProgramArtifact {
+        let mut schemas = SchemaTableBuilder::new();
+        let scalar = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let matrix = |rows, columns| {
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![
+                        DimensionExpr::Constant(rows),
+                        DimensionExpr::Constant(columns),
+                    ]
+                    .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let input = schemas.insert(matrix(2, 2)).unwrap();
+        let output = schemas.insert(matrix(2, 6)).unwrap();
+        let build = schemas.finish().unwrap();
+        let scalar = build.resolve(scalar).unwrap();
+        let input = build.resolve(input).unwrap();
+        let output = build.resolve(output).unwrap();
+        let (schemas, _) = build.into_parts();
+        let matrix_value = ValueDraft {
+            schema: input,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                [1.0, 2.0, 3.0, 4.0]
+                    .into_iter()
+                    .map(F64Bits::from_f64)
+                    .map(ValueDataDraft::F64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let selection_value = ValueDraft {
+            schema: scalar,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::F64(F64Bits::from_f64(2.0)),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let matrix_value = constants.insert(matrix_value).unwrap();
+        let selection_value = constants.insert(selection_value).unwrap();
+        let build = constants.finish().unwrap();
+        let matrix_value = build.resolve(matrix_value).unwrap();
+        let selection_value = build.resolve(selection_value).unwrap();
+        let (constants, _) = build.into_parts();
+        let mut contracts = OperationContractTableBuilder::new();
+        let contract = contracts
+            .insert(ResolvedOperationContract::Declared(
+                DeclaredOperationContract {
+                    inputs: [input, scalar]
+                        .into_iter()
+                        .map(|schema| ResolvedInputPort {
+                            schema,
+                            access: AccessMode::Read,
+                            delivery: DeliveryMode::Signal,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                    outputs: vec![ResolvedOutputPort {
+                        schema: output,
+                        access: AccessMode::Write,
+                        delivery: DeliveryMode::Signal,
+                        construction: OutputConstruction::Build {
+                            postcondition: ShapeContractReference {
+                                module_path: vec!["combinatorics".to_owned()].into_boxed_slice(),
+                                contract_name: "n-choose-k-matrix-output".to_owned(),
+                            },
+                        },
+                        alias: AliasPolicy::NoAlias,
+                        change_detection: ChangeDetectionPolicy::KernelReported,
+                    }]
+                    .into_boxed_slice(),
+                    interaction: ExternalInteraction::Pure,
+                },
+            ))
+            .unwrap();
+        let build = contracts.finish().unwrap();
+        let contract = build.resolve(contract).unwrap();
+        let (contracts, _) = build.into_parts();
+        let node = NodeId::new(0);
+        let slot = CellSlotId::new(0);
+        ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: vec![SlotDeclaration {
+                slot,
+                schema: output,
+                role: SlotRole::Derived,
+                producer: ProducerReference::NodeOutput {
+                    node,
+                    output_ordinal: 0,
+                },
+                initializer: None,
+            }]
+            .into_boxed_slice(),
+            nodes: vec![NodeDeclaration {
+                node,
+                body: crate::ExecutableNodeBody::Operation(crate::OperationNodeBody {
+                    operation: OperationReference {
+                        module_path: vec!["combinatorics".to_owned()].into_boxed_slice(),
+                        operation_name: "n-choose-k".to_owned(),
+                    },
+                    contract,
+                    requirement: None,
+                }),
+                input_bindings: 0..2,
+                output_bindings: 2..3,
+            }]
+            .into_boxed_slice(),
+            bindings: vec![
+                BindingDeclaration::Input {
+                    id: BindingId::new(0),
+                    node,
+                    port_ordinal: 0,
+                    source: ArtifactSource::Constant(matrix_value),
+                },
+                BindingDeclaration::Input {
+                    id: BindingId::new(1),
+                    node,
+                    port_ordinal: 1,
+                    source: ArtifactSource::Constant(selection_value),
+                },
+                BindingDeclaration::Output {
+                    id: BindingId::new(2),
+                    node,
+                    port_ordinal: 0,
+                    target: slot,
+                },
+            ]
+            .into_boxed_slice(),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn closed_n_choose_k_folds_source_and_decoded_matrix_results() {
+        let artifact = closed_n_choose_k_artifact();
+        let decoded = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        for artifact in [&artifact, &decoded] {
+            let operand = constant_comparison_operand(
+                artifact,
+                NodeId::new(0),
+                ArtifactSource::Slot(CellSlotId::new(0)),
+                &ActivationFacts::default(),
+                &ClosedActivationAnalysisContext::default(),
+                false,
+            )
+            .unwrap()
+            .expect("closed n-choose-k should fold");
+            assert_eq!((operand.rows, operand.columns), (2, 6));
+            assert_eq!(
+                operand.value.canonical_data_draft().unwrap(),
+                ValueDataDraft::Matrix(
+                    [1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 4.0]
+                        .into_iter()
+                        .map(F64Bits::from_f64)
+                        .map(ValueDataDraft::F64)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
             );
         }
     }
@@ -12114,7 +12784,7 @@ mod shape_fact_tests {
     }
 
     #[test]
-    fn closed_matrix_product_preserves_the_supplied_shape_witness() {
+    fn closed_matrix_product_matches_the_runtime_shape_witness() {
         let artifact = parameterized_closed_matrix_product_artifact();
         let decoded = crate::decode_program_artifact_bytecode_v1(
             &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
@@ -12126,10 +12796,9 @@ mod shape_fact_tests {
             let supplied = schema
                 .instantiate_shape(vec![0, 1].into_boxed_slice())
                 .unwrap();
+            let runtime_shape = matrix_shape_for_extents(schema, &[1, 1]).unwrap();
             assert_ne!(
-                matrix_shape_for_extents(schema, &[1, 1])
-                    .unwrap()
-                    .parameter_values(),
+                runtime_shape.parameter_values(),
                 supplied.parameter_values(),
                 "the regression requires two valid witnesses for the same extents",
             );
@@ -12145,7 +12814,7 @@ mod shape_fact_tests {
             )
             .unwrap()
             .expect("closed product should fold");
-            assert_eq!(operand.value.shape(), &supplied);
+            assert_eq!(operand.value.shape(), &runtime_shape);
             assert_eq!((operand.rows, operand.columns), (1, 1));
         }
     }
