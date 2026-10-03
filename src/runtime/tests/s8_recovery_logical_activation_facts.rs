@@ -285,6 +285,30 @@ fn closed_comparisons_compose_through_matrix_products() {
         "x := [42 43]\nproduct := matrix/dot([1u8 2u8], [3u8 4u8])\nmask := [product == 11u8 false]\nx[mask]\n",
         "[42]",
     );
+    exact_closed_mask(
+        "x := [42 43]\nproduct := matrix/dot([10000000000000000.0 1.0; -10000000000000000.0 1.0], [1.0 1.0; 1.0 1.0])\nmask := [product == 2.0 false]\nx[mask]\n",
+        "[42]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_matrix_solve() {
+    exact_closed_mask(
+        "x := [42 43]\nsolution := matrix/solve([1.0 2.0; 3.0 4.0], [5.0; 11.0])\nmask := solution > 1.5\nx[mask]\n",
+        "[43]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nsolution := matrix/solve([1f32 2f32; 3f32 4f32], [5f32; 11f32])\nmask := solution > 1.5<f32>\nx[mask]\n",
+        "[43]",
+    );
+}
+
+#[test]
+fn closed_n_choose_k_accepts_a_closed_slot_backed_selection() {
+    exact_closed_mask(
+        "+> combinatorics\nx := [42 43]\nk := 1 + 1\ncombinations := combinatorics/n-choose-k([1 2 3 4], k)\np := combinations === combinations\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
 }
 
 #[test]

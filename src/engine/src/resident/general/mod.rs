@@ -3404,7 +3404,7 @@ impl ClosedLogicalMask {
 
     fn transpose(&self, analysis: &ClosedActivationAnalysisContext) -> Option<Self> {
         let count = self.rows.checked_mul(self.columns)?;
-        if count != self.values.len() || count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+        if count != self.values.len() {
             return None;
         }
         let count_u64 = u64::try_from(count).ok()?;
@@ -3429,7 +3429,7 @@ impl ClosedLogicalMask {
 
     fn negated(&self, analysis: &ClosedActivationAnalysisContext) -> Option<Self> {
         let count = self.rows.checked_mul(self.columns)?;
-        if count != self.values.len() || count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+        if count != self.values.len() {
             return None;
         }
         let count_u64 = u64::try_from(count).ok()?;
@@ -3603,8 +3603,7 @@ fn logical_selector_mask_dimensions(
             let rows = usize::try_from(*rows).ok()?;
             let columns = usize::try_from(*columns).ok()?;
             let count = rows.checked_mul(columns)?;
-            (count == matrix.elements().len() && count <= MAX_STATIC_SELECTOR_SOURCE_STEPS)
-                .then_some((rows, columns))
+            (count == matrix.elements().len()).then_some((rows, columns))
         }
         _ => None,
     }
@@ -3641,7 +3640,7 @@ impl ClosedLogicalConcatenationPlan {
             (rows, first_columns)
         };
         let count = rows.checked_mul(columns)?;
-        (count <= MAX_STATIC_SELECTOR_SOURCE_STEPS).then_some(Self {
+        Some(Self {
             horizontal,
             rows,
             columns,
@@ -4203,6 +4202,24 @@ fn closed_matrix_product_operation(
     }
 }
 
+fn closed_matrix_solve_operation(operation: &OperationReference) -> bool {
+    operation.module_path.as_ref() == ["matrix"] && operation.operation_name == "solve"
+}
+
+fn closed_matrix_product_compute_work(
+    element: &SchemaBody,
+    terms: usize,
+    dense_f64_product: bool,
+) -> Option<usize> {
+    if dense_f64_product {
+        // Dense matrix multiplication and dot products perform one multiply
+        // and one add for every term.
+        terms.checked_mul(2)
+    } else {
+        super::numeric::snapshot_reduction_compute_work(element, terms).ok()
+    }
+}
+
 fn closed_matrix_reduction_operation(
     operation: &OperationReference,
 ) -> Option<ClosedMatrixReductionOperation> {
@@ -4226,11 +4243,12 @@ fn closed_snapshot_publication_comparison_work(
     target_schema_id: SchemaId,
     target_schema: &mech_core::Schema,
     output_count: usize,
+    snapshot_output: bool,
 ) -> Option<u64> {
-    let first = operands.first()?;
-    if dense_resident_kind(&first.element).is_some() {
+    if !snapshot_output {
         return Some(0);
     }
+    let first = operands.first()?;
     let (input_work, input_nodes) =
         operands
             .iter()
@@ -5208,6 +5226,8 @@ fn constant_comparison_operand_at_depth<'a>(
                     target_schema_id,
                     target_schema,
                     output_count,
+                    closed_slot_resident_kind(artifact, slot, facts)?
+                        == ResidentValueKind::Snapshot,
                 ) else {
                     return Ok(None);
                 };
@@ -5361,7 +5381,9 @@ fn constant_comparison_operand_at_depth<'a>(
                 else {
                     return Ok(None);
                 };
-                let comparison_work = if dense_resident_kind(&input.element).is_some() {
+                let snapshot_output = closed_slot_resident_kind(artifact, slot, facts)?
+                    == ResidentValueKind::Snapshot;
+                let comparison_work = if !snapshot_output {
                     let Ok(work) = u64::try_from(output_count) else {
                         return Ok(None);
                     };
@@ -5373,6 +5395,7 @@ fn constant_comparison_operand_at_depth<'a>(
                         target_schema_id,
                         target_schema,
                         output_count,
+                        true,
                     ) else {
                         return Ok(None);
                     };
@@ -5424,6 +5447,202 @@ fn constant_comparison_operand_at_depth<'a>(
                     schema: target_schema_id,
                     shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
                     data: ValueDataDraft::Matrix(sums.into_boxed_slice()),
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
+            } else if closed_matrix_solve_operation(operation.operation) {
+                let [coefficients, right] = inputs.as_slice() else {
+                    return Ok(None);
+                };
+                let Some(coefficients) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *coefficients,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let Some(right) = constant_comparison_operand_at_depth(
+                    artifact,
+                    node,
+                    *right,
+                    facts,
+                    next_depth,
+                    budget,
+                    analysis,
+                    allow_large_direct_dense,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let SchemaBody::Matrix {
+                    element: target_element,
+                    ..
+                } = target_schema.body()
+                else {
+                    return Ok(None);
+                };
+                if !matches!(coefficients.schema, SchemaBody::Matrix { .. })
+                    || !matches!(right.schema, SchemaBody::Matrix { .. })
+                    || coefficients.element != right.element
+                    || coefficients.element != **target_element
+                    || !matches!(
+                        coefficients.element,
+                        SchemaBody::FloatingPoint(
+                            mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64
+                        )
+                    )
+                    || coefficients.rows != coefficients.columns
+                    || right.rows != coefficients.rows
+                {
+                    return Ok(None);
+                }
+                let rows = coefficients.rows;
+                let columns = right.columns;
+                let Some(coefficient_count) = rows.checked_mul(rows) else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                let Some(right_count) = rows.checked_mul(columns) else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                let output_count = right_count;
+                if !closed_dense_fold_count_admitted(
+                    output_count,
+                    target_element,
+                    allow_large_direct_dense,
+                ) {
+                    return Ok(None);
+                }
+                let expected_extents = [
+                    u64::try_from(rows).map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                    u64::try_from(columns)
+                        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                ];
+                let Some(target_shape) = closed_numeric_output_shape_for_extents(
+                    artifact,
+                    slot,
+                    facts,
+                    &expected_extents,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let solve_work = match super::numeric::matrix_solve_compute_work(rows, columns) {
+                    Ok(work) => work,
+                    Err(_) => return Ok(None),
+                };
+                let Some(cloned_bytes) =
+                    closed_operand_retained_bytes(artifact, &coefficients, analysis).and_then(
+                        |coefficients| {
+                            closed_operand_retained_bytes(artifact, &right, analysis)
+                                .and_then(|right| coefficients.checked_add(right))
+                        },
+                    )
+                else {
+                    return Ok(None);
+                };
+                let element_bytes = match target_element.as_ref() {
+                    SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
+                        core::mem::size_of::<f32>()
+                    }
+                    SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
+                        core::mem::size_of::<f64>()
+                    }
+                    _ => return Ok(None),
+                };
+                let Some(draft_nodes) = coefficient_count
+                    .checked_add(right_count)
+                    .and_then(|inputs| inputs.checked_add(output_count))
+                else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                let Some(solve_temporary_bytes) = coefficient_count
+                    .checked_mul(2)
+                    .and_then(|coefficients| {
+                        right_count
+                            .checked_mul(3)
+                            .and_then(|right| coefficients.checked_add(right))
+                    })
+                    .and_then(|elements| elements.checked_mul(element_bytes))
+                    .and_then(|bytes| {
+                        rows.checked_mul(core::mem::size_of::<usize>())
+                            .and_then(|pivot| bytes.checked_add(pivot))
+                    })
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                else {
+                    return Ok(None);
+                };
+                let Some(shape_bytes) = target_schema
+                    .dimension_parameters()
+                    .len()
+                    .checked_mul(core::mem::size_of::<u64>())
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                else {
+                    return Ok(None);
+                };
+                let Some(construction_bytes) = draft_nodes
+                    .checked_mul(core::mem::size_of::<ValueDataDraft>())
+                    .and_then(|bytes| u64::try_from(bytes).ok())
+                    .and_then(|bytes| bytes.checked_add(cloned_bytes))
+                    .and_then(|bytes| bytes.checked_add(solve_temporary_bytes))
+                    .and_then(|bytes| bytes.checked_add(shape_bytes))
+                    .and_then(|bytes| {
+                        bytes.checked_add(u64::try_from(core::mem::size_of::<Value>()).ok()?)
+                    })
+                else {
+                    return Ok(None);
+                };
+                let Some(compute_work) = solve_work
+                    .checked_add(draft_nodes)
+                    .and_then(|work| u64::try_from(work).ok())
+                else {
+                    return Ok(None);
+                };
+                let Some(comparison_work) = closed_snapshot_publication_comparison_work(
+                    artifact,
+                    &[&coefficients, &right],
+                    target_schema_id,
+                    target_schema,
+                    output_count,
+                    closed_slot_resident_kind(artifact, slot, facts)?
+                        == ResidentValueKind::Snapshot,
+                ) else {
+                    return Ok(None);
+                };
+                if !analysis.construction.charge_compute_with_comparison(
+                    construction_bytes,
+                    compute_work,
+                    comparison_work,
+                ) || !analysis.record_materialized_operand_values(draft_nodes)
+                {
+                    return Ok(None);
+                }
+                let Some(coefficient_values) = closed_operand_draft_values(&coefficients) else {
+                    return Ok(None);
+                };
+                let Some(right_values) = closed_operand_draft_values(&right) else {
+                    return Ok(None);
+                };
+                let Ok(values) = super::numeric::canonical_matrix_solve_draft_values(
+                    &coefficients.element,
+                    &coefficient_values,
+                    &right_values,
+                    rows,
+                    columns,
+                ) else {
+                    return Ok(None);
+                };
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data: ValueDataDraft::Matrix(values.into_boxed_slice()),
                 }
                 .finalize(
                     &SnapshotValidationContext::new(artifact.schemas())
@@ -5530,11 +5749,15 @@ fn constant_comparison_operand_at_depth<'a>(
                 let Some(target_shape) = target_shape else {
                     return Ok(None);
                 };
-                let reduction_work =
-                    match super::numeric::snapshot_reduction_compute_work(&left.element, terms) {
-                        Ok(work) => work,
-                        Err(_) => return Ok(None),
-                    };
+                let dense_f64_product = closed_operand_resident_kind(artifact, &left, facts)?
+                    == ResidentValueKind::F64
+                    && closed_operand_resident_kind(artifact, &right, facts)?
+                        == ResidentValueKind::F64;
+                let Some(reduction_work) =
+                    closed_matrix_product_compute_work(&left.element, terms, dense_f64_product)
+                else {
+                    return Ok(None);
+                };
                 let Some(cloned_bytes) = closed_operand_retained_bytes(artifact, &left, analysis)
                     .and_then(|left| {
                         closed_operand_retained_bytes(artifact, &right, analysis)
@@ -5580,6 +5803,8 @@ fn constant_comparison_operand_at_depth<'a>(
                     target_schema_id,
                     target_schema,
                     output_count,
+                    closed_slot_resident_kind(artifact, slot, facts)?
+                        == ResidentValueKind::Snapshot,
                 ) else {
                     return Ok(None);
                 };
@@ -5627,13 +5852,33 @@ fn constant_comparison_operand_at_depth<'a>(
                         ValueDataDraft::Matrix(values.into_boxed_slice())
                     }
                     ClosedMatrixProductOperation::Dot => {
-                        let value = super::numeric::numeric_sum(
-                            &left.element,
-                            left_values
-                                .into_iter()
-                                .zip(right_values)
-                                .map(|(left, right)| multiply(left, right)),
-                        );
+                        let value = if dense_f64_product {
+                            // Dense F64 residents are column-major. Preserve
+                            // that reduction order because floating-point
+                            // addition is not associative.
+                            super::numeric::numeric_sum(
+                                &left.element,
+                                (0..left.columns).flat_map(|column| {
+                                    let left_values = &left_values;
+                                    let right_values = &right_values;
+                                    (0..left.rows).map(move |row| {
+                                        let index = row * left.columns + column;
+                                        multiply(
+                                            left_values[index].clone(),
+                                            right_values[index].clone(),
+                                        )
+                                    })
+                                }),
+                            )
+                        } else {
+                            super::numeric::numeric_sum(
+                                &left.element,
+                                left_values
+                                    .into_iter()
+                                    .zip(right_values)
+                                    .map(|(left, right)| multiply(left, right)),
+                            )
+                        };
                         let Ok(value) = value else {
                             return Ok(None);
                         };
@@ -6973,6 +7218,7 @@ fn closed_activation_producer_supported(operation: &OperationReference) -> bool 
     (operation.module_path.as_ref() == ["matrix"] && operation.operation_name == "transpose")
         || closed_matrix_concatenation(operation).is_some()
         || closed_matrix_product_operation(operation).is_some()
+        || closed_matrix_solve_operation(operation)
         || closed_matrix_reduction_operation(operation).is_some()
         || closed_n_choose_k_operation(operation)
         || closed_range_operation(operation).is_some()
@@ -7716,31 +7962,41 @@ fn complete_activation_shape_facts(
                     }
                 }
             };
-            let ArtifactSource::Constant(selection) = selection_source else {
-                // An activation-produced selection resolves k only when its
-                // control executes. Preserve the parameterized result shape;
-                // the resident mixed-layout executor validates k and resolves
-                // both output axes from the committed selection value.
+            let Some(selection) = constant_comparison_operand(
+                artifact,
+                node.node,
+                *selection_source,
+                &facts,
+                &analysis,
+                false,
+            )?
+            else {
+                // A genuinely live selection resolves k only when its control
+                // executes. Preserve the parameterized result shape and let
+                // the resident executor resolve both output axes.
                 continue;
             };
-            let selection = artifact
-                .constants()
-                .get(*selection)
-                .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
-            let requested = crate::resident::numeric::canonical_n_choose_k_cardinality(selection)
-                .filter(|requested| *requested != 0 && *requested <= available)
-                .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+            if selection.rows != 1 || selection.columns != 1 {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            }
+            let requested =
+                crate::resident::numeric::canonical_n_choose_k_cardinality(&selection.value)
+                    .filter(|requested| *requested != 0 && *requested <= available)
+                    .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
             let combinations =
                 crate::resident::numeric::checked_combination_count(available, requested)
                     .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-            if schema.dimension_parameters().len() == 2 {
-                let shape = schema
-                    .instantiate_shape(
-                        vec![requested as u64, combinations as u64].into_boxed_slice(),
-                    )
-                    .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
-                facts.slot_shapes.insert(output, shape);
-            }
+            let shape = matrix_shape_for_extents(
+                schema,
+                &[
+                    u64::try_from(requested)
+                        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                    u64::try_from(combinations)
+                        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                ],
+            )
+            .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+            facts.slot_shapes.insert(output, shape);
             continue;
         }
         let Some(mode) = node.operation.resolved_range_mode() else {
@@ -12868,7 +13124,7 @@ mod shape_fact_tests {
     }
 
     #[test]
-    fn large_binary_logical_masks_use_compute_and_memory_admission() {
+    fn large_logical_masks_use_compute_and_memory_admission() {
         let count = MAX_STATIC_SELECTOR_SOURCE_STEPS + 1;
         let (artifact, source) = closed_boolean_constant_artifact(
             1,
@@ -12884,6 +13140,38 @@ mod shape_fact_tests {
             let left =
                 logical_selector_mask(artifact, source, &ActivationFacts::default(), &analysis)
                     .expect("compute-bounded logical constant should be retained");
+            assert_eq!(
+                logical_selector_mask_dimensions(
+                    artifact,
+                    source,
+                    &ActivationFacts::default(),
+                    &analysis,
+                ),
+                Some((1, count)),
+            );
+            let negated = left
+                .negated(&analysis)
+                .expect("logical negation must use compute and memory admission");
+            assert_eq!((negated.rows, negated.columns), (1, count));
+            assert_eq!(
+                negated.population(),
+                Some(u64::try_from(count - 1).unwrap())
+            );
+            let transposed = left
+                .transpose(&analysis)
+                .expect("logical transpose must use compute and memory admission");
+            assert_eq!((transposed.rows, transposed.columns), (count, 1));
+            assert_eq!(transposed.population(), Some(1));
+            let scalar = std::sync::Arc::new(ClosedLogicalMask::scalar(false));
+            let concatenated = ClosedLogicalConcatenationPlan::from_dimensions(
+                true,
+                [(left.rows, left.columns), (scalar.rows, scalar.columns)],
+            )
+            .and_then(|plan| plan.admit(&analysis))
+            .and_then(|plan| plan.materialize(&[std::sync::Arc::clone(&left), scalar], &analysis))
+            .expect("logical concatenation must use compute and memory admission");
+            assert_eq!((concatenated.rows, concatenated.columns), (1, count + 1));
+            assert_eq!(concatenated.population(), Some(1));
             let mask = left
                 .binary(&ClosedLogicalMask::scalar(true), "and", &analysis)
                 .expect("binary logical work must not consume the comparison limit");
@@ -12895,10 +13183,7 @@ mod shape_fact_tests {
                     .insert(ArtifactSource::Slot(CellSlotId::new(0)), mask.clone())
             );
             assert_eq!(analysis.construction.comparison_work.get(), 0);
-            assert_eq!(
-                analysis.construction.compute_work.get(),
-                u64::try_from(count * 2).unwrap(),
-            );
+            assert!(analysis.construction.compute_work.get() >= u64::try_from(count * 5).unwrap());
             let slot_artifact = closed_boolean_input_artifact(1, u64::try_from(count).unwrap());
             let slot_source = ArtifactSource::Slot(CellSlotId::new(0));
             let value = closed_logical_mask_value(
@@ -12955,6 +13240,29 @@ mod shape_fact_tests {
                 Some(expected),
             );
         }
+    }
+
+    #[test]
+    fn closed_matrix_solve_classifier_covers_the_resident_name() {
+        let operation = OperationReference {
+            module_path: vec!["matrix".to_owned()].into_boxed_slice(),
+            operation_name: "solve".to_owned(),
+        };
+        assert!(closed_matrix_solve_operation(&operation));
+        assert!(closed_activation_producer_supported(&operation));
+    }
+
+    #[test]
+    fn dense_matrix_product_work_charges_multiply_and_add_per_term() {
+        let terms = 224_usize.pow(3);
+        let work = closed_matrix_product_compute_work(
+            &SchemaBody::FloatingPoint(FloatWidth::W64),
+            terms,
+            true,
+        )
+        .unwrap();
+        assert_eq!(work, terms * 2);
+        assert!(u64::try_from(work).unwrap() > mech_core::RESIDENT_MAX_COMPUTE_WORK);
     }
 
     #[test]
@@ -13493,7 +13801,7 @@ mod shape_fact_tests {
     }
 
     #[test]
-    fn repeated_constant_masks_are_rejected_before_materialization() {
+    fn repeated_large_constant_masks_use_compute_and_memory_admission() {
         let count = MAX_STATIC_SELECTOR_SOURCE_STEPS;
         let (artifact, source) = closed_boolean_constant_artifact(
             1,
@@ -13501,20 +13809,25 @@ mod shape_fact_tests {
             std::iter::repeat_n(true, count),
         );
         let analysis = ClosedActivationAnalysisContext::default();
-        assert!(
-            concatenate_closed_logical_sources(
-                &artifact,
-                true,
-                &[source, source],
-                &ActivationFacts::default(),
-                &analysis,
-            )
-            .is_none()
+        let mask = concatenate_closed_logical_sources(
+            &artifact,
+            true,
+            &[source, source],
+            &ActivationFacts::default(),
+            &analysis,
+        )
+        .expect("large repeated masks should use aggregate admission");
+        assert_eq!((mask.rows, mask.columns), (1, count * 2));
+        assert_eq!(
+            analysis.materialized_logical_mask_values.get(),
+            u64::try_from(count).unwrap(),
         );
-        assert_eq!(analysis.materialized_logical_mask_values.get(), 0);
-        assert_eq!(analysis.copied_mask_values.get(), 0);
-        assert_eq!(analysis.construction.construction_bytes.get(), 0);
-        assert_eq!(analysis.construction.compute_work.get(), 0);
+        assert_eq!(
+            analysis.copied_mask_values.get(),
+            u64::try_from(count * 2).unwrap(),
+        );
+        assert!(analysis.construction.construction_bytes.get() > 0);
+        assert!(analysis.construction.compute_work.get() > 0);
     }
 
     #[test]
@@ -13536,7 +13849,7 @@ mod shape_fact_tests {
     }
 
     #[test]
-    fn distinct_constant_masks_are_preflighted_before_bulk_preparation() {
+    fn distinct_large_constant_masks_use_aggregate_admission() {
         let width = MAX_STATIC_SELECTOR_SOURCE_STEPS / 2 + 1;
         let (artifact, sources) = closed_boolean_constants_artifact(
             1,
@@ -13544,18 +13857,23 @@ mod shape_fact_tests {
             vec![vec![true; width], vec![false; width]],
         );
         let analysis = ClosedActivationAnalysisContext::default();
-        assert!(
-            concatenate_closed_logical_sources(
-                &artifact,
-                true,
-                &sources,
-                &ActivationFacts::default(),
-                &analysis,
-            )
-            .is_none()
+        let mask = concatenate_closed_logical_sources(
+            &artifact,
+            true,
+            &sources,
+            &ActivationFacts::default(),
+            &analysis,
+        )
+        .expect("large distinct masks should use aggregate admission");
+        assert_eq!((mask.rows, mask.columns), (1, width * 2));
+        assert_eq!(
+            analysis.materialized_logical_mask_values.get(),
+            u64::try_from(width * 2).unwrap(),
         );
-        assert_eq!(analysis.materialized_logical_mask_values.get(), 0);
-        assert_eq!(analysis.copied_mask_values.get(), 0);
+        assert_eq!(
+            analysis.copied_mask_values.get(),
+            u64::try_from(width * 2).unwrap(),
+        );
     }
 
     #[test]

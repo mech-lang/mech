@@ -6435,6 +6435,15 @@ fn matrix_solve_work(rows: usize, right_columns: usize) -> Option<usize> {
     })
 }
 
+pub(super) fn matrix_solve_compute_work(
+    rows: usize,
+    right_columns: usize,
+) -> Result<usize, ResidentKernelError> {
+    matrix_solve_work(rows, right_columns)
+        .filter(|work| *work <= MAX_MATRIX_SOLVE_WORK)
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
 fn admit_matrix_solve(
     rows: usize,
     right_columns: usize,
@@ -6479,8 +6488,7 @@ fn admit_matrix_solve(
         super::budget::resident_cost! {
             comparison_work: supplemental.comparison_work(),
             compute_work: super::budget::checked_u64(
-                matrix_solve_work(rows, right_columns)
-                    .ok_or(ResidentKernelError::InvalidShape)?,
+                matrix_solve_compute_work(rows, right_columns)?,
             )?
                 .checked_add(supplemental.compute_work())
                 .ok_or(ResidentKernelError::InvalidShape)?,
@@ -6611,8 +6619,7 @@ fn bind_matrix_solve(
             if rows != columns
                 || right_rows != rows
                 || output_dimensions != (right_rows, right_columns)
-                || matrix_solve_work(rows, right_columns)
-                    .is_none_or(|work| work > MAX_MATRIX_SOLVE_WORK)
+                || matrix_solve_compute_work(rows, right_columns).is_err()
             {
                 return Err(ResidentKernelBindError::UnsupportedLayout);
             }
@@ -19614,6 +19621,79 @@ fn solve_dense<T: ResidentSolveFloat>(
     Ok(right)
 }
 
+pub(super) fn canonical_matrix_solve_draft_values(
+    element: &SchemaBody,
+    coefficients: &[ValueDataDraft],
+    right: &[ValueDataDraft],
+    rows: usize,
+    right_columns: usize,
+) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
+    let coefficient_count = rows
+        .checked_mul(rows)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let right_count = rows
+        .checked_mul(right_columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if coefficients.len() != coefficient_count || right.len() != right_count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    match element {
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
+            let canonical = |values: &[ValueDataDraft], columns: usize| {
+                (0..columns)
+                    .flat_map(|column| {
+                        (0..rows).map(move |row| match &values[row * columns + column] {
+                            ValueDataDraft::F32(value) => Ok(value.to_f32()),
+                            _ => Err(ResidentKernelError::InvalidInput),
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            };
+            let solved = solve_dense(
+                canonical(coefficients, rows)?,
+                canonical(right, right_columns)?,
+                rows,
+                right_columns,
+            )?;
+            Ok((0..rows)
+                .flat_map(|row| {
+                    let solved = &solved;
+                    (0..right_columns).map(move |column| {
+                        ValueDataDraft::F32(F32Bits::from_f32(solved[row + column * rows]))
+                    })
+                })
+                .collect())
+        }
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
+            let canonical = |values: &[ValueDataDraft], columns: usize| {
+                (0..columns)
+                    .flat_map(|column| {
+                        (0..rows).map(move |row| match &values[row * columns + column] {
+                            ValueDataDraft::F64(value) => Ok(value.to_f64()),
+                            _ => Err(ResidentKernelError::InvalidInput),
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            };
+            let solved = solve_dense(
+                canonical(coefficients, rows)?,
+                canonical(right, right_columns)?,
+                rows,
+                right_columns,
+            )?;
+            Ok((0..rows)
+                .flat_map(|row| {
+                    let solved = &solved;
+                    (0..right_columns).map(move |column| {
+                        ValueDataDraft::F64(F64Bits::from_f64(solved[row + column * rows]))
+                    })
+                })
+                .collect())
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
 fn matrix_solve_f64(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -19732,9 +19812,7 @@ fn matrix_solve_snapshot_mixed_f64(
     }
     let (rows, columns) = coefficient_dimensions;
     let (right_rows, right_columns) = right_dimensions;
-    let solve_work = matrix_solve_work(rows, right_columns)
-        .filter(|work| *work <= MAX_MATRIX_SOLVE_WORK)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let solve_work = matrix_solve_compute_work(rows, right_columns)?;
     if rows != columns || right_rows != rows {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -19894,7 +19972,7 @@ fn matrix_solve_snapshot(
     let (right_rows, right_columns) = snapshot_matrix_dimensions(right, right_schema.body())?;
     if rows != columns
         || right_rows != rows
-        || matrix_solve_work(rows, right_columns).is_none_or(|work| work > MAX_MATRIX_SOLVE_WORK)
+        || matrix_solve_compute_work(rows, right_columns).is_err()
     {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -19991,73 +20069,18 @@ fn matrix_solve_snapshot(
         true,
         supplemental,
     )?;
-    let to_column_major_f32 = |values: &[f32], columns: usize| {
-        (0..columns)
-            .flat_map(|column| (0..rows).map(move |row| values[row * columns + column]))
-            .collect::<Vec<_>>()
-    };
-    let to_column_major_f64 = |values: &[f64], columns: usize| {
-        (0..columns)
-            .flat_map(|column| (0..rows).map(move |row| values[row * columns + column]))
-            .collect::<Vec<_>>()
-    };
-    let data = match coefficient_element.as_ref() {
-        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
-            let canonical_coefficients =
-                f32_snapshot_values(coefficients).ok_or(ResidentKernelError::InvalidInput)?;
-            let canonical_right =
-                f32_snapshot_values(right).ok_or(ResidentKernelError::InvalidInput)?;
-            let next = solve_dense(
-                to_column_major_f32(&canonical_coefficients, rows),
-                to_column_major_f32(&canonical_right, right_columns),
-                rows,
-                right_columns,
-            )?;
-            ValueDataDraft::Matrix(
-                (0..rows)
-                    .flat_map(|row| {
-                        let next = &next;
-                        (0..right_columns).map(move |column| {
-                            ValueDataDraft::F32(F32Bits::from_f32(next[row + column * rows]))
-                        })
-                    })
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-            )
-        }
-        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
-            let snapshot_f64 = |value: &mech_core::Value| match value.data() {
-                ValueData::Matrix(matrix) => match matrix.elements() {
-                    SequenceView::F64(values) => Ok(values
-                        .iter()
-                        .map(|value| value.to_f64())
-                        .collect::<Vec<_>>()),
-                    _ => Err(ResidentKernelError::InvalidInput),
-                },
-                _ => Err(ResidentKernelError::InvalidInput),
-            };
-            let canonical_coefficients = snapshot_f64(coefficients)?;
-            let canonical_right = snapshot_f64(right)?;
-            let next = solve_dense(
-                to_column_major_f64(&canonical_coefficients, rows),
-                to_column_major_f64(&canonical_right, right_columns),
-                rows,
-                right_columns,
-            )?;
-            ValueDataDraft::Matrix(
-                (0..rows)
-                    .flat_map(|row| {
-                        let next = &next;
-                        (0..right_columns).map(move |column| {
-                            ValueDataDraft::F64(F64Bits::from_f64(next[row + column * rows]))
-                        })
-                    })
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-            )
-        }
-        _ => return Err(ResidentKernelError::InvalidInput),
-    };
+    let coefficient_values = snapshot_numeric_elements(coefficients)?;
+    let right_values = snapshot_numeric_elements(right)?;
+    let data = ValueDataDraft::Matrix(
+        canonical_matrix_solve_draft_values(
+            coefficient_element,
+            &coefficient_values,
+            &right_values,
+            rows,
+            right_columns,
+        )?
+        .into_boxed_slice(),
+    );
     if let Some(output_shape) = output_shape {
         write_snapshot_data_for_shape_with_work_budget(kernel, output, &output_shape, data, Some(0))
     } else {
