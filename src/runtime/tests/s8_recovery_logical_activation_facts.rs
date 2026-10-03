@@ -2,12 +2,16 @@
 //! logical-mask activation facts.
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 
-use mech_core::{ReactiveInstanceId, ResidentValueRef, SchemaBody};
+use mech_core::{
+    DimensionExpr, FloatWidth, ReactiveInstanceId, ResidentValueRef, SchemaBody, Value,
+};
 use mech_engine::ProgramArtifact;
 use mech_engine::resident::{
     ActivationFacts, CapturedSignalInput, ResidentActivationError, activate,
 };
-use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot, SourceDocument};
+use mech_runtime::{
+    ResidentDurabilityPolicy, RuntimeBuilder, RuntimeValueSnapshot, SourceDocument,
+};
 use mech_syntax::document::{ParseConfig, Revision};
 
 fn compile(source: &str) -> ProgramArtifact {
@@ -46,6 +50,23 @@ fn output(instance: &mech_engine::resident::ReactiveInstance) -> String {
         .format_canonical_inline()
 }
 
+fn assert_selected_identity(artifact: &ProgramArtifact, value: &Value, rows: u64, columns: u64) {
+    assert_eq!(value.schema(), artifact.outputs()[0].schema);
+    let schema = artifact.schemas().get(value.schema()).unwrap();
+    assert_eq!(value.schema_key(), schema.key());
+    assert_eq!(
+        schema.closed_body(value.shape()).unwrap(),
+        SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            dimensions: vec![
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        },
+    );
+}
+
 fn exact_closed_mask(source: &str, expected: &str) {
     let artifact = compile(source);
     let decoded = roundtrip(&artifact);
@@ -65,10 +86,73 @@ fn exact_closed_mask(source: &str, expected: &str) {
     }
 }
 
+fn exact_closed_mask_identity(source: &str, expected: &str, expected_shape: (u64, u64)) {
+    let artifact = compile(source);
+    let decoded = roundtrip(&artifact);
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in [&artifact, &decoded] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x58c, 9),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        let value = instance.copied_output(0).unwrap();
+        assert_eq!(
+            RuntimeValueSnapshot::from_value(value.clone())
+                .unwrap()
+                .format_canonical_inline(),
+            expected,
+        );
+        assert_selected_identity(artifact, &value, expected_shape.0, expected_shape.1);
+    }
+}
+
 #[test]
 fn closed_literal_and_computed_masks_publish_exact_source_and_decoded_shapes() {
     exact_closed_mask("x := [1 2 3]\nx[[false true true]]\n", "[2; 3]");
     exact_closed_mask("x := [1 2 3]\nmask := x > 1\nx[mask]\n", "[2; 3]");
+    exact_closed_mask_identity("x := [1 2 3]\nmask := x > 1\nx[mask]\n", "[2; 3]", (2, 1));
+    exact_closed_mask_identity("x := [1 2 3]\nmask := x == 2\nx[mask]\n", "[2]", (1, 1));
+    exact_closed_mask_identity("x := [1 2 3]\nmask := x > 3\nx[mask]\n", "[]", (0, 1));
+}
+
+#[test]
+fn production_source_and_bytecode_loads_publish_closed_mask_identity() {
+    let source = "x := [1 2 3]\nmask := x > 1\nx[mask]\n";
+    let artifact = compile(source);
+    for bytecode in [false, true] {
+        let mut runtime = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        let outcome = if bytecode {
+            runtime.load_bytecode_program(
+                &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+                ResidentDurabilityPolicy::Volatile,
+            )
+        } else {
+            runtime.load_source_program(source, ResidentDurabilityPolicy::Volatile)
+        }
+        .unwrap();
+        let initial = outcome.initial_value.to_value();
+        assert_eq!(
+            RuntimeValueSnapshot::from_value(initial.clone())
+                .unwrap()
+                .format_canonical_inline(),
+            "[2; 3]",
+        );
+        assert_selected_identity(&artifact, &initial, 2, 1);
+        runtime.step_active_program().unwrap();
+        let value = runtime
+            .output_value(artifact.outputs()[0].output)
+            .unwrap()
+            .unwrap()
+            .to_value();
+        assert_selected_identity(&artifact, &value, 2, 1);
+    }
 }
 
 #[test]
@@ -141,6 +225,14 @@ fn closed_binary_logical_masks_publish_exact_populations() {
             expected,
         );
     }
+    exact_closed_mask(
+        "x := [1 2 3]\na := x > 1\nmask := a == true\nx[mask]\n",
+        "[2; 3]",
+    );
+    exact_closed_mask(
+        "x := [1 2 3]\na := logic/and(x > 0, x < 3)\nmask := a == false\nx[mask]\n",
+        "[3]",
+    );
 }
 
 #[test]
@@ -259,5 +351,12 @@ fn live_masks_still_require_one_explicit_fixed_population_fact() {
             );
             assert_eq!(output(&instance), previous);
         }
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: mask_slot,
+                value: ResidentValueRef::Bool(&[0, 1, 1]),
+            }])
+            .unwrap();
+        assert_eq!(output(&instance), "[2; 3]");
     }
 }
