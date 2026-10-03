@@ -3852,12 +3852,35 @@ fn closed_comparison_population(
             ) if left_element == right_element
                 && dense_resident_kind(left_element).is_none()
         );
+        let dense_matrix_shape_mismatch = matches!(
+            (&left.schema, &right.schema),
+            (
+                SchemaBody::Matrix { element: left_element, .. },
+                SchemaBody::Matrix { element: right_element, .. },
+            ) if left_element == right_element
+                && dense_resident_kind(left_element).is_some()
+                && (left.rows != right.rows || left.columns != right.columns)
+        );
+        // The dense strict binder compares resolved ResidentShape identity
+        // before inspecting either payload. Mirror that constant-time mismatch
+        // result instead of applying snapshot aggregate admission.
+        if dense_matrix_shape_mismatch && matches!(name, "seq" | "sneq") {
+            return Ok(Some(u64::from(name == "sneq")));
+        }
         if left.schema_key != right.schema_key && !compatible_matrix_identity {
-            if snapshot_matrix_strict_path
-                && matches!(name, "seq" | "sneq")
-                && !closed_aggregate_equality_admitted(artifact, &left.value, &right.value, false)
-            {
-                return Ok(None);
+            let snapshot_strict = snapshot_matrix_strict_path && matches!(name, "seq" | "sneq");
+            let snapshot_ordinary = matches!(name, "eq" | "neq")
+                && !scalar_comparison_supported(&left.schema, false)
+                && !scalar_comparison_supported(&right.schema, false);
+            if snapshot_strict || snapshot_ordinary {
+                if !closed_aggregate_equality_admitted(
+                    artifact,
+                    &left.value,
+                    &right.value,
+                    snapshot_ordinary,
+                ) {
+                    return Ok(None);
+                }
             }
             return Ok(match name {
                 "eq" | "seq" => Some(0),
@@ -7775,9 +7798,9 @@ mod shape_fact_tests {
     use super::*;
     use crate::{NodeDeclaration, ProgramArtifactDraft, SlotDeclaration};
     use mech_core::{
-        BindingId, ConstantStoreBuilder, DeclaredOperationContract, DimensionParameterDeclaration,
-        DimensionParameterId, DimensionParameterOrigin, FloatWidth, IntegerWidth,
-        ManagedMemoryBudget, OperationContractTableBuilder, ResolvedInputPort,
+        BindingId, ConstantStoreBuilder, DeclaredOperationContract, DimensionLifetime,
+        DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
+        IntegerWidth, ManagedMemoryBudget, OperationContractTableBuilder, ResolvedInputPort,
         ResolvedOperationContract, ResolvedOutputPort, SchemaDraft, SchemaTableBuilder,
         ValueDataDraft, ValueDraft,
         snapshot::{F64Bits, SnapshotValidationContext},
@@ -7827,25 +7850,68 @@ mod shape_fact_tests {
         left_extents: [u64; 2],
         right_extents: [u64; 2],
         element_value: ValueDataDraft,
+        shared_parameterized_schema: bool,
     ) -> ProgramArtifact {
         let mut schemas = SchemaTableBuilder::new();
-        let mut matrix = |extents: [u64; 2]| {
-            schemas
+        let (left, right) = if shared_parameterized_schema {
+            let matrix = schemas
                 .insert(
                     SchemaDraft {
-                        dimension_parameters: Box::new([]),
+                        dimension_parameters: (0..2)
+                            .map(|index| DimensionParameterDeclaration {
+                                id: DimensionParameterId::new(index),
+                                origin: DimensionParameterOrigin::Explicit,
+                                lifetime: DimensionLifetime::Turn,
+                                lower_bound: DimensionExpr::Constant(0),
+                                upper_bound: Some(DimensionExpr::Constant(
+                                    left_extents[index as usize].max(right_extents[index as usize]),
+                                )),
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
                         body: SchemaBody::Matrix {
                             element: Box::new(element.clone()),
-                            dimensions: extents.map(DimensionExpr::Constant).into(),
+                            dimensions: vec![
+                                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                                DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                            ]
+                            .into_boxed_slice(),
                         },
                     }
                     .finalize()
                     .unwrap(),
                 )
-                .unwrap()
+                .unwrap();
+            (matrix, matrix)
+        } else {
+            let left = schemas
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: Box::new([]),
+                        body: SchemaBody::Matrix {
+                            element: Box::new(element.clone()),
+                            dimensions: left_extents.map(DimensionExpr::Constant).into(),
+                        },
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            let right = schemas
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: Box::new([]),
+                        body: SchemaBody::Matrix {
+                            element: Box::new(element.clone()),
+                            dimensions: right_extents.map(DimensionExpr::Constant).into(),
+                        },
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            (left, right)
         };
-        let left = matrix(left_extents);
-        let right = matrix(right_extents);
         let output = schemas
             .insert(
                 SchemaDraft {
@@ -7865,7 +7931,11 @@ mod shape_fact_tests {
         let value = |schema, extents: [u64; 2]| {
             ValueDraft {
                 schema,
-                shape_values: Box::new([]),
+                shape_values: if shared_parameterized_schema {
+                    extents.into()
+                } else {
+                    Box::new([])
+                },
                 data: ValueDataDraft::Matrix(
                     vec![element_value.clone(); (extents[0] * extents[1]) as usize]
                         .into_boxed_slice(),
@@ -7983,6 +8053,7 @@ mod shape_fact_tests {
             [1, 65_537],
             [1, 65_537],
             ValueDataDraft::F64(F64Bits::from_f64(1.0)),
+            false,
         );
         assert_eq!(
             closed_comparison_population(&artifact, NodeId::new(0), &ActivationFacts::default())
@@ -7999,6 +8070,47 @@ mod shape_fact_tests {
             [1, 5_000],
             [5_000, 1],
             ValueDataDraft::U128(1),
+            false,
+        );
+        assert_eq!(
+            closed_comparison_population(&artifact, NodeId::new(0), &ActivationFacts::default())
+                .unwrap(),
+            None,
+        );
+    }
+
+    #[test]
+    fn dense_strict_shape_mismatches_skip_payload_admission() {
+        for (operation, expected) in [("seq", 0), ("sneq", 1)] {
+            let artifact = strict_matrix_comparison_artifact(
+                operation,
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                [1, 65_537],
+                [65_537, 1],
+                ValueDataDraft::F64(F64Bits::from_f64(1.0)),
+                true,
+            );
+            assert_eq!(
+                closed_comparison_population(
+                    &artifact,
+                    NodeId::new(0),
+                    &ActivationFacts::default(),
+                )
+                .unwrap(),
+                Some(expected),
+            );
+        }
+    }
+
+    #[test]
+    fn cross_schema_snapshot_ordinary_mismatches_require_admission() {
+        let artifact = strict_matrix_comparison_artifact(
+            "eq",
+            SchemaBody::UnsignedInteger(IntegerWidth::W128),
+            [1, 5_000],
+            [5_000, 1],
+            ValueDataDraft::U128(1),
+            false,
         );
         assert_eq!(
             closed_comparison_population(&artifact, NodeId::new(0), &ActivationFacts::default())
