@@ -362,6 +362,35 @@ fn closed_comparisons_compose_through_resident_binary_float_operations() {
 }
 
 #[test]
+fn dense_string_comparisons_require_runtime_scan_admission() {
+    exact_closed_mask(
+        "x := [42 43]\ntext := [\"yes\" \"no\"]\nmask := text == \"yes\"\nx[mask]\n",
+        "[42]",
+    );
+
+    let payload = usize::try_from(mech_core::RESIDENT_MAX_COMPARISON_WORK).unwrap() + 1;
+    let source = format!(
+        "x := [42 43]\ntext := [\"{}\" \"short\"]\nmask := text == text\nx[mask]\n",
+        "x".repeat(payload),
+    );
+    let artifact = compile(&source);
+    let decoded = roundtrip(&artifact);
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in [&artifact, &decoded] {
+        match activate(
+            ReactiveInstanceId::new(0x58c, 14),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        ) {
+            Err(ResidentActivationError::UnresolvedShape { .. }) => {}
+            Err(error) => panic!("unexpected oversized String comparison error: {error:?}"),
+            Ok(_) => panic!("oversized String comparison inferred a selector population"),
+        }
+    }
+}
+
+#[test]
 fn closed_comparisons_compose_through_all_range_modes() {
     for range in ["1..4", "1..=3", "1..2..6", "1..2..=5"] {
         exact_closed_mask(

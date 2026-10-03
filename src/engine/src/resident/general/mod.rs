@@ -5540,6 +5540,27 @@ fn closed_string_element_comparison_work(
     u64::try_from(length).ok().map(|length| length.max(1))
 }
 
+fn closed_broadcast_string_comparison_work(
+    left: &ConstantComparisonOperand<'_>,
+    right: &ConstantComparisonOperand<'_>,
+    rows: usize,
+    columns: usize,
+) -> Option<u64> {
+    let mut work = 0_u64;
+    for column in 0..columns {
+        for row in 0..rows {
+            let left_index = (row % left.rows) * left.columns + column % left.columns;
+            let right_index = (row % right.rows) * right.columns + column % right.columns;
+            let pair = closed_string_element_comparison_work(left, left_index)?
+                .max(closed_string_element_comparison_work(right, right_index)?);
+            work = work
+                .checked_add(pair)
+                .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)?;
+        }
+    }
+    Some(work)
+}
+
 fn closed_comparison_mask(
     artifact: &ProgramArtifact,
     node: NodeId,
@@ -5851,7 +5872,6 @@ fn closed_comparison_mask(
             return Ok(None);
         };
         let mut measured_work = admitted_work;
-        let mut string_work = 0_u64;
         for column in 0..columns {
             for row in 0..rows {
                 let left_index = (row % left.rows) * left.columns + column % left.columns;
@@ -5881,31 +5901,32 @@ fn closed_comparison_mask(
                     return Ok(None);
                 };
                 admitted_work = next_admitted;
-                if matches!(element, SchemaBody::String) {
-                    let Some(work) = closed_string_element_comparison_work(&left, left_index)
-                        .zip(closed_string_element_comparison_work(&right, right_index))
-                        .map(|(left, right)| left.max(right))
-                    else {
-                        return Ok(None);
-                    };
-                    let Some(next_string) = string_work
-                        .checked_add(work)
-                        .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
-                    else {
-                        return Ok(None);
-                    };
-                    string_work = next_string;
-                    let Some(next_admitted) = admitted_work
-                        .checked_add(work)
-                        .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
-                    else {
-                        return Ok(None);
-                    };
-                    admitted_work = next_admitted;
-                }
             }
         }
+        if matches!(element, SchemaBody::String) {
+            let Some(string_work) =
+                closed_broadcast_string_comparison_work(&left, &right, rows, columns)
+            else {
+                return Ok(None);
+            };
+            let Some(next_admitted) = admitted_work
+                .checked_add(string_work)
+                .filter(|work| *work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+            else {
+                return Ok(None);
+            };
+            admitted_work = next_admitted;
+        }
         if !admit_closed_comparison_scan(analysis, admitted_work, true) {
+            return Ok(None);
+        }
+    } else if matches!(element, SchemaBody::String) {
+        let Some(string_work) =
+            closed_broadcast_string_comparison_work(&left, &right, rows, columns)
+        else {
+            return Ok(None);
+        };
+        if !admit_closed_comparison_scan(analysis, string_work, true) {
             return Ok(None);
         }
     }
