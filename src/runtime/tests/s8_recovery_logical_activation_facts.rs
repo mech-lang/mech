@@ -253,6 +253,18 @@ fn closed_comparisons_compose_through_supported_producers() {
         "+> string\nx := [42 43]\njoined := string/concat(\"ab\", \"cd\")\nq := joined == \"abcd\"\nmask := [q false]\nx[mask]\n",
         "[42]",
     );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [7 8]\nfirst := values[1]\np := first == 7\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [1 2; 3 4]\nsecond := values[2]\np := second == 3\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [1 2; 3 4]\ncell := values[2,1]\np := cell == 3\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
 }
 
 #[test]
