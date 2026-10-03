@@ -149,6 +149,19 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_r06_acceptance_and_shape_facts_are_explicitly_selected(self):
+        block = job_block(FULL, "cargo-language")
+        step = next(
+            step
+            for step in job_steps(FULL, "cargo-language")
+            if "Verify canonical document execution and rendered outputs" in step
+        )
+        self.assertIn("--features full_source,resident-routing-source", step)
+        self.assertIn("--test s8_recovery_logical_activation_facts", step)
+        self.assertIn("--features full_source,resident-artifact,r64,c64", step)
+        self.assertIn("--lib resident::general::shape_fact_tests::", step)
+        self.assertIn(step, block)
+
     def test_landing_source_fixture_is_fetched_before_offline_execution(self):
         block = job_block(CI, "standard-linux")
         fetch = "cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml"

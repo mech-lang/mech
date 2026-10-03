@@ -6418,7 +6418,15 @@ mod tests {
                     .unwrap(),
                 mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(7.0))
             );
-            install(&mut instance, mech_core::RESIDENT_MAX_COMPUTE_WORK / 2);
+            // The selected control body itself contributes eight units of
+            // compute work before the two installed calls. Split the
+            // remaining allowance exactly so the fixture tests accumulation
+            // and per-turn reset instead of accidentally exceeding the limit.
+            const CONTROL_BODY_COMPUTE_WORK: u64 = 8;
+            install(
+                &mut instance,
+                (mech_core::RESIDENT_MAX_COMPUTE_WORK - CONTROL_BODY_COMPUTE_WORK) / 2,
+            );
             for _ in 0..2 {
                 instance.turn(&inputs(&[1])).unwrap();
                 assert_eq!(

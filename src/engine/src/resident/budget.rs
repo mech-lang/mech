@@ -1,8 +1,11 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::snapshot::{SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint};
+use mech_core::snapshot::{
+    SequenceView, SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint,
+};
 use mech_core::{
-    ResidentKernelError, ResourceDemand, SchemaBody, SchemaId, SchemaTable, Value, ValueData,
+    ResidentKernelError, ResidentValueKind, ResourceDemand, SchemaBody, SchemaId, SchemaTable,
+    Value, ValueData,
 };
 
 use crate::memory_planner::{
@@ -12,6 +15,180 @@ use crate::memory_planner::{
 
 #[path = "payload_budget.rs"]
 pub(crate) mod payload;
+
+#[derive(Default)]
+struct DisplayByteCounter(usize);
+
+impl core::fmt::Write for DisplayByteCounter {
+    fn write_str(&mut self, value: &str) -> core::fmt::Result {
+        self.0 = self.0.checked_add(value.len()).ok_or(core::fmt::Error)?;
+        Ok(())
+    }
+}
+
+fn displayed_bytes(value: impl core::fmt::Display) -> Result<usize, ResidentKernelError> {
+    use core::fmt::Write;
+
+    let mut counter = DisplayByteCounter::default();
+    write!(&mut counter, "{value}").map_err(|_| ResidentKernelError::InvalidShape)?;
+    Ok(counter.0)
+}
+
+fn projected_string_value_bytes(value: &ValueData) -> Result<usize, ResidentKernelError> {
+    match value {
+        ValueData::U8(value) => displayed_bytes(value),
+        ValueData::U16(value) => displayed_bytes(value),
+        ValueData::U32(value) => displayed_bytes(value),
+        ValueData::U64(value) => displayed_bytes(value),
+        ValueData::U128(value) => displayed_bytes(value),
+        ValueData::I8(value) => displayed_bytes(value),
+        ValueData::I16(value) => displayed_bytes(value),
+        ValueData::I32(value) => displayed_bytes(value),
+        ValueData::I64(value) => displayed_bytes(value),
+        ValueData::I128(value) => displayed_bytes(value),
+        ValueData::F32(value) => displayed_bytes(value.to_f32()),
+        ValueData::F64(value) => displayed_bytes(value.to_f64()),
+        ValueData::Complex32(value) => displayed_bytes(value.real().to_f32())?
+            .checked_add(displayed_bytes(value.imaginary().to_f32())?)
+            .and_then(|bytes| bytes.checked_add(2))
+            .ok_or(ResidentKernelError::InvalidShape),
+        ValueData::Complex64(value) => displayed_bytes(value.real().to_f64())?
+            .checked_add(displayed_bytes(value.imaginary().to_f64())?)
+            .and_then(|bytes| bytes.checked_add(2))
+            .ok_or(ResidentKernelError::InvalidShape),
+        ValueData::Rational64(value) => displayed_bytes(value.numerator())?
+            .checked_add(displayed_bytes(value.denominator())?)
+            .and_then(|bytes| bytes.checked_add(1))
+            .ok_or(ResidentKernelError::InvalidShape),
+        ValueData::Bool(value) => Ok(if *value { 4 } else { 5 }),
+        ValueData::String(value) => Ok(value.len()),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn projected_display_sequence<T: core::fmt::Display>(
+    values: &[T],
+) -> Result<usize, ResidentKernelError> {
+    values.iter().try_fold(0usize, |bytes, value| {
+        bytes
+            .checked_add(displayed_bytes(value)?)
+            .ok_or(ResidentKernelError::InvalidShape)
+    })
+}
+
+pub(super) fn projected_snapshot_string_payload(
+    value: &Value,
+) -> Result<usize, ResidentKernelError> {
+    match value.data() {
+        ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::U8(values) => projected_display_sequence(values),
+            SequenceView::U16(values) => projected_display_sequence(values),
+            SequenceView::U32(values) => projected_display_sequence(values),
+            SequenceView::U64(values) => projected_display_sequence(values),
+            SequenceView::U128(values) => projected_display_sequence(values),
+            SequenceView::I8(values) => projected_display_sequence(values),
+            SequenceView::I16(values) => projected_display_sequence(values),
+            SequenceView::I32(values) => projected_display_sequence(values),
+            SequenceView::I64(values) => projected_display_sequence(values),
+            SequenceView::I128(values) => projected_display_sequence(values),
+            SequenceView::F32(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(displayed_bytes(value.to_f32())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::F64(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(displayed_bytes(value.to_f64())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Complex32(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(projected_string_value_bytes(&ValueData::Complex32(*value))?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Complex64(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(projected_string_value_bytes(&ValueData::Complex64(*value))?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Rational64(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(projected_string_value_bytes(&ValueData::Rational64(
+                        value.clone(),
+                    ))?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Bool(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(if *value { 4 } else { 5 })
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::String(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(value.len())
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Values(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(projected_string_value_bytes(value)?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Id(_) | SequenceView::Index(_) | SequenceView::Unit(_) => {
+                Err(ResidentKernelError::InvalidInput)
+            }
+        },
+        value => projected_string_value_bytes(value),
+    }
+}
+
+pub(super) fn projected_dense_string_payload(
+    value: &Value,
+    kind: ResidentValueKind,
+) -> Result<usize, ResidentKernelError> {
+    match (kind, value.data()) {
+        (ResidentValueKind::Bool, ValueData::Bool(value)) => Ok(if *value { 4 } else { 5 }),
+        (ResidentValueKind::Bool, ValueData::Matrix(matrix)) => {
+            let SequenceView::Bool(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(if *value { 4 } else { 5 })
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+        }
+        (ResidentValueKind::Index, ValueData::Index(value)) => displayed_bytes(value),
+        (ResidentValueKind::Index, ValueData::Matrix(matrix)) => {
+            let SequenceView::Index(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            projected_display_sequence(values)
+        }
+        (ResidentValueKind::F64, ValueData::F64(value)) => displayed_bytes(value.to_f64()),
+        (ResidentValueKind::F64, ValueData::Matrix(matrix)) => {
+            let SequenceView::F64(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(displayed_bytes(value.to_f64())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+        }
+        (ResidentValueKind::String, ValueData::String(value)) => Ok(value.len()),
+        (ResidentValueKind::String, ValueData::Matrix(matrix)) => {
+            let SequenceView::String(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(value.len())
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
 
 thread_local! {
     static ACTIVE_TURN_PLAN: Mutex<Option<Arc<TurnMemoryPlan>>> = const { Mutex::new(None) };

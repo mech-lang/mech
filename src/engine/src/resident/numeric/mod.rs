@@ -336,13 +336,275 @@ enum SemanticComparison {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u64)]
-enum SemanticArithmetic {
+pub(super) enum SemanticArithmetic {
     Add = 0,
     Subtract = 1,
     Multiply = 2,
     Divide = 3,
     Remainder = 4,
     Power = 5,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum SemanticFloatUnary {
+    Acos,
+    Acosh,
+    Acot,
+    Acsc,
+    Asec,
+    Asin,
+    Asinh,
+    Atan,
+    Atanh,
+    Cbrt,
+    Ceil,
+    Cos,
+    Cosh,
+    Cot,
+    Csc,
+    Erf,
+    Erfc,
+    Floor,
+    Lgamma,
+    Log,
+    Log10,
+    Log1p,
+    Log2,
+    Rint,
+    Round,
+    RoundEven,
+    Sec,
+    Sin,
+    Sinh,
+    Sqrt,
+    Tan,
+    Tanh,
+    Tgamma,
+    Trunc,
+    BesselJ0,
+    BesselJ1,
+    BesselY0,
+    BesselY1,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum SemanticFloatBinary {
+    Atan2,
+    CopySign,
+    PositiveDifference,
+    Modulus,
+    NextAfter,
+    Remainder,
+    BesselJn,
+    BesselYn,
+}
+
+pub(super) fn semantic_float_binary_operation(
+    module_path: &[String],
+    operation_name: &str,
+) -> Option<SemanticFloatBinary> {
+    use SemanticFloatBinary::*;
+    Some(match (module_path, operation_name) {
+        ([module], "atan2") if module == "math" => Atan2,
+        ([module], "copysign") if module == "math" => CopySign,
+        ([module], "fdim") if module == "math" => PositiveDifference,
+        ([module], "fmod") if module == "math" => Modulus,
+        ([module], "nextafter") if module == "math" => NextAfter,
+        ([module], "remainder") if module == "math" => Remainder,
+        ([math, bessel], "jn") if math == "math" && bessel == "bessel" => BesselJn,
+        ([math, bessel], "yn") if math == "math" && bessel == "bessel" => BesselYn,
+        _ => return None,
+    })
+}
+
+impl SemanticFloatBinary {
+    fn apply_f64(self, left: f64, right: f64) -> f64 {
+        use SemanticFloatBinary::*;
+        match self {
+            Atan2 => left.atan2(right),
+            CopySign => libm::copysign(left, right),
+            PositiveDifference => libm::fdim(left, right),
+            Modulus => libm::fmod(left, right),
+            NextAfter => libm::nextafter(left, right),
+            Remainder => libm::remainder(left, right),
+            BesselJn => libm::jn(left as i32, right),
+            BesselYn => libm::yn(left as i32, right),
+        }
+    }
+
+    fn apply_f32(self, left: f32, right: f32) -> f32 {
+        use SemanticFloatBinary::*;
+        match self {
+            Atan2 => libm::atan2f(left, right),
+            CopySign => libm::copysignf(left, right),
+            PositiveDifference => libm::fdimf(left, right),
+            Modulus => libm::fmodf(left, right),
+            NextAfter => libm::nextafterf(left, right),
+            Remainder => libm::remainderf(left, right),
+            BesselJn => libm::jnf(left as i32, right),
+            BesselYn => libm::ynf(left as i32, right),
+        }
+    }
+
+    fn apply_snapshot_f64(self, left: f64, right: f64) -> f64 {
+        match self {
+            // The mixed/snapshot resident uses libm while the all-dense F64
+            // kernel deliberately uses the platform method.
+            Self::Atan2 => libm::atan2(left, right),
+            _ => self.apply_f64(left, right),
+        }
+    }
+}
+
+pub(super) fn semantic_float_unary_operation(
+    module_path: &[String],
+    operation_name: &str,
+) -> Option<SemanticFloatUnary> {
+    use SemanticFloatUnary::*;
+    Some(match (module_path, operation_name) {
+        ([module], "acos") if module == "math" => Acos,
+        ([module], "acosh") if module == "math" => Acosh,
+        ([module], "acot") if module == "math" => Acot,
+        ([module], "acsc") if module == "math" => Acsc,
+        ([module], "asec") if module == "math" => Asec,
+        ([module], "asin") if module == "math" => Asin,
+        ([module], "asinh") if module == "math" => Asinh,
+        ([module], "atan") if module == "math" => Atan,
+        ([module], "atanh") if module == "math" => Atanh,
+        ([module], "cbrt") if module == "math" => Cbrt,
+        ([module], "ceil") if module == "math" => Ceil,
+        ([module], "cos") if module == "math" => Cos,
+        ([module], "cosh") if module == "math" => Cosh,
+        ([module], "cot") if module == "math" => Cot,
+        ([module], "csc") if module == "math" => Csc,
+        ([module], "erf") if module == "math" => Erf,
+        ([module], "erfc") if module == "math" => Erfc,
+        ([module], "floor") if module == "math" => Floor,
+        ([module], "lgamma") if module == "math" => Lgamma,
+        ([module], "log") if module == "math" => Log,
+        ([module], "log10") if module == "math" => Log10,
+        ([module], "log1p") if module == "math" => Log1p,
+        ([module], "log2") if module == "math" => Log2,
+        ([module], "rint") if module == "math" => Rint,
+        ([module], "round") if module == "math" => Round,
+        ([module], "roundeven") if module == "math" => RoundEven,
+        ([module], "sec") if module == "math" => Sec,
+        ([module], "sin") if module == "math" => Sin,
+        ([module], "sinh") if module == "math" => Sinh,
+        ([module], "sqrt") if module == "math" => Sqrt,
+        ([module], "tan") if module == "math" => Tan,
+        ([module], "tanh") if module == "math" => Tanh,
+        ([module], "tgamma") if module == "math" => Tgamma,
+        ([module], "trunc") if module == "math" => Trunc,
+        ([math, bessel], "j0") if math == "math" && bessel == "bessel" => BesselJ0,
+        ([math, bessel], "j1") if math == "math" && bessel == "bessel" => BesselJ1,
+        ([math, bessel], "y0") if math == "math" && bessel == "bessel" => BesselY0,
+        ([math, bessel], "y1") if math == "math" && bessel == "bessel" => BesselY1,
+        _ => return None,
+    })
+}
+
+impl SemanticFloatUnary {
+    fn apply_f64(self, value: f64) -> f64 {
+        use SemanticFloatUnary::*;
+        match self {
+            Acos => libm::acos(value),
+            Acosh => libm::acosh(value),
+            Acot => libm::atan(1.0 / value),
+            Acsc => libm::asin(1.0 / value),
+            Asec => libm::acos(1.0 / value),
+            Asin => libm::asin(value),
+            Asinh => libm::asinh(value),
+            Atan => libm::atan(value),
+            Atanh => libm::atanh(value),
+            Cbrt => libm::cbrt(value),
+            Ceil => libm::ceil(value),
+            Cos => value.cos(),
+            Cosh => libm::cosh(value),
+            Cot => 1.0 / libm::tan(value),
+            Csc => 1.0 / libm::sin(value),
+            Erf => libm::erf(value),
+            Erfc => libm::erfc(value),
+            Floor => value.floor(),
+            Lgamma => libm::lgamma(value),
+            Log => libm::log(value),
+            Log10 => libm::log10(value),
+            Log1p => libm::log1p(value),
+            Log2 => libm::log2(value),
+            Rint => libm::rint(value),
+            Round => libm::round(value),
+            RoundEven => libm::roundeven(value),
+            Sec => 1.0 / libm::cos(value),
+            Sin => value.sin(),
+            Sinh => libm::sinh(value),
+            Sqrt => value.sqrt(),
+            Tan => libm::tan(value),
+            Tanh => libm::tanh(value),
+            Tgamma => libm::tgamma(value),
+            Trunc => libm::trunc(value),
+            BesselJ0 => libm::j0(value),
+            BesselJ1 => libm::j1(value),
+            BesselY0 => libm::y0(value),
+            BesselY1 => libm::y1(value),
+        }
+    }
+
+    fn apply_f32(self, value: f32) -> f32 {
+        use SemanticFloatUnary::*;
+        match self {
+            Acos => libm::acosf(value),
+            Acosh => libm::acoshf(value),
+            Acot => libm::atanf(1.0 / value),
+            Acsc => libm::asinf(1.0 / value),
+            Asec => libm::acosf(1.0 / value),
+            Asin => libm::asinf(value),
+            Asinh => libm::asinhf(value),
+            Atan => libm::atanf(value),
+            Atanh => libm::atanhf(value),
+            Cbrt => libm::cbrtf(value),
+            Ceil => libm::ceilf(value),
+            Cos => libm::cosf(value),
+            Cosh => libm::coshf(value),
+            Cot => 1.0 / libm::tanf(value),
+            Csc => 1.0 / libm::sinf(value),
+            Erf => libm::erff(value),
+            Erfc => libm::erfcf(value),
+            Floor => libm::floorf(value),
+            Lgamma => libm::lgammaf(value),
+            Log => libm::logf(value),
+            Log10 => libm::log10f(value),
+            Log1p => libm::log1pf(value),
+            Log2 => libm::log2f(value),
+            Rint => libm::rintf(value),
+            Round => libm::roundf(value),
+            RoundEven => libm::roundevenf(value),
+            Sec => 1.0 / libm::cosf(value),
+            Sin => libm::sinf(value),
+            Sinh => libm::sinhf(value),
+            Sqrt => libm::sqrtf(value),
+            Tan => libm::tanf(value),
+            Tanh => libm::tanhf(value),
+            Tgamma => libm::tgammaf(value),
+            Trunc => libm::truncf(value),
+            BesselJ0 => libm::j0f(value),
+            BesselJ1 => libm::j1f(value),
+            BesselY0 => libm::y0f(value),
+            BesselY1 => libm::y1f(value),
+        }
+    }
+
+    fn apply_snapshot_f64(self, value: f64) -> f64 {
+        use SemanticFloatUnary::*;
+        match self {
+            // These dense F64 kernels deliberately use the platform methods,
+            // while their snapshot peers use libm alongside the F32 path.
+            Cos => libm::cos(value),
+            Floor => libm::floor(value),
+            Sin => libm::sin(value),
+            Sqrt => libm::sqrt(value),
+            _ => self.apply_f64(value),
+        }
+    }
 }
 
 impl SemanticArithmetic {
@@ -2679,7 +2941,7 @@ fn bind_binary(
     )
 }
 
-fn snapshot_arithmetic_element_supported(
+pub(super) fn snapshot_arithmetic_element_supported(
     arithmetic: SemanticArithmetic,
     element: &SchemaBody,
 ) -> bool {
@@ -2719,7 +2981,7 @@ fn snapshot_arithmetic_element_supported(
     }
 }
 
-fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
+pub(super) fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
     use mech_core::{FloatWidth, IntegerWidth};
     match element {
         SchemaBody::Bool
@@ -2750,7 +3012,7 @@ fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
 const RATIONAL_MULTIPLY_COMPUTE_WORK: usize = 1_024;
 const RATIONAL_POWER_ELEMENT_COMPUTE_WORK: usize = 126 * RATIONAL_MULTIPLY_COMPUTE_WORK;
 
-fn snapshot_power_compute_work(
+pub(super) fn snapshot_power_compute_work(
     arithmetic: SemanticArithmetic,
     element: &SchemaBody,
     output_elements: usize,
@@ -2799,7 +3061,7 @@ fn snapshot_power_compute_work(
 // Keep fixed arithmetic inside the same conservative power-of-two allowance.
 const RATIONAL_REDUCTION_TERM_COMPUTE_WORK: usize = 2_048;
 
-fn snapshot_reduction_compute_work(
+pub(super) fn snapshot_reduction_compute_work(
     element: &SchemaBody,
     terms: usize,
 ) -> Result<usize, ResidentKernelError> {
@@ -2817,7 +3079,7 @@ fn snapshot_reduction_compute_work(
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
-fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
+pub(super) fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
     use mech_core::FloatWidth;
     matches!(
         element,
@@ -2828,7 +3090,7 @@ fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
         || (cfg!(feature = "c64") && matches!(element, SchemaBody::Complex(FloatWidth::W64)))
 }
 
-fn snapshot_abs_element_supported(element: &SchemaBody) -> bool {
+pub(super) fn snapshot_abs_element_supported(element: &SchemaBody) -> bool {
     use mech_core::FloatWidth;
     matches!(
         element,
@@ -3338,7 +3600,7 @@ fn bind_sum_rows(
     bind_snapshot_sum(request, false)
 }
 
-fn is_snapshot_sum_element(body: &SchemaBody) -> bool {
+pub(super) fn matrix_sum_element_supported(body: &SchemaBody) -> bool {
     match body {
         SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
@@ -3389,7 +3651,7 @@ fn bind_snapshot_sum(
         && output_element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
         && request.output.shape.len().is_some();
     if input_element != output_element
-        || !is_snapshot_sum_element(input_element)
+        || !matrix_sum_element_supported(input_element)
         || (!snapshot_output && !dense_f64_output)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -4974,7 +5236,7 @@ fn bind_n_choose_k(
     )
 }
 
-fn is_n_choose_k_snapshot_element(body: &SchemaBody) -> bool {
+pub(super) fn n_choose_k_element_supported(body: &SchemaBody) -> bool {
     match body {
         SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
@@ -5016,7 +5278,7 @@ fn bind_snapshot_n_choose_k_scalar(
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     if n_schema.body() != k_schema.body()
         || n_schema.body() != output_schema.body()
-        || !is_n_choose_k_snapshot_element(n_schema.body())
+        || !n_choose_k_element_supported(n_schema.body())
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -5085,7 +5347,7 @@ fn bind_snapshot_n_choose_k_matrix(
         || (input_snapshot && input.shape != ResidentShape::SCALAR)
         || (!selection_snapshot && !selection_dense_f64)
         || (selection_snapshot && selection_schema.body() != input_element.as_ref())
-        || !is_n_choose_k_snapshot_element(input_element)
+        || !n_choose_k_element_supported(input_element)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -5993,7 +6255,7 @@ fn bind_matmul(
         || rhs.shape != ResidentShape::SCALAR
         || request.output.shape != ResidentShape::SCALAR
         || lhs_element != rhs_element
-        || !is_dot_numeric_schema(lhs_element)
+        || !matrix_product_element_supported(lhs_element)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -6045,7 +6307,7 @@ fn dot_element_schema(body: &SchemaBody) -> &SchemaBody {
     }
 }
 
-fn is_dot_numeric_schema(body: &SchemaBody) -> bool {
+pub(super) fn matrix_product_element_supported(body: &SchemaBody) -> bool {
     matches!(
         body,
         SchemaBody::UnsignedInteger(_)
@@ -6084,7 +6346,7 @@ fn bind_matrix_dot(
     let right_element = dot_element_schema(right_schema.body());
     if left_element != right_element
         || left_element != output_schema.body()
-        || !is_dot_numeric_schema(left_element)
+        || !matrix_product_element_supported(left_element)
         || request.output.shape != ResidentShape::SCALAR
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -6195,6 +6457,15 @@ fn matrix_solve_work(rows: usize, right_columns: usize) -> Option<usize> {
     })
 }
 
+pub(super) fn matrix_solve_compute_work(
+    rows: usize,
+    right_columns: usize,
+) -> Result<usize, ResidentKernelError> {
+    matrix_solve_work(rows, right_columns)
+        .filter(|work| *work <= MAX_MATRIX_SOLVE_WORK)
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
 fn admit_matrix_solve(
     rows: usize,
     right_columns: usize,
@@ -6239,8 +6510,7 @@ fn admit_matrix_solve(
         super::budget::resident_cost! {
             comparison_work: supplemental.comparison_work(),
             compute_work: super::budget::checked_u64(
-                matrix_solve_work(rows, right_columns)
-                    .ok_or(ResidentKernelError::InvalidShape)?,
+                matrix_solve_compute_work(rows, right_columns)?,
             )?
                 .checked_add(supplemental.compute_work())
                 .ok_or(ResidentKernelError::InvalidShape)?,
@@ -6371,8 +6641,7 @@ fn bind_matrix_solve(
             if rows != columns
                 || right_rows != rows
                 || output_dimensions != (right_rows, right_columns)
-                || matrix_solve_work(rows, right_columns)
-                    .is_none_or(|work| work > MAX_MATRIX_SOLVE_WORK)
+                || matrix_solve_compute_work(rows, right_columns).is_err()
             {
                 return Err(ResidentKernelBindError::UnsupportedLayout);
             }
@@ -13753,11 +14022,80 @@ pub(super) fn canonical_range_cardinality(
     inclusive: bool,
     incremented: bool,
 ) -> Option<usize> {
-    let numbers = values
-        .iter()
-        .map(|value| snapshot_range_number(value.data()))
-        .collect::<Option<Vec<_>>>()?;
-    snapshot_range_size(&numbers, inclusive, incremented)
+    match (values, incremented) {
+        ([first, second], false) => snapshot_range_size(
+            &[
+                snapshot_range_number(first.data())?,
+                snapshot_range_number(second.data())?,
+            ],
+            inclusive,
+            false,
+        ),
+        ([first, second, third], true) => snapshot_range_size(
+            &[
+                snapshot_range_number(first.data())?,
+                snapshot_range_number(second.data())?,
+                snapshot_range_number(third.data())?,
+            ],
+            inclusive,
+            true,
+        ),
+        _ => None,
+    }
+}
+
+pub(super) fn canonical_range_draft_cardinality(
+    values: &[ValueDataDraft],
+    inclusive: bool,
+    incremented: bool,
+) -> Option<usize> {
+    match (values, incremented) {
+        ([first, second], false) => snapshot_range_size(
+            &[draft_range_number(first)?, draft_range_number(second)?],
+            inclusive,
+            false,
+        ),
+        ([first, second, third], true) => snapshot_range_size(
+            &[
+                draft_range_number(first)?,
+                draft_range_number(second)?,
+                draft_range_number(third)?,
+            ],
+            inclusive,
+            true,
+        ),
+        _ => None,
+    }
+}
+
+pub(super) fn canonical_range_draft_values(
+    values: &[ValueDataDraft],
+    element: &SchemaBody,
+    inclusive: bool,
+    incremented: bool,
+    expected_count: usize,
+) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
+    let count = canonical_range_draft_cardinality(values, inclusive, incremented)
+        .filter(|count| *count != 0 && *count == expected_count)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let expected_inputs = if incremented { 3 } else { 2 };
+    if values.len() != expected_inputs {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let mut current = values[0].clone();
+    let step = if incremented {
+        values[1].clone()
+    } else {
+        range_one(element)?
+    };
+    let mut elements = Vec::with_capacity(count);
+    for index in 0..count {
+        elements.push(current.clone());
+        if index + 1 < count {
+            current = range_add(current, step.clone())?;
+        }
+    }
+    Ok(elements)
 }
 
 fn range_input_draft(
@@ -13851,14 +14189,11 @@ fn range_snapshot(
     } else {
         second.clone()
     };
-    let numbers = [
-        draft_range_number(&first).ok_or(ResidentKernelError::InvalidInput)?,
-        draft_range_number(&second).ok_or(ResidentKernelError::InvalidInput)?,
-        draft_range_number(&third).ok_or(ResidentKernelError::InvalidInput)?,
-    ];
-    let count = snapshot_range_size(&numbers[..expected_inputs], inclusive, incremented)
-        .filter(|count| *count != 0)
-        .ok_or(ResidentKernelError::InvalidInput)?;
+    let values = [first, second, third];
+    let count =
+        canonical_range_draft_cardinality(&values[..expected_inputs], inclusive, incremented)
+            .filter(|count| *count != 0)
+            .ok_or(ResidentKernelError::InvalidInput)?;
     if *declared_count != 0 && u64::try_from(count).ok() != Some(*declared_count) {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -13882,19 +14217,13 @@ fn range_snapshot(
         .and_then(|call| call.inputs().first())
         .ok_or(ResidentKernelError::InvalidInput)?
         .schema();
-    let mut current = first;
-    let step = if incremented {
-        second
-    } else {
-        range_one(input_schema.body())?
-    };
-    let mut elements = Vec::with_capacity(count);
-    for index in 0..count {
-        elements.push(current.clone());
-        if index + 1 < count {
-            current = range_add(current, step.clone())?;
-        }
-    }
+    let elements = canonical_range_draft_values(
+        &values[..expected_inputs],
+        input_schema.body(),
+        inclusive,
+        incremented,
+        count,
+    )?;
     let output_shape = resolved_snapshot_output_shape(kernel, 1, count)?;
     write_snapshot_data_for_shape_with_work_budget(
         kernel,
@@ -14180,6 +14509,71 @@ fn numeric_from_u128(
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub(super) struct CanonicalNChooseKScalarPlan {
+    n: u128,
+    k: u128,
+    result_maximum: Option<u128>,
+    steps: usize,
+}
+
+impl CanonicalNChooseKScalarPlan {
+    pub(super) fn steps(self) -> usize {
+        self.steps
+    }
+
+    pub(super) fn evaluate(
+        self,
+        n_value: &mech_core::Value,
+        body: &SchemaBody,
+    ) -> Result<ValueDataDraft, ResidentKernelError> {
+        if self.k > self.n {
+            return numeric_zero(body);
+        }
+        if let Some(maximum) = self.result_maximum {
+            let result = checked_integer_n_choose_k(self.n, self.k)
+                .filter(|result| *result <= maximum)
+                .ok_or(ResidentKernelError::Arithmetic)?;
+            return numeric_from_u128(body, result);
+        }
+        let mut result = numeric_one(body)?;
+        let n_draft = n_value
+            .canonical_data_draft()
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
+        for index in 0..u128::try_from(self.steps).map_err(|_| ResidentKernelError::InvalidShape)? {
+            let numerator = numeric_subtract(n_draft.clone(), numeric_from_u128(body, index)?)?;
+            let denominator = numeric_from_u128(
+                body,
+                index
+                    .checked_add(1)
+                    .ok_or(ResidentKernelError::Arithmetic)?,
+            )?;
+            result = numeric_divide(numeric_multiply(result, numerator)?, denominator)?;
+        }
+        Ok(result)
+    }
+}
+
+pub(super) fn canonical_n_choose_k_scalar_plan(
+    n_value: &mech_core::Value,
+    k_value: &mech_core::Value,
+) -> Result<CanonicalNChooseKScalarPlan, ResidentKernelError> {
+    let (n, result_maximum) =
+        canonical_n_choose_k_selection(n_value.data()).ok_or(ResidentKernelError::InvalidInput)?;
+    let (k, _) =
+        canonical_n_choose_k_selection(k_value.data()).ok_or(ResidentKernelError::InvalidInput)?;
+    let steps = if k > n { 0 } else { k.min(n - k) };
+    if steps > 1_000_000 {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(CanonicalNChooseKScalarPlan {
+        n,
+        k,
+        result_maximum,
+        steps: usize::try_from(steps).map_err(|_| ResidentKernelError::InvalidShape)?,
+    })
+}
+
 fn n_choose_k_scalar_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -14204,14 +14598,7 @@ fn n_choose_k_scalar_snapshot(
     if n_schema.body() != k_schema.body() {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let (n, result_maximum) =
-        canonical_n_choose_k_selection(n_value.data()).ok_or(ResidentKernelError::InvalidInput)?;
-    let (k, _) =
-        canonical_n_choose_k_selection(k_value.data()).ok_or(ResidentKernelError::InvalidInput)?;
-    let steps = if k > n { 0 } else { k.min(n - k) };
-    if steps > 1_000_000 {
-        return Err(ResidentKernelError::InvalidShape);
-    }
+    let plan = canonical_n_choose_k_scalar_plan(n_value, k_value)?;
     preflight_snapshot_arithmetic(
         kernel,
         schemas,
@@ -14219,33 +14606,9 @@ fn n_choose_k_scalar_snapshot(
         &output,
         2,
         1,
-        usize::try_from(steps).map_err(|_| ResidentKernelError::InvalidShape)?,
+        plan.steps(),
     )?;
-    let result = if k > n {
-        numeric_zero(n_schema.body())?
-    } else if let Some(maximum) = result_maximum {
-        let result = checked_integer_n_choose_k(n, k)
-            .filter(|result| *result <= maximum)
-            .ok_or(ResidentKernelError::Arithmetic)?;
-        numeric_from_u128(n_schema.body(), result)?
-    } else {
-        let mut result = numeric_one(n_schema.body())?;
-        let n_draft = n_value
-            .canonical_data_draft()
-            .map_err(|_| ResidentKernelError::InvalidInput)?;
-        for index in 0..steps {
-            let numerator =
-                numeric_subtract(n_draft.clone(), numeric_from_u128(n_schema.body(), index)?)?;
-            let denominator = numeric_from_u128(
-                n_schema.body(),
-                index
-                    .checked_add(1)
-                    .ok_or(ResidentKernelError::Arithmetic)?,
-            )?;
-            result = numeric_divide(numeric_multiply(result, numerator)?, denominator)?;
-        }
-        result
-    };
+    let result = plan.evaluate(n_value, n_schema.body())?;
     write_snapshot_data_with_work_budget(kernel, output, result, Some(0))
 }
 
@@ -14394,7 +14757,7 @@ fn n_choose_k_snapshot(
             return Err(ResidentKernelError::IncompleteOutput);
         }
     }
-    if !is_n_choose_k_snapshot_element(element) {
+    if !n_choose_k_element_supported(element) {
         return Err(ResidentKernelError::IncompleteOutput);
     }
     write_snapshot_data_for_shape_with_work_budget(
@@ -14406,7 +14769,7 @@ fn n_choose_k_snapshot(
     )
 }
 
-fn advance_combination_indices(selected: &mut [usize], available: usize) -> bool {
+pub(super) fn advance_combination_indices(selected: &mut [usize], available: usize) -> bool {
     let Some(pivot) = (0..selected.len())
         .rev()
         .find(|index| selected[*index] < available - selected.len() + *index)
@@ -15230,7 +15593,7 @@ fn access_indices(
     }
 }
 
-fn sequence_data_draft_at(
+pub(super) fn sequence_data_draft_at(
     schema: &SchemaBody,
     values: SequenceView<'_>,
     index: usize,
@@ -17318,7 +17681,7 @@ fn snapshot_numeric_abs(
 // Complex zero signs are observable in canonical values. A nonempty complex
 // reduction starts with its first term; other numeric families retain their
 // existing positive-zero seed. Empty reductions retain their typed zero.
-fn numeric_sum(
+pub(super) fn numeric_sum(
     body: &SchemaBody,
     terms: impl IntoIterator<Item = Result<ValueDataDraft, ResidentKernelError>>,
 ) -> Result<ValueDataDraft, ResidentKernelError> {
@@ -18631,7 +18994,7 @@ fn numeric_rational_power_impl(
     numeric_rational_power_with_exponent(left, i64::from(exponent))
 }
 
-fn numeric_rational_power(
+pub(super) fn numeric_rational_power(
     left: ValueDataDraft,
     right: ValueDataDraft,
 ) -> Result<ValueDataDraft, ResidentKernelError> {
@@ -18646,7 +19009,7 @@ fn numeric_rational_power(
     }
 }
 
-fn numeric_arithmetic(
+pub(super) fn numeric_arithmetic(
     arithmetic: SemanticArithmetic,
     left: ValueDataDraft,
     right: ValueDataDraft,
@@ -18661,7 +19024,7 @@ fn numeric_arithmetic(
     }
 }
 
-fn numeric_negate(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelError> {
+pub(super) fn numeric_negate(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelError> {
     Ok(match value {
         ValueDataDraft::I8(value) => {
             ValueDataDraft::I8(value.checked_neg().ok_or(ResidentKernelError::Arithmetic)?)
@@ -18694,7 +19057,7 @@ fn numeric_negate(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKerne
     })
 }
 
-fn numeric_abs(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelError> {
+pub(super) fn numeric_abs(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelError> {
     Ok(match value {
         value @ (ValueDataDraft::U8(_)
         | ValueDataDraft::U16(_)
@@ -18730,6 +19093,68 @@ fn numeric_abs(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelEr
         value @ ValueDataDraft::Complex64(_) => complex_to_draft(complex_from_draft(value)?.abs()),
         _ => return Err(ResidentKernelError::InvalidInput),
     })
+}
+
+pub(super) fn numeric_float_unary(
+    operation: SemanticFloatUnary,
+    value: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match value {
+        ValueDataDraft::F32(value) => Ok(ValueDataDraft::F32(F32Bits::from_f32(
+            operation.apply_f32(value.to_f32()),
+        ))),
+        ValueDataDraft::F64(value) => Ok(ValueDataDraft::F64(F64Bits::from_f64(
+            operation.apply_f64(value.to_f64()),
+        ))),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+pub(super) fn numeric_float_unary_snapshot(
+    operation: SemanticFloatUnary,
+    value: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match value {
+        ValueDataDraft::F32(value) => Ok(ValueDataDraft::F32(F32Bits::from_f32(
+            operation.apply_f32(value.to_f32()),
+        ))),
+        ValueDataDraft::F64(value) => Ok(ValueDataDraft::F64(F64Bits::from_f64(
+            operation.apply_snapshot_f64(value.to_f64()),
+        ))),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+pub(super) fn numeric_float_binary(
+    operation: SemanticFloatBinary,
+    left: ValueDataDraft,
+    right: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match (left, right) {
+        (ValueDataDraft::F32(left), ValueDataDraft::F32(right)) => Ok(ValueDataDraft::F32(
+            F32Bits::from_f32(operation.apply_f32(left.to_f32(), right.to_f32())),
+        )),
+        (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
+            F64Bits::from_f64(operation.apply_f64(left.to_f64(), right.to_f64())),
+        )),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+pub(super) fn numeric_float_binary_snapshot(
+    operation: SemanticFloatBinary,
+    left: ValueDataDraft,
+    right: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match (left, right) {
+        (ValueDataDraft::F32(left), ValueDataDraft::F32(right)) => Ok(ValueDataDraft::F32(
+            F32Bits::from_f32(operation.apply_f32(left.to_f32(), right.to_f32())),
+        )),
+        (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
+            F64Bits::from_f64(operation.apply_snapshot_f64(left.to_f64(), right.to_f64())),
+        )),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
 }
 
 fn snapshot_numeric_elements(
@@ -19249,6 +19674,79 @@ fn solve_dense<T: ResidentSolveFloat>(
     Ok(right)
 }
 
+pub(super) fn canonical_matrix_solve_draft_values(
+    element: &SchemaBody,
+    coefficients: &[ValueDataDraft],
+    right: &[ValueDataDraft],
+    rows: usize,
+    right_columns: usize,
+) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
+    let coefficient_count = rows
+        .checked_mul(rows)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let right_count = rows
+        .checked_mul(right_columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if coefficients.len() != coefficient_count || right.len() != right_count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    match element {
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
+            let canonical = |values: &[ValueDataDraft], columns: usize| {
+                (0..columns)
+                    .flat_map(|column| {
+                        (0..rows).map(move |row| match &values[row * columns + column] {
+                            ValueDataDraft::F32(value) => Ok(value.to_f32()),
+                            _ => Err(ResidentKernelError::InvalidInput),
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            };
+            let solved = solve_dense(
+                canonical(coefficients, rows)?,
+                canonical(right, right_columns)?,
+                rows,
+                right_columns,
+            )?;
+            Ok((0..rows)
+                .flat_map(|row| {
+                    let solved = &solved;
+                    (0..right_columns).map(move |column| {
+                        ValueDataDraft::F32(F32Bits::from_f32(solved[row + column * rows]))
+                    })
+                })
+                .collect())
+        }
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
+            let canonical = |values: &[ValueDataDraft], columns: usize| {
+                (0..columns)
+                    .flat_map(|column| {
+                        (0..rows).map(move |row| match &values[row * columns + column] {
+                            ValueDataDraft::F64(value) => Ok(value.to_f64()),
+                            _ => Err(ResidentKernelError::InvalidInput),
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            };
+            let solved = solve_dense(
+                canonical(coefficients, rows)?,
+                canonical(right, right_columns)?,
+                rows,
+                right_columns,
+            )?;
+            Ok((0..rows)
+                .flat_map(|row| {
+                    let solved = &solved;
+                    (0..right_columns).map(move |column| {
+                        ValueDataDraft::F64(F64Bits::from_f64(solved[row + column * rows]))
+                    })
+                })
+                .collect())
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
 fn matrix_solve_f64(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -19367,9 +19865,7 @@ fn matrix_solve_snapshot_mixed_f64(
     }
     let (rows, columns) = coefficient_dimensions;
     let (right_rows, right_columns) = right_dimensions;
-    let solve_work = matrix_solve_work(rows, right_columns)
-        .filter(|work| *work <= MAX_MATRIX_SOLVE_WORK)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    let solve_work = matrix_solve_compute_work(rows, right_columns)?;
     if rows != columns || right_rows != rows {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -19529,7 +20025,7 @@ fn matrix_solve_snapshot(
     let (right_rows, right_columns) = snapshot_matrix_dimensions(right, right_schema.body())?;
     if rows != columns
         || right_rows != rows
-        || matrix_solve_work(rows, right_columns).is_none_or(|work| work > MAX_MATRIX_SOLVE_WORK)
+        || matrix_solve_compute_work(rows, right_columns).is_err()
     {
         return Err(ResidentKernelError::InvalidShape);
     }
@@ -19626,73 +20122,18 @@ fn matrix_solve_snapshot(
         true,
         supplemental,
     )?;
-    let to_column_major_f32 = |values: &[f32], columns: usize| {
-        (0..columns)
-            .flat_map(|column| (0..rows).map(move |row| values[row * columns + column]))
-            .collect::<Vec<_>>()
-    };
-    let to_column_major_f64 = |values: &[f64], columns: usize| {
-        (0..columns)
-            .flat_map(|column| (0..rows).map(move |row| values[row * columns + column]))
-            .collect::<Vec<_>>()
-    };
-    let data = match coefficient_element.as_ref() {
-        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
-            let canonical_coefficients =
-                f32_snapshot_values(coefficients).ok_or(ResidentKernelError::InvalidInput)?;
-            let canonical_right =
-                f32_snapshot_values(right).ok_or(ResidentKernelError::InvalidInput)?;
-            let next = solve_dense(
-                to_column_major_f32(&canonical_coefficients, rows),
-                to_column_major_f32(&canonical_right, right_columns),
-                rows,
-                right_columns,
-            )?;
-            ValueDataDraft::Matrix(
-                (0..rows)
-                    .flat_map(|row| {
-                        let next = &next;
-                        (0..right_columns).map(move |column| {
-                            ValueDataDraft::F32(F32Bits::from_f32(next[row + column * rows]))
-                        })
-                    })
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-            )
-        }
-        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
-            let snapshot_f64 = |value: &mech_core::Value| match value.data() {
-                ValueData::Matrix(matrix) => match matrix.elements() {
-                    SequenceView::F64(values) => Ok(values
-                        .iter()
-                        .map(|value| value.to_f64())
-                        .collect::<Vec<_>>()),
-                    _ => Err(ResidentKernelError::InvalidInput),
-                },
-                _ => Err(ResidentKernelError::InvalidInput),
-            };
-            let canonical_coefficients = snapshot_f64(coefficients)?;
-            let canonical_right = snapshot_f64(right)?;
-            let next = solve_dense(
-                to_column_major_f64(&canonical_coefficients, rows),
-                to_column_major_f64(&canonical_right, right_columns),
-                rows,
-                right_columns,
-            )?;
-            ValueDataDraft::Matrix(
-                (0..rows)
-                    .flat_map(|row| {
-                        let next = &next;
-                        (0..right_columns).map(move |column| {
-                            ValueDataDraft::F64(F64Bits::from_f64(next[row + column * rows]))
-                        })
-                    })
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-            )
-        }
-        _ => return Err(ResidentKernelError::InvalidInput),
-    };
+    let coefficient_values = snapshot_numeric_elements(coefficients)?;
+    let right_values = snapshot_numeric_elements(right)?;
+    let data = ValueDataDraft::Matrix(
+        canonical_matrix_solve_draft_values(
+            coefficient_element,
+            &coefficient_values,
+            &right_values,
+            rows,
+            right_columns,
+        )?
+        .into_boxed_slice(),
+    );
     if let Some(output_shape) = output_shape {
         write_snapshot_data_for_shape_with_work_budget(kernel, output, &output_shape, data, Some(0))
     } else {

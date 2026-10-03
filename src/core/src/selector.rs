@@ -1,6 +1,9 @@
 //! Canonical positional-selector semantics shared by every execution target.
 
-use crate::{SchemaBody, ValueData, snapshot::SequenceView};
+use crate::{
+    SchemaBody, ValueData,
+    snapshot::{SequenceView, ValueDataDraft},
+};
 
 /// Largest one-based selector value that is portable across supported hosts.
 pub const PORTABLE_SELECTOR_INDEX_MAX: u64 = u32::MAX as u64;
@@ -48,6 +51,30 @@ pub fn canonical_positional_ordinal(value: &ValueData) -> Result<u64, CanonicalS
         ValueData::I128(value) => signed_ordinal(*value)?,
         ValueData::F32(value) => return float_ordinal(f64::from(value.to_f32())),
         ValueData::F64(value) => return float_ordinal(value.to_f64()),
+        _ => return Err(CanonicalSelectorError::UnsupportedSchema),
+    };
+    checked_ordinal(value)
+}
+
+/// Converts a draft scalar through the same canonical selector rules used by
+/// finalized resident values.
+pub fn canonical_positional_ordinal_draft(
+    value: &ValueDataDraft,
+) -> Result<u64, CanonicalSelectorError> {
+    let value = match value {
+        ValueDataDraft::Index(value) => u128::from(*value),
+        ValueDataDraft::U8(value) => u128::from(*value),
+        ValueDataDraft::U16(value) => u128::from(*value),
+        ValueDataDraft::U32(value) => u128::from(*value),
+        ValueDataDraft::U64(value) => u128::from(*value),
+        ValueDataDraft::U128(value) => *value,
+        ValueDataDraft::I8(value) => signed_ordinal(i128::from(*value))?,
+        ValueDataDraft::I16(value) => signed_ordinal(i128::from(*value))?,
+        ValueDataDraft::I32(value) => signed_ordinal(i128::from(*value))?,
+        ValueDataDraft::I64(value) => signed_ordinal(i128::from(*value))?,
+        ValueDataDraft::I128(value) => signed_ordinal(*value)?,
+        ValueDataDraft::F32(value) => return float_ordinal(f64::from(value.to_f32())),
+        ValueDataDraft::F64(value) => return float_ordinal(value.to_f64()),
         _ => return Err(CanonicalSelectorError::UnsupportedSchema),
     };
     checked_ordinal(value)
@@ -357,6 +384,16 @@ mod tests {
         assert_eq!(
             canonical_positional_ordinal(&ValueData::Bool(true)),
             Err(CanonicalSelectorError::UnsupportedSchema),
+        );
+        assert_eq!(
+            canonical_positional_ordinal_draft(&ValueDataDraft::F64(F64Bits::from_f64(1.9))),
+            Ok(1),
+        );
+        assert_eq!(
+            canonical_positional_ordinal_draft(&ValueDataDraft::U64(
+                PORTABLE_SELECTOR_INDEX_MAX + 1,
+            )),
+            Err(CanonicalSelectorError::OutOfRange),
         );
     }
 }

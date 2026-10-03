@@ -1,0 +1,663 @@
+//! Exact source/decoded acceptance for recovery finding G17's fixed-population
+//! logical-mask activation facts.
+#![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
+
+use mech_core::{
+    DimensionExpr, FloatWidth, ReactiveInstanceId, ResidentValueRef, SchemaBody, Value,
+};
+use mech_engine::ProgramArtifact;
+use mech_engine::resident::{
+    ActivationFacts, CapturedSignalInput, ResidentActivationError, activate,
+};
+use mech_runtime::{
+    ResidentDurabilityPolicy, RuntimeBuilder, RuntimeValueSnapshot, SourceDocument,
+};
+use mech_syntax::document::{ParseConfig, Revision};
+
+fn compile(source: &str) -> ProgramArtifact {
+    let document = SourceDocument::parse_resolved(
+        "s8-recovery-logical-activation-facts.mec",
+        Revision(0),
+        source,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(
+        document.is_strictly_clean(),
+        "source did not parse cleanly: {:?}",
+        document.snapshot().diagnostics.as_slice(),
+    );
+    RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap()
+        .compile_document(&document)
+        .unwrap_or_else(|error| panic!("failed to compile:\n{source}\n{error:?}"))
+        .artifact()
+        .clone()
+}
+
+fn roundtrip(artifact: &ProgramArtifact) -> ProgramArtifact {
+    mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(artifact).unwrap(),
+    )
+    .unwrap()
+}
+
+fn output(instance: &mech_engine::resident::ReactiveInstance) -> String {
+    RuntimeValueSnapshot::from_value(instance.copied_output(0).unwrap())
+        .unwrap()
+        .format_canonical_inline()
+}
+
+fn assert_selected_identity(artifact: &ProgramArtifact, value: &Value, rows: u64, columns: u64) {
+    assert_eq!(value.schema(), artifact.outputs()[0].schema);
+    let schema = artifact.schemas().get(value.schema()).unwrap();
+    assert_eq!(value.schema_key(), schema.key());
+    assert_eq!(
+        schema.closed_body(value.shape()).unwrap(),
+        SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            dimensions: vec![
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        },
+    );
+}
+
+fn exact_closed_mask(source: &str, expected: &str) {
+    let artifact = compile(source);
+    let decoded = roundtrip(&artifact);
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in [&artifact, &decoded] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x58c, 6),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("failed to activate:\n{source}\n{error:?}"));
+        for _ in 0..2 {
+            instance.turn(&[]).unwrap();
+            assert_eq!(output(&instance), expected);
+        }
+    }
+}
+
+fn exact_closed_mask_identity(source: &str, expected: &str, expected_shape: (u64, u64)) {
+    let artifact = compile(source);
+    let decoded = roundtrip(&artifact);
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in [&artifact, &decoded] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x58c, 9),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        let value = instance.copied_output(0).unwrap();
+        assert_eq!(
+            RuntimeValueSnapshot::from_value(value.clone())
+                .unwrap()
+                .format_canonical_inline(),
+            expected,
+        );
+        assert_selected_identity(artifact, &value, expected_shape.0, expected_shape.1);
+    }
+}
+
+#[test]
+fn closed_literal_and_computed_masks_publish_exact_source_and_decoded_shapes() {
+    exact_closed_mask("x := [1 2 3]\nx[[false true true]]\n", "[2; 3]");
+    exact_closed_mask("x := [1 2 3]\nmask := x > 1\nx[mask]\n", "[2; 3]");
+    exact_closed_mask_identity("x := [1 2 3]\nmask := x > 1\nx[mask]\n", "[2; 3]", (2, 1));
+    exact_closed_mask_identity("x := [1 2 3]\nmask := x == 2\nx[mask]\n", "[2]", (1, 1));
+    exact_closed_mask_identity("x := [1 2 3]\nmask := x > 3\nx[mask]\n", "[]", (0, 1));
+}
+
+#[test]
+fn production_source_and_bytecode_loads_publish_closed_mask_identity() {
+    let source = "x := [1 2 3]\nmask := x > 1\nx[mask]\n";
+    let artifact = compile(source);
+    for bytecode in [false, true] {
+        let mut runtime = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        let outcome = if bytecode {
+            runtime.load_bytecode_program(
+                &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+                ResidentDurabilityPolicy::Volatile,
+            )
+        } else {
+            runtime.load_source_program(source, ResidentDurabilityPolicy::Volatile)
+        }
+        .unwrap();
+        let initial = outcome.initial_value.to_value();
+        assert_eq!(
+            RuntimeValueSnapshot::from_value(initial.clone())
+                .unwrap()
+                .format_canonical_inline(),
+            "[2; 3]",
+        );
+        assert_selected_identity(&artifact, &initial, 2, 1);
+        runtime.step_active_program().unwrap();
+        let value = runtime
+            .output_value(artifact.outputs()[0].output)
+            .unwrap()
+            .unwrap()
+            .to_value();
+        assert_selected_identity(&artifact, &value, 2, 1);
+    }
+}
+
+#[test]
+fn closed_comparison_masks_share_broadcast_and_ordering_semantics() {
+    for (comparison, expected) in [
+        ("x > 1", "[2; 3]"),
+        ("x >= 2", "[2; 3]"),
+        ("x < 3", "[1; 2]"),
+        ("x <= 2", "[1; 2]"),
+        ("x == 2", "[2]"),
+        ("x != 2", "[1; 3]"),
+        ("1 < x", "[2; 3]"),
+    ] {
+        exact_closed_mask(
+            &format!("x := [1 2 3]\nmask := {comparison}\nx[mask]\n"),
+            expected,
+        );
+    }
+    exact_closed_mask("x := [1 2; 3 4]\nmask := x >= 3\nx[mask]\n", "[3; 4]");
+    exact_closed_mask(
+        "x := [1 2 3; 4 5 6]\nmask := x > [0 2.5 10]\nx[mask]\n",
+        "[1; 4; 5]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := 1 < 2\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask("x := [1 2 3]\nmask := logic/not(x > 1)\nx[mask]\n", "[1]");
+}
+
+#[test]
+fn closed_arithmetic_comparison_operands_publish_exact_populations() {
+    for (arithmetic, comparison, expected) in [
+        ("x + 1", "y > 2", "[2; 3]"),
+        ("x - 1", "y >= 1", "[2; 3]"),
+        ("x * 2", "y > 2", "[2; 3]"),
+        ("x / 2", "y >= 1", "[2; 3]"),
+        ("x % 2", "y == 1", "[1; 3]"),
+        ("x ^ 2", "y > 3", "[2; 3]"),
+        ("-x", "y < -1", "[2; 3]"),
+    ] {
+        exact_closed_mask(
+            &format!("x := [1 2 3]\ny := {arithmetic}\nmask := {comparison}\nx[mask]\n"),
+            expected,
+        );
+    }
+    exact_closed_mask(
+        "x := [1 2 3; 4 5 6]\ny := x + [10 20 30]\nmask := y > 24\nx[mask]\n",
+        "[5; 3; 6]",
+    );
+    exact_closed_mask(
+        "x := [1 2 3; 4 5 6]\ny := x + [10; 20]\nmask := y > 22\nx[mask]\n",
+        "[4; 5; 6]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := (1/2 ^ 2<i32>) == 1/4\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+}
+
+#[test]
+fn closed_binary_logical_masks_publish_exact_populations() {
+    exact_closed_mask(
+        "x := [42 43]\np := logic/and(1 < 2, 2 < 3)\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    for (operation, expected) in [("and", "[2]"), ("or", "[1; 2; 3]"), ("xor", "[1; 3]")] {
+        exact_closed_mask(
+            &format!("x := [1 2 3]\nmask := logic/{operation}(x > 1, x < 3)\nx[mask]\n"),
+            expected,
+        );
+    }
+    exact_closed_mask(
+        "x := [1 2 3]\na := x > 1\nmask := a == true\nx[mask]\n",
+        "[2; 3]",
+    );
+    exact_closed_mask(
+        "x := [1 2 3]\na := logic/and(x > 0, x < 3)\nmask := a == false\nx[mask]\n",
+        "[3]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_supported_producers() {
+    exact_closed_mask(
+        "x := [42 43]\np := 1 < 2\nt := (p, 7)\nq := t == (true, 7)\nmask := [q false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := 1 < 2\ntext<string> := p\nq := text == \"true\"\nmask := [q false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\npresent := :some(7)\nq := present == :some(7)\nmask := [q false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "+> string\nx := [42 43]\njoined := string/concat(\"ab\", \"cd\")\nq := joined == \"abcd\"\nmask := [q false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [7 8]\nfirst := values[1]\np := first == 7\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [1 2; 3 4]\nsecond := values[2]\np := second == 3\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [1 2; 3 4]\ncell := values[2,1]\np := cell == 3\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_set_size_and_matrix_access() {
+    exact_closed_mask(
+        "x := [42 43]\ncount := set/size({1, 2})\nmask := [count == 2<u64> false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\ncombined := set/union({1}, {2})\ncount := set/size(combined)\nmask := [count == 2<u64> false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [10 20 30; 40 50 60]\nselected := values[:,2]\nmask := selected > 25\nx[mask]\n",
+        "[43]",
+    );
+    exact_closed_mask(
+        "x := [42 43 44]\nvalues := [10 20 30; 40 50 60]\nselected := values[2,:]\nmask := selected > 45\nx[mask]\n",
+        "[43; 44]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nvalues := [10 20 30; 40 50 60]\nselected := values[[6 2]]\nmask := selected > 50\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43; 44 45]\nvalues := [10 20 30; 40 50 60]\nselected := values[[2 1],[3 1]]\nmask := selected > 35\nx[mask]\n",
+        "[42; 43]",
+    );
+}
+
+#[test]
+fn closed_boolean_access_is_equivalent_across_selector_routes() {
+    for mask in [
+        "values[:]",
+        "values[:] == true",
+        "logic/and(values[:], true)",
+    ] {
+        exact_closed_mask(
+            &format!(
+                "x := [40 41 42 43 44 45]\nvalues := [false false false; true false true]\nmask := {mask}\nx[mask]\n"
+            ),
+            "[41; 45]",
+        );
+    }
+}
+
+#[test]
+fn closed_comparisons_compose_through_matrix_concatenation() {
+    exact_closed_mask(
+        "x := [10 20 30 40]\njoined := matrix/horzcat([1 2], [3 4])\nmask := joined > 2\nx[mask]\n",
+        "[30; 40]",
+    );
+    exact_closed_mask(
+        "x := [10 20; 30 40]\njoined := matrix/vertcat([1 2], [3 4])\nmask := joined > 2\nx[mask]\n",
+        "[30; 40]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_matrix_products() {
+    exact_closed_mask(
+        "x := [42 43; 44 45]\nproduct := matrix/matmul([1 2; 3 4], [5 6; 7 8])\nmask := product > 20\nx[mask]\n",
+        "[44; 43; 45]",
+    );
+    exact_closed_mask(
+        "x := [42 43; 44 45]\nproduct := matrix/matmul([1f32 2f32; 3f32 4f32], [5f32 6f32; 7f32 8f32])\nmask := product > 20f32\nx[mask]\n",
+        "[44; 43; 45]",
+    );
+    exact_closed_mask(
+        "x := [42 43; 44 45]\nproduct := matrix/matmul([1u8 2u8; 3u8 4u8], [5u8 6u8; 7u8 8u8])\nmask := product > 20u8\nx[mask]\n",
+        "[44; 43; 45]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nproduct := matrix/dot([1 2], [3 4])\nmask := [product == 11 false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nproduct := matrix/dot([1f32 2f32], [3f32 4f32])\nmask := [product == 11f32 false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nproduct := matrix/dot([1u8 2u8], [3u8 4u8])\nmask := [product == 11u8 false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nproduct := matrix/dot([10000000000000000.0 1.0; -10000000000000000.0 1.0], [1.0 1.0; 1.0 1.0])\nmask := [product == 2.0 false]\nx[mask]\n",
+        "[42]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_matrix_solve() {
+    exact_closed_mask(
+        "x := [42 43]\nsolution := matrix/solve([1.0 2.0; 3.0 4.0], [5.0; 11.0])\nmask := solution > 1.5\nx[mask]\n",
+        "[43]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nsolution := matrix/solve([1f32 2f32; 3f32 4f32], [5f32; 11f32])\nmask := solution > 1.5<f32>\nx[mask]\n",
+        "[43]",
+    );
+}
+
+#[test]
+fn closed_n_choose_k_accepts_a_closed_slot_backed_selection() {
+    exact_closed_mask(
+        "+> combinatorics\nx := [42 43]\nk := 1 + 1\ncombinations := combinatorics/n-choose-k([1 2 3 4], k)\np := combinations === combinations\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_row_and_column_reductions() {
+    exact_closed_mask(
+        "+> stats\nx := [42 43 44]\nreduced := stats/sum/row([1 2 3; 4 5 6])\nmask := reduced > 6\nx[mask]\n",
+        "[43; 44]",
+    );
+    exact_closed_mask(
+        "+> stats\nx := [42 43]\nreduced := stats/sum/column([1 2 3; 4 5 6])\nmask := reduced > 10\nx[mask]\n",
+        "[43]",
+    );
+    exact_closed_mask(
+        "+> stats\nx := [42 43 44]\nreduced := stats/sum/row([1f32 2f32 3f32; 4f32 5f32 6f32])\nmask := reduced > 6f32\nx[mask]\n",
+        "[43; 44]",
+    );
+    exact_closed_mask(
+        "+> stats\nx := [42 43]\nreduced := stats/sum/column([1u8 2u8 3u8; 4u8 5u8 6u8])\nmask := reduced > 10u8\nx[mask]\n",
+        "[43]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_absolute_value() {
+    exact_closed_mask(
+        "+> math\nx := [42 43]\nmagnitude := math/abs([-2.0 3.0])\nmask := magnitude > 2.5\nx[mask]\n",
+        "[43]",
+    );
+}
+
+#[test]
+fn closed_comparisons_compose_through_resident_unary_float_operations() {
+    exact_closed_mask(
+        "+> math\nx := [42 43]\nrounded := math/floor([1.5 3.5])\nmask := rounded > 2\nx[mask]\n",
+        "[43]",
+    );
+    exact_closed_mask(
+        "+> math\nx := [42 43]\nrounded := math/floor([1.5<f32> 3.5<f32>])\nmask := rounded > 2f32\nx[mask]\n",
+        "[43]",
+    );
+    for operation in [
+        "acos",
+        "acosh",
+        "acot",
+        "acsc",
+        "asec",
+        "asin",
+        "asinh",
+        "atan",
+        "atanh",
+        "cbrt",
+        "ceil",
+        "cos",
+        "cosh",
+        "cot",
+        "csc",
+        "erf",
+        "erfc",
+        "floor",
+        "lgamma",
+        "log",
+        "log10",
+        "log1p",
+        "log2",
+        "rint",
+        "round",
+        "roundeven",
+        "sec",
+        "sin",
+        "sinh",
+        "sqrt",
+        "tan",
+        "tanh",
+        "tgamma",
+        "trunc",
+    ] {
+        exact_closed_mask(
+            &format!(
+                "+> math\nx := [42 43]\ny := math/{operation}([1.0 1.0])\nmask := y == y\nx[mask]\n"
+            ),
+            "[42; 43]",
+        );
+    }
+    for operation in ["j0", "j1", "y0", "y1"] {
+        exact_closed_mask(
+            &format!(
+                "+> math\nx := [42 43]\ny := math/bessel/{operation}([1.0 1.0])\nmask := y == y\nx[mask]\n"
+            ),
+            "[42; 43]",
+        );
+    }
+}
+
+#[test]
+fn closed_comparisons_compose_through_resident_binary_float_operations() {
+    for operation in [
+        "atan2",
+        "copysign",
+        "fdim",
+        "fmod",
+        "nextafter",
+        "remainder",
+    ] {
+        exact_closed_mask(
+            &format!(
+                "+> math\nx := [42 43]\ny := math/{operation}([2.0 2.0], [1.0 1.0])\nmask := y == y\nx[mask]\n"
+            ),
+            "[42; 43]",
+        );
+    }
+    for operation in ["jn", "yn"] {
+        exact_closed_mask(
+            &format!(
+                "+> math\nx := [42 43]\ny := math/bessel/{operation}([1.0 1.0], [2.0 2.0])\nmask := y == y\nx[mask]\n"
+            ),
+            "[42; 43]",
+        );
+    }
+    exact_closed_mask(
+        "+> math\nx := [42 43]\ny := math/fmod([5.3<f32> 5.3<f32>], [2f32 2f32])\nmask := y == y\nx[mask]\n",
+        "[42; 43]",
+    );
+}
+
+#[test]
+fn dense_string_comparisons_require_runtime_scan_admission() {
+    exact_closed_mask(
+        "x := [42 43]\ntext := [\"yes\" \"no\"]\nmask := text == \"yes\"\nx[mask]\n",
+        "[42]",
+    );
+
+    let payload = usize::try_from(mech_core::RESIDENT_MAX_COMPARISON_WORK).unwrap() + 1;
+    let source = format!(
+        "x := [42 43]\ntext := [\"{}\" \"short\"]\nmask := text == text\nx[mask]\n",
+        "x".repeat(payload),
+    );
+    let artifact = compile(&source);
+    let decoded = roundtrip(&artifact);
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in [&artifact, &decoded] {
+        match activate(
+            ReactiveInstanceId::new(0x58c, 14),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        ) {
+            Err(ResidentActivationError::UnresolvedShape { .. }) => {}
+            Err(error) => panic!("unexpected oversized String comparison error: {error:?}"),
+            Ok(_) => panic!("oversized String comparison inferred a selector population"),
+        }
+    }
+}
+
+#[test]
+fn closed_comparisons_compose_through_all_range_modes() {
+    for range in ["1..4", "1..=3", "1..2..6", "1..2..=5"] {
+        exact_closed_mask(
+            &format!("x := [10 20 30]\nr := {range}\nmask := r > 1\nx[mask]\n"),
+            "[20; 30]",
+        );
+    }
+}
+
+#[test]
+fn closed_whole_value_comparisons_have_scalar_populations() {
+    exact_closed_mask(
+        "x := [42 43]\np := [1 2] === [1 2]\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := [1 2] !== [1 3]\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := [:Point :Point] == [:Point :Point]\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := [-0.0] === [0.0]\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := (-0.0, 1) == (0.0, 1)\nmask := [p true]\nx[mask]\n",
+        "[43]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := {a: 1, b: 2} == {a: 1, b: 2}\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := {1: 2, 3: 4} == {1: 2, 3: 4}\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := (|a<u8>|1u8|) == (|a<u8>|1u8|)\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nfixed := [1 2]\nparameterized<[f64]:1,2> := [1 2]\np := fixed === parameterized\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+}
+
+#[test]
+fn live_masks_still_require_one_explicit_fixed_population_fact() {
+    let artifact = compile("x := [1 2 3]\nx[mask<[bool]:1,3>]\n");
+    let decoded = roundtrip(&artifact);
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in [&artifact, &decoded] {
+        let selected = artifact
+            .slots()
+            .iter()
+            .find(|slot| {
+                artifact.schemas().get(slot.schema).is_some_and(|schema| {
+                    matches!(schema.body(), SchemaBody::Matrix { .. })
+                        && !schema.dimension_parameters().is_empty()
+                })
+            })
+            .unwrap();
+        assert!(matches!(
+            activate(
+                ReactiveInstanceId::new(0x58c, 7),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            ),
+            Err(ResidentActivationError::UnresolvedShape { slot }) if slot == selected.slot
+        ));
+
+        let mut facts = ActivationFacts::default();
+        facts.slot_shapes.insert(
+            selected.slot,
+            artifact
+                .schemas()
+                .get(selected.schema)
+                .unwrap()
+                .instantiate_shape(Box::new([2]))
+                .unwrap(),
+        );
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x58c, 8),
+            artifact,
+            &catalog,
+            &facts,
+        )
+        .unwrap();
+        let mask_slot = instance
+            .plan
+            .inputs
+            .iter()
+            .find(|input| {
+                artifact.inputs().iter().any(|declaration| {
+                    declaration.name == mech_engine::encode_source_input_name("mask")
+                        && declaration.slot == input.artifact_slot
+                })
+            })
+            .unwrap()
+            .slot;
+        for (mask, expected) in [([0_u8, 1, 1], "[2; 3]"), ([1, 0, 1], "[1; 3]")] {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: mask_slot,
+                    value: ResidentValueRef::Bool(&mask),
+                }])
+                .unwrap();
+            assert_eq!(output(&instance), expected);
+        }
+        let previous = output(&instance);
+        for mask in [[1_u8, 0, 0], [1, 1, 1], [2, 0, 0]] {
+            assert!(
+                instance
+                    .turn(&[CapturedSignalInput {
+                        slot: mask_slot,
+                        value: ResidentValueRef::Bool(&mask),
+                    }])
+                    .is_err()
+            );
+            assert_eq!(output(&instance), previous);
+        }
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: mask_slot,
+                value: ResidentValueRef::Bool(&[0, 1, 1]),
+            }])
+            .unwrap();
+        assert_eq!(output(&instance), "[2; 3]");
+    }
+}
