@@ -3355,10 +3355,16 @@ fn logical_selector_mask(
             if count != values.len() || count > MAX_STATIC_SELECTOR_SOURCE_STEPS {
                 return None;
             }
+            let mut dense_values = Vec::with_capacity(count);
+            for column in 0..columns {
+                for row in 0..rows {
+                    dense_values.push(values[row * columns + column]);
+                }
+            }
             Some(ClosedLogicalMask {
                 rows,
                 columns,
-                values: values.iter().copied().collect(),
+                values: dense_values,
             })
         }
         _ => None,
@@ -4267,8 +4273,11 @@ fn closed_comparison_mask(
     let mut string_comparison_work = 0_u64;
     for column in 0..columns {
         for row in 0..rows {
-            let left_index = (row % left.rows) + (column % left.columns) * left.rows;
-            let right_index = (row % right.rows) + (column % right.columns) * right.rows;
+            // Canonical matrix values are row-major even when the resident
+            // Boolean output is dense column-major. Translate the logical
+            // output coordinate before applying either operand's broadcast.
+            let left_index = (row % left.rows) * left.columns + column % left.columns;
+            let right_index = (row % right.rows) * right.columns + column % right.columns;
             if aggregate_comparison {
                 let Some(left_work) = closed_snapshot_element_comparison_work(
                     &mut comparison_meter,
@@ -8623,6 +8632,75 @@ mod shape_fact_tests {
             matrix.binary(&row, "xor").unwrap().values,
             [true, false, true, false, true, false],
         );
+    }
+
+    #[test]
+    fn closed_boolean_constants_translate_from_canonical_to_dense_order() {
+        let mut schemas = SchemaTableBuilder::new();
+        let matrix = schemas
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Bool),
+                        dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)]
+                            .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = schemas.finish().unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: matrix,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                [false, true, false, false, false, false]
+                    .map(ValueDataDraft::Bool)
+                    .into(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut constants = ConstantStoreBuilder::new(&schemas);
+        let value = constants.insert(value).unwrap();
+        let build = constants.finish().unwrap();
+        let value = build.resolve(value).unwrap();
+        let (constants, _) = build.into_parts();
+        let build = OperationContractTableBuilder::new().finish().unwrap();
+        let (contracts, _) = build.into_parts();
+        let artifact = ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        let mask = logical_selector_mask(
+            &artifact,
+            ArtifactSource::Constant(value),
+            &ActivationFacts::default(),
+            &BTreeMap::new(),
+        )
+        .unwrap();
+        assert_eq!(mask.values, [false, false, true, false, false, false]);
+        let row = ClosedLogicalMask {
+            rows: 1,
+            columns: 3,
+            values: vec![false, true, false],
+        };
+        assert_eq!(mask.binary(&row, "and").unwrap().population(), Some(1));
     }
 
     #[test]
