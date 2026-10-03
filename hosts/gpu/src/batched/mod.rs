@@ -3721,77 +3721,94 @@ mod axis_tests {
 
     #[test]
     fn published_static_selector_remains_materialized() {
-        let source_artifact = compile_fixed_source(
-            "selector := 1f32..=2f32\nvalues := [10f32; 20f32]\nselected := values[selector]\nselected\n",
-        );
-        let selector = source_artifact
-            .nodes()
-            .iter()
-            .find_map(|node| {
-                let operation = node.as_operation()?;
-                (display_operation(&operation.operation) == "range/inclusive")
-                    .then(|| operation.output_bindings.clone())
-            })
-            .and_then(|bindings| {
-                bindings.into_iter().find_map(|binding| {
-                    let BindingDeclaration::Output { target, .. } =
-                        source_artifact.bindings().get(binding as usize)?
-                    else {
-                        return None;
-                    };
-                    Some(*target)
+        for (range, operation_name, expected) in [
+            ("1f32..=2f32", "range/inclusive", [1.0, 2.0]),
+            ("1f32..3f32", "range/exclusive", [1.0, 2.0]),
+            ("1f32..2f32..=3f32", "range/inclusive-increment", [1.0, 3.0]),
+            ("1f32..2f32..4f32", "range/exclusive-increment", [1.0, 3.0]),
+        ] {
+            let source_artifact = compile_fixed_source(&format!(
+                "selector := {range}\nvalues := [10f32; 20f32; 30f32]\nselected := values[selector]\nselected\n",
+            ));
+            let selector = source_artifact
+                .nodes()
+                .iter()
+                .find_map(|node| {
+                    let operation = node.as_operation()?;
+                    (display_operation(&operation.operation) == operation_name)
+                        .then(|| operation.output_bindings.clone())
                 })
-            })
-            .expect("the inclusive range must have an output slot");
-        let selector_schema = source_artifact.slots()[selector.get() as usize].schema;
-        let mut outputs = source_artifact.outputs().to_vec();
-        let output_id = mech_core::OutputId(outputs.len() as u32);
-        let mut slots = source_artifact.slots().to_vec();
-        let output_slot = CellSlotId(slots.len() as u32);
-        slots.push(SlotDeclaration {
-            slot: output_slot,
-            schema: selector_schema,
-            role: SlotRole::Output,
-            producer: ProducerReference::Output {
+                .and_then(|bindings| {
+                    bindings.into_iter().find_map(|binding| {
+                        let BindingDeclaration::Output { target, .. } =
+                            source_artifact.bindings().get(binding as usize)?
+                        else {
+                            return None;
+                        };
+                        Some(*target)
+                    })
+                })
+                .expect("the range producer must have an output slot");
+            let selector_schema = source_artifact.slots()[selector.get() as usize].schema;
+            let mut outputs = source_artifact.outputs().to_vec();
+            let output_id = mech_core::OutputId(outputs.len() as u32);
+            let mut slots = source_artifact.slots().to_vec();
+            let output_slot = CellSlotId(slots.len() as u32);
+            slots.push(SlotDeclaration {
+                slot: output_slot,
+                schema: selector_schema,
+                role: SlotRole::Output,
+                producer: ProducerReference::Output {
+                    output: output_id,
+                    source: ArtifactSource::Slot(selector),
+                },
+                initializer: None,
+            });
+            outputs.push(OutputDeclaration {
                 output: output_id,
-                source: ArtifactSource::Slot(selector),
-            },
-            initializer: None,
-        });
-        outputs.push(OutputDeclaration {
-            output: output_id,
-            name: "selector".to_owned(),
-            interactive_binding: None,
-            source: output_slot,
-            schema: selector_schema,
-        });
-        let artifact = ProgramArtifactDraft {
-            schemas: source_artifact.schemas().clone(),
-            constants: source_artifact.constants().clone(),
-            contracts: source_artifact.contracts().clone(),
-            requirements: source_artifact.requirements().clone(),
-            inputs: source_artifact.inputs().into(),
-            slots: slots.into_boxed_slice(),
-            nodes: source_artifact.nodes().into(),
-            bindings: source_artifact.bindings().into(),
-            outputs: outputs.into_boxed_slice(),
-            constraints: source_artifact.constraints().into(),
-            compute_regions: source_artifact.compute_regions().into(),
-        }
-        .finalize()
-        .unwrap();
-        assert!(artifact.outputs().iter().any(|output| {
-            physical_publication_slot(&artifact, output.source) == Some(selector)
-        }));
+                name: "selector".to_owned(),
+                interactive_binding: None,
+                source: output_slot,
+                schema: selector_schema,
+            });
+            let artifact = ProgramArtifactDraft {
+                schemas: source_artifact.schemas().clone(),
+                constants: source_artifact.constants().clone(),
+                contracts: source_artifact.contracts().clone(),
+                requirements: source_artifact.requirements().clone(),
+                inputs: source_artifact.inputs().into(),
+                slots: slots.into_boxed_slice(),
+                nodes: source_artifact.nodes().into(),
+                bindings: source_artifact.bindings().into(),
+                outputs: outputs.into_boxed_slice(),
+                constraints: source_artifact.constraints().into(),
+                compute_regions: source_artifact.compute_regions().into(),
+            }
+            .finalize()
+            .unwrap();
+            assert!(artifact.outputs().iter().any(|output| {
+                physical_publication_slot(&artifact, output.source) == Some(selector)
+            }));
 
-        let kernel = crate::ComputeLowerer.compile_batched(&artifact, 1).unwrap();
-        let storage = kernel.compute_program().fixed_shape_storage().unwrap();
-        assert!(storage.publications.iter().any(|publication| {
-            publication.slot == selector && publication.shape.elements() == 2
-        }));
-        let mut session = kernel.prepare_cpu(&BTreeMap::new()).unwrap();
-        session.dispatch_turns(1).unwrap();
-        assert_eq!(session.state()[&selector], [1.0, 2.0]);
+            let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+                &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            for artifact in [&artifact, &decoded] {
+                let selected = physical_publication_slot(artifact, artifact.outputs()[0].source)
+                    .expect("selected publication must retain its physical slot");
+                let kernel = crate::ComputeLowerer.compile_batched(artifact, 2).unwrap();
+                let storage = kernel.compute_program().fixed_shape_storage().unwrap();
+                assert!(storage.publications.iter().any(|publication| {
+                    publication.slot == selector && publication.shape.elements() == 2
+                }));
+                let mut session = kernel.prepare_cpu(&BTreeMap::new()).unwrap();
+                session.dispatch_turns(1).unwrap();
+                assert_eq!(session.state()[&selector], expected.repeat(2), "{range}");
+                let selected_values = expected.map(|index| index * 10.0).repeat(2);
+                assert_eq!(session.state()[&selected], selected_values, "{range}");
+            }
+        }
     }
 
     #[test]
