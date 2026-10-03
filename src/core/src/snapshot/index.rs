@@ -129,6 +129,7 @@ fn collect_maximum_index(
             }
         }
         SchemaBody::Bool
+        | SchemaBody::IntegerInterval(_)
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
         | SchemaBody::FloatingPoint(_)

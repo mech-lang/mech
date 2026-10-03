@@ -930,6 +930,9 @@ pub fn native_features_for_schema_body(
 ) {
     match schema {
         SchemaBody::Dynamic => features.extend(ALL_NATIVE_VALUE_FEATURES.iter().copied()),
+        SchemaBody::IntegerInterval(interval) => {
+            native_features_for_schema_body(&interval.base_body(), features);
+        }
         SchemaBody::Bool => {
             features.insert(NativeValueFeature::Bool);
         }
