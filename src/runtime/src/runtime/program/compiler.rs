@@ -23,7 +23,6 @@ use mech_core::{
 use mech_engine::__resident::activate_external;
 #[cfg(feature = "compute")]
 use mech_engine::ComputeRegionDeclaration;
-use mech_engine::expressions::ReactiveComprehensionStructureUnsupported;
 use mech_engine::resident::ActivationFacts;
 use mech_engine::resident::ResidentIntegrityMode;
 use mech_engine::{
@@ -3029,11 +3028,6 @@ fn classify_source_planning(error: mech_core::MechError) -> mech_core::MechError
     }
     let class = if error.kind_as::<RuntimeResourceProviderNotFound>().is_some() {
         ResidentRouteFailureClass::ProviderUnavailable
-    } else if error
-        .kind_as::<ReactiveComprehensionStructureUnsupported>()
-        .is_some()
-    {
-        ResidentRouteFailureClass::SemanticUnsupported
     } else {
         ResidentRouteFailureClass::InvalidArtifact
     };
