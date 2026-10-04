@@ -177,29 +177,20 @@ fn typed_document_compiles_definition_and_expression_units_in_source_order() {
 
 #[cfg(all(feature = "resident-artifact", feature = "string", feature = "tuple"))]
 #[test]
-fn canonical_live_tuple_pack_stages_complete_payloads_across_growth_and_retry() {
-    let short = mech_core::ValueCell::from_exact("old".to_owned())
-        .unwrap()
-        .snapshot()
-        .unwrap();
-    let larger = mech_core::ValueCell::from_exact(
-        "a substantially larger reactive tuple payload".to_owned(),
-    )
-    .unwrap()
-    .snapshot()
-    .unwrap();
-    let replacement = mech_core::ValueCell::from_exact("new".to_owned())
-        .unwrap()
-        .snapshot()
-        .unwrap();
+fn canonical_live_tuple_pack_stages_complete_payloads_across_growth_and_shrink() {
+    let payloads = [
+        vec!["old".to_owned()],
+        vec!["a substantially larger reactive tuple payload".to_owned()],
+        vec!["new".to_owned()],
+    ];
     execute_document(
         "(signal<string>, true)\n",
-        [&short, &larger, &replacement].into_iter().map(|value| {
+        payloads.iter().map(|values| {
             (
-                vec![ResidentValueRef::Snapshot(value)],
+                vec![ResidentValueRef::String(values)],
                 ValueDataDraft::Tuple(
                     vec![
-                        value.canonical_data_draft().unwrap(),
+                        ValueDataDraft::String(values[0].clone()),
                         ValueDataDraft::Bool(true),
                     ]
                     .into_boxed_slice(),
