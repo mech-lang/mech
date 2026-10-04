@@ -282,6 +282,14 @@ impl PreparedCellPublicationBatch {
             domain.final_version = next;
         }
 
+        // Validate all interval candidates and retain their exact read leases
+        // before locking any cell. A late refusal exposes no earlier sibling.
+        for publication in self.publications.iter_mut() {
+            for replacement in publication.replacements.iter_mut() {
+                replacement.validate_interval_publication(publication.undo.as_ref())?;
+            }
+        }
+
         let mut locked = 0_usize;
         for publication in self.publications.iter_mut() {
             for replacement in publication.replacements.iter_mut() {
@@ -742,6 +750,11 @@ impl MemoryDomain {
                 }
                 .into());
             }
+        }
+        // Candidate storage remains mutable after preparation. Membership is
+        // therefore checked here under a lease held through infallible commit.
+        for replacement in prepared.replacements.iter_mut() {
+            replacement.validate_interval_publication(prepared.undo.as_ref())?;
         }
         let mut state = self.state.borrow_mut();
         if state.closed {

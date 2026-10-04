@@ -302,7 +302,169 @@ pub(crate) struct PreparedManagedCellBinding {
     previous_shape: Option<ShapeInstance>,
     pub(crate) next_shape: Option<ShapeInstance>,
     next_storage: Option<CellStorageBinding>,
+    // Acquired only at readiness: sibling calls may finish staging first.
+    // This protects the exact validated candidate bytes until commit/drop.
+    interval_read_lease: Option<crate::memory_runtime::RetainedPublicationLease>,
     pub(crate) changed: bool,
+}
+
+impl PreparedManagedCellBinding {
+    pub(crate) fn validate_interval_publication(
+        &mut self,
+        undo: Option<&crate::memory_runtime::PreparedUndoSnapshot>,
+    ) -> MResult<()> {
+        let Some(CellStorageBinding::ManagedHost { storage, .. }) = &self.next_storage else {
+            return Ok(());
+        };
+        let schema = self
+            .cell
+            .binding
+            .schemas
+            .get(self.cell.schema())
+            .expect("cell schema exists");
+        let (interval, matrix) = match schema.body() {
+            SchemaBody::IntegerInterval(interval) => (*interval, false),
+            SchemaBody::Matrix { element, .. } => match element.as_ref() {
+                SchemaBody::IntegerInterval(interval) => (*interval, true),
+                _ => return Ok(()),
+            },
+            _ => return Ok(()),
+        };
+        let storage = storage
+            .as_any()
+            .downcast_ref::<ManagedHostCellStorage>()
+            .ok_or_else(|| {
+                MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "initialized interval candidate has no managed typed storage".into(),
+                })
+            })?;
+        let shape = self
+            .next_shape
+            .as_ref()
+            .expect("prepared binding retains its shape");
+        let extents = crate::ResolvedValueDescriptor::from_schema(schema.clone(), shape.clone())
+            .map_err(MechError::from)?
+            .current_extents()
+            .map_err(MechError::from)?;
+        self.interval_read_lease = storage.owner.validate_publication_region(
+            &storage.realized,
+            storage.object,
+            storage.region,
+            undo,
+            |frame| validate_managed_interval(frame, storage.object, interval, matrix, &extents),
+        )?;
+        Ok(())
+    }
+}
+
+fn validate_managed_interval(
+    frame: &crate::KernelMemoryFrame<'_>,
+    object: crate::PlanObjectKey,
+    interval: crate::IntegerInterval,
+    matrix: bool,
+    extents: &[u64],
+) -> MResult<()> {
+    let expected = extents
+        .iter()
+        .try_fold(1_u64, |count, extent| count.checked_mul(*extent))
+        .ok_or_else(|| {
+            managed_host_shape_error(object, "interval candidate cardinality overflows")
+        })?;
+    #[cfg(any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128"
+    ))]
+    macro_rules! lanes {
+        ($ty:ty, $contains:ident, $wide:ty) => {
+            frame
+                .with_object_value_view::<$ty, _>(object, |view| {
+                    if u64::try_from(view.len()).ok() != Some(expected) {
+                        return Err(managed_host_shape_error(
+                            object,
+                            "interval candidate geometry differs from its shape",
+                        ));
+                    }
+                    // Rectangle coordinates, not allocation order or capacity,
+                    // define the logical matrix elements and diagnostic indices.
+                    if matrix
+                        && extents.len() == 2
+                        && (u64::try_from(view.rows()).ok() != Some(extents[0])
+                            || u64::try_from(view.columns()).ok() != Some(extents[1]))
+                    {
+                        return Err(managed_host_shape_error(
+                            object,
+                            "interval matrix geometry differs from its shape",
+                        ));
+                    }
+                    if view.is_empty() {
+                        return Ok(());
+                    }
+                    for row in 0..view.rows() {
+                        for column in 0..view.columns() {
+                            let value = view.get(row, column).ok_or_else(|| {
+                                managed_host_shape_error(
+                                    object,
+                                    "interval candidate coordinate is out of bounds",
+                                )
+                            })?;
+                            if !interval.$contains(<$wide>::from(value)) {
+                                let path = crate::snapshot::SnapshotPath::root();
+                                let path = if matrix {
+                                    path.child(crate::snapshot::SnapshotPathSegment::MatrixElement(
+                                        (row * view.columns() + column) as u64,
+                                    ))
+                                } else {
+                                    path
+                                };
+                                return Err(snapshot_failure(
+                                    SnapshotValueError::IntegerIntervalViolationV1 { path },
+                                ));
+                            }
+                        }
+                    }
+                    Ok(())
+                })
+                .map_err(MechError::from)?
+        };
+    }
+    // Feature-disabled integer backings still refuse precisely; they do not
+    // manufacture membership evidence for storage they cannot inspect.
+    let _ = (frame, expected, matrix, extents);
+    match interval.base_body() {
+        #[cfg(feature = "u8")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W8) => lanes!(u8, contains_unsigned, u128),
+        #[cfg(feature = "u16")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W16) => lanes!(u16, contains_unsigned, u128),
+        #[cfg(feature = "u32")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W32) => lanes!(u32, contains_unsigned, u128),
+        #[cfg(feature = "u64")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W64) => lanes!(u64, contains_unsigned, u128),
+        #[cfg(feature = "u128")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W128) => lanes!(u128, contains_unsigned, u128),
+        #[cfg(feature = "i8")]
+        SchemaBody::SignedInteger(IntegerWidth::W8) => lanes!(i8, contains_signed, i128),
+        #[cfg(feature = "i16")]
+        SchemaBody::SignedInteger(IntegerWidth::W16) => lanes!(i16, contains_signed, i128),
+        #[cfg(feature = "i32")]
+        SchemaBody::SignedInteger(IntegerWidth::W32) => lanes!(i32, contains_signed, i128),
+        #[cfg(feature = "i64")]
+        SchemaBody::SignedInteger(IntegerWidth::W64) => lanes!(i64, contains_signed, i128),
+        #[cfg(feature = "i128")]
+        SchemaBody::SignedInteger(IntegerWidth::W128) => lanes!(i128, contains_signed, i128),
+        _ => Err(managed_host_shape_error(
+            object,
+            "interval candidate requires an enabled exact integer backing",
+        )),
+    }
 }
 
 pub(crate) struct StagedManagedCellUpdate {
@@ -4704,6 +4866,7 @@ impl ValueCell {
             previous_shape: Some(published.shape.clone()),
             next_shape: Some(next_shape),
             next_storage: Some(next_storage),
+            interval_read_lease: None,
             changed,
         })
     }

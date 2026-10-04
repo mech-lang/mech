@@ -2705,6 +2705,811 @@ fn publication_versions_change_only_for_changed_candidates() {
 }
 
 #[test]
+fn interval_initialized_region_requires_membership_before_publication() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell = interval_publication_cell(&domain, None, &[2]);
+    let before = IntervalCellState::capture(&cell);
+    let region = InitializedIntervalRegion::new(&domain, &[10]);
+    // The invalid endpoint is raw kernel output, not a ValueDraft that could
+    // reject it before the initialized-region publication boundary is reached.
+    let prepared = region.prepare(&domain, &cell).unwrap();
+    let rejection = match domain.ready_cell_publication(prepared) {
+        Err(error) => Some(error),
+        Ok(ready) => {
+            drop(ready);
+            None
+        }
+    };
+    before.assert_unchanged(&cell);
+    assert_interval_publication_rejection(
+        rejection
+            .expect("initialized raw u64 10 reached the ready gate for exclusive interval [1, 10)"),
+        None,
+    );
+
+    region.write(&domain, &[3]);
+    domain
+        .ready_cell_publication(region.prepare(&domain, &cell).unwrap())
+        .unwrap()
+        .commit();
+    before.assert_identity_and_shape(&cell);
+    assert_eq!(u64_cell(&cell), 3);
+    assert!(cell.published_version() > before.version);
+}
+
+fn interval_publication_cell(
+    domain: &MemoryDomain,
+    matrix_rows: Option<u64>,
+    values: &[u64],
+) -> ValueCell {
+    let interval = SchemaBody::IntegerInterval(mech_core::IntegerInterval::Unsigned {
+        width: mech_core::IntegerWidth::W64,
+        lower: 1,
+        upper: 10,
+        upper_inclusive: false,
+    });
+    let (dimension_parameters, body, shape_values, data) = match matrix_rows {
+        None => {
+            assert_eq!(values.len(), 1);
+            (
+                Box::new([]) as Box<[_]>,
+                interval,
+                Box::new([]) as Box<[_]>,
+                ValueDataDraft::U64(values[0]),
+            )
+        }
+        Some(rows) => (
+            vec![mech_core::DimensionParameterDeclaration {
+                id: mech_core::DimensionParameterId::new(0),
+                origin: mech_core::DimensionParameterOrigin::Explicit,
+                lifetime: mech_core::DimensionLifetime::Activation,
+                lower_bound: mech_core::DimensionExpr::Constant(0),
+                upper_bound: Some(mech_core::DimensionExpr::Constant(4)),
+            }]
+            .into_boxed_slice(),
+            SchemaBody::Matrix {
+                element: Box::new(interval),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Parameter(mech_core::DimensionParameterId::new(0)),
+                    mech_core::DimensionExpr::Constant(3),
+                ]
+                .into_boxed_slice(),
+            },
+            vec![rows].into_boxed_slice(),
+            ValueDataDraft::Matrix(values.iter().copied().map(ValueDataDraft::U64).collect()),
+        ),
+    };
+    let schema = SchemaDraft {
+        dimension_parameters,
+        body,
+    }
+    .finalize()
+    .unwrap();
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder.insert(schema).unwrap();
+    let build = builder.finish().unwrap();
+    let schema = build.resolve(handle).unwrap();
+    let (schemas, _) = build.into_parts();
+    let value = ValueDraft {
+        schema,
+        shape_values,
+        data,
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .unwrap();
+    ValueCell::from_snapshot_in(domain, value).unwrap()
+}
+
+struct IntervalCellState {
+    values: Vec<u64>,
+    id: mech_core::CanonicalCellId,
+    schema: mech_core::SchemaId,
+    schema_key: mech_core::SchemaKey,
+    shape: mech_core::ShapeInstance,
+    version: mech_core::PublishedValueVersion,
+}
+
+impl IntervalCellState {
+    fn capture(cell: &ValueCell) -> Self {
+        Self {
+            values: interval_cell_values(cell),
+            id: cell.reactive_cell_id(),
+            schema: cell.schema(),
+            schema_key: cell.schema_key(),
+            shape: cell.shape().clone(),
+            version: cell.published_version(),
+        }
+    }
+
+    fn assert_identity_and_shape(&self, cell: &ValueCell) {
+        assert_eq!(cell.reactive_cell_id(), self.id);
+        assert_eq!(cell.schema(), self.schema);
+        assert_eq!(cell.schema_key(), self.schema_key);
+        assert_eq!(cell.shape().clone(), self.shape);
+        let snapshot = cell.snapshot().unwrap();
+        assert_eq!(snapshot.schema(), self.schema);
+        assert_eq!(snapshot.schema_key(), self.schema_key);
+        assert_eq!(snapshot.shape(), &self.shape);
+    }
+
+    fn assert_unchanged(&self, cell: &ValueCell) {
+        self.assert_identity_and_shape(cell);
+        assert_eq!(interval_cell_values(cell), self.values);
+        assert_eq!(cell.published_version(), self.version);
+    }
+}
+
+fn interval_cell_values(cell: &ValueCell) -> Vec<u64> {
+    let snapshot = cell.snapshot().unwrap();
+    match snapshot.data() {
+        mech_core::ValueData::U64(value) => vec![*value],
+        mech_core::ValueData::Matrix(matrix) => matrix
+            .elements()
+            .to_values()
+            .into_iter()
+            .map(|element| match element {
+                mech_core::ValueData::U64(value) => value,
+                _ => panic!("expected interval U64 matrix member"),
+            })
+            .collect(),
+        _ => panic!("expected interval U64 scalar or matrix"),
+    }
+}
+
+fn assert_interval_publication_rejection(error: mech_core::MechError, matrix_index: Option<u64>) {
+    assert_eq!(error.kind_name(), "ValueCellSnapshotFailure", "{error:?}");
+    let message = error.kind_message();
+    assert!(message.contains("IntegerIntervalViolationV1"), "{error:?}");
+    if let Some(index) = matrix_index {
+        assert!(
+            message.contains(&format!("MatrixElement({index})")),
+            "{error:?}"
+        );
+    }
+}
+
+fn interval_scalar_cell_from_data(
+    domain: &MemoryDomain,
+    interval: mech_core::IntegerInterval,
+    data: ValueDataDraft,
+) -> ValueCell {
+    let schema = SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body: SchemaBody::IntegerInterval(interval),
+    }
+    .finalize()
+    .unwrap();
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder.insert(schema).unwrap();
+    let build = builder.finish().unwrap();
+    let schema = build.resolve(handle).unwrap();
+    let (schemas, _) = build.into_parts();
+    let value = ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data,
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .unwrap();
+    ValueCell::from_snapshot_in(domain, value).unwrap()
+}
+
+struct InitializedIntervalRegion {
+    realized: mech_core::RealizedMemoryPlan,
+    object: mech_core::PlanObjectKey,
+    region: MemoryAccessRegion,
+    count: usize,
+}
+
+impl InitializedIntervalRegion {
+    fn matrix(domain: &MemoryDomain, rows: u64, columns: u64, values: &[u64]) -> Self {
+        assert_eq!(rows * columns, values.len() as u64);
+        let mut result = Self::new(domain, values);
+        result.region = MemoryAccessRegion::Rectangle {
+            offset_bytes: 0,
+            rows,
+            columns,
+            row_stride_bytes: 8,
+            column_stride_bytes: rows * 8,
+            element_bytes: 8,
+        };
+        result
+    }
+
+    fn new(domain: &MemoryDomain, values: &[u64]) -> Self {
+        let bytes = (values.len() as u64) * 8;
+        let revision = domain.issue_plan_revision().unwrap();
+        let allocations = [allocation(
+            0,
+            0,
+            0,
+            0,
+            bytes,
+            MemoryLifetime::Activation,
+            None,
+        )];
+        let arenas = [arena(0, ArenaBackingKind::ContiguousBytes, bytes, &[0])];
+        let realized = domain
+            .materialize(
+                domain
+                    .prepare_realization(runtime_plan_view(
+                        revision,
+                        &allocations,
+                        &arenas,
+                        ResourceDemand::default(),
+                        MemoryBudgetLimits::default(),
+                        &[],
+                    ))
+                    .unwrap(),
+            )
+            .unwrap();
+        let object = domain
+            .plan_object_key(revision, MemoryObjectId::new(0))
+            .unwrap();
+        domain.activate_realization(&realized).unwrap();
+        let result = Self {
+            realized,
+            object,
+            region: MemoryAccessRegion::Contiguous {
+                offset_bytes: 0,
+                length_bytes: bytes,
+            },
+            count: values.len(),
+        };
+        result.write(domain, values);
+        result
+    }
+
+    fn write_access(&self, domain: &MemoryDomain) -> mech_core::PreparedCallAccess {
+        domain
+            .prepare_call(
+                &self.realized,
+                &[CallAccessRequest {
+                    object: self.object,
+                    mode: MemoryAccessMode::Write,
+                    region: MemoryAccessRegion::Contiguous {
+                        offset_bytes: 0,
+                        length_bytes: (self.count as u64) * 8,
+                    },
+                }],
+            )
+            .unwrap()
+    }
+
+    fn write(&self, domain: &MemoryDomain, values: &[u64]) {
+        assert_eq!(values.len(), self.count);
+        let initialization = self.write_access(domain);
+        domain
+            .acquire_call(&self.realized, &initialization)
+            .unwrap()
+            .with_object_init_writer::<u64>(self.object, |writer| writer.copy_from_slice(values))
+            .unwrap();
+    }
+
+    fn prepare(
+        &self,
+        domain: &MemoryDomain,
+        cell: &ValueCell,
+    ) -> mech_core::MResult<PreparedCellPublication> {
+        domain.prepare_cell_publication(
+            &self.realized,
+            vec![CellPublicationCandidate {
+                cell: cell.clone(),
+                object: self.object,
+                binding: self.realized.binding(self.object).unwrap(),
+                region: self.region,
+                evidence: CellPublicationEvidence::initialized_region(cell.shape().clone()),
+                changed: true,
+            }],
+        )
+    }
+}
+
+#[test]
+fn interval_initialized_region_revalidates_at_ready_and_excludes_writers() {
+    let domain = MemoryDomain::new().unwrap();
+    let cell = interval_publication_cell(&domain, None, &[2]);
+    let before = IntervalCellState::capture(&cell);
+    let region = InitializedIntervalRegion::new(&domain, &[3]);
+    let prepared = region.prepare(&domain, &cell).unwrap();
+    // Preparation cannot certify content that a later admitted kernel changes.
+    region.write(&domain, &[10]);
+    let stale_rejection = match domain.ready_cell_publication(prepared) {
+        Err(error) => Some(error),
+        Ok(ready) => {
+            drop(ready);
+            None
+        }
+    };
+    before.assert_unchanged(&cell);
+    assert_interval_publication_rejection(
+        stale_rejection
+            .expect("ready trusted stale interval preparation after raw 3 -> 10 rewrite"),
+        None,
+    );
+
+    region.write(&domain, &[3]);
+    let prepared = region.prepare(&domain, &cell).unwrap();
+    let write = region.write_access(&domain);
+    let held_writer = domain.acquire_call(&region.realized, &write).unwrap();
+    let overlap_rejected = match domain.ready_cell_publication(prepared) {
+        Err(_) => true,
+        Ok(ready) => {
+            drop(ready);
+            false
+        }
+    };
+    drop(held_writer);
+    before.assert_unchanged(&cell);
+    assert!(
+        overlap_rejected,
+        "ready admitted an overlapping live typed writer"
+    );
+
+    let ready = domain
+        .ready_cell_publication(region.prepare(&domain, &cell).unwrap())
+        .unwrap();
+    let writer_rejected = match domain.acquire_call(&region.realized, &write) {
+        Err(_) => true,
+        Ok(writer) => {
+            drop(writer);
+            false
+        }
+    };
+    let projection_rejected =
+        match domain.project_host_arena::<u64>(&region.realized, MemoryArenaId::new(0), 1) {
+            Err(_) => true,
+            Ok(projection) => {
+                drop(projection);
+                false
+            }
+        };
+    // Do not panic while the ready gate is held, even if exclusion regresses.
+    // A projection also revokes initialization, so an unexpected capability
+    // must abort this candidate rather than publish it during a negative check.
+    if writer_rejected && projection_rejected {
+        ready.commit();
+    } else {
+        drop(ready);
+    }
+    assert!(
+        writer_rejected,
+        "typed writer entered while Ready held the candidate"
+    );
+    assert!(
+        projection_rejected,
+        "host-arena projection entered while Ready held the candidate"
+    );
+    before.assert_identity_and_shape(&cell);
+    assert_eq!(u64_cell(&cell), 3);
+    assert!(cell.published_version() > before.version);
+}
+
+#[test]
+fn interval_initialized_region_matrix_batch_rejects_late_member_atomically() {
+    let domain = MemoryDomain::new().unwrap();
+    let left = interval_publication_cell(&domain, None, &[2]);
+    let right = interval_publication_cell(&domain, Some(2), &[2, 3, 4, 5, 6, 7]);
+    let left_before = IntervalCellState::capture(&left);
+    let right_before = IntervalCellState::capture(&right);
+    assert_eq!(right_before.shape.parameter_values(), &[2]);
+    let left_region = InitializedIntervalRegion::new(&domain, &[3]);
+    let left_candidate = left_region.prepare(&domain, &left).unwrap();
+    let right_region = InitializedIntervalRegion::matrix(&domain, 2, 3, &[3, 6, 4, 7, 5, 10]);
+    let right_candidate = right_region.prepare(&domain, &right).unwrap();
+    let rejection = match PreparedCellPublicationBatch::new(vec![left_candidate, right_candidate])
+        .unwrap()
+        .ready()
+    {
+        Err(error) => Some(error),
+        Ok(ready) => {
+            drop(ready);
+            None
+        }
+    };
+    left_before.assert_unchanged(&left);
+    right_before.assert_unchanged(&right);
+    assert_interval_publication_rejection(
+        rejection.expect("late invalid matrix member allowed an earlier sibling to publish"),
+        Some(5),
+    );
+
+    // Stage valid candidates, then corrupt only the last raw matrix member.
+    // This forces batch ready itself to revalidate, not just its preparation.
+    let left_region = InitializedIntervalRegion::new(&domain, &[3]);
+    let left_candidate = left_region.prepare(&domain, &left).unwrap();
+    let right_region = InitializedIntervalRegion::matrix(&domain, 2, 3, &[3, 6, 4, 7, 5, 8]);
+    let right_candidate = right_region.prepare(&domain, &right).unwrap();
+    right_region.write(&domain, &[3, 6, 4, 7, 5, 10]);
+    let rejection = match PreparedCellPublicationBatch::new(vec![left_candidate, right_candidate])
+        .unwrap()
+        .ready()
+    {
+        Err(error) => Some(error),
+        Ok(ready) => {
+            drop(ready);
+            None
+        }
+    };
+    left_before.assert_unchanged(&left);
+    right_before.assert_unchanged(&right);
+    assert_interval_publication_rejection(
+        rejection.expect("batch ready trusted stale interval matrix preparation"),
+        Some(5),
+    );
+
+    let left_region = InitializedIntervalRegion::new(&domain, &[3]);
+    let left_candidate = left_region.prepare(&domain, &left).unwrap();
+    let right_region = InitializedIntervalRegion::matrix(&domain, 2, 3, &[3, 6, 4, 7, 5, 8]);
+    let right_candidate = right_region.prepare(&domain, &right).unwrap();
+    let write = right_region.write_access(&domain);
+    let ready = PreparedCellPublicationBatch::new(vec![left_candidate, right_candidate])
+        .unwrap()
+        .ready()
+        .unwrap();
+    let writer_rejected = match domain.acquire_call(&right_region.realized, &write) {
+        Err(_) => true,
+        Ok(writer) => {
+            drop(writer);
+            false
+        }
+    };
+    let projection_rejected =
+        match domain.project_host_arena::<u64>(&right_region.realized, MemoryArenaId::new(0), 6) {
+            Err(_) => true,
+            Ok(projection) => {
+                drop(projection);
+                false
+            }
+        };
+    if writer_rejected && projection_rejected {
+        ready.commit();
+    } else {
+        drop(ready);
+    }
+    assert!(
+        writer_rejected,
+        "typed writer entered while batch Ready held the matrix"
+    );
+    assert!(
+        projection_rejected,
+        "host projection entered while batch Ready held the matrix"
+    );
+    left_before.assert_identity_and_shape(&left);
+    right_before.assert_identity_and_shape(&right);
+    assert_eq!(u64_cell(&left), 3);
+    assert_eq!(interval_cell_values(&right), vec![3, 4, 5, 6, 7, 8]);
+    assert!(left.published_version() > left_before.version);
+    assert!(right.published_version() > right_before.version);
+}
+
+#[test]
+fn interval_initialized_region_uses_exact_integer_widths() {
+    macro_rules! check_width {
+        ($ty:ty, $variant:ident, $sign:ident, $width:ident, $wide:ty) => {
+            check_width!($ty, $variant, $sign, $width, $wide, <$ty>::MAX - 9, <$ty>::MAX);
+        };
+        ($ty:ty, $variant:ident, $sign:ident, $width:ident, $wide:ty, $lower:expr, $upper:expr) => {
+            for upper_inclusive in [false, true] {
+                let lower = $lower;
+                let upper = $upper;
+                let initial = lower + 1;
+                let valid = lower + 2;
+                // Exclusive tests reject the upper endpoint; inclusive tests
+                // reject below the lower endpoint while accepting the upper.
+                let invalid = if upper_inclusive {
+                    match lower.checked_sub(1) {
+                        Some(value) => value,
+                        None => upper + 1,
+                    }
+                } else { upper };
+                let domain = MemoryDomain::new().unwrap();
+                let cell = interval_scalar_cell_from_data(
+                    &domain,
+                    mech_core::IntegerInterval::$sign {
+                        width: mech_core::IntegerWidth::$width,
+                        lower: <$wide>::from(lower),
+                        upper: <$wide>::from(upper),
+                        upper_inclusive,
+                    },
+                    ValueDataDraft::$variant(initial),
+                );
+                let id = cell.reactive_cell_id();
+                let schema = cell.schema();
+                let key = cell.schema_key();
+                let shape = cell.shape().clone();
+                let version = cell.published_version();
+                let bytes = core::mem::size_of::<$ty>() as u64;
+                let alignment = core::mem::align_of::<$ty>() as u32;
+                let revision = domain.issue_plan_revision().unwrap();
+                let mut planned = allocation(0, 0, 0, 0, bytes, MemoryLifetime::Activation, None);
+                planned.slot = Some(mech_core::PlannedSlotKind::FixedScalar(
+                    mech_core::ScalarMemoryKind::$sign(mech_core::IntegerWidth::$width),
+                ));
+                planned.alignment = alignment;
+                let allocations = [planned];
+                let mut planned_arena = arena(0, ArenaBackingKind::ContiguousBytes, bytes, &[0]);
+                planned_arena.alignment = alignment;
+                let arenas = [planned_arena];
+                let realized = domain
+                    .materialize(
+                        domain
+                            .prepare_realization(runtime_plan_view(
+                                revision,
+                                &allocations,
+                                &arenas,
+                                ResourceDemand::default(),
+                                MemoryBudgetLimits::default(),
+                                &[],
+                            ))
+                            .unwrap(),
+                    )
+                    .unwrap();
+                let object = domain.plan_object_key(revision, MemoryObjectId::new(0)).unwrap();
+                domain.activate_realization(&realized).unwrap();
+                let region = MemoryAccessRegion::Contiguous { offset_bytes: 0, length_bytes: bytes };
+                let write = domain.prepare_call(&realized, &[CallAccessRequest {
+                    object, mode: MemoryAccessMode::Write, region,
+                }]).unwrap();
+                let initialize = |value: $ty| {
+                    domain.acquire_call(&realized, &write).unwrap()
+                        .with_object_init_writer::<$ty>(object, |writer| writer.write_next(value)).unwrap();
+                };
+                let prepare = || domain.prepare_cell_publication(&realized, vec![CellPublicationCandidate {
+                    cell: cell.clone(), object, binding: realized.binding(object).unwrap(), region,
+                    evidence: CellPublicationEvidence::initialized_region(shape.clone()), changed: true,
+                }]).unwrap();
+                initialize(invalid);
+                let rejection = match domain.ready_cell_publication(prepare()) {
+                    Err(error) => Some(error),
+                    Ok(ready) => { drop(ready); None }
+                };
+                assert_interval_publication_rejection(
+                    rejection.expect(concat!(stringify!($ty), " invalid raw interval endpoint reached Ready")),
+                    None,
+                );
+                assert!(matches!(cell.snapshot().unwrap().data(), mech_core::ValueData::$variant(value) if *value == initial));
+                assert_eq!(cell.published_version(), version);
+                // Both ordinary members and inclusive maxima are admitted in
+                // exact integer arithmetic, including u128/i128 extremes.
+                let valid = if lower == <$ty>::MIN { lower } else if upper_inclusive { upper } else { valid };
+                initialize(valid);
+                domain.ready_cell_publication(prepare()).unwrap().commit();
+                assert!(matches!(cell.snapshot().unwrap().data(), mech_core::ValueData::$variant(value) if *value == valid));
+                assert_eq!(cell.reactive_cell_id(), id);
+                assert_eq!(cell.schema(), schema);
+                assert_eq!(cell.schema_key(), key);
+                assert_eq!(cell.shape().clone(), shape);
+                assert!(cell.published_version() > version);
+            }
+        };
+    }
+    #[cfg(feature = "u8")]
+    check_width!(u8, U8, Unsigned, W8, u128);
+    #[cfg(feature = "u16")]
+    check_width!(u16, U16, Unsigned, W16, u128);
+    #[cfg(feature = "u32")]
+    check_width!(u32, U32, Unsigned, W32, u128);
+    #[cfg(feature = "u64")]
+    check_width!(u64, U64, Unsigned, W64, u128);
+    #[cfg(feature = "u128")]
+    check_width!(u128, U128, Unsigned, W128, u128);
+    #[cfg(feature = "i8")]
+    check_width!(i8, I8, Signed, W8, i128);
+    #[cfg(feature = "i16")]
+    check_width!(i16, I16, Signed, W16, i128);
+    #[cfg(feature = "i32")]
+    check_width!(i32, I32, Signed, W32, i128);
+    #[cfg(feature = "i64")]
+    check_width!(i64, I64, Signed, W64, i128);
+    #[cfg(feature = "i128")]
+    check_width!(i128, I128, Signed, W128, i128);
+    #[cfg(feature = "i128")]
+    check_width!(i128, I128, Signed, W128, i128, i128::MIN, i128::MIN + 10);
+}
+
+#[test]
+fn interval_initialized_region_matrix_handles_empty_and_padded_geometry() {
+    let domain = MemoryDomain::new().unwrap();
+    let empty = interval_publication_cell(&domain, Some(0), &[]);
+    let empty_before = IntervalCellState::capture(&empty);
+    let empty_region = InitializedIntervalRegion::matrix(&domain, 0, 3, &[]);
+    domain
+        .ready_cell_publication(empty_region.prepare(&domain, &empty).unwrap())
+        .unwrap()
+        .commit();
+    empty_before.assert_identity_and_shape(&empty);
+    assert_eq!(empty.shape().parameter_values(), &[0]);
+    assert_eq!(interval_cell_values(&empty), Vec::<u64>::new());
+    assert!(empty.published_version() > empty_before.version);
+
+    let matrix = interval_publication_cell(&domain, Some(2), &[2, 3, 4, 5, 6, 7]);
+    let before = IntervalCellState::capture(&matrix);
+    // Two invalid padding lanes lie outside the logical 2×3 rectangle. Only
+    // the final semantic lane (raw index7, canonical index5) must be refused.
+    let mut padded = InitializedIntervalRegion::new(&domain, &[3, 6, 10, 4, 7, 10, 5, 10]);
+    padded.region = MemoryAccessRegion::Rectangle {
+        offset_bytes: 0,
+        rows: 2,
+        columns: 3,
+        row_stride_bytes: 8,
+        column_stride_bytes: 24,
+        element_bytes: 8,
+    };
+    let rejection = match domain.ready_cell_publication(padded.prepare(&domain, &matrix).unwrap()) {
+        Err(error) => Some(error),
+        Ok(ready) => {
+            drop(ready);
+            None
+        }
+    };
+    before.assert_unchanged(&matrix);
+    assert_interval_publication_rejection(
+        rejection.expect("padded matrix admitted its late invalid semantic member"),
+        Some(5),
+    );
+    padded.write(&domain, &[3, 6, 10, 4, 7, 10, 5, 8]);
+    domain
+        .ready_cell_publication(padded.prepare(&domain, &matrix).unwrap())
+        .unwrap()
+        .commit();
+    before.assert_identity_and_shape(&matrix);
+    assert_eq!(interval_cell_values(&matrix), vec![3, 4, 5, 6, 7, 8]);
+    assert!(matrix.published_version() > before.version);
+}
+
+#[cfg(feature = "full")]
+#[test]
+fn interval_initialized_region_required_in_place_restores_and_retries() {
+    use mech_core::{
+        AccessMode, AliasPolicy, BoundCall, BytecodeCompilerContext, CallMemoryPlanningRequest,
+        ChangeDetectionPolicy, CurrentMemoryFootprint, DeliveryMode, ExecutionTarget,
+        ExternalInteraction, FunctionInstance, ImplementationMemoryClass, InputPortLayout,
+        InputPortPolicy, MechFunctionCompiler, MemoryFootprintWitness,
+        OperationContractDeclaration, OutputConstruction, OutputPortPolicy, RegionAccessPlan,
+        RegionPolicy, Register, ResolvedOperationDescriptor, RuntimeFunctionId,
+        TargetMemoryProfile, TransactionRequirement, physical_storage_descriptor, plan_call_memory,
+    };
+    use std::{cell::Cell, rc::Rc};
+
+    struct WriteInterval {
+        input: ManagedPort<u64>,
+        output: ManagedPort<u64>,
+        next: Rc<Cell<u64>>,
+        observed: Rc<Cell<u64>>,
+    }
+
+    impl MechFunctionImpl for WriteInterval {
+        fn solve_managed(
+            &self,
+            frame: &mut KernelMemoryFrame<'_>,
+            _: &mut dyn MechExecutionServices,
+        ) -> mech_core::MResult<ReactiveSolveStatus> {
+            self.observed
+                .set(frame.with_port_slice(&self.input, |values| values[0])?);
+            frame.with_port_slice_mut(&self.output, |values| values[0] = self.next.get())?;
+            Ok(ReactiveSolveStatus::Changed)
+        }
+
+        fn to_string(&self) -> String {
+            "initialized interval required-in-place output".into()
+        }
+    }
+
+    impl MechFunctionCompiler for WriteInterval {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> mech_core::MResult<Register> {
+            Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "test-only managed interval writer is not an artifact compiler".into(),
+            }
+            .into())
+        }
+    }
+
+    let domain = MemoryDomain::new().unwrap();
+    let cell = interval_publication_cell(&domain, None, &[2]);
+    let before = IntervalCellState::capture(&cell);
+    let descriptor = cell.resolved_descriptor().unwrap();
+    let operation = ResolvedOperationDescriptor::from_name(
+        "test/r15-in-place-interval",
+        OperationContractDeclaration {
+            inputs: InputPortLayout::Fixed(
+                vec![InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                }]
+                .into_boxed_slice(),
+            ),
+            outputs: vec![OutputPortPolicy {
+                access: AccessMode::Write,
+                delivery: DeliveryMode::Signal,
+                construction: OutputConstruction::ReadModifyWrite {
+                    base_input: 0,
+                    regions: RegionPolicy::WholeValue,
+                },
+                alias: AliasPolicy::InPlaceRequired { input: 0 },
+                change_detection: ChangeDetectionPolicy::AlwaysChanged,
+            }]
+            .into_boxed_slice(),
+            interaction: ExternalInteraction::Pure,
+        },
+    )
+    .unwrap();
+    let bound = BoundCall::syntax_directed(
+        operation,
+        vec![descriptor.clone()].into_boxed_slice(),
+        vec![descriptor].into_boxed_slice(),
+        RuntimeFunctionId::from_name("R15InPlaceInterval"),
+        ExecutionTarget::DirectRuntime,
+    )
+    .unwrap();
+    let target = TargetMemoryProfile::current_direct_host().unwrap();
+    let storage =
+        physical_storage_descriptor(cell.representation(), &target, MemoryLifetime::Activation);
+    let witness = MemoryFootprintWitness::Known(CurrentMemoryFootprint {
+        logical_elements: 1,
+        fixed_bytes: 8,
+        encoded_bytes: 8,
+        retained_nodes: 1,
+        schema_bytes: 1,
+        shape_parameter_count: 0,
+        ..CurrentMemoryFootprint::default()
+    });
+    let plan = plan_call_memory(CallMemoryPlanningRequest {
+        bound_call: &bound,
+        input_storage: &[storage.clone()],
+        output_storage: &[storage],
+        input_witnesses: &[witness],
+        output_witnesses: &[witness],
+        published_output_witnesses: &[witness],
+        implementation_memory: ImplementationMemoryClass::NoAdditionalScratch,
+        target: &target,
+        regions: &[RegionAccessPlan::WholeValue],
+    })
+    .unwrap();
+    assert!(matches!(
+        plan.transactions[0],
+        TransactionRequirement::UndoSnapshot { .. }
+    ));
+    let invocation = FunctionInvocation::unary(cell.clone(), cell.clone());
+    let input = invocation.input(0).unwrap().try_managed::<u64>().unwrap();
+    let output = invocation.output().try_managed::<u64>().unwrap();
+    let next = Rc::new(Cell::new(10));
+    let observed = Rc::new(Cell::new(0));
+    let instance = FunctionInstance::new(
+        Box::new(WriteInterval {
+            input,
+            output,
+            next: next.clone(),
+            observed: observed.clone(),
+        }),
+        invocation,
+        Rc::new(plan),
+    )
+    .unwrap();
+    let error = instance
+        .solve_reactive()
+        .expect_err("invalid in-place interval candidate published");
+    assert_interval_publication_rejection(error, None);
+    before.assert_unchanged(&cell);
+    assert_eq!(observed.get(), 2);
+
+    next.set(3);
+    assert_eq!(
+        instance.solve_reactive().unwrap(),
+        ReactiveSolveStatus::Changed
+    );
+    assert_eq!(
+        observed.get(),
+        2,
+        "the rejected output must restore its exact undo image"
+    );
+    before.assert_identity_and_shape(&cell);
+    assert_eq!(u64_cell(&cell), 3);
+    assert!(cell.published_version() > before.version);
+}
+
+#[test]
 fn multi_cell_publication_rejects_late_conflict_before_any_value_changes() {
     let domain = MemoryDomain::new().unwrap();
     let left = ValueCell::from_exact_in(&domain, 1_u64).unwrap();

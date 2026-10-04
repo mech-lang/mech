@@ -575,23 +575,30 @@ impl PreparedUndoSnapshot {
     }
 }
 
-struct RetainedPublicationLease {
+pub(crate) struct RetainedPublicationLease {
     domain: MemoryDomain,
     _realized: RealizedMemoryPlan,
-    handle: AllocationHandle,
-    token: u64,
+    lease: HeldLease,
 }
 
 impl Drop for RetainedPublicationLease {
     fn drop(&mut self) {
         let mut state = self.domain.state.borrow_mut();
+        let handle = self
+            .lease
+            .handle
+            .expect("a retained publication lease owns physical storage");
+        let token = self
+            .lease
+            .token
+            .expect("a retained publication lease owns an installed token");
         let record = state
-            .record_mut(self.handle)
+            .record_mut(handle)
             .expect("retained publication lease keeps its allocation live");
         let position = record
             .leases
             .iter()
-            .position(|lease| lease.token == self.token)
+            .position(|lease| lease.token == token)
             .expect("retained publication lease keeps its token installed");
         record.leases.remove(position);
     }
@@ -607,6 +614,12 @@ impl Drop for PreparedUndoSnapshot {
 enum CallAccessAuthority {
     ActivePlan,
     OwnedInitialization,
+    /// Read-only validation of one retained publication candidate. Its owner
+    /// remains valid after the producing call scope has ended; this authority
+    /// neither executes a kernel nor grants new writes to expired storage.
+    PublicationCandidate {
+        borrowed: Option<HeldLease>,
+    },
     PublishedCell {
         cell: crate::ValueCell,
         update: bool,
@@ -1191,6 +1204,10 @@ impl MemoryDomain {
             }
         }
 
+        let publication_candidate = matches!(
+            &prepared.authority,
+            CallAccessAuthority::PublicationCandidate { .. }
+        );
         let retained_owner = match &prepared.authority {
             CallAccessAuthority::ActivePlan => false,
             CallAccessAuthority::OwnedInitialization => {
@@ -1204,6 +1221,46 @@ impl MemoryDomain {
                         object: None,
                         reason: "construction authority cannot read storage".into(),
                     });
+                }
+                true
+            }
+            CallAccessAuthority::PublicationCandidate { borrowed } => {
+                if workspace
+                    .leases
+                    .iter()
+                    .any(|lease| lease.mode != MemoryAccessMode::Read)
+                {
+                    return Err(MemoryRuntimeError::CandidateValidationFailed {
+                        object: None,
+                        reason: "publication validation authority is read-only".into(),
+                    });
+                }
+                if let Some(held) = borrowed {
+                    let [request] = workspace.leases.as_mut_slice() else {
+                        return Err(MemoryRuntimeError::CandidateValidationFailed {
+                            object: Some(held.object.object()),
+                            reason: "undo publication validation must borrow one exact region"
+                                .into(),
+                        });
+                    };
+                    if held.mode != MemoryAccessMode::ExclusiveInPlace
+                        || !held.owns_lease
+                        || request.object != held.object
+                        || request.handle != held.handle
+                        || request.region != held.region
+                        || request.start != held.start
+                        || request.end != held.end
+                        || request.incarnation != held.incarnation
+                    {
+                        return Err(MemoryRuntimeError::CandidateValidationFailed {
+                            object: Some(request.object.object()),
+                            reason: "undo publication validation differs from its retained lease"
+                                .into(),
+                        });
+                    }
+                    // The undo owner, not this short-lived read frame, owns
+                    // the exclusive token through readiness and commit/drop.
+                    request.owns_lease = false;
                 }
                 true
             }
@@ -1322,7 +1379,9 @@ impl MemoryDomain {
                         reason: "empty plan object has a nonempty access span",
                     });
                 }
-                if !lifetime_is_active(request.lifetime, state.active_point.get()) {
+                if !publication_candidate
+                    && !lifetime_is_active(request.lifetime, state.active_point.get())
+                {
                     return Err(MemoryRuntimeError::InvalidLifetimeTransition {
                         object: Some(request.object.object()),
                         from: "inactive plan interval",
@@ -1352,7 +1411,9 @@ impl MemoryDomain {
                     reason: "device allocation requires a backend submission hold",
                 });
             }
-            if !lifetime_is_active(request.lifetime, state.active_point.get()) {
+            if !publication_candidate
+                && !lifetime_is_active(request.lifetime, state.active_point.get())
+            {
                 return Err(MemoryRuntimeError::InvalidLifetimeTransition {
                     object: Some(request.object.object()),
                     from: "inactive plan interval",
@@ -1365,6 +1426,31 @@ impl MemoryDomain {
                     requested: request.end,
                     capacity: record.capacity_bytes,
                 });
+            }
+            if let CallAccessAuthority::PublicationCandidate {
+                borrowed: Some(held),
+            } = &prepared.authority
+            {
+                let token = held
+                    .token
+                    .ok_or(MemoryRuntimeError::CandidateValidationFailed {
+                        object: Some(request.object.object()),
+                        reason: "undo publication has no retained lease token".into(),
+                    })?;
+                if !record.leases.iter().any(|lease| {
+                    lease.token == token
+                        && lease.write
+                        && lease.start == held.start
+                        && lease.end == held.end
+                }) || record.leases.iter().any(|lease| {
+                    lease.token != token
+                        && lease.write
+                        && overlaps(request.start, request.end, lease.start, lease.end)
+                }) {
+                    return Err(MemoryRuntimeError::BorrowConflict {
+                        object: request.object.object(),
+                    });
+                }
             }
             if request.owns_lease
                 && record.leases.iter().any(|lease| {
@@ -1475,6 +1561,103 @@ impl MemoryDomain {
             staged_canonical_output: None,
             undo_snapshot,
         })
+    }
+
+    /// Validates the actual initialized candidate under read authority that
+    /// remains owned until publication commits or aborts. The candidate may
+    /// come from a sibling call whose execution revision is no longer active.
+    /// No snapshot or source-sized copy is constructed for this boundary.
+    pub(crate) fn validate_publication_region(
+        &self,
+        realized: &RealizedMemoryPlan,
+        object: PlanObjectKey,
+        region: MemoryAccessRegion,
+        undo: Option<&PreparedUndoSnapshot>,
+        validate: impl FnOnce(&KernelMemoryFrame<'_>) -> crate::MResult<()>,
+    ) -> crate::MResult<Option<RetainedPublicationLease>> {
+        let borrowed = if let Some(undo) = undo {
+            if !undo.armed || !undo.matches(realized, object) {
+                return Err(MemoryRuntimeError::CandidateValidationFailed {
+                    object: Some(object.object()),
+                    reason: "publication validation differs from its undo authority".into(),
+                }
+                .into());
+            }
+            match &undo.retained_lease {
+                Some(guard) => {
+                    if guard.domain.id() != self.id()
+                        || guard._realized.domain() != realized.domain()
+                        || guard._realized.revision() != realized.revision()
+                        || guard.lease.object != object
+                        || guard.lease.region != region
+                    {
+                        return Err(MemoryRuntimeError::CandidateValidationFailed {
+                            object: Some(object.object()),
+                            reason: "publication region differs from its retained undo lease"
+                                .into(),
+                        }
+                        .into());
+                    }
+                    Some(guard.lease)
+                }
+                None => {
+                    let binding = realized.binding(object)?;
+                    let (start, end, _) =
+                        enclosing_span(object.object(), &binding, MemoryAccessMode::Read, region)?;
+                    if binding.handle().is_some() || start != end {
+                        return Err(MemoryRuntimeError::CandidateValidationFailed {
+                            object: Some(object.object()),
+                            reason: "nonempty undo publication has no retained lease".into(),
+                        }
+                        .into());
+                    }
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        let mut prepared = self.prepare_call(
+            realized,
+            &[CallAccessRequest {
+                object,
+                mode: MemoryAccessMode::Read,
+                region,
+            }],
+        )?;
+        prepared.authority = CallAccessAuthority::PublicationCandidate { borrowed };
+        let mut frame = self.acquire_call(realized, &prepared)?;
+        validate(&frame)?;
+        if borrowed.is_some() {
+            // The borrowed undo token remains installed, and its owner is
+            // retained by PreparedCellPublication through commit or rollback.
+            return Ok(None);
+        }
+        let held = frame
+            .leases
+            .leases
+            .first()
+            .copied()
+            .expect("publication validation acquires one candidate region");
+        match (held.handle, held.token) {
+            (Some(_), Some(_)) => {
+                frame.leases.leases.pop();
+                Ok(Some(RetainedPublicationLease {
+                    domain: self.clone(),
+                    _realized: realized.clone(),
+                    lease: held,
+                }))
+            }
+            (None, None) if held.start == held.end => {
+                frame.leases.leases.pop();
+                Ok(None)
+            }
+            _ => Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: Some(object.object()),
+                reason: "publication validation has incomplete retained lease authority".into(),
+            }
+            .into()),
+        }
     }
 
     pub(crate) fn prepare_owned_initialization(
@@ -3594,12 +3777,11 @@ impl KernelMemoryFrame<'_> {
             })?;
         let held = self.leases.leases.remove(position);
         match (held.handle, held.token) {
-            (Some(handle), Some(token)) => {
+            (Some(_), Some(_)) => {
                 undo.retained_lease = Some(RetainedPublicationLease {
                     domain: self.domain.clone(),
                     _realized: self.realized.clone(),
-                    handle,
-                    token,
+                    lease: held,
                 });
             }
             // Empty objects have real logical transaction authority but no
