@@ -23,6 +23,9 @@ mod document_imports;
 mod document_types;
 
 enum DocumentUnit {
+    // Context binding and authority belong to the canonical resolver. Keeping
+    // its participating owner here distinguishes preparation from inert prose.
+    Context,
     Import(mech_syntax::document::ModuleImportSyntax),
     Kind(mech_syntax::document::KindDefineSyntax),
     Enum(mech_syntax::document::EnumDefineSyntax),
@@ -603,6 +606,21 @@ fn compile_collected_document(
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
     let mut presentation = Vec::new();
+    let mut pending = units.iter().collect::<Vec<_>>();
+    let mut declaration_preparation = false;
+    while let Some(unit) = pending.pop() {
+        match unit {
+            DocumentUnit::Context
+            | DocumentUnit::Import(_)
+            | DocumentUnit::Kind(_)
+            | DocumentUnit::Enum(_)
+            | DocumentUnit::FsmSpecification(_)
+            | DocumentUnit::FsmImplementation(_)
+            | DocumentUnit::Function(_) => declaration_preparation = true,
+            DocumentUnit::Fence(_, _, nested) => pending.extend(nested),
+            _ => {}
+        }
+    }
     let last = compile_document_units(
         &mut builder,
         units,
@@ -611,6 +629,31 @@ fn compile_collected_document(
         interactive,
     )?;
     let Some(last) = last else {
+        if interactive
+            && declaration_preparation
+            && exports.is_empty()
+            && published_bindings.is_empty()
+            && retained_result_boundary.is_none()
+            && builder.retained_result.is_none()
+            && presentation.is_empty()
+        {
+            // Run the same final schema/value checks without inventing a
+            // result or a turn for a participating declaration. Existing
+            // registration rules (including nominal and paired-FSM rules)
+            // remain authoritative; this is not partial declaration admission.
+            let mut program = builder.finish()?;
+            let graph = program.program();
+            if graph.requirements.is_empty()
+                && graph.inputs.is_empty()
+                && graph.states.is_empty()
+                && graph.nodes.is_empty()
+                && graph.outputs.is_empty()
+                && graph.constraints.is_empty()
+            {
+                program.document_owner = Some(owner);
+                return Ok(program);
+            }
+        }
         return Err(SourceSemanticError {
             code: "source-semantics/empty-document",
             message: "canonical document contains no executable source unit".to_owned(),
@@ -956,10 +999,11 @@ fn collect_document_units(
     }
     // Resolver-owned declarations participate through the canonical source
     // index and runtime handoff; they do not emit engine operations themselves.
-    if matches!(
-        node.kind(),
-        SyntaxKind::ContextDeclaration | SyntaxKind::ImportDeclaration
-    ) {
+    if node.kind() == SyntaxKind::ContextDeclaration {
+        output.push(DocumentUnit::Context);
+        return Ok(());
+    }
+    if node.kind() == SyntaxKind::ImportDeclaration {
         return Ok(());
     }
     if matches!(
@@ -1001,7 +1045,8 @@ fn declare_document_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Kind(_)
+            DocumentUnit::Context
+            | DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
             | DocumentUnit::FsmSpecification(_)
             | DocumentUnit::Function(_)
@@ -1037,7 +1082,8 @@ fn declare_document_inline_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Kind(_)
+            DocumentUnit::Context
+            | DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
             | DocumentUnit::FsmSpecification(_)
             | DocumentUnit::FsmImplementation(_)
@@ -1096,7 +1142,8 @@ fn compile_document_units_inner(
     let mut last = None;
     for unit in units {
         match unit {
-            DocumentUnit::Kind(_)
+            DocumentUnit::Context
+            | DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
             | DocumentUnit::FsmSpecification(_)
             | DocumentUnit::FsmImplementation(_)

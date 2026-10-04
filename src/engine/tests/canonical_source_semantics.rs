@@ -1786,6 +1786,262 @@ fn resolver_declarations_are_metadata_and_exports_have_artifact_outputs() {
 }
 
 #[test]
+fn interactive_declaration_metadata_prepares_an_exact_zero_work_program() {
+    let catalog = std::sync::Arc::new(mech_core::FunctionCatalogBuilder::new().build().unwrap());
+    let frontend = CanonicalSourceFrontend.with_nominal_origin(nominal_origin());
+    for source in interactive_declaration_preparation_cases() {
+        let document = document(source);
+        let compiled = frontend
+            .compile_interactive_document_with_catalog(&document, catalog.clone())
+            .unwrap_or_else(|error| panic!("{source:?}: {error:?}"));
+        assert_eq!(compiled.document_owner(), Some(document.scope_id()));
+        let graph = compiled.program();
+        assert!(graph.requirements.is_empty(), "{source:?}");
+        assert!(graph.inputs.is_empty(), "{source:?}");
+        assert!(graph.states.is_empty(), "{source:?}");
+        assert!(graph.nodes.is_empty(), "{source:?}");
+        assert!(graph.outputs.is_empty(), "{source:?}");
+        assert!(graph.constraints.is_empty(), "{source:?}");
+        assert!(compiled.document_outputs().is_empty(), "{source:?}");
+        assert!(compiled.document_exports().is_empty(), "{source:?}");
+        assert!(compiled.source_map().outputs.is_empty(), "{source:?}");
+        assert_eq!(compiled.constants().len(), 0, "{source:?}");
+
+        let artifact = compiled.compile_artifact().unwrap();
+        let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+        for candidate in [&artifact, &decoded] {
+            assert_eq!(candidate.revision(), artifact.revision(), "{source:?}");
+            assert!(candidate.requirements().is_empty(), "{source:?}");
+            assert!(candidate.inputs().is_empty(), "{source:?}");
+            assert!(candidate.slots().is_empty(), "{source:?}");
+            assert!(candidate.nodes().is_empty(), "{source:?}");
+            assert!(candidate.bindings().is_empty(), "{source:?}");
+            assert!(candidate.outputs().is_empty(), "{source:?}");
+            assert!(candidate.constraints().is_empty(), "{source:?}");
+            assert!(candidate.compute_regions().is_empty(), "{source:?}");
+            assert_eq!(candidate.constants().len(), 0, "{source:?}");
+        }
+    }
+}
+
+fn interactive_declaration_preparation_cases() -> [&'static str; 7] {
+    [
+        "+> @out := cli/stdout\n",
+        "@out := test://stdout\n",
+        "```mech\n+> @out := cli/stdout\n```\n",
+        "<count> := <u8>\n",
+        "<event> := :idle | :busy\n",
+        "identity(value<u8>) => <u8>\n  | value => value.\n",
+        concat!(
+            "#Machine(left<u64>, right<u64>) => <u64>\n",
+            "  | :Start(left<u64>, right<u64>)\n",
+            "  | :Done(value<u64>).\n",
+            "#Machine(left, right) -> :Start(left, right)\n",
+            "  :Start(left, right) -> :Done(left + right)\n",
+            "  :Done(value) => value.\n",
+        ),
+    ]
+}
+
+#[test]
+fn interactive_declaration_preparation_keeps_empty_and_inert_source_refused() {
+    let catalog = std::sync::Arc::new(mech_core::FunctionCatalogBuilder::new().build().unwrap());
+    for source in [
+        "",
+        "Just prose.\n",
+        "Displayed {{+> @out := cli/stdout}}.\n",
+        "```mech:disabled\n+> @out := cli/stdout\n```\n",
+        "```mech:worker\n+> @out := cli/stdout\n```\n",
+        "```mech:worker\n<count> := <u8>\n```\n",
+        "```mech:disabled\nidentity(value<u8>) => <u8>\n  | value => value.\n```\n",
+        "```text\n+> @out := cli/stdout\n```\n",
+        "-- literal comment\n",
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_interactive_document_with_catalog(&document(source), catalog.clone())
+            .err()
+            .unwrap_or_else(|| panic!("{source:?} is not root preparation"));
+        assert_eq!(error.code, "source-semantics/empty-document", "{source:?}");
+    }
+    let frontend = CanonicalSourceFrontend.with_nominal_origin(nominal_origin());
+    for source in interactive_declaration_preparation_cases() {
+        let error = frontend
+            .compile_document_with_catalog(&document(source), catalog.clone())
+            .err()
+            .unwrap_or_else(|| panic!("{source:?} must not relax ordinary compilation"));
+        assert_eq!(error.code, "source-semantics/empty-document", "{source:?}");
+    }
+}
+
+#[test]
+fn interactive_declaration_preparation_does_not_hide_validation_or_effects() {
+    let catalog = std::sync::Arc::new(mech_core::FunctionCatalogBuilder::new().build().unwrap());
+    for (source, code) in [
+        (
+            "+> @out := cli/stdout\n<+ missing\n",
+            "source-semantics/empty-document",
+        ),
+        (
+            "+> @out := cli/stdout\nvalid! := true\n",
+            "source-semantics/empty-document",
+        ),
+        (
+            "+> @out := cli/stdout\nvalid! := 1\n",
+            "source-semantics/non-boolean-invariant",
+        ),
+        (
+            "+> @out := cli/stdout\n@out/line <- \"never published\"\n",
+            "source-semantics/unbound-resource-send",
+        ),
+        ("+> @out :=\n", "source-semantics/recovered-syntax"),
+        (
+            "<bad> := <{a<u8>,a<bool>}>\n",
+            "source-semantics/invalid-kind-declaration",
+        ),
+        (
+            "<count> := <u8>\n<count> := <u16>\n",
+            "source-semantics/duplicate-kind-declaration",
+        ),
+        (
+            "<event> := :idle | :idle\n",
+            "source-semantics/duplicate-enum-variant",
+        ),
+        (
+            "identity(value<u8>) => <u8>\n  | value => value.\nidentity(value<u8>) => <u8>\n  | value => value.\n",
+            "source-semantics/duplicate-function",
+        ),
+        (
+            "#Machine(left<u64>, right<u64>) => <u64>\n  | :Start(left<u64>, right<u64>)\n  | :Done(value<u64>).\n",
+            "source-semantics/missing-fsm-implementation",
+        ),
+        (
+            "#Machine(left, right) -> :Start(left, right)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.\n",
+            "source-semantics/missing-fsm-specification",
+        ),
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_interactive_document_with_catalog(&document(source), catalog.clone())
+            .err()
+            .unwrap_or_else(|| panic!("{source:?} must not become empty preparation"));
+        assert_eq!(error.code, code, "{source:?}");
+    }
+    let error = CanonicalSourceFrontend
+        .compile_interactive_document_with_catalog(
+            &document("<event> := :idle | :busy\n"),
+            catalog.clone(),
+        )
+        .err()
+        .expect("interactive preparation cannot invent nominal provenance");
+    assert_eq!(error.code, "source-semantics/nominal-origin-required");
+
+    let effect = CanonicalSourceFrontend
+        .compile_interactive_document_with_catalog_and_resources(
+            &document("+> @out := cli/stdout\n@out/line <- \"not empty preparation\"\n"),
+            catalog.clone(),
+            Default::default(),
+            Default::default(),
+            std::collections::BTreeMap::from([(
+                "@out/line".to_owned(),
+                mech_core::ExecutionResourceRequest {
+                    base_uri: "test://stdout".to_owned(),
+                    path: "line".to_owned(),
+                    context_name: "stdout".to_owned(),
+                    operation: "send".to_owned(),
+                    intent: mech_core::ResourceIntent::Send,
+                    delivery: mech_core::ResourceDelivery::Snapshot,
+                },
+            )]),
+        )
+        .unwrap();
+    assert_eq!(effect.program().requirements.len(), 1);
+    assert_eq!(effect.program().nodes.len(), 1);
+    assert_eq!(effect.source_map().nodes[0].operation, "resource/send");
+    assert_eq!(effect.program().outputs.len(), 2);
+    assert_eq!(effect.program().outputs[0].name, "result");
+    assert_eq!(
+        effect.program().outputs[1].name,
+        mech_engine::encode_interactive_symbol_output_name("ans"),
+    );
+    assert_eq!(
+        effect.program().outputs[1].source,
+        effect.program().outputs[0].source,
+    );
+    assert_eq!(
+        effect.program().outputs[1].schema,
+        effect.program().outputs[0].schema,
+    );
+    assert_eq!(effect.document_outputs().len(), 1);
+    assert_eq!(effect.document_outputs()[0].output, 0);
+    assert_eq!(
+        effect.document_outputs()[0].kind,
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+    assert!(!effect.document_outputs()[0].visible);
+
+    let compiled = CanonicalSourceFrontend
+        .compile_interactive_document_with_catalog(
+            &document("+> @out := cli/stdout\n42\n"),
+            catalog,
+        )
+        .unwrap();
+    assert_eq!(compiled.program().outputs.len(), 2);
+    assert_eq!(compiled.program().outputs[0].name, "result");
+    assert_eq!(
+        compiled.program().outputs[1].name,
+        mech_engine::encode_interactive_symbol_output_name("ans"),
+    );
+    assert_eq!(
+        compiled.program().outputs[1].source,
+        compiled.program().outputs[0].source,
+    );
+    assert_eq!(
+        compiled.program().outputs[1].schema,
+        compiled.program().outputs[0].schema,
+    );
+    assert_eq!(compiled.document_outputs().len(), 1);
+    assert_eq!(compiled.document_outputs()[0].output, 0);
+    assert!(compiled.document_outputs()[0].visible);
+    assert_eq!(
+        compiled.document_outputs()[0].kind,
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+}
+
+#[test]
+fn interactive_declaration_preparation_preserves_requested_and_retained_results() {
+    use std::collections::BTreeSet;
+    let catalog = std::sync::Arc::new(mech_core::FunctionCatalogBuilder::new().build().unwrap());
+    let source = document("+> @out := cli/stdout\n");
+    let error = CanonicalSourceFrontend
+        .compile_interactive_document_with_planning_contract(
+            &source,
+            catalog.clone(),
+            Default::default(),
+            Default::default(),
+            &BTreeSet::new(),
+            &BTreeSet::from(["missing".to_owned()]),
+            &BTreeSet::new(),
+        )
+        .err()
+        .expect("a requested output cannot be satisfied by empty preparation");
+    assert_eq!(error.code, "source-semantics/empty-document");
+
+    let error = CanonicalSourceFrontend
+        .compile_interactive_document_with_retained_result(
+            &source,
+            catalog,
+            Default::default(),
+            Default::default(),
+            &BTreeSet::new(),
+            TextSize(0),
+        )
+        .err()
+        .expect("a captured result cannot be fabricated for a declaration");
+    assert_eq!(error.code, "source-semantics/empty-document");
+}
+
+#[test]
 fn semantic_policy_covers_the_exact_generated_component() {
     let schema = fs::read_to_string(
         repository_root().join("docs/design/grammar-audit/phase-2i-syntax-schema.tsv"),

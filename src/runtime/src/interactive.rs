@@ -321,7 +321,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.emit_source_echo(source_echo);
         let visible_value = if !self.quiet && !value.is_empty() {
             Some(ValueOutput::new(
-                value.kind().to_string(),
+                value.format_repl_kind(),
                 value.format_repl_inline(self.value_element_limit),
             ))
         } else {
@@ -410,7 +410,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 ReplResponseKind::ValueInspection,
                 ReplResponseStatus::Neutral,
                 None,
-                OutputContent::Value(ValueOutput::new(value.kind().to_string(), canonical)),
+                OutputContent::Value(ValueOutput::new(value.format_repl_kind(), canonical)),
             ))));
         }
         Ok(value)
@@ -1969,6 +1969,186 @@ mod tests {
                 .to_string(),
             "42"
         );
+    }
+
+    #[test]
+    fn canonical_context_preparation_retains_source_without_turns_or_authority() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        for declaration in ["@local := test://resource", "@child := @local"] {
+            let value = session.submit(declaration).unwrap();
+            assert!(value.is_empty());
+            assert!(session.source().contains(declaration));
+            assert_eq!(
+                session.runtime().unwrap().program_execution_info(),
+                crate::RuntimeProgramExecutionInfo::default(),
+            );
+            assert!(session.symbol("ans").unwrap().is_none());
+        }
+        let source = session.source().to_owned();
+        let revision = session.source_document().unwrap().source().revision();
+        for invalid in ["@local := test://other", "@bad := @missing", "@bad :="] {
+            assert!(session.submit(invalid).is_err(), "{invalid}");
+            assert_eq!(session.source(), source);
+            assert_eq!(
+                session.source_document().unwrap().source().revision(),
+                revision
+            );
+            assert_eq!(
+                session.runtime().unwrap().program_execution_info(),
+                crate::RuntimeProgramExecutionInfo::default(),
+            );
+        }
+        let value = session.submit("value := 42").unwrap();
+        assert_eq!(value.format_canonical_inline(), "42");
+        let info = session.runtime().unwrap().program_execution_info();
+        assert_eq!(info.route, crate::RuntimeProgramRoute::ResidentPure);
+        assert_eq!(info.resident_accepted_turns, 1);
+        assert_eq!(info.requirement_count, 0);
+        assert_eq!(info.observation_count, 0);
+        assert_eq!(info.effect_count, 0);
+        assert_eq!(
+            session
+                .symbol("value")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "42"
+        );
+    }
+
+    #[test]
+    fn canonical_interactive_declarations_retain_valid_metadata_without_turns() {
+        struct MetadataDocumentFactory;
+        impl ResidentReplRuntimeFactory for MetadataDocumentFactory {
+            fn build(&self, events: MechEventBuffer) -> MResult<MechRuntime> {
+                SourceRuntimeFactory.build(events)
+            }
+
+            fn activate_document(
+                &self,
+                events: MechEventBuffer,
+                document: &crate::SourceDocument,
+            ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+                if document.source().to_contiguous_string().trim().is_empty() {
+                    return self.activate(events, "");
+                }
+                let mut runtime = self.build(events)?;
+                let outcome = runtime.load_interactive_document_program(
+                    document,
+                    ResidentDurabilityPolicy::Volatile,
+                )?;
+                Ok((runtime, outcome))
+            }
+        }
+        let origin = mech_core::CanonicalNominalPath::new(vec![
+            "test-package".to_owned(),
+            "interactive-metadata".to_owned(),
+        ])
+        .unwrap();
+        let document = crate::SourceDocument::parse_resolved(
+            "repl://metadata",
+            Revision(0),
+            Arc::<str>::from(""),
+            ParseConfig::default(),
+        )
+        .unwrap()
+        .with_nominal_origin(origin.clone());
+        let mut session =
+            ResidentReplSession::from_document(MetadataDocumentFactory, document).unwrap();
+        for declaration in [
+            "<count> := <u8>",
+            "<event> := :idle | :busy",
+            "identity(value<u8>) => <u8>\n  | value => value.",
+            "#Machine(left<u64>, right<u64>) => <u64>\n  | :Start(left<u64>, right<u64>)\n  | :Done(value<u64>).\n#Machine(left, right) -> :Start(left, right)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.",
+        ] {
+            assert!(session.submit(declaration).unwrap().is_empty());
+            assert!(session.source().contains(declaration));
+            assert_eq!(
+                session.source_document().unwrap().nominal_origin(),
+                Some(&origin)
+            );
+            assert_eq!(
+                session.runtime().unwrap().program_execution_info(),
+                crate::RuntimeProgramExecutionInfo::default(),
+            );
+            assert!(session.symbol("ans").unwrap().is_none());
+        }
+        let source = session.source().to_owned();
+        let revision = session.source_document().unwrap().source().revision();
+        for invalid in [
+            "<count> := <u16>",
+            "<event> := :other",
+            "identity(value<u8>) => <u8>\n  | value => value.",
+            "#Missing() => <u64>\n  | :Done.",
+            "#Orphan() -> :Done\n  :Done => 1u64.",
+        ] {
+            assert!(session.submit(invalid).is_err(), "{invalid}");
+            assert_eq!(session.source(), source);
+            assert_eq!(
+                session.source_document().unwrap().source().revision(),
+                revision
+            );
+            assert_eq!(
+                session.runtime().unwrap().program_execution_info(),
+                crate::RuntimeProgramExecutionInfo::default(),
+            );
+        }
+        let value = session
+            .submit("answer<count> := identity(2<count>)\nanswer")
+            .unwrap();
+        assert_eq!(value.format_canonical_inline(), "2");
+        assert_eq!(value.format_repl_kind(), "u8");
+        let info = session.runtime().unwrap().program_execution_info();
+        assert_eq!(info.route, crate::RuntimeProgramRoute::ResidentPure);
+        assert_eq!(info.resident_accepted_turns, 1);
+        assert_eq!(info.requirement_count, 0);
+        assert_eq!(info.observation_count, 0);
+        assert_eq!(info.effect_count, 0);
+    }
+
+    #[test]
+    fn canonical_clear_names_live_dependencies_and_preserves_revision_on_refusal() {
+        for name in ["x", "Δ", "mech-source-input-78"] {
+            let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+            session.submit(&format!("{name} := 1")).unwrap();
+            session.submit(&format!("remaining := {name} + 1")).unwrap();
+            let source = session.source().to_owned();
+            let document = session.source_document().unwrap().source().revision();
+            let info = session.runtime().unwrap().program_execution_info();
+            let error = session.clear_variables(&[name.to_owned()]).unwrap_err();
+            assert!(error.kind_message().contains(name), "{error:?}");
+            assert_eq!(session.source(), source);
+            assert_eq!(
+                session.source_document().unwrap().source().revision(),
+                document
+            );
+            assert_eq!(
+                session
+                    .symbol(name)
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "1"
+            );
+            assert_eq!(
+                session
+                    .symbol("remaining")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "2"
+            );
+            assert_eq!(session.runtime().unwrap().program_execution_info(), info);
+            session.submit("retry := 3").unwrap();
+            assert_eq!(
+                session
+                    .symbol("retry")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "3"
+            );
+        }
     }
 
     #[test]

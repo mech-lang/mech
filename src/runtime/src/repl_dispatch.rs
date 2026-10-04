@@ -551,7 +551,7 @@ fn symbol_values(
                 .map(|symbol| {
                     vec![
                         symbol.name,
-                        symbol.value.kind().to_string(),
+                        symbol.value.format_repl_kind(),
                         symbol.value.format_repl_inline(value_element_limit),
                     ]
                 })
@@ -580,7 +580,7 @@ fn integrity_constraint_values(
             .map(|(name, value)| {
                 vec![
                     name,
-                    value.kind().to_string(),
+                    value.format_repl_kind(),
                     value.format_repl_inline(value_element_limit),
                 ]
             })
@@ -676,6 +676,38 @@ mod tests {
         assert_eq!(
             table.row_selection_tokens,
             [Some("selection:9".to_string())],
+        );
+    }
+
+    #[cfg(all(feature = "matrix", feature = "f64"))]
+    #[test]
+    fn symbol_tables_keep_complete_resolved_kind_when_values_are_elided() {
+        let value = crate::RuntimeValueSnapshot::from_value(
+            crate::RuntimeHostInputValue::F64Matrix {
+                rows: 2,
+                columns: 3,
+                values: vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            }
+            .into_value()
+            .unwrap(),
+        )
+        .unwrap();
+        let content = symbol_values(
+            vec![ResidentSymbolInspection {
+                name: "matrix".to_string(),
+                value,
+                selection_token: "selection:matrix".to_string(),
+            }],
+            2,
+        );
+        let OutputContent::Table(table) = content else {
+            panic!("symbol inspection must remain tabular");
+        };
+        assert_eq!(table.rows[0][1], "[f64]:2,3");
+        assert!(table.rows[0][2].contains('…'));
+        assert_eq!(
+            table.row_selection_tokens,
+            [Some("selection:matrix".to_string())],
         );
     }
 }

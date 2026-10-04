@@ -56,6 +56,10 @@ fn targetless_repl_exits_after_the_third_ctrl_c_without_stdin_input() {
     let stdout = directory.join("stdout");
     let stderr = directory.join("stderr");
     let mut child = Command::new(env!("CARGO_BIN_EXE_mech"))
+        // This witness asserts the rich farewell. Do not inherit a caller's
+        // plain-mode selection (for example TERM=dumb in native CI shells).
+        .env_remove("MECH_NOFUN")
+        .env("MECH_REPL_STYLE", "rich")
         .stdin(Stdio::piped())
         .stdout(Stdio::from(File::create(&stdout).expect("create stdout")))
         .stderr(Stdio::from(File::create(&stderr).expect("create stderr")))

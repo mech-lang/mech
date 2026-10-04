@@ -19,7 +19,7 @@ pub(super) const MECH_AMBER: (u8, u8, u8) = (246, 192, 78);
 pub(super) fn value(value: &RuntimeValueSnapshot) -> Option<OutputContent> {
     if !value.is_empty() {
         return Some(OutputContent::Value(ValueOutput::new(
-            value.kind().to_string(),
+            value.format_repl_kind(),
             value.format_canonical_inline(),
         )));
     }

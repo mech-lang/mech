@@ -475,9 +475,18 @@ impl MechRuntime {
             )
         })?;
         if !external && !preflight.plan.inputs.is_empty() {
-            return Err(super::unsupported_route(
-                "pure production resident programs cannot require turn inputs",
-            ));
+            let names = artifact
+                .inputs()
+                .iter()
+                .map(|input| {
+                    mech_engine::decode_source_input_name(&input.name)
+                        .unwrap_or_else(|| input.name.clone())
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            return Err(super::unsupported_route(format!(
+                "pure production resident programs cannot require turn inputs: {names}",
+            )));
         }
 
         if let Some(authority) = authority.as_ref() {
@@ -488,6 +497,28 @@ impl MechRuntime {
                 authority,
             )
             .map_err(classify_provider_preflight)?;
+        }
+
+        #[cfg(feature = "resident-routing-source")]
+        if matches!(
+            initial_value_projection,
+            InitialValueProjection::InteractiveRootResult
+        ) && artifact.requirements().is_empty()
+            && artifact.inputs().is_empty()
+            && artifact.slots().is_empty()
+            && artifact.nodes().is_empty()
+            && artifact.bindings().is_empty()
+            && artifact.outputs().is_empty()
+            && artifact.constraints().is_empty()
+        {
+            // Canonical interactive preparation may retain declarations, but
+            // an admitted graph with no work must not activate an instance,
+            // start a driver, or manufacture an accepted turn.
+            return Ok(RuntimeProgramLoadOutcome {
+                route: RuntimeProgramRoute::None,
+                initial_value: crate::RuntimeValueSnapshot::empty(),
+                info: RuntimeProgramExecutionInfo::default(),
+            });
         }
 
         let instance_id = self.allocate_resident_instance()?;
