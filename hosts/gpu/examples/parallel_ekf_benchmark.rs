@@ -254,7 +254,9 @@ fn source_inputs(
         .inputs()
         .iter()
         .filter_map(|input| {
-            let driver_name = match input.name.as_str() {
+            let source_name = mech_engine::decode_source_input_name(&input.name)
+                .unwrap_or_else(|| input.name.clone());
+            let driver_name = match source_name.as_str() {
                 "dt" => "lane-dt",
                 "linear-velocity" => "lane-linear-velocity",
                 "angular-velocity" => "lane-angular-velocity",
@@ -264,7 +266,7 @@ fn source_inputs(
             };
             driver
                 .get(driver_name)
-                .map(|values| (input.name.clone(), values.clone()))
+                .map(|values| (source_name, values.clone()))
         })
         .collect()
 }
@@ -375,4 +377,34 @@ fn millis(duration: std::time::Duration) -> f64 {
 
 fn throughput(instances: usize, duration: std::time::Duration) -> f64 {
     instances as f64 / duration.as_secs_f64() / 1_000_000.0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn broadcast_inputs_use_source_names_from_the_artifact() {
+        let tree = source_tree(3);
+        let driver = evaluate_driver(&tree);
+        let artifact = compile_artifact(&tree, &driver);
+        assert_eq!(artifact.inputs().len(), COMPUTE_INPUT_NAMES.len());
+        assert!(
+            artifact
+                .inputs()
+                .iter()
+                .all(|input| input.name.starts_with("mech-source-input-"))
+        );
+        let expected = COMPUTE_INPUT_NAMES
+            .into_iter()
+            .map(|name| (name.to_owned(), driver[&format!("lane-{name}")].clone()))
+            .collect::<BTreeMap<_, _>>();
+        let inputs = source_inputs(&driver, &artifact);
+        assert_eq!(inputs, expected);
+        let program = ComputeLowerer
+            .compile_broadcast(&artifact, &inputs)
+            .unwrap();
+        assert_eq!(program.instances(), 3);
+        assert_eq!(program.integrity_constraints().count(), 3);
+    }
 }

@@ -197,7 +197,7 @@ impl CanonicalDocumentRenderer {
             output.push_str("<span class='");
             output.push_str(repl_item_class(&item));
             output.push_str("'>");
-            render_canonical_source_html(&item, None, &mut output)?;
+            render_canonical_source_html(&item, None, None, &mut output)?;
             output.push_str("</span>");
             cursor = range.end;
         }
@@ -620,10 +620,23 @@ fn has_syntax_kind(node: &SyntaxNode, kind: SyntaxKind) -> bool {
 fn render_canonical_source_html(
     node: &SyntaxNode,
     parent_node: Option<&SyntaxNode>,
+    comment_context: Option<(DocumentScopeId, &ResultLookup<'_>)>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
     let kind = node.kind();
     let parent = parent_node.map(SyntaxNode::kind);
+    if kind == SyntaxKind::Comment {
+        output.push_str("<span class='mech-comment'>");
+        if let Some((owner, lookup)) = comment_context {
+            // Document comments own rich inline presentation and its exact
+            // scope/mode. REPL source display has no execution context.
+            render_inline_html(node, owner, lookup, output)?;
+        } else {
+            push_source(node, node.range(), output, true)?;
+        }
+        output.push_str("</span>");
+        return Ok(());
+    }
     if kind == SyntaxKind::Identifier
         && matches!(
             parent,
@@ -662,7 +675,6 @@ fn render_canonical_source_html(
     }
     let class = match kind {
         SyntaxKind::Number => Some("mech-number"),
-        SyntaxKind::Comment => Some("mech-comment"),
         SyntaxKind::PrefixedContextPath => Some("mech-context-reference"),
         SyntaxKind::AtomLiteral => Some("mech-atom"),
         SyntaxKind::Identifier if parent == Some(SyntaxKind::ContextDeclaration) => {
@@ -696,7 +708,9 @@ fn render_canonical_source_html(
     }
     for element in node.children_with_tokens() {
         match element {
-            SyntaxElement::Node(child) => render_canonical_source_html(&child, Some(node), output)?,
+            SyntaxElement::Node(child) => {
+                render_canonical_source_html(&child, Some(node), comment_context, output)?;
+            }
             SyntaxElement::Token(token) => {
                 let class = match token.kind() {
                     SyntaxKind::Colon
@@ -2777,7 +2791,7 @@ fn render_code_comments(
     html: bool,
 ) -> Result<(), CanonicalDocumentRenderError> {
     if html {
-        return render_canonical_source_html(code, None, output);
+        return render_canonical_source_html(code, None, Some((owner, lookup)), output);
     }
     if !html && lookup.mode == RenderMode::Source {
         return push_source(code, code.range(), output, false);

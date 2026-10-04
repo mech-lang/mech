@@ -1326,7 +1326,7 @@ fn browser_titles_preserve_lf_and_crlf_source() {
 }
 
 #[test]
-fn canonical_comments_preserve_literal_markup_in_each_scope() {
+fn rich_comments_render_markup_and_line_local_ans_in_each_scope() {
     let body = "answer := 40 + 2 -- **Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}.\nanswer + 2 // __Next__: {ans}, {ans + 10}.\n";
     for (source, named) in [
         (body.to_owned(), false),
@@ -1355,29 +1355,74 @@ fn canonical_comments_preserve_literal_markup_in_each_scope() {
             }
             let renderer = CanonicalDocumentRenderer;
             let html = renderer.render_html(&document, &results).unwrap();
-            // The canonical comment production owns literal tokens through
-            // the end of the line, including Mechdown-looking punctuation.
-            assert!(html.contains("**Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}."), "{html}");
-            assert!(html.contains("__Next__: {ans}, {ans + 10}."), "{html}");
             assert!(
-                !html.contains("mech-strong") && !html.contains(">141</span>"),
+                html.contains("<strong class='mech-strong'>Result</strong>"),
                 "{html}"
             );
+            assert!(html.contains("href='https://mech-lang.org'"), "{html}");
+            assert!(
+                html.contains("<u class='mech-underline'>Next</u>"),
+                "{html}"
+            );
+            for value in [42, 43, 44, 54] {
+                assert!(
+                    html.contains(&format!(">{value}</span>")),
+                    "missing {value}: {html}"
+                );
+            }
+            assert!(
+                html.contains("<code class='mech-inline-code'>literal</code>"),
+                "{html}"
+            );
+            assert!(
+                html.contains("<code class='mech-inline'>answer + 99</code>"),
+                "{html}"
+            );
+            assert!(
+                !html.contains(">141</span>"),
+                "double braces must not execute: {html}"
+            );
+            assert!(html.contains("class='mech-number'>40</span>"), "{html}");
+            assert!(html.contains("class='mech-number'>2</span>"), "{html}");
             let text = renderer.render_text(&document, &results).unwrap();
-            assert!(text.contains(": {ans}, {ans + 1}."), "{text}");
-            assert!(text.contains(": {ans}, {ans + 10}."), "{text}");
+            assert!(text.contains(": 42, 43."), "{text}");
+            assert!(text.contains(": 44, 54."), "{text}");
             let browser = renderer.format_browser_html(&document).unwrap();
             assert_eq!(
                 browser.matches("class='mech-inline-mech-code'").count(),
-                0,
+                if named { 0 } else { 4 },
+                "{browser}"
+            );
+            assert!(
+                browser.contains("<strong class='mech-strong'>Result</strong>"),
                 "{browser}"
             );
         }
     }
+
+    // REPL source highlighting remains a nonexecuting display of the exact
+    // comment body, while ordinary code retains its syntax highlighting.
+    let repl = CanonicalDocumentRenderer
+        .render_repl_source_html(&document(body))
+        .unwrap()
+        .unwrap();
+    assert!(
+        repl.contains(
+            "**Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}."
+        ),
+        "{repl}"
+    );
+    assert!(repl.contains("__Next__: {ans}, {ans + 10}."), "{repl}");
+    assert!(repl.contains("class='mech-number'>40</span>"), "{repl}");
+    assert!(repl.contains("data-mech-var-name='answer'"), "{repl}");
+    assert!(!repl.contains("mech-inline-mech-code"), "{repl}");
+    assert!(!repl.contains("mech-strong"), "{repl}");
+    assert!(!repl.contains("data-mech-var-name='ans'"), "{repl}");
+    assert!(!repl.contains("class='mech-number'>99</span>"), "{repl}");
 }
 
 #[test]
-fn literal_comments_do_not_capture_ans_through_source_and_bytecode() {
+fn inline_ans_in_comments_tracks_live_state_through_source_and_bytecode() {
     let document = document("~counter := 0\ncounter += 1 -- **Counter** {ans}\ncounter\n");
     let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
     let artifact = program.compile_artifact().unwrap();
@@ -1414,7 +1459,7 @@ fn literal_comments_do_not_capture_ans_through_source_and_bytecode() {
             let html = CanonicalDocumentRenderer
                 .render_html(&document, &results)
                 .unwrap();
-            assert!(html.contains("-- **Counter** {ans}"), "{html}");
+            assert!(html.contains(&format!("<strong class='mech-strong'>Counter</strong> <span class='mech-value'>{value}</span>")), "{html}");
             assert!(!html.contains("mech-inline-mech-code"), "{html}");
             assert!(html.contains(&format!("<output class='mech-program-output'><span class='mech-value'>{value}</span></output>")), "{html}");
         }
