@@ -659,7 +659,9 @@ fn compute_initializers(
                 } else {
                     ComputeValue::TensorF32 {
                         dimensions: port.dimensions.clone(),
-                        layout: TensorLayout::RowMajor,
+                        // These arrays are the fixed kernel's physical inputs,
+                        // documented as lane-contiguous column-major values.
+                        layout: TensorLayout::ColumnMajor,
                         values: Arc::from(values.clone()),
                     }
                 };
