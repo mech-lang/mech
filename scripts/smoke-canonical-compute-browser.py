@@ -120,7 +120,7 @@ def qualify_static_bundle(args):
         ] + [urlsplit(urljoin(prefix, source[key])).path
              for source in manifest["sources"] for key in ("url", "documentUrl")
              if key in source]
-        if (output / "main.mec").read_text() != STATIC_SOURCE:
+        if (output / root_source["url"]).read_text() != STATIC_SOURCE:
             raise RuntimeError("bundle changed retained source")
         for name, digest in package_hashes.items():
             if file_digest(output / "pkg" / name) != digest:
