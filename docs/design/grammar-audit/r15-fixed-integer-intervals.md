@@ -5,6 +5,12 @@ R15 implements the first G12 constrained scalar form. A kind such as
 `..` excludes the upper endpoint and `..=` includes it. Equal endpoints are
 valid only with `..=`. Descending and empty intervals are invalid.
 
+This accepted fixed-integer contract supersedes the earlier post-v0.4 deferral
+in issue #865 for this narrowly defined form. Qualification and sealing remain
+separate from that scope decision. Completion of R15 does not claim arbitrary
+scalar predicates, dynamic bounds, stepped membership, implicit interval
+subtyping, or arithmetic result-bound inference; those need separate contracts.
+
 The supported domains are the exact signed and unsigned integer widths 8, 16,
 32, 64, and 128. Both endpoints must be closed decimal integer literals that
 fit the declared width. Mixed-width endpoints, fractions, floating point,
@@ -134,3 +140,65 @@ Historical results above remain attributed to their original candidates.
 R15 review requests were subsequently authorized; another correcting-head
 review is requested after publication. CI remains paused. These checks are
 not Full CI or a seal.
+
+## Live-value and transport acceptance (2026-10-03)
+
+The boundary qualification starts from review-clean R15
+`6ad5b16205fcfb4e18cbfca697275db64a6a905a` on R26 `efc049e9d`.
+No new production correctness defect was reproduced, and no production code
+changed. Tests extend existing owner suites rather than adding a transaction
+framework or interval arithmetic.
+
+Public runtime cases load original and decoded artifacts and exercise the same
+activated scalar/matrix instance. Checked base-to-interval host entry admits 2,
+rejects the excluded upper, then admits 3. Unconverted base snapshots are
+separately refused at runtime input capture, preserving the no-implicit-live-
+narrowing rule. Membership refusal and input-schema refusal are distinct checks;
+invalid finalized Values are never manufactured. State, output, complete schema
+and shape, published epoch, state revisions and state hash stay unchanged after
+refusal, followed by valid same-instance execution.
+
+The mutable ValueCell owner tests check candidate membership and the actual
+replacement gate, aliased values, cell identity, descriptor and publication
+revision. A nonsquare 2x3 matrix's raw rebuild candidate has five valid members
+before an invalid sixth: refusal identifies MatrixElement(5), with no input or
+registered-transpose output change. A valid retry commits on the same cell and
+executes the same registered transpose, checking complete 3x2 values and the
+retained interval element schema. This mutable adapter evidence is not replaced
+by an immutable rebind test alone.
+
+Exact membership tests cover all ten widths: signed minimum/maximum, unsigned
+maximum, inclusive extreme singletons, excluded upper, negative intervals that
+exclude zero and odd exact 64/128-bit payloads beyond floating-point precision.
+Both finalization and checked base rebind are tested. Codec tests roundtrip all
+ten extreme intervals and retain ordinary integer schema tags/width encodings.
+Malformed valid section JSON reaches InvalidIntegerIntervalV1 for out-of-width,
+empty or descending bounds, and IntegerIntervalViolationV1 for invalid payloads;
+an unrelated checksum/envelope failure is not accepted as evidence. Restoring
+the original representation decodes successfully.
+
+Fresh normal-thread qualification uses locked nightly-2026-03-03, warnings
+denied, incremental compilation disabled and two build jobs:
+
+- `cargo +nightly-2026-03-03 test --locked -p mech-core --features full
+  --test snapshot_value_contract --test r4_type_cutover
+  --test type_system_builtin --test type_system_contract --test type_system_solver`:
+  10 snapshot, 14 cutover, 17 builtin, 15 contract and 30 solver tests passed.
+- `cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features
+  --features full_source,resident-artifact,compiler
+  --test program_artifact_contract --test canonical_source_semantics`:
+  37 artifact and 138 source-semantic tests passed. The codec target explicitly
+  requires compiler; a feature-disabled refusal is not counted as execution.
+- Combined `mech-stdlib/full_compiler`, `mech-runtime/full_source` and
+  `mech-runtime/resident-routing-source`, selecting existing
+  `r6_managed_functions` and `canonical_constant_binding`: 16 managed and
+  49 runtime tests passed with the ordinary test-thread invocation. The previous
+  serial run is not a concurrency waiver.
+- Reduced Standard compiler managed target: 12 passed, but it excludes u8, so
+  this is compatibility evidence rather than interval coverage. Standard plus
+  the existing u8 feature: 15 passed, including both new mutable interval cases.
+
+The accepted narrow contract above supersedes issue #865's earlier deferral;
+broader refinement features are not claimed. Historical counts remain assigned
+to their original candidates. R15 CI remains paused pending authorization, and
+local boundary qualification does not itself seal R15.

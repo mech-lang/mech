@@ -10,16 +10,16 @@ use mech_core::{
     DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy, EncodedConstant,
     ExecutionResourceRequest, ExecutionTarget, ExternalInteraction, FloatWidth, FunctionInvocation,
     FunctionValueRepresentation, IdempotencyRequirement, InputPortLayout, InputPortPolicy,
-    IntegerWidth, KindExpr, MResult, MechFunction, MechFunctionCompiler, MechFunctionFactory,
-    MechFunctionImpl, NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
-    OperationContractDeclaration, OperationContractError, OperationContractId,
-    OperationContractTable, OperationContractTableBuilder, OutputConstruction, OutputPortPolicy,
-    RegionPolicy, Register, ResolvedInputPort, ResolvedOperationContract,
+    IntegerInterval, IntegerWidth, KindExpr, MResult, MechFunction, MechFunctionCompiler,
+    MechFunctionFactory, MechFunctionImpl, NominalKey, NominalKind, ObservationContract,
+    ObservationReplayPolicy, OperationContractDeclaration, OperationContractError,
+    OperationContractId, OperationContractTable, OperationContractTableBuilder, OutputConstruction,
+    OutputPortPolicy, RegionPolicy, Register, ResolvedInputPort, ResolvedOperationContract,
     ResolvedOperationDescriptor, ResolvedOutputPort, ResourceDelivery, ResourceIntent,
     RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
     RuntimeType, SchemaBody, SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder,
-    ShapeContractReference, ShapeRule, Value, ValueCell, ValueData, ValueDataDraft, ValueDraft,
-    compile_value_cell_matrix_literal_register,
+    SemanticModelError, ShapeContractReference, ShapeRule, SnapshotValueError, Value, ValueCell,
+    ValueData, ValueDataDraft, ValueDraft, compile_value_cell_matrix_literal_register,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
         MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SequenceView,
@@ -3113,6 +3113,249 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
             right.shape().parameter_values()
         );
     }
+}
+
+fn integer_codec_artifact(body: SchemaBody, data: ValueDataDraft) -> ProgramArtifact {
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder.insert(schema(body)).unwrap();
+    let build = builder.finish().unwrap();
+    let schema = build.resolve(handle).unwrap();
+    let schemas = build.into_parts().0;
+    let value = ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data,
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .unwrap();
+    let mut constants = ConstantStoreBuilder::new(&schemas);
+    constants.insert(value).unwrap();
+    let constants = constants.finish().unwrap().into_parts().0;
+    ProgramArtifactDraft {
+        schemas,
+        constants,
+        contracts: OperationContractTable::empty(),
+        requirements: ApplicationRequirementTable::empty(),
+        inputs: Box::new([]),
+        slots: Box::new([]),
+        nodes: Box::new([]),
+        bindings: Box::new([]),
+        outputs: Box::new([]),
+        constraints: Box::new([]),
+        compute_regions: Box::new([]),
+    }
+    .finalize()
+    .unwrap()
+}
+
+#[test]
+fn bytecode_v1_preserves_exact_interval_extremes_and_primitive_integer_identity() {
+    for (width, unsigned_payload, signed_min_payload, signed_max_payload) in [
+        (
+            IntegerWidth::W8,
+            ValueDataDraft::U8(u8::MAX),
+            ValueDataDraft::I8(i8::MIN),
+            ValueDataDraft::I8(i8::MAX),
+        ),
+        (
+            IntegerWidth::W16,
+            ValueDataDraft::U16(u16::MAX),
+            ValueDataDraft::I16(i16::MIN),
+            ValueDataDraft::I16(i16::MAX),
+        ),
+        (
+            IntegerWidth::W32,
+            ValueDataDraft::U32(u32::MAX),
+            ValueDataDraft::I32(i32::MIN),
+            ValueDataDraft::I32(i32::MAX),
+        ),
+        (
+            IntegerWidth::W64,
+            ValueDataDraft::U64(u64::MAX),
+            ValueDataDraft::I64(i64::MIN),
+            ValueDataDraft::I64(i64::MAX),
+        ),
+        (
+            IntegerWidth::W128,
+            ValueDataDraft::U128(u128::MAX),
+            ValueDataDraft::I128(i128::MIN),
+            ValueDataDraft::I128(i128::MAX),
+        ),
+    ] {
+        let (unsigned_max, signed_min, signed_max) = if width == IntegerWidth::W128 {
+            (u128::MAX, i128::MIN, i128::MAX)
+        } else {
+            let half = 1_i128 << ((width as u16) - 1);
+            ((1_u128 << (width as u16)) - 1, -half, half - 1)
+        };
+        for (interval, data) in [
+            (
+                IntegerInterval::Unsigned {
+                    width,
+                    lower: unsigned_max,
+                    upper: unsigned_max,
+                    upper_inclusive: true,
+                },
+                unsigned_payload,
+            ),
+            (
+                IntegerInterval::Signed {
+                    width,
+                    lower: signed_min,
+                    upper: signed_min,
+                    upper_inclusive: true,
+                },
+                signed_min_payload,
+            ),
+            (
+                IntegerInterval::Signed {
+                    width,
+                    lower: signed_max,
+                    upper: signed_max,
+                    upper_inclusive: true,
+                },
+                signed_max_payload,
+            ),
+        ] {
+            for body in [SchemaBody::IntegerInterval(interval), interval.base_body()] {
+                let artifact = integer_codec_artifact(body.clone(), data.clone());
+                let decoded = decode_program_artifact_bytecode_v1(
+                    &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+                )
+                .unwrap();
+                assert_eq!(decoded.revision(), artifact.revision());
+                let constant = ConstantId::new(0);
+                let before = artifact.constants().get(constant).unwrap();
+                let after = decoded.constants().get(constant).unwrap();
+                assert_eq!(decoded.schemas().get(after.schema()).unwrap().body(), &body);
+                assert_eq!(after.schema_key(), schema(body.clone()).key());
+                assert_eq!(after.shape(), before.shape());
+                assert!(
+                    before
+                        .snapshot_eq(artifact.schemas(), after, decoded.schemas())
+                        .unwrap()
+                );
+                assert_eq!(
+                    mech_core::snapshot::canonical_snapshot_data_draft(&body, after.data())
+                        .unwrap(),
+                    data,
+                );
+                assert_eq!(
+                    after.canonical_payload_bytes(decoded.schemas()).unwrap(),
+                    before.canonical_payload_bytes(artifact.schemas()).unwrap(),
+                );
+                if body == interval.base_body() {
+                    // Freeze the pre-interval primitive schema tags and exact width.
+                    let mut primitive_encoding = vec![1];
+                    primitive_encoding.extend_from_slice(&0_u32.to_le_bytes());
+                    primitive_encoding.extend_from_slice(&3_u64.to_le_bytes());
+                    primitive_encoding.push(match interval {
+                        IntegerInterval::Unsigned { .. } => 2,
+                        IntegerInterval::Signed { .. } => 3,
+                    });
+                    primitive_encoding.extend_from_slice(&(width as u16).to_le_bytes());
+                    assert_eq!(schema(body).canonical_bytes().as_ref(), primitive_encoding);
+                    assert_ne!(
+                        after.schema_key(),
+                        schema(SchemaBody::IntegerInterval(interval)).key()
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn decoded_interval_schema_rejects_invalid_bounds_semantically() {
+    let valid = integer_codec_artifact(
+        SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        }),
+        ValueDataDraft::U8(9),
+    );
+    let sections = encode_program_artifact_sections(&valid).unwrap();
+    for interval in [
+        IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 256,
+            upper_inclusive: false,
+        },
+        IntegerInterval::Signed {
+            width: IntegerWidth::W8,
+            lower: -129,
+            upper: 0,
+            upper_inclusive: true,
+        },
+        IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 10,
+            upper: 10,
+            upper_inclusive: false,
+        },
+        IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 10,
+            upper: 1,
+            upper_inclusive: true,
+        },
+    ] {
+        let mut malformed = sections.clone();
+        let mut schemas: Vec<SchemaDraft> = serde_json::from_slice(&malformed.schemas).unwrap();
+        assert_eq!(schemas.len(), 1);
+        schemas[0].body = SchemaBody::IntegerInterval(interval);
+        malformed.schemas = serde_json::to_vec(&schemas).unwrap();
+        // Decode real section JSON directly: no envelope/checksum can mask the
+        // exact schema finalization error, including an out-of-width excluded endpoint.
+        assert!(matches!(
+            decode_program_artifact_sections(&malformed),
+            Err(ArtifactBytecodeError::Semantic(
+                SemanticModelError::InvalidIntegerIntervalV1
+            ))
+        ));
+    }
+    assert_eq!(
+        decode_program_artifact_sections(&sections)
+            .unwrap()
+            .revision(),
+        valid.revision()
+    );
+}
+
+#[test]
+fn decoded_interval_payload_rejects_nonmembers_before_constant_publication() {
+    let valid = integer_codec_artifact(
+        SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        }),
+        ValueDataDraft::U8(9),
+    );
+    let sections = encode_program_artifact_sections(&valid).unwrap();
+    for nonmember in [0, 10] {
+        let mut malformed = sections.clone();
+        let mut constants: Vec<ValueDraft> = serde_json::from_slice(&malformed.constants).unwrap();
+        assert_eq!(constants.len(), 1);
+        constants[0].data = ValueDataDraft::U8(nonmember);
+        malformed.constants = serde_json::to_vec(&constants).unwrap();
+        assert!(matches!(
+            decode_program_artifact_sections(&malformed),
+            Err(ArtifactBytecodeError::Snapshot(
+                SnapshotValueError::IntegerIntervalViolationV1 { .. }
+            ))
+        ));
+    }
+    let restored = decode_program_artifact_sections(&sections).unwrap();
+    assert_eq!(restored.revision(), valid.revision());
+    assert!(matches!(
+        restored.constants().get(ConstantId::new(0)).unwrap().data(),
+        ValueData::U8(9)
+    ));
 }
 
 #[test]

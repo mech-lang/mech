@@ -924,6 +924,169 @@ fn fixed_integer_interval_set_union_publishes_exact_source_and_decoded_identity(
     );
 }
 
+fn interval_u8_body() -> SchemaBody {
+    SchemaBody::IntegerInterval(mech_core::IntegerInterval::Unsigned {
+        width: IntegerWidth::W8,
+        lower: 1,
+        upper: 10,
+        upper_inclusive: false,
+    })
+}
+
+fn check_interval_live_rejection(
+    source: &str,
+    body: SchemaBody,
+    base_body: SchemaBody,
+    accepted: D,
+    rejected: D,
+    recovered: D,
+    invalid_path: &[mech_core::snapshot::SnapshotPathSegment],
+) {
+    let document = SourceDocument::parse_resolved(
+        "audit:interval/live-rejection",
+        Revision(9),
+        source,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(document.is_strictly_clean());
+    let catalog = mech_stdlib::source_catalog();
+    let artifact = CanonicalSourceFrontend
+        .compile_document_with_catalog_and_input_schemas(
+            &document.document(),
+            Arc::clone(&catalog),
+            BTreeMap::from([("signal".to_owned(), body.clone())]),
+        )
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let bytecode = decoded(&artifact);
+    let expected = snapshot(body.clone(), accepted.clone());
+    let next = snapshot(body, recovered.clone());
+    let base_values = [accepted, rejected, recovered].map(|data| snapshot(base_body.clone(), data));
+    for (route, artifact) in [("source", &artifact), ("bytecode", &bytecode)] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x865, 1),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        assert_eq!(instance.plan.inputs.len(), 1);
+        let input = instance.plan.inputs[0].clone();
+        let states = artifact
+            .slots()
+            .iter()
+            .filter(|slot| slot.role == mech_engine::SlotRole::State)
+            .collect::<Vec<_>>();
+        assert_eq!(states.len(), 1);
+        let state_slot = states[0].slot;
+        let checked = |value: &Value| value.rebind(input.schema, &input.shape, artifact.schemas());
+        let publish = |instance: &mut mech_engine::resident::ReactiveInstance, value: &Value| {
+            instance
+                .prepare_turn_values(&[CapturedValueInput {
+                    slot: input.slot,
+                    value,
+                }])
+                .and_then(|prepared| prepared.publish())
+                .unwrap();
+        };
+        let assert_accepted = |instance: &mech_engine::resident::ReactiveInstance,
+                               value: &Value| {
+            let output = instance.copied_output(0).unwrap();
+            assert_exact(&output, value, route);
+            assert_eq!(
+                output.shape(),
+                value.shape(),
+                "{route}: complete output shape"
+            );
+            let mech_engine::resident::ResidentValueBorrow::Snapshot { values, .. } =
+                instance.state_borrow(state_slot).unwrap()
+            else {
+                panic!("{route}: interval state must retain an exact snapshot");
+            };
+            assert_eq!(values.len(), 1);
+            let state = values[0].as_ref().unwrap();
+            assert_exact(state, value, &format!("{route}: state"));
+            assert_eq!(
+                state.shape(),
+                value.shape(),
+                "{route}: complete state shape"
+            );
+        };
+
+        // Explicit checked host entry is distinct from an implicit live
+        // narrowing conversion in the source language.
+        let admitted = checked(&base_values[0]).unwrap();
+        publish(&mut instance, &admitted);
+        assert_accepted(&instance, &expected);
+        let epoch = instance.published_epoch();
+        let state_revisions = instance.state.epochs(state_slot);
+        let state_hash = instance.published_state_hash();
+
+        let error = checked(&base_values[1]).unwrap_err();
+        let mech_core::snapshot::SnapshotValueError::IntegerIntervalViolationV1 { path } = error
+        else {
+            panic!("{route}: expected membership refusal, got {error:?}");
+        };
+        assert_eq!(path.segments(), invalid_path);
+        // A valid ordinary integer snapshot is not itself an admitted interval
+        // input, even when its payload happens to be an interval member.
+        for unconverted in [&base_values[0], &base_values[1], &base_values[2]] {
+            let error = match instance.prepare_turn_values(&[CapturedValueInput {
+                slot: input.slot,
+                value: unconverted,
+            }]) {
+                Ok(_) => panic!("{route}: unconverted base input must not implicitly narrow"),
+                Err(error) => error,
+            };
+            assert!(
+                matches!(error, mech_engine::resident::ResidentExecutionError::InputLayout { slot } if slot == input.slot)
+            );
+            assert_eq!(instance.published_epoch(), epoch);
+            assert_eq!(instance.state.epochs(state_slot), state_revisions);
+            assert_eq!(instance.published_state_hash(), state_hash);
+            assert_accepted(&instance, &expected);
+        }
+        let admitted = checked(&base_values[2]).unwrap();
+        publish(&mut instance, &admitted);
+        assert!(instance.published_epoch() > epoch);
+        assert_ne!(instance.state.epochs(state_slot), state_revisions);
+        assert_accepted(&instance, &next);
+    }
+}
+
+#[test]
+fn interval_live_scalar_rejects_external_candidate_without_publication_and_recovers() {
+    check_interval_live_rejection(
+        "~state⟨u8:1..10⟩ := 2\nstate = signal\nstate\n",
+        interval_u8_body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8),
+        D::U8(2),
+        D::U8(10),
+        D::U8(3),
+        &[],
+    );
+}
+
+#[test]
+fn interval_live_matrix_rejects_a_late_external_member_atomically_and_recovers() {
+    let matrix_body = |element| SchemaBody::Matrix {
+        element: Box::new(element),
+        dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into_boxed_slice(),
+    };
+    let matrix = |values: &[u8]| D::Matrix(values.iter().copied().map(D::U8).collect());
+    check_interval_live_rejection(
+        "~state := [2⟨u8:1..10⟩ 4⟨u8:1..10⟩ 5⟨u8:1..10⟩; 6⟨u8:1..10⟩ 7⟨u8:1..10⟩ 8⟨u8:1..10⟩]\nstate = signal\nstate\n",
+        matrix_body(interval_u8_body()),
+        matrix_body(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+        matrix(&[2, 4, 5, 6, 7, 8]),
+        matrix(&[3, 4, 5, 6, 7, 10]),
+        matrix(&[3, 4, 5, 6, 7, 9]),
+        &[mech_core::snapshot::SnapshotPathSegment::MatrixElement(5)],
+    );
+}
+
 #[test]
 fn bound_match_relocates_literal_patterns_and_arm_constants() {
     for (signal, expected) in [(0.0, 11.0), (0.5, 22.0)] {
