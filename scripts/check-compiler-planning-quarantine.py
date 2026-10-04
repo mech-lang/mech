@@ -52,6 +52,18 @@ TEST_MODULE = re.compile(
     r"#\[cfg\([^\]]*\btest\b[^\]]*\)\]\s*(?:pub(?:\([^)]*\))?\s+)?mod\s+[A-Za-z0-9_]+\s*\{",
     re.MULTILINE,
 )
+RETIRED_NAMESPACES = {
+    "mech_engine": {"interpreter", "expressions", "literals", "structures"},
+    "mech_core": {"nodes"},
+}
+QUALIFIED_NAMESPACE = re.compile(r"\b(?P<owner>mech_engine|mech_core)\s*::\s*")
+RUST_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+PRECEDING_PATH_MEMBER = re.compile(r"(?P<member>[A-Za-z_][A-Za-z0-9_]*)\s*::\s*$")
+USE_GROUP_BRACE = re.compile(r"[{}]")
+RAW_LITERAL = re.compile(r'(?:br|rb|cr|r)(?P<hashes>#{0,255})"')
+CHAR_LITERAL = re.compile(
+    r"(?:b)?'(?:\\(?:[nrt0\\'\"]|x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]{1,6}\})|[^\\'\r\n])'"
+)
 
 # These are exact provider/value conversion adapters already governed by the
 # value-system boundary. The quarantine checker deliberately grants no parent
@@ -86,6 +98,135 @@ def rust_sources(root: Path) -> list[Path]:
 
 def line_number(source: str, offset: int) -> int:
     return source.count("\n", 0, offset) + 1
+
+
+def rust_code(source: str) -> str:
+    """Mask comments/literals, as in the other architecture gates, retaining offsets."""
+    masked = list(source)
+
+    def blank(start: int, end: int) -> None:
+        for index in range(start, end):
+            if masked[index] not in "\r\n":
+                masked[index] = " "
+
+    index = 0
+    while index < len(source):
+        if source.startswith("//", index):
+            end = source.find("\n", index + 2)
+            end = len(source) if end < 0 else end
+        elif source.startswith("/*", index):
+            depth = 1
+            end = index + 2
+            while end < len(source) and depth:
+                if source.startswith("/*", end):
+                    depth += 1
+                    end += 2
+                elif source.startswith("*/", end):
+                    depth -= 1
+                    end += 2
+                else:
+                    end += 1
+        elif character := CHAR_LITERAL.match(source, index):
+            end = character.end()
+        elif raw := RAW_LITERAL.match(source, index):
+            terminator = '"' + raw.group("hashes")
+            close = source.find(terminator, raw.end())
+            end = len(source) if close < 0 else close + len(terminator)
+        elif source[index] == '"' or source.startswith(('b"', 'c"'), index):
+            end = index + (1 if source[index] == '"' else 2)
+            escaped = False
+            while end < len(source):
+                character = source[end]
+                end += 1
+                if escaped:
+                    escaped = False
+                elif character == "\\":
+                    escaped = True
+                elif character == '"':
+                    break
+        else:
+            index += 1
+            continue
+        blank(index, end)
+        index = end
+    # A raw identifier is the same namespace, not an exemption from retirement.
+    return re.sub(r"\br#(?=[A-Za-z_][A-Za-z0-9_]*)", "  ", "".join(masked))
+
+
+def retired_root_members(source: str, start: int, owner: str) -> list[tuple[int, str]]:
+    """Inspect only root members of a qualified path or grouped Rust use tree."""
+    while start < len(source) and source[start].isspace():
+        start += 1
+    identifier = RUST_IDENTIFIER.match(source, start)
+    if identifier is not None:
+        module = identifier.group()
+        if module in RETIRED_NAMESPACES[owner]:
+            return [(start, module)]
+        if module == "self":
+            separator = re.match(r"\s*::\s*", source[identifier.end():])
+            if separator is not None:
+                return retired_root_members(source, identifier.end() + separator.end(), owner)
+        return []
+    if start >= len(source) or source[start] != "{":
+        return []
+    members: list[tuple[int, str]] = []
+    depth = 1
+    member_start = start + 1
+    for delimiter in re.finditer(r"[{},]", source[start + 1:]):
+        offset = start + 1 + delimiter.start()
+        if delimiter.group() == "{":
+            depth += 1
+        elif delimiter.group() == "}":
+            depth -= 1
+            if depth == 0:
+                members.extend(retired_root_members(source, member_start, owner))
+                break
+        elif depth == 1:
+            members.extend(retired_root_members(source, member_start, owner))
+            member_start = offset + 1
+    return members
+
+
+def qualified_use_groups(source: str) -> list[tuple[int, int]]:
+    """Find named use-tree groups, whose children are not external crate roots."""
+    groups: list[tuple[int, int]] = []
+    for use in re.finditer(r"\buse\b[^;]*;", source):
+        openings: list[tuple[int, bool]] = []
+        for brace in USE_GROUP_BRACE.finditer(source, use.start(), use.end()):
+            if brace.group() == "{":
+                named = PRECEDING_PATH_MEMBER.search(source, use.start(), brace.start())
+                openings.append((brace.start(), named is not None))
+            elif openings:
+                opening, named = openings.pop()
+                if named:
+                    groups.append((opening, brace.start()))
+    return groups
+
+
+def check_retired_namespaces(root: Path) -> list[str]:
+    failures: list[str] = []
+    for relative in rust_sources(root):
+        source = rust_code((root / relative).read_text(encoding="utf-8"))
+        local_groups = qualified_use_groups(source)
+        found: set[tuple[int, str]] = set()
+        for qualified in QUALIFIED_NAMESPACE.finditer(source):
+            preceding = PRECEDING_PATH_MEMBER.search(source, 0, qualified.start())
+            # `use ::mech_engine` starts an absolute path, whereas
+            # `project::mech_engine` names an unrelated local module.
+            if preceding is not None and preceding.group("member") not in {
+                "use", "as", "return", "break", "yield",
+            }:
+                continue
+            if any(opening < qualified.start() < closing for opening, closing in local_groups):
+                continue
+            owner = qualified.group("owner")
+            for offset, module in retired_root_members(source, qualified.end(), owner):
+                found.add((offset, f"{owner}::{module}"))
+        for offset, namespace in sorted(found):
+            failures.append(
+                f"{relative}:{line_number(source, offset)}: retired {namespace} namespace"
+            )
+    return failures
 
 
 def rust_without_test_modules(source: str) -> str:
@@ -229,6 +370,7 @@ def check_shipping_reachability(root: Path) -> list[str]:
 def run(root: Path = ROOT) -> list[str]:
     return (
         check_module_boundary(root)
+        + check_retired_namespaces(root)
         + check_removed_surface(root)
         + check_shipping_reachability(root)
     )

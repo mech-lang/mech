@@ -161,6 +161,137 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
         failures = CHECKER.run(root)
         self.assertFalse(any("mech-program-v1" in row for row in failures))
 
+    def test_deleted_runtime_error_import_fails_before_compilation(self):
+        root = self.fixture()
+        compiler = root / "src/runtime/src/runtime/program/compiler.rs"
+        compiler.write_text(
+            "use mech_core::LegacyValue;\n"
+            "#[cfg(any())]\n"
+            "use mech_engine::expressions::ReactiveComprehensionStructureUnsupported;\n",
+            encoding="utf-8",
+        )
+        # The previous physical/export and executor checks missed this consumer.
+        self.assertEqual(
+            CHECKER.check_module_boundary(root)
+            + CHECKER.check_removed_surface(root)
+            + CHECKER.check_shipping_reachability(root),
+            [],
+        )
+        self.assertEqual(
+            CHECKER.run(root),
+            ["src/runtime/src/runtime/program/compiler.rs:3: retired mech_engine::expressions namespace"],
+        )
+
+    def test_disabled_qualified_retired_imports_fail_for_every_owner(self):
+        for owner, modules in CHECKER.RETIRED_NAMESPACES.items():
+            for module in modules:
+                for path in (
+                    f"{owner}::{module}::OldSurface",
+                    f"::{owner} /* root */ :: /* member */ {module} :: OldSurface",
+                    f"r#{owner}::r#{module}::OldSurface",
+                ):
+                    with self.subTest(path=path):
+                        root = self.fixture()
+                        product = root / "src/runtime/src/runtime/program/compiler.rs"
+                        product.write_text(f"#[cfg(any())]\nuse {path} as Old;\n", encoding="utf-8")
+                        self.assertTrue(any(
+                            f"retired {owner}::{module} namespace" in row
+                            for row in CHECKER.run(root)
+                        ))
+
+    def test_grouped_retired_imports_fail_without_banning_nested_local_names(self):
+        for owner, module in (
+            ("mech_engine", "expressions"),
+            ("mech_core", "nodes"),
+        ):
+            for path in (
+                f"{owner}::{{allowed::{{{module}}}, {module}::OldSurface}}",
+                f"{owner}::{{allowed, self::{{{module}::OldSurface}}}}",
+                f"{{{owner}::{{allowed, self::{module}::OldSurface}}, project::Other}}",
+            ):
+                with self.subTest(path=path):
+                    root = self.fixture()
+                    product = root / "src/runtime/src/runtime/program/compiler.rs"
+                    product.write_text(f"#[cfg(any())]\nuse {path};\n", encoding="utf-8")
+                    self.assertEqual(CHECKER.check_retired_namespaces(root), [
+                        f"src/runtime/src/runtime/program/compiler.rs:2: retired {owner}::{module} namespace"
+                    ])
+
+    def test_qualified_namespace_restoration_is_checked_in_all_maintained_rust_roots(self):
+        for source_root in ("src", "machines", "hosts", "tests"):
+            with self.subTest(source_root=source_root):
+                root = self.fixture()
+                relative = f"{source_root}/restoration_probe.rs"
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(
+                    "#[cfg(any())]\nfn unused(_: mech_engine::literals::OldSurface) {}\n",
+                    encoding="utf-8",
+                )
+                self.assertEqual(CHECKER.check_retired_namespaces(root), [
+                    f"{relative}:2: retired mech_engine::literals namespace"
+                ])
+
+    def test_retired_paths_in_comments_and_quoted_negative_fixtures_are_not_imports(self):
+        root = self.fixture()
+        negative = root / "tests/quoted_scanner_negative.rs"
+        negative.parent.mkdir(parents=True)
+        negative.write_text(
+            '// mech_engine::interpreter::OldSurface\n'
+            '/* mech_engine::expressions::OldSurface\n'
+            '   /* mech_engine::literals::OldSurface */\n'
+            '   mech_core::nodes::OldSurface */\n'
+            'const A: &str = "use mech_engine::structures::OldSurface;";\n'
+            'const B: &str = r###"use mech_engine::{expressions::OldSurface};"###;\n'
+            'const C: &[u8] = b"use mech_core::nodes::OldSurface;";\n'
+            'const D: &[u8] = br##"mech_engine::interpreter::OldSurface"##;\n'
+            'const E: &CStr = c"mech_engine::literals::OldSurface";\n'
+            'const F: &CStr = cr#"mech_engine::structures::OldSurface"#;\n'
+            'const G: &str = "escaped \\\" mech_core::nodes::OldSurface";\n'
+            "const CH: char = '\"'; const BYTE: u8 = b'\"';\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(CHECKER.run(root), [])
+
+    def test_comments_and_literals_do_not_hide_a_real_disabled_import(self):
+        root = self.fixture()
+        compiler = root / "src/runtime/src/runtime/program/compiler.rs"
+        compiler.write_text(
+            'const QUOTE: char = \'"\';\r\n'
+            '/* outer /* inner */ tail */\r\n'
+            'const FIXTURE: &str = r#"mech_core::nodes::OldSurface"#;\r\n'
+            '#[cfg(any())]\r\n'
+            'use mech_engine::structures::OldSurface;\r\n',
+            encoding="utf-8",
+        )
+        self.assertEqual(CHECKER.check_retired_namespaces(root), [
+            "src/runtime/src/runtime/program/compiler.rs:5: retired mech_engine::structures namespace"
+        ])
+
+    def test_canonical_intrinsic_and_unrelated_namespace_names_remain_allowed(self):
+        root = self.fixture()
+        product = root / "src/runtime/src/runtime/program/compiler.rs"
+        product.write_text(
+            "use mech_engine::{source_semantics::frontend, intrinsics::{aggregate, kind_conversion}};\n"
+            "use mech_core::{source_diagnostic, encoded_payload, execution::ComputePlacement};\n"
+            "use project::{expressions, interpreter, literals, structures, nodes};\n"
+            "mod expressions {} mod interpreter {} mod literals {} mod structures {} mod nodes {}\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(CHECKER.run(root), [])
+
+    def test_external_owner_names_inside_local_paths_are_not_external_namespaces(self):
+        root = self.fixture()
+        product = root / "src/runtime/src/runtime/program/compiler.rs"
+        product.write_text(
+            "use project::mech_engine::expressions::Local;\n"
+            "use crate /* local */ :: mech_core :: nodes :: Local;\n"
+            "use project::{mech_engine::structures::Local, local::{mech_core::nodes::Local}};\n"
+            "use {project::{mech_engine::literals::Local}, mech_engine::intrinsics::aggregate};\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(CHECKER.run(root), [])
+
 
 if __name__ == "__main__":
     unittest.main()

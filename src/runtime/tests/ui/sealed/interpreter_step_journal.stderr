@@ -1,15 +1,15 @@
-error[E0603]: struct `Interpreter` is private
- --> tests/ui/sealed/interpreter_step_journal.rs:1:18
+error[E0599]: no method named `advance_reactive_turn_with_journal` found for struct `ReactivePlan` in the current scope
+ --> tests/ui/sealed/interpreter_step_journal.rs:5:15
   |
-1 | use mech_engine::Interpreter;
-  |                  ^^^^^^^^^^^ private struct
+5 |     drop(plan.advance_reactive_turn_with_journal());
+  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-note: the struct `Interpreter` is defined here
- --> $WORKSPACE/src/engine/src/lib.rs
+help: there is a method `advance_reactive_turn` with a similar name, but with different arguments
+ --> $WORKSPACE/src/core/src/function/mod.rs
   |
-  |     Interpreter, InterpreterExecution, InterpreterRef, RuntimeContextBinding,
-  |     ^^^^^^^^^^^
-help: import `Interpreter` directly
-  |
-1 | use mech_engine::interpreter::Interpreter;
-  |                  +++++++++++++
+  | /     pub fn advance_reactive_turn(
+  | |         &mut self,
+  | |         state: &mut ReactiveTurnState,
+  | |         dirty_cells: &[CanonicalCellId],
+  | |     ) -> MResult<ReactiveTurnOutcome> {
+  | |_____________________________________^
