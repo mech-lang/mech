@@ -38,6 +38,15 @@ const COMPUTE_INPUT_NAMES: [&str; 5] = [
     "measurement-noise",
 ];
 
+fn unavailable_gpu(context: &str, reason: impl std::fmt::Display) {
+    assert_ne!(
+        std::env::var("MECH_REQUIRE_GPU").as_deref(),
+        Ok("1"),
+        "{context}: required actual WebGPU execution unavailable: {reason}"
+    );
+    eprintln!("SKIP {context} WebGPU execution: {reason}");
+}
+
 fn source_document(instances: usize) -> SourceDocument {
     source_document_from(SOURCE, instances)
 }
@@ -351,7 +360,10 @@ result
             program.compute_program(),
         ) {
             Ok(factory) => factory,
-            Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => continue,
+            Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                unavailable_gpu("rectangular matrix", &error);
+                continue;
+            }
             Err(error) => panic!("{backend} rejected the rectangular program: {error}"),
         };
         let executable = factory.compile(program.compute_program()).unwrap();
@@ -473,7 +485,10 @@ result
             program.compute_program(),
         ) {
             Ok(factory) => factory,
-            Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => continue,
+            Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                unavailable_gpu("matrix right-hand-side solve", &error);
+                continue;
+            }
             Err(error) => panic!("{backend} rejected the matrix solve program: {error}"),
         };
         let executable = factory.compile(program.compute_program()).unwrap();
@@ -698,7 +713,10 @@ fn registered_backends_share_one_thousand_lane_fixed_shape_conformance_contract(
             program.compute_program(),
         ) {
             Ok(factory) => factory,
-            Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => continue,
+            Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                unavailable_gpu("1,000-lane fixed-shape conformance", &error);
+                continue;
+            }
             Err(error) => panic!("{backend} rejected the conformance program: {error}"),
         };
         assert_eq!(factory.descriptor().id.as_str(), backend);
@@ -991,9 +1009,8 @@ fn native_gpu_lane_zero_is_independent_of_broadcast_extent() {
     let (batch_program, batch_inputs) = source_program(1_000);
     let mut single = match single_program.prepare_resident(&single_inputs) {
         Ok(session) => session,
-        Err(BatchedExecutionError::Native(message))
-            if message.to_ascii_lowercase().contains("adapter") =>
-        {
+        Err(BatchedExecutionError::Native(message)) if message == "GPU adapter unavailable" => {
+            unavailable_gpu("EKF lane-zero recurrence", &message);
             return;
         }
         Err(error) => panic!("single-lane native GPU preparation failed: {error}"),
@@ -1001,6 +1018,11 @@ fn native_gpu_lane_zero_is_independent_of_broadcast_extent() {
     let mut batch = batch_program
         .prepare_resident(&batch_inputs)
         .expect("the same adapter must admit the 1,000-lane program");
+    eprintln!(
+        "EKF lane-zero actual WebGPU adapters: single={}, batch={}",
+        single.adapter(),
+        batch.adapter()
+    );
     let state_slots = published_output_slots(&single_program, &single_inputs);
     assert_eq!(
         state_slots,
@@ -1272,13 +1294,14 @@ fn source_driven_broadcast_matches_the_native_gpu() {
     let mut gpu = match lowered.prepare_resident(&inputs) {
         Ok(gpu) => gpu,
         Err(mech_gpu::BatchedExecutionError::Native(message))
-            if message.to_ascii_lowercase().contains("adapter")
-                && message.to_ascii_lowercase().contains("unavailable") =>
+            if message == "GPU adapter unavailable" =>
         {
+            unavailable_gpu("source-driven EKF numerical comparison", &message);
             return;
         }
         Err(error) => panic!("native GPU preparation failed: {error}"),
     };
+    eprintln!("source-driven EKF actual WebGPU adapter: {}", gpu.adapter());
     let actual = gpu.run_turns(4).unwrap().state;
     let output_slots = published_output_slots(&lowered, &inputs);
     assert_eq!(
@@ -1296,14 +1319,16 @@ fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
     let (program, mut inputs) = source_program(32);
     let mut gpu = match program.prepare_resident(&inputs) {
         Ok(gpu) => gpu,
-        Err(BatchedExecutionError::Native(message))
-            if message.to_ascii_lowercase().contains("adapter")
-                && message.to_ascii_lowercase().contains("unavailable") =>
-        {
+        Err(BatchedExecutionError::Native(message)) if message == "GPU adapter unavailable" => {
+            unavailable_gpu("EKF integrity rejection", &message);
             return;
         }
         Err(error) => panic!("native GPU preparation failed: {error}"),
     };
+    eprintln!(
+        "EKF integrity rejection actual WebGPU adapter: {}",
+        gpu.adapter()
+    );
     let mut cpu = program.prepare_cpu(&inputs).unwrap();
     cpu.dispatch_turns(2).unwrap();
     gpu.dispatch_turns(2).unwrap();
@@ -1449,6 +1474,7 @@ fn canonical_derived_publications_commit_without_becoming_recurrence_state() {
             ) {
                 Ok(factory) => factory,
                 Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                    unavailable_gpu("derived-publication integrity rejection", &error);
                     continue;
                 }
                 Err(error) => panic!("{backend}: {error}"),
@@ -1572,6 +1598,7 @@ fn canonical_matrix_broadcast_uses_each_input_axis() {
             ) {
                 Ok(factory) => factory,
                 Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                    unavailable_gpu("canonical matrix broadcast", &error);
                     continue;
                 }
                 Err(error) => panic!("{backend}: {error}"),

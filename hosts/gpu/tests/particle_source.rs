@@ -19,6 +19,15 @@ use mech_runtime::{
 };
 use std::num::NonZeroU32;
 
+fn unavailable_gpu(context: &str, reason: impl std::fmt::Display) {
+    assert_ne!(
+        std::env::var("MECH_REQUIRE_GPU").as_deref(),
+        Ok("1"),
+        "{context}: required actual WebGPU execution unavailable: {reason}"
+    );
+    eprintln!("SKIP {context} WebGPU execution: {reason}");
+}
+
 const PARTICLE_SOURCE: &str = r#"
 ~positions := host-positions
 ~velocities := host-velocities
@@ -271,6 +280,7 @@ fn particle_source_and_bytecode_share_cpu_and_wgpu_results() {
             ) {
                 Ok(factory) => factory,
                 Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                    unavailable_gpu("particle source/bytecode", &error);
                     return None;
                 }
                 Err(error) => panic!("{backend} rejected particle bytecode: {error}"),
@@ -851,17 +861,21 @@ fn native_gpu_matches_the_cpu_backend_when_an_adapter_is_available() {
         ("dt".to_owned(), vec![0.1]),
     ]);
     let cpu = program.run_cpu(&inputs).expect("CPU backend must run");
-    let gpu = match program.run_gpu(&inputs) {
+    let gpu = match program.run_gpu_profiled(&inputs) {
         Ok(gpu) => gpu,
-        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => {
+            unavailable_gpu("particle numerical comparison", "GPU adapter unavailable");
+            return;
+        }
         Err(error) => panic!("GPU dispatch failed: {error}"),
     };
+    eprintln!("particle numerical actual WebGPU adapter: {}", gpu.adapter);
     assert_eq!(
         cpu.keys().collect::<Vec<_>>(),
-        gpu.keys().collect::<Vec<_>>()
+        gpu.outputs.keys().collect::<Vec<_>>()
     );
     for (name, cpu_values) in cpu {
-        assert_close(&gpu[&name], &cpu_values);
+        assert_close(&gpu.outputs[&name], &cpu_values);
     }
 }
 
@@ -880,7 +894,13 @@ fn served_particle_shader_matches_cpu_with_pointer_force() {
     let cpu = program.run_cpu(&inputs).expect("CPU reference must run");
     let gpu = match program.run_gpu_profiled(&inputs) {
         Ok(gpu) => gpu,
-        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => {
+            unavailable_gpu(
+                "served particle pointer-force numerical comparison",
+                "GPU adapter unavailable",
+            );
+            return;
+        }
         Err(error) => panic!("served particle shader failed: {error}"),
     };
     eprintln!("served particle adapter: {}", gpu.adapter);
@@ -934,9 +954,16 @@ fn resident_gpu_feeds_particle_outputs_into_the_next_turn() {
     ]);
     let mut resident = match program.prepare_resident(&initial_inputs) {
         Ok(resident) => resident,
-        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => {
+            unavailable_gpu("particle recurrence", "GPU adapter unavailable");
+            return;
+        }
         Err(error) => panic!("resident GPU preparation failed: {error}"),
     };
+    eprintln!(
+        "particle recurrence actual WebGPU adapter: {}",
+        resident.adapter()
+    );
     let gpu = resident.run_turns(3).expect("resident turns must run");
     assert_close(&gpu.outputs["result.0"], &expected["result.0"]);
     assert_close(&gpu.outputs["result.1"], &expected["result.1"]);
@@ -971,9 +998,16 @@ fn resident_gpu_accepts_new_inputs_without_resetting_state() {
 
     let mut resident = match program.prepare_resident(&initial) {
         Ok(resident) => resident,
-        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => {
+            unavailable_gpu("particle live-input update", "GPU adapter unavailable");
+            return;
+        }
         Err(error) => panic!("resident GPU preparation failed: {error}"),
     };
+    eprintln!(
+        "particle live-input actual WebGPU adapter: {}",
+        resident.adapter()
+    );
     resident
         .dispatch_turns(30)
         .expect("initial GPU turns must run");
@@ -1313,6 +1347,10 @@ fn canonical_activation_initializers_are_shared_and_run_only_once() {
     }
     match kernel.prepare_resident(&inputs) {
         Ok(mut gpu) => {
+            eprintln!(
+                "particle computed-initializer actual WebGPU adapter: {}",
+                gpu.adapter()
+            );
             let published = gpu.run_turns(2).unwrap().state;
             assert_eq!(
                 published.len(),
@@ -1323,7 +1361,10 @@ fn canonical_activation_initializers_are_shared_and_run_only_once() {
             }
         }
         Err(mech_gpu::BatchedExecutionError::Native(detail))
-            if detail == "GPU adapter unavailable" => {}
+            if detail == "GPU adapter unavailable" =>
+        {
+            unavailable_gpu("particle computed initializer", &detail);
+        }
         Err(error) => panic!("computed-initializer GPU preparation failed: {error}"),
     }
     assert_eq!(

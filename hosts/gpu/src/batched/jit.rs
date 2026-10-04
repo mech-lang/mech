@@ -132,6 +132,10 @@ impl BatchedJitCpuSession {
         &self.state
     }
 
+    pub fn input_values(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        &self.inputs
+    }
+
     pub const fn fault_count(&self) -> u64 {
         self.faults.fault_count
     }

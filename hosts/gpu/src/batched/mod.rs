@@ -709,6 +709,7 @@ impl FixedShapeKernel {
                     .iter()
                     .map(|publication| publication.slot),
             )
+            .chain(storage.inputs.iter().map(|input| input.slot))
             .collect::<BTreeSet<_>>();
         if program
             .interface()
@@ -720,7 +721,9 @@ impl FixedShapeKernel {
                 "fixed-shape output has no publication storage",
             ));
         }
-        if retained_slots.len() != storage.states.len() + storage.publications.len() {
+        if retained_slots.len()
+            != storage.states.len() + storage.publications.len() + storage.inputs.len()
+        {
             return Err(fixed_shape_program_error(
                 "fixed-shape retained storage slots overlap",
             ));
@@ -1121,6 +1124,11 @@ impl BatchedCpuSession {
         &self.state
     }
 
+    /// Current supplied inputs, independent of committed turn results.
+    pub fn input_values(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        &self.inputs
+    }
+
     pub const fn fault_count(&self) -> u64 {
         self.faults.fault_count
     }
@@ -1219,6 +1227,11 @@ impl BatchedSimdCpuSession {
 
     pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
         &self.state
+    }
+
+    /// Current supplied inputs, independent of committed turn results.
+    pub fn input_values(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        &self.inputs
     }
 
     pub const fn fault_count(&self) -> u64 {
@@ -1646,11 +1659,18 @@ impl<'a> BatchCompiler<'a> {
             });
         }
         let mut published = BTreeSet::new();
+        let input_slots = self
+            .inputs
+            .iter()
+            .map(|(slot, _, _)| *slot)
+            .collect::<BTreeSet<_>>();
         let publications = interface
             .outputs
             .iter()
             .filter(|output| {
-                !self.states.contains_key(&output.slot) && published.insert(output.slot)
+                !self.states.contains_key(&output.slot)
+                    && !input_slots.contains(&output.slot)
+                    && published.insert(output.slot)
             })
             .map(|output| {
                 let shape = self.shape(output.slot)?;
@@ -3706,7 +3726,51 @@ mod axis_tests {
         )
         .unwrap();
 
-        crate::ComputeLowerer.compile_batched(&decoded, 1).unwrap();
+        let inputs = BTreeMap::new();
+        let expected = [7.0, 15.0, 10.0, 22.0].repeat(3);
+        let mut expected_interface = None;
+        for (label, artifact) in [
+            ("canonical matmul", &artifact),
+            ("legacy multiply", &legacy),
+            ("decoded legacy multiply", &decoded),
+        ] {
+            let kernel = crate::ComputeLowerer.compile_batched(artifact, 3).unwrap();
+            let interface = kernel.compute_program().interface();
+            assert_eq!(interface.outputs.len(), 1, "{label}");
+            let output = &interface.outputs[0];
+            assert_eq!(output.dimensions.as_ref(), [2, 2], "{label}");
+            if let Some(expected_interface) = &expected_interface {
+                assert_eq!(interface, expected_interface, "{label}");
+            } else {
+                expected_interface = Some(interface.clone());
+            }
+            let mut scalar = kernel.prepare_cpu(&inputs).unwrap();
+            scalar.dispatch_turns(1).unwrap();
+            assert_eq!(scalar.state()[&output.slot], expected, "{label} scalar");
+            let mut simd = kernel.prepare_simd_cpu(&inputs).unwrap();
+            simd.dispatch_turns(1).unwrap();
+            assert_eq!(simd.state()[&output.slot], expected, "{label} SIMD");
+
+            #[cfg(feature = "native")]
+            match kernel.prepare_resident(&inputs) {
+                Ok(mut gpu) => {
+                    eprintln!("R26 {label} actual WebGPU adapter: {}", gpu.adapter());
+                    gpu.dispatch_turns(1).unwrap();
+                    let (_, values) = gpu.read_published_state().unwrap();
+                    assert_eq!(values[&output.slot], expected, "{label} WebGPU");
+                }
+                Err(BatchedExecutionError::Native(message))
+                    if message == "GPU adapter unavailable" =>
+                {
+                    assert!(
+                        std::env::var("MECH_REQUIRE_GPU").as_deref() != Ok("1"),
+                        "{label}: required actual WebGPU adapter unavailable"
+                    );
+                    eprintln!("SKIP R26 {label} WebGPU execution: adapter unavailable");
+                }
+                Err(error) => panic!("{label} WebGPU preparation failed: {error}"),
+            }
+        }
     }
 
     #[test]
@@ -3717,14 +3781,27 @@ mod axis_tests {
 
         assert_eq!(kernel.instances(), 3);
         assert_eq!(kernel.inputs().collect::<Vec<_>>(), vec![("signal", 1)]);
-        let mut session = kernel.prepare_cpu(&inputs).unwrap();
-        session.dispatch_turns(1).unwrap();
-        assert!(
-            session
-                .state()
-                .values()
-                .any(|values| values == &[1.0, 2.0, 3.0])
+        let program = kernel.compute_program();
+        let output = &program.interface().outputs[0];
+        assert_eq!(output.name.as_ref(), "result");
+        assert_eq!(
+            output.slot,
+            program.interface().input_named("signal").unwrap().slot
         );
+        assert!(
+            program
+                .fixed_shape_storage()
+                .unwrap()
+                .publications
+                .is_empty()
+        );
+        assert!(kernel.physical_states().is_empty());
+        let mut session = kernel.prepare_cpu(&inputs).unwrap();
+        assert_eq!(session.attempted_turns(), 0);
+        assert_eq!(session.input_values()[&output.slot], [1.0, 2.0, 3.0]);
+        session.dispatch_turns(1).unwrap();
+        assert!(session.state().is_empty());
+        assert_eq!(session.input_values()[&output.slot], [1.0, 2.0, 3.0]);
     }
 
     #[test]
@@ -3885,10 +3962,7 @@ mod axis_tests {
                     let kernel = crate::ComputeLowerer.compile_batched(artifact, 2).unwrap();
                     assert_eq!(kernel.compute_program().interface(), &interface);
                     let storage = kernel.compute_program().fixed_shape_storage().unwrap();
-                    assert_eq!(
-                        storage.publications.len(),
-                        if publishes_input { 3 } else { 2 }
-                    );
+                    assert_eq!(storage.publications.len(), 2);
                     assert_eq!(
                         storage
                             .publications
@@ -3944,7 +4018,8 @@ mod axis_tests {
                                 .iter()
                                 .any(|output| output.slot == input.slot)
                         );
-                        assert_eq!(session.state()[&input.slot], [7.0, 11.0]);
+                        assert!(!session.state().contains_key(&input.slot));
+                        assert_eq!(session.input_values()[&input.slot], [7.0, 11.0]);
                     }
                 }
             }
@@ -4633,7 +4708,9 @@ mod native {
                 let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some(&binding.name),
                     contents: bytemuck::cast_slice(values),
-                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                    usage: wgpu::BufferUsages::STORAGE
+                        | wgpu::BufferUsages::COPY_DST
+                        | wgpu::BufferUsages::COPY_SRC,
                 });
                 let object = planned_execution
                     .binding_object(binding.binding)
@@ -4842,7 +4919,14 @@ mod native {
                     .iter()
                     .map(|output| {
                         let slot = CellSlotId::new(output.slot);
-                        (slot, state_buffers[&slot][1 - group].clone())
+                        let buffer = if output.binding.is_some() {
+                            // The shared physical plan aliases directly published
+                            // inputs, which remain readable without a turn.
+                            input_buffers[&slot].clone()
+                        } else {
+                            state_buffers[&slot][1 - group].clone()
+                        };
+                        (slot, buffer)
                     })
                     .collect()
             });
@@ -5090,10 +5174,9 @@ mod native {
             Ok(started.elapsed())
         }
 
-        fn record_completed_writes(
+        fn record_completed_input_uploads(
             &mut self,
             uploaded_objects: &[MemoryObjectId],
-            written_state_groups: [bool; 2],
         ) -> Result<(), BatchedExecutionError> {
             for object in uploaded_objects {
                 let bytes = self
@@ -5112,6 +5195,15 @@ mod native {
                     .record_device_write(*object, bytes)
                     .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             }
+            Ok(())
+        }
+
+        fn record_completed_writes(
+            &mut self,
+            uploaded_objects: &[MemoryObjectId],
+            written_state_groups: [bool; 2],
+        ) -> Result<(), BatchedExecutionError> {
+            self.record_completed_input_uploads(uploaded_objects)?;
             for (object, bytes) in self.memory_plan.writable_device_objects().iter().copied() {
                 self.managed_memory
                     .record_device_write(object, bytes)
@@ -5381,9 +5473,21 @@ mod native {
                 );
                 readbacks.push((*slot, size));
             }
+            let mut uploaded_objects = Vec::new();
+            uploaded_objects
+                .try_reserve_exact(self.queued_uploads.len())
+                .map_err(|_| {
+                    BatchedExecutionError::Native(
+                        "GPU upload publication reservation was not available".to_owned(),
+                    )
+                })?;
+            let upload_holds = self.queued_uploads.drain(..).map(|(object, hold)| {
+                uploaded_objects.push(object);
+                hold
+            });
             let unsubmitted = self
                 .submission_tracker
-                .reserve_batch(core::iter::once(readback_hold))
+                .reserve_batch(core::iter::once(readback_hold).chain(upload_holds))
                 .map_err(BatchedExecutionError::Native)?;
             let submission = self.queue.submit(Some(encoder.finish()));
             unsubmitted.record_submitted(submission);
@@ -5430,8 +5534,11 @@ mod native {
                 &self.managed_memory,
             )
             .map_err(|error| BatchedExecutionError::Native(error.to_string()));
-            let state = readback_result?;
             completion_result?;
+            // Copy-only readback also flushes pending input uploads, but does
+            // not execute a turn or publish any candidate state/derived value.
+            self.record_completed_input_uploads(&uploaded_objects)?;
+            let state = readback_result?;
             for slot in state.keys().copied() {
                 let object = self
                     .memory_plan

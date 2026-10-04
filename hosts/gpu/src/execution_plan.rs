@@ -643,6 +643,12 @@ fn physical_outputs(
                         binding.role == GpuExecutionBindingRole::Output
                             && binding.slot == output.slot
                     })
+                    .or_else(|| {
+                        bindings.iter().find(|binding| {
+                            binding.role == GpuExecutionBindingRole::Input
+                                && binding.slot == output.slot
+                        })
+                    })
                     .ok_or_else(|| {
                         GpuExecutionPlanError::Invalid(format!(
                             "output `{}` has no physical binding",
@@ -778,6 +784,50 @@ mod tests {
             physical_layout: GpuPlanLayout::RowMajor,
         });
         assert!(plan.validate().is_err());
+    }
+
+    #[test]
+    fn physical_input_outputs_alias_input_only_when_no_output_binding_exists() {
+        let mut plan = test_execution_plan(5);
+        let output = |name: &str| GpuPlanOutput {
+            name: name.to_owned(),
+            slot: 1,
+            physical_output: 0,
+            elements: 5,
+            elements_per_instance: 5,
+            dimensions: vec![5],
+            sample_dimensions: vec![5],
+            physical_layout: GpuPlanLayout::RowMajor,
+        };
+        plan.outputs = vec![output("input"), output("input-alias")];
+        plan.physical_outputs = physical_outputs(&plan.outputs, &plan.bindings).unwrap();
+        plan.validate().unwrap();
+        assert!(plan.states.is_empty());
+        assert_eq!(plan.physical_outputs.len(), 1);
+        assert_eq!(plan.physical_outputs[0].binding, Some(0));
+        assert_eq!(plan.physical_outputs[0].aliases, ["input", "input-alias"]);
+        let decoded: GpuExecutionPlan =
+            serde_json::from_str(&serde_json::to_string(&plan).unwrap()).unwrap();
+        assert_eq!(decoded, plan);
+
+        // Elementwise lowering already owns an output buffer for this slot.
+        // Input bindings precede it, but must not silently replace that existing
+        // publication/transfer contract with an input readback.
+        plan.bindings.push(GpuPlanBinding {
+            binding: 1,
+            name: "existing-output".to_owned(),
+            access: GpuBindingAccess::ReadWrite,
+            role: GpuExecutionBindingRole::Output,
+            slot: 1,
+            elements: 5,
+            scalar: GpuPlanScalar::F32,
+            initial_values: None,
+        });
+        plan.physical_outputs = physical_outputs(&plan.outputs, &plan.bindings).unwrap();
+        plan.validate().unwrap();
+        assert_eq!(plan.physical_outputs.len(), 1);
+        assert_eq!(plan.physical_outputs[0].binding, Some(1));
+        assert_eq!(plan.physical_outputs[0].aliases, ["input", "input-alias"]);
     }
 
     #[test]
