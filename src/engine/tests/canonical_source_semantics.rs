@@ -149,14 +149,10 @@ fn execute_document<'a>(
                 })
                 .collect::<Vec<_>>();
             instance.turn(&captured).unwrap();
-            assert_eq!(
-                instance
-                    .copied_output(0)
-                    .unwrap()
-                    .canonical_data_draft()
-                    .unwrap(),
-                expected
-            );
+            let output = instance.copied_output(0).unwrap();
+            assert_eq!(output.schema_key(), instance.plan.outputs[0].schema_key);
+            assert_eq!(output.shape(), &instance.plan.outputs[0].shape);
+            assert_eq!(output.canonical_data_draft().unwrap(), expected);
         }
     }
 }
@@ -5776,6 +5772,174 @@ fn fixed_integer_intervals_keep_identity_and_check_boundaries() {
         live_update.code,
         "source-semantics/unsupported-live-interval-conversion"
     );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn fixed_integer_interval_ordering_binds_and_executes_exact_kinds() {
+    fn assert_bool_matrix_schema(source: &str, rows: u64, columns: u64) {
+        let compiled = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .unwrap();
+        assert_eq!(
+            compiled
+                .schemas()
+                .get(compiled.program().outputs[0].schema)
+                .unwrap()
+                .body(),
+            &SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Bool),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(rows),
+                    mech_core::DimensionExpr::Constant(columns)
+                ]
+                .into_boxed_slice(),
+            },
+        );
+    }
+    // Distinct less/equal/greater lanes distinguish all four resident relations.
+    // execute_document executes both the source artifact and decoded bytecode.
+    for (relation, expected) in [
+        ("<", [true, false, false, true, false, false]),
+        ("<=", [true, true, false, true, true, false]),
+        (">", [false, false, true, false, false, true]),
+        (">=", [false, true, true, false, true, true]),
+    ] {
+        for (left, right, value) in [
+            (2, 3, expected[0]),
+            (3, 3, expected[1]),
+            (4, 3, expected[2]),
+        ] {
+            execute_document(
+                &format!("{left}⟨u8:1..10⟩ {relation} {right}⟨u8:1..10⟩\n"),
+                [(Vec::new(), ValueDataDraft::Bool(value))],
+            );
+        }
+        let source = format!(
+            "[2⟨u8:1..10⟩ 3⟨u8:1..10⟩ 4⟨u8:1..10⟩; 6⟨u8:1..10⟩ 7⟨u8:1..10⟩ 8⟨u8:1..10⟩] {relation} [3⟨u8:1..10⟩ 3⟨u8:1..10⟩ 3⟨u8:1..10⟩; 7⟨u8:1..10⟩ 7⟨u8:1..10⟩ 7⟨u8:1..10⟩]\n"
+        );
+        assert_bool_matrix_schema(&source, 2, 3);
+        execute_document(
+            &source,
+            [(
+                Vec::new(),
+                ValueDataDraft::Matrix(expected.into_iter().map(ValueDataDraft::Bool).collect()),
+            )],
+        );
+        // These are the existing snapshot owner's exact interval broadcast
+        // layouts, specialized from the same closed interval identity only.
+        let matrix = "[2⟨u8:1..10⟩ 3⟨u8:1..10⟩ 4⟨u8:1..10⟩; 6⟨u8:1..10⟩ 7⟨u8:1..10⟩ 8⟨u8:1..10⟩]";
+        for (other, expanded) in [
+            ("4⟨u8:1..10⟩", [4, 4, 4, 4, 4, 4]),
+            ("[3⟨u8:1..10⟩ 3⟨u8:1..10⟩ 3⟨u8:1..10⟩]", [3, 3, 3, 3, 3, 3]),
+            ("[3⟨u8:1..10⟩; 7⟨u8:1..10⟩]", [3, 3, 3, 7, 7, 7]),
+        ] {
+            for reversed in [false, true] {
+                let (left, right) = if reversed {
+                    (other, matrix)
+                } else {
+                    (matrix, other)
+                };
+                let source = format!("{left} {relation} {right}\n");
+                assert_bool_matrix_schema(&source, 2, 3);
+                let expected = [2, 3, 4, 6, 7, 8]
+                    .into_iter()
+                    .zip(expanded)
+                    .map(|(matrix, other)| {
+                        let (left, right) = if reversed {
+                            (other, matrix)
+                        } else {
+                            (matrix, other)
+                        };
+                        ValueDataDraft::Bool(match relation {
+                            "<" => left < right,
+                            "<=" => left <= right,
+                            ">" => left > right,
+                            ">=" => left >= right,
+                            _ => unreachable!(),
+                        })
+                    })
+                    .collect();
+                execute_document(&source, [(Vec::new(), ValueDataDraft::Matrix(expected))]);
+            }
+        }
+    }
+    // One scalar bridge per exact integer width, not a type/operator Cartesian
+    // product. No interval is widened to its ordinary primitive schema.
+    for width in [
+        "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128",
+    ] {
+        execute_document(
+            &format!("2⟨{width}:1..10⟩ < 3⟨{width}:1..10⟩\n"),
+            [(Vec::new(), ValueDataDraft::Bool(true))],
+        );
+    }
+    // Adjacent exact values above F64 precision and at the signed minimum
+    // independently distinguish the snapshot ordering path from float casts.
+    for (width, low, high) in [
+        (
+            "u64",
+            9_007_199_254_740_993_i128,
+            9_007_199_254_740_994_i128,
+        ),
+        ("u128", (1_i128 << 100) + 1, (1_i128 << 100) + 2),
+        ("i128", -((1_i128 << 100) + 2), -((1_i128 << 100) + 1)),
+        ("i128", i128::MIN, i128::MIN + 1),
+    ] {
+        let bounds = format!("{width}:{low}..={high}");
+        execute_document(
+            &format!("{low}⟨{bounds}⟩ < {high}⟨{bounds}⟩\n"),
+            [(Vec::new(), ValueDataDraft::Bool(true))],
+        );
+        let matrix_source =
+            format!("[{low}⟨{bounds}⟩ {high}⟨{bounds}⟩] >= [{high}⟨{bounds}⟩ {low}⟨{bounds}⟩]\n");
+        assert_bool_matrix_schema(&matrix_source, 1, 2);
+        execute_document(
+            &matrix_source,
+            [(
+                Vec::new(),
+                ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::Bool(false), ValueDataDraft::Bool(true)]
+                        .into_boxed_slice(),
+                ),
+            )],
+        );
+    }
+    let low = u128::MAX - 1;
+    let high = u128::MAX;
+    let bounds = format!("u128:{low}..={high}");
+    execute_document(
+        &format!("{low}⟨{bounds}⟩ < {high}⟨{bounds}⟩\n"),
+        [(Vec::new(), ValueDataDraft::Bool(true))],
+    );
+}
+
+#[test]
+fn fixed_integer_interval_ordering_rejects_implicit_widening() {
+    for relation in ["<", "<=", ">", ">="] {
+        for (left, right) in [
+            ("1⟨u8:1..10⟩", "2u8"),
+            ("1u8", "2⟨u8:1..10⟩"),
+            ("1⟨u8:1..10⟩", "2⟨u8:2..10⟩"),
+            ("1⟨u8:1..10⟩", "2⟨u8:1..9⟩"),
+            ("1⟨u8:1..10⟩", "2⟨u8:1..=10⟩"),
+            ("1⟨u8:1..10⟩", "2⟨u16:1..10⟩"),
+            ("[1⟨u8:1..10⟩ 2⟨u8:1..10⟩]", "[2u8 3u8]"),
+            ("[1u8 2u8]", "[2⟨u8:1..10⟩ 3⟨u8:1..10⟩]"),
+            ("[1⟨u8:1..10⟩ 2⟨u8:1..10⟩]", "2u8"),
+            ("1u8", "[2⟨u8:1..10⟩ 3⟨u8:1..10⟩]"),
+        ] {
+            let source = format!("{left} {relation} {right}");
+            let error = CanonicalSourceFrontend
+                .compile_expression(&expression(&source))
+                .err()
+                .expect("ordering must not erase interval identity or narrow/widen operands");
+            assert_eq!(
+                error.code, "source-semantics/incompatible-comparison-kinds",
+                "{source}"
+            );
+        }
+    }
 }
 
 #[test]

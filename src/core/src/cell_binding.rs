@@ -8103,10 +8103,12 @@ mod tests {
             &source.resolved_descriptor().unwrap(),
             FunctionValueRepresentation::Matrix {
                 element: FunctionMatrixElement::U8,
-                storage: FunctionMatrixStoragePattern::AnyStorage,
+                storage: FunctionMatrixStoragePattern::Exact(FunctionMatrixRepresentation::MatrixD),
             },
         )
         .unwrap();
+        assert_eq!(output.schema(), source.schema());
+        assert_eq!(*output.shape(), *source.shape());
         assert_eq!(
             output.snapshot().unwrap().canonical_data_draft().unwrap(),
             ValueDataDraft::Matrix(

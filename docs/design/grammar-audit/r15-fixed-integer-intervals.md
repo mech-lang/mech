@@ -341,3 +341,75 @@ jobs and ordinary test threads:
 Historical results above remain assigned to their original candidates. CI
 remains paused; local evidence is not exact-head Full CI, an external clean
 review or a seal.
+
+## PR CI and exact ordering closeout (2026-10-04)
+
+The user restacked all fifteen R15 patches onto qualified R26
+`8899be8bf7c81fd38a54eea5d0a031144a925be5`, producing `2ee7706ba`.
+Range-diff confirms every patch unchanged. The empty, skip-free trigger
+`6f2eb2e86` has the same complete tree as reviewed `814cce330d`.
+Subsequent review 5406531421 on `2ee7706ba` nevertheless found an additional
+ordering issue; identical trees do not make that finding disappear.
+
+CI is now authorized for R15 through its branch PR. Normal PR run
+`37206905754` selected Full validation but failed its architecture and core
+owner gates. The separate workflow-dispatch run `37205943106` was cancelled
+at the user's request and supplies no passing qualification.
+
+The architecture failure was the missing `IntegerInterval` allowance for an
+actual canonical-source test import. The exact import inventory is updated;
+the checker is unchanged. The core failure was the previously recorded matrix
+output-seed fixture: an allocation requires a concrete backing, not the opaque
+`AnyStorage` pattern. The fixture now requests supported `Exact(MatrixD)` and
+checks unchanged schema, complete shape and both admitted lower-bound lanes.
+No production storage or interval validation rule is relaxed. The actual core
+CI owner command includes the library and six integration targets; the earlier
+focused 48-test publication pass did not establish that entire owner command.
+
+Review comment 4177940006 exposed a separate source/runtime type boundary.
+Intervals have `Ordered`, but the ordering schemes inherited `Number` and
+`Promotes`, so the resident's existing exact comparison implementation was
+unreachable from source. Before correction, the two new source tests ran:
+the positive failed with `incompatible-comparison-kinds` because the interval
+did not satisfy `Number`; the mixed-identity refusal test passed.
+
+The correction uses the existing compiler-only source-template mechanism.
+All four ordering operations retain their previous numeric, Index and String
+schemes. Only an identical, valid interval pair appends concrete exact scalar
+and maintained elementwise schemes. Scalar/matrix, row/column and compatible
+matrix dimensions use the existing comparison owners. No runtime arithmetic,
+numeric capability, implicit narrowing, interval subtyping or wire format is
+changed. A generic `Ordered` prototype was discarded before publication
+because it would admit unrelated unsupported layouts.
+
+One core contract test verifies identity conversions, independent symbolic
+axes, unchanged ordinary schemes and mixed-kind refusal. Two source tests
+exercise all four relations, nonsquare ordering, both broadcast axes and
+operand orders, all ten integer widths, adjacent exact values above floating
+precision, signed minimum and U128 maximum, and mixed base/bounds/inclusion/
+width refusal. Actual source and decoded-artifact execution checks published
+schema, complete shape and values. Their subcases are not independent suite
+counts.
+
+Fresh local qualification of this correcting code, continuing from `6f2eb2e86`,
+uses locked offline nightly-2026-03-03, warning denial, no incremental
+compilation, two build jobs and ordinary test threads:
+
+- Core `--all-features --lib --test type_memory_contract
+  --test storage_capability --test operation_memory_requirement
+  --test type_memory_boundary --test r6_memory_runtime --test r6_memory_safety
+  --test type_system_contract --test type_system_builtin --test type_system_solver`:
+  274 library, 7 memory-contract, 12 storage, 14 operation-memory, 9 boundary,
+  48 managed-memory, 23 memory-safety, 16 type-contract, 17 builtin and 30
+  solver tests passed. This refresh includes the previously failing CI owner.
+- Engine `--no-default-features --features full_source,resident-artifact,compiler
+  --test program_artifact_contract --test canonical_source_semantics`:
+  all 37 artifact and 140 source-semantic tests passed.
+- All nineteen commands from the static architecture job passed on the
+  correcting source, including formatting, the exact import inventory,
+  78 CI/browser Python cases, unsafe and R1-R6 contracts, and the bytecode
+  format's 21 deterministic fixtures.
+
+Historical evidence above remains attributed to its original code. Fresh
+correcting-head review and the PR's complete selected CI remain seal gates;
+neither the failed older PR run nor local results are relabeled as a seal.

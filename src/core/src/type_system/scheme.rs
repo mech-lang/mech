@@ -1316,6 +1316,9 @@ pub fn numeric_binary_for_predicate(
 
 pub fn maintained_source_scheme_template(name: &str) -> Option<SourceSchemeTemplate> {
     match name {
+        "compare/lt" | "compare/lte" | "compare/gt" | "compare/gte" => {
+            Some(SourceSchemeTemplate::OrderedComparison)
+        }
         "matrix/horzcat" => Some(SourceSchemeTemplate::HorizontalConcatenation),
         "matrix/vertcat" => Some(SourceSchemeTemplate::VerticalConcatenation),
         "set/define" => Some(SourceSchemeTemplate::SetDefinition),
@@ -1335,6 +1338,36 @@ pub fn instantiate_source_scheme_template(
     template: SourceSchemeTemplate,
     inputs: &[ResolvedType],
 ) -> Result<Vec<KindScheme>, SemanticModelError> {
+    if template == SourceSchemeTemplate::OrderedComparison {
+        // Preserve the existing numeric, Index and String declarations. Only
+        // an identical valid interval pair adds its exact resident-capable
+        // scalar/elementwise family; Ordered alone must not widen admission of
+        // unrelated scalar or broadcast layouts.
+        let mut schemes = maintained_source_schemes("compare/lt")?
+            .expect("ordering has maintained source schemes");
+        let leaf = |input: &ResolvedType| match input.kind() {
+            KindExpr::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2 => element.as_ref().clone(),
+            kind => kind.clone(),
+        };
+        if let [left, right] = inputs {
+            let element = leaf(left);
+            if let KindExpr::IntegerInterval(interval) = &element
+                && interval.is_valid()
+                && leaf(right) == element
+            {
+                schemes.push(exact_binary(
+                    element.clone(),
+                    element.clone(),
+                    BuiltinScalarKind::Bool.kind_expr(),
+                )?);
+                schemes.extend(exact_elementwise_comparison(element)?);
+            }
+        }
+        return Ok(schemes);
+    }
     let scheme = match template {
         SourceSchemeTemplate::HorizontalConcatenation => {
             instantiate_concatenation_scheme(inputs, true)?
@@ -1358,6 +1391,9 @@ pub fn instantiate_source_scheme_template(
             )?
         }
         SourceSchemeTemplate::TableJoin(mode) => instantiate_table_join_scheme(inputs, mode)?,
+        SourceSchemeTemplate::OrderedComparison => {
+            unreachable!("ordering returns its scheme family above")
+        }
     };
     Ok(vec![scheme])
 }

@@ -79,6 +79,188 @@ fn exact_conversion_promotion_and_cast_are_independent_relations() {
 }
 
 #[test]
+fn maintained_ordering_resolves_exact_interval_kinds_without_numeric_promotion() {
+    let interval = KindExpr::IntegerInterval(IntegerInterval::Unsigned {
+        width: IntegerWidth::W128,
+        lower: (1_u128 << 100) + 1,
+        upper: (1_u128 << 100) + 4,
+        upper_inclusive: false,
+    });
+    let interval_type = closed(interval.clone());
+    assert!(interval_type.satisfies(BuiltinKindPredicate::Ordered));
+    assert!(!interval_type.satisfies(BuiltinKindPredicate::Number));
+    assert_eq!(
+        numeric_promotion(&interval_type, &interval_type).unwrap(),
+        None
+    );
+    let matrix_kind = |element| KindExpr::Matrix {
+        element: Box::new(element),
+        dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into_boxed_slice(),
+    };
+    for operation in ["compare/lt", "compare/lte", "compare/gt", "compare/gte"] {
+        let declaration = maintained_source_type_declaration(operation).unwrap();
+        let template = declaration
+            .template
+            .expect("maintained ordering is a closed input-aware family");
+        let resolve = |inputs: &[ResolvedType]| {
+            let schemes = instantiate_source_scheme_template(template, inputs).unwrap();
+            let candidates = schemes
+                .iter()
+                .enumerate()
+                .map(|(id, scheme)| TypeOverloadCandidate {
+                    id: id as u64,
+                    scheme,
+                })
+                .collect::<Vec<_>>();
+            resolve_type_overloads(
+                TypeConstraintOrigin::new(operation, None),
+                &candidates,
+                inputs,
+                None,
+            )
+        };
+        for (left, right, output) in [
+            (
+                interval_type.clone(),
+                interval_type.clone(),
+                closed(BuiltinScalarKind::Bool.kind_expr()),
+            ),
+            (
+                closed(matrix_kind(interval.clone())),
+                closed(matrix_kind(interval.clone())),
+                closed(matrix_kind(BuiltinScalarKind::Bool.kind_expr())),
+            ),
+            (
+                interval_type.clone(),
+                closed(matrix_kind(interval.clone())),
+                closed(matrix_kind(BuiltinScalarKind::Bool.kind_expr())),
+            ),
+            (
+                closed(matrix_kind(interval.clone())),
+                interval_type.clone(),
+                closed(matrix_kind(BuiltinScalarKind::Bool.kind_expr())),
+            ),
+        ] {
+            let inputs = [left, right];
+            let resolution = resolve(&inputs).unwrap();
+            assert_eq!(resolution.outputs.as_ref(), &[output]);
+            assert!(
+                resolution
+                    .conversions
+                    .iter()
+                    .zip(&inputs)
+                    .all(|(conversion, input)| {
+                        &conversion.source == input
+                            && &conversion.target == input
+                            && conversion.step == ConversionStep::Identity
+                            && conversion.cost == 0
+                    }),
+                "{operation} must retain interval/schema identity rather than promote it"
+            );
+        }
+        for other in [
+            closed(BuiltinScalarKind::U128.kind_expr()),
+            closed(KindExpr::IntegerInterval(IntegerInterval::Unsigned {
+                width: IntegerWidth::W128,
+                lower: (1_u128 << 100) + 2,
+                upper: (1_u128 << 100) + 4,
+                upper_inclusive: false,
+            })),
+            closed(KindExpr::IntegerInterval(IntegerInterval::Unsigned {
+                width: IntegerWidth::W128,
+                lower: (1_u128 << 100) + 1,
+                upper: (1_u128 << 100) + 5,
+                upper_inclusive: false,
+            })),
+            closed(KindExpr::IntegerInterval(IntegerInterval::Unsigned {
+                width: IntegerWidth::W128,
+                lower: (1_u128 << 100) + 1,
+                upper: (1_u128 << 100) + 4,
+                upper_inclusive: true,
+            })),
+        ] {
+            assert!(resolve(&[interval_type.clone(), other.clone()]).is_err());
+            assert!(resolve(&[other, interval_type.clone()]).is_err());
+        }
+        // Independent input dimensions must not be unified into one symbolic
+        // origin merely because an execution can establish equal extents.
+        let symbolic_matrix = |row_parameter: bool| {
+            ResolvedType::new(
+                KindExpr::Matrix {
+                    element: Box::new(interval.clone()),
+                    dimensions: if row_parameter {
+                        vec![
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Constant(3),
+                        ]
+                    } else {
+                        vec![
+                            DimensionExpr::Constant(2),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]
+                    }
+                    .into_boxed_slice(),
+                },
+                vec![dimension_parameter(0, DimensionLifetime::Turn, 0, None)].into_boxed_slice(),
+            )
+            .unwrap()
+        };
+        let inputs = [symbolic_matrix(true), symbolic_matrix(false)];
+        let compatible =
+            resolve(&inputs).expect("equal-extent obligations allow distinct input origins");
+        assert!(
+            matches!(compatible.outputs[0].kind(), KindExpr::Matrix { element, dimensions }
+            if element.as_ref() == &BuiltinScalarKind::Bool.kind_expr() && dimensions.len() == 2)
+        );
+        assert!(
+            compatible
+                .conversions
+                .iter()
+                .zip(&inputs)
+                .all(|(conversion, input)| &conversion.source == input
+                    && &conversion.target == input
+                    && conversion.step == ConversionStep::Identity)
+        );
+        // The template is an extension of the pre-existing non-interval
+        // registry, not a generic Ordered admission bypass.
+        for inputs in [
+            vec![closed(KindExpr::Index), closed(KindExpr::Index)],
+            vec![
+                closed(matrix_kind(BuiltinScalarKind::String.kind_expr())),
+                closed(BuiltinScalarKind::String.kind_expr()),
+            ],
+            vec![
+                closed(BuiltinScalarKind::String.kind_expr()),
+                closed(matrix_kind(BuiltinScalarKind::String.kind_expr())),
+            ],
+            vec![
+                closed(BuiltinScalarKind::U8.kind_expr()),
+                closed(BuiltinScalarKind::U16.kind_expr()),
+            ],
+        ] {
+            assert_eq!(
+                instantiate_source_scheme_template(template, &inputs).unwrap(),
+                maintained_source_schemes(operation).unwrap().unwrap(),
+            );
+        }
+        assert!(resolve(&[closed(KindExpr::Index), closed(KindExpr::Index)]).is_err());
+        let promoted = resolve(&[
+            closed(BuiltinScalarKind::U8.kind_expr()),
+            closed(BuiltinScalarKind::U16.kind_expr()),
+        ])
+        .unwrap();
+        assert_eq!(
+            promoted.outputs.as_ref(),
+            &[closed(BuiltinScalarKind::Bool.kind_expr())]
+        );
+        assert_eq!(
+            promoted.conversions[0].target,
+            closed(BuiltinScalarKind::U16.kind_expr())
+        );
+    }
+}
+
+#[test]
 fn kind_variables_close_options_and_structural_aggregates() {
     let type_parameter = KindParameterId::new(0);
     let identity = scheme(
