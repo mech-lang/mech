@@ -19,6 +19,73 @@ class ProgramArtifactContractTests(unittest.TestCase):
     def test_repository_contract_passes(self) -> None:
         self.assertEqual(CHECKER.run(ROOT), [])
 
+    def canonical_product_sources(self) -> tuple[str, str]:
+        return (
+            (ROOT / "src/engine/src/program/compiler_planning.rs").read_text(),
+            (ROOT / "src/runtime/src/runtime/program/compiler.rs").read_text(),
+        )
+
+    def test_canonical_product_encodes_the_actual_artifact(self) -> None:
+        program, runtime = self.canonical_product_sources()
+        self.assertIn("encode_program_artifact_bytecode_v1(&artifact)", program)
+        changed = program.replace("encode_program_artifact_bytecode_v1(&artifact)", "encode_program_artifact_bytecode_v1(&other_artifact)", 1)
+        failures = CHECKER.validate_canonical_compilation_product(changed, runtime)
+        self.assertTrue(any("encode the exact supplied artifact" in failure for failure in failures), failures)
+
+    def test_canonical_product_requires_the_real_encoder(self) -> None:
+        program, runtime = self.canonical_product_sources()
+        changed = program.replace("encode_program_artifact_bytecode_v1(&artifact)", "Ok(Vec::new())", 1)
+        failures = CHECKER.validate_canonical_compilation_product(changed, runtime)
+        self.assertTrue(any("encode the exact supplied artifact" in failure for failure in failures), failures)
+
+    def test_canonical_product_retains_the_actual_artifact(self) -> None:
+        program, runtime = self.canonical_product_sources()
+        constructor = CHECKER.function_body(program, "pub fn from_canonical_artifact(")
+        self.assertIsNotNone(constructor)
+        self.assertIn("            artifact,", constructor)
+        changed = program.replace(constructor, constructor.replace("            artifact,", "            artifact: other_artifact,", 1), 1)
+        failures = CHECKER.validate_canonical_compilation_product(changed, runtime)
+        self.assertTrue(any("retain the supplied artifact" in failure for failure in failures), failures)
+
+    def test_document_compilation_forwards_the_actual_artifact(self) -> None:
+        program, runtime = self.canonical_product_sources()
+        document = CHECKER.function_body(runtime, "pub(crate) fn compile_document(")
+        self.assertIsNotNone(document)
+        changed = runtime.replace(document, document.replace("from_canonical_artifact(artifact)", "from_canonical_artifact(other_artifact)", 1), 1)
+        failures = CHECKER.validate_canonical_compilation_product(program, changed)
+        self.assertTrue(any("forward its exact canonical artifact" in failure for failure in failures), failures)
+
+    def test_document_compilation_requires_canonical_preparation(self) -> None:
+        program, runtime = self.canonical_product_sources()
+        document = CHECKER.function_body(runtime, "pub(crate) fn compile_document(")
+        self.assertIsNotNone(document)
+        changed = runtime.replace(document, document.replace("self.canonical_document_artifact(document)", "self.unchecked_document_artifact(document)", 1), 1)
+        failures = CHECKER.validate_canonical_compilation_product(program, changed)
+        self.assertTrue(any("obtain the canonical document artifact" in failure for failure in failures), failures)
+
+    def test_document_compilation_retains_the_selected_function_catalog(self) -> None:
+        program, runtime = self.canonical_product_sources()
+        preparation = CHECKER.function_body(runtime, "fn canonical_document_artifact_with_projection(")
+        self.assertIsNotNone(preparation)
+        self.assertIn("Arc::clone(&self.function_catalog)", preparation)
+        changed = runtime.replace(preparation, preparation.replace("Arc::clone(&self.function_catalog)", "default_catalog()", 1), 1)
+        failures = CHECKER.validate_canonical_compilation_product(program, changed)
+        self.assertTrue(any("Arc::clone(&self.function_catalog)" in failure for failure in failures), failures)
+
+    def test_document_compilation_retains_external_contract_resolution(self) -> None:
+        program, runtime = self.canonical_product_sources()
+        preparation = CHECKER.function_body(runtime, "fn canonical_document_artifact_with_projection(")
+        self.assertIsNotNone(preparation)
+        changed = runtime.replace(preparation, preparation.replace("compile_artifact_with_external_contracts", "compile_artifact", 1), 1)
+        failures = CHECKER.validate_canonical_compilation_product(program, changed)
+        self.assertTrue(any("compile_artifact_with_external_contracts" in failure for failure in failures), failures)
+
+    def test_tokens_outside_the_product_constructor_do_not_satisfy_the_guard(self) -> None:
+        program, runtime = self.canonical_product_sources()
+        changed = program.replace("pub fn from_canonical_artifact(", "pub fn unchecked_product(", 1)
+        failures = CHECKER.validate_canonical_compilation_product(changed, runtime)
+        self.assertTrue(any("missing the immutable canonical artifact product constructor" in failure for failure in failures), failures)
+
     def test_canonical_source_proof_rejects_missing_field_assertions(self) -> None:
         source = (ROOT / "src/engine/tests/canonical_document_state.rs").read_text()
         for field in (

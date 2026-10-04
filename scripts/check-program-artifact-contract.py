@@ -169,6 +169,42 @@ def validate_bytecode_sections(source: str, required: list[str]) -> list[str]:
     return failures
 
 
+def validate_canonical_compilation_product(program: str, runtime_compiler: str) -> list[str]:
+    """Follow the normal retained-source path to its exact immutable artifact."""
+    failures: list[str] = []
+    constructor = function_body(program, "pub fn from_canonical_artifact(")
+    if constructor is None:
+        failures.append("normal compiler path is missing the immutable canonical artifact product constructor")
+    else:
+        compact = re.sub(r"\s+", "", constructor)
+        if "letbytecode=encode_program_artifact_bytecode_v1(&artifact)" not in compact:
+            failures.append("canonical compilation product does not encode the exact supplied artifact")
+        if "Ok(Self{artifact,bytecode," not in compact:
+            failures.append("canonical compilation product does not retain the supplied artifact and its encoded bytes")
+
+    document = function_body(runtime_compiler, "pub(crate) fn compile_document(")
+    compact_document = re.sub(r"\s+", "", document or "")
+    if "letartifact=self.canonical_document_artifact(document)?;" not in compact_document:
+        failures.append("normal document compilation does not obtain the canonical document artifact")
+    if "ProgramCompilationProduct::from_canonical_artifact(artifact)" not in compact_document:
+        failures.append("normal document compilation does not forward its exact canonical artifact to the product")
+
+    artifact = function_body(runtime_compiler, "fn canonical_document_artifact(")
+    if "self.canonical_document_artifact_with_projection(document,false)" not in re.sub(r"\s+", "", artifact or ""):
+        failures.append("normal document artifact path does not select the retained canonical preparation owner")
+    preparation = function_body(runtime_compiler, "fn canonical_document_artifact_with_projection(")
+    compact_preparation = re.sub(r"\s+", "", preparation or "")
+    for required in (
+        "CanonicalSourceFrontend::compile_document_with_catalog_and_resources",
+        "CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources",
+        "Arc::clone(&self.function_catalog)",
+        "program.compile_artifact_with_external_contracts(&ResidentExternalContractResolver::new(self.resources,))",
+    ):
+        if required not in compact_preparation:
+            failures.append(f"canonical document artifact preparation is missing {required}")
+    return failures
+
+
 def changed_protected_paths(
     root: Path, base: str, paths: list[str], head: str = "HEAD"
 ) -> list[str]:
@@ -272,6 +308,7 @@ def run(root: Path = ROOT) -> list[str]:
     sections += (root / "src/core/src/program/bytecode/header.rs").read_text()
     test = (root / "src/engine/tests/program_artifact_contract.rs").read_text()
     program = (root / "src/engine/src/program/compiler_planning.rs").read_text()
+    runtime_compiler = (root / "src/runtime/src/runtime/program/compiler.rs").read_text()
     encoding = (root / "src/engine/src/artifact/encoding.rs").read_text()
     snapshot_data = (root / "src/core/src/snapshot/data.rs").read_text()
     failures.extend(validate_model(model, manifest))
@@ -290,14 +327,7 @@ def run(root: Path = ROOT) -> list[str]:
     for forbidden in ("LegacyValue", "LegacyCompiledGraph", "artifact_from_legacy_graph"):
         if forbidden in bytecode:
             failures.append(f"bytecode decoder retains forbidden compatibility token {forbidden}")
-    for required in (
-        "compile_program_product",
-        "compile_executable_program_artifact",
-        "encode_program_artifact_sections",
-        "write_bytecode_with_artifact",
-    ):
-        if required not in program:
-            failures.append(f"normal compiler path is missing {required}")
+    failures.extend(validate_canonical_compilation_product(program, runtime_compiler))
     source_proof = (root / "src/engine/tests/canonical_document_state.rs").read_text()
     failures.extend(validate_ordinary_source_proof(source_proof))
     for required in (
