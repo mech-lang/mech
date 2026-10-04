@@ -295,6 +295,97 @@ remain in place. This is owner correction evidence, not final product-matrix or
 landing qualification. R26 CI remains paused and the correcting head requests
 another review; no R15 or S8C changes are part of this correction.
 
+R26 current-input publication correction, 2026-10-03
+--------------------------------------------------
+
+Production correction `5888faaa6f7e2634fa6dcbd8100f374433757707` starts
+from R26 `efc049e9dee196e4ae293efbe568105cfb6c55ea` on R06
+`e5101287f1c2436d6fdb8a00566274f92ba3d0d0`. The two preceding CI-trigger
+commits have the same tree as the already reviewed tuple correction
+`873ebe7cf3722e12ec7d94e1d175701a98c759e9`. That tuple correction remains
+intact; the present correction adds no operations or supported value families.
+
+A valid canonical mixed-source/public-backend regression executed on reviewed
+`3f1f23772a588c980c2a84c3acc5bb73ecc60fee` inferred five lanes, accepted a
+scalar initializer of 7, and returned five zeros from the exact named input
+publication before any dispatch. Earlier fixtures rejected at source admission
+are not counted as reproductions. Distinct batched initializers are additionally
+checked on the correcting implementation.
+
+Fixed-shape input publications now alias retained input storage. Scalar, SIMD,
+JIT and GPU output reads distinguish current supplied inputs from initialized
+or last-committed state and derived publications. Preparation performs no hidden
+turn. Native copy-only readback completes pending input uploads without claiming
+shader/state writes. The physical plan prefers an existing Output binding and
+uses an Input binding only when no Output exists, preserving elementwise paths.
+Initializers and updates share the existing broadcast validator; public row-major
+matrix values are projected once into the fixed kernel's column-major storage.
+
+Source and decoded-artifact cases assert complete public names, order, schemas,
+shapes and values across direct, alias, tuple, nested and duplicate publications;
+an unconsumed input in a legal nonempty region; inferred five-lane batches and
+tail samples; nonsquare 2x3 matrices; input update; successful and rejected turns;
+and valid recovery. State-generation cases use the existing interactive host
+output-path projection and assert actual State owners. Document expressions after
+assignment remain derived candidates rather than being relabeled as state.
+
+Deterministic negative controls were executed and restored before qualification:
+disconnecting tuple-leaf discovery rejected range/inclusive in the ordinary-source
+four-range test; restoring the old input publication shadow and state-only read
+returned five zeros again in the pre-dispatch public test. The retained low-level
+manual-output test is not substituted for ordinary-source acceptance.
+
+The first native numerical run exposed a test fixture that labeled physical
+column-major matrix initializers as row-major. Test-only correction
+`665526f6f3d2df4c980f58ba93148ed502488962` declares that physical layout
+accurately. Independent 2x2 solve arithmetic confirms the original expected
+values. Public runtime matrices remain row-major. No numerical reference value
+or tolerance was changed, and the suites were rerun rather than counting the
+partially failed first run as success.
+
+Fresh qualification below uses locked nightly-2026-03-03, warnings denied,
+`CARGO_INCREMENTAL=0` and `CARGO_BUILD_JOBS=2` on `665526f6f3d2df4c980f58ba93148ed502488962`:
+
+- `cargo +nightly-2026-03-03 test --locked -p mech-compute --lib`: 17 passed.
+- `cargo +nightly-2026-03-03 test --locked -p mech-gpu --lib
+  --test canonical_publication -- --test-threads=2`: 27 library and 9 publication
+  tests passed in the default profile.
+- `cargo +nightly-2026-03-03 test --locked -p mech-gpu --features native,jit
+  --test canonical_publication
+  jit_publications_preserve_input_and_committed_state_generations -- --exact
+  --nocapture`: 1 passed, 10 filtered. This executes the public JIT lifecycle
+  case, not merely its feature-enabled compilation.
+- `cargo +nightly-2026-03-03 test --locked -p mech-runtime --no-default-features
+  --features full_source,resident-routing-source --test s8_recovery_numeric_targets
+  legacy_matrix_multiply_bytecode_remains_resolvable -- --exact`: 1 passed,
+  21 filtered. This executes persisted bytecode, not merely compilation.
+- With `MECH_REQUIRE_GPU=1`, `cargo +nightly-2026-03-03 test --locked -p mech-gpu
+  --features native --lib --test canonical_publication --test canonical_shipped_ekf
+  -- --nocapture --test-threads=2`: 57 library, 10 publication and 1 shipped-region
+  tests passed. Actual native adapter: Apple M1, Metal. Canonical matmul, legacy
+  multiply and decoded legacy multiply execute and assert complete values.
+- With `MECH_REQUIRE_GPU=1`, `cargo +nightly-2026-03-03 test --locked -p mech-gpu
+  --features native --test parallel_ekf --test particle_source
+  -- --nocapture --test-threads=2`: 22 EKF and 32 particle tests passed with actual
+  Apple M1/Metal execution. Device absence fails this mandatory profile; fallback
+  or unavailable-device skips cannot satisfy it. Existing numerical references
+  and tolerances are unchanged; served-particle maximum CPU/GPU error was 5.960e-8.
+
+The CI impact/full-contract Python suites passed all 75 tests. Formatting,
+whitespace, warning policy, memory planner/runtime, interactive architecture,
+production resident routing, compiler planning quarantine, runtime factory
+safety, canonical evidence imports and retired-value checks passed. The browser
+compute lifecycle harness and browser bridge syntax check passed; its GPU
+buffers are mocks and do not qualify a browser device or the assembled product.
+
+R06 is sealed at the unchanged parent `e5101287f1`, with clean exact-head review
+and successful Full CI run 37155590828. R26's previous clean review applies to
+`873ebe7cf3`; the existing Full CI run 37166299442 applies to `efc049e9d` and
+was still running at this publication. Neither qualifies the new correction.
+The correcting R26 review is requested after publication. New-head CI remains
+paused pending explicit authorization, and this evidence is not a seal. R25
+and assembled S8C product/distribution qualification remain separate gates.
+
 Type coverage audit
 -------------------------------------------------------------------------------
 
