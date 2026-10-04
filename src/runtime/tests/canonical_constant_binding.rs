@@ -20,7 +20,7 @@ use mech_core::{
 };
 use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, ProgramArtifact};
-use mech_runtime::SourceDocument;
+use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder, SourceDocument};
 use mech_syntax::document::{ParseConfig, Revision};
 
 struct Case {
@@ -853,6 +853,75 @@ fn assert_bound(program: &CanonicalSourceProgram, expected: &Value) {
             );
         }
     }
+}
+
+fn assert_public_interval_source(source: &str, expected: &Value) {
+    let artifact = compile_source(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for bytecode in [false, true] {
+        let mut runtime = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        let outcome = if bytecode {
+            runtime.load_bytecode_program(&bytes, ResidentDurabilityPolicy::Volatile)
+        } else {
+            runtime.load_source_program(source, ResidentDurabilityPolicy::Volatile)
+        }
+        .unwrap();
+        assert_exact(
+            &outcome.initial_value.to_value(),
+            expected,
+            "public interval load",
+        );
+        runtime.step_active_program().unwrap();
+        assert_exact(
+            &runtime
+                .output_value(artifact.outputs()[0].output)
+                .unwrap()
+                .unwrap()
+                .to_value(),
+            expected,
+            "public interval subsequent turn",
+        );
+    }
+}
+
+#[test]
+fn fixed_integer_interval_literal_publishes_exact_source_and_decoded_identity() {
+    let body = SchemaBody::IntegerInterval(mech_core::IntegerInterval::Unsigned {
+        width: IntegerWidth::W8,
+        lower: 1,
+        upper: 10,
+        upper_inclusive: false,
+    });
+    let expected = snapshot(body, D::U8(9));
+    assert_public_interval_source("answer := 9⟨u8:1..10⟩\nanswer\n", &expected);
+}
+
+#[test]
+fn fixed_integer_interval_set_union_publishes_exact_source_and_decoded_identity() {
+    let body = SchemaBody::Set {
+        element: Box::new(SchemaBody::IntegerInterval(
+            mech_core::IntegerInterval::Unsigned {
+                width: IntegerWidth::W8,
+                lower: 1,
+                upper: 10,
+                upper_inclusive: false,
+            },
+        )),
+        cardinality: CardinalitySpec::Dynamic {
+            upper_bound: Some(DimensionExpr::Constant(4)),
+        },
+    };
+    let expected = snapshot(
+        body,
+        D::Set(vec![D::U8(2), D::U8(5), D::U8(9)].into_boxed_slice()),
+    );
+    assert_public_interval_source(
+        "left := {2⟨u8:1..10⟩, 5⟨u8:1..10⟩}\nright := {5⟨u8:1..10⟩, 9⟨u8:1..10⟩}\nanswer := set/union(left, right)\nanswer\n",
+        &expected,
+    );
 }
 
 #[test]

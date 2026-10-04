@@ -513,6 +513,11 @@ fn resolved_schema_body(
             .ok_or_else(|| invalid_rule(format!("named kind {id:?} has no canonical schema"))),
         (KindExpr::Id, _) => Ok(SchemaBody::Id),
         (KindExpr::Index, _) => Ok(SchemaBody::Index),
+        (KindExpr::IntegerInterval(expected), SchemaBody::IntegerInterval(actual))
+            if expected == actual =>
+        {
+            Ok(template.clone())
+        }
         (KindExpr::Atom(expected), SchemaBody::Atom(actual)) if expected == actual => {
             Ok(template.clone())
         }

@@ -4,10 +4,11 @@ use mech_core::{
     AccessMode, AliasPolicy, BoundCall, BoundCallOrigin, CardinalitySpec, ChangeDetectionPolicy,
     DeliveryMode, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
     DimensionParameterId, DimensionParameterOrigin, ExecutionTarget, ExternalInteraction,
-    InputPortLayout, InputPortPolicy, KindExpr, OperationContractDeclaration, OperationId,
-    OutputConstruction, OutputPortPolicy, ResolvedOperationDescriptor, ResolvedOutputSchemaRule,
-    ResolvedType, ResolvedValueDescriptor, RuntimeFunctionId, SchemaBody, SchemaDraft, ShapeRule,
-    ValueCell, ValueDataDraft, materialize_resolved_output, shape_for_value_data,
+    InputPortLayout, InputPortPolicy, IntegerInterval, IntegerWidth, KindExpr,
+    OperationContractDeclaration, OperationId, OutputConstruction, OutputPortPolicy,
+    ResolvedOperationDescriptor, ResolvedOutputSchemaRule, ResolvedType, ResolvedValueDescriptor,
+    RuntimeFunctionId, SchemaBody, SchemaDraft, SchemaField, ShapeRule, ValueCell, ValueDataDraft,
+    materialize_resolved_output, shape_for_value_data,
 };
 use nalgebra::{DMatrix, DVector, RowDVector};
 
@@ -346,4 +347,362 @@ fn shared_dimension_witnesses_reject_inconsistent_extents() {
         )
         .is_err()
     );
+}
+
+fn interval_output_cases(interval: IntegerInterval) -> Vec<(&'static str, SchemaBody, Box<[u64]>)> {
+    interval_output_cases_with_element(SchemaBody::IntegerInterval(interval))
+}
+
+fn interval_output_cases_with_element(
+    element: SchemaBody,
+) -> Vec<(&'static str, SchemaBody, Box<[u64]>)> {
+    let fields = || {
+        vec![SchemaField {
+            name: "bounded".into(),
+            schema: element.clone(),
+        }]
+        .into_boxed_slice()
+    };
+    let cardinality = CardinalitySpec::Exact(DimensionExpr::Constant(2));
+    vec![
+        ("scalar", element.clone(), Box::new([])),
+        (
+            "option",
+            SchemaBody::Option(Box::new(element.clone())),
+            Box::new([]),
+        ),
+        (
+            "matrix",
+            SchemaBody::Matrix {
+                element: Box::new(element.clone()),
+                dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)]
+                    .into_boxed_slice(),
+            },
+            vec![2, 3].into_boxed_slice(),
+        ),
+        (
+            "tuple",
+            SchemaBody::Tuple(
+                vec![
+                    element.clone(),
+                    SchemaBody::Option(Box::new(element.clone())),
+                ]
+                .into_boxed_slice(),
+            ),
+            Box::new([]),
+        ),
+        ("record", SchemaBody::Record(fields()), Box::new([])),
+        (
+            "table",
+            SchemaBody::Table {
+                columns: fields(),
+                rows: cardinality.clone(),
+            },
+            vec![2].into_boxed_slice(),
+        ),
+        (
+            "set",
+            SchemaBody::Set {
+                element: Box::new(element.clone()),
+                cardinality: cardinality.clone(),
+            },
+            vec![2].into_boxed_slice(),
+        ),
+        (
+            "map",
+            SchemaBody::Map {
+                key: Box::new(element.clone()),
+                value: Box::new(element.clone()),
+                cardinality: cardinality.clone(),
+            },
+            vec![2].into_boxed_slice(),
+        ),
+        (
+            "nested",
+            SchemaBody::Tuple(
+                vec![
+                    SchemaBody::Option(Box::new(SchemaBody::Record(fields()))),
+                    SchemaBody::Map {
+                        key: Box::new(element.clone()),
+                        value: Box::new(SchemaBody::Option(Box::new(SchemaBody::Set {
+                            element: Box::new(element),
+                            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(1)),
+                        }))),
+                        cardinality,
+                    },
+                ]
+                .into_boxed_slice(),
+            ),
+            Box::new([]),
+        ),
+    ]
+}
+
+fn interval_descriptor(
+    body: SchemaBody,
+    declarations: Box<[DimensionParameterDeclaration]>,
+    witnesses: Box<[u64]>,
+) -> ResolvedValueDescriptor {
+    let schema = SchemaDraft {
+        dimension_parameters: declarations,
+        body,
+    }
+    .finalize()
+    .unwrap();
+    let shape = schema.instantiate_shape(witnesses).unwrap();
+    ResolvedValueDescriptor::from_schema(schema, shape).unwrap()
+}
+
+#[test]
+fn interval_output_materialization_preserves_exact_identity_for_every_authority() {
+    for width in [
+        IntegerWidth::W8,
+        IntegerWidth::W16,
+        IntegerWidth::W32,
+        IntegerWidth::W64,
+        IntegerWidth::W128,
+    ] {
+        for upper_inclusive in [false, true] {
+            for interval in [
+                IntegerInterval::Signed {
+                    width,
+                    lower: 1,
+                    upper: 9,
+                    upper_inclusive,
+                },
+                IntegerInterval::Unsigned {
+                    width,
+                    lower: 1,
+                    upper: 9,
+                    upper_inclusive,
+                },
+            ] {
+                for (family, body, extents) in interval_output_cases(interval) {
+                    let input = interval_descriptor(body.clone(), Box::new([]), Box::new([]));
+                    for rule in [
+                        ResolvedOutputSchemaRule::FromResolvedType,
+                        ResolvedOutputSchemaRule::Declared(body.clone()),
+                        ResolvedOutputSchemaRule::FromInput(0),
+                    ] {
+                        let output = materialize_resolved_output(
+                            input.resolved_type(),
+                            &rule,
+                            core::slice::from_ref(&input),
+                            extents.clone(),
+                        )
+                        .unwrap_or_else(|error| {
+                            panic!("{interval:?} {family} {rule:?}: {error:?}")
+                        });
+                        assert_eq!(output, input, "{interval:?} {family} {rule:?}");
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn interval_output_materialization_preserves_parameterized_shape_witnesses() {
+    let interval = SchemaBody::IntegerInterval(IntegerInterval::Signed {
+        width: IntegerWidth::W128,
+        lower: -9,
+        upper: -1,
+        upper_inclusive: true,
+    });
+    let parameter = DimensionExpr::Parameter(DimensionParameterId::new(0));
+    let matrix = SchemaBody::Matrix {
+        element: Box::new(interval),
+        dimensions: vec![
+            parameter.clone(),
+            DimensionExpr::Add(vec![parameter, DimensionExpr::Constant(1)].into_boxed_slice()),
+        ]
+        .into_boxed_slice(),
+    };
+    for (body, extents, witness) in [
+        (matrix.clone(), vec![3, 4].into_boxed_slice(), 3),
+        // Embedded matrices have no top-level extent authority. Their existing
+        // contract reconstructs the declared lower-bound witness, not any
+        // arbitrary witness belonging to an input value.
+        (
+            SchemaBody::Option(Box::new(matrix)),
+            Box::<[u64]>::default(),
+            2,
+        ),
+    ] {
+        let input = interval_descriptor(
+            body.clone(),
+            vec![DimensionParameterDeclaration {
+                id: DimensionParameterId::new(0),
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(2),
+                upper_bound: Some(DimensionExpr::Constant(5)),
+            }]
+            .into_boxed_slice(),
+            vec![witness].into_boxed_slice(),
+        );
+        for rule in [
+            ResolvedOutputSchemaRule::FromResolvedType,
+            ResolvedOutputSchemaRule::Declared(body.clone()),
+            ResolvedOutputSchemaRule::FromInput(0),
+        ] {
+            let output = materialize_resolved_output(
+                input.resolved_type(),
+                &rule,
+                core::slice::from_ref(&input),
+                extents.clone(),
+            )
+            .unwrap();
+            assert_eq!(output.schema(), input.schema());
+            assert_eq!(output.shape(), input.shape());
+            assert_eq!(output.resolved_type(), input.resolved_type());
+            assert_eq!(output.shape().parameter_values(), &[witness]);
+        }
+    }
+}
+
+#[test]
+fn interval_output_materialization_rejects_different_interval_templates() {
+    let interval = IntegerInterval::Signed {
+        width: IntegerWidth::W8,
+        lower: 1,
+        upper: 9,
+        upper_inclusive: false,
+    };
+    for mismatched in [
+        IntegerInterval::Signed {
+            width: IntegerWidth::W8,
+            lower: 2,
+            upper: 9,
+            upper_inclusive: false,
+        },
+        IntegerInterval::Signed {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 8,
+            upper_inclusive: false,
+        },
+        IntegerInterval::Signed {
+            width: IntegerWidth::W16,
+            lower: 1,
+            upper: 9,
+            upper_inclusive: false,
+        },
+        IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 9,
+            upper_inclusive: false,
+        },
+        IntegerInterval::Signed {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 9,
+            upper_inclusive: true,
+        },
+    ] {
+        for ((family, body, extents), (other_family, other_body, _)) in
+            interval_output_cases(interval)
+                .into_iter()
+                .zip(interval_output_cases(mismatched))
+        {
+            assert_eq!(family, other_family);
+            let expected = interval_descriptor(body, Box::new([]), Box::new([]));
+            let input = interval_descriptor(other_body.clone(), Box::new([]), Box::new([]));
+            for rule in [
+                ResolvedOutputSchemaRule::Declared(other_body.clone()),
+                ResolvedOutputSchemaRule::FromInput(0),
+            ] {
+                assert!(
+                    materialize_resolved_output(
+                        expected.resolved_type(),
+                        &rule,
+                        core::slice::from_ref(&input),
+                        extents.clone(),
+                    )
+                    .is_err(),
+                    "{family} {mismatched:?} {rule:?} must not replace {interval:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn interval_output_materialization_rejects_erased_base_integer_templates() {
+    let interval = IntegerInterval::Signed {
+        width: IntegerWidth::W8,
+        lower: 1,
+        upper: 9,
+        upper_inclusive: false,
+    };
+    for ((family, body, extents), (other_family, other_body, _)) in interval_output_cases(interval)
+        .into_iter()
+        .zip(interval_output_cases_with_element(
+            SchemaBody::SignedInteger(IntegerWidth::W8),
+        ))
+    {
+        assert_eq!(family, other_family);
+        let expected = interval_descriptor(body, Box::new([]), Box::new([]));
+        let input = interval_descriptor(other_body.clone(), Box::new([]), Box::new([]));
+        for rule in [
+            ResolvedOutputSchemaRule::Declared(other_body),
+            ResolvedOutputSchemaRule::FromInput(0),
+        ] {
+            assert!(
+                materialize_resolved_output(
+                    expected.resolved_type(),
+                    &rule,
+                    core::slice::from_ref(&input),
+                    extents.clone(),
+                )
+                .is_err(),
+                "{family} {rule:?} must not erase the interval into its base storage kind"
+            );
+        }
+    }
+}
+
+#[test]
+fn interval_output_materialization_preserves_dynamic_set_rule_identity() {
+    let left_element = SchemaBody::IntegerInterval(IntegerInterval::Signed {
+        width: IntegerWidth::W8,
+        lower: -9,
+        upper: -1,
+        upper_inclusive: false,
+    });
+    let right_element = SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+        width: IntegerWidth::W128,
+        lower: 1,
+        upper: 9,
+        upper_inclusive: true,
+    });
+    let dynamic_set = |element| SchemaBody::Set {
+        element: Box::new(element),
+        cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+    };
+    let descriptor = |body| interval_descriptor(body, Box::new([]), Box::new([]));
+    let left = descriptor(dynamic_set(left_element.clone()));
+    let right = descriptor(dynamic_set(right_element.clone()));
+    let product_template = descriptor(dynamic_set(SchemaBody::Tuple(
+        vec![left_element, right_element].into_boxed_slice(),
+    )));
+    let product = materialize_resolved_output(
+        product_template.resolved_type(),
+        &ResolvedOutputSchemaRule::DynamicSetCartesianProduct,
+        &[left.clone(), right],
+        Box::new([]),
+    )
+    .unwrap();
+    assert_eq!(product, product_template);
+
+    let powerset_template = descriptor(dynamic_set(left.schema().body().clone()));
+    let powerset = materialize_resolved_output(
+        powerset_template.resolved_type(),
+        &ResolvedOutputSchemaRule::DynamicSetPowerset,
+        &[left],
+        Box::new([]),
+    )
+    .unwrap();
+    assert_eq!(powerset, powerset_template);
 }

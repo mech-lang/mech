@@ -952,6 +952,121 @@ mod ordinary_managed_execution {
         );
     }
 
+    #[cfg(feature = "u8")]
+    #[test]
+    fn maintained_interval_set_definition_materializes_the_resolved_element_kind() {
+        let element = SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        });
+        let function = specialize(
+            "set/define",
+            [2, 9]
+                .into_iter()
+                .map(|value| {
+                    ValueCell::from_schema_data(element.clone(), ValueDataDraft::U8(value)).unwrap()
+                })
+                .collect(),
+        );
+        assert_eq!(
+            function.instance().solve_reactive().unwrap(),
+            ReactiveSolveStatus::Unchanged,
+        );
+        let value = function.output().snapshot().unwrap();
+        let schema = value.schemas().unwrap();
+        assert_eq!(
+            schema.get(value.schema()).unwrap().body(),
+            &SchemaBody::Set {
+                element: Box::new(element),
+                cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+            },
+        );
+        assert!(value.shape().parameter_values().is_empty());
+        assert_eq!(
+            value.canonical_data_draft().unwrap(),
+            ValueDataDraft::Set(
+                vec![ValueDataDraft::U8(2), ValueDataDraft::U8(9)].into_boxed_slice(),
+            ),
+        );
+        assert_eq!(
+            function.bound_call().outputs()[0],
+            function.output().resolved_descriptor().unwrap(),
+        );
+    }
+
+    #[cfg(all(feature = "u8", feature = "full_compiler"))]
+    #[test]
+    fn maintained_interval_set_algebra_binds_and_executes_with_input_schema_authority() {
+        let element = SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        });
+        let body = SchemaBody::Set {
+            element: Box::new(element.clone()),
+            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+        };
+        let input = |values: &[u8]| {
+            ValueCell::from_schema_data(
+                body.clone(),
+                ValueDataDraft::Set(
+                    values
+                        .iter()
+                        .copied()
+                        .map(ValueDataDraft::U8)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            )
+            .unwrap()
+        };
+        for (operation, expected, bound) in [
+            ("set/union", &[2, 5, 9][..], 4),
+            ("set/intersection", &[5][..], 2),
+            ("set/difference", &[2][..], 2),
+            ("set/symmetric-difference", &[2, 9][..], 4),
+        ] {
+            let function = specialize(operation, vec![input(&[2, 5]), input(&[5, 9])]);
+            let output_body = SchemaBody::Set {
+                element: Box::new(element.clone()),
+                cardinality: CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Constant(bound)),
+                },
+            };
+            for _ in 0..2 {
+                function.instance().solve_result().unwrap();
+                let value = function.output().snapshot().unwrap();
+                let schema = value.schemas().unwrap();
+                assert_eq!(
+                    schema.get(value.schema()).unwrap().body(),
+                    &output_body,
+                    "{operation}"
+                );
+                assert!(value.shape().parameter_values().is_empty(), "{operation}");
+                assert_eq!(
+                    value.canonical_data_draft().unwrap(),
+                    ValueDataDraft::Set(
+                        expected
+                            .iter()
+                            .copied()
+                            .map(ValueDataDraft::U8)
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    ),
+                    "{operation}",
+                );
+                assert!(
+                    function.bound_call().outputs()[0]
+                        .has_same_type_contract(&function.output().resolved_descriptor().unwrap()),
+                    "{operation}",
+                );
+            }
+        }
+    }
+
     #[test]
     fn nested_convenience_call_rejects_before_cold_replanning_or_kernel_execution() {
         let session = MemoryDomain::new().unwrap();

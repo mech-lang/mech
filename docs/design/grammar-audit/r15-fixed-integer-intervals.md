@@ -78,3 +78,59 @@ above is the only new R15 implementation delta. Historical qualification
 counts belong to their earlier candidates; these local checks are not Full CI,
 a new exact-head external review, or a seal. CI and new R15 review requests
 remain paused under the existing instructions.
+
+## Output-template correction (2026-10-03)
+
+Review comment 4175643613 on `32327f6f36` exposed the next construction boundary:
+`schema_body_from_resolved` could create an interval template, but the shared
+`resolved_schema_body` matcher rejected it. The five-line correction admits
+only equal `KindExpr::IntegerInterval` / `SchemaBody::IntegerInterval` pairs.
+Signedness, width, both bounds, and upper inclusion remain exact semantic
+identity; a primitive base-integer or different-interval template still fails.
+Recursive aggregate materialization inherits this one leaf rule. No enum
+authority, dimension-witness policy, allocation rule, or resident semantics
+changes.
+
+Five new core regressions cover all ten integer types with both endpoint
+policies, nine scalar/aggregate families, `FromResolvedType`, `Declared`, and
+`FromInput`, compound parameterized matrix witnesses, nested supported
+lower-bound witnesses, dynamic Cartesian/powerset output rules, and rejection
+of all interval-identity changes and erased base-integer templates. The
+parameterized matrix uses a non-lower witness; the nested option case does not
+claim arbitrary input-witness preservation beyond the existing policy.
+
+The maintained registered-specializer tests exercise set construction and all
+four algebra operations through the actual resolved runtime binder, asserting
+complete schemas, shapes, values, and bound-call contracts. Public runtime
+tests separately load source and decoded bytecode, check full identity at
+publication, and execute another turn. The public frontend has a separate
+schema-draft materializer and already handled intervals: those public cases
+are regression coverage, not the failure-before oracle for this binder bug.
+
+Failure-before evidence: all five focused core tests ran; three positive
+materializations failed at the missing interval-template match and two
+rejection tests passed. Both new registered-specializer cases also reported
+the exact identical-interval/template mismatch. That parallel test process
+aborted during panic teardown, so it is recorded as two executed
+reproductions, not a normally completed two-test suite.
+
+Fresh correction qualification with nightly `2026-03-03`, locked dependencies,
+incremental compilation disabled, and two build jobs:
+
+- Core `full` profile: 14 `r4_type_cutover` and 17 `type_system_builtin` tests
+  passed, including all five new materialization regressions.
+- Combined stdlib/runtime profile (`mech-stdlib/full_compiler`,
+  `mech-runtime/full_source`, `mech-runtime/resident-routing-source`): all 14
+  `r6_managed_functions` and 47 `canonical_constant_binding` tests passed with
+  one test thread, including the four new registered-binding/public-loading
+  cases. Invalid initial fixture spellings were corrected to established
+  Unicode kind delimiters; those initial fixture failures are not qualification.
+- Engine `full_source,resident-artifact`: all 138
+  `canonical_source_semantics` tests passed.
+- Formatting, whitespace, warning policy, R3 type-system, and R4 type-cutover
+  checks passed under the repository's warning-denied configuration.
+
+Historical results above remain attributed to their original candidates.
+R15 review requests were subsequently authorized; another correcting-head
+review is requested after publication. CI remains paused. These checks are
+not Full CI or a seal.
