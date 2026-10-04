@@ -392,8 +392,13 @@ impl ResolvedSource {
                     None,
                 )
             })?
-            .index()
-            .map_err(|error| MechError::new(error, None))
+            .index_with_diagnostics()
+            .map_err(|mut error| {
+                if let Some(details) = error.message.as_mut() {
+                    *details = format!("{}: {details}", self.canonical_uri);
+                }
+                error
+            })
     }
 
     /// Populate the resolver handoff solely from the retained canonical

@@ -16,22 +16,26 @@ pub enum RunInputMode {
     Paths(Vec<String>),
 }
 
+fn has_explicit_path_prefix(s: &str) -> bool {
+    s.starts_with("./")
+        || s.starts_with(".\\")
+        || s.starts_with("../")
+        || s.starts_with("..\\")
+        || s.starts_with('/')
+        || s.starts_with('\\')
+        || (s.len() > 2
+            && s.as_bytes()[0].is_ascii_alphabetic()
+            && s.as_bytes()[1] == b':'
+            && matches!(s.as_bytes()[2], b'/' | b'\\'))
+}
+
 fn is_intended_path(s: &str) -> bool {
     if s.trim().is_empty() {
         return false;
     }
 
     let path = Path::new(s);
-    if path.exists() {
-        return true;
-    }
-    if s.starts_with("./")
-        || s.starts_with(".\\")
-        || s.starts_with("../")
-        || s.starts_with("..\\")
-        || s.starts_with('/')
-        || s.starts_with('\\')
-    {
+    if path.exists() || has_explicit_path_prefix(s) {
         return true;
     }
     if s.len() > 2 && s.as_bytes()[1] == b':' {
@@ -63,10 +67,10 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
     }
 
     if inputs.len() == 1 {
-        if Path::new(&inputs[0]).exists() {
+        if Path::new(&inputs[0]).exists() || has_explicit_path_prefix(&inputs[0]) {
             return RunInputMode::Paths(inputs);
         }
-        if parses_as_run_source(&inputs[0]) {
+        if is_run_source_candidate(&inputs[0]) {
             return RunInputMode::InlineSource(inputs[0].clone());
         }
         if is_intended_path(&inputs[0]) {
@@ -76,7 +80,7 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
     }
 
     let joined = inputs.join(" ");
-    if parses_as_run_source(&joined) {
+    if is_run_source_candidate(&joined) {
         return RunInputMode::InlineSource(joined);
     }
 
@@ -87,15 +91,46 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
     }
 }
 
-fn parses_as_run_source(input: &str) -> bool {
+fn is_run_source_candidate(input: &str) -> bool {
     use mech_runtime::resolver::SourceDocument;
     use mech_syntax::document::{
-        AstNode, DocumentId, ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSnapshot,
+        AstNode, CodeBlockSyntax, CodeFenceScope, DocumentId, MechCodeAltSyntax, MechCodeSyntax,
+        ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSnapshot,
     };
 
-    fn contains_run_source_metadata(root: &SyntaxNode) -> bool {
+    fn contains_unadmitted_active_source(root: &SyntaxNode) -> bool {
         let mut pending = vec![root.clone()];
         while let Some(node) = pending.pop() {
+            if matches!(
+                node.kind(),
+                SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+            ) {
+                continue;
+            }
+            if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+                if matches!(
+                    fence.info().map(|info| info.scope),
+                    Some(CodeFenceScope::Root | CodeFenceScope::Named(_))
+                ) && let Some(body) = fence.mech_code()
+                {
+                    pending.push(body.syntax().clone());
+                }
+                continue;
+            }
+            if node.kind() == SyntaxKind::EvalInlineMechCode {
+                return true;
+            }
+            if let Some(code) = MechCodeSyntax::cast(node.clone()) {
+                if code
+                    .items()
+                    .iter()
+                    .filter_map(MechCodeAltSyntax::value)
+                    .any(|item| item.kind() != SyntaxKind::Comment)
+                {
+                    return true;
+                }
+                continue;
+            }
             if matches!(
                 node.kind(),
                 SyntaxKind::ContextDeclaration
@@ -114,11 +149,13 @@ fn parses_as_run_source(input: &str) -> bool {
         return false;
     };
     let document = SourceDocument::parse(source, ParseConfig::default());
-    if !document.is_strictly_clean() {
-        return false;
-    }
     let syntax = document.document();
-    syntax.contains_executable_source() || contains_run_source_metadata(syntax.syntax())
+    // This selects a source argument, not an executable document. A malformed
+    // active source candidate must reach strict compiler admission for its
+    // positioned diagnostics instead of becoming a path merely because it
+    // contains a division operator or resource URI. Existing files still win.
+    syntax.contains_program_source()
+        || (!document.is_strictly_clean() && contains_unadmitted_active_source(syntax.syntax()))
 }
 
 pub fn new_cli_runtime(
@@ -364,6 +401,66 @@ mod tests {
     fn classifies_single_plain_inline_expression_as_inline_source() {
         let mode = classify_run_inputs(vec!["x := 1".to_string()]);
         assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn malformed_active_source_reaches_admission_before_path_heuristics() {
+        for source in [
+            "+> @env := cli/env\nx := 1 +\n",
+            "x := @env/INPUT +\n",
+            "1 /\n",
+            "The value is {1 /}.\n",
+        ] {
+            assert_eq!(
+                classify_run_inputs(vec![source.to_owned()]),
+                RunInputMode::InlineSource(source.to_owned()),
+                "{source:?}"
+            );
+            let retained = crate::cli::canonical_source::CanonicalCliSource::retain(
+                "cli:test:unadmitted",
+                mech_syntax::document::Revision(0),
+                source,
+            )
+            .unwrap();
+            assert!(retained.document().index().is_err());
+            assert!(!retained.contains_executable_source());
+        }
+        for path in [
+            "./missing file.mec",
+            "./missing\npath.mec",
+            "../missing.mec",
+        ] {
+            assert_eq!(
+                classify_run_inputs(vec![path.to_owned()]),
+                RunInputMode::Paths(vec![path.to_owned()]),
+                "{path:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn source_candidates_keep_displayed_disabled_and_local_syntax_inert() {
+        for source in [
+            "Displayed {{1 /}}.\n",
+            "```mech:disabled\n+> @env := cli/env\nx := 1 /\n```\n",
+            "```text\n+> @env := cli/env\n```\n",
+            "~∘~⸢+> @env := cli/env\nx := 1 /\n⸥\n",
+        ] {
+            assert!(!is_run_source_candidate(source), "{source:?}");
+        }
+        for source in [
+            "```mech\n+> @env := cli/env\nx := 1 /\n```\n",
+            "```mech:worker\n+> @env := cli/env\nx := 1 /\n```\n",
+        ] {
+            assert!(is_run_source_candidate(source), "{source:?}");
+            let retained = crate::cli::canonical_source::CanonicalCliSource::retain(
+                "cli:test:unadmitted-fence",
+                mech_syntax::document::Revision(0),
+                source,
+            )
+            .unwrap();
+            assert!(retained.document().index().is_err());
+        }
     }
 
     #[test]

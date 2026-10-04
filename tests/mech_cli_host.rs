@@ -705,3 +705,151 @@ fn mech_run_inline_source_preserves_colon_prefixed_token() {
         "colon-prefixed source token must not be dropped from run inputs:\n{combined}"
     );
 }
+
+// These actual-command witnesses use canonical scalar output as their oracle.
+// Full distribution selects all four gates; a reduced non-compute or
+// non-presentation profile must not claim this product coverage.
+#[cfg(all(
+    feature = "run",
+    feature = "cli_host",
+    feature = "compute_backends_native",
+    feature = "pretty_print"
+))]
+mod native_mixed_compute {
+    use super::{assert_failure_contains, combined_output, temp_root};
+
+    // The existing CLI/env provider supplies one driverless admitted bootstrap.
+    // No timer or pointer driver can manufacture additional recurrence turns.
+    // The one requested compute turn then publishes 2 * 3 + 1 = 7, and the CLI
+    // drains exactly one corresponding telemetry packet before exiting.
+    const SOURCE: &str = "\
++> @env := cli/env\n\
+seed := @env/MECH_NATIVE_MIXED_COMPUTE_SEED\n\
+@compute := compute://filters/kernel{:write(turn), :read(sample/result)}\n\
+@compute/turn <- 1\n\
+answer := @compute/sample/result\n\
+answer\n\
+\n\
+calculation @compute\n\
+-------------------\n\
+~counter := 2f32\n\
+counter = counter * 3f32 + 1f32\n\
+counter\n";
+
+    fn fixture(name: &str) -> std::path::PathBuf {
+        let root = temp_root(name);
+        std::fs::write(
+            root.join("mech.mcfg"),
+            r#"config := {
+  hosts: [{ name: "filters" provider: "compute" settings: { region: "calculation" backend: "cpu" } }]
+  run: { grants: [
+    { target: "filters/kernel" operations: ["read", "write"] paths: ["sample/result", "turn"] }
+    { target: "cli/env" operations: ["read"] paths: ["MECH_NATIVE_MIXED_COMPUTE_SEED"] }
+  ] }
+}
+"#,
+        )
+        .unwrap();
+        root
+    }
+
+    fn execute(root: &std::path::Path, source: &str, inline: bool) -> std::process::Output {
+        let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_mech"));
+        command
+            .arg("run")
+            .arg("--backend")
+            .arg("cpu-scalar")
+            .arg("--max-live-turns")
+            .arg("1")
+            .arg("--runtime-info")
+            .current_dir(root)
+            .env("MECH_NATIVE_MIXED_COMPUTE_SEED", "once");
+        if inline {
+            // A single argument is essential: this must select InlineSource,
+            // not path collection or reconstruction from separately split words.
+            command.arg(source);
+        } else {
+            let path = root.join("mixed.mec");
+            std::fs::write(&path, source).unwrap();
+            command.arg(path);
+        }
+        command.output().unwrap()
+    }
+
+    fn assert_completed_once(output: std::process::Output) {
+        assert!(
+            output.status.success(),
+            "native mixed CPU command failed:\n{}",
+            combined_output(&output)
+        );
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        assert_eq!(
+            stdout.lines().filter(|line| *line == "7").count(),
+            1,
+            "the exact first recurrence value must be printed once:\n{stdout}"
+        );
+        assert!(stdout.lines().any(|line| line == "f64"), "{stdout}");
+        let reports = stdout
+            .lines()
+            .filter_map(|line| line.strip_prefix("MECH_RUNTIME_INFO "))
+            .collect::<Vec<_>>();
+        assert_eq!(reports.len(), 1, "{stdout}");
+        let info: serde_json::Value = serde_json::from_str(reports[0]).unwrap();
+        assert_eq!(info["route"], "resident-external", "{info}");
+        assert_eq!(info["routing_policy"], "require-resident", "{info}");
+        assert_eq!(info["resident_accepted_turns"], 2, "{info}");
+        assert_eq!(info["resident_rejected_turns"], 0, "{info}");
+        assert_eq!(info["coalesced_host_packets"], 0, "{info}");
+        assert_eq!(info["ignored_host_packets"], 0, "{info}");
+        assert_eq!(info["effects"], 1, "{info}");
+        assert_eq!(info["observations"], 2, "{info}");
+        assert_eq!(info["layout_generation"], 1, "{info}");
+        assert_eq!(info["plan_generation"], 1, "{info}");
+        assert_eq!(info["program_revision"].as_str().unwrap().len(), 64);
+    }
+
+    #[test]
+    fn native_mixed_compute_source_path_executes_one_admitted_cpu_turn() {
+        let root = fixture("native-mixed-compute-file");
+        assert_completed_once(execute(&root, SOURCE, false));
+    }
+
+    #[test]
+    fn native_mixed_compute_single_argument_inline_executes_one_admitted_cpu_turn() {
+        let root = fixture("native-mixed-compute-inline");
+        assert_completed_once(execute(&root, SOURCE, true));
+    }
+
+    #[test]
+    fn native_mixed_compute_positioned_refusal_allows_valid_retry_in_both_entry_modes() {
+        // End at the operator: a later identifier must not be eligible for the
+        // canonical grammar's accepted multiline expression continuation.
+        let malformed = SOURCE.replace("3f32 + 1f32\ncounter\n", "3f32 +\n");
+        for inline in [false, true] {
+            let root = fixture(if inline {
+                "native-mixed-compute-invalid-inline"
+            } else {
+                "native-mixed-compute-invalid-file"
+            });
+            let rejected = assert_failure_contains(
+                execute(&root, &malformed, inline),
+                "syntax/missing-operator-operand",
+            );
+            assert!(
+                rejected.contains("at 11:27"),
+                "the missing operand must retain its exact source position:\n{rejected}"
+            );
+            assert!(
+                !rejected.contains("MECH_RUNTIME_INFO "),
+                "invalid source must not report an activated program:\n{rejected}"
+            );
+            assert!(
+                !rejected.lines().any(|line| line == "7"),
+                "invalid source must not publish the compute result:\n{rejected}"
+            );
+            // This is a new actual invocation through the same entry point and
+            // config/cwd after refusal, not a claim of same-instance recovery.
+            assert_completed_once(execute(&root, SOURCE, inline));
+        }
+    }
+}

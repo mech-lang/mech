@@ -741,9 +741,7 @@ impl<'a> ProgramCompilerView<'a> {
             self.max_source_bytes,
             u64::from(document.source().byte_len().0),
         )?;
-        let index = document
-            .index()
-            .map_err(|error| MechError::new(error, None))?;
+        let index = document.index_with_diagnostics()?;
         let (input_schemas, resource_reads, resource_writes, planned_reads) =
             self.canonical_document_resources(&index.root, &document.document())?;
         let mut program = canonical_frontend(document)
@@ -790,9 +788,7 @@ impl<'a> ProgramCompilerView<'a> {
         document: &SourceDocument,
         inputs: &BTreeMap<String, RuntimeHostInputValue>,
     ) -> MResult<CanonicalDocumentPlanning> {
-        let index = document
-            .index()
-            .map_err(|error| MechError::new(error, None))?;
+        let index = document.index_with_diagnostics()?;
         let (mut schemas, reads, writes, mut values) =
             self.canonical_document_resources(&index.root, &document.document())?;
         for (name, input) in inputs {
@@ -1043,9 +1039,7 @@ impl<'a> ProgramCompilerView<'a> {
             self.max_source_bytes,
             u64::from(document.source().byte_len().0),
         )?;
-        let index = document
-            .index()
-            .map_err(|error| MechError::new(error, None))?;
+        let index = document.index_with_diagnostics()?;
         let (input_schemas, resource_reads, resource_writes, planned_reads) =
             self.canonical_document_resources(&index.root, &document.document())?;
         let compile = if interactive {
@@ -1165,8 +1159,7 @@ impl<'a> ProgramCompilerView<'a> {
                 .ok_or_else(|| {
                     canonical_compilation_error("ordered root has no retained document")
                 })?
-                .index()
-                .map_err(|error| MechError::new(error, None))?;
+                .index_with_diagnostics()?;
             let mut detached = index.root.clone();
             let mut imports = Vec::new();
             for declaration in index.root.program_imports() {
@@ -1407,9 +1400,7 @@ impl<'a> ProgramCompilerView<'a> {
         let document = resolved
             .source_document()
             .ok_or_else(|| canonical_compilation_error("mixed root has no retained document"))?;
-        let index = document
-            .index()
-            .map_err(|error| MechError::new(error, None))?;
+        let index = document.index_with_diagnostics()?;
         let mut context = CanonicalGraphCompilation::new(Some(options));
         self.register_nominal_declarations(document, &mut context)?;
         context.active.push(resolved.canonical_uri.clone());
@@ -1558,9 +1549,7 @@ impl<'a> ProgramCompilerView<'a> {
             )));
         }
         context.active.push(uri.to_owned());
-        let index = document
-            .index()
-            .map_err(|error| MechError::new(error, None))?;
+        let index = document.index_with_diagnostics()?;
         let imports = self.canonical_graph_imports(&index.root, uri, context)?;
         let frontend = frontend.with_imported_enum_qualifiers(context.enum_qualifiers()?);
         let imported = canonical_import_values(&index.root, &SourceScope::Program, &imports)
@@ -2023,9 +2012,7 @@ impl<'a> ProgramCompilerView<'a> {
         let document = resolved
             .source_document()
             .ok_or_else(|| canonical_compilation_error("mixed root has no retained document"))?;
-        let index = document
-            .index()
-            .map_err(|error| MechError::new(error, None))?;
+        let index = document.index_with_diagnostics()?;
         let mut context = CanonicalGraphCompilation::new(options);
         self.register_nominal_declarations(document, &mut context)?;
         context.active.push(resolved.canonical_uri.clone());
@@ -2058,9 +2045,7 @@ impl<'a> ProgramCompilerView<'a> {
             self.max_source_bytes,
             u64::from(document.source().byte_len().0),
         )?;
-        let index = document
-            .index()
-            .map_err(|error| MechError::new(error, None))?;
+        let index = document.index_with_diagnostics()?;
         let external_input_names = canonical_declared_compute_inputs(&index.root)?;
         let retained_outputs = canonical_declared_compute_outputs(&index.root)?;
         let declared_compute_reads = canonical_declared_compute_reads(&index.root)?;

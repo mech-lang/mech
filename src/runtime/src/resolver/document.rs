@@ -222,7 +222,16 @@ impl SourceDocument {
                 CanonicalSourceIndexError {
                     document: self.snapshot.document,
                     revision: self.snapshot.revision,
-                    range: self.source().full_range(),
+                    range: self
+                        .snapshot
+                        .diagnostics
+                        .iter()
+                        .find_map(|diagnostic| {
+                            diagnostic
+                                .primary
+                                .resolve(self.source().revision(), &self.snapshot.nodes)
+                        })
+                        .unwrap_or_else(|| self.source().full_range()),
                     message: "cannot index an invalid retained source document",
                 },
             ));
@@ -244,6 +253,55 @@ impl SourceDocument {
             })?;
         }
         Ok(index)
+    }
+
+    /// Keep the retained diagnostic owner when projecting an index refusal into
+    /// the runtime's existing error representation. File and inline admission
+    /// use this boundary; neither reparses source nor publishes a partial index.
+    pub(crate) fn index_with_diagnostics(&self) -> mech_core::MResult<CanonicalDocumentIndex> {
+        self.index().map_err(|error| {
+            let range = match &error {
+                SourceDocumentIndexError::Syntax(error) => Some(error.range),
+                SourceDocumentIndexError::AddressTargets { .. } => None,
+            };
+            let details = (!self.is_strictly_clean())
+                .then(|| {
+                    let mut details = String::new();
+                    for diagnostic in self.snapshot.diagnostics.iter() {
+                        details.push_str(&mech_syntax::document::render_plain(
+                            diagnostic,
+                            self.source(),
+                            &self.snapshot.nodes,
+                        ));
+                        if let Some(range) = diagnostic
+                            .primary
+                            .resolve(self.source().revision(), &self.snapshot.nodes)
+                        {
+                            details.push_str(&format!(
+                                "  source bytes {}..{}\n",
+                                range.start.0, range.end.0
+                            ));
+                        }
+                    }
+                    details
+                })
+                .filter(|details| !details.is_empty());
+            let mut error = mech_core::MechError::new(error, details);
+            if let Some(range) = range {
+                let location = |offset| {
+                    let (line, column) = self.source().line_index().line_and_byte_column(offset);
+                    mech_core::SourceLocation {
+                        row: line + 1,
+                        col: column.0 as usize + 1,
+                    }
+                };
+                error.program_range = Some(mech_core::SourceRange {
+                    start: location(range.start),
+                    end: location(range.end),
+                });
+            }
+            error
+        })
     }
 }
 

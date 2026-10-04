@@ -47,6 +47,183 @@ fn malformed_records_remain_lossless_without_publishing_partial_facts() {
     }
 }
 
+fn missing_operand_source(ending: &str) -> String {
+    // The preceding declarations must not escape strict index admission. The
+    // non-ASCII identifier distinguishes byte columns from character columns.
+    let prefix = format!("+> ./ready.mec{ending}<+ ready{ending}");
+    let faulty_line = "café := 1 +";
+    format!("{prefix}{faulty_line}{ending}")
+}
+
+#[test]
+fn invalid_source_index_uses_exact_canonical_missing_operand_range() {
+    use mech_runtime::resolver::SourceDocumentIndexError;
+
+    for (ending, byte_offset) in [("\n", 36), ("\r\n", 38)] {
+        let text = missing_operand_source(ending);
+        let expected = TextRange::empty(TextSize(byte_offset));
+        let document = SourceDocument::parse_resolved(
+            "memory:positioned.mec",
+            Revision(17),
+            text.as_str(),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(!document.is_strictly_clean());
+        assert_eq!(document.snapshot().diagnostics.len(), 1);
+        let diagnostic = document.snapshot().diagnostics.iter().next().unwrap();
+        assert_eq!(diagnostic.code.as_str(), "syntax/missing-operator-operand");
+        assert_eq!(
+            diagnostic
+                .primary
+                .resolve(Revision(17), &document.snapshot().nodes),
+            Some(expected)
+        );
+        let SourceDocumentIndexError::Syntax(error) = document.index().unwrap_err() else {
+            panic!("missing operand must reject the whole syntax index");
+        };
+        assert_eq!(error.document, document.source().document());
+        assert_eq!(error.revision, Revision(17));
+        assert_eq!(error.range, expected);
+        assert_ne!(error.range, document.source().full_range());
+        validate_lossless(&document.snapshot().root, document.source()).unwrap();
+        assert_eq!(document.source().to_contiguous_string(), text);
+    }
+}
+
+#[test]
+fn resolved_index_refusal_preserves_exact_utf8_crlf_diagnostics_and_allows_retry() {
+    use mech_core::MechSourceCode;
+    use mech_runtime::resolver::SourceDocumentIndexError;
+    use mech_runtime::{ResolvedSource, SourceKind};
+
+    let uri = "memory:positioned.mec";
+    for (ending, byte_offset) in [("\n", 36), ("\r\n", 38)] {
+        let text = missing_operand_source(ending);
+        let expected = TextRange::empty(TextSize(byte_offset));
+        let document = SourceDocument::parse_resolved(
+            uri,
+            Revision(17),
+            text.as_str(),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let resolved =
+            ResolvedSource::new("positioned.mec", uri, MechSourceCode::String(text.clone()))
+                .with_kind(SourceKind::Mech)
+                .with_source_document(document.clone())
+                .unwrap();
+        let error = resolved.canonical_document_index().unwrap_err();
+        assert_eq!(error.kind_name(), "SourceDocumentIndexError");
+        let Some(SourceDocumentIndexError::Syntax(index_error)) =
+            error.kind_as::<SourceDocumentIndexError>()
+        else {
+            panic!("runtime projection must preserve the public syntax error kind");
+        };
+        assert_eq!(index_error.range, expected);
+        assert_eq!(index_error.document, document.source().document());
+        assert_eq!(index_error.revision, Revision(17));
+        let expected_message = format!(
+            "{uri}: Error[syntax/missing-operator-operand] at 3:13: missing expression after operator\n  source bytes {byte_offset}..{byte_offset}\n"
+        );
+        assert_eq!(error.message.as_deref(), Some(expected_message.as_str()));
+        let range = error.program_range.as_ref().unwrap();
+        assert_eq!((range.start.row, range.start.col), (3, 13));
+        assert_eq!((range.end.row, range.end.col), (3, 13));
+        assert!(resolved.clone().admit_canonical_document().is_err());
+        assert!(resolved.imports.is_empty());
+        assert!(resolved.exports.is_empty());
+        assert!(resolved.dependencies.is_empty());
+        assert_eq!(resolved.source_document(), Some(&document));
+
+        let valid_text = text.replace("1 +", "1 + 2");
+        let next = SourceDocument::parse_resolved(
+            uri,
+            Revision(18),
+            valid_text.as_str(),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let accepted = ResolvedSource::new(
+            "positioned.mec",
+            uri,
+            MechSourceCode::String(valid_text.clone()),
+        )
+        .with_kind(SourceKind::Mech)
+        .with_indexed_source_document(next.clone())
+        .unwrap();
+        assert!(next.is_strictly_clean());
+        assert_eq!(accepted.imports.len(), 1);
+        assert_eq!(accepted.exports.len(), 1);
+        assert_eq!(accepted.dependencies.len(), 1);
+        assert_eq!(accepted.source_document(), Some(&next));
+        assert_eq!(next.source().revision(), Revision(18));
+        assert_eq!(next.source().to_contiguous_string(), valid_text);
+        assert_eq!(document.source().revision(), Revision(17));
+        assert_eq!(document.source().to_contiguous_string(), text);
+        assert!(document.index().is_err());
+        assert_eq!(
+            accepted.canonical_document_index().unwrap().root.exports[0]
+                .declaration
+                .name,
+            "ready"
+        );
+    }
+}
+
+#[test]
+fn diagnostics_suppressed_index_refusal_preserves_nonempty_fallback() {
+    use mech_core::MechSourceCode;
+    use mech_runtime::resolver::SourceDocumentIndexError;
+    use mech_runtime::{ResolvedSource, SourceKind};
+
+    let uri = "memory:suppressed-diagnostics.mec";
+    let text = missing_operand_source("\r\n");
+    let document = SourceDocument::parse_resolved(
+        uri,
+        Revision(19),
+        text.as_str(),
+        ParseConfig {
+            limits: ParseLimits {
+                max_diagnostics: 0,
+                ..ParseLimits::default()
+            },
+        },
+    )
+    .unwrap();
+    assert!(document.snapshot().diagnostics.is_empty());
+    assert!(document.snapshot().stats.diagnostics_truncated);
+    assert!(!document.is_strictly_clean());
+    let SourceDocumentIndexError::Syntax(index_error) = document.index().unwrap_err() else {
+        panic!("suppressed diagnostics must not permit a partial index");
+    };
+    assert_eq!(index_error.range, document.source().full_range());
+
+    let resolved = ResolvedSource::new(
+        "suppressed-diagnostics.mec",
+        uri,
+        MechSourceCode::String(text.clone()),
+    )
+    .with_kind(SourceKind::Mech)
+    .with_source_document(document.clone())
+    .unwrap();
+    let error = resolved.canonical_document_index().unwrap_err();
+    assert_eq!(error.kind_name(), "SourceDocumentIndexError");
+    assert!(error.message.is_none());
+    assert!(!error.display_message().is_empty());
+    assert_eq!(error.display_message(), error.kind_message());
+    assert!(
+        error
+            .display_message()
+            .contains("cannot index an invalid retained source document")
+    );
+    assert!(resolved.clone().admit_canonical_document().is_err());
+    assert!(resolved.imports.is_empty());
+    assert!(resolved.exports.is_empty());
+    assert!(resolved.dependencies.is_empty());
+    assert_eq!(document.source().to_contiguous_string(), text);
+}
+
 #[cfg(feature = "mika")]
 #[test]
 fn local_owners_and_named_scopes_stay_attached_to_the_retained_document() {

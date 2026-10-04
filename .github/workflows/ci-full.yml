@@ -1627,6 +1627,22 @@ jobs:
           cargo check -p mech-runtime -p mech-browser -p mech-terminal
           cargo check -p mech-terminal --no-default-features
 
+      - name: Verify native mixed compute through source and inline CLI commands
+        env:
+          CARGO_BUILD_JOBS: "2"
+          CARGO_PROFILE_DEV_DEBUG: "0"
+          CARGO_PROFILE_TEST_DEBUG: "0"
+        run: |
+          CLI_MIXED_TEST_LIST=$(cargo +nightly-2026-03-03 test --locked \
+            --no-default-features --features distribution-full,compute_backends_native \
+            --test mech_cli_host native_mixed_compute_ -- --list)
+          printf '%s\n' "$CLI_MIXED_TEST_LIST"
+          CLI_MIXED_TEST_COUNT=$(printf '%s\n' "$CLI_MIXED_TEST_LIST" | awk '/: test$/ { count += 1 } END { print count + 0 }')
+          test "$CLI_MIXED_TEST_COUNT" -eq 3
+          cargo +nightly-2026-03-03 test --locked \
+            --no-default-features --features distribution-full,compute_backends_native \
+            --test mech_cli_host native_mixed_compute_ -- --nocapture --test-threads=1
+
       - name: Disk report at end
         if: always()
         run: bash scripts/ci-disk-report.sh

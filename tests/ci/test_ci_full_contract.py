@@ -149,6 +149,24 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_native_mixed_cli_product_coverage_is_selected_and_nonempty(self):
+        block = job_block(FULL, "cargo-runtime")
+        step = next(
+            step for step in job_steps(FULL, "cargo-runtime")
+            if "Verify native mixed compute through source and inline CLI commands" in step
+        )
+        self.assertIn("--features distribution-full,compute_backends_native", step)
+        self.assertEqual(step.count("--test mech_cli_host native_mixed_compute_"), 2)
+        self.assertIn("-- --list", step)
+        self.assertIn('test "$CLI_MIXED_TEST_COUNT" -eq 3', step)
+        self.assertIn("-- --nocapture --test-threads=1", step)
+        self.assertIn('CARGO_BUILD_JOBS: "2"', step)
+        self.assertIn('CARGO_PROFILE_DEV_DEBUG: "0"', step)
+        self.assertIn('CARGO_PROFILE_TEST_DEBUG: "0"', step)
+        self.assertNotIn("continue-on-error", step)
+        self.assertNotIn("if:", step)
+        self.assertIn("--features distribution-standard", block)
+
     def test_static_compute_product_uses_matching_build_and_is_a_required_browser_step(self):
         smoke = job_block(CI, "browser-compute-smoke")
         step = next(
