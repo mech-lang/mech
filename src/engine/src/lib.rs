@@ -130,7 +130,7 @@ pub use crate::intrinsics::kind_conversion::*;
 pub use crate::program::*;
 #[cfg(feature = "source")]
 pub use crate::source_semantics::*;
-#[cfg(any(feature = "trace", feature = "state_machines"))]
+#[cfg(feature = "trace")]
 pub use crate::tracing::*;
 
 #[cfg(all(feature = "access", feature = "map"))]
