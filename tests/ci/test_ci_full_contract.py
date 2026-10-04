@@ -709,8 +709,8 @@ class FullWorkflowContractTests(unittest.TestCase):
             "but this adapter supports 10"
         )
         inventory = json.dumps([{"binding": 0, "name": "state_read", "access": "read"}])
-        for status in (0, 27):
-            with self.subTest(status=status), tempfile.TemporaryDirectory() as temporary:
+        for status, software_adapter in ((0, True), (0, False), (27, True), (27, False)):
+            with self.subTest(status=status, software_adapter=software_adapter), tempfile.TemporaryDirectory() as temporary:
                 directory = Path(temporary)
                 project = directory / "project"
                 browser = directory / "browser"
@@ -737,6 +737,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                     "filter_count=1000",
                     "continuity_edit=false",
                     "terminal_submit_probe=false",
+                    f"software_adapter={str(software_adapter).lower()}",
                     match.group(),
                     "trap cleanup EXIT",
                     f"exit {status}",
@@ -758,6 +759,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertEqual(failure["outcome"], "failed")
                 self.assertEqual(failure["exit_status"], status)
                 self.assertEqual(failure["requested_backend"], "wgpu")
+                self.assertEqual(failure["browser_software_adapter_requested"], software_adapter)
                 self.assertRegex(failure["revision"], r"^[0-9a-f]{40}$")
                 self.assertEqual(
                     failure["dataset"]["data-mech-document-error"], capability_error,
@@ -768,6 +770,31 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertEqual(failure["dataset"]["data-mech-compute-dispatches"], "0")
                 self.assertNotIn("output", failure)
                 self.assertFalse((directory / "ekf-wgpu-no-edit.json").exists())
+
+    def test_ekf_adapter_selection_is_validated_before_product_startup(self):
+        match = re.search(
+            r'(?ms)^software_adapter="\$\{MECH_BROWSER_SOFTWARE_ADAPTER:-true\}"\n.*?^esac\n',
+            EKF_BROWSER,
+        )
+        self.assertIsNotNone(match)
+        self.assertLess(match.start(), EKF_BROWSER.index('project_dir="$(mktemp'))
+        for requested, expected in ((None, "true"), ("true", "true"), ("false", "false"), ("typo", None)):
+            with self.subTest(requested=requested):
+                environment = os.environ.copy()
+                environment.pop("MECH_BROWSER_SOFTWARE_ADAPTER", None)
+                if requested is not None:
+                    environment["MECH_BROWSER_SOFTWARE_ADAPTER"] = requested
+                result = subprocess.run(
+                    ["bash", "--noprofile", "--norc", "-c", "set -euo pipefail\n" + match.group() + 'printf "%s" "$software_adapter"'],
+                    env=environment, text=True, capture_output=True, timeout=10,
+                )
+                if expected is None:
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn("must be true or false", result.stderr)
+                    self.assertEqual(result.stdout, "")
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stdout, expected)
 
     def test_engine_owner_runs_source_semantics_before_full_validation(self):
         owners = (ROOT / ".github/ci/owners.toml").read_text(encoding="utf-8")
