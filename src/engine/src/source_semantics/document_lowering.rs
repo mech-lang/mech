@@ -23,9 +23,9 @@ mod document_imports;
 mod document_types;
 
 enum DocumentUnit {
-    // Context binding and authority belong to the canonical resolver. Keeping
-    // its participating owner here distinguishes preparation from inert prose.
-    Context,
+    // Source imports, context binding and authority belong to the canonical
+    // resolver. Retain their participation without emitting engine operations.
+    ResolverDeclaration,
     Import(mech_syntax::document::ModuleImportSyntax),
     Kind(mech_syntax::document::KindDefineSyntax),
     Enum(mech_syntax::document::EnumDefineSyntax),
@@ -610,7 +610,7 @@ fn compile_collected_document(
     let mut declaration_preparation = false;
     while let Some(unit) = pending.pop() {
         match unit {
-            DocumentUnit::Context
+            DocumentUnit::ResolverDeclaration
             | DocumentUnit::Import(_)
             | DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
@@ -999,11 +999,11 @@ fn collect_document_units(
     }
     // Resolver-owned declarations participate through the canonical source
     // index and runtime handoff; they do not emit engine operations themselves.
-    if node.kind() == SyntaxKind::ContextDeclaration {
-        output.push(DocumentUnit::Context);
-        return Ok(());
-    }
-    if node.kind() == SyntaxKind::ImportDeclaration {
+    if matches!(
+        node.kind(),
+        SyntaxKind::ContextDeclaration | SyntaxKind::ImportDeclaration
+    ) {
+        output.push(DocumentUnit::ResolverDeclaration);
         return Ok(());
     }
     if matches!(
@@ -1045,7 +1045,7 @@ fn declare_document_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Context
+            DocumentUnit::ResolverDeclaration
             | DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
             | DocumentUnit::FsmSpecification(_)
@@ -1082,7 +1082,7 @@ fn declare_document_inline_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Context
+            DocumentUnit::ResolverDeclaration
             | DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
             | DocumentUnit::FsmSpecification(_)
@@ -1142,7 +1142,7 @@ fn compile_document_units_inner(
     let mut last = None;
     for unit in units {
         match unit {
-            DocumentUnit::Context
+            DocumentUnit::ResolverDeclaration
             | DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
             | DocumentUnit::FsmSpecification(_)

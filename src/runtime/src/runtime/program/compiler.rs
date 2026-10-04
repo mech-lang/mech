@@ -1040,6 +1040,20 @@ impl<'a> ProgramCompilerView<'a> {
             u64::from(document.source().byte_len().0),
         )?;
         let index = document.index_with_diagnostics()?;
+        if let Some(import) = index
+            .root
+            .program_imports()
+            .into_iter()
+            .find(import_requires_source_dependency)
+        {
+            // This entry point has a retained document, but no resolver-owned
+            // URI/referrer. Required dependencies belong to the rooted graph
+            // compiler; a declaration-only artifact must not bypass resolution.
+            return Err(canonical_compilation_error(format!(
+                "declared source import {:?} requires rooted source compilation",
+                import.specifier,
+            )));
+        }
         let (input_schemas, resource_reads, resource_writes, planned_reads) =
             self.canonical_document_resources(&index.root, &document.document())?;
         let compile = if interactive {

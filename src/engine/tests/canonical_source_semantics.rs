@@ -1825,8 +1825,10 @@ fn interactive_declaration_metadata_prepares_an_exact_zero_work_program() {
     }
 }
 
-fn interactive_declaration_preparation_cases() -> [&'static str; 7] {
+fn interactive_declaration_preparation_cases() -> [&'static str; 9] {
     [
+        "+> ./dep.mec\n",
+        "```mech\n+> ./dep.mec\n```\n",
         "+> @out := cli/stdout\n",
         "@out := test://stdout\n",
         "```mech\n+> @out := cli/stdout\n```\n",
@@ -1853,6 +1855,8 @@ fn interactive_declaration_preparation_keeps_empty_and_inert_source_refused() {
         "Displayed {{+> @out := cli/stdout}}.\n",
         "```mech:disabled\n+> @out := cli/stdout\n```\n",
         "```mech:worker\n+> @out := cli/stdout\n```\n",
+        "```mech:disabled\n+> ./dep.mec\n```\n",
+        "```mech:worker\n+> ./dep.mec\n```\n",
         "```mech:worker\n<count> := <u8>\n```\n",
         "```mech:disabled\nidentity(value<u8>) => <u8>\n  | value => value.\n```\n",
         "```text\n+> @out := cli/stdout\n```\n",

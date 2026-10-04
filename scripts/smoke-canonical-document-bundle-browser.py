@@ -192,6 +192,54 @@ try {
     container.remove();
     doc.free();
   }
+  // Use independent documents: the seven maintained fixture sources and their
+  // state/replacement oracles above remain unchanged. This reaches the real
+  // Object/Reflect rendering path, not a native-only presentation helper.
+  for (const declaration of ['+> ./dep.mec\n', '```mech\n+> ./dep.mec\n```\n']) {
+    const fixture = fixtures.imported;
+    const doc = WasmDocument.fromEncodedWithSources(fixture.encoded, 'document.mec', fixture.sources);
+    const response = doc.replReplaceSource(declaration);
+    assert(doc.replSource() === declaration, 'resolver-owned declaration accepted: ' + JSON.stringify(response));
+    assert(doc.renderedSymbol('ans') == null, 'declaration preparation has no fabricated result');
+    const accepted = {source: doc.replSource(), info: doc.runtimeInfo()};
+    assert(accepted.info.route === 'none' && accepted.info.program_revision == null
+      && accepted.info.plan_generation == null && accepted.info.layout_generation == null
+      && accepted.info.resident_accepted_turns === 0 && accepted.info.requirements === 0
+      && accepted.info.observations === 0 && accepted.info.effects === 0,
+      'declaration preparation creates no root instance, turn or authority: ' + JSON.stringify(accepted.info));
+    try {doc.replInvoke('+> ./missing.mec');} catch (_) {}
+    assert(doc.replSource() === accepted.source, 'missing dependency preserves declaration source');
+    assert(JSON.stringify(doc.runtimeInfo()) === JSON.stringify(accepted.info), 'missing dependency preserves execution identity');
+    const recovery = doc.replInvoke('answer := dep/value\nanswer');
+    assert(doc.renderedSymbol('answer')?.inlineHtml === '2', 'same document uses imported value after refusal: ' + JSON.stringify(recovery));
+    assert(doc.runtimeInfo().resident_accepted_turns === 1, 'valid imported use publishes one real turn');
+    doc.free();
+  }
+  for (const [matrix, kind, expected] of [
+    ['[10 20 30;40 50 60]', '[f64]:2,3', [10,20,30,40,50,60]],
+    ['[10 20 30]', '[f64]:1,3', [10,20,30]],
+    ['[10;20;30]', '[f64]:3,1', [10,20,30]],
+  ]) {
+    const doc = WasmDocument.fromEncoded(fixtures.plain.encoded);
+    const source = 'browser-value := ' + matrix + '\nbrowser-value\n';
+    const response = doc.replReplaceSource(source);
+    assert(doc.replSource() === source, 'typed browser source accepted: ' + JSON.stringify(response));
+    const rendered = doc.renderedSymbol('browser-value');
+    assert(rendered?.kind === kind, 'complete browser kind: ' + JSON.stringify({kind, rendered}));
+    const span = document.createElement('span');
+    span.innerHTML = rendered.inlineHtml;
+    const actual = [...span.textContent.matchAll(/[-+]?\d+(?:\.\d+)?/g)].map(match => Number(match[0]));
+    assert(JSON.stringify(actual) === JSON.stringify(expected), 'typed browser values: ' + JSON.stringify({actual, expected}));
+    const named = doc.renderedSymbols(['browser-value']);
+    assert(named.length === 1 && named[0].kind === kind, 'complete named browser kind');
+    assert(doc.replSelectSymbol('browser-value', true).rendered?.kind === kind, 'selected kind agrees with document kind');
+    doc.replSetValueElementLimit(1);
+    assert(doc.renderedSymbol('browser-value')?.kind === kind, 'elision preserves document kind');
+    assert(doc.renderedSymbols(['browser-value'])[0]?.kind === kind, 'elision preserves named kind');
+    assert(doc.replSelectSymbol('browser-value', true).rendered?.kind === kind, 'elision preserves selected kind');
+    rows.push({name: 'complete-browser-kind', kind, values: actual});
+    doc.free();
+  }
   if (fixtures['served-compute']) {
     const fixture = fixtures['served-compute'];
     window.__MECH_HOST_CONFIG = fixture.authority;

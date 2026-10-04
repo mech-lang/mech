@@ -5375,6 +5375,10 @@ fn runtime_info_value(info: &RuntimeProgramExecutionInfo) -> Result<JsValue, JsV
     Ok(out.into())
 }
 
+fn rendered_value_kind(snapshot: &mech_runtime::RuntimeValueSnapshot) -> String {
+    snapshot.format_repl_kind()
+}
+
 pub(super) fn rendered_value(
     snapshot: mech_runtime::RuntimeValueSnapshot,
     max_elements: usize,
@@ -5383,7 +5387,7 @@ pub(super) fn rendered_value(
     Reflect::set(
         &rendered,
         &JsValue::from_str("kind"),
-        &JsValue::from_str(&snapshot.kind().to_string()),
+        &JsValue::from_str(&rendered_value_kind(&snapshot)),
     )?;
     Reflect::set(
         &rendered,
@@ -5588,6 +5592,225 @@ fn test_document_payload(root_specifier: &str, source: &str) -> BrowserDocumentP
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn assert_rendered_snapshot_unchanged(
+        snapshot: &mech_runtime::RuntimeValueSnapshot,
+        before: &mech_core::Value,
+    ) {
+        let after = snapshot.value();
+        assert_eq!(after.schema(), before.schema());
+        assert_eq!(after.schema_key(), before.schema_key());
+        assert_eq!(after.shape(), before.shape());
+        assert!(
+            std::ptr::eq(after.data(), before.data()),
+            "rendering retains the exact immutable payload owner"
+        );
+    }
+
+    fn rendered_kind_snapshot(
+        schema: mech_core::SchemaDraft,
+        shape_values: Box<[u64]>,
+        data: mech_core::ValueDataDraft,
+    ) -> mech_runtime::RuntimeValueSnapshot {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let handle = builder.insert(schema.finalize().unwrap()).unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = mech_core::ValueDraft {
+            schema,
+            shape_values,
+            data,
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+            &schemas,
+        ))
+        .unwrap();
+        mech_runtime::RuntimeValueSnapshot::from_value(value).unwrap()
+    }
+
+    fn static_rendered_kind_snapshot(
+        body: mech_core::SchemaBody,
+        data: mech_core::ValueDataDraft,
+    ) -> mech_runtime::RuntimeValueSnapshot {
+        rendered_kind_snapshot(
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            },
+            Box::new([]),
+            data,
+        )
+    }
+
+    #[test]
+    fn browser_rendered_kind_preserves_nonsquare_oriented_and_empty_matrix_shapes() {
+        use mech_core::{DimensionExpr, FloatWidth, SchemaBody, ValueDataDraft};
+
+        for (rows, columns) in [(2, 3), (1, 3), (3, 1), (0, 3), (3, 0)] {
+            let snapshot = static_rendered_kind_snapshot(
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![
+                        DimensionExpr::Constant(rows),
+                        DimensionExpr::Constant(columns),
+                    ]
+                    .into_boxed_slice(),
+                },
+                ValueDataDraft::Matrix(
+                    (0..rows * columns)
+                        .map(|value| {
+                            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(
+                                value as f64,
+                            ))
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            );
+            let before = snapshot.value().clone();
+            assert_eq!(
+                rendered_value_kind(&snapshot),
+                format!("[f64]:{rows},{columns}")
+            );
+            let _ = snapshot.format_repl_inline(1);
+            assert_eq!(
+                rendered_value_kind(&snapshot),
+                format!("[f64]:{rows},{columns}"),
+                "payload elision cannot erase the complete browser kind"
+            );
+            assert_rendered_snapshot_unchanged(&snapshot, &before);
+            assert!(snapshot.value().shape().parameter_values().is_empty());
+        }
+    }
+
+    #[test]
+    fn browser_rendered_kind_uses_the_resolved_shape_witness() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, FloatWidth, SchemaBody, SchemaDraft, ValueDataDraft,
+        };
+
+        let snapshot = rendered_kind_snapshot(
+            SchemaDraft {
+                dimension_parameters: (0..2)
+                    .map(|id| DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(id),
+                        origin: DimensionParameterOrigin::Explicit,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(1),
+                        upper_bound: Some(DimensionExpr::Constant(8)),
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        DimensionExpr::Add(
+                            vec![
+                                DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                                DimensionExpr::Constant(1),
+                            ]
+                            .into_boxed_slice(),
+                        ),
+                    ]
+                    .into_boxed_slice(),
+                },
+            },
+            vec![2, 2].into_boxed_slice(),
+            ValueDataDraft::Matrix(
+                (0..6)
+                    .map(|value| {
+                        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value as f64))
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        );
+        let before = snapshot.value().clone();
+        assert_eq!(rendered_value_kind(&snapshot), "[f64]:2,3");
+        assert_eq!(snapshot.value().shape().parameter_values(), [2, 2]);
+        assert_rendered_snapshot_unchanged(&snapshot, &before);
+    }
+
+    #[test]
+    fn browser_rendered_kind_preserves_exact_integer_interval_identity() {
+        use mech_core::{DimensionExpr, IntegerInterval, IntegerWidth, SchemaBody, ValueDataDraft};
+
+        let lower = u128::MAX - 1;
+        for upper_inclusive in [false, true] {
+            let interval = SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+                width: IntegerWidth::W128,
+                lower,
+                upper: u128::MAX,
+                upper_inclusive,
+            });
+            let expected = format!(
+                "u128:{lower}..{}{}",
+                if upper_inclusive { "=" } else { "" },
+                u128::MAX
+            );
+            let scalar =
+                static_rendered_kind_snapshot(interval.clone(), ValueDataDraft::U128(lower));
+            let before = scalar.value().clone();
+            assert_eq!(rendered_value_kind(&scalar), expected);
+            assert_rendered_snapshot_unchanged(&scalar, &before);
+            let matrix = static_rendered_kind_snapshot(
+                SchemaBody::Matrix {
+                    element: Box::new(interval),
+                    dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                        .into_boxed_slice(),
+                },
+                ValueDataDraft::Matrix(vec![ValueDataDraft::U128(lower); 2].into_boxed_slice()),
+            );
+            let before = matrix.value().clone();
+            assert_eq!(rendered_value_kind(&matrix), format!("[{expected}]:1,2"));
+            assert_rendered_snapshot_unchanged(&matrix, &before);
+        }
+        let signed = static_rendered_kind_snapshot(
+            SchemaBody::IntegerInterval(IntegerInterval::Signed {
+                width: IntegerWidth::W128,
+                lower: i128::MIN,
+                upper: -1,
+                upper_inclusive: false,
+            }),
+            ValueDataDraft::I128(i128::MIN),
+        );
+        let before = signed.value().clone();
+        assert_eq!(
+            rendered_value_kind(&signed),
+            format!("i128:{}..-1", i128::MIN)
+        );
+        assert_rendered_snapshot_unchanged(&signed, &before);
+        let base = static_rendered_kind_snapshot(
+            SchemaBody::UnsignedInteger(IntegerWidth::W128),
+            ValueDataDraft::U128(lower),
+        );
+        let interval = static_rendered_kind_snapshot(
+            SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+                width: IntegerWidth::W128,
+                lower,
+                upper: u128::MAX,
+                upper_inclusive: false,
+            }),
+            ValueDataDraft::U128(lower),
+        );
+        let before = base.value().clone();
+        assert_eq!(rendered_value_kind(&base), "u128");
+        assert_eq!(
+            rendered_value_kind(&interval),
+            format!("u128:{lower}..{}", u128::MAX)
+        );
+        assert_eq!(base.kind(), interval.kind());
+        for snapshot in [&base, &interval] {
+            assert!(
+                matches!(snapshot.value().data(), mech_core::ValueData::U128(value) if *value == lower)
+            );
+        }
+        assert_ne!(base.schema_key(), interval.schema_key());
+        assert_rendered_snapshot_unchanged(&base, &before);
+    }
 
     #[test]
     fn pretty_text_normalizes_set_commas() {

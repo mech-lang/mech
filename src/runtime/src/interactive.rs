@@ -2107,6 +2107,152 @@ mod tests {
     }
 
     #[test]
+    fn canonical_resolver_import_preparation_retains_source_without_a_turn() {
+        struct ImportDocumentFactory;
+        impl ImportDocumentFactory {
+            fn resolver() -> crate::InMemorySourceResolver {
+                crate::InMemorySourceResolver::new()
+                    .with_string("app/dep.mec", "value := 42\n<+ value\n")
+                    .with_string("app/invalid.mec", "value :=\n<+ value\n")
+                    .with_string("app/cycle-a.mec", "+> ./cycle-b.mec\n1\n")
+                    .with_string("app/cycle-b.mec", "+> ./cycle-a.mec\n2\n")
+            }
+        }
+        impl ResidentReplRuntimeFactory for ImportDocumentFactory {
+            fn build(&self, _events: MechEventBuffer) -> MResult<MechRuntime> {
+                MechRuntime::builder()
+                    .function_catalog(mech_stdlib::source_catalog())
+                    .source_resolver(Self::resolver())
+                    .build()
+            }
+
+            fn activate_document(
+                &self,
+                events: MechEventBuffer,
+                document: &crate::SourceDocument,
+            ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+                if document.source().to_contiguous_string().trim().is_empty() {
+                    return self.activate(events, "");
+                }
+                // Match the document host's rooted loading path. A bare
+                // document compiler has no source URI/referrer for imports.
+                let root = crate::ResolvedSource::new(
+                    "app/main.mec",
+                    "runtime:interactive",
+                    mech_core::MechSourceCode::String(document.source().to_contiguous_string()),
+                )
+                .with_kind(crate::SourceKind::Mech)
+                .with_source_document(document.clone())?;
+                let mut resolver = Self::resolver().with_source("app/main.mec", root);
+                for (specifier, target) in [
+                    ("./dep.mec", "app/dep.mec"),
+                    ("./invalid.mec", "app/invalid.mec"),
+                    ("./cycle-a.mec", "app/cycle-a.mec"),
+                ] {
+                    resolver.insert_resolution("app/main.mec", specifier, target)?;
+                }
+                let mut runtime = MechRuntime::builder()
+                    .function_catalog(mech_stdlib::source_catalog())
+                    .source_resolver(resolver)
+                    .build()?;
+                let outcome = runtime.load_interactive_root_program(
+                    crate::SourceRequest::new("app/main.mec"),
+                    crate::ModuleBuildOptions::new("test", "2024", "test", &[], &[]),
+                    ResidentDurabilityPolicy::Volatile,
+                )?;
+                Ok((runtime, outcome))
+            }
+        }
+        for declaration in ["+> ./dep.mec", "```mech\n+> ./dep.mec\n```"] {
+            let document = crate::SourceDocument::parse_resolved(
+                "runtime:interactive",
+                Revision(0),
+                Arc::<str>::from(""),
+                ParseConfig::default(),
+            )
+            .unwrap();
+            let unrooted = crate::SourceDocument::parse_resolved(
+                "runtime:interactive",
+                Revision(1),
+                Arc::<str>::from(declaration),
+                ParseConfig::default(),
+            )
+            .unwrap();
+            let mut unrooted_runtime = ImportDocumentFactory
+                .build(MechEventBuffer::default())
+                .unwrap();
+            let error = unrooted_runtime
+                .load_interactive_document_program(&unrooted, ResidentDurabilityPolicy::Volatile)
+                .unwrap_err();
+            assert_eq!(error.kind_name(), "CanonicalProgramCompilationError");
+            assert!(
+                error
+                    .kind_message()
+                    .contains("requires rooted source compilation")
+            );
+            assert_eq!(
+                unrooted_runtime.program_execution_info(),
+                crate::RuntimeProgramExecutionInfo::default(),
+            );
+            let mut session =
+                ResidentReplSession::from_document(ImportDocumentFactory, document).unwrap();
+            let value = session.submit(declaration).unwrap();
+            assert!(value.is_empty(), "{declaration}");
+            assert!(session.source().contains(declaration));
+            assert!(session.symbol("ans").unwrap().is_none());
+            assert_eq!(
+                session.runtime().unwrap().program_execution_info(),
+                crate::RuntimeProgramExecutionInfo::default(),
+            );
+            let source = session.source().to_owned();
+            let revision = session.source_document().unwrap().source().revision();
+            for (invalid, kind, reason) in [
+                (
+                    "+> ./missing.mec",
+                    "RuntimeModuleDependencyMissing",
+                    "./missing.mec",
+                ),
+                (
+                    "+> ./invalid.mec",
+                    "SourceDocumentIndexError",
+                    "cannot index an invalid retained source document",
+                ),
+                (
+                    "+> ./cycle-a.mec",
+                    "CanonicalProgramCompilationError",
+                    "canonical source dependency cycle",
+                ),
+            ] {
+                let error = session.submit(invalid).expect_err(invalid);
+                assert_eq!(error.kind_name(), kind, "{invalid}: {error:?}");
+                assert!(
+                    error.kind_message().contains(reason),
+                    "dependency validation must be decisive: {error:?}"
+                );
+                assert_eq!(session.source(), source);
+                assert_eq!(
+                    session.source_document().unwrap().source().revision(),
+                    revision
+                );
+                assert!(session.symbol("ans").unwrap().is_none());
+                assert_eq!(
+                    session.runtime().unwrap().program_execution_info(),
+                    crate::RuntimeProgramExecutionInfo::default(),
+                );
+            }
+            let value = session.submit("answer := dep/value\nanswer").unwrap();
+            assert_eq!(value.format_canonical_inline(), "42");
+            assert_eq!(value.format_repl_kind(), "f64");
+            let info = session.runtime().unwrap().program_execution_info();
+            assert_eq!(info.route, crate::RuntimeProgramRoute::ResidentPure);
+            assert_eq!(info.resident_accepted_turns, 1);
+            assert_eq!(info.requirement_count, 0);
+            assert_eq!(info.observation_count, 0);
+            assert_eq!(info.effect_count, 0);
+        }
+    }
+
+    #[test]
     fn canonical_clear_names_live_dependencies_and_preserves_revision_on_refusal() {
         for name in ["x", "Δ", "mech-source-input-78"] {
             let mut session = ResidentReplSession::new(SourceRuntimeFactory);
