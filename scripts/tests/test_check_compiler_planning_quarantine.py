@@ -20,16 +20,10 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
         files = {
-            "src/engine/src/lib.rs": (
-                '#[cfg(feature = "semantic-compiler")]\nmod interpreter;\n'
-                '#[cfg(feature = "semantic-compiler")]\n'
-                'pub(crate) use interpreter::Interpreter;\n'
-            ),
-            "src/engine/src/interpreter/mod.rs": (
-                "pub(crate) type InterpreterRef = Ref<Box<Interpreter>>;\n"
-            ),
+            "src/core/src/lib.rs": "pub mod source_diagnostic;\npub mod encoded_payload;\n",
+            "src/engine/src/lib.rs": "pub mod memory_runtime;\n",
             "src/engine/src/program/mod.rs": '#[cfg(feature = "semantic-compiler")]\nmod compiler_planning;\n',
-            "src/engine/src/program/compiler_planning.rs": "pub struct CompilerPlanningProgram;\n",
+            "src/engine/src/program/compiler_planning.rs": "pub struct CompilerPlanningConfig;\n",
             "src/engine/src/artifact/encoding.rs": 'const DOMAIN: &[u8] = b"mech-program-v1\\0";\n',
             "src/runtime/src/runtime/program/compiler.rs": "use mech_core::LegacyValue;\n",
             "src/runtime/src/runtime/program/external/value_adapter_tests.rs": "use mech_core::LegacyValue;\n",
@@ -53,7 +47,7 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
         instance = root / "src/engine/src/program/instance.rs"
         instance.write_text("pub struct MechProgram;\n", encoding="utf-8")
         failures = CHECKER.run(root)
-        self.assertTrue(any("interpreter module is public" in row for row in failures))
+        self.assertTrue(any("retired interpreter module remains reachable" in row for row in failures))
         self.assertTrue(any("obsolete mutable program instance" in row for row in failures))
         self.assertTrue(any("removed MechProgram surface" in row for row in failures))
 
@@ -67,12 +61,93 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
 
     def test_public_interpreter_reference_alias_fails(self):
         root = self.fixture()
-        (root / "src/engine/src/interpreter/mod.rs").write_text(
+        interpreter = root / "src/engine/src/interpreter/mod.rs"
+        interpreter.parent.mkdir(parents=True)
+        interpreter.write_text(
             "pub type InterpreterRef = Ref<Box<Interpreter>>;\n",
             encoding="utf-8",
         )
         failures = CHECKER.run(root)
-        self.assertTrue(any("InterpreterRef remains public" in row for row in failures))
+        self.assertTrue(any("removed InterpreterRef surface" in row for row in failures))
+        self.assertTrue(any("retired AST workspace remains" in row for row in failures))
+
+    def test_disabled_private_interpreter_restoration_fails(self):
+        root = self.fixture()
+        (root / "src/engine/src/lib.rs").write_text(
+            '#[cfg(any())]\nmod interpreter;\n', encoding="utf-8"
+        )
+        failures = CHECKER.run(root)
+        self.assertTrue(any("retired interpreter module remains reachable" in row for row in failures))
+
+    def test_disabled_ast_visitor_export_restoration_fails(self):
+        for module in ("expressions", "literals", "structures"):
+            with self.subTest(module=module):
+                root = self.fixture()
+                (root / "src/engine/src/lib.rs").write_text(
+                    f'#[cfg(any())]\npub use {module}::*;\n', encoding="utf-8"
+                )
+                self.assertTrue(any(f"retired {module} module remains reachable" in row for row in CHECKER.run(root)))
+
+    def test_disabled_core_source_tree_export_restoration_fails(self):
+        for source in (
+            '#[cfg(any())]\npub mod nodes;\n',
+            '#[cfg(any())]\npub use self::nodes::*;\n',
+        ):
+            with self.subTest(source=source):
+                root = self.fixture()
+                (root / "src/core/src/lib.rs").write_text(source, encoding="utf-8")
+                self.assertTrue(any("retired source-tree module/export remains reachable" in row for row in CHECKER.run(root)))
+
+    def test_disabled_planning_workspace_restoration_fails(self):
+        root = self.fixture()
+        planning = root / "src/engine/src/program/compiler_planning.rs"
+        planning.write_text(
+            '#[cfg(any())]\nstruct CompilerPlanningProgram;\n', encoding="utf-8"
+        )
+        failures = CHECKER.run(root)
+        self.assertTrue(any("removed CompilerPlanningProgram surface" in row for row in failures))
+
+    def test_core_ast_formatting_helper_restoration_fails(self):
+        for source in (
+            '#[cfg(any())]\npub struct IndexedString { pub data: Vec<char> }\n',
+            '#[cfg(any())]\nimpl IndexedString { fn new() {} }\n',
+        ):
+            with self.subTest(source=source):
+                root = self.fixture()
+                (root / "src/core/src/lib.rs").write_text(source, encoding="utf-8")
+                self.assertTrue(any("retired IndexedString AST formatting helper remains" in row for row in CHECKER.run(root)))
+
+    def test_unrelated_indexed_string_name_is_not_retired(self):
+        root = self.fixture()
+        unrelated = root / "src/build/src/text_index.rs"
+        unrelated.parent.mkdir(parents=True)
+        unrelated.write_text("struct IndexedString;\n", encoding="utf-8")
+        self.assertEqual(CHECKER.run(root), [])
+
+    def test_source_namespace_identity_does_not_admit_an_executor_type(self):
+        root = self.fixture()
+        index = root / "src/runtime/src/resolver/index.rs"
+        index.parent.mkdir(parents=True)
+        index.write_text(
+            "enum SourceScope { Program, Interpreter(SourceInterpreterId) }\n"
+            "fn named_scope() { SourceScope::Interpreter(id); }\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(CHECKER.run(root), [])
+        with index.open("a", encoding="utf-8") as source:
+            source.write("\n#[cfg(any())] struct Interpreter;\n")
+        self.assertTrue(any("removed Interpreter surface" in row for row in CHECKER.run(root)))
+
+    def test_removed_ast_path_restoration_fails_even_without_exports(self):
+        for relative in CHECKER.REMOVED_WORKSPACE_PATHS:
+            with self.subTest(relative=relative):
+                root = self.fixture()
+                path = root / relative
+                if not path.suffix:
+                    path = path / "mod.rs"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("// inert but physically retired workspace\n", encoding="utf-8")
+                self.assertTrue(any("retired AST workspace remains" in row for row in CHECKER.run(root)))
 
     def test_legacy_value_exception_is_exact(self):
         root = self.fixture()

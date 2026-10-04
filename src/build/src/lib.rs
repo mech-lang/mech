@@ -1,11 +1,18 @@
 //! Deterministic native application planning and generation for Mech.
 
+#![cfg_attr(
+    all(windows, feature = "process-supervision"),
+    feature(windows_process_extensions_main_thread_handle)
+)]
+
 mod analysis;
 pub mod cargo;
 pub mod dependency;
 pub mod error;
 pub mod host;
 pub mod plan;
+#[cfg(feature = "process-supervision")]
+pub mod process;
 pub mod project;
 
 use std::collections::{BTreeMap, BTreeSet};

@@ -3,10 +3,10 @@ use mech_syntax::document::parser::canonical::{
 };
 use mech_syntax::document::parser::{CANONICAL_PORTS, PortPhase, RuleFamily, rules};
 use mech_syntax::document::{
-    DocumentId, FragmentKind, IdGenerator, ParseConfig, ParseContext, RecoveryAction, Revision,
-    SyntaxKind, TextRange, TextSize, TextSnapshot, TokenFlags, compact_debug_tree,
-    parse_canonical_grammar, parse_fragment, reconstruct_source, validate_lossless,
-    validate_lossless_range,
+    DocumentId, GrammarFragmentContext, GrammarFragmentKind, IdGenerator, ParseConfig,
+    RecoveryAction, Revision, SyntaxKind, TextRange, TextSize, TextSnapshot, TokenFlags,
+    compact_debug_tree, parse_canonical_grammar, parse_canonical_grammar_fragment,
+    reconstruct_source, validate_lossless, validate_lossless_range,
 };
 use proptest::prelude::*;
 
@@ -174,11 +174,11 @@ proptest! {
     let source =
       TextSnapshot::new(DocumentId(46), Revision(0), physical).unwrap();
     let mut ids = IdGenerator::new();
-    let fragment = parse_fragment(
+    let fragment = parse_canonical_grammar_fragment(
       &source,
       range,
-      FragmentKind::GrammarRule,
-      ParseContext::for_kind(FragmentKind::GrammarRule),
+      GrammarFragmentKind::GrammarRule,
+      GrammarFragmentContext::default(),
       ParseConfig::default(),
       &mut ids,
     );

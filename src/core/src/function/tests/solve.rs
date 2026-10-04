@@ -1,17 +1,14 @@
 #[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
-    FunctionDefinition, FunctionInvocation, MechFunctionImpl, ReactiveNodeId, ReactiveNodeKind,
-    ReactivePlan, ReactivePlanSolveOutcome, ReactiveRegisterCommitOutcome, ReactiveSolveStatus,
+    FunctionInvocation, MechFunctionImpl, Plan, ReactiveNodeId, ReactiveNodeKind, ReactivePlan,
+    ReactivePlanSolveOutcome, ReactiveRegisterCommitOutcome, ReactiveSolveStatus,
     ReactiveTurnOutcome, ReactiveTurnState,
 };
 use super::support::reg;
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{
-    FunctionDefine, GenericError, MResult, MechError, ValueCell, hash_str,
-    internal_pattern_value_identifier,
-};
+use crate::{GenericError, MResult, MechError, ValueCell};
 use std::{cell::RefCell, rc::Rc};
 
 #[cfg(feature = "u64")]
@@ -214,24 +211,14 @@ impl MechFunctionCompiler for FalliblePlanStep {
 
 #[cfg(feature = "f64")]
 #[test]
-fn function_definition_plan_propagates_solve_failure_without_publishing_later_outputs() {
-    let definition = FunctionDefinition::new(
-        hash_str("fallible-plan"),
-        "fallible-plan".into(),
-        FunctionDefine {
-            name: internal_pattern_value_identifier("fallible-plan"),
-            input: Vec::new(),
-            output: Vec::new(),
-            statements: Vec::new(),
-            match_arms: Vec::new(),
-        },
-    );
+fn reactive_plan_propagates_solve_failure_without_publishing_later_outputs() {
+    let plan = Plan::new();
+    let trigger = ValueCell::from_exact(0.0_f64).unwrap();
     let failed_output = ValueCell::from_exact(7.0_f64).unwrap();
     let later_output = ValueCell::from_exact(11.0_f64).unwrap();
     let failed_calls = Rc::new(RefCell::new(0));
     let later_calls = Rc::new(RefCell::new(0));
-    definition
-        .plan
+    let failed_node = plan
         .add_function(crate::function::test_planned_instance(
             Box::new(FalliblePlanStep {
                 label: "plan solve failed",
@@ -243,8 +230,7 @@ fn function_definition_plan_propagates_solve_failure_without_publishing_later_ou
             FunctionInvocation::nullary(failed_output.clone()),
         ))
         .unwrap();
-    definition
-        .plan
+    let later_node = plan
         .add_function(crate::function::test_planned_instance(
             Box::new(FalliblePlanStep {
                 label: "later plan step",
@@ -257,7 +243,17 @@ fn function_definition_plan_propagates_solve_failure_without_publishing_later_ou
         ))
         .unwrap();
 
-    let error = definition.solve_result().unwrap_err();
+    assert!(
+        plan.borrow_mut()
+            .add_reactive_dependency(failed_node, trigger.reactive_cell_id())
+    );
+    assert!(
+        plan.borrow_mut()
+            .add_reactive_dependency(later_node, trigger.reactive_cell_id())
+    );
+    let error = plan
+        .solve_dirty_cells(&[trigger.reactive_cell_id()])
+        .unwrap_err();
 
     assert!(error.full_chain_message().contains("plan solve failed"));
     assert!(

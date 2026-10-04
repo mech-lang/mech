@@ -648,6 +648,15 @@ jobs:
           path: /tmp/browser-compute-canary
       - name: Restore the shared compute browser build
         run: tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+      - name: Install Node for static compute package admission
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+      - name: Verify emitted static CPU and WebGPU bundles under a non-root prefix
+        run: >-
+          python3 scripts/smoke-canonical-compute-browser.py
+          --static-bundle --mech-bin target/debug/mech
+          --wasm-pkg src/wasm/pkg --software-adapter
       - name: Verify canonical document bundle activation and replacement
         env:
           MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-document-bundles

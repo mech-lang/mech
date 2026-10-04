@@ -26,10 +26,10 @@ REQUIRED = TYPE_MODULES + (
     "src/core/src/cell_binding.rs",
     "src/core/src/function/catalog.rs",
     "src/core/src/function/specialization.rs",
-    "src/engine/src/expressions/formulas.rs",
-    "src/engine/src/expressions/errors.rs",
+    "src/engine/src/source_semantics/frontend.rs",
+    "src/engine/src/intrinsics/aggregate.rs",
     "src/engine/src/function/resolver.rs",
-    "src/engine/src/literals.rs",
+    "src/engine/src/intrinsics/kind_conversion.rs",
     "src/engine/src/resident/conversion.rs",
     "src/runtime/src/runtime/program/tests.rs",
     "src/core/tests/type_system_builtin.rs",
@@ -465,13 +465,13 @@ def failures(root: Path) -> list[str]:
     ) or ""
     if re.search(r"\bif\s+exact_type_equal\s*\(", numeric_promotion):
         found.append("numeric promotion admits arbitrary exact-equal kinds")
-    literal = rust_code(sources["src/engine/src/literals.rs"])
+    conversion_execution = rust_code(sources["src/engine/src/intrinsics/kind_conversion.rs"])
     integer_target = extract_item_body(
         sources["src/core/src/type_system/conversion.rs"], re.compile(r"\bfn\s+integer_target\b")
     ) or ""
     if re.search(r"\bnumber_to_f64\b", integer_target):
         found.append("integer conversion funnels through f64")
-    if "ConversionPlan" not in literal or "execute_conversion_plan" not in literal:
+    if "ConversionPlan" not in conversion_execution or "execute_conversion_plan" not in conversion_execution:
         found.append("production conversion execution does not consume ConversionPlan")
     resident_conversion = rust_code(sources["src/engine/src/resident/conversion.rs"])
     for marker in ("bind_kind_conversion", "plan_explicit_cast"):
@@ -480,12 +480,11 @@ def failures(root: Path) -> list[str]:
     if not re.search(r"execute_conversion_draft\s*\(\s*source\b", resident_conversion):
         found.append("resident convert/kind execution is missing the semantic conversion executor")
 
-    formulas = rust_code(sources["src/engine/src/expressions/formulas.rs"])
+    frontend = sources["src/engine/src/source_semantics/frontend.rs"]
     add_route = extract_item_body(
-        sources["src/engine/src/expressions/formulas.rs"],
-        re.compile(r"\bfn\s+specialize_add_operation\b"),
+        frontend, re.compile(r"\bfn\s+emit_operator\b"),
     ) or ""
-    if "operation_semantically_accepts" not in add_route:
+    if "resolve_maintained_call" not in add_route or "emit_with_schema_draft" not in add_route:
         found.append("formula + does not select its operation through semantic schemes")
     if re.search(r"\b(?:representation|runtime_type|storage)\b", add_route, re.IGNORECASE):
         found.append("formula + inspects runtime representation or storage while routing")
@@ -504,20 +503,31 @@ def failures(root: Path) -> list[str]:
     if re.search(r"\b(?:representation|prefix|factory name|runtime factory)\b", specialization_messages, re.IGNORECASE):
         found.append("source-facing specialization diagnostics expose physical binding details")
 
-    expression_errors = rust_code(sources["src/engine/src/expressions/errors.rs"])
+    aggregate = sources["src/engine/src/intrinsics/aggregate.rs"]
+    generator_descriptor = extract_item_body(
+        aggregate, re.compile(r"\bstruct\s+ComprehensionGeneratorError\b"),
+    ) or ""
+    generator_error = extract_item_body(
+        aggregate, re.compile(r"\bimpl\s+MechErrorKind\s+for\s+ComprehensionGeneratorError\b"),
+    ) or ""
+    expression_errors = rust_code(frontend + generator_descriptor + generator_error)
     if re.search(r"\b(?:FunctionValueRepresentation|FunctionRuntimeType|RuntimeFunctionSignature)\b", expression_errors):
         found.append("source-facing expression diagnostics expose physical binding types")
-    for name in (
-        "ComprehensionGeneratorError",
-        "MatchArmKindMismatchError",
-        "InvalidGuardExpressionError",
+    if "semantic_name" not in generator_error:
+        found.append("ComprehensionGeneratorError does not format a semantic type name")
+    match_lowering = extract_item_body_raw(
+        frontend, re.compile(r"\bfn\s+lower_match_expression_inner\b"),
+    ) or ""
+    if (
+        "schema.body != SchemaBody::Bool" not in rust_code(match_lowering)
+        or '"source-semantics/non-boolean-operator-kind"' not in match_lowering
     ):
-        body = extract_item_body(
-            sources["src/engine/src/expressions/errors.rs"],
-            re.compile(rf"\bimpl\s+MechErrorKind\s+for\s+{name}\b"),
-        ) or ""
-        if "semantic_name" not in body:
-            found.append(f"{name} does not format a semantic type name")
+        found.append("source match guard does not require the semantic Boolean schema")
+    if (
+        "expected != &schema" not in rust_code(match_lowering)
+        or '"source-semantics/incompatible-match-result-kind"' not in match_lowering
+    ):
+        found.append("source match arms do not require one exact semantic result schema")
 
     catalog = sources["src/core/src/function/catalog.rs"]
     runtime_entry = extract_item_body(catalog, re.compile(r"\bstruct\s+RuntimeFunctionEntry\b")) or ""

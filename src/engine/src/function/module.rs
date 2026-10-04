@@ -6,6 +6,7 @@ use super::dynamic::{
     dynamic_trace, mech_str_to_string,
 };
 use crate::*;
+#[cfg(any(test, feature = "dynamic-modules"))]
 use std::collections::{BTreeMap, BTreeSet};
 #[cfg(feature = "dynamic-modules")]
 use std::collections::{HashMap, HashSet};
@@ -107,6 +108,7 @@ pub struct DynamicFunctionModuleFragment {
 }
 
 impl DynamicFunctionModuleFragment {
+    #[cfg(any(test, feature = "dynamic-modules"))]
     fn manifest(&self) -> ModuleManifest {
         ModuleManifest {
             module: self.module.clone(),
@@ -1417,53 +1419,6 @@ fn missing_module(module: &str) -> MechError {
     MechError::new(MissingFunctionError::named(module), None).with_compiler_loc()
 }
 
-fn missing_module_item(module: &str, item: &str) -> MechError {
-    MechError::new(
-        MissingFunctionError::named(format!("{module}/{item}")),
-        None,
-    )
-    .with_compiler_loc()
-}
-
-fn static_module_manifest(catalog: &FunctionCatalog, module: &str) -> Option<ModuleManifest> {
-    if !catalog.has_module(module) {
-        return None;
-    }
-
-    Some(ModuleManifest {
-        module: module.to_string(),
-        items: catalog
-            .module_exports(module)
-            .map(|export| {
-                export
-                    .item
-                    .clone()
-                    .expect("catalog module exports always have an item")
-            })
-            .collect(),
-    })
-}
-
-fn bind_static_exports<'a>(
-    interpreter: &Interpreter,
-    bindings: impl IntoIterator<Item = (&'a FunctionExport, String)>,
-) -> MResult<()> {
-    let mut state = interpreter.state.borrow_mut();
-    let checkpoint = state.function_environment.clone();
-
-    for (export, visible_name) in bindings {
-        if let Err(error) = state
-            .function_environment
-            .bind_catalog_export(export, &visible_name)
-        {
-            state.function_environment = checkpoint;
-            return Err(error);
-        }
-    }
-
-    Ok(())
-}
-
 fn invalid_dynamic_fragment(
     fragment: &DynamicFunctionModuleFragment,
     reason: impl Into<String>,
@@ -1481,6 +1436,7 @@ fn invalid_dynamic_fragment(
     .with_compiler_loc()
 }
 
+#[cfg(any(test, feature = "dynamic-modules"))]
 fn validate_dynamic_fragment(
     fragment: &DynamicFunctionModuleFragment,
 ) -> MResult<BTreeMap<String, (ExtensionFunctionId, String)>> {
@@ -1573,183 +1529,9 @@ fn validate_dynamic_fragment(
     Ok(exports_by_item)
 }
 
-fn install_dynamic_fragment(
-    interpreter: &Interpreter,
-    fragment: DynamicFunctionModuleFragment,
-    binding_requests: Vec<(String, String)>,
-) -> MResult<ModuleManifest> {
-    let exports_by_item = validate_dynamic_fragment(&fragment)?;
-    let mut bindings = Vec::with_capacity(binding_requests.len());
-    for (item, visible_name) in binding_requests {
-        let Some((extension, canonical_name)) = exports_by_item.get(&item) else {
-            return Err(missing_module_item(&fragment.module, &item));
-        };
-        bindings.push((*extension, canonical_name.clone(), visible_name));
-    }
-
-    let manifest = fragment.manifest();
-    let mut state = interpreter.state.borrow_mut();
-    let mut next_extensions = state.function_extensions.clone();
-    for entry in fragment.entries {
-        next_extensions.insert_or_replace(entry)?;
-    }
-    for export in fragment.exports {
-        next_extensions.insert_module_export_or_replace(
-            fragment.module.clone(),
-            export.item,
-            export.extension,
-        )?;
-    }
-
-    let mut next_environment = state.function_environment.clone();
-    for (extension, canonical_name, visible_name) in bindings {
-        next_environment.bind_extension(&canonical_name, &visible_name, extension)?;
-    }
-
-    state.function_extensions = next_extensions;
-    state.function_environment = next_environment;
-    Ok(manifest)
-}
-
-fn load_module_with_registry(
-    interpreter: &Interpreter,
-    module: &str,
-    registry: &ModuleRegistry,
-) -> MResult<ModuleManifest> {
-    let catalog = interpreter.function_catalog();
-    if let Some(manifest) = static_module_manifest(catalog, module) {
-        let bindings = catalog.module_exports(module).map(|export| {
-            let item = export
-                .item
-                .as_deref()
-                .expect("catalog module exports always have an item");
-            (export, format!("{module}/{item}"))
-        });
-        bind_static_exports(interpreter, bindings)?;
-        return Ok(manifest);
-    }
-
-    let fragment = registry.load(module)?;
-    let binding_requests = fragment
-        .exports
-        .iter()
-        .map(|export| (export.item.clone(), format!("{module}/{}", export.item)))
-        .collect();
-    install_dynamic_fragment(interpreter, fragment, binding_requests)
-}
-
-pub fn load_module(interpreter: &Interpreter, module: &str) -> MResult<ModuleManifest> {
-    load_module_with_registry(interpreter, module, &ModuleRegistry::available())
-}
-
-pub fn import_module_qualified(interpreter: &Interpreter, module: &str) -> MResult<ModuleManifest> {
-    load_module(interpreter, module)
-}
-
-pub fn import_module_item(interpreter: &Interpreter, module: &str, item: &str) -> MResult<()> {
-    let catalog = interpreter.function_catalog();
-    if catalog.has_module(module) {
-        let export = catalog
-            .module_export(module, item)
-            .ok_or_else(|| missing_module_item(module, item))?;
-        let local_name = item.rsplit('/').next().unwrap_or(item);
-        return bind_static_exports(interpreter, [(export, local_name.to_string())]);
-    }
-
-    let fragment = ModuleRegistry::available().load(module)?;
-    let local_name = item.rsplit('/').next().unwrap_or(item);
-    install_dynamic_fragment(
-        interpreter,
-        fragment,
-        vec![(item.to_string(), local_name.to_string())],
-    )?;
-    Ok(())
-}
-
-pub fn import_module_item_as(
-    interpreter: &Interpreter,
-    module: &str,
-    item: &str,
-    alias: &str,
-) -> MResult<()> {
-    let catalog = interpreter.function_catalog();
-    if catalog.has_module(module) {
-        let export = catalog
-            .module_export(module, item)
-            .ok_or_else(|| missing_module_item(module, item))?;
-        return bind_static_exports(interpreter, [(export, alias.to_string())]);
-    }
-
-    let fragment = ModuleRegistry::available().load(module)?;
-    install_dynamic_fragment(
-        interpreter,
-        fragment,
-        vec![(item.to_string(), alias.to_string())],
-    )?;
-    Ok(())
-}
-
-pub fn import_module_group(
-    interpreter: &Interpreter,
-    module: &str,
-    items: &[String],
-) -> MResult<()> {
-    let catalog = interpreter.function_catalog();
-    if catalog.has_module(module) {
-        let mut bindings = Vec::with_capacity(items.len());
-        for item in items {
-            let export = catalog
-                .module_export(module, item)
-                .ok_or_else(|| missing_module_item(module, item))?;
-            let local_name = item.rsplit('/').next().unwrap_or(item);
-            bindings.push((export, local_name.to_string()));
-        }
-        return bind_static_exports(interpreter, bindings);
-    }
-
-    let fragment = ModuleRegistry::available().load(module)?;
-    let binding_requests = items
-        .iter()
-        .map(|item| {
-            let local_name = item.rsplit('/').next().unwrap_or(item);
-            (item.clone(), local_name.to_string())
-        })
-        .collect();
-    install_dynamic_fragment(interpreter, fragment, binding_requests)?;
-    Ok(())
-}
-
-pub fn import_module_glob(interpreter: &Interpreter, module: &str) -> MResult<()> {
-    let catalog = interpreter.function_catalog();
-    if catalog.has_module(module) {
-        let bindings = catalog.module_exports(module).map(|export| {
-            let item = export
-                .item
-                .as_deref()
-                .expect("catalog module exports always have an item");
-            let local_name = item.rsplit('/').next().unwrap_or(item);
-            (export, local_name.to_string())
-        });
-        return bind_static_exports(interpreter, bindings);
-    }
-
-    let fragment = ModuleRegistry::available().load(module)?;
-    let binding_requests = fragment
-        .exports
-        .iter()
-        .map(|export| {
-            let local_name = export.item.rsplit('/').next().unwrap_or(&export.item);
-            (export.item.clone(), local_name.to_string())
-        })
-        .collect();
-    install_dynamic_fragment(interpreter, fragment, binding_requests)?;
-    Ok(())
-}
-
 #[cfg(test)]
-mod static_catalog_module_tests {
+mod dynamic_fragment_validation_tests {
     use super::*;
-    use std::sync::atomic::{AtomicBool, Ordering};
 
     struct TestSpecializer;
 
@@ -1760,101 +1542,6 @@ mod static_catalog_module_tests {
             _: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             unreachable!("module visibility tests do not specialize functions")
-        }
-    }
-
-    fn static_catalog() -> Arc<FunctionCatalog> {
-        let mut builder = FunctionCatalogBuilder::new();
-        for (canonical_name, module, item) in [
-            ("math/sin", "math", "sin"),
-            ("math/cos", "math", "cos"),
-            ("stats/sum/column", "stats", "sum/column"),
-        ] {
-            let operation = builder
-                .insert_canonical_specializer_with_contract(
-                    canonical_name,
-                    mech_core::maintained_source_type_declaration(canonical_name).unwrap(),
-                    crate::test_support::catalog::pure_test_operation_contract(1),
-                    Arc::new(TestSpecializer),
-                )
-                .unwrap();
-            builder
-                .insert_export(FunctionExport {
-                    operation,
-                    canonical_name: canonical_name.to_string(),
-                    module: Some(module.to_string()),
-                    item: Some(item.to_string()),
-                    exposure: FunctionExposure::ModuleOnly,
-                })
-                .unwrap();
-        }
-        Arc::new(builder.build().unwrap())
-    }
-
-    fn interpreter() -> Interpreter {
-        Interpreter::with_function_catalog(0, 100, static_catalog())
-    }
-
-    fn binding(interpreter: &Interpreter, name: &str) -> Option<FunctionBinding> {
-        interpreter
-            .state
-            .borrow()
-            .function_environment
-            .resolve_name(name)
-    }
-
-    #[test]
-    fn qualified_item_alias_glob_and_nested_imports_bind_exact_catalog_exports() {
-        let qualified = interpreter();
-        let manifest = load_module(&qualified, "math").unwrap();
-        assert_eq!(manifest.items, ["cos", "sin"]);
-        assert_eq!(
-            binding(&qualified, "math/cos"),
-            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
-                "math/cos",
-            ))),
-        );
-        assert_eq!(binding(&qualified, "cos"), None);
-
-        let item = interpreter();
-        import_module_item(&item, "stats", "sum/column").unwrap();
-        assert_eq!(
-            binding(&item, "column"),
-            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
-                "stats/sum/column",
-            ))),
-        );
-        assert_eq!(binding(&item, "stats/sum/column"), None);
-
-        let alias = interpreter();
-        import_module_item_as(&alias, "math", "cos", "trig").unwrap();
-        assert_eq!(
-            binding(&alias, "trig"),
-            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
-                "math/cos",
-            ))),
-        );
-        assert_eq!(binding(&alias, "cos"), None);
-
-        let glob = interpreter();
-        import_module_glob(&glob, "math").unwrap();
-        assert!(binding(&glob, "cos").is_some());
-        assert!(binding(&glob, "sin").is_some());
-        assert_eq!(binding(&glob, "math/cos"), None);
-    }
-
-    struct RecordingLoader {
-        probed: Arc<AtomicBool>,
-    }
-
-    impl ModuleLoader for RecordingLoader {
-        fn can_load(&self, _: &str) -> bool {
-            self.probed.store(true, Ordering::SeqCst);
-            true
-        }
-
-        fn load(&self, _: &str) -> MResult<DynamicFunctionModuleFragment> {
-            unreachable!("an exact static module must take precedence")
         }
     }
 
@@ -1896,110 +1583,6 @@ mod static_catalog_module_tests {
     }
 
     #[test]
-    fn exact_static_module_precedes_every_dynamic_loader() {
-        let interpreter = interpreter();
-        let probed = Arc::new(AtomicBool::new(false));
-        let registry = ModuleRegistry::new().with_loader(Box::new(RecordingLoader {
-            probed: probed.clone(),
-        }));
-
-        load_module_with_registry(&interpreter, "math", &registry).unwrap();
-
-        assert!(!probed.load(Ordering::SeqCst));
-    }
-
-    #[test]
-    fn dynamic_fragment_installs_exact_exports_and_qualified_bindings() {
-        let interpreter = interpreter();
-        let registry = ModuleRegistry::new().with_loader(Box::new(FragmentLoader {
-            fragment: dynamic_fragment("dynamic", &["sin", "sum/column"]),
-        }));
-
-        let manifest = load_module_with_registry(&interpreter, "dynamic", &registry).unwrap();
-
-        assert_eq!(manifest.module, "dynamic");
-        assert_eq!(manifest.items, ["sin", "sum/column"]);
-        let sin = ExtensionFunctionId::from_name("dynamic/sin");
-        let column = ExtensionFunctionId::from_name("dynamic/sum/column");
-        assert_eq!(
-            binding(&interpreter, "dynamic/sin"),
-            Some(FunctionBinding::Extension(sin)),
-        );
-        assert_eq!(
-            binding(&interpreter, "dynamic/sum/column"),
-            Some(FunctionBinding::Extension(column)),
-        );
-        assert_eq!(binding(&interpreter, "sin"), None);
-
-        let state = interpreter.state.borrow();
-        assert!(state.function_extensions.entry(sin).is_some());
-        assert!(state.function_extensions.entry(column).is_some());
-        assert_eq!(
-            state.function_extensions.module_export("dynamic", "sin"),
-            Some(sin),
-        );
-        assert_eq!(
-            state
-                .function_extensions
-                .module_export("dynamic", "sum/column"),
-            Some(column),
-        );
-    }
-
-    #[test]
-    fn failed_dynamic_binding_does_not_install_entries_exports_or_names() {
-        let interpreter = interpreter();
-        let extension = ExtensionFunctionId::from_name("dynamic/sin");
-
-        let error = install_dynamic_fragment(
-            &interpreter,
-            dynamic_fragment("dynamic", &["sin"]),
-            vec![(String::from("sin"), String::new())],
-        )
-        .unwrap_err();
-
-        assert_eq!(error.kind_name(), "FunctionEnvironmentInvalidBinding");
-        let state = interpreter.state.borrow();
-        assert!(state.function_extensions.entry(extension).is_none());
-        assert_eq!(
-            state.function_extensions.module_export("dynamic", "sin"),
-            None,
-        );
-        assert_eq!(state.function_environment.resolve_name("dynamic/sin"), None);
-        assert_eq!(state.function_environment.resolve_name("sin"), None);
-    }
-
-    #[test]
-    fn checkpoint_restore_removes_a_loaded_dynamic_fragment_without_changing_the_catalog() {
-        let mut interpreter = interpreter();
-        let catalog = Arc::clone(interpreter.function_catalog());
-        let extension = ExtensionFunctionId::from_name("dynamic/sin");
-        let checkpoint = interpreter.checkpoint().unwrap();
-
-        install_dynamic_fragment(
-            &interpreter,
-            dynamic_fragment("dynamic", &["sin"]),
-            vec![(String::from("sin"), String::from("s"))],
-        )
-        .unwrap();
-        assert_eq!(
-            binding(&interpreter, "s"),
-            Some(FunctionBinding::Extension(extension)),
-        );
-
-        interpreter.restore(checkpoint).unwrap();
-
-        assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
-        let state = interpreter.state.borrow();
-        assert!(state.function_extensions.entry(extension).is_none());
-        assert_eq!(
-            state.function_extensions.module_export("dynamic", "sin"),
-            None,
-        );
-        assert_eq!(state.function_environment.resolve_name("s"), None);
-    }
-
-    #[test]
     fn registry_rejects_a_fragment_for_a_different_module() {
         let registry = ModuleRegistry::new().with_loader(Box::new(FragmentLoader {
             fragment: dynamic_fragment("other", &["sin"]),
@@ -2018,30 +1601,44 @@ mod static_catalog_module_tests {
     }
 
     #[test]
-    fn missing_item_in_static_module_does_not_mutate_visibility() {
-        let interpreter = interpreter();
-
-        let error = import_module_item(&interpreter, "math", "missing").unwrap_err();
-
-        assert_eq!(error.kind_name(), "MissingFunction");
-        assert_eq!(binding(&interpreter, "missing"), None);
-        assert_eq!(binding(&interpreter, "math/missing"), None);
+    fn exact_dynamic_exports_are_validated_without_source_workspace() {
+        let fragment = dynamic_fragment("dynamic", &["sin", "sum/column"]);
+        let exports = validate_dynamic_fragment(&fragment).unwrap();
+        assert_eq!(exports.len(), 2);
+        assert_eq!(exports["sin"].1, "dynamic/sin");
+        assert_eq!(exports["sum/column"].1, "dynamic/sum/column");
+        let manifest = fragment.manifest();
+        assert_eq!(manifest.items, ["sin", "sum/column"]);
     }
 
     #[test]
-    fn failed_group_import_rolls_back_every_earlier_binding() {
-        let interpreter = interpreter();
-
-        let error = import_module_group(
-            &interpreter,
-            "math",
-            &[String::from("sin"), String::from("missing")],
-        )
-        .unwrap_err();
-
-        assert_eq!(error.kind_name(), "MissingFunction");
-        assert_eq!(binding(&interpreter, "sin"), None);
-        assert_eq!(binding(&interpreter, "missing"), None);
+    fn malformed_dynamic_fragments_are_rejected_before_catalog_installation() {
+        let valid = dynamic_fragment("dynamic", &["sin", "cos"]);
+        let mut candidates = Vec::new();
+        let mut duplicate_entry = valid.clone();
+        duplicate_entry
+            .entries
+            .push(duplicate_entry.entries[0].clone());
+        candidates.push((duplicate_entry, "duplicate extension entry"));
+        let mut duplicate_export = valid.clone();
+        duplicate_export
+            .exports
+            .push(duplicate_export.exports[0].clone());
+        candidates.push((duplicate_export, "duplicate exact export item"));
+        let mut missing = valid.clone();
+        missing.exports[0].extension = ExtensionFunctionId::from_name("absent/item");
+        candidates.push((missing, "references missing extension"));
+        let mut wrong_name = valid.clone();
+        wrong_name.exports[0].item = "different".into();
+        candidates.push((wrong_name, "instead of exact canonical name"));
+        let mut unexported = valid.clone();
+        unexported.exports.pop();
+        candidates.push((unexported, "has no exact module export"));
+        for (candidate, expected) in candidates {
+            let error = validate_dynamic_fragment(&candidate).unwrap_err();
+            assert!(error.full_chain_message().contains(expected), "{error:?}");
+        }
+        assert_eq!(validate_dynamic_fragment(&valid).unwrap().len(), 2);
     }
 }
 

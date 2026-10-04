@@ -150,6 +150,7 @@ cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
 bundle_web_core = [
       "project", "web_host", "formatter_core", "serde", "dep:sha2", "dep:tempfile",
+      "dep:mech-build", "mech-build/process-supervision",
       "mech-engine/compiler", "mech-syntax/program", "mech-stdlib/standard_compiler",
       "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source", "mech-runtime/pretty_print",
       ]

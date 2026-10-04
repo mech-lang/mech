@@ -8,63 +8,21 @@ extern crate alloc;
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
-#[cfg(feature = "trace")]
-#[macro_export]
-macro_rules! trace_println {
-  ($interpreter:expr, $($arg:tt)*) => {
-    if $interpreter.trace {
-      let __trace_line = format!($($arg)*);
-      $interpreter.push_trace_line(__trace_line.clone());
-      if $interpreter.trace_to_stdout {
-        println!("{}", __trace_line);
-      }
-    }
-  };
-}
-
-#[cfg(not(feature = "trace"))]
-#[macro_export]
-macro_rules! trace_println {
-    ($interpreter:expr, $($arg:tt)*) => {};
-}
-
 #[cfg(feature = "semantic-compiler")]
 pub use mech_core::{
     CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
     CompiledNodeKind, CompiledSymbolDefinition,
 };
 
-#[cfg(all(
-    feature = "semantic-compiler",
-    feature = "functions",
-    feature = "symbol_table"
-))]
-pub mod activation;
 #[cfg(feature = "resident-ekf")]
 mod efficacy;
-#[cfg(feature = "semantic-compiler")]
-pub mod expressions;
 #[cfg(feature = "functions")]
 pub mod function;
-#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
-pub mod integrity;
-#[cfg(feature = "semantic-compiler")]
-mod interpreter;
-#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
-pub(crate) use interpreter::InterpreterRef;
-#[cfg(feature = "semantic-compiler")]
-pub(crate) use interpreter::{Interpreter, InterpreterExecution, RuntimeContextBinding};
 pub mod intrinsics;
-#[cfg(feature = "semantic-compiler")]
-pub mod literals;
-#[cfg(feature = "semantic-compiler")]
-pub mod mechdown;
 #[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
 pub mod memory_planner;
 #[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
 pub mod memory_runtime;
-#[cfg(feature = "semantic-compiler")]
-pub mod patterns;
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
 mod resident;
@@ -113,12 +71,6 @@ pub mod __resident {
 }
 #[cfg(feature = "source")]
 pub mod source_semantics;
-#[cfg(all(feature = "semantic-compiler", feature = "state_machines"))]
-pub mod state_machines;
-#[cfg(feature = "semantic-compiler")]
-pub mod statements;
-#[cfg(feature = "semantic-compiler")]
-pub mod structures;
 #[cfg(all(test, feature = "semantic-compiler", feature = "functions"))]
 #[path = "../tests/support/mod.rs"]
 pub(crate) mod test_support;
@@ -159,37 +111,25 @@ pub mod __mech_native {
     pub use crate::intrinsics::define::install_variable_define_f64;
     #[cfg(feature = "matrix_horzcat")]
     pub use crate::intrinsics::horzcat::__mech_native::*;
+    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+    pub use crate::intrinsics::kind_conversion::install_runtime_kind_conversion;
     #[cfg(feature = "table")]
     pub use crate::intrinsics::table_ops::__mech_native::*;
     #[cfg(feature = "matrix_vertcat")]
     pub use crate::intrinsics::vertcat::__mech_native::*;
-    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
-    pub use crate::literals::install_runtime_kind_conversion;
 }
 
 pub use mech_core::*;
 
-#[cfg(feature = "semantic-compiler")]
-pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::function::*;
-#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
-pub use crate::integrity::*;
 #[cfg(feature = "semantic-compiler")]
-pub use crate::literals::*;
+pub use crate::intrinsics::aggregate::*;
 #[cfg(feature = "semantic-compiler")]
-pub use crate::mechdown::*;
-#[cfg(feature = "semantic-compiler")]
-pub use crate::patterns::*;
+pub use crate::intrinsics::kind_conversion::*;
 pub use crate::program::*;
 #[cfg(feature = "source")]
 pub use crate::source_semantics::*;
-#[cfg(all(feature = "semantic-compiler", feature = "state_machines"))]
-pub use crate::state_machines::*;
-#[cfg(feature = "semantic-compiler")]
-pub use crate::statements::*;
-#[cfg(feature = "semantic-compiler")]
-pub use crate::structures::*;
 #[cfg(any(feature = "trace", feature = "state_machines"))]
 pub use crate::tracing::*;
 

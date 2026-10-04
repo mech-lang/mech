@@ -1,6 +1,5 @@
 use std::{collections::BTreeMap, env, fs, hint::black_box, time::Duration, time::Instant};
 
-use mech_core::{Body, MechCode, Program, Section, SectionElement};
 use mech_gpu::{ComputeLowerer, GpuBindingRole};
 use mech_runtime::RuntimeBuilder;
 
@@ -20,9 +19,10 @@ fn main() {
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .expect("source compiler must build")
-        .compile_tree_artifact(&tree)
+        .compile_mixed_document(&tree)
         .expect("the particle compute region must compile")
-        .into_artifact();
+        .compute
+        .artifact;
     let program = ComputeLowerer
         .compile(&artifact)
         .expect("the neutral compute region must lower");
@@ -167,45 +167,40 @@ where
         .unwrap_or(default)
 }
 
-fn isolated_compute_tree(source: &str) -> Program {
-    let tree = mech_syntax::parse(source).expect("complete particle source must parse");
-    let imports = tree
-        .body
-        .sections
-        .iter()
-        .flat_map(|section| &section.elements)
-        .filter_map(|element| {
-            let SectionElement::MechCode(code) = element else {
-                return None;
-            };
-            let imports = code
-                .iter()
-                .filter(|(code, _)| matches!(code, MechCode::Import(_)))
-                .cloned()
-                .collect::<Vec<_>>();
-            (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
-        })
-        .collect::<Vec<_>>();
-    let region = tree
-        .body
-        .sections
-        .iter()
-        .find(|section| !section.annotations.is_empty())
-        .expect("particle source must contain a compute region")
-        .clone();
-    Program {
-        title: None,
-        body: Body {
-            sections: vec![
-                Section {
-                    subtitle: None,
-                    annotations: Vec::new(),
-                    elements: imports,
-                },
-                region,
-            ],
-        },
-    }
+fn isolated_compute_tree(source: &str) -> mech_runtime::SourceDocument {
+    let start = [
+        "particle-field @compute\n",
+        "particle-field @cpu\n",
+        "particle-field @gpu\n",
+    ]
+    .into_iter()
+    .find_map(|heading| source.find(heading))
+    .expect("mixed source must contain its compute region");
+    let document = retained_document(&format!(
+        "+> math\n@particles := compute://particles/kernel{{:write(input/force-point), :write(input/force-strength), :write(input/dt), :write(turn)}}\n\
+         @particles/input/force-point <- [0f32; 0f32]\n\
+         @particles/input/force-strength <- 0f32\n\
+         @particles/input/dt <- 0.016666667<f32>\n\
+         @particles/turn <- 1\n\n{}",
+        &source[start..]
+    ));
+    document
+}
+
+fn retained_document(source: &str) -> mech_runtime::SourceDocument {
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://particle-source",
+        mech_syntax::document::Revision(0),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .expect("source must parse");
+    assert!(
+        document.is_strictly_clean(),
+        "{:?}",
+        document.snapshot().diagnostics
+    );
+    document
 }
 
 fn default_inputs(program: &mech_gpu::ElementwiseKernel) -> BTreeMap<String, Vec<f32>> {

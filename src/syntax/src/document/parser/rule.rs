@@ -55,11 +55,11 @@ impl RuleStack {
         if let Some(rule) = canonical {
             self.push_canonical(rule);
         } else {
-            self.push_prototype(context);
+            self.push_context(context);
         }
     }
 
-    pub fn push_prototype(&mut self, context: ParserContextId) {
+    pub fn push_context(&mut self, context: ParserContextId) {
         self.rules.push(RuleFrame {
             context: Some(context),
             canonical: None,
@@ -121,19 +121,19 @@ mod tests {
 
     #[test]
     fn internal_contexts_are_not_canonical_rules() {
-        let context = parser_context_id("prototype-additive-expression");
-        assert!(canonical_rule_id("prototype-additive-expression").is_none());
+        let context = parser_context_id("internal-additive-context");
+        assert!(canonical_rule_id("internal-additive-context").is_none());
         assert_ne!(context.0, 0);
     }
 
     #[test]
-    fn canonical_and_prototype_frames_have_disjoint_attribution() {
+    fn canonical_and_internal_context_frames_have_disjoint_attribution() {
         let mut stack = RuleStack::default();
-        let prototype = parser_context_id("prototype-test");
+        let context = parser_context_id("internal-test");
         let canonical = rules::GRAMMAR;
 
-        stack.push_prototype(prototype);
-        assert_eq!(stack.current_context(), Some(prototype));
+        stack.push_context(context);
+        assert_eq!(stack.current_context(), Some(context));
         assert_eq!(stack.current_rule(), None);
 
         stack.push_canonical(canonical);
@@ -141,7 +141,7 @@ mod tests {
         assert_eq!(stack.current_rule(), Some(canonical));
 
         stack.truncate(1);
-        assert_eq!(stack.current_context(), Some(prototype));
+        assert_eq!(stack.current_context(), Some(context));
         assert_eq!(stack.current_rule(), None);
     }
 }

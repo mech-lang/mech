@@ -62,7 +62,7 @@ impl BrowserDocumentPayload {
 
     #[cfg(feature = "serde")]
     pub fn encode(&self) -> MResult<String> {
-        crate::nodes::compress_and_encode(self)
+        crate::encoded_payload::compress_and_encode(self)
             .map(|encoded| format!("{BROWSER_DOCUMENT_PAYLOAD_PREFIX}{encoded}"))
             .map_err(|error| payload_error(format!("failed to encode browser document: {error}")))
     }
@@ -74,9 +74,10 @@ impl BrowserDocumentPayload {
             .ok_or_else(|| {
                 payload_error("browser document payload is missing its retained-source prefix")
             })?;
-        let payload: Self = crate::nodes::decode_and_decompress(encoded).map_err(|error| {
-            payload_error(format!("failed to decode browser document: {error}"))
-        })?;
+        let payload: Self =
+            crate::encoded_payload::decode_and_decompress(encoded).map_err(|error| {
+                payload_error(format!("failed to decode browser document: {error}"))
+            })?;
         if payload.version != BROWSER_DOCUMENT_PAYLOAD_VERSION {
             return Err(payload_error(format!(
                 "unsupported browser document payload version {}; expected {}",

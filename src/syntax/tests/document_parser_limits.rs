@@ -1,11 +1,11 @@
 use mech_syntax::document::{
     DocumentId, NodeFlags, ParseConfig, ParseLimits, RecoveryAction, Revision, SyntaxKind,
-    SyntaxNode, TextRange, TextSize, TextSnapshot, TokenFlags, parse_document, reconstruct_source,
-    validate_lossless,
+    SyntaxNode, TextRange, TextSize, TextSnapshot, TokenFlags, parse_canonical_document,
+    reconstruct_source, validate_lossless,
 };
 
 fn parse_with_limits(text: &str, limits: ParseLimits) -> mech_syntax::document::SyntaxSnapshot {
-    parse_document(
+    parse_canonical_document(
         TextSnapshot::new(DocumentId(88), Revision(0), text).unwrap(),
         ParseConfig { limits },
     )
@@ -47,7 +47,13 @@ fn assert_only_remainder_is_error(
     );
 
     let expected = TextRange::new(TextSize::from_u32(error_start), snapshot.source.byte_len());
-    assert_eq!(resource_range(snapshot), expected);
+    assert_eq!(
+        resource_range(snapshot),
+        expected,
+        "canonical resource remainder differs; steps={}, events={}",
+        snapshot.stats.parser_steps,
+        snapshot.stats.events_emitted
+    );
     let errors = nodes_of_kind(&snapshot.syntax(), SyntaxKind::Error);
     assert_eq!(errors.len(), 1);
     assert_eq!(errors[0].range(), expected);
@@ -112,7 +118,7 @@ fn fuel_limit_consumes_remainder_and_never_panics() {
 
 #[test]
 fn diagnostic_limit_suppresses_cascades_and_later_excess() {
-    let text = "x :=\n1. Next\n--------\ny :=\n";
+    let text = "x :=;\n1. Next\n--------\ny :=;\n";
     let snapshot = parse_with_limits(
         text,
         ParseLimits {
@@ -264,11 +270,11 @@ fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
     let prefix_end = text.find("final-item").unwrap();
     for limits in [
         ParseLimits {
-            fuel: 49,
+            fuel: 390,
             ..ParseLimits::default()
         },
         ParseLimits {
-            max_events: 78,
+            max_events: 128,
             ..ParseLimits::default()
         },
     ] {
@@ -277,24 +283,27 @@ fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
         assert!(snapshot.stats.parser_steps <= limits.fuel);
         assert!(snapshot.stats.events_emitted <= u64::from(limits.max_events));
         let prefix_end = TextSize::from_u32(prefix_end as u32);
-        for kind in [
-            SyntaxKind::UlSubtitle,
-            SyntaxKind::Paragraph,
-            SyntaxKind::VariableDefine,
+        for (kind, expected_texts) in [
+            (SyntaxKind::UlSubtitle, vec!["1. Stable\n--------\n\n"]),
+            (SyntaxKind::Paragraph, vec!["Stable", "A stable paragraph."]),
+            (SyntaxKind::VariableDefine, vec!["x := 1"]),
         ] {
             let completed = nodes_of_kind(&snapshot.syntax(), kind)
                 .into_iter()
                 .filter(|node| node.range().end <= prefix_end)
                 .collect::<Vec<_>>();
             assert_eq!(
-                completed.len(),
-                1,
-                "completed {kind:?} prefix node was not preserved"
+                completed
+                    .iter()
+                    .map(|node| node.text().unwrap())
+                    .collect::<Vec<_>>(),
+                expected_texts,
+                "completed {kind:?} prefix nodes were not preserved"
             );
             assert!(
-                completed[0]
-                    .tokens()
-                    .into_iter()
+                completed
+                    .iter()
+                    .flat_map(|node| node.tokens())
                     .all(|token| !token.flags().contains(TokenFlags::ERROR)),
                 "completed {kind:?} bytes must remain ordinary tokens"
             );
@@ -305,7 +314,9 @@ fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
 #[test]
 fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
     let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
-    for (fuel, error_start) in [(0, 0), (49, 49), (100, 100)] {
+    // Canonical work includes rule selection and retained lookahead; byte offsets
+    // are not fuel units. These measured budgets preserve exact same remainders.
+    for (fuel, error_start) in [(0, 0), (390, 49), (648, 100)] {
         let snapshot = parse_with_limits(
             text,
             ParseLimits {
@@ -318,14 +329,16 @@ fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
 }
 
 #[test]
-fn scanner_exhaustion_never_promotes_partially_scanned_bytes() {
+fn scanner_exhaustion_never_promotes_unemitted_canonical_bytes() {
+    // Canonical terminals publish completed graphemes rather than the retired
+    // prototype's whole identifier/number scanner tokens.
     for (text, fuel, token_start) in [
-        ("ordinaryparagraphtext\n", 10, 0),
-        ("longidentifier := 1\n", 7, 0),
-        ("x := 123_456u64\n", 9, 5),
-        ("x<record<field: u8>> := 1\n", 10, 2),
-        ("-- long comment contents\n", 10, 0),
-        ("```\nlongfencecontent\n```\n", 8, 4),
+        ("ordinaryparagraphtext\n", 10, 10),
+        ("longidentifier := 1\n", 7, 7),
+        ("x := 123_456u64\n", 9, 9),
+        ("x<record<field: u8>> := 1\n", 10, 10),
+        ("-- long comment contents\n", 10, 10),
+        ("```\nlongfencecontent\n```\n", 8, 0),
     ] {
         let snapshot = parse_with_limits(
             text,

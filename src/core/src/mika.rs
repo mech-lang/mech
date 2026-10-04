@@ -6,12 +6,6 @@ use crate::*;
 // Inline Mika lives in the terminal. She greets users when they start Mech, and provides a friendly face to interact with. She can be depicted in a variety of expressions, sizes, colors, and poses.
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct MikaSection {
-    pub elements: Section,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Mika {
     Mini(MiniMika),

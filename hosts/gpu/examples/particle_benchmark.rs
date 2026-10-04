@@ -194,12 +194,23 @@ fn compile_particle_artifact(
         .keys()
         .map(|name| name.strip_prefix("host-").unwrap_or(name).to_owned())
         .collect();
-    let tree = mech_syntax::parse(PARTICLE_SOURCE).expect("source must parse");
+    let tree = mech_runtime::SourceDocument::parse_resolved(
+        "benchmark://particle",
+        mech_syntax::document::Revision(0),
+        PARTICLE_SOURCE,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .expect("source must parse");
+    assert!(
+        tree.is_strictly_clean(),
+        "{:?}",
+        tree.snapshot().diagnostics
+    );
     RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .expect("source compiler must build")
-        .compile_tree_artifact_with_inputs(&tree, &values, &external_input_names)
+        .compile_document_artifact_with_inputs(&tree, &values, &external_input_names)
         .expect("source must compile")
         .into_artifact()
 }

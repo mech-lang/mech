@@ -1,12 +1,14 @@
 {
-  "code": "syntax/missing-expression",
-  "rule": null,
-  "context": "prototype-expression",
+  "code": "syntax/missing-variable-definition-value",
+  "rule": "variable-define",
+  "context": null,
   "range": {
     "start": 5,
     "end": 5
   },
-  "expected": "prototype-expression",
+  "expected": [
+    { "kind": "production", "value": "expression" }
+  ],
   "found": "Eof",
   "recovery": "Insert"
 }

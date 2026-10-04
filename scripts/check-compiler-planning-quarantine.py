@@ -10,9 +10,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ENGINE_LIB = Path("src/engine/src/lib.rs")
+CORE_LIB = Path("src/core/src/lib.rs")
 PROGRAM_MOD = Path("src/engine/src/program/mod.rs")
 PLANNING_MODULE = Path("src/engine/src/program/compiler_planning.rs")
 REMOVED_INSTANCE = Path("src/engine/src/program/instance.rs")
+REMOVED_WORKSPACE_PATHS = (
+    Path("src/engine/src/interpreter"),
+    Path("src/engine/src/expressions"),
+    Path("src/engine/src/literals.rs"),
+    Path("src/engine/src/structures.rs"),
+    Path("src/core/src/nodes.rs"),
+)
 
 GLOBAL_REMOVED = (
     "MechProgram",
@@ -20,6 +28,9 @@ GLOBAL_REMOVED = (
     "MechProgramEnvironment",
     "ProgramSolveOutcome",
     "run_profiled_string",
+    "Interpreter",
+    "InterpreterRef",
+    "CompilerPlanningProgram",
 )
 SHIPPING_ROOTS = (
     Path("src/runtime/src/runtime/program"),
@@ -115,18 +126,20 @@ def rust_without_test_modules(source: str) -> str:
 def check_module_boundary(root: Path) -> list[str]:
     failures: list[str] = []
     engine_lib = (root / ENGINE_LIB).read_text(encoding="utf-8")
-    if re.search(r"(?m)^\s*pub\s+mod\s+interpreter\s*;", engine_lib):
-        failures.append(f"{ENGINE_LIB}: interpreter module is public")
-    if not re.search(
-        r'#\[cfg\(feature = "semantic-compiler"\)\]\s*mod\s+interpreter\s*;',
-        engine_lib,
-    ):
-        failures.append(f"{ENGINE_LIB}: interpreter is not semantic-compiler-only")
-    if not re.search(
-        r'#\[cfg\(feature = "semantic-compiler"\)\]\s*pub\(crate\)\s+use\s+interpreter::',
-        engine_lib,
-    ):
-        failures.append(f"{ENGINE_LIB}: interpreter symbols are not crate-private")
+    for module in ("interpreter", "expressions", "literals", "structures"):
+        if re.search(rf"\bmod\s+{module}\s*;|\b{module}::", engine_lib):
+            failures.append(f"{ENGINE_LIB}: retired {module} module remains reachable")
+    core_lib = root / CORE_LIB
+    if core_lib.exists():
+        core_source = core_lib.read_text(encoding="utf-8")
+        if re.search(r"\bmod\s+nodes\s*;|\bnodes::", core_source):
+            failures.append(f"{CORE_LIB}: retired source-tree module/export remains reachable")
+        if re.search(r"\b(?:struct|impl)\s+IndexedString\b", core_source):
+            failures.append(f"{CORE_LIB}: retired IndexedString AST formatting helper remains")
+    for relative in REMOVED_WORKSPACE_PATHS:
+        path = root / relative
+        if path.is_file() or (path.is_dir() and any(child.is_file() for child in path.rglob("*"))):
+            failures.append(f"{relative}: retired AST workspace remains")
     planning = root / PLANNING_MODULE
     if not planning.exists():
         failures.append(f"{PLANNING_MODULE}: compiler-planning module is missing")
@@ -138,11 +151,6 @@ def check_module_boundary(root: Path) -> list[str]:
         failures.append(f"{PROGRAM_MOD}: compiler_planning is not semantic-compiler-only")
     if (root / REMOVED_INSTANCE).exists():
         failures.append(f"{REMOVED_INSTANCE}: obsolete mutable program instance remains")
-    interpreter_source = (root / "src/engine/src/interpreter/mod.rs").read_text(
-        encoding="utf-8"
-    )
-    if re.search(r"(?m)^pub\s+type\s+InterpreterRef\b", interpreter_source):
-        failures.append("src/engine/src/interpreter/mod.rs: InterpreterRef remains public")
     return failures
 
 
@@ -151,6 +159,20 @@ def check_removed_surface(root: Path) -> list[str]:
     for relative in rust_sources(root):
         source = (root / relative).read_text(encoding="utf-8")
         searchable = source
+        # SourceScope::Interpreter is the maintained source namespace identity,
+        # not the removed engine executor. Preserve this exact transport label
+        # without admitting a declaration or import of the old executor type.
+        searchable = re.sub(
+            r"\bSourceScope\s*::\s*Interpreter\b",
+            lambda match: re.sub(r"[^\r\n]", " ", match.group()),
+            searchable,
+        )
+        if relative == Path("src/runtime/src/resolver/index.rs"):
+            searchable = re.sub(
+                r"\bInterpreter\s*\(\s*SourceInterpreterId\s*\)",
+                lambda match: re.sub(r"[^\r\n]", " ", match.group()),
+                searchable,
+            )
         if relative == Path("src/engine/src/artifact/encoding.rs"):
             searchable = searchable.replace('b"mech-program-v1\\0"', "")
         for token in GLOBAL_REMOVED:

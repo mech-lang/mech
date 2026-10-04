@@ -208,18 +208,6 @@
     {
       "directive": "allow",
       "expires_release": "0.5.0",
-      "expiry_condition": "Remove when structure dispatch no longer supports profiles with all structure variants disabled.",
-      "introduced_release": "0.4.0",
-      "lint": "unreachable_patterns",
-      "occurrences": 1,
-      "owner": "Canonical structure dispatch",
-      "path": "src/engine/src/structures.rs",
-      "production_or_test": "production",
-      "reason": "the fallback is reachable only in narrow structure feature profiles"
-    },
-    {
-      "directive": "allow",
-      "expires_release": "0.5.0",
       "expiry_condition": "Remove when every assignment-enabled host profile also selects a typed matrix backing.",
       "introduced_release": "0.4.0",
       "lint": "dead_code",

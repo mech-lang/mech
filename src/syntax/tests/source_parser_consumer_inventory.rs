@@ -2141,6 +2141,10 @@ fn discovered_production_calls() -> (BTreeMap<(String, String), usize>, Vec<Stri
 #[test]
 fn production_parser_callers_are_physically_absent_after_cutover() {
     let consumers = consumers();
+    let mut expected = consumers
+        .values()
+        .map(|row| ((row.source_path.clone(), row.caller.clone()), row.calls))
+        .collect::<BTreeMap<_, _>>();
     let mut total = 0usize;
     for (id, row) in &consumers {
         for (field, value) in [

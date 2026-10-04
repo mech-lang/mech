@@ -74,6 +74,11 @@ impl MechErrorKind for IndexOutOfBoundsError {
 #[cfg(feature = "functions")]
 pub mod catalog;
 
+#[cfg(feature = "semantic-compiler")]
+pub mod aggregate;
+#[cfg(feature = "semantic-compiler")]
+pub mod kind_conversion;
+
 #[cfg(feature = "access")]
 pub mod access;
 #[cfg(feature = "assign")]

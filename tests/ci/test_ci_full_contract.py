@@ -149,6 +149,22 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_static_compute_product_uses_matching_build_and_is_a_required_browser_step(self):
+        smoke = job_block(CI, "browser-compute-smoke")
+        step = next(
+            step for step in job_steps(CI, "browser-compute-smoke")
+            if "Verify emitted static CPU and WebGPU bundles under a non-root prefix" in step
+        )
+        self.assertLess(smoke.index("Restore the shared compute browser build"), smoke.index(step))
+        self.assertLess(smoke.index("Install Node for static compute package admission"), smoke.index(step))
+        self.assertIn("scripts/smoke-canonical-compute-browser.py", step)
+        self.assertIn("--static-bundle --mech-bin target/debug/mech", step)
+        self.assertIn("--wasm-pkg src/wasm/pkg --software-adapter", step)
+        self.assertNotIn("continue-on-error", step)
+        self.assertNotIn("if:", step)
+        self.assertNotIn("--disable-gpu", step)
+        self.assertIn("browser-compute-smoke", job_block(CI, "browser-compute-canary"))
+
     def test_r06_acceptance_and_shape_facts_are_explicitly_selected(self):
         block = job_block(FULL, "cargo-language")
         step = next(

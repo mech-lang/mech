@@ -1,8 +1,7 @@
 use mech_syntax::document::parser::Cursor;
 use mech_syntax::document::{
-    DocumentId, ParseConfig, ParseRequestError, ParseRoot, ParserImplementation, Revision,
-    SyntaxKind, SyntaxNode, TextSize, TextSnapshot, TokenFlags, parse_canonical_grammar,
-    parse_syntax, reconstruct_source, validate_lossless,
+    DocumentId, ParseConfig, Revision, SyntaxKind, SyntaxNode, TextSize, TextSnapshot, TokenFlags,
+    parse_canonical_document, parse_canonical_grammar, reconstruct_source, validate_lossless,
 };
 
 fn source(text: &str) -> TextSnapshot {
@@ -249,43 +248,16 @@ fn clustered_quote_inside_a_terminal_remains_whole_content() {
 }
 
 #[test]
-fn dispatcher_supports_the_canonical_document_root() {
+fn canonical_entries_select_their_own_roots() {
     let config = ParseConfig::default();
-    assert!(
-        parse_syntax(
-            source("x := \"a\";"),
-            ParseRoot::Grammar,
-            ParserImplementation::Canonical,
-            config,
-        )
-        .is_ok()
-    );
-    assert!(
-        parse_syntax(
-            source("x := 1"),
-            ParseRoot::Document,
-            ParserImplementation::Prototype,
-            config,
-        )
-        .is_ok()
-    );
-    assert!(
-        parse_syntax(
-            source("x := 1"),
-            ParseRoot::Document,
-            ParserImplementation::Canonical,
-            config,
-        )
-        .is_ok()
-    );
-    let implementation = ParserImplementation::Prototype;
-    let root = ParseRoot::Grammar;
-    let error = parse_syntax(source(""), root, implementation, config).unwrap_err();
     assert_eq!(
-        error,
-        ParseRequestError::Unsupported {
-            implementation,
-            root,
-        }
+        parse_canonical_grammar(source("x := \"a\";"), config)
+            .root
+            .kind,
+        SyntaxKind::GrammarDocument,
+    );
+    assert_eq!(
+        parse_canonical_document(source("x := 1"), config).root.kind,
+        SyntaxKind::Document,
     );
 }

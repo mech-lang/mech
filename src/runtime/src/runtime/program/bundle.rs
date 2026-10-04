@@ -232,7 +232,7 @@ impl CanonicalProgramBundle {
 
     #[cfg(feature = "serde")]
     pub fn encode(&self) -> MResult<String> {
-        mech_core::nodes::compress_and_encode(self)
+        mech_core::encoded_payload::compress_and_encode(self)
             .map_err(|error| bundle_error(format!("unable to encode canonical bundle: {error}")))
     }
 
@@ -261,7 +261,7 @@ impl CanonicalProgramBundle {
 
     #[cfg(feature = "serde")]
     fn decode_payload(encoded: &str) -> MResult<Self> {
-        mech_core::nodes::decode_and_decompress(encoded).map_err(|error| {
+        mech_core::encoded_payload::decode_and_decompress(encoded).map_err(|error| {
             bundle_error(format!(
                 "invalid canonical program bundle; retired AST payloads must be regenerated: {error}"
             ))
@@ -316,7 +316,8 @@ mod tests {
         assert!(old_envelope.validate(Some(source)).is_err());
 
         let retired_tree_payload = vec!["retired", "syntax", "tree"];
-        let legacy = mech_core::nodes::compress_and_encode(&retired_tree_payload).unwrap();
+        let legacy =
+            mech_core::encoded_payload::compress_and_encode(&retired_tree_payload).unwrap();
         let error = CanonicalProgramBundle::decode(&legacy, Some(source)).unwrap_err();
         assert!(error.display_message().contains("retired AST"));
         Ok(())

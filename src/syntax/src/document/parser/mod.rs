@@ -1,5 +1,5 @@
 use alloc::collections::BTreeMap;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 
@@ -17,9 +17,8 @@ pub mod checkpoint;
 mod context_probe;
 pub mod cursor;
 mod delimiter_scan;
-pub mod document;
 pub mod event;
-pub mod fragment;
+pub mod grammar_fragment;
 mod grapheme_scan;
 mod journal;
 pub mod limits;
@@ -27,8 +26,6 @@ mod literal_scan;
 mod tree_cache;
 use journal::Journal;
 pub mod marker;
-pub mod mech;
-pub mod mechdown;
 pub mod recovery;
 mod resource_found;
 pub mod rule;
@@ -38,7 +35,7 @@ pub mod terminal;
 pub use checkpoint::*;
 pub use cursor::*;
 pub use event::*;
-pub use fragment::*;
+pub use grammar_fragment::*;
 pub use limits::*;
 pub use marker::*;
 pub use recovery::*;
@@ -57,26 +54,6 @@ struct ParserOutput {
     stats: ParseStats,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ParserImplementation {
-    Prototype,
-    Canonical,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ParseRoot {
-    Document,
-    Grammar,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ParseRequestError {
-    Unsupported {
-        implementation: ParserImplementation,
-        root: ParseRoot,
-    },
-}
-
 /// Internal lexical classification selected by the parser entry point.
 ///
 /// Canonical grammar parsing intentionally ignores grammar-level whitespace,
@@ -85,7 +62,6 @@ pub enum ParseRequestError {
 /// mode.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum LexicalMode {
-    PrototypeDocument,
     CanonicalGrammar,
     CanonicalSourceFragment,
 }
@@ -555,6 +531,7 @@ impl<'a> Parser<'a> {
         true
     }
 
+    #[cfg(test)]
     pub(crate) fn with_rule<T>(
         &mut self,
         context: ParserContextId,
@@ -678,59 +655,8 @@ impl<'a> Parser<'a> {
             .map(|pending| &mut pending.diagnostic)
     }
 
-    pub(crate) fn consume_horizontal_space(&mut self) -> Option<TextRange> {
-        let start = self.offset();
-        while self
-            .cursor
-            .peek_char()
-            .is_some_and(terminal::is_horizontal_space)
-        {
-            let _ = self.bump_char_raw()?;
-        }
-        if self.offset() == start {
-            return None;
-        }
-        let range = TextRange::new(start, self.offset());
-        self.token(SyntaxKind::Whitespace, range);
-        Some(range)
-    }
-
-    pub(crate) fn consume_newline(&mut self) -> Option<TextRange> {
-        let count = match (self.cursor.byte(), self.cursor.byte_at(1)) {
-            (Some(b'\r'), Some(b'\n')) => 2,
-            (Some(b'\r' | b'\n'), _) => 1,
-            _ => return None,
-        };
-        self.bump_bytes_token(count, SyntaxKind::Newline)
-    }
-
-    pub(crate) fn consume_syntax_whitespace(&mut self) {
-        loop {
-            if self.consume_horizontal_space().is_some() {
-                continue;
-            }
-            if self.consume_newline().is_some() {
-                continue;
-            }
-            break;
-        }
-    }
-
     pub(crate) fn found_syntax(&self) -> FoundSyntax {
         match self.state.lexical_mode {
-            LexicalMode::PrototypeDocument => {
-                let character = self.cursor.context_peek_char();
-                if character.is_none() {
-                    return FoundSyntax {
-                        kind: Some(SyntaxKind::Eof),
-                        text: None,
-                    };
-                }
-                FoundSyntax {
-                    kind: character.map(terminal::token_kind_for_char),
-                    text: character.map(|character| character.to_string()),
-                }
-            }
             LexicalMode::CanonicalGrammar => canonical::found::found_syntax(self, self.offset()),
             LexicalMode::CanonicalSourceFragment => {
                 canonical::found::source_found_syntax(self, self.offset())
@@ -753,20 +679,6 @@ impl<'a> Parser<'a> {
 
     pub(crate) fn pop_nesting(&mut self) {
         self.state.nesting = self.state.nesting.saturating_sub(1);
-    }
-
-    pub(crate) fn is_fence_start(&self) -> bool {
-        mechdown::fence_delimiter(self.cursor()).is_some()
-    }
-
-    pub(crate) fn is_context_fence_start(&self) -> bool {
-        mechdown::fence_delimiter_context(self.cursor.context_view()).is_some()
-    }
-
-    pub(crate) fn is_strong_document_boundary(&self) -> bool {
-        let context = self.cursor.context_view();
-        context.is_line_start()
-            && (mechdown::is_ul_subtitle_context(context) || self.is_context_fence_start())
     }
 
     pub(crate) fn consume_resource_remainder(&mut self) {
@@ -807,14 +719,7 @@ impl<'a> Parser<'a> {
             self.state.resource_diagnostic_emitted = true;
             let rule = self.current_rule().or(self.state.resource_rule);
             let context = rule.is_none().then(|| self.current_context()).flatten();
-            let found = if self.state.lexical_mode == LexicalMode::PrototypeDocument {
-                Some(FoundSyntax {
-                    kind: Some(SyntaxKind::Unknown),
-                    text: None,
-                })
-            } else {
-                None
-            };
+            let found = None;
             let diagnostic_index = self.state.diagnostics.len();
             let deferred = found.is_none();
             let diagnostic = Diagnostic {
@@ -938,69 +843,14 @@ impl<'a> Parser<'a> {
     }
 }
 
-pub fn parse_syntax(
-    source: TextSnapshot,
-    root: ParseRoot,
-    implementation: ParserImplementation,
-    config: ParseConfig,
-) -> Result<SyntaxSnapshot, ParseRequestError> {
-    let mut ids = IdGenerator::new();
-    match (implementation, root) {
-        (ParserImplementation::Prototype, ParseRoot::Document) => {
-            Ok(parse_document_with_ids(source, config, &mut ids))
-        }
-        (ParserImplementation::Canonical, ParseRoot::Grammar) => {
-            Ok(parse_canonical_grammar_with_ids(source, config, &mut ids))
-        }
-        (ParserImplementation::Canonical, ParseRoot::Document) => {
-            Ok(parse_canonical_document_with_ids(source, config, &mut ids))
-        }
-        _ => Err(ParseRequestError::Unsupported {
-            implementation,
-            root,
-        }),
-    }
-}
-
-pub fn parse_document(source: TextSnapshot, config: ParseConfig) -> SyntaxSnapshot {
-    parse_syntax(
-        source,
-        ParseRoot::Document,
-        ParserImplementation::Prototype,
-        config,
-    )
-    .expect("prototype document parsing is a supported configuration")
-}
-
 pub fn parse_canonical_grammar(source: TextSnapshot, config: ParseConfig) -> SyntaxSnapshot {
-    parse_syntax(
-        source,
-        ParseRoot::Grammar,
-        ParserImplementation::Canonical,
-        config,
-    )
-    .expect("canonical grammar parsing is a supported configuration")
+    let mut ids = IdGenerator::new();
+    parse_canonical_grammar_with_ids(source, config, &mut ids)
 }
 
 pub fn parse_canonical_document(source: TextSnapshot, config: ParseConfig) -> SyntaxSnapshot {
-    parse_syntax(
-        source,
-        ParseRoot::Document,
-        ParserImplementation::Canonical,
-        config,
-    )
-    .expect("canonical document parsing is a supported configuration")
-}
-
-pub(crate) fn parse_document_with_ids(
-    source: TextSnapshot,
-    config: ParseConfig,
-    ids: &mut IdGenerator,
-) -> SyntaxSnapshot {
-    let mut parser = Parser::new(&source, LexicalMode::PrototypeDocument, config, ids);
-    document::parse_document_root(&mut parser);
-    let output = parser.finish();
-    finish_snapshot(source, output, ids, SyntaxKind::Document)
+    let mut ids = IdGenerator::new();
+    parse_canonical_document_with_ids(source, config, &mut ids)
 }
 
 fn parse_canonical_grammar_with_ids(
@@ -1390,7 +1240,6 @@ mod tests {
     #[test]
     fn lexical_mode_not_resource_attribution_selects_found_syntax() {
         for mode in [
-            LexicalMode::PrototypeDocument,
             LexicalMode::CanonicalGrammar,
             LexicalMode::CanonicalSourceFragment,
         ] {
@@ -1409,7 +1258,7 @@ mod tests {
         let mut ids = IdGenerator::new();
         let mut parser = Parser::new(
             &source,
-            LexicalMode::PrototypeDocument,
+            LexicalMode::CanonicalSourceFragment,
             ParseConfig::default(),
             &mut ids,
         );
@@ -1425,7 +1274,7 @@ mod tests {
         let mut ids = IdGenerator::new();
         let mut parser = Parser::new(
             &source,
-            LexicalMode::PrototypeDocument,
+            LexicalMode::CanonicalSourceFragment,
             ParseConfig::default(),
             &mut ids,
         );
@@ -1521,16 +1370,16 @@ mod tests {
     }
 
     #[test]
-    fn prototype_rule_scope_keeps_context_without_canonical_rule() {
+    fn internal_rule_scope_keeps_context_without_canonical_rule() {
         let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
         let mut ids = IdGenerator::new();
         let mut parser = Parser::new(
             &source,
-            LexicalMode::PrototypeDocument,
+            LexicalMode::CanonicalSourceFragment,
             ParseConfig::default(),
             &mut ids,
         );
-        let context = parser_context_id("prototype-test");
+        let context = parser_context_id("internal-test");
         parser.with_rule(context, None, |parser| {
             let _ = recovery::insert_missing(
                 parser,

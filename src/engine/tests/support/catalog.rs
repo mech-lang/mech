@@ -857,9 +857,8 @@ mod test_operations {
 #[cfg(all(test, feature = "semantic-compiler"))]
 mod tests {
     use super::*;
-    use crate::Interpreter;
     #[cfg(feature = "program")]
-    use crate::{CompilerPlanningConfig, CompilerPlanningProgram, ExtensionFunctionId};
+    use crate::{ExtensionFunctionId, FunctionEnvironment};
     #[test]
     fn empty_catalog_has_no_function_surface() {
         let catalog = empty_function_catalog();
@@ -878,66 +877,22 @@ mod tests {
         assert!(!Arc::ptr_eq(&first, &second));
     }
 
-    #[test]
-    fn interpreter_new_has_an_empty_catalog() {
-        let interpreter = Interpreter::new(41, 100);
-        let catalog = interpreter.function_catalog();
-
-        assert_eq!(catalog.runtime_factory_count(), 0);
-        assert_eq!(catalog.specializer_count(), 0);
-        assert_eq!(catalog.intrinsic_specializer_count(), 0);
-        assert_eq!(catalog.all_exports().len(), 0);
-    }
-
     #[cfg(feature = "program")]
     #[test]
-    fn program_new_has_an_empty_catalog() {
-        let program = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
-        let catalog = program.function_catalog();
-
-        assert_eq!(catalog.runtime_factory_count(), 0);
-        assert_eq!(catalog.specializer_count(), 0);
-        assert_eq!(catalog.intrinsic_specializer_count(), 0);
-        assert_eq!(catalog.all_exports().len(), 0);
-    }
-
-    #[cfg(feature = "program")]
-    #[test]
-    fn bare_programs_have_independent_catalogs_and_environments() {
-        let first = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
-        let second = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
+    fn canonical_catalogs_have_independent_name_environments() {
+        let first = empty_function_catalog();
+        let second = empty_function_catalog();
+        let mut first_environment = FunctionEnvironment::from_catalog_defaults(&first).unwrap();
+        let second_environment = FunctionEnvironment::from_catalog_defaults(&second).unwrap();
         let extension = ExtensionFunctionId::from_name("host/first-only");
-
-        assert!(!Arc::ptr_eq(
-            first.function_catalog(),
-            second.function_catalog()
-        ));
-
-        first
-            .interpreter
-            .state
-            .borrow_mut()
-            .function_environment
+        assert!(!Arc::ptr_eq(&first, &second));
+        first_environment
             .bind_extension("host/first-only", "first-only", extension)
             .unwrap();
-
         assert_eq!(
-            first
-                .interpreter
-                .state
-                .borrow()
-                .function_environment
-                .resolve_name("first-only"),
-            Some(crate::FunctionBinding::Extension(extension)),
+            first_environment.resolve_name("first-only"),
+            Some(crate::FunctionBinding::Extension(extension))
         );
-        assert_eq!(
-            second
-                .interpreter
-                .state
-                .borrow()
-                .function_environment
-                .resolve_name("first-only"),
-            None,
-        );
+        assert_eq!(second_environment.resolve_name("first-only"), None);
     }
 }

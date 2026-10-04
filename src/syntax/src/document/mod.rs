@@ -41,9 +41,8 @@ pub use index::*;
 pub use line_index::*;
 pub use parser::stream::*;
 pub use parser::{
-    FenceDelimiter, FragmentKind, FragmentSnapshot, ParseConfig, ParseContext, ParseLimits,
-    ParseMode, ParseRequestError, ParseRoot, ParserImplementation, parse_canonical_document,
-    parse_canonical_grammar, parse_document, parse_fragment, parse_syntax,
+    GrammarFragmentContext, GrammarFragmentKind, GrammarFragmentSnapshot, ParseConfig, ParseLimits,
+    parse_canonical_document, parse_canonical_grammar, parse_canonical_grammar_fragment,
 };
 pub use pointer::*;
 pub use red::*;

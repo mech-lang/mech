@@ -845,7 +845,11 @@ impl Continuation {
                     let progress = continuation.advance(parser, final_input, allowance);
                     self.work += before - *allowance;
                     match progress {
-                        recovery::SkipProgress::Complete(_) => {}
+                        recovery::SkipProgress::Complete(marker) => {
+                            debug_assert!(
+                                marker.is_none_or(|marker| marker.kind() == SyntaxKind::Error)
+                            );
+                        }
                         recovery::SkipProgress::NeedInput => {
                             self.push(Frame::Skip(continuation));
                             return Progress::NeedInput;

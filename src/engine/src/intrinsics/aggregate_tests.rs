@@ -1,12 +1,27 @@
-#[cfg(feature = "matrix_comprehensions")]
-use super::super::ValueMatrixComprehension;
-#[cfg(feature = "set_comprehensions")]
-use super::super::ValueSetComprehension;
 #[cfg(feature = "semantic-compiler")]
 use crate::CompileCtx;
+#[cfg(feature = "matrix_comprehensions")]
+use crate::intrinsics::constructors::ValueMatrixComprehension;
+#[cfg(feature = "set_comprehensions")]
+use crate::intrinsics::constructors::ValueSetComprehension;
 use crate::{FunctionInvocation, MechFunctionFactory, SchemaBody, ValueCell, ValueData};
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{BytecodeInstruction, ParsedProgram, hash_str};
+
+#[test]
+fn conversion_errors_preserve_the_core_public_type_identity() {
+    let error = crate::MechError::new(
+        crate::CannotConvertToTypeError {
+            target_type: "canonical-test-type",
+        },
+        None,
+    );
+    assert!(
+        error
+            .kind_as::<mech_core::CannotConvertToTypeError>()
+            .is_some()
+    );
+}
 
 #[cfg(feature = "matrix_comprehensions")]
 fn matrix_output(values: &[ValueCell], rows: usize, columns: usize) -> ValueCell {

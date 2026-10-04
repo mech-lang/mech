@@ -1,265 +1,18 @@
+//! Schema-directed conversion preparation and managed execution.
+//!
+//! Canonical source and native catalogs share this owner; no parser AST is accepted.
+
 use crate::*;
+#[cfg(all(test, any(feature = "kind_annotation", feature = "convert")))]
+use mech_core::snapshot::ReifiedTypeDraft;
 #[cfg(all(test, feature = "convert"))]
 use mech_core::snapshot::{Complex64Bits, F32Bits, F64Bits, OptionDraft};
 #[cfg(any(feature = "kind_annotation", feature = "convert"))]
-use mech_core::snapshot::{ReifiedKind, ReifiedType, ReifiedTypeDraft};
+use mech_core::snapshot::{ReifiedKind, ReifiedType};
 #[cfg(any(feature = "kind_annotation", feature = "convert"))]
 use std::collections::BTreeMap;
 
-// Literals
-// ----------------------------------------------------------------------------
-
-pub fn literal(ltrl: &Literal, p: &InterpreterExecution<'_>) -> MResult<SpecializationInput> {
-    let input = match &ltrl {
-        Literal::Empty(_) => Ok(SpecializationInput::Absent),
-        #[cfg(feature = "bool")]
-        Literal::Boolean(bln) => boolean(bln).map(SpecializationInput::Cell),
-        Literal::Number(num) => number(num, p).map(SpecializationInput::Cell),
-        #[cfg(feature = "string")]
-        Literal::String(strng) => string(strng).map(SpecializationInput::Cell),
-        #[cfg(feature = "atom")]
-        Literal::Atom(atm) => atom(atm, p).map(SpecializationInput::Cell),
-        #[cfg(feature = "kind_annotation")]
-        Literal::Kind(knd) => kind_value(knd, p).map(SpecializationInput::Cell),
-        #[cfg(feature = "convert")]
-        Literal::TypedLiteral((ltrl, kind)) => {
-            typed_literal(ltrl, kind, p).map(SpecializationInput::Cell)
-        }
-        #[cfg(not(all(
-            feature = "bool",
-            feature = "string",
-            feature = "atom",
-            feature = "kind_annotation",
-            feature = "convert"
-        )))]
-        _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
-    }?;
-    match input {
-        SpecializationInput::Cell(cell) => cell
-            .import_owned_in(p.memory_domain())
-            .map(SpecializationInput::Cell),
-        SpecializationInput::Absent => Ok(SpecializationInput::Absent),
-        SpecializationInput::MatrixAllSelection => Ok(SpecializationInput::MatrixAllSelection),
-    }
-}
-
-#[cfg(feature = "kind_annotation")]
-pub fn kind_value(
-    knd: &mech_core::nodes::Kind,
-    p: &InterpreterExecution<'_>,
-) -> MResult<ValueCell> {
-    let mut named = SourceNamedKinds::default();
-    let mut dimensions = DimensionEnvironmentBuilder::new();
-    let kind = canonical_kind_annotation(knd, p, &mut named, &mut dimensions)?;
-    let reified = ReifiedKind::from_closed_kind(&kind, dimensions.declarations(), &named).map_err(
-        |error| MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc(),
-    )?;
-    ValueCell::from_schema_data(
-        SchemaBody::ReifiedType,
-        ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
-            reified.canonical_bytes().to_vec().into_boxed_slice(),
-        )),
-    )
-}
-
-#[cfg(feature = "kind_annotation")]
-#[derive(Default)]
-struct SourceNamedKinds(BTreeMap<KindId, CanonicalNominalPath>);
-
-#[cfg(feature = "kind_annotation")]
-impl NamedKindPathResolver for SourceNamedKinds {
-    fn canonical_path(&self, id: KindId) -> Option<&CanonicalNominalPath> {
-        self.0.get(&id)
-    }
-}
-
-#[cfg(feature = "kind_annotation")]
-fn source_nominal_path(name: &str) -> MResult<CanonicalNominalPath> {
-    Ok(CanonicalNominalPath::new(
-        name.split('/')
-            .filter(|segment| !segment.is_empty())
-            .map(str::to_owned)
-            .collect::<Vec<_>>(),
-    )?)
-}
-
-#[cfg(feature = "kind_annotation")]
-fn canonical_kind_annotation(
-    knd: &mech_core::nodes::Kind,
-    p: &InterpreterExecution<'_>,
-    named: &mut SourceNamedKinds,
-    dimensions: &mut DimensionEnvironmentBuilder,
-) -> MResult<KindExpr> {
-    Ok(match knd {
-        mech_core::nodes::Kind::Kind(inner) => KindExpr::TypeOf(Box::new(
-            canonical_kind_annotation(inner, p, named, dimensions)?,
-        )),
-        mech_core::nodes::Kind::Any => KindExpr::Wildcard,
-        mech_core::nodes::Kind::Atom(identifier) => {
-            let path = source_nominal_path(&identifier.to_string())?;
-            KindExpr::Atom(NominalKey::from_path(NominalKind::Atom, &path))
-        }
-        mech_core::nodes::Kind::Empty => KindExpr::Never,
-        mech_core::nodes::Kind::Record(fields) => KindExpr::Record(
-            fields
-                .iter()
-                .map(|(name, kind)| {
-                    Ok(KindField {
-                        name: name.to_string(),
-                        kind: canonical_kind_annotation(kind, p, named, dimensions)?,
-                    })
-                })
-                .collect::<MResult<Vec<_>>>()?
-                .into_boxed_slice(),
-        ),
-        mech_core::nodes::Kind::Tuple(elements) => KindExpr::Tuple(
-            elements
-                .iter()
-                .map(|element| canonical_kind_annotation(element, p, named, dimensions))
-                .collect::<MResult<Vec<_>>>()?
-                .into_boxed_slice(),
-        ),
-        mech_core::nodes::Kind::Map(key, value) => KindExpr::Map {
-            key: Box::new(canonical_kind_annotation(key, p, named, dimensions)?),
-            value: Box::new(canonical_kind_annotation(value, p, named, dimensions)?),
-            cardinality: inferred_interpreter_kind_dimension(dimensions)?,
-        },
-        mech_core::nodes::Kind::Scalar(identifier) => {
-            let name = identifier.to_string();
-            let scalar_id = identifier.hash();
-            if name == "id" {
-                KindExpr::Id
-            } else if name == "ix" || name == "index" {
-                KindExpr::Index
-            } else if let Ok((id, path)) = builtin_scalar_named_kind(scalar_id) {
-                named.0.insert(id, path);
-                KindExpr::Named(id)
-            } else if p.state.borrow().enums.contains_key(&scalar_id) {
-                let path = source_nominal_path(&name)?;
-                KindExpr::Enum(NominalKey::from_path(NominalKind::Enum, &path))
-            } else {
-                return Err(SemanticModelError::BuiltinScalarKindUnresolved { scalar_id }.into());
-            }
-        }
-        mech_core::nodes::Kind::Matrix((element, dimension_nodes)) => {
-            let mut extents = dimension_nodes
-                .iter()
-                .map(|dimension| {
-                    literal_usize(dimension, p).and_then(|value| {
-                        value.map_or_else(
-                            || inferred_interpreter_kind_dimension(dimensions),
-                            |value| Ok(DimensionExpr::Constant(value as u64)),
-                        )
-                    })
-                })
-                .collect::<MResult<Vec<_>>>()?;
-            if extents.is_empty() {
-                extents.push(inferred_interpreter_kind_dimension(dimensions)?);
-                extents.push(inferred_interpreter_kind_dimension(dimensions)?);
-            }
-            KindExpr::Matrix {
-                element: Box::new(canonical_kind_annotation(element, p, named, dimensions)?),
-                dimensions: extents.into_boxed_slice(),
-            }
-        }
-        mech_core::nodes::Kind::Option(element) => KindExpr::Option(Box::new(
-            canonical_kind_annotation(element, p, named, dimensions)?,
-        )),
-        mech_core::nodes::Kind::Table((columns, rows)) => KindExpr::Table {
-            columns: columns
-                .iter()
-                .map(|(name, kind)| {
-                    Ok(KindField {
-                        name: name.to_string(),
-                        kind: canonical_kind_annotation(kind, p, named, dimensions)?,
-                    })
-                })
-                .collect::<MResult<Vec<_>>>()?
-                .into_boxed_slice(),
-            rows: literal_usize(rows, p)?.map_or_else(
-                || inferred_interpreter_kind_dimension(dimensions),
-                |value| Ok(DimensionExpr::Constant(value as u64)),
-            )?,
-        },
-        mech_core::nodes::Kind::Set(element, cardinality) => KindExpr::Set {
-            element: Box::new(canonical_kind_annotation(element, p, named, dimensions)?),
-            cardinality: cardinality
-                .as_ref()
-                .map(|value| literal_usize(value, p))
-                .transpose()?
-                .flatten()
-                .map_or_else(
-                    || inferred_interpreter_kind_dimension(dimensions),
-                    |value| Ok(DimensionExpr::Constant(value as u64)),
-                )?,
-        },
-    })
-}
-
-#[cfg(feature = "kind_annotation")]
-fn inferred_interpreter_kind_dimension(
-    dimensions: &mut DimensionEnvironmentBuilder,
-) -> MResult<DimensionExpr> {
-    dimensions
-        .declare(
-            DimensionParameterOrigin::Inferred,
-            DimensionLifetime::Activation,
-            DimensionExpr::Constant(0),
-            None,
-        )
-        .map(DimensionExpr::Parameter)
-        .map_err(MechError::from)
-}
-
-#[cfg(feature = "kind_annotation")]
-pub(crate) fn literal_usize(
-    literal_node: &Literal,
-    p: &InterpreterExecution<'_>,
-) -> MResult<Option<usize>> {
-    let input = literal(literal_node, p)?;
-    let SpecializationInput::Cell(cell) = input else {
-        return Ok(None);
-    };
-    let snapshot = cell.snapshot()?;
-    let value = match snapshot.data() {
-        ValueData::Index(value) => usize::try_from(*value).ok(),
-        ValueData::U8(value) => Some(*value as usize),
-        ValueData::U16(value) => Some(*value as usize),
-        ValueData::U32(value) => usize::try_from(*value).ok(),
-        ValueData::U64(value) => usize::try_from(*value).ok(),
-        ValueData::U128(value) => usize::try_from(*value).ok(),
-        ValueData::I8(value) => usize::try_from(*value).ok(),
-        ValueData::I16(value) => usize::try_from(*value).ok(),
-        ValueData::I32(value) => usize::try_from(*value).ok(),
-        ValueData::I64(value) => usize::try_from(*value).ok(),
-        ValueData::I128(value) => usize::try_from(*value).ok(),
-        ValueData::F32(value) => {
-            let value = value.to_f32();
-            (value >= 0.0 && value.fract() == 0.0).then(|| value as usize)
-        }
-        ValueData::F64(value) => {
-            let value = value.to_f64();
-            (value >= 0.0 && value.fract() == 0.0).then(|| value as usize)
-        }
-        _ => None,
-    };
-    value
-        .map(Some)
-        .ok_or_else(|| MechError::new(ExpectedNumericForKindSizeError, None).with_compiler_loc())
-}
-
-#[cfg(feature = "convert")]
-pub fn typed_literal(
-    ltrl: &Literal,
-    knd_attn: &KindAnnotation,
-    p: &InterpreterExecution<'_>,
-) -> MResult<ValueCell> {
-    let value = literal(ltrl, p)?.cell().cloned()?;
-    let target = crate::structures::schema_body_from_kind(&knd_attn.kind, p)?;
-    convert_literal_cell(value, &target).map_err(|error| error.with_tokens(knd_attn.tokens()))
-}
-
-#[cfg(feature = "convert")]
+#[cfg(all(test, feature = "convert"))]
 pub(crate) fn convert_literal_cell(value: ValueCell, target: &SchemaBody) -> MResult<ValueCell> {
     let source_type = value.resolved_type()?;
     let semantic_target =
@@ -412,7 +165,7 @@ fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBod
     }
 }
 
-#[cfg(feature = "convert")]
+#[cfg(all(test, feature = "convert"))]
 fn materialize_declared_conversion_semantic_shape(
     source: &KindExpr,
     target: &SchemaBody,
@@ -948,13 +701,14 @@ fn planned_type_conversion_instance(
             output: output.clone(),
             plan,
             reified_constraints,
+
             reified_target,
         }),
         invocation,
     )
 }
 
-#[cfg(feature = "convert")]
+#[cfg(all(test, feature = "convert"))]
 fn planned_type_conversion_specialized(
     source: ValueCell,
     output: ValueCell,
@@ -3748,6 +3502,7 @@ fn substitute_reified_dimension(
 }
 
 #[cfg(feature = "convert")]
+
 fn substitute_reified_cardinality(
     cardinality: &CardinalitySpec,
     declared_cardinality: Option<&CardinalitySpec>,
@@ -4160,195 +3915,6 @@ impl MechFunctionCompiler for PlannedTypeConversion {
         }
         Ok(destination)
     }
-}
-
-#[cfg(feature = "convert")]
-pub(crate) fn convert_cell_with_plan_reactively(
-    value: ValueCell,
-    plan: &ConversionPlan,
-    interpreter: &InterpreterExecution<'_>,
-) -> MResult<ValueCell> {
-    if matches!(plan.step, ConversionStep::Identity) {
-        return Ok(value);
-    }
-    let source_schema = value.closed_schema_body()?;
-    let target =
-        conversion_target_schema(&source_schema, &plan.step).map_err(conversion_execution_error)?;
-    let output = execute_conversion_plan(&value, &target, plan)?;
-    interpreter
-        .plan()
-        .register_specialized(planned_type_conversion_specialized(
-            value,
-            output.clone(),
-            plan.clone(),
-        )?)?;
-    Ok(output)
-}
-
-/// Builds the exact lossless conversion selected by semantic input/output
-/// compatibility. User-function boundaries use this path; lossy conversions
-/// remain available only through the explicit `convert/kind` intrinsic.
-#[cfg(feature = "convert")]
-pub(crate) fn convert_cell_implicitly_reactively(
-    value: ValueCell,
-    target: SchemaBody,
-    interpreter: &InterpreterExecution<'_>,
-) -> MResult<ValueCell> {
-    let source_type = value.resolved_type()?;
-    let semantic_target =
-        materialize_declared_conversion_semantic_shape(source_type.kind(), &target);
-    let target = materialize_declared_conversion_shape(&value.closed_schema_body()?, &target);
-    if value.closed_schema_body()? == target {
-        return Ok(value);
-    }
-    let target_type =
-        ResolvedType::from_schema_body(&semantic_target, source_type.dimension_parameters())
-            .map_err(MechError::from)?;
-    let plan = plan_implicit_conversion(&source_type, &target_type).map_err(MechError::from)?;
-    let output = execute_conversion_plan(&value, &target, &plan)?;
-    interpreter
-        .plan()
-        .register_specialized(planned_type_conversion_specialized(
-            value,
-            output.clone(),
-            plan,
-        )?)?;
-    Ok(output)
-}
-
-/// Builds one reactive, schema-directed conversion without routing semantic
-/// values through the retired universal value representation.
-#[cfg(feature = "convert")]
-pub(crate) fn convert_cell_reactively(
-    value: ValueCell,
-    target: SchemaBody,
-    interpreter: &InterpreterExecution<'_>,
-) -> MResult<ValueCell> {
-    let source_type = value.resolved_type()?;
-    let semantic_target =
-        materialize_declared_conversion_semantic_shape(source_type.kind(), &target);
-    let target = materialize_declared_conversion_shape(&value.closed_schema_body()?, &target);
-    if value.closed_schema_body()? == target {
-        return Ok(value);
-    }
-    let target_type =
-        ResolvedType::from_schema_body(&semantic_target, source_type.dimension_parameters())
-            .map_err(MechError::from)?;
-    let plan = plan_explicit_cast(&source_type, &target_type).map_err(MechError::from)?;
-    let output = execute_conversion_plan(&value, &target, &plan)?;
-    interpreter
-        .plan()
-        .register_specialized(planned_type_conversion_specialized(
-            value,
-            output.clone(),
-            plan,
-        )?)?;
-    Ok(output)
-}
-
-#[cfg(feature = "atom")]
-pub fn atom(atm: &Atom, p: &InterpreterExecution<'_>) -> MResult<ValueCell> {
-    let id = atm.name.hash();
-    let name = atm.name.to_string();
-    let state = p.state.borrow();
-    let dictionary = state.dictionary.clone();
-    {
-        let mut dictionary_brrw = dictionary.borrow_mut();
-        dictionary_brrw.insert(id, name.clone());
-    }
-    let path = CanonicalNominalPath::new(
-        name.split('/')
-            .filter(|segment| !segment.is_empty())
-            .map(str::to_owned)
-            .collect::<Vec<_>>(),
-    )?;
-    let key = NominalKey::from_path(NominalKind::Atom, &path);
-    ValueCell::from_schema_data(SchemaBody::Atom(key), ValueDataDraft::Atom)
-}
-
-pub fn number(num: &Number, p: &InterpreterExecution<'_>) -> MResult<ValueCell> {
-    match num {
-        Number::Real(num) => real(num, p),
-        #[cfg(feature = "complex")]
-        Number::Complex(num) => complex(num, p),
-        #[cfg(not(feature = "complex"))]
-        _ => panic!("Number type not supported."),
-    }
-}
-
-#[cfg(feature = "complex")]
-fn complex(num: &C64Node, p: &InterpreterExecution<'_>) -> MResult<ValueCell> {
-    let im = cell_f64(&real(&num.imaginary.number, p)?)?.unwrap_or(0.0);
-    let result = match &num.real {
-        Some(real_val) => {
-            let re = cell_f64(&real(&real_val, p)?)?.unwrap_or(0.0);
-            C64::new(re, im)
-        }
-        None => C64::new(0.0, im),
-    };
-    ValueCell::from_exact(result)
-}
-
-#[cfg(any(
-    feature = "math_neg",
-    feature = "f64",
-    feature = "floats",
-    feature = "i64",
-    feature = "rational",
-    feature = "convert"
-))]
-pub fn real(
-    rl: &RealNumber,
-    #[cfg(any(feature = "math_neg", feature = "convert"))] p: &InterpreterExecution<'_>,
-    #[cfg(not(any(feature = "math_neg", feature = "convert")))] _: &InterpreterExecution<'_>,
-) -> MResult<ValueCell> {
-    let result = match rl {
-        #[cfg(feature = "math_neg")]
-        RealNumber::Negated(num) => negated(num, p)?,
-        #[cfg(feature = "f64")]
-        RealNumber::Integer(num) => integer(num)?,
-        #[cfg(feature = "floats")]
-        RealNumber::Float(num) => float(num)?,
-        #[cfg(feature = "i64")]
-        RealNumber::Decimal(num) => dec(num)?,
-        #[cfg(feature = "i64")]
-        RealNumber::Hexadecimal(num) => hex(num)?,
-        #[cfg(feature = "i64")]
-        RealNumber::Octal(num) => oct(num)?,
-        #[cfg(feature = "i64")]
-        RealNumber::Binary(num) => binary(num)?,
-        #[cfg(feature = "floats")]
-        RealNumber::Scientific(num) => scientific(num)?,
-        #[cfg(feature = "rational")]
-        RealNumber::Rational(num) => rational(num)?,
-        #[cfg(feature = "convert")]
-        RealNumber::TypedInteger((num_tkn, kind)) => {
-            let num: Literal = Literal::Number(Number::Real(RealNumber::Integer(num_tkn.clone())));
-            typed_literal(&num, kind, p)?
-        }
-        #[cfg(not(all(
-            feature = "math_neg",
-            feature = "f64",
-            feature = "floats",
-            feature = "i64",
-            feature = "rational",
-            feature = "convert"
-        )))]
-        _ => panic!("Number type not supported."),
-    };
-    Ok(result)
-}
-
-#[cfg(not(any(
-    feature = "math_neg",
-    feature = "f64",
-    feature = "floats",
-    feature = "i64",
-    feature = "rational",
-    feature = "convert"
-)))]
-pub fn real(_: &RealNumber, _: &InterpreterExecution<'_>) -> MResult<ValueCell> {
-    panic!("Number type not supported.")
 }
 
 #[cfg(all(test, feature = "convert", feature = "f64", feature = "u8"))]
@@ -5748,6 +5314,7 @@ mod canonical_conversion_tests {
                 Some(DimensionExpr::Constant(0))
             ],
         );
+
         let weighted = target(
             DimensionExpr::Multiply(
                 [DimensionExpr::Constant(2), DimensionExpr::Parameter(p)].into(),
@@ -7917,145 +7484,5 @@ mod canonical_conversion_tests {
                 value: Some(value),
             }) if matches!(*value, ValueDataDraft::U16(255))
         ));
-    }
-}
-
-#[cfg(feature = "math_neg")]
-pub fn negated(num: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<ValueCell> {
-    let num_val = real(&num, p)?;
-    let snapshot = num_val.snapshot()?;
-    match snapshot.data() {
-        #[cfg(feature = "i8")]
-        ValueData::I8(value) => ValueCell::from_exact(-*value),
-        #[cfg(feature = "i16")]
-        ValueData::I16(value) => ValueCell::from_exact(-*value),
-        #[cfg(feature = "i32")]
-        ValueData::I32(value) => ValueCell::from_exact(-*value),
-        #[cfg(feature = "i64")]
-        ValueData::I64(value) => ValueCell::from_exact(-*value),
-        #[cfg(feature = "i128")]
-        ValueData::I128(value) => ValueCell::from_exact(-*value),
-        #[cfg(feature = "f64")]
-        ValueData::F64(value) => ValueCell::from_exact(-value.to_f64()),
-        #[cfg(feature = "f32")]
-        ValueData::F32(value) => ValueCell::from_exact(-value.to_f32()),
-        _ => Err(MechError::new(ExpectedNumericForKindSizeError, None).with_compiler_loc()),
-    }
-}
-
-#[cfg(feature = "complex")]
-fn cell_f64(cell: &ValueCell) -> MResult<Option<f64>> {
-    Ok(match cell.snapshot()?.data() {
-        ValueData::F64(value) => Some(value.to_f64()),
-        _ => None,
-    })
-}
-
-#[cfg(feature = "rational")]
-pub fn rational(rat: &(Token, Token)) -> MResult<ValueCell> {
-    let (num, denom) = rat;
-    let num = num.chars.iter().collect::<String>().parse::<i64>().unwrap();
-    let denom = denom
-        .chars
-        .iter()
-        .collect::<String>()
-        .parse::<i64>()
-        .unwrap();
-    if denom == 0 {
-        panic!("Denominator cannot be zero in a rational number");
-    }
-    let rat_num = R64::new(num, denom);
-    ValueCell::from_exact(rat_num)
-}
-
-#[cfg(feature = "i64")]
-pub fn dec(bnry: &Token) -> MResult<ValueCell> {
-    let binary_str: String = bnry.chars.iter().collect();
-    let num = i64::from_str_radix(&binary_str, 10).unwrap();
-    ValueCell::from_exact(num)
-}
-
-#[cfg(feature = "i64")]
-pub fn binary(bnry: &Token) -> MResult<ValueCell> {
-    let binary_str: String = bnry.chars.iter().collect();
-    let num = i64::from_str_radix(&binary_str, 2).unwrap();
-    ValueCell::from_exact(num)
-}
-
-#[cfg(feature = "i64")]
-pub fn oct(octl: &Token) -> MResult<ValueCell> {
-    let hex_str: String = octl.chars.iter().collect();
-    let num = i64::from_str_radix(&hex_str, 8).unwrap();
-    ValueCell::from_exact(num)
-}
-
-#[cfg(feature = "i64")]
-pub fn hex(hxdcml: &Token) -> MResult<ValueCell> {
-    let hex_str: String = hxdcml.chars.iter().collect();
-    let num = i64::from_str_radix(&hex_str, 16).unwrap();
-    ValueCell::from_exact(num)
-}
-
-#[cfg(feature = "f64")]
-pub fn scientific(sci: &(Base, Exponent)) -> MResult<ValueCell> {
-    let (base, exp): &(Base, Exponent) = sci;
-    let (whole, part): &(Whole, Part) = base;
-    let (sign, exp_whole, exp_part): &(Sign, Whole, Part) = exp;
-
-    let a = whole.chars.iter().collect::<String>();
-    let b = part.chars.iter().collect::<String>();
-    let c = exp_whole.chars.iter().collect::<String>();
-    let d = exp_part.chars.iter().collect::<String>();
-    let num_f64: f64 = format!("{}.{}", a, b).parse::<f64>().unwrap();
-    let mut exp_f64: f64 = format!("{}.{}", c, d).parse::<f64>().unwrap();
-    if *sign {
-        exp_f64 = -exp_f64;
-    }
-    let num = num_f64 * 10f64.powf(exp_f64);
-    ValueCell::from_exact(num)
-}
-
-#[cfg(feature = "floats")]
-pub fn float(flt: &(Token, Token)) -> MResult<ValueCell> {
-    let a = flt.0.chars.iter().collect::<String>();
-    let b = flt.1.chars.iter().collect::<String>();
-    let num: f64 = format!("{}.{}", a, b).parse::<f64>().unwrap();
-    ValueCell::from_exact(num)
-}
-
-#[cfg(feature = "f64")]
-pub fn integer(int: &Token) -> MResult<ValueCell> {
-    let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
-    ValueCell::from_exact(num)
-}
-
-#[cfg(feature = "string")]
-pub fn string(tkn: &MechString) -> MResult<ValueCell> {
-    let strng: String = tkn.text.chars.iter().collect::<String>();
-    ValueCell::from_exact(strng)
-}
-
-pub fn empty() -> ValueCell {
-    ValueCell::unit()
-}
-
-#[cfg(feature = "bool")]
-pub fn boolean(tkn: &Token) -> MResult<ValueCell> {
-    let val = match tkn.kind {
-        TokenKind::True => true,
-        TokenKind::False => false,
-        _ => unreachable!(),
-    };
-    ValueCell::from_exact(val)
-}
-
-#[derive(Debug, Clone)]
-pub struct ExpectedNumericForKindSizeError;
-impl MechErrorKind for ExpectedNumericForKindSizeError {
-    fn name(&self) -> &str {
-        "ExpectedNumericForKindSize"
-    }
-    fn message(&self) -> String {
-        "Expected a numeric value for kind size, but received a non-numeric value.".to_string()
     }
 }

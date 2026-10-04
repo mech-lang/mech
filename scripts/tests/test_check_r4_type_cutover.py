@@ -118,6 +118,70 @@ class R4TypeCutoverCheckerTests(unittest.TestCase):
         path.write_text(path.read_text() + "\nfn bad(step: &Step) { step.semantic_operation_name(); }\n")
         self.assert_failure(root, "semantic sidecars independently")
 
+    def test_independent_resident_semantic_sidecar_fails(self):
+        root = self.fixture()
+        path = root / "src/engine/src/resident/general/mod.rs"
+        path.write_text(path.read_text() + "\nfn bad(step: &Step) { step.semantic_operation_name(); }\n")
+        self.assert_failure(root, "semantic sidecars independently")
+
+    def test_resident_binding_must_use_the_actual_artifact_operation(self):
+        root = self.fixture()
+        path = root / "src/engine/src/resident/general/mod.rs"
+        source = path.read_text()
+        self.assertIn("BoundCall::artifact_operation(", source)
+        path.write_text(source.replace("BoundCall::artifact_operation(", "unchecked_call(", 1))
+        self.assert_failure(root, "resident activation does not bind the actual artifact operation")
+
+    def test_resident_binding_must_use_the_actual_semantic_contract(self):
+        root = self.fixture()
+        path = root / "src/engine/src/resident/general/mod.rs"
+        source = path.read_text()
+        self.assertIn("ResolvedOperationDescriptor::from_resolved_contract(", source)
+        path.write_text(source.replace("ResolvedOperationDescriptor::from_resolved_contract(", "ResolvedOperationDescriptor::from_name(", 1))
+        self.assert_failure(root, "semantic descriptors from the actual artifact contract and layouts")
+
+    def test_resident_binding_must_use_actual_output_shape(self):
+        root = self.fixture()
+        path = root / "src/engine/src/resident/general/mod.rs"
+        source = path.read_text()
+        body = CHECKER.rust_function_body(source, "bind_resident_operation")
+        self.assertIn("output_layout.shape_instance.clone()", body)
+        path.write_text(source.replace(body, body.replace("output_layout.shape_instance.clone()", "ShapeInstance::scalar()", 1), 1))
+        self.assert_failure(root, "semantic descriptors from the actual artifact contract and layouts")
+
+    def test_resident_memory_plan_must_consume_selected_bound_call(self):
+        root = self.fixture()
+        path = root / "src/engine/src/resident/general/mod.rs"
+        source = path.read_text()
+        body = CHECKER.rust_function_body(source, "bind_resident_operation")
+        self.assertIn("&resident_context.bound_call,", body)
+        path.write_text(source.replace(body, body.replace("&resident_context.bound_call,", "&unrelated_bound_call,", 1), 1))
+        self.assert_failure(root, "call-memory planning does not consume the selected BoundCall")
+
+    def test_resident_kernel_must_retain_selected_bound_call(self):
+        root = self.fixture()
+        path = root / "src/engine/src/resident/general/mod.rs"
+        source = path.read_text()
+        self.assertIn(".with_bound_call(resident_context.bound_call)", source)
+        path.write_text(source.replace(".with_bound_call(resident_context.bound_call)", ".with_unchecked_metadata()", 1))
+        self.assert_failure(root, "resident executable kernel does not retain its selected BoundCall")
+
+    def test_selected_kernel_call_is_not_merely_a_sidecar_argument(self):
+        root = self.fixture()
+        path = root / "src/core/src/function/resident.rs"
+        source = path.read_text()
+        self.assertIn("self.bound_call = Some(bound_call)", source)
+        path.write_text(source.replace("self.bound_call = Some(bound_call)", "drop(bound_call)", 1))
+        self.assert_failure(root, "retain and expose the selected semantic BoundCall")
+
+    def test_executable_node_must_retain_bound_kernel(self):
+        root = self.fixture()
+        path = root / "src/engine/src/resident/general/mod.rs"
+        source = path.read_text()
+        self.assertIn("pub kernel: BoundResidentKernel", source)
+        path.write_text(source.replace("pub kernel: BoundResidentKernel", "pub kernel: UnboundKernel", 1))
+        self.assert_failure(root, "executable node does not retain the bound kernel")
+
     def test_implementation_contract_authority_fails(self):
         root = self.fixture()
         path = root / "src/core/src/function/specialization.rs"

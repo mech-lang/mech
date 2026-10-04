@@ -175,6 +175,40 @@ fn typed_document_compiles_definition_and_expression_units_in_source_order() {
         .expect("canonical document produces an artifact");
 }
 
+#[cfg(all(feature = "resident-artifact", feature = "string", feature = "tuple"))]
+#[test]
+fn canonical_live_tuple_pack_stages_complete_payloads_across_growth_and_retry() {
+    let short = mech_core::ValueCell::from_exact("old".to_owned())
+        .unwrap()
+        .snapshot()
+        .unwrap();
+    let larger = mech_core::ValueCell::from_exact(
+        "a substantially larger reactive tuple payload".to_owned(),
+    )
+    .unwrap()
+    .snapshot()
+    .unwrap();
+    let replacement = mech_core::ValueCell::from_exact("new".to_owned())
+        .unwrap()
+        .snapshot()
+        .unwrap();
+    execute_document(
+        "(signal<string>, true)\n",
+        [&short, &larger, &replacement].into_iter().map(|value| {
+            (
+                vec![ResidentValueRef::Snapshot(value)],
+                ValueDataDraft::Tuple(
+                    vec![
+                        value.canonical_data_draft().unwrap(),
+                        ValueDataDraft::Bool(true),
+                    ]
+                    .into_boxed_slice(),
+                ),
+            )
+        }),
+    );
+}
+
 #[test]
 fn interactive_ans_requires_a_preceding_value() {
     let error =

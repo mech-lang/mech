@@ -142,6 +142,23 @@ def check_product_references() -> list[str]:
     return failures
 
 
+def check_retired_executor_boundary(root: Path = ROOT) -> list[str]:
+    failures: list[str] = []
+    engine_lib = (root / "src/engine/src/lib.rs").read_text(encoding="utf-8")
+    if re.search(r"\bmod\s+interpreter\s*;|\binterpreter::", engine_lib):
+        failures.append(
+            "src/engine/src/lib.rs: retired interpreter module must not remain reachable"
+        )
+    interpreter = root / "src/engine/src/interpreter"
+    if interpreter.is_file() or (
+        interpreter.is_dir() and any(path.is_file() for path in interpreter.rglob("*"))
+    ):
+        failures.append("src/engine/src/interpreter: retired executor workspace remains")
+    if (root / "src/engine/src/program/instance.rs").exists():
+        failures.append("src/engine/src/program/instance.rs: obsolete program instance remains")
+    return failures
+
+
 def manifest_features(relative: str) -> dict[str, list[str]]:
     manifest = (ROOT / relative).read_text(encoding="utf-8")
     match = re.search(r"(?ms)^\[features\]\s*$\n(.*?)(?=^\[[^\n]+\]\s*$|\Z)", manifest)
@@ -289,18 +306,7 @@ def check_required_product_seams() -> list[str]:
         failures.append(
             "src/runtime/src/runtime/program/compiler.rs: compiler modules must not share ValRef identity"
         )
-    engine_lib = (ROOT / "src/engine/src/lib.rs").read_text(encoding="utf-8")
-    if re.search(r"(?m)^\s*pub\s+mod\s+interpreter\s*;", engine_lib):
-        failures.append("src/engine/src/lib.rs: interpreter module must remain private")
-    if not re.search(
-        r'#\[cfg\(feature = "semantic-compiler"\)\]\s*mod\s+interpreter\s*;',
-        engine_lib,
-    ):
-        failures.append(
-            "src/engine/src/lib.rs: private interpreter module must be semantic-compiler-only"
-        )
-    if (ROOT / "src/engine/src/program/instance.rs").exists():
-        failures.append("src/engine/src/program/instance.rs: obsolete program instance remains")
+    failures.extend(check_retired_executor_boundary())
     terminal_provider = (ROOT / "hosts/terminal/src/provider.rs").read_text(
         encoding="utf-8"
     )

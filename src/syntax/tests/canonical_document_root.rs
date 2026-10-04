@@ -78,13 +78,7 @@ fn canonical_document_root_owns_the_whole_source_fixture_corpus() {
 
 #[test]
 fn canonical_document_is_the_supported_document_root() {
-    let parsed = mech_syntax::document::parse_syntax(
-        source("answer := 42\n"),
-        mech_syntax::document::ParseRoot::Document,
-        mech_syntax::document::ParserImplementation::Canonical,
-        ParseConfig::default(),
-    )
-    .unwrap();
+    let parsed = parse_canonical_document(source("answer := 42\n"), ParseConfig::default());
     assert_eq!(parsed.syntax().kind(), SyntaxKind::Document);
 }
 

@@ -19,13 +19,10 @@ mod tests {
 
     #[test]
     fn legacy_tree_payload_is_not_accepted_as_retained_source() {
-        let tree = mech_core::nodes::Program {
-            title: None,
-            body: mech_core::nodes::Body {
-                sections: Vec::new(),
-            },
-        };
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        assert!(BrowserDocumentPayload::decode(&encoded).is_err());
+        // Frozen compatibility payload: Brotli/base64 of the retired bincode
+        // empty Program (title=None, sections=[]), whose raw bytes are [0, 0].
+        // Keep rejection coverage without resurrecting its source AST types.
+        const LEGACY_EMPTY_PROGRAM: &str = "iwCAAAAD";
+        assert!(BrowserDocumentPayload::decode(LEGACY_EMPTY_PROGRAM).is_err());
     }
 }
