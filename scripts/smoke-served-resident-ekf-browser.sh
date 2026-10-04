@@ -20,6 +20,15 @@ if [[ ! -x "$MECH_BIN" ]]; then
   exit 1
 fi
 
+software_adapter="${MECH_BROWSER_SOFTWARE_ADAPTER:-true}"
+case "$software_adapter" in
+  true|false) ;;
+  *)
+    echo "MECH_BROWSER_SOFTWARE_ADAPTER must be true or false" >&2
+    exit 1
+    ;;
+esac
+
 mkdir -p "$target_dir"
 project_dir="$(mktemp -d "$target_dir/served-resident-ekf.XXXXXX")"
 browser_dir="$(mktemp -d "$target_dir/served-resident-ekf-browser.XXXXXX")"
@@ -46,7 +55,8 @@ cleanup() {
     # Do not retain the browser profile, which is large and unrelated evidence.
     rm -rf "$chrome_profile"
     if ! python3 - "$browser_dir" "$exit_status" "${compute_backend:-}" \
-      "${filter_count:-}" "${continuity_edit:-}" "${terminal_submit_probe:-}" <<'PY'
+      "${filter_count:-}" "${continuity_edit:-}" "${terminal_submit_probe:-}" \
+      "$software_adapter" <<'PY'
 from html.parser import HTMLParser
 import json
 from pathlib import Path
@@ -66,7 +76,7 @@ class DatasetParser(HTMLParser):
             })
 
 
-directory, status, backend, filters, continuity, terminal_probe = sys.argv[1:]
+directory, status, backend, filters, continuity, terminal_probe, software_adapter = sys.argv[1:]
 directory = Path(directory)
 parser = DatasetParser()
 dom = directory / "chrome.dom"
@@ -87,6 +97,7 @@ dirty = subprocess.run(
     "filter_count": filters,
     "continuity_edit": continuity,
     "terminal_submit_probe": terminal_probe,
+    "browser_software_adapter_requested": software_adapter == "true",
     "dataset": parser.dataset,
     "artifacts": ["server.log", "chrome.stderr", "harness.stderr", "chrome.dom"],
 }, indent=2, sort_keys=True) + "\n")
@@ -1349,7 +1360,7 @@ set +e
 : >"$dom_file"
 : >"$chrome_log"
 python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" \
-  "$terminal_submit_probe" <<'PY' 2>"$harness_log"
+  "$terminal_submit_probe" "$software_adapter" <<'PY' 2>"$harness_log"
 import json
 from pathlib import Path
 import sys
@@ -1363,14 +1374,14 @@ from tests.browser.harness import (
 )
 
 
-page_url, profile, dom_file, chrome_log, compute_backend, terminal_submit_probe = sys.argv[1:]
+page_url, profile, dom_file, chrome_log, compute_backend, terminal_submit_probe, software_adapter = sys.argv[1:]
 flags = []
 if compute_backend != "wgpu":
     flags.append("--disable-gpu")
 else:
-    # This canary proves the WebGPU transport independent of host-driver setup.
+    # CI retains its software canary; hardware qualification opts out explicitly.
     flags.extend(chrome_webgpu_test_flags(
-        software_adapter=True,
+        software_adapter=software_adapter == "true",
         linux=sys.platform.startswith("linux"),
     ))
 
@@ -1601,12 +1612,13 @@ parity_output="$(sed -n 's/.*data-mech-parity-output="\([^"]*\)".*/\1/p' "$dom_f
 continuity_output="$(sed -n 's/.*data-mech-continuity-next-sample="\([^"]*\)".*/\1/p' "$dom_file" | head -1)"
 if [[ -n "${MECH_EKF_RESULT_FILE:-}" ]]; then
   python3 - "$MECH_EKF_RESULT_FILE" "$compute_backend" "$parity_updates" \
-    "$parity_output" "$parity_tracking_error" "$continuity_output" <<'PY'
+    "$parity_output" "$parity_tracking_error" "$continuity_output" \
+    "$software_adapter" <<'PY'
 import json
 from pathlib import Path
 import sys
 
-path, backend, updates, output, tracking, continuity_output = sys.argv[1:]
+path, backend, updates, output, tracking, continuity_output, software_adapter = sys.argv[1:]
 values = [float(value) for value in output.split(",") if value]
 continuity_values = [float(value) for value in continuity_output.split(",") if value]
 if len(values) != 15:
@@ -1621,6 +1633,7 @@ Path(path).write_text(json.dumps({
     "output": values,
     "continuity_output": continuity_values,
     "tracking_error": float(tracking),
+    "browser_software_adapter_requested": software_adapter == "true",
 }, sort_keys=True))
 PY
 fi
