@@ -189,14 +189,28 @@ denied, incremental compilation disabled and two build jobs:
   --test program_artifact_contract --test canonical_source_semantics`:
   37 artifact and 138 source-semantic tests passed. The codec target explicitly
   requires compiler; a feature-disabled refusal is not counted as execution.
-- Combined `mech-stdlib/full_compiler`, `mech-runtime/full_source` and
-  `mech-runtime/resident-routing-source`, selecting existing
-  `r6_managed_functions` and `canonical_constant_binding`: 16 managed and
+- `cargo +nightly-2026-03-03 test --locked -p mech-stdlib -p mech-runtime
+  --no-default-features --features
+  mech-stdlib/full_compiler,mech-runtime/full_source,mech-runtime/resident-routing-source
+  --test r6_managed_functions --test canonical_constant_binding`: 16 managed and
   49 runtime tests passed with the ordinary test-thread invocation. The previous
   serial run is not a concurrency waiver.
-- Reduced Standard compiler managed target: 12 passed, but it excludes u8, so
+- `cargo +nightly-2026-03-03 test --locked -p mech-stdlib --no-default-features
+  --features standard_compiler --test r6_managed_functions`: 12 passed, but it excludes u8, so
   this is compatibility evidence rather than interval coverage. Standard plus
-  the existing u8 feature: 15 passed, including both new mutable interval cases.
+  the existing u8 feature (`--features standard_compiler,u8`): 15 passed,
+  including both new mutable interval cases. Bare `compiler,u8` selects zero
+  tests in this target and receives no coverage credit; the maintained preset
+  must be selected.
+
+The test/evidence patch `ca1bf1c13` and all eleven preceding R15 patches were
+restacked onto review-clean R26 `0f1c8feabf87a0bb86f9a986d3e6329639ff8ee8`.
+All twelve patches are identical by range-diff. Every successful command above
+was refreshed with the same nonempty counts on resulting code/test candidate
+`a96608b4529c2a13505cd59eb1e21c2f092863fd`. Formatting, whitespace, warning
+policy, R3/R4 and the bytecode format's 21 deterministic fixtures also passed
+there. Routing, quarantine and retired-value checks passed before the mechanical
+restack; those historical runs are not relabeled as new-head execution.
 
 The accepted narrow contract above supersedes issue #865's earlier deferral;
 broader refinement features are not claimed. Historical counts remain assigned
