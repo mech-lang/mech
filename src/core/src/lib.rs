@@ -27,7 +27,7 @@ use std::fmt::{self, Debug, Display};
 #[cfg(feature = "no_std")]
 use alloc::vec::Vec;
 
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 use fxhash::FxHasher;
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 type HashMap<K, V> = HashBrownMap<K, V, core::hash::BuildHasherDefault<FxHasher>>;
