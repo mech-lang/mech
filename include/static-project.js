@@ -1,4 +1,5 @@
 import init, { WasmProject } from "../pkg/mech_wasm.js";
+import "./browser-compute.js";
 
 function findBootstrapScript(ownerDocument, moduleUrl) {
   const resolvedModuleUrl = new URL(moduleUrl, ownerDocument.baseURI).href;
@@ -24,7 +25,9 @@ const script = findBootstrapScript(document, import.meta.url);
 const { projectBase, maxInputsPerFrame } = readBootstrapOptions(script, window.location.href);
 let project;
 let running = false;
+let stopped = false;
 let releasePointerInput = () => {};
+let computeSession = null;
 
 function initializePointerInput() {
   if (typeof project.hasPointerInput !== "function" || !project.hasPointerInput()) return;
@@ -71,8 +74,14 @@ function initializePointerInput() {
 }
 
 function stopProject(error) {
+  if (stopped) return;
+  stopped = true;
   running = false;
   releasePointerInput();
+  if (computeSession) {
+    computeSession.retire();
+    computeSession = null;
+  }
   if (project) {
     try { project.stop(); } catch (stopError) { console.error(stopError); }
   }
@@ -172,15 +181,52 @@ async function main() {
   if (!Object.prototype.hasOwnProperty.call(window, "__MECH_HOST_CONFIG")) {
     throw new Error("static bundle is missing injected browser host authority");
   }
+  if (stopped) return;
 
-  project = WasmProject.fromServedDocuments(
-    config,
-    sources,
-    documents,
-    manifest.roots,
-    manifest.resolutions,
-    provenance,
+  // Backend selection must observe adapter availability before constructing
+  // the retained runtime. Merely having navigator.gpu does not prove that an
+  // adapter can be obtained. Non-compute profiles never request a device.
+  let adapter = null;
+  if (typeof WasmProject.supportsCompute === "function" && WasmProject.supportsCompute()) {
+    try { adapter = await navigator.gpu?.requestAdapter(); } catch { /* auto selects CPU */ }
+    window.__MECH_GPU_AVAILABLE = Boolean(adapter);
+  }
+  if (stopped) return;
+  const loadProject = () => WasmProject.fromServedDocuments(
+    config, sources, documents, manifest.roots, manifest.resolutions, provenance,
   );
+  project = loadProject();
+  const computeManifest = typeof project.computeManifest === "function" ? project.computeManifest() : null;
+  if (computeManifest && project.computeBackend() !== "cpu-scalar") {
+    if (project.computeBackend() !== "wgpu" || !adapter) {
+      throw new Error("static compute project has no supported browser GPU adapter");
+    }
+    let resource;
+    try {
+      resource = await MechBrowserCompute.Device.create(computeManifest, adapter, []);
+    } catch (error) {
+      if (stopped) return;
+      // This is the only fallback boundary: no driver was started and no GPU
+      // command was submitted. A submitted/rejected turn is never replayed.
+      if (computeManifest.requestedBackend !== "auto") throw error;
+      project.stop();
+      window.__MECH_GPU_AVAILABLE = false;
+      project = loadProject();
+      if (project.computeBackend() !== "cpu-scalar") throw error;
+    }
+    if (stopped) {
+      resource?.dispose();
+      return;
+    }
+    if (resource) {
+      const controller = project;
+      const generation = controller.computeGeneration();
+      computeSession = new MechBrowserCompute.Session({
+        controller, resource, generation,
+        isCurrent: () => project === controller && controller.computeGeneration() === generation,
+      });
+    }
+  }
   project.start();
   running = true;
   initializePointerInput();
@@ -192,7 +238,16 @@ function frame() {
     return;
   }
   try {
-    project.frame(maxInputsPerFrame);
+    if (computeSession?.failure) throw computeSession.failure;
+    if (!computeSession?.pending) {
+      // A GPU turn may suspend awaiting exact completion. Do not drain a
+      // second ingress turn before that command has been acknowledged.
+      const result = project.frame(computeSession ? 1 : maxInputsPerFrame);
+      if (result?.computeCommand?.dispatch) {
+        if (!computeSession) throw new Error("static compute dispatch has no browser session");
+        computeSession.submit(result.computeCommand, { onFailure: stopProject });
+      }
+    }
   } catch (error) {
     stopProject(error);
     return;

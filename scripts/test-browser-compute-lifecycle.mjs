@@ -271,6 +271,66 @@ assert.equal(rejectedDeviceRequests, 0, "a capability mismatch must fail before 
 
 // Exercise the production fallback function without starting the DOM host.
 const documentSource = readFileSync(new URL("../include/document.js", import.meta.url), "utf8");
+const pointerHostSource = documentSource.slice(
+  documentSource.indexOf("function initializePointerHostInput()"),
+  documentSource.indexOf("function initializeLayout()"),
+);
+const pointerRoot = {
+  dataset: {},
+  getBoundingClientRect: () => ({ left: 10, top: 20, width: 200, height: 100 }),
+};
+const pointerWindow = {};
+const pointerListeners = new Map();
+const pointerSamples = [];
+let pointerDriverRunning = false;
+const pointerController = {
+  hasPointerInput: () => pointerDriverRunning,
+  pointerInput(...sample) {
+    assert.equal(pointerDriverRunning, true, "a configured inactive pointer driver must never receive an event");
+    pointerSamples.push(sample);
+  },
+};
+const pointerState = {
+  root: pointerRoot,
+  runtimeLifecycle: "ready",
+  document: pointerController,
+  pointerHostTimestamp: null,
+  pointerHostPressed: false,
+};
+const pointerContext = vm.createContext({
+  state: pointerState,
+  window: pointerWindow,
+  servedPointerHostConfig: () => ({ provider: "pointer" }),
+  addRuntimeMutationEventListener(target, name, listener) {
+    pointerListeners.set(`${target === pointerRoot ? "root" : "window"}:${name}`, listener);
+  },
+});
+const initializePointerHost = vm.runInContext(`${pointerHostSource}\ninitializePointerHostInput;`, pointerContext);
+initializePointerHost();
+const pointerEvent = { button: 0, clientX: 110, clientY: 45, timeStamp: 1000 };
+pointerListeners.get("root:pointermove")(pointerEvent);
+pointerListeners.get("root:pointerdown")(pointerEvent);
+assert.deepEqual(pointerSamples, [], "configuration alone must not activate pointer ingress");
+pointerDriverRunning = true;
+pointerListeners.get("root:pointermove")(pointerEvent);
+pointerListeners.get("root:pointerdown")({ ...pointerEvent, timeStamp: 1016 });
+assert.deepEqual(pointerSamples, [[0, 0.5, false, 0], [0, 0.5, true, 0.016]]);
+// Source replacement can remove the last live read without changing host config
+// or the long-lived DOM listeners. Read accepted-driver liveness on each event.
+pointerDriverRunning = false;
+pointerListeners.get("root:pointermove")({ ...pointerEvent, timeStamp: 1100 });
+pointerListeners.get("window:pointerup")({ ...pointerEvent, timeStamp: 1101 });
+assert.equal(pointerSamples.length, 2);
+pointerDriverRunning = true;
+pointerListeners.get("root:pointermove")({ ...pointerEvent, timeStamp: 1200 });
+assert.deepEqual(pointerSamples[2], [0, 0.5, false, 0], "reactivation must not retain inactive button/timestamp state");
+pointerState.runtimeLifecycle = "stopped";
+pointerListeners.get("root:pointermove")({ ...pointerEvent, timeStamp: 1300 });
+assert.equal(pointerSamples.length, 3);
+pointerState.runtimeLifecycle = "ready";
+pointerState.document = { pointerInput() { throw new Error("old package must not submit without liveness API"); } };
+pointerListeners.get("root:pointermove")({ ...pointerEvent, timeStamp: 1400 });
+assert.equal(pointerSamples.length, 3);
 const fallbackSource = documentSource.slice(
   documentSource.indexOf("async function createDocumentComputeBridgeWithFallback("),
   documentSource.indexOf("async function main()"),

@@ -21,10 +21,10 @@ use mech_gpu::{
 };
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
-    MechRuntime, RuntimeBuilder, RuntimeHostFactory, RuntimeHostInput, RuntimeHostInputDriver,
-    RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeHostInstallation,
-    RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest, SourceDocument,
-    materialize_host_manifest, parse_config_document,
+    MechRuntime, ModuleBuildOptions, RuntimeBuilder, RuntimeHostFactory, RuntimeHostInput,
+    RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue,
+    RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    SourceDocument, SourceRequest, materialize_host_manifest, parse_config_document,
 };
 use mech_syntax::document::{ParseConfig, Revision};
 use wasm_bindgen::prelude::*;
@@ -395,29 +395,14 @@ pub(crate) fn prepare_browser_compute_runtime(
             backend_override,
         } => (1, None, Some(outputs), Some(backend_override)),
     };
-    let command = ComputeCommandHandle::new(prepared.region.clone(), generation);
-    let registry = match outputs {
-        Some(outputs) => browser_compute_backend_registry(command.clone(), outputs, gpu_available)?,
-        None => browser_resident_compute_backend_registry(command.clone(), gpu_available)?,
-    };
-    let mut factory = ComputeHostFactory::new(
-        prepared.region.clone(),
-        prepared.placement,
-        prepared.program.clone(),
-        prepared.initializers.clone(),
-        registry,
-        ComputePlatform::Browser,
-    )?
-    .with_retained_outputs(prepared.retained_outputs.clone())?;
-    if let Some(backend_override) = backend_override.filter(|value| !value.is_empty()) {
-        factory = factory.with_backend_override(
-            BackendRequest::parse(backend_override)
-                .map_err(|failure| mixed_error(failure.to_string()))?,
-        );
-    }
-    let backend = factory
-        .resolved_backend_id(&document.hosts[compute_index].settings)?
-        .to_string();
+    let (mut factory, command, backend) = prepare_browser_compute_factory(
+        document,
+        &prepared,
+        gpu_available,
+        generation,
+        outputs,
+        backend_override,
+    )?;
     let manifest = gpu_program_manifest(
         prepared.kernel.plan_source(),
         &initializer_values(&prepared.program, &prepared.initializers)?,
@@ -492,6 +477,53 @@ pub(crate) fn prepare_browser_compute_runtime(
     })
 }
 
+/// Admission shares live browser backend selection, but creates no manifest,
+/// device, session, activation, or turn. Capability is checked independently of
+/// the publisher machine's adapter availability.
+#[cfg(feature = "served_project_authority")]
+pub(crate) fn prepare_browser_compute_admission_factory(
+    document: &MechConfigDocument,
+    prepared: &PreparedComputeRegion,
+) -> MResult<ComputeHostFactory> {
+    prepare_browser_compute_factory(document, prepared, true, 1, None, None)
+        .map(|(factory, _, _)| factory)
+}
+
+fn prepare_browser_compute_factory(
+    document: &MechConfigDocument,
+    prepared: &PreparedComputeRegion,
+    gpu_available: bool,
+    generation: u64,
+    outputs: Option<BrowserOutputHandle>,
+    backend_override: Option<&str>,
+) -> MResult<(ComputeHostFactory, ComputeCommandHandle, String)> {
+    let compute_index = configured_host_index(document, "compute")?;
+    let command = ComputeCommandHandle::new(prepared.region.clone(), generation);
+    let registry = match outputs {
+        Some(outputs) => browser_compute_backend_registry(command.clone(), outputs, gpu_available)?,
+        None => browser_resident_compute_backend_registry(command.clone(), gpu_available)?,
+    };
+    let mut factory = ComputeHostFactory::new(
+        prepared.region.clone(),
+        prepared.placement,
+        prepared.program.clone(),
+        prepared.initializers.clone(),
+        registry,
+        ComputePlatform::Browser,
+    )?
+    .with_retained_outputs(prepared.retained_outputs.clone())?;
+    if let Some(backend_override) = backend_override.filter(|value| !value.is_empty()) {
+        factory = factory.with_backend_override(
+            BackendRequest::parse(backend_override)
+                .map_err(|failure| mixed_error(failure.to_string()))?,
+        );
+    }
+    let backend = factory
+        .resolved_backend_id(&document.hosts[compute_index].settings)?
+        .to_string();
+    Ok((factory, command, backend))
+}
+
 #[derive(Debug)]
 pub(crate) enum PreparedGpuKernel {
     Elementwise(ElementwiseKernel),
@@ -550,6 +582,16 @@ pub(crate) fn prepare_compute_document_region(
     let artifact_started = Instant::now();
     let mixed = compiler.compile_mixed_document(document)?;
     finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
+}
+
+pub(crate) fn prepare_compute_root_region(
+    compiler: &mut mech_runtime::ProgramCompiler,
+    request: SourceRequest,
+    options: ModuleBuildOptions<'_>,
+) -> MResult<PreparedComputeRegion> {
+    let artifact_started = Instant::now();
+    let mixed = compiler.compile_canonical_mixed_root(request, options)?;
+    finish_prepared_compute_region(mixed, 0.0, 0.0, artifact_started)
 }
 
 fn finish_prepared_compute_region(

@@ -17,6 +17,7 @@ use crate::fs_paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig, resolve_config_path};
 
 const STATIC_PROJECT_BOOTSTRAP: &str = include_str!("../include/static-project.js");
+const STATIC_BROWSER_COMPUTE: &str = include_str!("../include/browser-compute.js");
 const STATIC_PROJECT_ADMISSION: &str = include_str!("../include/static-project-admission.mjs");
 const STATIC_PROJECT_SCRIPT: &str =
     r#"<script type="module" src="./_mech/project.js" data-mech-project="."></script>"#;
@@ -264,6 +265,10 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     fs::write(
         output_dir.join("_mech/project.js"),
         STATIC_PROJECT_BOOTSTRAP,
+    )?;
+    fs::write(
+        output_dir.join("_mech/browser-compute.js"),
+        STATIC_BROWSER_COMPUTE,
     )?;
     let index_html = output_dir.join("index.html");
     fs::write(&index_html, &root_shim_with_config)?;
@@ -1790,6 +1795,7 @@ export default async function init() {}
         assert!(out.join("pkg/mech_wasm_bg.wasm").is_file());
         assert!(out.join("mech.mcfg").is_file());
         assert!(out.join("_mech/project.js").is_file());
+        assert!(out.join("_mech/browser-compute.js").is_file());
         assert!(out.join("_mech/project-sources.json").is_file());
         assert!(out.join("source/demo.mec").is_file());
         assert!(out.join("code/demo.mec").is_file());
@@ -1807,6 +1813,7 @@ export default async function init() {}
 
         let index = fs::read_to_string(out.join("index.html")).unwrap();
         let bootstrap = fs::read_to_string(out.join("_mech/project.js")).unwrap();
+        let compute_bridge = fs::read_to_string(out.join("_mech/browser-compute.js")).unwrap();
         let manifest: serde_json::Value =
             serde_json::from_slice(&fs::read(out.join("_mech/project-sources.json")).unwrap())
                 .unwrap();
@@ -1815,6 +1822,8 @@ export default async function init() {}
         assert!(bootstrap.contains("WasmProject.fromServedDocuments"));
         assert!(bootstrap.contains("WasmProject.supportsServedDocumentResolutions"));
         assert!(bootstrap.contains("../pkg/mech_wasm.js"));
+        assert!(bootstrap.contains("./browser-compute.js"));
+        assert_eq!(compute_bridge, STATIC_BROWSER_COMPUTE);
         assert_eq!(manifest["version"], 4);
         assert_eq!(manifest["roots"], serde_json::json!(["demo.mec"]));
         assert_eq!(manifest["sources"][0]["specifier"], "demo.mec");

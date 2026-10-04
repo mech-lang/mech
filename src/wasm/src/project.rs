@@ -83,10 +83,12 @@ fn served_provenance_from_js(
 use crate::canonical_document::CanonicalWasmDocument;
 #[cfg(feature = "browser_host_dom")]
 use crate::host::WasmBrowserDomBackend;
+#[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
+use crate::mixed_compute::prepare_browser_compute_admission_factory;
 #[cfg(feature = "browser_compute")]
 use crate::mixed_compute::{
-    BrowserComputeBridge, BrowserComputePurpose, prepare_browser_compute_runtime,
-    prepare_compute_document_region,
+    BrowserComputeBridge, BrowserComputePurpose, PreparedComputeRegion,
+    prepare_browser_compute_runtime, prepare_compute_document_region, prepare_compute_root_region,
 };
 
 #[wasm_bindgen]
@@ -95,6 +97,8 @@ pub struct WasmProject {
     events: MechEventBus,
     #[cfg(feature = "browser_compute")]
     pointer: Option<PointerInputHandle>,
+    #[cfg(feature = "browser_compute")]
+    compute: Option<BrowserComputeBridge>,
     #[cfg(feature = "browser_host_scene")]
     scenes: BrowserSceneRegistry,
     started: bool,
@@ -126,6 +130,11 @@ impl WasmProject {
     #[wasm_bindgen(js_name = supportsServedDocumentProvenance)]
     pub fn supports_served_document_provenance() -> bool {
         cfg!(feature = "served_project_authority")
+    }
+
+    #[wasm_bindgen(js_name = supportsCompute)]
+    pub fn supports_compute() -> bool {
+        cfg!(feature = "browser_compute")
     }
 
     /// Compile with this package's actual language and host closure. This is
@@ -188,22 +197,26 @@ impl WasmProject {
             &provenance,
         )
         .map_err(to_js_error)?;
-        let mut runtime = build_runtime(
+        let candidate = build_project_source_runtime(
             &document,
             source_resolver,
+            #[cfg(feature = "served_project_authority")]
+            None,
             #[cfg(feature = "browser_host_scene")]
             scenes.clone(),
             #[cfg(feature = "browser_compute")]
             pointer.clone(),
         )?;
-        run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
-        Ok(Self::from_runtime(
-            runtime,
+        let project = Self::from_runtime(
+            candidate.runtime,
             #[cfg(feature = "browser_host_scene")]
             scenes,
             #[cfg(feature = "browser_compute")]
             pointer,
-        ))
+        );
+        #[cfg(feature = "browser_compute")]
+        let project = project.with_compute_bridge(candidate.compute);
+        Ok(project)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -414,23 +427,31 @@ impl WasmProject {
             &provenance,
         )
         .map_err(to_js_error)?;
-        let mut runtime = build_runtime_from_authority(
+        let candidate = build_project_source_runtime(
             &document,
-            &authority,
             source_resolver,
+            Some(&authority),
             #[cfg(feature = "browser_host_scene")]
             scenes.clone(),
             #[cfg(feature = "browser_compute")]
             pointer.clone(),
         )?;
-        run_project_sources(&mut runtime, &document).map_err(to_js_error)?;
-        Ok(Self::from_runtime(
-            runtime,
+        let project = Self::from_runtime(
+            candidate.runtime,
             #[cfg(feature = "browser_host_scene")]
             scenes,
             #[cfg(feature = "browser_compute")]
             pointer,
-        ))
+        );
+        #[cfg(feature = "browser_compute")]
+        let project = project.with_compute_bridge(candidate.compute);
+        Ok(project)
+    }
+
+    #[cfg(feature = "browser_compute")]
+    fn with_compute_bridge(mut self, compute: Option<BrowserComputeBridge>) -> Self {
+        self.compute = compute;
+        self
     }
 
     fn from_runtime(
@@ -443,6 +464,8 @@ impl WasmProject {
             events: MechEventBus::default(),
             #[cfg(feature = "browser_compute")]
             pointer,
+            #[cfg(feature = "browser_compute")]
+            compute: None,
             #[cfg(feature = "browser_host_scene")]
             scenes,
             started: false,
@@ -521,6 +544,50 @@ impl WasmProject {
     fn refresh_relevant_input_drivers(&mut self) -> Result<(), JsValue> {
         self.runtime.start_input_drivers().map_err(to_js_error)?;
         Ok(())
+    }
+
+    #[cfg(feature = "browser_compute")]
+    #[wasm_bindgen(js_name = computeManifest)]
+    pub fn compute_manifest(&self) -> JsValue {
+        self.compute
+            .as_ref()
+            .map(BrowserComputeBridge::manifest)
+            .unwrap_or(JsValue::NULL)
+    }
+
+    #[cfg(feature = "browser_compute")]
+    #[wasm_bindgen(js_name = computeBackend)]
+    pub fn compute_backend(&self) -> String {
+        self.compute
+            .as_ref()
+            .map(BrowserComputeBridge::backend)
+            .unwrap_or_default()
+    }
+
+    #[cfg(feature = "browser_compute")]
+    #[wasm_bindgen(js_name = computeGeneration)]
+    pub fn compute_generation(&self) -> String {
+        self.compute
+            .as_ref()
+            .map(|compute| compute.generation().to_string())
+            .unwrap_or_default()
+    }
+
+    #[cfg(feature = "browser_compute")]
+    #[wasm_bindgen(js_name = isComputeCommandTokenCurrent)]
+    pub fn is_compute_command_token_current(&self, token: &str) -> bool {
+        self.compute
+            .as_ref()
+            .is_some_and(|compute| compute.validate_token(token).is_ok())
+    }
+
+    #[cfg(feature = "browser_compute")]
+    #[wasm_bindgen(js_name = completeComputeCommand)]
+    pub fn complete_compute_command(&self, completion: JsValue) -> Result<(), JsValue> {
+        self.compute
+            .as_ref()
+            .ok_or_else(|| js_error("project has no compute region"))?
+            .complete_command(&completion)
     }
 
     pub fn frame(&mut self, max_inputs: usize) -> Result<JsValue, JsValue> {
@@ -605,6 +672,15 @@ impl WasmProject {
             &out,
             &JsValue::from_str("coalesced"),
             &JsValue::from_f64(info.coalesced_host_packets as f64),
+        )?;
+        #[cfg(feature = "browser_compute")]
+        Reflect::set(
+            &out,
+            &JsValue::from_str("computeCommand"),
+            &match self.compute.as_ref() {
+                Some(compute) => compute.take_command()?,
+                None => JsValue::NULL,
+            },
         )?;
         Ok(out.into())
     }
@@ -3511,6 +3587,22 @@ mod document {
                 .map_err(to_js_error)
         }
 
+        #[wasm_bindgen(js_name = hasPointerInput)]
+        pub fn has_pointer_input(&self) -> bool {
+            #[cfg(feature = "browser_compute")]
+            {
+                self.bootstrap
+                    .source()
+                    .lifecycle
+                    .pointer()
+                    .is_some_and(|pointer| pointer.is_running())
+            }
+            #[cfg(not(feature = "browser_compute"))]
+            {
+                false
+            }
+        }
+
         #[cfg(feature = "browser_compute")]
         #[wasm_bindgen(js_name = pointerInput)]
         pub fn pointer_input(
@@ -4367,34 +4459,6 @@ fn runtime_builder_with_factories(
     Ok(builder)
 }
 
-fn build_runtime(
-    document: &MechConfigDocument,
-    source_resolver: InMemorySourceResolver,
-    #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
-    #[cfg(feature = "browser_compute")] pointer: Option<PointerInputHandle>,
-) -> Result<MechRuntime, JsValue> {
-    let runtime_config = mech_runtime::RuntimeConfig::default()
-        .apply_patch(&document.runtime)
-        .map_err(to_js_error)?;
-    let mut builder = runtime_builder_with_factories(
-        None,
-        #[cfg(feature = "browser_host_scene")]
-        scenes,
-        #[cfg(feature = "browser_compute")]
-        pointer,
-    )?
-    .config(runtime_config)
-    .source_resolver(source_resolver);
-    for host in &document.hosts {
-        builder = builder.host_instance(host.clone());
-    }
-    if let Some(run) = &document.run {
-        for grant in &run.grants {
-            builder = builder.run_resource_grant(grant.clone());
-        }
-    }
-    builder.build().map_err(to_js_error)
-}
 #[cfg(feature = "served_project_authority")]
 fn build_runtime_from_authority(
     document: &MechConfigDocument,
@@ -4403,7 +4467,44 @@ fn build_runtime_from_authority(
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
     #[cfg(feature = "browser_compute")] pointer: Option<PointerInputHandle>,
 ) -> Result<MechRuntime, JsValue> {
-    let runtime_config = authority.into_runtime_config().map_err(to_js_error)?;
+    project_runtime_builder(
+        document,
+        source_resolver,
+        Some(authority),
+        false,
+        #[cfg(feature = "browser_compute")]
+        None,
+        #[cfg(feature = "browser_host_scene")]
+        scenes,
+        #[cfg(feature = "browser_compute")]
+        pointer,
+    )?
+    .build()
+    .map_err(to_js_error)
+}
+
+/// Host settings, grants, and runtime limits stay under the same authority for
+/// planning and loading. Only planning omits the not-yet-prepared compute host.
+fn project_runtime_builder(
+    document: &MechConfigDocument,
+    source_resolver: InMemorySourceResolver,
+    #[cfg(feature = "served_project_authority")] authority: Option<&BrowserRuntimeInjectionConfig>,
+    omit_compute: bool,
+    #[cfg(feature = "browser_compute")] compute_factory: Option<mech_gpu::ComputeHostFactory>,
+    #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+    #[cfg(feature = "browser_compute")] pointer: Option<PointerInputHandle>,
+) -> Result<RuntimeBuilder, JsValue> {
+    #[cfg(not(feature = "served_project_authority"))]
+    let runtime_config = mech_runtime::RuntimeConfig::default()
+        .apply_patch(&document.runtime)
+        .map_err(to_js_error)?;
+    #[cfg(feature = "served_project_authority")]
+    let runtime_config = match authority {
+        Some(authority) => authority.into_runtime_config().map_err(to_js_error)?,
+        None => mech_runtime::RuntimeConfig::default()
+            .apply_patch(&document.runtime)
+            .map_err(to_js_error)?,
+    };
     let mut builder = runtime_builder_with_factories(
         None,
         #[cfg(feature = "browser_host_scene")]
@@ -4411,23 +4512,156 @@ fn build_runtime_from_authority(
         #[cfg(feature = "browser_compute")]
         pointer,
     )?
-    // The served authority already contains the project patch that the server
-    // verified and signed. Keep that runtime environment authoritative here.
     .config(runtime_config)
     .source_resolver(source_resolver);
-    for required in &document.hosts {
-        if let Some(host) = authority
-            .hosts
-            .iter()
-            .find(|host| host.name == required.name && host.provider == required.provider)
-        {
-            builder = builder.host_instance(host.clone());
+    #[cfg(feature = "browser_compute")]
+    if let Some(factory) = compute_factory {
+        builder = builder
+            .host_factory(Box::new(factory))
+            .map_err(to_js_error)?;
+    }
+    for required in document
+        .hosts
+        .iter()
+        .filter(|host| !omit_compute || host.provider != "compute")
+    {
+        #[cfg(feature = "served_project_authority")]
+        if let Some(authority) = authority {
+            if let Some(host) = authority
+                .hosts
+                .iter()
+                .find(|host| host.name == required.name && host.provider == required.provider)
+            {
+                builder = builder.host_instance(host.clone());
+            }
+            continue;
+        }
+        builder = builder.host_instance(required.clone());
+    }
+    #[cfg(feature = "served_project_authority")]
+    if let Some(authority) = authority {
+        for grant in required_issued_grants(document, authority) {
+            builder = builder.run_resource_grant(grant);
+        }
+        return Ok(builder);
+    }
+    if let Some(run) = &document.run {
+        for grant in &run.grants {
+            builder = builder.run_resource_grant(grant.clone());
         }
     }
-    for grant in required_issued_grants(document, authority) {
-        builder = builder.run_resource_grant(grant);
+    Ok(builder)
+}
+
+struct ProjectRuntimeCandidate {
+    runtime: MechRuntime,
+    #[cfg(feature = "browser_compute")]
+    compute: Option<BrowserComputeBridge>,
+}
+
+#[cfg(feature = "browser_compute")]
+fn prepare_project_compute_region(
+    document: &MechConfigDocument,
+    resolver: InMemorySourceResolver,
+    #[cfg(feature = "served_project_authority")] authority: Option<&BrowserRuntimeInjectionConfig>,
+) -> MResult<Option<PreparedComputeRegion>> {
+    if !document.hosts.iter().any(|host| host.provider == "compute") {
+        return Ok(None);
     }
-    builder.build().map_err(to_js_error)
+    let run = require_run(document)?;
+    let [root] = run.paths.as_slice() else {
+        return Err(document_runtime_error(
+            "static browser compute projects require exactly one root",
+        ));
+    };
+    let mut compiler = project_runtime_builder(
+        document,
+        resolver,
+        #[cfg(feature = "served_project_authority")]
+        authority,
+        true,
+        None,
+        #[cfg(feature = "browser_host_scene")]
+        BrowserSceneRegistry::new(),
+        None,
+    )
+    .map_err(js_value_to_mech_error)?
+    .function_catalog(mech_stdlib::source_native_plan_catalog())
+    .build_compiler()?;
+    prepare_compute_root_region(
+        &mut compiler,
+        SourceRequest::new(root.to_string_lossy()),
+        browser_module_options(),
+    )
+    .map(Some)
+}
+
+fn build_project_source_runtime(
+    document: &MechConfigDocument,
+    resolver: InMemorySourceResolver,
+    #[cfg(feature = "served_project_authority")] authority: Option<&BrowserRuntimeInjectionConfig>,
+    #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+    #[cfg(feature = "browser_compute")] pointer: Option<PointerInputHandle>,
+) -> Result<ProjectRuntimeCandidate, JsValue> {
+    #[cfg(feature = "browser_compute")]
+    let prepared = prepare_project_compute_region(
+        document,
+        resolver.clone(),
+        #[cfg(feature = "served_project_authority")]
+        authority,
+    )
+    .map_err(to_js_error)?
+    .map(|prepared| {
+        prepare_browser_compute_runtime(
+            document,
+            prepared,
+            browser_gpu_available(),
+            BrowserComputePurpose::ResidentDocument {
+                generation: 1,
+                previous: None,
+            },
+        )
+    })
+    .transpose()
+    .map_err(to_js_error)?;
+    #[cfg(feature = "browser_compute")]
+    let (factory, coordinator, compute) = match prepared {
+        Some(prepared) => (
+            Some(prepared.factory),
+            Some(prepared.coordinator),
+            Some(prepared.bridge),
+        ),
+        None => (None, None, None),
+    };
+    let mut runtime = project_runtime_builder(
+        document,
+        resolver,
+        #[cfg(feature = "served_project_authority")]
+        authority,
+        false,
+        #[cfg(feature = "browser_compute")]
+        factory,
+        #[cfg(feature = "browser_host_scene")]
+        scenes,
+        #[cfg(feature = "browser_compute")]
+        pointer,
+    )?
+    .build()
+    .map_err(to_js_error)?;
+    #[cfg(feature = "browser_compute")]
+    if let Some(coordinator) = coordinator {
+        let durability = runtime.config().resident_durability;
+        runtime
+            .load_compiled_program(coordinator, durability)
+            .map_err(to_js_error)?;
+        return Ok(ProjectRuntimeCandidate { runtime, compute });
+    }
+    run_project_sources(&mut runtime, document).map_err(to_js_error)?;
+    Ok(ProjectRuntimeCandidate {
+        runtime,
+        #[cfg(feature = "browser_compute")]
+        compute,
+    })
 }
 
 fn compiled_browser_providers() -> BTreeMap<&'static str, &'static str> {
@@ -4943,31 +5177,40 @@ fn validate_static_project_sources(
     validate_static_nominal_provenance(sources, provenance)?;
     let resolver =
         project_source_resolver_with_resolutions_and_provenance(sources, resolutions, provenance)?;
-    let mut builder = runtime_builder_with_factories(
+    #[cfg(feature = "browser_compute")]
+    let prepared = prepare_project_compute_region(document, resolver.clone(), None)?;
+    #[cfg(feature = "browser_compute")]
+    let factory = prepared
+        .as_ref()
+        .map(|prepared| prepare_browser_compute_admission_factory(document, prepared))
+        .transpose()?;
+    let builder = project_runtime_builder(
+        document,
+        resolver,
         None,
+        false,
+        #[cfg(feature = "browser_compute")]
+        factory,
         #[cfg(feature = "browser_host_scene")]
         BrowserSceneRegistry::new(),
         #[cfg(feature = "browser_compute")]
         None,
     )
-    .map_err(js_value_to_mech_error)?
-    .config(mech_runtime::RuntimeConfig::default().apply_patch(&document.runtime)?)
-    .source_resolver(resolver);
-    for host in &document.hosts {
-        builder = builder.host_instance(host.clone());
-    }
+    .map_err(js_value_to_mech_error)?;
     let run = require_run(document)?;
     if run.paths.len() != 1 {
         return Err(document_runtime_error(
             "static browser projects require exactly one root",
         ));
     }
-    for grant in &run.grants {
-        builder = builder.run_resource_grant(grant.clone());
-    }
-    // Use the same interactive root compiler as WasmProject's source loader,
-    // not the native publisher's broader catalog or a second feature list.
     let mut compiler = builder.build_compiler()?;
+    #[cfg(feature = "browser_compute")]
+    if let Some(prepared) = prepared {
+        compiler.preflight_resident_artifact(&prepared.coordinator)?;
+        return Ok(());
+    }
+    // Non-compute projects keep the same interactive root compiler and catalog
+    // as their source loader. Mixed projects preflight the prepared coordinator.
     let product = compiler.compile_canonical_interactive_root_with_options(
         SourceRequest::new(run.paths[0].to_string_lossy()),
         browser_module_options(),
@@ -6931,7 +7174,9 @@ phase"#;
             ),
         });
         let mut document = WasmDocument::try_from_bootstrap(bootstrap).unwrap();
+        assert!(!document.has_pointer_input());
         document.start().unwrap();
+        assert!(document.has_pointer_input());
         document.pointer_input(0.5, -0.25, true, 0.016).unwrap();
         assert_eq!(
             document
@@ -6951,6 +7196,81 @@ phase"#;
             .unwrap()
             .1;
         assert_eq!(pulse.format_canonical_inline(), "1");
+        document.stop().unwrap();
+        assert!(!document.has_pointer_input());
+    }
+
+    #[cfg(all(feature = "served_project_authority", feature = "browser_compute"))]
+    #[test]
+    fn served_pointer_liveness_tracks_accepted_source_replacement() {
+        let config_source = r#"config := {
+  hosts: [{ name: "mouse" provider: "pointer" settings: {} }]
+  run: {
+    paths: ["main.mec"]
+    grants: [{ target: "mouse/frame" operations: ["read"] paths: ["pulse", "position", "pressed", "delta-seconds"] }]
+  }
+}"#;
+        let config =
+            parse_config_document("mech.mcfg", config_source, ConfigProfileOptions::default())
+                .unwrap();
+        let mut bootstrap = document_bootstrap(
+            "main.mec",
+            "answer := 42\nanswer\n",
+            HashMap::new(),
+            Vec::new(),
+        );
+        bootstrap.console_instance = internal_repl_console_instance(&config.hosts);
+        bootstrap.served = Some(ServedDocumentBootstrap {
+            config_source: config_source.to_owned(),
+            authority: authority_config(
+                config.hosts.clone(),
+                config.run.as_ref().unwrap().grants.clone(),
+            ),
+        });
+        let mut document = WasmDocument::try_from_bootstrap(bootstrap).unwrap();
+        document.start().unwrap();
+        assert!(
+            !document.has_pointer_input(),
+            "configuration alone does not start a driver"
+        );
+        let source =
+            "@mouse := pointer://mouse/frame{:read(pulse)}\npulse := @mouse/pulse\npulse\n";
+        let active = document_payload("main.mec", source).encode().unwrap();
+        document.reset(&active).unwrap();
+        assert!(
+            document.has_pointer_input(),
+            "accepted live read starts its driver"
+        );
+        let previous = document.bootstrap.source().lifecycle.pointer().unwrap();
+        document.pointer_input(0.25, -0.5, false, 0.016).unwrap();
+        assert_eq!(
+            document
+                .runtime()
+                .unwrap()
+                .pending_host_input_count()
+                .unwrap(),
+            1
+        );
+        document.repl.session.drain_pending_inputs(1).unwrap();
+        let inactive = document_payload("main.mec", "answer := 43\nanswer\n")
+            .encode()
+            .unwrap();
+        document.reset(&inactive).unwrap();
+        assert!(
+            !document.has_pointer_input(),
+            "removing the last read stops pointer ingress"
+        );
+        assert!(
+            !previous.is_running(),
+            "replacement retires the previous input driver"
+        );
+        document.reset(&active).unwrap();
+        assert!(
+            document.has_pointer_input(),
+            "a valid replacement can reactivate ingress"
+        );
+        document.stop().unwrap();
+        assert!(!document.has_pointer_input());
     }
 
     #[cfg(all(feature = "served_project_authority", feature = "browser_compute"))]
@@ -7048,6 +7368,226 @@ phase"#;
                 "{source}"
             );
         }
+    }
+
+    #[cfg(all(feature = "served_project_authority", feature = "browser_compute"))]
+    #[test]
+    fn static_compute_admission_and_loading_share_mixed_preparation() {
+        let source = "@compute := compute://filters/kernel{:write(turn), :read(sample/result)}\n@compute/turn <- 1\nanswer := @compute/sample/result\nanswer\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\ncounter\n";
+        let sources = HashMap::from([("main.mec".to_owned(), source.to_owned())]);
+        for backend in ["cpu", "auto", "wgpu"] {
+            let config = format!(
+                r#"config := {{
+  hosts: [{{ name: "filters" provider: "compute" settings: {{ region: "calculation" backend: "{backend}" }} }}]
+  run: {{ paths: ["main.mec"] grants: [{{ target: "filters/kernel" operations: ["read", "write"] paths: ["sample/result", "turn"] }}] }}
+}}"#
+            );
+            let document =
+                parse_config_document("mech.mcfg", &config, ConfigProfileOptions::default())
+                    .unwrap();
+            // Negative control reproduces the reviewed ordinary-loader failure.
+            // No device or program is activated by either admission path.
+            let mut ordinary = runtime_builder_with_factories(
+                None,
+                #[cfg(feature = "browser_host_scene")]
+                BrowserSceneRegistry::new(),
+                None,
+            )
+            .unwrap();
+            for host in &document.hosts {
+                ordinary = ordinary.host_instance(host.clone());
+            }
+            let missing_compute = ordinary
+                .build_compiler()
+                .err()
+                .expect("the ordinary loader has no prepared compute factory");
+            assert_eq!(missing_compute.kind_name(), "RuntimeHostProviderNotFound");
+            assert_eq!(
+                missing_compute.kind_message(),
+                "host provider `compute` is not registered"
+            );
+            validate_static_project_sources(&document, &sources, &[], &HashMap::new()).unwrap();
+            if backend != "cpu" {
+                continue;
+            }
+            let authority = authority_config(
+                document.hosts.clone(),
+                document.run.as_ref().unwrap().grants.clone(),
+            );
+            let resolver = project_source_resolver(&sources).unwrap();
+            let prepared =
+                prepare_project_compute_region(&document, resolver.clone(), Some(&authority))
+                    .unwrap()
+                    .unwrap();
+            let factory = prepare_browser_compute_admission_factory(&document, &prepared).unwrap();
+            let mut runtime = project_runtime_builder(
+                &document,
+                resolver,
+                Some(&authority),
+                false,
+                Some(factory),
+                #[cfg(feature = "browser_host_scene")]
+                BrowserSceneRegistry::new(),
+                None,
+            )
+            .unwrap()
+            .build()
+            .unwrap();
+            assert_eq!(runtime.program_execution_info().resident_accepted_turns, 0);
+            let durability = runtime.config().resident_durability;
+            runtime
+                .load_compiled_program(prepared.coordinator, durability)
+                .unwrap();
+            // A driver-backed sample observation is dormant on installation.
+            // Explicitly admit its input-free activation send, then publish the
+            // compute host's completed sample through normal input ingress.
+            assert_eq!(
+                runtime
+                    .root_symbol_value("answer")
+                    .unwrap()
+                    .format_canonical_inline(),
+                "0"
+            );
+            assert_eq!(runtime.program_execution_info().resident_accepted_turns, 0);
+            runtime.step_active_program().unwrap();
+            let pending = runtime.pending_host_input_count().unwrap();
+            if pending > 0 {
+                runtime.drain_host_inputs(pending).unwrap();
+            }
+            assert_eq!(
+                runtime
+                    .root_symbol_value("answer")
+                    .unwrap()
+                    .format_canonical_inline(),
+                "1"
+            );
+            assert_eq!(
+                runtime.program_route(),
+                RuntimeProgramRoute::ResidentExternal
+            );
+            runtime.shutdown().unwrap();
+        }
+        for (backend, candidate) in [
+            ("cpu-jit", source.to_owned()),
+            ("cpu", source.replace("sample/result", "sample/unknown")),
+        ] {
+            let config = format!(
+                r#"config := {{
+  hosts: [{{ name: "filters" provider: "compute" settings: {{ region: "calculation" backend: "{backend}" }} }}]
+  run: {{ paths: ["main.mec"] grants: [{{ target: "filters/kernel" operations: ["read", "write"] paths: ["sample/result", "sample/unknown", "turn"] }}] }}
+}}"#
+            );
+            let document =
+                parse_config_document("mech.mcfg", &config, ConfigProfileOptions::default())
+                    .unwrap();
+            let candidates = HashMap::from([("main.mec".to_owned(), candidate)]);
+            let declined = validate_static_project_sources(
+                &document,
+                &candidates,
+                &[],
+                &HashMap::new(),
+            )
+            .expect_err(
+                "unsupported backends and undeclared sample paths must decline during admission",
+            );
+            if backend == "cpu-jit" {
+                assert_eq!(declined.kind_name(), "ComputeBackendSelection");
+                assert!(declined.kind_message().contains("cpu-jit"));
+            }
+        }
+    }
+
+    #[cfg(all(feature = "served_project_authority", feature = "browser_compute"))]
+    #[test]
+    fn static_compute_keeps_retained_import_and_nominal_authority() {
+        let config = r#"config := {
+  hosts: [{ name: "filters" provider: "compute" settings: { region: "calculation" backend: "cpu" } }]
+  run: { paths: ["main.mec"] grants: [{ target: "filters/kernel" operations: ["read", "write"] paths: ["sample/result", "turn"] }] }
+}"#;
+        let document =
+            parse_config_document("mech.mcfg", config, ConfigProfileOptions::default()).unwrap();
+        let source = "+> ./seed\n@compute := compute://filters/kernel{:write(turn), :read(sample/result)}\n@compute/turn <- 1\nanswer := @compute/sample/result\nadjusted := answer + seed/value\nadjusted\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\ncounter\n";
+        let sources = HashMap::from([
+            ("main.mec".to_owned(), source.to_owned()),
+            (
+                "helpers/index.mec".to_owned(),
+                "<event> := :idle | :busy\nvalue := 2f32\n<+ value\n".to_owned(),
+            ),
+        ]);
+        let resolutions = [SourceResolutionEntry {
+            referrer: "main.mec".to_owned(),
+            specifier: "./seed".to_owned(),
+            target: "helpers/index.mec".to_owned(),
+        }];
+        let provenance = HashMap::from([(
+            "helpers/index.mec".to_owned(),
+            ServedSourceProvenance {
+                nominal_origin: mech_core::CanonicalNominalPath::new([
+                    "static-compute-fixture".to_owned(),
+                    "helper".to_owned(),
+                ])
+                .unwrap(),
+                nominal_package_id: Some("sha256:static-compute-fixture".to_owned()),
+            },
+        )]);
+        assert!(
+            validate_static_project_sources(&document, &sources, &resolutions, &HashMap::new())
+                .is_err()
+        );
+        assert!(validate_static_project_sources(&document, &sources, &[], &provenance).is_err());
+        validate_static_project_sources(&document, &sources, &resolutions, &provenance).unwrap();
+        let authority = authority_config(
+            document.hosts.clone(),
+            document.run.as_ref().unwrap().grants.clone(),
+        );
+        let resolver = project_source_resolver_with_resolutions_and_provenance(
+            &sources,
+            &resolutions,
+            &provenance,
+        )
+        .unwrap();
+        let prepared =
+            prepare_project_compute_region(&document, resolver.clone(), Some(&authority))
+                .unwrap()
+                .unwrap();
+        let factory = prepare_browser_compute_admission_factory(&document, &prepared).unwrap();
+        let mut runtime = project_runtime_builder(
+            &document,
+            resolver,
+            Some(&authority),
+            false,
+            Some(factory),
+            #[cfg(feature = "browser_host_scene")]
+            BrowserSceneRegistry::new(),
+            None,
+        )
+        .unwrap()
+        .build()
+        .unwrap();
+        let durability = runtime.config().resident_durability;
+        runtime
+            .load_compiled_program(prepared.coordinator, durability)
+            .unwrap();
+        assert_eq!(
+            runtime
+                .root_symbol_value("adjusted")
+                .unwrap()
+                .format_canonical_inline(),
+            "0"
+        );
+        runtime.step_active_program().unwrap();
+        let pending = runtime.pending_host_input_count().unwrap();
+        if pending > 0 {
+            runtime.drain_host_inputs(pending).unwrap();
+        }
+        assert_eq!(
+            runtime
+                .root_symbol_value("adjusted")
+                .unwrap()
+                .format_canonical_inline(),
+            "3"
+        );
+        runtime.shutdown().unwrap();
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -8669,6 +9209,128 @@ mod browser_tests {
             rendered_text(&document.rendered_output(address).unwrap()),
             "43"
         );
+    }
+
+    #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
+    #[wasm_bindgen_test]
+    fn static_compute_document_uses_the_registered_mixed_runtime_and_bridge() {
+        let config = r#"config := {
+  hosts: [{ name: "filters" provider: "compute" settings: { region: "calculation" backend: "cpu" } }]
+  run: { paths: ["main.mec"] grants: [{ target: "filters/kernel" operations: ["read", "write"] paths: ["sample/result", "turn"] }] }
+}"#;
+        let source = "@compute := compute://filters/kernel{:write(turn), :read(sample/result)}\n@compute/turn <- 1\nanswer := @compute/sample/result\nanswer\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\ncounter\n";
+        let document =
+            parse_config_document("mech.mcfg", config, ConfigProfileOptions::default()).unwrap();
+        let authority = BrowserRuntimeInjectionConfig {
+            runtime: mech_browser::BrowserHostRuntimeConfig::from(
+                &mech_runtime::RuntimeConfig::default(),
+            ),
+            hosts: document.hosts.clone(),
+            run_grants: document.run.as_ref().unwrap().grants.clone(),
+        };
+        install_served_authority(&authority);
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str(source),
+        )
+        .unwrap();
+        let documents = Object::new();
+        Reflect::set(
+            &documents,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str(&encoded_document_at("main.mec", source)),
+        )
+        .unwrap();
+        let roots = Array::new();
+        roots.push(&JsValue::from_str("main.mec"));
+        let mut project = WasmProject::from_served_documents(
+            config,
+            sources.into(),
+            documents.into(),
+            roots.into(),
+            JsValue::NULL,
+            JsValue::NULL,
+        )
+        .unwrap();
+        assert_eq!(project.compute_backend(), "cpu-scalar");
+        assert!(!project.compute_manifest().is_null());
+        assert_eq!(project.compute_generation(), "1");
+        assert_eq!(
+            project
+                .runtime
+                .root_symbol_value("answer")
+                .unwrap()
+                .format_canonical_inline(),
+            "0"
+        );
+        project.runtime.step_active_program().unwrap();
+        let pending = project.runtime.pending_host_input_count().unwrap();
+        if pending > 0 {
+            project.runtime.drain_host_inputs(pending).unwrap();
+        }
+        assert_eq!(
+            project
+                .runtime
+                .root_symbol_value("answer")
+                .unwrap()
+                .format_canonical_inline(),
+            "1"
+        );
+        let before = project
+            .runtime
+            .program_execution_info()
+            .resident_accepted_turns;
+        project.start().unwrap();
+        let frame = project.frame(8).unwrap();
+        assert!(
+            Reflect::get(&frame, &JsValue::from_str("computeCommand"))
+                .unwrap()
+                .is_null()
+        );
+        assert_eq!(
+            project
+                .runtime
+                .program_execution_info()
+                .resident_accepted_turns,
+            before
+        );
+        assert!(!project.has_pointer_input());
+        project.stop().unwrap();
+
+        // The ordinary source constructor must select the same mixed owner,
+        // not depend on the served-document entry point to special-case it.
+        let mut project = WasmProject::from_project_sources(
+            document,
+            HashMap::from([("main.mec".to_owned(), source.to_owned())]),
+            Vec::new(),
+            HashMap::new(),
+        )
+        .unwrap();
+        assert_eq!(project.compute_backend(), "cpu-scalar");
+        assert_eq!(
+            project
+                .runtime
+                .root_symbol_value("answer")
+                .unwrap()
+                .format_canonical_inline(),
+            "0"
+        );
+        project.runtime.step_active_program().unwrap();
+        let pending = project.runtime.pending_host_input_count().unwrap();
+        if pending > 0 {
+            project.runtime.drain_host_inputs(pending).unwrap();
+        }
+        assert_eq!(
+            project
+                .runtime
+                .root_symbol_value("answer")
+                .unwrap()
+                .format_canonical_inline(),
+            "1"
+        );
+        project.stop().unwrap();
     }
 
     #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]

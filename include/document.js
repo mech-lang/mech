@@ -4163,7 +4163,12 @@ function initializePointerHostInput() {
   state.root.dataset.mechPointerHostBound = "true";
   const submit = event => {
     if (state.runtimeLifecycle !== "ready" ||
-        !servedPointerHostConfig() || typeof state.document?.pointerInput !== "function") return;
+        !servedPointerHostConfig() || typeof state.document?.pointerInput !== "function" ||
+        typeof state.document?.hasPointerInput !== "function" || !state.document.hasPointerInput()) {
+      state.pointerHostTimestamp = null;
+      state.pointerHostPressed = false;
+      return;
+    }
     const bounds = state.root.getBoundingClientRect();
     if (bounds.width <= 0 || bounds.height <= 0) return;
     const x = Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width) * 2 - 1));
