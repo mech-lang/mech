@@ -381,20 +381,15 @@ fn schema_predicate_set(
         })
         .collect::<Vec<_>>();
     let mut predicates = intrinsic_kind_predicates(kind, &child_predicates);
-    // Enum payloads and integer intervals use their closed schema as the
-    // evidence authority for equality and keyability.
-    if matches!(
-        body,
-        SchemaBody::Enum { .. } | SchemaBody::IntegerInterval(_)
-    ) {
+    // Enum payloads use their closed schema as the evidence authority for
+    // equality and keyability. Closed integer intervals use the shared
+    // intrinsic classifier, including when constructed directly from a kind.
+    if matches!(body, SchemaBody::Enum { .. }) {
         if schema_equatable(body) {
             predicates.insert(BuiltinKindPredicate::Equatable);
         }
         if crate::schema::is_schema_body_keyable(body) {
             predicates.insert(BuiltinKindPredicate::Keyable);
-        }
-        if matches!(body, SchemaBody::IntegerInterval(interval) if interval.is_valid()) {
-            predicates.insert(BuiltinKindPredicate::Ordered);
         }
     }
     predicates
