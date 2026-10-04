@@ -31,9 +31,12 @@ check. A live plain integer cannot be implicitly narrowed to an interval.
 An interval value can be rebound to its exact base kind by a checked lower
 layer, but source typing does not implicitly widen it. Different intervals
 do not implicitly subtype one another, even when one contains the other.
-Aggregate members and mutable or external values are checked by the
-schema-directed snapshot finalizer before publication; an out-of-range value
-must fail without publishing a partial state change.
+Aggregate members and checked mutable or external snapshots are checked by the
+schema-directed snapshot finalizer. Initialized fixed-width interval regions
+are separately checked against their exact integer bounds under retained
+storage authority before publication; initialization and shape alone are not
+membership evidence. An out-of-range value must fail without publishing a
+partial state change.
 
 The following paired outcomes are the minimum acceptance evidence: lower and
 last admitted value succeed; the value below lower and the excluded upper fail;
@@ -216,3 +219,125 @@ The accepted narrow contract above supersedes issue #865's earlier deferral;
 broader refinement features are not claimed. Historical counts remain assigned
 to their original candidates. R15 CI remains paused pending authorization, and
 local boundary qualification does not itself seal R15.
+
+## Initialized-region publication correction (2026-10-04)
+
+The source-traced review of `7b197ca5fbec577ecb3125c305219297d844d420`
+identified a publication route that did not use the snapshot finalizer.
+`InitializedManagedRegion` supplied checked initialization and shape but no
+interval membership evidence. The owner regression reproduced this on the
+unchanged implementation: an ordinary typed U64 region containing 10 reached
+ReadyPublication for a valid `u64:1..10` cell holding 2. Both `--features full`
+and the maintained CI `--all-features` invocation executed the focused test
+and failed at that specific ready-gate assertion. Unexpected ready objects
+were dropped before assertions; invalid bytes were never committed.
+
+The correcting code/test candidate is
+`114925449ac698e1e6b4c91380b6a16c6d819a47`, continuing from the reviewed head
+on R26 `0f1c8feabf87a0bb86f9a986d3e6329639ff8ee8`. The earlier capability,
+output-template, checked-value and codec acceptance corrections remain intact.
+
+Single and batch readiness now validate initialized interval candidates before
+locking any cell or entering the infallible gate. Validation uses exact typed
+views of the candidate region and the existing signed/unsigned interval
+membership functions. It neither constructs a canonical payload copy nor
+changes primitive-output publication. Matrix checks use logical coordinates,
+not padding or spare capacity; diagnostic indices are row-major and complete
+shape geometry is retained. Empty geometry returns after validation without
+iterating an empty large axis. All ten fixed integer widths remain exact.
+
+Preparation alone is not a durable check: an admitted writer can change bytes
+before readiness. The candidate scan therefore acquires a read lease retained
+through ready commit or abort, preventing typed writes and host-arena
+projections from invalidating membership evidence. The read-only private
+authority retains the exact realization, region and incarnation even when a
+sibling call has finished staging. A required in-place candidate instead
+borrows its matching retained exclusive undo lease; failure keeps rollback
+authority intact. No fallible check was added to final commit.
+
+Six added cases in the existing `r6_memory_runtime` target cover:
+
+- Raw scalar excluded-upper refusal and valid retry, with unchanged accepted
+  value, alias identity, schema, shape and publication revision after refusal.
+- Valid preparation followed by raw invalid mutation, overlapping-writer
+  refusal, and typed-writer/host-projection exclusion while Ready is held.
+- A parameterized nonsquare matrix with a late invalid member, exact
+  `MatrixElement(5)` rejection, atomic refusal of an earlier valid sibling,
+  stale preparation, complete unchanged bindings and valid batch retry.
+- All ten exact integer widths and signed minimum/maximum bounds: 22 bound
+  subcases, not 22 independently selected tests.
+- Permitted empty and padded matrices: invalid padding is irrelevant, an
+  invalid logical sixth lane is not, and a valid retry preserves full identity.
+- A real required-in-place/undo fixture: raw invalid output is rejected at
+  readiness, old bytes and bindings are restored, and a valid retry commits.
+
+Deterministic negative controls were executed and then removed. Bypassing the
+membership predicate made the scalar ready-gate test fail. Releasing the read
+lease immediately after validation made the writer-exclusion test fail even
+though membership validation still ran. Both tests drop unexpected
+capabilities and abort ready objects before assertions; neither publishes an
+invalid candidate to demonstrate the defect. Restored source is the candidate
+qualified below.
+
+During implementation, an additional all-features library diagnostic was not
+green: 273 of 274 tests passed, while the existing
+`cell_binding::tests::exact_interval_matrix_output_seeds_every_lane_inside_the_interval`
+failed during construction with `ValueCellStorageContractViolation` / "storage
+capabilities are opaque", before initialized-region publication. A separate
+clean worktree at unchanged `7b197ca5f` executed that exact library test and
+reproduced the same error. This is recorded as a pre-existing diagnostic
+failure, not a passing suite or a regression caused by this correction. The
+integration targets listed after that failing library invocation did not run
+in that invocation and receive no credit from it. The maintained publication
+CI route selects `--all-features --test r6_memory_runtime`; no workflow routing,
+test suppression, storage-capability policy or earlier finding was changed.
+
+Fresh qualification on `114925449ac698e1e6b4c91380b6a16c6d819a47` uses locked
+nightly-2026-03-03, warnings denied, incremental compilation disabled, two build
+jobs and ordinary test threads:
+
+- `cargo +nightly-2026-03-03 test --locked -p mech-core --all-features
+  --test r6_memory_runtime --test r5_memory_plan`: all 48 managed-memory and
+  23 memory-plan tests passed. The six new cases were also separately executed
+  and passed before the committed-candidate refresh. They are not added again
+  to the full-suite count.
+- Core `--features full`, with `snapshot_value_contract`, `r4_type_cutover`,
+  `type_system_builtin`, `type_system_contract` and `type_system_solver`: all
+  10 snapshot, 14 cutover, 17 builtin, 15 contract and 30 solver tests passed.
+- Engine `--no-default-features --features full_source,resident-artifact,compiler`,
+  with `program_artifact_contract` and `canonical_source_semantics`: all 37
+  artifact and 138 source-semantic tests passed, retaining interval payload,
+  malformed-bound and source/decoded artifact witnesses.
+- Combined stdlib/runtime `--no-default-features --features
+  mech-stdlib/full_compiler,mech-runtime/full_source,mech-runtime/resident-routing-source`,
+  with `r6_managed_functions` and `canonical_constant_binding`: all 16 managed
+  and 49 runtime-binding tests passed, retaining live refusal/recovery and the
+  registered interval-matrix transpose.
+- Standard `--no-default-features --features standard_compiler` managed-function
+  target: 12 passed, compatibility evidence only. Standard plus u8: 15 passed,
+  including the existing interval mutable-cell witnesses.
+- Core `--no-default-features --features functions,u8,u64,f64,string,matrixd,bool
+  --test r6_memory_safety`: all 23 passed, including primitive fixed-width
+  publication without a canonical copy, initialization/stride safety,
+  borrow-unwind recovery and steady-state allocation checks.
+- The same 23 memory-safety tests passed in release mode with
+  `RUSTFLAGS='-D warnings -C debug-assertions=no'`. Debug assertions are not
+  membership or publication authority.
+- Default-profile `cargo +nightly-2026-03-03 test --locked -p mech-core`: all
+  enabled library, integration and documentation suites passed, including 70
+  library and 3 documentation tests. Feature-disabled zero-test targets are
+  not interval or initialized-region coverage.
+- Warning-denied core checks passed for isolated `functions`, `functions,u8`
+  and `functions,i128` profiles. Formatting, whitespace, R3/R4/R6, warning
+  policy, bytecode format (21 deterministic fixtures), production routing,
+  compiler-planning quarantine and retired-value checks passed.
+- The existing R3/R4/R6 and warning checker unit/mutation cases passed using
+  `python3 -B scripts/run-python-unittest-shards.py --jobs 4` with
+  `test_check_r6_memory_runtime.py`, `test_check_r3_type_system.py`,
+  `test_check_r4_type_cutover.py` and `test_warning_policy.py`: all 197 cases
+  passed across four balanced subprocess shards. The interrupted preliminary
+  serial invocation is not credited as a completed run.
+
+Historical results above remain assigned to their original candidates. CI
+remains paused; local evidence is not exact-head Full CI, an external clean
+review or a seal.
