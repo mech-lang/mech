@@ -413,3 +413,68 @@ compilation, two build jobs and ordinary test threads:
 Historical evidence above remains attributed to its original code. Fresh
 correcting-head review and the PR's complete selected CI remain seal gates;
 neither the failed older PR run nor local results are relabeled as a seal.
+
+## Managed positional-index correction (2026-10-04)
+
+Review comment 4178697930 on `118fa783e` identified a remaining physical
+dispatch mismatch. The shared selector validator admitted integer intervals,
+but the maintained, publicly registered `access/index` factory selected its
+typed input port by matching only primitive schemas. Its scalar and matrix
+entry paths therefore rejected valid interval selectors during binding.
+
+Before changing production code, ten new integer-family regressions failed at
+the reported `CannotConvertToType` binder error. Two independent matrix-first
+regressions also failed there, without a preceding scalar conversion. These
+are actual public runtime-catalog binding tests, not an unrelated frontend
+failure or an unsupported layout. Canonical source/resident selection can
+bypass this factory; passing source examples alone would not reproduce it.
+
+The five-line correction unwraps the interval only when choosing the
+fixed-width backing in `ManagedIndexInput::bind`. The original input port
+retains its exact interval schema, complete shape, logical identity and
+publication authority. Existing width feature guards, membership validation,
+portable one-based index limits, memory contracts and output `Index` identity
+are unchanged. This does not introduce implicit widening, narrowing,
+arithmetic promotion or another evaluator. A neighboring-owner source audit
+found existing normalized physical dispatch in managed access/assignment and
+interval-aware handling in resident selectors; no broader change was needed.
+
+The twelve new cases cover all ten signed/unsigned widths, positive scalar
+updates, asymmetric 2-by-3 selectors flattened to a 6-by-1 Index output,
+repeated selectors, and valid recovery on the same bound instance. Zero and
+negative interval members, plus portable-limit overflow in wider types, are
+valid constrained inputs but invalid positional selectors. Their conversion
+must refuse without changing output values, full descriptor, identity or
+publication revision. A late invalid matrix member follows a distinct valid
+prefix, so an uncommitted partial write cannot hide behind identical values.
+
+Fresh qualification from `118fa783e` plus this correction used locked offline
+nightly-2026-03-03, warning denial, ordinary test threads, two build jobs and
+no incremental compilation:
+
+- Engine `--no-default-features --features full_compiler,resident-artifact
+  --lib --test r6_memory_runtime --test canonical_source_semantics
+  --test program_artifact_contract`: 665 library, 31 managed-memory, 140
+  source-semantic and 37 artifact tests passed, with no ignored or filtered
+  tests in those selected targets. Suite counts overlap earlier evidence.
+- The exact engine CI-owner command with `full_compiler` also passed 236
+  library, 77 source-semantic and 28 managed-memory tests before strengthening
+  the late-failure prefix assertion; the expanded run above includes that
+  stronger assertion. Feature-disabled resident cases in the former profile
+  are not additional coverage.
+- Formatting, whitespace, canonical-evidence imports, warning policy, R3,
+  R4, R6, unsafe boundaries and runtime-factory safety passed. No checker or
+  admission limit was weakened.
+
+The preceding comparison-template helper corrections remain attributed to
+`118fa783e`: 26 core catalog tests and all 17 frozen specialization cases
+passed locally. They are not newly executed core qualification for this
+production correction. Historical publication, reduced-profile and transport
+results above retain their original attribution.
+
+At the user's request, normal PR CI run `37221898495` on `118fa783e` was
+cancelled while closing this review finding. Its cancellation-derived failed
+aggregate gates are not source/test failures or passing qualification. The
+correcting candidate requires a clean exact-head review before PR CI is
+allowed to finish; each subsequent correction must repeat that order. Local
+results are not a seal or a fresh external-review result.

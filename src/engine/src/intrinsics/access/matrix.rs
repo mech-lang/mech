@@ -3403,6 +3403,11 @@ macro_rules! managed_index_inputs {
 
         impl ManagedIndexInput {
             fn bind(source: mech_core::FunctionInputPort<'_>, schema: &SchemaBody) -> MResult<Self> {
+                if let SchemaBody::IntegerInterval(interval) = schema {
+                    // Select the fixed-width backing without erasing the
+                    // constrained schema retained by the original input port.
+                    return Self::bind(source, &interval.base_body());
+                }
                 match schema {
                     $base_schema => Ok(Self::$base_variant(source.try_managed_element::<$base_type>()?)),
                     $(#[cfg(feature = $feature)] $schema => Ok(Self::$variant(source.try_managed_element::<$type>()?)),)+
