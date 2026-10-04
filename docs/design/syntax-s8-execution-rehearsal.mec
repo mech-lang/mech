@@ -579,3 +579,153 @@ Each mutation ran a nonempty decisive case. Restored Node, syntax and real-packa
 checks pass. These suite counts overlap and are not added into a coverage total.
 C is not sealed. CI remains paused; the published correcting head is submitted
 for review before returning to the outstanding R26 review finding.
+
+S8C static mixed loading and live ingress correction, 2026-10-04
+--------------------------------------------------------------
+
+The correcting implementation/test candidate is
+`433e159345c623e38a9bd0f4bb8cbda3a87f639a`, on R15
+`7b197ca5fbec577ecb3125c305219297d844d420`, R26
+`0f1c8feabf87a0bb86f9a986d3e6329639ff8ee8`, and sealed R06
+`e5101287f1c2436d6fdb8a00566274f92ba3d0d0`. All 13 C patches through
+`4a936c78aa03388a2eb59a03f37273859dc9ab1b` have identical range-diff
+entries across the restack. The issued-settings correction in `29d116413`
+is an additional implementation delta, not an identical-tree restack.
+`433e15934` changes only two wasm-target fixture arguments; the production
+correction and native qualification remain at `29d116413`.
+
+Codex review 5403855830 applies to the previous published C head
+`0f7f327ac969de4e52471b8f0060b19b81250bae`. Its P2 comment 4175773279
+and P1 comment 4175773281 are corrected at their shared lifecycle and
+preparation owners:
+
+- Served pointer events query the accepted running input driver. A configured
+  but unused host does not submit events; replacing source to remove or restore
+  the last read updates readiness without stale button/time state. Stop and
+  encoded reset retain driver ownership. Static pointer readiness is preserved.
+- Static admission and public source constructors reuse the existing mixed-root
+  preparation, compute factory and coordinator. The admission factory does not
+  create a device, activate a runtime, advance a turn, start drivers or deliver
+  effects. Retained imports, nominal identity, issued authority, runtime limits
+  and grants remain in the existing owners.
+- The static bundle emits the existing browser-compute bridge unchanged. Its
+  client uses Device/Session ownership, exact completion and pending-command
+  gating; refusal never replays an input. Stop retires a pending session, and
+  unload during device creation disposes the late resource. Automatic CPU
+  reconstruction is limited to pre-start device failure, not a submitted turn.
+
+A related concrete mismatch was corrected in both served and static preparation:
+backend/manifest selection now uses the issued compute settings that the runtime
+uses. Legitimate CPU/WGPU/auto overrides work without changing roots, grants or
+host identity; a settings/compiled-region mismatch is still rejected by the
+factory. This is not a new evaluator, catalog expansion or transaction redesign.
+
+The original served pointer handler fails the inactive-driver regression against
+`0f7f327ac9`, while the corrected handler passes. The final 16-case static client
+suite has eight passing and eight failing cases against that reviewed source,
+and all 16 pass after restoration. These tests use real Session ownership with
+mocked device resources, not actual browser GPU qualification. Native tests
+assert the exact original `RuntimeHostProviderNotFound` and missing-compute
+provider message; issued-settings tests execute the original source-only backend
+negative control and assert `ComputeHostConfiguration` on a region mismatch.
+
+Two initial new execution fixtures incorrectly expected an initialized derived
+sample or attempted manual advancement of an external-input program. The
+runtime correctly leaves those samples dormant and rejects manual advancement.
+The fixtures now start the registered pointer driver and execute only through
+admitted host input. No runtime allowance or hidden preparation dispatch was
+added. An earlier broad canary run also selected an nbody case outside that
+profile's combinatorics catalog. None of those failed attempts is a passing
+qualification result.
+
+The first real Chrome constructor attempt executed one case and correctly
+rejected a fixture's null source-resolution value. The production static client
+already supplies an array. `433e15934` supplies explicit empty arrays in the two
+new browser fixtures without relaxing the public API; that failed attempt is
+not a browser pass.
+
+Fresh native commands below all ran on exact code/test head `29d116413`, with
+`CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2` and normal test threads:
+
+```sh
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_project,browser_compute --lib -- --nocapture
+# 100 passed; one intentionally ignored million-particle stress case.
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_compute_canary --lib project::tests::static_ -- --nocapture
+# 4 passed.
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_compute_canary --lib project::tests::served_pointer -- --nocapture
+# 2 passed.
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_compute_canary --lib \
+  project::tests::served_compute_preparation_uses_issued_backend_settings -- --exact --nocapture
+# 1 passed.
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_project --lib -- --nocapture
+# 78 passed, no ignored or skipped cases.
+cargo +nightly-2026-03-03 test --locked -p mech --no-default-features \
+  --features full_compiler,bundle_web --lib bundle_web::tests:: -- --nocapture
+# 65 passed, one actual-package prerequisite case ignored, 24 filtered out.
+```
+
+The focused seven canary cases are not a full-canary pass. Native full-owner and
+no-compute results are separate feature profiles; these counts overlap and are
+not added into a coverage total. `node --test scripts/tests/static-project.test.mjs`
+passes 16 cases; the maintained browser-compute lifecycle harness and both
+client syntax checks pass. Formatting, warning policy, interactive architecture,
+resident routing, compiler-planning quarantine, canonical evidence imports and
+whitespace checks pass on this candidate.
+
+The bundle filter includes both library and CLI bundle owners. Asset checks assert
+the full emitted bridge bytes and client import route. Package mocks do not prove
+actual browser execution; the prerequisite-gated actual-package case above is
+not claimed as freshly passed.
+
+Both real browser cases passed separately on `433e15934`, each with one executed
+test, zero failures/ignored cases and 36 filtered cases. The constructor case
+uses the public served constructor and ordinary source constructor, real pointer
+ingress/frame execution, expected CPU output and bridge metadata. The other case
+checks static and served-document backend/manifest selection under three issued
+settings overrides. These are actual browser/Wasm CPU and metadata witnesses,
+not actual GPU execution or an assembled bundle/application qualification.
+
+The exact commands, from the C worktree, were:
+
+```sh
+CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 RUSTUP_TOOLCHAIN=nightly-2026-03-03 \
+  WASM_BINDGEN_TEST_TIMEOUT=180 \
+  WASM_BINDGEN_TEST_WEBDRIVER_JSON=/private/tmp/mech-s8c-chromedriver.wGgBhE/webdriver.json \
+  wasm-pack test --headless --chrome \
+  --chromedriver /private/tmp/mech-s8c-chromedriver.wGgBhE/chromedriver-mac-arm64/chromedriver \
+  --release src/wasm --locked --lib --no-default-features \
+  --features browser_compute_canary -- \
+  project::browser_tests::static_compute_document_uses_the_registered_mixed_runtime_and_bridge \
+  --exact --nocapture
+CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 RUSTUP_TOOLCHAIN=nightly-2026-03-03 \
+  WASM_BINDGEN_TEST_TIMEOUT=180 \
+  WASM_BINDGEN_TEST_WEBDRIVER_JSON=/private/tmp/mech-s8c-chromedriver.wGgBhE/webdriver.json \
+  wasm-pack test --headless --chrome \
+  --chromedriver /private/tmp/mech-s8c-chromedriver.wGgBhE/chromedriver-mac-arm64/chromedriver \
+  --release src/wasm --locked --lib --no-default-features \
+  --features browser_compute_canary -- \
+  project::browser_tests::served_static_and_document_compute_metadata_follow_issued_settings \
+  --exact --nocapture
+```
+
+The runner was wasm-bindgen-test-runner 0.2.126 through wasm-pack 0.12.1.
+Chrome 154.0.8037.93 and official ChromeDriver 154.0.8037.92 share the verified
+154.0.8037 build. The capabilities file selects the installed Chrome binary
+and an isolated temporary profile under the driver directory, with no-first-run
+and no-default-browser-check; no real user profile was used. The official driver
+archive is at
+`https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.92/mac-arm64/chromedriver-mac-arm64.zip`.
+Both runner logs report accepted capabilities and one running test, rather than
+crediting installation or a zero-test invocation as a browser pass.
+
+The final evidence commit adds only this record; it does not change production
+or test behavior. C remains unsealed and its CI remains paused. R26 has an applicable
+clean review and authorized exact-head Full CI running separately; R15's boundary
+acceptance is locally qualified with CI still paused. Old C review/CI results
+remain historical, and R25 plus assembled C product/distribution gates are not
+claimed by this correction.
