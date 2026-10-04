@@ -528,7 +528,11 @@ fn resolve_named_overload_with_expected(
     inputs: &[ResolvedType],
     expected_outputs: Option<&[ResolvedType]>,
 ) -> Result<mech_core::ResolvedOverload, mech_core::TypeResolutionError> {
-    let declaration = maintained_source_type_declaration(name).unwrap();
+    let mut declaration = maintained_source_type_declaration(name).unwrap();
+    if let Some(template) = declaration.template {
+        let schemes = instantiate_source_scheme_template(template, inputs).unwrap();
+        declaration = FunctionTypeDeclaration::from_schemes(schemes);
+    }
     let candidates = declaration
         .overloads
         .iter()
