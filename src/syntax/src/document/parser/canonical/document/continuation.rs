@@ -1555,8 +1555,10 @@ mod tests {
     use crate::document::parser::LexicalMode;
     use crate::document::{DocumentId, IdGenerator, ParseConfig, Revision, TextSize, TextSnapshot};
 
+    #[cfg(any(feature = "base", feature = "full"))]
+    use crate::document::parser::canonical::continuation_test_support::assert_partitions;
     use crate::document::parser::canonical::continuation_test_support::{
-        TestContinuation, TestProgress, assert_partitions,
+        TestContinuation, TestProgress,
     };
     impl TestContinuation for Continuation<'static> {
         fn new(rule: RuleId) -> Self {

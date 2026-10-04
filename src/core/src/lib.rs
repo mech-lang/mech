@@ -39,9 +39,11 @@ use std::io::{Cursor, Read, Write};
 use alloc::string::{String, ToString};
 
 #[cfg(feature = "no_std")]
-use core::hash::{Hash, Hasher};
+use core::hash::Hash;
+#[cfg(any(feature = "atom", feature = "complex", feature = "matrix"))]
+use core::hash::Hasher;
 #[cfg(not(feature = "no_std"))]
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 
 #[cfg(feature = "no_std")]
 use alloc::boxed::Box;

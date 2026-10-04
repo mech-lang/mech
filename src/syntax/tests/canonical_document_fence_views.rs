@@ -1,8 +1,10 @@
 use mech_syntax::document::{
-    AstNode, CodeBlockSyntax, CodeFenceScope, DocumentId, EvalInlineMechCodeSyntax, ParseConfig,
-    ParseLimits, Revision, SyntaxKind, SyntaxNode, TextSnapshot, parse_canonical_document,
-    reconstruct_source, validate_lossless,
+    AstNode, CodeBlockSyntax, CodeFenceScope, DocumentId, DocumentStream, EvalInlineMechCodeSyntax,
+    ParseConfig, ParseLimits, Revision, SyntaxKind, SyntaxNode, SyntaxSnapshot, TextSnapshot,
+    parse_canonical_document, reconstruct_source, validate_lossless,
 };
+#[path = "support/document_stream.rs"]
+mod support;
 
 fn source(text: &str) -> TextSnapshot {
     TextSnapshot::new(DocumentId(0x572), Revision(7), text).unwrap()
@@ -15,6 +17,115 @@ fn find<T: AstNode>(node: SyntaxNode) -> Option<T> {
 fn has_identifier(node: SyntaxNode, name: &str) -> bool {
     (node.kind() == SyntaxKind::Identifier && node.text().unwrap() == name)
         || node.children().any(|child| has_identifier(child, name))
+}
+
+fn comment_fence(delimiter: &str, comment: &str) -> (String, String) {
+    let body = format!("~answer := 0\nanswer += 2 -- {comment}\nanswer\n");
+    let text = format!(
+        "{delimiter}mech\n{body}{delimiter}\n\nDistinct prose 💡 displays {{answer + 7}}.\n\nafter := 41\nafter\n"
+    );
+    (text, body)
+}
+
+fn assert_comment_fence(snapshot: &SyntaxSnapshot, text: &str, body_text: &str, delimiter: &str) {
+    assert!(
+        snapshot.diagnostics.is_empty(),
+        "{text:?}: {:?}",
+        snapshot.diagnostics
+    );
+    validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+    assert_eq!(
+        reconstruct_source(&snapshot.root, &snapshot.source).unwrap(),
+        text
+    );
+    let fence = find::<CodeBlockSyntax>(snapshot.syntax()).unwrap();
+    let body = fence.mech_code().unwrap();
+    assert_eq!(body.items().len(), 3);
+    assert_eq!(body.syntax().text().unwrap(), body_text);
+    assert_eq!(
+        body.syntax().range().end.0 as usize,
+        text.find(&format!("\n{delimiter}\n")).unwrap() + 1
+    );
+    let delimiters = fence.delimiters();
+    assert_eq!(delimiters.len(), 2);
+    assert_eq!(delimiters[1].text().unwrap(), delimiter);
+    assert!(
+        !delimiters[1]
+            .flags()
+            .contains(mech_syntax::document::TokenFlags::SYNTHETIC)
+    );
+    assert!(has_identifier(snapshot.syntax(), "after"));
+
+    fn expressions(node: SyntaxNode, values: &mut Vec<String>) {
+        if let Some(inline) = EvalInlineMechCodeSyntax::cast(node.clone()) {
+            values.push(inline.expression().unwrap().syntax().text().unwrap());
+        } else {
+            for child in node.children() {
+                expressions(child, values);
+            }
+        }
+    }
+    let mut values = Vec::new();
+    expressions(snapshot.syntax(), &mut values);
+    let expected = if body_text.contains("{ans}") {
+        vec!["ans", "ans + 1", "answer + 7"]
+    } else {
+        vec!["answer + 7"]
+    };
+    assert_eq!(values, expected);
+}
+
+#[test]
+fn comments_in_executable_fences_preserve_the_closer_prose_and_inline_owners() {
+    for delimiter in ["```", "~~~"] {
+        for comment in [
+            "plain",
+            "**Count** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}.",
+        ] {
+            let (text, body) = comment_fence(delimiter, comment);
+            let snapshot = parse_canonical_document(source(&text), ParseConfig::default());
+            assert_comment_fence(&snapshot, &text, &body, delimiter);
+        }
+    }
+}
+
+#[test]
+fn streamed_comments_in_executable_fences_keep_local_frontiers_at_every_scalar_cut() {
+    for delimiter in ["```", "~~~"] {
+        let (text, body) = comment_fence(delimiter, "`literal` {{answer + 99}}: {ans}, {ans + 1}.");
+        for allowance in [13, 1] {
+            for cut in text
+                .char_indices()
+                .map(|(at, _)| at)
+                .chain(core::iter::once(text.len()))
+            {
+                let mut stream = DocumentStream::new(DocumentId(0x572), ParseConfig::default());
+                for chunk in [&text[..cut], &text[cut..]] {
+                    support::append(&mut stream, chunk, allowance);
+                }
+                let snapshot = support::finish(&mut stream, allowance);
+                assert_comment_fence(&snapshot, &text, &body, delimiter);
+                support::equivalent(&snapshot, &text);
+            }
+        }
+    }
+}
+
+#[test]
+fn streamed_minimal_fence_comments_make_progress_at_unit_allowance() {
+    for text in [
+        "answer := 1 -- plain\nanswer\n",
+        "```mech\nanswer := 1 -- plain\nanswer\n```\n",
+        "```mech\nanswer := 1 -- `literal`\nanswer\n```\n",
+        "```mech\nanswer := 1 -- {{answer + 99}}\nanswer\n```\n",
+        "```mech\nanswer := 1 -- {ans}\nanswer\n```\n",
+    ] {
+        let mut stream = DocumentStream::new(DocumentId(0x572), ParseConfig::default());
+        support::append(&mut stream, text, 1);
+        let snapshot = support::finish(&mut stream, 1);
+        assert!(snapshot.is_strictly_clean());
+        support::equivalent(&snapshot, text);
+    }
 }
 
 #[test]

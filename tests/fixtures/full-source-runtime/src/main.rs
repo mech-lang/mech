@@ -258,7 +258,12 @@ fn write_browser_bundle_fixtures(directory: &std::path::Path) {
                     .with_source_document(document.clone())
                     .unwrap()
                     .admit_canonical_document()
-                    .unwrap(),
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "browser fixture `{name}` failed canonical admission: {error:?}; syntax diagnostics: {:?}",
+                            document.snapshot().diagnostics,
+                        )
+                    }),
             )
             .unwrap();
         let mut sources = BTreeMap::from([("document.mec", source)]);
@@ -297,7 +302,9 @@ fn write_browser_bundle_fixtures(directory: &std::path::Path) {
             .unwrap();
         let product = compiler
             .compile_canonical_interactive_root(SourceRequest::new(uri))
-            .unwrap();
+            .unwrap_or_else(|error| {
+                panic!("browser fixture `{name}` failed interactive compilation: {error:?}")
+            });
         let revision = product
             .artifact()
             .revision()

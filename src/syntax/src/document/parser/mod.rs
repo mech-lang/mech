@@ -78,6 +78,7 @@ pub(crate) struct Parser<'a> {
 pub(crate) struct CursorScope {
     consume_end: TextSize,
     context_end: TextSize,
+    source_end: TextSize,
     cursor_frontier: bool,
     context_frontier: bool,
 }
@@ -267,6 +268,7 @@ impl<'a> Parser<'a> {
         let outer = CursorScope {
             consume_end: self.cursor.end(),
             context_end: self.cursor.context_end(),
+            source_end: self.source.byte_len(),
             cursor_frontier: self.state.cursor_frontier,
             context_frontier: self.state.context_frontier,
         };
@@ -279,12 +281,15 @@ impl<'a> Parser<'a> {
 
     pub(crate) fn leave_cursor_scope(&mut self, outer: CursorScope) {
         let checkpoint = self.cursor.checkpoint();
-        let end = if outer.cursor_frontier {
+        // An unsealed embedded body also needs more input, but its safe
+        // frontier is not permission to consume the enclosing document.
+        // Only boundaries at the physical input frontier grow after append.
+        let end = if outer.cursor_frontier && outer.consume_end == outer.source_end {
             self.source.byte_len()
         } else {
             outer.consume_end
         };
-        let context = if outer.context_frontier {
+        let context = if outer.context_frontier && outer.context_end == outer.source_end {
             self.source.byte_len()
         } else {
             outer.context_end
@@ -1040,6 +1045,33 @@ fn leading_indentation(source: &TextSnapshot, range: TextRange) -> u32 {
 mod tests {
     use super::*;
     use crate::document::{DocumentId, ExpectedSyntax, Revision};
+
+    #[test]
+    fn nested_cursor_scope_retains_an_open_embedded_frontier_before_the_document_end() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "abcdef").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalSourceFragment,
+            ParseConfig::default(),
+            &mut ids,
+        );
+        let document = parser.enter_cursor_scope(TextSize(4));
+        // An unsealed executable fence may need more body input without
+        // authorizing a nested comment to consume the document's remainder.
+        parser.state.cursor_frontier = true;
+        parser.state.context_frontier = true;
+        let comment = parser.enter_cursor_scope(TextSize(2));
+        parser.bump_bytes_token(1, SyntaxKind::Text).unwrap();
+        parser.leave_cursor_scope(comment);
+        assert_eq!(parser.cursor().end(), TextSize(4));
+        assert_eq!(parser.cursor().context_end(), TextSize(4));
+        assert!(parser.state.cursor_frontier);
+        assert!(parser.state.context_frontier);
+        parser.leave_cursor_scope(document);
+        assert_eq!(parser.cursor().end(), source.byte_len());
+        assert_eq!(parser.cursor().context_end(), source.byte_len());
+    }
 
     #[test]
     fn embedded_cursor_scopes_survive_append_and_restore_each_owning_frontier() {
