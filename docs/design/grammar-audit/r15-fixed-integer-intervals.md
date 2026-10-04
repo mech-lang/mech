@@ -478,3 +478,47 @@ aggregate gates are not source/test failures or passing qualification. The
 correcting candidate requires a clean exact-head review before PR CI is
 allowed to finish; each subsequent correction must repeat that order. Local
 results are not a seal or a fresh external-review result.
+
+## Default-core CI correction (2026-10-04)
+
+Normal PR Full CI attempt 2, run `37224534119` on `f6200b9b2`,
+failed its Cargo language job when `cargo test -p mech-core` compiled the
+default core profile. The PR gate failed as a consequence, not because of
+a second independent implementation defect. The exact error was E0425 in
+`type_system_contract.rs`: the interval ordering test referenced
+`maintained_source_type_declaration`, whose function-catalog owner is enabled
+only by the optional `functions` feature.
+
+The semantic test now obtains the same maintained ordering template directly
+from `maintained_source_scheme_template`. This is the exact first branch used
+by the optional wrapper, not a replacement or test-only scheme. Every scalar,
+matrix, broadcast, identity-conversion, mismatched-interval and independent-axis
+assertion remains. No test is gated out, no CI profile is expanded and no
+production code or interval guard changes. Neighboring catalog-dependent tests
+already require the appropriate function/source/distribution features.
+
+Executed on `f6200b9b2` plus the correction committed with this record, using
+locked offline nightly-2026-03-03, two build jobs, no incremental compilation,
+zero debug information and ordinary test threads:
+
+- Before correction, the default `type_system_contract` target reproduced the
+  exact E0425 compilation error in 5.403 seconds; no tests executed.
+- After correction, the complete default `cargo test -p mech-core` selection
+  passes in 10.858 seconds, including 70 library, all 16 type-contract tests
+  and three compile-fail doctests. Feature-disabled targets selecting zero
+  tests are not credited as additional interval/runtime coverage.
+- With only `functions` enabled, all 16 type-contract and 26 catalog tests
+  pass in 7.542 seconds, with no ignored or filtered tests.
+- With all features enabled, the same 16 type-contract and 26 catalog tests
+  pass in 15.403 seconds, with no ignored or filtered tests.
+- Formatting, whitespace and warning-policy checks pass. Raw bounded logs
+  are retained under
+  `/private/tmp/mech-s8c-seal-products.0zIeZM/native-plan-logs/r15-ci-*`;
+  every stage reports completed owned-process cleanup.
+
+These overlapping profile counts are not summed. Previous publication,
+transport, managed-selector and production qualification remain attributed
+to their original candidates. The failed CI run is not relabeled as passing;
+the correcting head still requires clean review and complete selected normal
+PR CI before sealing. S8C will inherit this correction through a rebase,
+with its unfinished local review fixes preserved separately.

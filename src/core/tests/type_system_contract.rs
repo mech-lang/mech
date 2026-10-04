@@ -98,9 +98,9 @@ fn maintained_ordering_resolves_exact_interval_kinds_without_numeric_promotion()
         dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into_boxed_slice(),
     };
     for operation in ["compare/lt", "compare/lte", "compare/gt", "compare/gte"] {
-        let declaration = maintained_source_type_declaration(operation).unwrap();
-        let template = declaration
-            .template
+        // The semantic template inventory is available in every core profile;
+        // its function-catalog wrapper is optional and adds no policy here.
+        let template = maintained_source_scheme_template(operation)
             .expect("maintained ordering is a closed input-aware family");
         let resolve = |inputs: &[ResolvedType]| {
             let schemes = instantiate_source_scheme_template(template, inputs).unwrap();
