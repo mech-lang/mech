@@ -9389,7 +9389,7 @@ mod browser_tests {
             sources.into(),
             documents.into(),
             roots.into(),
-            JsValue::NULL,
+            Array::new().into(),
             JsValue::NULL,
         )
         .unwrap();
@@ -9537,7 +9537,7 @@ mod browser_tests {
                 sources.clone().into(),
                 documents.into(),
                 roots.into(),
-                JsValue::NULL,
+                Array::new().into(),
                 JsValue::NULL,
             )
             .unwrap();
