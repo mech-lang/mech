@@ -1,4 +1,4 @@
-//! Canonical export and context declaration productions for Phase 2F.
+//! Canonical export and context declaration productions for declaration grammar.
 //!
 //! These rules form a closed declaration island. They do not select a
 //! statement, code, or document root.
@@ -10,8 +10,8 @@ use super::super::rule::rules;
 use super::base;
 use super::combinator::Attempt;
 
-/// The complete closed declaration set directly ported by Phase 2F.
-pub(crate) const PHASE_2F_DECLARATION_RULES: &[RuleId; 8] = &[
+/// The complete closed declaration set directly ported by declaration grammar.
+pub(crate) const DECLARATION_DECLARATION_RULES: &[RuleId; 8] = &[
     rules::EXPORT_DECLARATION,
     rules::CONTEXT_DECLARATION,
     rules::CONTEXT_BASE_CONTEXT,
@@ -22,12 +22,12 @@ pub(crate) const PHASE_2F_DECLARATION_RULES: &[RuleId; 8] = &[
     rules::CONTEXT_CAPABILITY_SCOPE,
 ];
 
-/// Whether `rule` belongs to the Phase 2F declaration layer.
+/// Whether `rule` belongs to the declaration layer.
 pub(crate) fn supports(rule: RuleId) -> bool {
-    PHASE_2F_DECLARATION_RULES.contains(&rule)
+    DECLARATION_DECLARATION_RULES.contains(&rule)
 }
 
-/// Dispatch one exact Phase 2F declaration production.
+/// Dispatch one exact declaration production.
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::EXPORT_DECLARATION => parse_export_declaration(parser),
@@ -38,7 +38,7 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
         rules::CONTEXT_CAPABILITY_PATH_TOKEN => parse_context_capability_path_token(parser),
         rules::CONTEXT_CAPABILITY_PATH => parse_context_capability_path(parser),
         rules::CONTEXT_CAPABILITY_SCOPE => parse_context_capability_scope(parser),
-        _ => unreachable!("Phase 2F declaration support guard rejects every other RuleId"),
+        _ => unreachable!("declaration support guard rejects every other RuleId"),
     })
 }
 

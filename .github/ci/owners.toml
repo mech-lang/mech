@@ -4,7 +4,7 @@ version = 1
 exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = ["src/core/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "type_memory_contract", "--test", "storage_capability", "--test", "operation_memory_requirement", "--test", "type_memory_boundary", "--test", "r6_memory_runtime", "--test", "r6_memory_safety", "--all-features"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "type_memory_contract", "--test", "storage_capability", "--test", "operation_memory_requirement", "--test", "type_memory_boundary", "--test", "memory_runtime", "--test", "memory_safety", "--all-features"]
 standard = true
 cross_cutting = true
 
@@ -29,7 +29,7 @@ exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 full = true
 paths = ["src/engine/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-engine", "--lib", "--test", "r6_memory_runtime", "--test", "canonical_source_semantics", "--no-default-features", "--features", "full_compiler"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-engine", "--lib", "--test", "memory_runtime", "--test", "canonical_source_semantics", "--no-default-features", "--features", "full_compiler"]
 standard = true
 cross_cutting = true
 
@@ -47,7 +47,7 @@ exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 full = true
 paths = ["hosts/gpu/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-gpu", "--test", "r5_memory_plan", "--test", "r6_memory_runtime"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-gpu", "--test", "memory_plan", "--test", "memory_runtime"]
 standard = true
 cross_cutting = true
 browser = true
@@ -73,16 +73,17 @@ cross_cutting = true
 exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = ["src/stdlib/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "profile_contracts", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "profile_contracts", "--test", "managed_functions", "--no-default-features", "--features", "standard_compiler"]
 standard = true
 cross_cutting = true
 
 # Machine implementations share the maintained standard-library behavior suite.
 [owners.machine-functions]
+browser_applications = true
 exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = ["machines/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "managed_functions", "--no-default-features", "--features", "standard_compiler"]
 standard = false
 cross_cutting = false
 browser = true
@@ -200,7 +201,7 @@ browser = true
 exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 full = true
-paths = ["scripts/run-owner-tests.py", ".github/workflows/ci.yml", ".github/workflows/ci-full.yml", ".github/workflows/ci-native-plan.yml", ".github/ci/owners.toml", "scripts/ci-impact.py", "tests/ci/test_ci_impact.py", "scripts/check-*-contract.py", "scripts/generate-*-contract.py", "scripts/check-production-resident-routing.py", "scripts/check-bytecode-v1-format.py", "scripts/check-native-host-catalog.py", "scripts/check-r2-type-memory-boundary.py", "scripts/check-r3-type-system.py", "scripts/check-r4-type-cutover.py", "scripts/check-r5-memory-planner.py", "scripts/check-r6-memory-runtime.py", "scripts/run-python-unittest-shards.py", "scripts/rust_source.py", "scripts/tests/test_rust_source.py", "scripts/tests/test_check_*_contract.py", "scripts/tests/test_generate_*_contract.py", "scripts/tests/test_check_r2_type_memory_boundary.py", "scripts/tests/test_check_r3_type_system.py", "scripts/tests/test_check_r4_type_cutover.py", "scripts/tests/test_check_r5_memory_planner.py", "scripts/tests/test_check_r6_memory_runtime.py", "scripts/tests/test_run_python_unittest_shards.py", "tests/architecture/**"]
+paths = ["scripts/run-owner-tests.py", ".github/workflows/ci.yml", ".github/workflows/ci-full.yml", ".github/workflows/ci-native-plan.yml", ".github/ci/owners.toml", "scripts/ci-impact.py", "tests/ci/test_ci_impact.py", "scripts/check-*-contract.py", "scripts/generate-*-contract.py", "scripts/check-production-resident-routing.py", "scripts/check-bytecode-v1-format.py", "scripts/check-native-host-catalog.py", "scripts/check-type-memory-boundary.py", "scripts/check-type-system.py", "scripts/check-semantic-type-authority.py", "scripts/check-memory-planner.py", "scripts/check-memory-runtime.py", "scripts/run-python-unittest-shards.py", "scripts/rust_source.py", "scripts/tests/test_rust_source.py", "scripts/tests/test_check_*_contract.py", "scripts/tests/test_generate_*_contract.py", "scripts/tests/test_check_type_memory_boundary.py", "scripts/tests/test_check_type_system.py", "scripts/tests/test_check_semantic_type_authority.py", "scripts/tests/test_check_memory_planner.py", "scripts/tests/test_check_memory_runtime.py", "scripts/tests/test_run_python_unittest_shards.py", "tests/architecture/**"]
 command = []
 standard = false
 cross_cutting = true

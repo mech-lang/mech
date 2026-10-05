@@ -171,7 +171,7 @@ fn canonical_bytes_round_trip_every_contract_family() {
 }
 
 #[test]
-fn pre_r1_schema_only_contract_tag_is_rejected() {
+fn schema_only_contract_tag_is_rejected() {
     let experimental = vec![
         1, 1, // bytecode-v1 contract version and unsupported experimental tag
         1, 0, 0, 0, 3, 0, 0, 0, // one input schema: 3

@@ -2,7 +2,7 @@
 
 use mech_core::{BindingId, CellSlotId, ConstantId, InputId, NodeId, OutputId, SchemaBody};
 use mech_engine::*;
-use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+use mech_syntax::document::parser::{canonical::parse_canonical_executable_rule_for_test, rules};
 use mech_syntax::document::{
     AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode,
     TextSnapshot,
@@ -16,7 +16,7 @@ fn find(node: SyntaxNode) -> Option<ExpressionSyntax> {
 }
 
 fn compile(source: &str) -> CanonicalSourceProgram {
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = parse_canonical_executable_rule_for_test(
         TextSnapshot::new(DocumentId(0x4d41544348), Revision(1), source).unwrap(),
         rules::EXPRESSION,
         ParseConfig::default(),
@@ -1430,7 +1430,7 @@ fn match_integrity_failure_preserves_state_and_published_epoch() {
 #[test]
 fn unfinished_control_forms_are_explicit_source_errors() {
     for source in ["x<*> ? | y => y | * => 0"] {
-        let parsed = parse_canonical_phase_2i_rule_for_test(
+        let parsed = parse_canonical_executable_rule_for_test(
             TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
             rules::EXPRESSION,
             ParseConfig::default(),
@@ -2129,7 +2129,7 @@ fn nested_control_depth_is_bounded_before_artifact_mapping_and_wire_allocation()
         })
     ));
     let source = format!("signal<f64> ? | * => ({source})");
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = parse_canonical_executable_rule_for_test(
         TextSnapshot::new(DocumentId(822), Revision(1), source.as_str()).unwrap(),
         rules::EXPRESSION,
         ParseConfig::default(),
@@ -2203,7 +2203,7 @@ fn nested_comprehension_depth_is_bounded_before_contract_mapping() {
     }
     compile(&source);
     source = format!("[{source} | item <- [1]]");
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = parse_canonical_executable_rule_for_test(
         TextSnapshot::new(DocumentId(823), Revision(1), source.as_str()).unwrap(),
         rules::EXPRESSION,
         ParseConfig::default(),

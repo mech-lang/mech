@@ -1,4 +1,4 @@
-//! Typed syntax views for the closed Phase 2F source-import productions.
+//! Typed syntax views for the closed declaration grammar source-import productions.
 
 use alloc::vec::Vec;
 

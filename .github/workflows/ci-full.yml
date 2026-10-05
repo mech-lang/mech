@@ -125,7 +125,7 @@ jobs:
       - name: Fetch locked artifact dependencies
         run: cargo fetch --locked
       - name: Build and inspect representative artifacts
-        run: python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}
+        run: python3 scripts/check-artifact-completeness.py ${{ matrix.representative }}
 
   architecture-contracts:
     name: Architecture contract qualification
@@ -169,23 +169,23 @@ jobs:
           python3 scripts/check-no-retired-value-system.py
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
-          python3 scripts/check-r2-type-memory-boundary.py
-          python3 scripts/check-r3-type-system.py
-          python3 scripts/check-r4-type-cutover.py
-          python3 scripts/check-r5-memory-planner.py
-          python3 scripts/check-r6-memory-runtime.py
+          python3 scripts/check-type-memory-boundary.py
+          python3 scripts/check-type-system.py
+          python3 scripts/check-semantic-type-authority.py
+          python3 scripts/check-memory-planner.py
+          python3 scripts/check-memory-runtime.py
           python3 scripts/check-compiler-planning-quarantine.py
       - name: Execute resident external publication contract
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-runtime
           --no-default-features --features resident_external_test_support
           --test resident_external_contract
-      - name: Execute the complete R2 conformance boundary
+      - name: Execute the complete type and memory boundary
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-core
           --all-features --test type_memory_contract --test storage_capability
           --test operation_memory_requirement --test type_memory_boundary
-      - name: Execute the complete R3 conformance boundary
+      - name: Execute the complete type system contract
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features \
             --test type_system_builtin \
@@ -199,16 +199,16 @@ jobs:
             --no-default-features --features full_compiler,resident-routing-source \
             --lib runtime::program::tests::compiled_conversion_executes_after_bytecode_round_trip \
             -- --exact
-      - name: Execute the complete R4 conformance boundary
+      - name: Execute the complete semantic type authority contract
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features \
-            --test r4_type_cutover
+            --test canonical_type_contract
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler \
-            --test r4_type_cutover
+            --test canonical_type_contract
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
-            --test r4_type_cutover
+            --test canonical_type_contract
 
   architecture-mutations:
     name: Architecture mutation qualification (${{ matrix.shard }})
@@ -251,11 +251,11 @@ jobs:
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_rust_source.py \
-            scripts/tests/test_check_r2_type_memory_boundary.py \
-            scripts/tests/test_check_r3_type_system.py \
-            scripts/tests/test_check_r4_type_cutover.py \
-            scripts/tests/test_check_r5_memory_planner.py \
-            scripts/tests/test_check_r6_memory_runtime.py \
+            scripts/tests/test_check_type_memory_boundary.py \
+            scripts/tests/test_check_type_system.py \
+            scripts/tests/test_check_semantic_type_authority.py \
+            scripts/tests/test_check_memory_planner.py \
+            scripts/tests/test_check_memory_runtime.py \
             scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
@@ -288,16 +288,16 @@ jobs:
       - name: Execute the complete memory-planner conformance boundary
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core \
-            --all-features --test r5_memory_plan
+            --all-features --test memory_plan
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler \
-            --test r5_memory_plan
+            --test memory_plan
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
-            --test r5_memory_contract
+            --test memory_contract
           cargo +nightly-2026-03-03 test --locked -p mech-compute
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
-            --test r5_memory_plan
+            --test memory_plan
 
   managed-memory-runtime:
     name: Managed memory runtime
@@ -329,19 +329,19 @@ jobs:
       - name: Execute the complete managed-memory conformance boundary
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core \
-            --all-features --test r6_memory_runtime
+            --all-features --test memory_runtime
           cargo +nightly-2026-03-03 test --locked -p mech-core \
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
-            --test r6_memory_safety
+            --test memory_safety
           RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \
             cargo +nightly-2026-03-03 test --locked --release -p mech-core \
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
-            --test r6_memory_safety
+            --test memory_safety
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
-            --test r6_memory_runtime
+            --test memory_runtime
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
             --lib resident::general::live::
@@ -350,16 +350,16 @@ jobs:
             --lib memory_planner::resident::tests
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features standard_compiler \
-            --test r6_managed_functions
+            --test managed_functions
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
-            --test r6_managed_functions
+            --test managed_functions
           cargo +nightly-2026-03-03 test --locked -p mech-compute \
-            --test r6_memory_runtime
+            --test memory_runtime
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
-            --test r6_memory_runtime
+            --test memory_runtime
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
-            --features jit --test r6_memory_runtime
+            --features jit --test memory_runtime
           cargo +nightly-2026-03-03 check --locked -p mech-gpu --features native
 
   managed-memory-fixed-profiles:
@@ -408,7 +408,7 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features "full_compiler,${{ matrix.feature }}" \
-            --test r6_managed_functions
+            --test managed_functions
 
   managed-memory-miri:
     name: Managed memory safety (Miri)
@@ -442,7 +442,7 @@ jobs:
           cargo +nightly-2026-03-03 miri test --locked \
             -p mech-core --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
-            --test r6_memory_safety
+            --test memory_safety
 
   cargo-features:
     name: Cargo feature and example checks
@@ -1413,7 +1413,7 @@ jobs:
             --test canonical_port_registry --test canonical_rule_registry \
             --test canonical_recursive_core_inventory --test canonical_recursive_core_schema \
             --test canonical_grammar --test canonical_mechdown_closed_rules \
-            --test canonical_phase_2i_certification --test canonical_phase_2i_recovery
+            --test canonical_executable_conformance --test canonical_executable_recovery
 
       - name: Verify canonical document syntax with optional features disabled
         run: >-
@@ -1517,7 +1517,7 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 check --locked -p mech-engine --no-default-features --features source
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features source --test canonical_source_profile --test canonical_source_review --test canonical_source_collections --test canonical_boolean_match
-          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_document_state --test canonical_document_streaming --test canonical_source_semantics --test canonical_source_review --test canonical_source_structures --test canonical_source_collections --test canonical_boolean_match --test canonical_source_completion --test canonical_phase_2i_semantic_certification
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_document_state --test canonical_document_streaming --test canonical_source_semantics --test canonical_source_review --test canonical_source_structures --test canonical_source_collections --test canonical_boolean_match --test canonical_source_completion --test canonical_executable_semantics
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --lib source_semantics::frontend::
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --lib resident::numeric::tests::
 
@@ -1616,7 +1616,7 @@ jobs:
       - name: Run CLI host and context-send regression coverage
         run: |
           cargo test -p mech-syntax --all-features \
-            --test canonical_declaration_rules --test canonical_phase_2f_typed_views
+            --test canonical_declaration_rules --test canonical_declaration_typed_views
           cargo test -p mech-terminal --features provider --test provider
           cargo test -p mech-console
           cargo test -p mech-browser

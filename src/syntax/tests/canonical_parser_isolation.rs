@@ -42,40 +42,40 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
     "structure_shell/continuation.rs",
 ];
 
-const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &[
+const DOCUMENT_MARKUP_PRODUCTION_SOURCES: &[&str] = &[
     "mechdown/mod.rs",
     "mechdown/continuation.rs",
     "prose.rs",
     "statements.rs",
 ];
-const PHASE_2C_PRODUCTION_SOURCES: &[&str] = &[
+const LITERAL_PATH_KIND_PRODUCTION_SOURCES: &[&str] = &[
     "literals/mod.rs",
     "literals/continuation.rs",
     "strings.rs",
     "paths.rs",
     "kinds.rs",
 ];
-const PHASE_2D_PRODUCTION_SOURCES: &[&str] = &[
+const EXPRESSION_PRODUCTION_SOURCES: &[&str] = &[
     "operators/mod.rs",
     "operators/spec.rs",
     "operators/continuation.rs",
 ];
-const PHASE_2E_PRODUCTION_SOURCES: &[&str] = &["imports/mod.rs", "imports/continuation.rs"];
-const PHASE_2F_PRODUCTION_SOURCES: &[&str] = &[
+const MODULE_IMPORT_PRODUCTION_SOURCES: &[&str] = &["imports/mod.rs", "imports/continuation.rs"];
+const DECLARATION_PRODUCTION_SOURCES: &[&str] = &[
     "source_imports/mod.rs",
     "source_imports/continuation.rs",
     "declarations/mod.rs",
     "declarations/continuation.rs",
 ];
-const PHASE_2G_PRODUCTION_SOURCES: &[&str] = &[
+const PRIMITIVE_PRODUCTION_SOURCES: &[&str] = &[
     "subscript_primitives.rs",
     "pattern_primitives.rs",
     "control_operators.rs",
     "primitives.rs",
 ];
-const PHASE_2H_PRODUCTION_SOURCES: &[&str] =
+const STRUCTURE_PRODUCTION_SOURCES: &[&str] =
     &["structure_shell/mod.rs", "structure_shell/continuation.rs"];
-const PHASE_2I_PRODUCTION_SOURCES: &[&str] = &[
+const EXECUTABLE_PRODUCTION_SOURCES: &[&str] = &[
     "recursive_core/calls.rs",
     "recursive_core/comprehensions.rs",
     "recursive_core/expressions.rs",
@@ -477,9 +477,9 @@ fn executable_violations(source: &str) -> Vec<&'static str> {
 }
 
 #[test]
-fn canonical_phase_2b_sources_are_present_and_directly_isolated() {
+fn canonical_document_markup_sources_are_present_and_directly_isolated() {
     let canonical = canonical_root();
-    for relative in PHASE_2B_PRODUCTION_SOURCES {
+    for relative in DOCUMENT_MARKUP_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -521,9 +521,9 @@ fn canonical_phase_2b_sources_are_present_and_directly_isolated() {
 }
 
 #[test]
-fn canonical_phase_2c_sources_are_present_and_directly_isolated() {
+fn canonical_literal_path_kind_sources_are_present_and_directly_isolated() {
     let canonical = canonical_root();
-    for relative in PHASE_2C_PRODUCTION_SOURCES {
+    for relative in LITERAL_PATH_KIND_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -568,9 +568,9 @@ fn canonical_phase_2c_sources_are_present_and_directly_isolated() {
 }
 
 #[test]
-fn canonical_phase_2d_operator_source_is_present_and_directly_isolated() {
+fn canonical_expression_operator_source_is_present_and_directly_isolated() {
     let canonical = canonical_root();
-    for relative in PHASE_2D_PRODUCTION_SOURCES {
+    for relative in EXPRESSION_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -670,9 +670,9 @@ fn canonical_phase_2d_operator_source_is_present_and_directly_isolated() {
 }
 
 #[test]
-fn canonical_phase_2e_import_source_is_present_and_directly_isolated() {
+fn canonical_module_import_import_source_is_present_and_directly_isolated() {
     let canonical = canonical_root();
-    for relative in PHASE_2E_PRODUCTION_SOURCES {
+    for relative in MODULE_IMPORT_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -768,9 +768,9 @@ fn canonical_phase_2e_import_source_is_present_and_directly_isolated() {
 }
 
 #[test]
-fn canonical_phase_2f_sources_are_present_and_directly_isolated() {
+fn canonical_declaration_sources_are_present_and_directly_isolated() {
     let canonical = canonical_root();
-    for relative in PHASE_2F_PRODUCTION_SOURCES {
+    for relative in DECLARATION_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -822,7 +822,7 @@ fn canonical_phase_2f_sources_are_present_and_directly_isolated() {
 }
 
 #[test]
-fn phase_2f_entry_points_bind_their_exact_generated_rule_ids() {
+fn declaration_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
         (
@@ -945,9 +945,9 @@ fn phase_2f_entry_points_bind_their_exact_generated_rule_ids() {
 }
 
 #[test]
-fn canonical_phase_2g_sources_are_present_and_directly_isolated() {
+fn canonical_primitive_sources_are_present_and_directly_isolated() {
     let canonical = canonical_root();
-    for relative in PHASE_2G_PRODUCTION_SOURCES {
+    for relative in PRIMITIVE_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -1014,7 +1014,7 @@ fn canonical_phase_2g_sources_are_present_and_directly_isolated() {
 }
 
 #[test]
-fn phase_2g_entry_points_bind_their_exact_generated_rule_ids() {
+fn primitive_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
         ("subscript_primitives.rs", "parse_select_all", "SELECT_ALL"),
@@ -1099,9 +1099,9 @@ fn phase_2g_entry_points_bind_their_exact_generated_rule_ids() {
 }
 
 #[test]
-fn canonical_phase_2h_source_is_present_and_directly_isolated() {
+fn canonical_structure_source_is_present_and_directly_isolated() {
     let canonical = canonical_root();
-    for relative in PHASE_2H_PRODUCTION_SOURCES {
+    for relative in STRUCTURE_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -1161,7 +1161,7 @@ fn canonical_phase_2h_source_is_present_and_directly_isolated() {
 }
 
 #[test]
-fn phase_2h_entry_points_bind_their_exact_generated_rule_ids() {
+fn structure_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
         (
@@ -1201,9 +1201,9 @@ fn phase_2h_entry_points_bind_their_exact_generated_rule_ids() {
 }
 
 #[test]
-fn canonical_phase_2i_sources_are_present_and_directly_isolated() {
+fn canonical_executable_sources_are_present_and_directly_isolated() {
     let canonical = canonical_root();
-    for relative in PHASE_2I_PRODUCTION_SOURCES {
+    for relative in EXECUTABLE_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -1249,7 +1249,7 @@ fn canonical_phase_2i_sources_are_present_and_directly_isolated() {
 }
 
 #[test]
-fn phase_2b_entry_points_bind_their_exact_generated_rule_ids() {
+fn document_markup_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
         ("statements.rs", "parse_comment_sigil", "COMMENT_SIGIL"),
@@ -1296,7 +1296,7 @@ fn phase_2b_entry_points_bind_their_exact_generated_rule_ids() {
 }
 
 #[test]
-fn phase_2c_entry_points_bind_their_exact_generated_rule_ids() {
+fn literal_path_kind_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
         ("literals/mod.rs", "parse_empty", "EMPTY"),
@@ -1389,7 +1389,7 @@ fn phase_2c_entry_points_bind_their_exact_generated_rule_ids() {
 }
 
 #[test]
-fn phase_2d_entry_points_bind_their_exact_generated_rule_ids() {
+fn expression_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
         (
@@ -1513,7 +1513,7 @@ fn phase_2d_entry_points_bind_their_exact_generated_rule_ids() {
 }
 
 #[test]
-fn phase_2e_entry_points_bind_their_exact_generated_rule_ids() {
+fn module_import_entry_points_bind_their_exact_generated_rule_ids() {
     let canonical = canonical_root();
     let expected = [
         (
@@ -1619,7 +1619,7 @@ fn phase_2e_entry_points_bind_their_exact_generated_rule_ids() {
 }
 
 #[test]
-fn phase_2c_sources_do_not_reference_unported_recursive_parent_rules() {
+fn literal_path_kind_sources_do_not_reference_unported_recursive_parent_rules() {
     let canonical = canonical_root();
     let unported_parents = [
         "LITERAL",
@@ -1641,7 +1641,7 @@ fn phase_2c_sources_do_not_reference_unported_recursive_parent_rules() {
         "EXPRESSION",
     ];
 
-    for relative in PHASE_2C_PRODUCTION_SOURCES {
+    for relative in LITERAL_PATH_KIND_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -1655,7 +1655,7 @@ fn phase_2c_sources_do_not_reference_unported_recursive_parent_rules() {
 }
 
 #[test]
-fn phase_2d_sources_do_not_reference_unported_expression_parent_rules() {
+fn expression_sources_do_not_reference_unported_expression_parent_rules() {
     let canonical = canonical_root();
     let unported_parents = [
         "EXPRESSION",
@@ -1680,7 +1680,7 @@ fn phase_2d_sources_do_not_reference_unported_expression_parent_rules() {
     ];
     assert_eq!(unported_parents.len(), 19);
 
-    for relative in PHASE_2D_PRODUCTION_SOURCES {
+    for relative in EXPRESSION_PRODUCTION_SOURCES {
         let path = canonical.join(relative);
         let source = fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
@@ -1821,7 +1821,7 @@ fn removed_migration_state_and_document_skeleton_types_stay_absent() {
     ] {
         assert!(
             !manifest.join(relative).exists(),
-            "S7 must not retain {relative}"
+            "canonical parser must not retain {relative}"
         );
     }
 

@@ -1,4 +1,4 @@
-//! Typed syntax views for the closed Phase 2G subscript primitives.
+//! Typed syntax views for the closed executable primitives subscript primitives.
 
 use crate::document::ast::literals::IntegerLiteralSyntax;
 use crate::document::{AstNode, IdentifierSyntax, SyntaxKind, SyntaxNode};
@@ -24,7 +24,7 @@ macro_rules! subscript_ast_node {
     };
 }
 
-/// A typed view over any node-valued Phase 2G subscript primitive.
+/// A typed view over any node-valued executable primitives subscript primitive.
 #[derive(Clone, Debug)]
 pub struct SubscriptPrimitiveSyntax(SyntaxNode);
 

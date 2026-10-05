@@ -271,7 +271,10 @@ fn assert_runtime_surface(catalog: &FunctionCatalog) {
         .runtime_entries()
         .map(|entry| (id_hex(entry.id.raw()), entry.name.clone()))
         .collect::<BTreeMap<_, _>>();
-    assert_eq!(actual, expected, "runtime catalog diverged from PR2");
+    assert_eq!(
+        actual, expected,
+        "runtime catalog diverged from the standard-linked-dynamic-shape contract"
+    );
 
     let digest = Sha256::digest(RUNTIME_SURFACE)
         .iter()

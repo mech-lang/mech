@@ -6,12 +6,12 @@ local recovery, typed access, and engine-owned semantic compilation. Its generat
 dependency graph defines the strongly connected component.
 
 The authoritative member inventory is
-`docs/design/grammar-audit/phase-2i-recursive-core.tsv`. The generated count is
+`docs/design/grammar-audit/recursive-core.tsv`. The generated count is
 authoritative; no manual 33-rule, 83-rule, family-total, or handwritten member
 assumption defines this phase.
 
 The authoritative representation inventory is
-`docs/design/grammar-audit/phase-2i-syntax-schema.tsv`. It freezes module
+`docs/design/grammar-audit/recursive-core-syntax-schema.tsv`. It freezes module
 ownership and concrete tree emission for the same 80 rules: 71 unconditional
 nodes, seven conditional precedence nodes, and two transparent aliases. It
 reserves 73 new append-only syntax kinds and reuses five existing kinds.
@@ -28,15 +28,15 @@ that grammar and records its direct child and reverse parent edges.
 rule-level syntax, source-semantic, activation, node-policy, phase, and audit
 disposition evidence. It is audit metadata and the deterministic RuleId
 registry input, not parser or runtime dispatch. Its `certified` semantic status is distinct from the
-milestone-level behavior-demonstration gate. Its separate `activation-status`
-keeps all 80 Phase 2I rows at `candidate` until the completion record reports
+milestone-level behavior-demonstration gate. Its separate `grammar-scope`
+keeps all 80 executable grammar rows at `candidate` until the completion record reports
 every required behavior as demonstrated. The recursive-core component is the
-exact Phase 2I candidate set:
+exact executable grammar candidate set:
 it starts at `expression`, follows the generated canonical dependencies, and
 contains one complete strongly connected component.
 
-`phase-2i-recursive-core.tsv` defines membership and dependencies.
-`phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
+`recursive-core.tsv` defines membership and dependencies.
+`recursive-core-syntax-schema.tsv` defines module ownership and concrete tree
 emission. The schema does not replace or duplicate the dependency graph.
 
 The dependency extractor does not inspect retiring Rust parser calls. An
@@ -48,8 +48,8 @@ typed grammar syntax to reproduce every generated edge.
 2. Canonical authority only
 -------------------------------------------------------------------------------
 
-All Phase 2I production code uses the canonical event-based parser and the
-canonical specification. The Phase 2I-C recognizer does not call, wrap,
+All executable grammar production code uses the canonical event-based parser and the
+canonical specification. The executable recognition recognizer does not call, wrap,
 translate, or extend a Nom parser.
 
 `ParseString` and `ParseResult` do not appear in canonical recursive-core code.
@@ -62,7 +62,7 @@ grammar graph is the only dependency authority.
 3. Atomic activation candidate
 -------------------------------------------------------------------------------
 
-The S6 candidate assigns every generated member to Phase 2I only after the
+The grammar registry validation candidate assigns every generated member to executable grammar only after the
 complete rule-level closure:
 
 ```text
@@ -81,7 +81,7 @@ witnesses. Registry metadata does not replace behavior on a supported target.
 4. Module design
 -------------------------------------------------------------------------------
 
-Phase 2I-B freezes this exact ownership division:
+typed executable grammar freezes this exact ownership division:
 
 ```text
 kinds             11
@@ -131,13 +131,13 @@ The implementation uses ordinary mutually recursive Rust functions. It does
 not introduce a parser generator, boxed parser closures, a Nom-like combinator
 framework, or one monolithic `recursive_core.rs` module.
 
-Phase 2I-C created the parser directory above and implemented the complete clean
-recognizer. S2 added bounded local recovery, S3 added the typed syntax surface,
-S4 owns engine source-semantic completion, and S5 closed the certification
-implementation. S6 stages all 80 recursive rules as one atomic registry
-candidate; qualification and activation wait for the S4 behavior gate.
-Canonical document-root completion remains the S7 milestone; product cutover
-and removal are reserved for S8.
+executable recognition created the parser directory above and implemented the complete clean
+recognizer. recovery added bounded local recovery, typed syntax added the typed syntax surface,
+source semantics owns engine source-semantic completion, and conformance closed the certification
+implementation. grammar registry validation stages all 80 recursive rules as one atomic registry
+candidate; qualification and activation wait for the source semantics behavior gate.
+Canonical document-root completion remains the document syntax milestone; product cutover
+and removal are reserved for canonical source integration.
 
 `MATCH-001` records the canonical expression-match whitespace rule. The
 optional suffix owns that whitespace only when the following question mark
@@ -180,7 +180,7 @@ foo[1]             slice
 
 `l1` through `l7` remain canonical rules. A level with no operator adds no
 unconditional wrapper node. A level with one or more operators creates one
-chain node. The Phase 2D operator nodes remain authoritative.
+chain node. The expression grammar operator nodes remain authoritative.
 
 The planned chain nodes are:
 
@@ -197,7 +197,7 @@ SetExpression
 `formula` and `pattern-array-item` are transparent aliases. The five reused
 kinds are `Expression`, `KindAnnotation`, `AdditiveExpression`,
 `ParentheticalExpression`, and `VariableDefine`; every other node-valued
-schema row uses one of the 73 new append-only kinds reserved by Phase 2I-B.
+schema row uses one of the 73 new append-only kinds reserved by typed executable grammar.
 
 7. Recovery ownership
 -------------------------------------------------------------------------------
@@ -209,7 +209,7 @@ Unexpected physical source remains under `ERROR`. Absent required syntax
 becomes `MISSING`. Every recovery loop must consume physical source, insert
 once, return, or exhaust a hard resource limit.
 
-The S2 implementation distinguishes absence from unexpected source before it
+The recovery implementation distinguishes absence from unexpected source before it
 chooses a recovery action. Delimiter scans balance nested parentheses,
 brackets, and braces, ignore delimiters inside quoted source, stop before the
 owner or ancestor closer, and charge a cumulative recovery-byte budget.
@@ -217,9 +217,9 @@ Diagnostic codes, canonical rule IDs, anchors, and recovery actions are stable
 across repeated parses. All 80 direct rules retain their configured partial
 node, or the configured child for a transparent rule, on committed failure.
 
-S2 qualification follow-up (2026-09-12): the nine review findings and the
+recovery qualification follow-up (2026-09-12): the nine review findings and the
 variable-range dispatch regression each have a named test in
-`src/syntax/tests/canonical_phase_2i_review_regressions.rs`. Review IDs are
+`src/syntax/tests/canonical_executable_review_regressions.rs`. Review IDs are
 recorded beside their tests. Evidence includes direct/shared paths, selected
 owners, later children, physical delimiters, missing/error structure, diagnostic
 fields and anchors, and exact source reconstruction. The resource suite adds
@@ -245,7 +245,7 @@ semantic reconstruction.
 9. Root boundary
 -------------------------------------------------------------------------------
 
-Phase 2I itself added no public parser root. S7 extends the current canonical
+executable grammar itself added no public parser root. document syntax extends the current canonical
 root surface to:
 
 ```text

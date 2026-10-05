@@ -44,7 +44,7 @@ use tabled::{
 pub trait MechFunctionFactory {
     const SIGNATURE: RuntimeFunctionSignature;
 
-    /// Closed R5 declaration of heap work beyond generic atomic publication.
+    /// Closed memory declaration of heap work beyond generic atomic publication.
     fn implementation_memory_class() -> ImplementationMemoryClass;
 
     /// Semantic memory contract declared by a statically registered runtime
@@ -119,7 +119,7 @@ pub trait MechFunctionImpl {
     }
 
     /// Resolves value-dependent output payload requirements before any
-    /// result construction. Canonical builders override this hook so the R5
+    /// result construction. Canonical builders override this hook so the memory
     /// call planner can admit the complete prospective footprint first.
     fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
         Ok(None)
@@ -433,7 +433,7 @@ impl ManagedCallRealization {
         };
         let plan = realized
             .call_plan()
-            .expect("call realization retains immutable R5 authority")
+            .expect("call realization retains immutable memory authority")
             .clone();
         let initialization = domain.prepare_function_input_initialization(
             &realized,
@@ -675,7 +675,7 @@ impl ManagedCallRealization {
         if self.plan.implementation_memory != ImplementationMemoryClass::ExternalMarshalling {
             return Err(MemoryRuntimeError::CandidateValidationFailed {
                 object: self.plan.inputs.first().map(|input| input.object),
-                reason: "external input marshalling has no R5 scratch authority".into(),
+                reason: "external input marshalling has no planned scratch authority".into(),
             }
             .into());
         }
@@ -831,7 +831,7 @@ impl FunctionInstance {
         {
             return Err(MemoryRuntimeError::CandidateValidationFailed {
                 object: plan.outputs.first().map(|output| output.object),
-                reason: "external adoption requires the R5 external-marshalling memory class"
+                reason: "external adoption requires the planned external-marshalling memory class"
                     .into(),
             }
             .into());

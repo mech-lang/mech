@@ -1,11 +1,9 @@
 # Program artifact resident activation contract
 
-This document is the normative contract, introduced by D0, for converting a
-finalized `ProgramArtifact` into resident execution state. D1 implements the
-first admitted ordinary-EKF vertical slice behind an efficacy-only feature. It
-does not route general production programs through the resident executor.
-
-The boundary is:
+A finalized `ProgramArtifact` is converted into a physical execution plan and
+independent resident instances. The shipping runtime executes admitted
+artifacts through this boundary. Unsupported activation returns a structured
+error.
 
 ```text
 ProgramArtifact
@@ -32,285 +30,124 @@ ReactiveInstance
 Authority is ordered and non-overlapping:
 
 - `ProgramArtifact` is the semantic authority.
-- `ResolvedOperationContract` is the operation-access and interaction
-  authority.
+- `ResolvedOperationContract` is the operation-access and interaction authority.
 - `ActivatedPlan` is the physical execution-plan authority.
 - `ReactiveInstance` is the runtime-instance authority.
 - `StateArena` is the persistent versioned-storage authority.
-- `TurnWorkspace` is the authority for candidate input, dirty scheduling,
-  scratch, and bounded turn-local bookkeeping.
-- The turn ledger is the retained transition-history authority.
+- `TurnWorkspace` owns candidate input, dirty scheduling, scratch, and bounded
+  turn-local bookkeeping.
+- The turn ledger owns retained transition history.
 
-The resident EKF control is not semantic authority and is named
-`ResidentEkfControlFixture`. The finalized public artifact is the only
-`ProgramArtifact` authority used by resident activation and execution.
+The finalized public artifact is the authority used by resident activation.
+Benchmark control fixtures do not supply production semantics. Memory planning
+and realization follow [Memory planner](memory-planner.md) and
+[Managed memory runtime](memory-runtime.md).
 
-## Identity map
+## Identity and activation
 
-Identity has these distinct domains:
+Identity has distinct domains:
 
-- `ProgramRevision` identifies immutable `ProgramArtifact` content.
+- `ProgramRevision` identifies immutable artifact content.
 - `CellSlotId` is a deterministic logical slot inside the artifact.
 - `PlanGeneration` identifies one activated-plan generation.
 - `LayoutGeneration` identifies one physical arena-layout generation.
-- `ReactiveInstanceId` identifies one runtime activation and rejects stale
-  handles.
+- `ReactiveInstanceId` identifies one runtime activation and rejects stale handles.
 - `SlotIndex` is a dense activated-plan index.
-- `CellId` is the pair `ReactiveInstanceId + CellSlotId`.
-- `InstanceEpoch` identifies one candidate or published instance-state
-  version.
+- `CellId` combines instance identity with a logical slot.
+- `InstanceEpoch` identifies one candidate or published instance-state version.
 
-D1 begins with `PlanGeneration::ZERO`, `LayoutGeneration::ZERO`, and published
-`InstanceEpoch::ZERO`. Its first candidate is `InstanceEpoch(1)`. The value
-`u64::MAX` is a legal final epoch exactly once. Asking for its successor fails
-with identity exhaustion; an epoch never wraps.
+Initial plan, layout, and published-epoch generations are zero. The first
+candidate epoch is one. Epochs and generations use checked advancement; they
+never wrap. `u64::MAX` is a legal final epoch, and requesting its successor
+fails with identity exhaustion.
 
-Every artifact slot receives exactly one dense `SlotIndex`. The D1 mapping is
-identity-ordered:
+Every artifact slot receives exactly one dense `SlotIndex`. Activation
+validates slot density and uniqueness, representable counts, known schemas,
+producer ownership, initializers, operation contracts, and physical layout
+before execution. A physical pointer never supplies logical identity,
+dependency topology, scheduling identity, or receipt identity.
 
-```text
-CellSlotId 0 -> SlotIndex 0
-CellSlotId 1 -> SlotIndex 1
-...
-```
-
-Activation fails before arena allocation if slot declarations are not dense,
-a mapping is missing or duplicated, the slot count exceeds `u32`, a schema is
-unknown, a producer is invalid, or an initializer is incompatible.
-
-A physical pointer is never an identity. A pointer must not be encoded in a
-`CellId`, `SlotIndex`, dependency topology, dirty-scheduling record, receipt,
-or observer handle.
+Reconfiguration validates the replacement plan and layout before publication.
+Generation identity distinguishes the replacement from stale handles. Shape,
+operation, or layout requests outside the admitted profile fail explicitly.
 
 ## Storage ownership
 
-D1 assigns storage by semantic role:
+Constants remain immutable and have no mutable epoch or rollback entry.
+Captured inputs live in reusable candidate input storage. Persistent state and
+published output slots use versioned storage. Derived computations use scratch
+unless their semantic producer requires input or activation-constant storage.
+These classes remain distinct even when their concrete scalar or matrix
+representation is the same.
 
-| Role | Ownership and lifetime |
-|---|---|
-| Constant | Remains in `ConstantStore`; no `SlotIndex`-backed mutable payload, epoch, or rollback entry. |
-| Input | Receives a resolved `SlotIndex`; its payload is installed in reusable `TurnWorkspace` storage and is valid only for the active candidate turn. It is not a published output in D1. |
-| State | Lives in `StateArena`, uses two versioned typed buffers, and publishes with the instance epoch. |
-| Derived non-output | Lives in reusable typed `TurnWorkspace` scratch and is not retained across turns. |
-| Externally declared output | Resolves to a versioned state slot in D1. |
+An output may be materialized from a constant, an input, or a computed value;
+publication does not require the source program to disguise an output as state.
+Mutable payload is owned by the instance. Independent instances do not share
+mutable value cells.
 
-D1 rejects a derived output that requires retention after the turn. Constants,
-inputs, persistent state, and derived scratch remain distinct storage classes.
-
-## Observer policy
-
-D1 supports synchronous observation only. An observer may read a published
-output synchronously after acceptance, but no borrowed view may survive the
-next `begin_candidate`. D1 has no epoch pin, RCU handle, `Arc` snapshot,
-version pool, or retained slice. Benchmark correctness code may copy output
-after the timed turn. D2 introduces retained-observer policies.
-
-This lifetime rule makes two buffers sufficient for D1.
+Borrowed synchronous output views cannot outlive their permitted version.
+Retained observation requires explicit owned snapshots or version ownership;
+no pointer may silently keep a reusable candidate buffer alive. Observer
+retention and bounded-resource failures are validated by the runtime's
+publication and history contracts.
 
 ## Candidate semantics
 
-One `ReactiveInstance` may have at most one active candidate. A candidate
-contains:
-
-```text
-base_epoch
-working_epoch
-published buffer index
-candidate buffer index
-turn input
-dirty-node state
-touched slots
-changed slots
-bounded diagnostics
-prepared recording ownership
-```
+One instance has at most one active candidate. It owns base and working epochs,
+published and candidate buffer identities, captured input, dirty-node state,
+touched and changed slots, bounded diagnostics, and prepared recording
+ownership.
 
 Persistent-state reads observe the base published version. Reads of values
 produced earlier in the same turn observe the current workspace or candidate
 result. A first write marks a slot touched. A semantic change marks it changed.
 Scheduler propagation uses changed state, not merely touched state.
 
-Abort leaves `published_epoch` unchanged, invalidates candidate tags, and
-discards candidate receipt and effect material. Acceptance executes and
-validates the complete candidate, derives its summary, prepares the required
-owned record from reserved capacity, publishes one epoch, and then appends the
-already-prepared record infallibly.
+Abort preserves the published epoch, invalidates candidate tags, and discards
+candidate receipt and effect material. Acceptance executes and validates the
+complete candidate before publication. Expected failures, integrity rejection,
+and capacity exhaustion leave published state unchanged.
 
-## Publication
+## Publication and recording
 
-Publication is exactly one release store:
+The normative sequence is:
 
-```rust
-published_epoch.store(working_epoch, Ordering::Release)
-```
+1. Reserve admission and recording capacity.
+2. Begin and execute the candidate.
+3. Validate the candidate and integrity predicates.
+4. Derive the candidate summary.
+5. Prepare the owned receipt or commit using the reserved capacity.
+6. Publish with one release store.
+7. Append the already-prepared record infallibly.
 
-A semantically equivalent single release store is permitted. Readers use
-acquire ordering. D1 must report all of these structural facts:
+Readers use acquire ordering. Receipt preparation failure aborts before
+publication. Complete full-write outputs require zero candidate seed bytes
+and zero published-buffer copy bytes. Read-modify-write operations retain
+their explicit preservation and initialization requirements.
 
-```text
-publication_store_count = 1
-published_buffer_copy_bytes = 0
-candidate_seed_bytes = 0
-```
+The artifact-derived engine path returns a typed `ResidentTurnSummary` with
+instance and program identities, before and after epochs, candidate hash, and
+bounded touched, changed, and dirty counts. Benchmark receipt formats are
+separate from canonical runtime recording. Observations, deferred effects,
+replay, and transactional participants obey their declared operation contracts
+and the runtime's admission and delivery rules.
 
-No full-write output is seeded from the published version.
+## EKF fixture
 
-## Receipt boundary
+`tests/architecture/resident-activation/ekf-source-v1.mec` is the ordinary-source
+EKF fixture. Its `ekf/*` operations bind to typed kernels after source
+compilation; the fixture is not a hand-built artifact. Its semantic workload
+and committed source bytes remain authoritative for the behavioral and
+allocation tests.
 
-The artifact-derived engine path returns a typed `ResidentTurnSummary`
-containing the instance and program identities, before/after epochs, candidate
-hash, and bounded touched/changed/dirty counts. The private resident EKF
-coordinator converts that summary into the benchmark-only
-`ResidentEkfReceipt`; this path does not introduce a new canonical receipt
-format.
+The instance's persistent candidate state is three `f64` values (24 bytes) plus
+nine covariance `f64` values (72 bytes), totaling 96 bytes. The four-element
+input frame and intermediate values use reusable turn workspace.
 
-The sole normative D1 sequence remains the D0 sequence:
-
-```text
-1. reserve admission/ledger capacity before execution
-2. begin candidate
-3. execute candidate
-4. validate candidate and integrity predicates
-5. derive candidate summary
-6. prepare the owned receipt/commit using the reserved permit
-7. publish with one Release store
-8. append the already-prepared record infallibly
-```
-
-Receipt preparation failure aborts the candidate before publication. After
-publication the prepared append is infallible. D1 does not introduce event
-projection, effect delivery, or production ledger routing.
-
-## D1 admitted profile
-
-D1 admits exactly this profile:
-
-```text
-operation contract:       Declared
-delivery:                 Signal
-resident interaction:     Pure
-input interaction:        Observation(CaptureAsInputFact)
-dimension lifetime:       CompileTime
-output construction:      FullWrite
-alias policy:             NoAlias
-pure numeric kernels:     KernelReported
-pure predicates:          ExactScalar
-sole observation root:    AlwaysChanged
-observer policy:          Synchronous
-```
-
-The sole admitted observation is the EKF frame input adapter. It executes
-outside the resident candidate graph and supplies one captured input fact.
-
-Activation rejects the following before arena allocation:
-
-```text
-LegacyOpaque
-Stream
-Future
-Effect
-TransactionalExternal
-Activation dimension
-Turn dimension
-ReadModifyWrite
-Replace
-Build
-MayAlias
-InPlaceRequired
-SemanticHash
-AlwaysChanged on resident compute or state update
-second observation root
-unknown kernel
-unknown operation
-unsupported schema
-derived retained output
-non-output state with no initializer
-```
-
-After resident activation has been requested, failure does not fall back to
-the legacy executor.
-
-## Frozen D1 EKF profile
-
-The ordinary source fixture at
-`tests/architecture/resident-activation/ekf-source-v1.mec` is the exact D1
-vertical slice. Its `ekf/*` operations bind to the typed kernels already proven
-by Gate B after compiling through the normal parser and `MechProgram`; the
-fixture is not a hand-built artifact or source plan.
-
-The semantic workload and the committed source bytes are authoritative. The
-fixture uses the current parser's hanging-call form: no whitespace immediately
-after `(` or immediately before `)`, with line breaks permitted after commas.
-The exact bytes become frozen when D0 commit 3 is created. D0 does not broaden
-function-call whitespace grammar.
-
-Persistent candidate storage per EKF instance is exactly:
-
-```text
-state:       3 * f64 = 24 bytes
-covariance:  9 * f64 = 72 bytes
-total:                  96 bytes
-```
-
-The four-element input frame and every intermediate value are reusable
-turn-workspace storage and do not count as persistent candidate bytes.
-
-The workload has eighteen ordered operation nodes. Operations 0 through 14 are
-resident kernels with one output and `KernelReported` change detection.
-Operations 15 through 17 are ordinary pure predicate nodes with one Boolean
-output, `Write`, `FullWrite`, `NoAlias`, and `ExactScalar`. The
-`ekf/candidate-finite` predicate checks every corrected-state and symmetrized-
-covariance element.
-
-Three separate `IntegrityConstraintDeclaration` entries use
-`integrity/assert`, read one predicate Boolean, and have zero outputs. Thus the
-predicate node owns the Boolean `ResolvedOutputPort`; the integrity assertion
-is the zero-output artifact layer. No `ProgramArtifact`, compiler-lowering, or
-bytecode change is required. State and covariance each receive one complete
-full-write update. `estimate` synchronously observes the published state before
-the next candidate.
-
-## Reconfiguration boundary
-
-D1 supports no reconfiguration. Both plan and layout generation remain zero:
-
-```text
-PlanGeneration = 0
-LayoutGeneration = 0
-```
-
-A request requiring an activation-dimension change, turn-varying physical
-representation, kernel replacement, slot-layout change, or program-revision
-replacement returns an unsupported-activation error. D2 implements
-reconfiguration and generalizes storage and shapes.
-
-## Private Gate B control and migration
-
-The Gate B executor remains an efficacy control. Its typed dual
-buffers, candidate epoch, fixed receipt, and single release-store publication
-prove that the resident target is effective. D1 replaces its former private
-artifact and activation authority with activation from the finalized public
-`ProgramArtifact`; only the explicitly named control fixture remains for
-performance comparison.
-
-The existing resident module must not gain dependencies on legacy value
-storage, mutable-reference identity, reactive-cell identity, legacy journals,
-runtime transaction coordinators, transaction-wide state cloning, or
-`commit_runtime`. The D migration projection remains unimplemented in D0 and
-is reproduced mechanically from the authoritative value-system inventory.
-
-## Phase boundaries
-
-- D0 freezes this contract and changes no production behavior.
-- D1 implements the frozen ordinary EKF artifact-to-resident vertical slice;
-  one artifact and two state slots are migrated within that slice only.
-- D2 generalizes storage, shapes, reconfiguration, and observer retention.
-- D3 adds observations, effects, and transactional participants.
-- D4 routes supported production programs.
-- D5 closes legacy runtime storage.
-- Final cutover deletes dead legacy types only after their obligations have
-  moved.
-
-There is no bytecode v2 before launch. Bytecode v1 evolves only when the static
-`ProgramArtifact` format requires additional pre-launch fields. D0 itself
-changes no bytecode.
+The workload has eighteen ordered operation nodes: fifteen resident kernels
+with `KernelReported` change detection, followed by three pure Boolean
+predicates with `FullWrite`, `NoAlias`, and `ExactScalar`. Separate
+`IntegrityConstraintDeclaration` entries read those predicates and have no
+outputs. State and covariance receive complete full-write updates. The
+synchronous estimate observes accepted published state before the next
+candidate.

@@ -1,7 +1,7 @@
-//! Canonical Phase 2B Mechdown productions.
+//! Canonical document markup Mechdown productions.
 //!
 //! This module contains only the exact closed grammar island selected for
-//! Phase 2B. It does not call prototype or legacy production parsers.
+//! document markup. It does not call prototype or legacy production parsers.
 
 use crate::document::{
     DiagnosticAnchor, DiagnosticLabel, ExpectedSyntax, RuleId, SyntaxKind, TextRange, TextSnapshot,
@@ -22,13 +22,13 @@ pub(crate) enum CodeblockDelimiter {
     Tilde,
 }
 
-/// Backwards-compatible name for Phase 2B direct-rule snapshots.
+/// Backwards-compatible name for document markup direct-rule snapshots.
 pub type CanonicalMechdownRuleSnapshot = CanonicalSourceRuleSnapshot;
 
-/// Parse one of the exact 13 Phase 2B productions as a deterministic prefix.
+/// Parse one of the exact 13 document markup productions as a deterministic prefix.
 ///
 /// This is intentionally a test-only contract surface, analogous to the
-/// Phase 2A lexical-rule prefix wrapper. It is not a production document root.
+/// lexical grammar lexical-rule prefix wrapper. It is not a production document root.
 #[doc(hidden)]
 pub fn parse_canonical_mechdown_rule_for_test(
     source: TextSnapshot,

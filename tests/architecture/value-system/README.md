@@ -1,9 +1,5 @@
 # Value-system architecture contracts
 
-The final deletion-to-replacement disposition for mixed and compatibility-only
-test suites is retained as archived review evidence in the
-[value-system final-cutover test map](../../../docs/design/archive/value-system-final-cutover-test-map.md).
-
 ## Canonical runtime boundary
 
 `Value` is immutable canonical data. Its validated `ValueData`, schema key,
@@ -46,7 +42,7 @@ files, crate-root modules, exact retired symbols, and conversion entry points:
 python3 scripts/check-no-retired-value-system.py
 ```
 
-The migration inventories, performance evidence, growth baseline, C2 allowance,
+The migration inventories, performance evidence, growth baseline, temporary allowance,
 and their generators were intentionally removed after the final zero result.
 Git history retains that review evidence; the working tree now carries only
 permanent canonical contracts.

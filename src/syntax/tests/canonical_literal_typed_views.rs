@@ -1,5 +1,5 @@
 use mech_syntax::document::ast::{ComplexNumberSyntax, RealNumberSyntax, UntypedRealNumberSyntax};
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2c_rule_for_test;
+use mech_syntax::document::parser::canonical::parse_canonical_literal_path_kind_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode, TextSnapshot,
@@ -17,9 +17,12 @@ fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
 }
 
 fn parse_typed<N: AstNode>(input: &str, rule: RuleId, kind: SyntaxKind) -> N {
-    let parsed =
-        parse_canonical_phase_2c_rule_for_test(source(input), rule, ParseConfig::default())
-            .unwrap();
+    let parsed = parse_canonical_literal_path_kind_rule_for_test(
+        source(input),
+        rule,
+        ParseConfig::default(),
+    )
+    .unwrap();
     assert!(parsed.is_strictly_clean(), "{rule:?} on {input:?}");
     assert_eq!(parsed.consumed.end, parsed.source.byte_len(), "{input:?}");
     let node = find_node(&parsed.syntax(), kind)

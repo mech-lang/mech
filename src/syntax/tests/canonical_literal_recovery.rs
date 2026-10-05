@@ -1,6 +1,6 @@
 use mech_syntax::document::parser::canonical::{
-    CanonicalRuleOutcome, parse_canonical_phase_2c_rule_for_test,
-    parse_canonical_phase_2i_rule_for_test,
+    CanonicalRuleOutcome, parse_canonical_executable_rule_for_test,
+    parse_canonical_literal_path_kind_rule_for_test,
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
@@ -17,7 +17,8 @@ fn parse(
     text: &str,
     rule: RuleId,
 ) -> mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot {
-    parse_canonical_phase_2c_rule_for_test(source(text), rule, ParseConfig::default()).unwrap()
+    parse_canonical_literal_path_kind_rule_for_test(source(text), rule, ParseConfig::default())
+        .unwrap()
 }
 
 fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -219,8 +220,8 @@ fn fuel_exhausted_at_string_recovery_opening_retains_its_selected_owner() {
                 ..ParseLimits::default()
             },
         };
-        let parsed = parse_canonical_phase_2c_rule_for_test(source(text), rule, config)
-            .or_else(|| parse_canonical_phase_2i_rule_for_test(source(text), rule, config))
+        let parsed = parse_canonical_literal_path_kind_rule_for_test(source(text), rule, config)
+            .or_else(|| parse_canonical_executable_rule_for_test(source(text), rule, config))
             .unwrap();
         assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
         assert_eq!(parsed.stats.parser_steps, fuel);
@@ -300,7 +301,7 @@ fn direct_string_recovery_preserves_its_owner_when_opening_quotes_exhaust_fuel()
             2,
         ),
     ] {
-        let parsed = parse_canonical_phase_2c_rule_for_test(
+        let parsed = parse_canonical_literal_path_kind_rule_for_test(
             source(text),
             rule,
             ParseConfig {
@@ -399,8 +400,10 @@ fn string_recovery_keeps_all_shared_resource_budgets_bounded() {
         {
             let config = ParseConfig { limits };
             let parsed = std::panic::catch_unwind(|| {
-                parse_canonical_phase_2c_rule_for_test(source(text), rule, config)
-                    .or_else(|| parse_canonical_phase_2i_rule_for_test(source(text), rule, config))
+                parse_canonical_literal_path_kind_rule_for_test(source(text), rule, config)
+                    .or_else(|| {
+                        parse_canonical_executable_rule_for_test(source(text), rule, config)
+                    })
                     .unwrap()
             })
             .unwrap_or_else(|_| panic!("{rule:?}, {text:?}, {limits:?}"));

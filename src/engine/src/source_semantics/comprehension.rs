@@ -1125,14 +1125,16 @@ pub(super) fn resolve_comprehension(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+    use mech_syntax::document::parser::{
+        canonical::parse_canonical_executable_rule_for_test, rules,
+    };
     use mech_syntax::document::{ParseConfig, TextSnapshot};
 
     fn expression(source: &str) -> ExpressionSyntax {
         fn find(node: SyntaxNode) -> Option<ExpressionSyntax> {
             ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
         }
-        let parsed = parse_canonical_phase_2i_rule_for_test(
+        let parsed = parse_canonical_executable_rule_for_test(
             TextSnapshot::new(DocumentId(822), Revision(70), source).unwrap(),
             rules::EXPRESSION,
             ParseConfig::default(),

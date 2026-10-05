@@ -403,8 +403,8 @@ only then allocate and decode typed values.
 
 | Section | Array element |
 | --- | --- |
-| Artifact schemas | Canonical C0 `SchemaDraft` (`dimension_parameters`, `body`) |
-| Artifact constants | Canonical C2 `ValueDraft` (`schema`, `shape_values`, `data`) |
+| Artifact schemas | Canonical `SchemaDraft` (`dimension_parameters`, `body`) |
+| Artifact constants | Canonical `ValueDraft` (`schema`, `shape_values`, `data`) |
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
@@ -543,7 +543,7 @@ many canonical bytes for each contract. Contract rows are sorted by their
 canonical bytes, duplicate rows are forbidden, and every node and integrity
 constraint contract ID is in range. Each contract starts with encoding version
 `1 u8` and contract tag `0` for `Declared`. This declared-only encoding is the
-initial supported bytecode-v1 baseline established by R1. Pre-R1 experimental
+initial supported bytecode-v1 baseline established by declared operation contracts. Pre-declared operation contracts experimental
 contract tags are unsupported and fail canonical decoding.
 
 A declared contract is:
@@ -615,10 +615,10 @@ path. The source adapter therefore rejects them with a structured unresolved
 nominal error unless future compiler metadata supplies that exact path; it
 never embeds a synthetic `legacy/...` identity in an artifact.
 
-The constant representation is total for the C2 snapshot family. A reified
+The constant representation is total for the immutable snapshot family. A reified
 schema carries its `SchemaKey`; a reified kind carries validated canonical
 closed-kind bytes and is reconstructed without a legacy kind value. Decoding
-rebuilds the closed semantic kind, runs the C1 canonical encoder, and requires
+rebuilds the closed semantic kind, runs the canonical encoder, and requires
 the reencoded bytes to equal the supplied bytes exactly. Dynamic shape
 parameter values remain in `ValueDraft.shape_values`.
 

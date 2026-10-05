@@ -21,9 +21,9 @@ EXPECTED_COLUMNS = [
     "family",
     "syntax-status",
     "semantic-status",
-    "activation-status",
+    "grammar-scope",
     "node-policy",
-    "phase",
+    "component",
     "notes",
 ]
 SYNTAX_STATUSES = {
@@ -35,10 +35,10 @@ SEMANTIC_STATUSES = {
     "syntax-only": "SyntaxOnly",
     "certified": "Certified",
 }
-ACTIVATION_STATUSES = {
-    "inactive": "Inactive",
-    "candidate": "Candidate",
-    "active": "Active",
+GRAMMAR_SCOPES = {
+    "outside-document": "OutsideDocument",
+    "executable-core": "ExecutableCore",
+    "supporting": "Supporting",
 }
 FAMILIES = {
     "activation": "Activation",
@@ -57,18 +57,18 @@ FAMILIES = {
     "statements": "Statements",
     "structures": "Structures",
 }
-PHASES = {
+COMPONENTS = {
     "": "None",
-    "2A": "Some(PortPhase::Phase2A)",
-    "2B": "Some(PortPhase::Phase2B)",
-    "2C": "Some(PortPhase::Phase2C)",
-    "2D": "Some(PortPhase::Phase2D)",
-    "2E": "Some(PortPhase::Phase2E)",
-    "2F": "Some(PortPhase::Phase2F)",
-    "2G": "Some(PortPhase::Phase2G)",
-    "2H": "Some(PortPhase::Phase2H)",
-    "2I": "Some(PortPhase::Phase2I)",
-    "S7": "Some(PortPhase::S7)",
+    "lexical": "Some(GrammarComponent::Lexical)",
+    "document-markup": "Some(GrammarComponent::DocumentMarkup)",
+    "literal-path-kind": "Some(GrammarComponent::LiteralPathKind)",
+    "expression": "Some(GrammarComponent::Expression)",
+    "module-import": "Some(GrammarComponent::ModuleImport)",
+    "declaration": "Some(GrammarComponent::Declaration)",
+    "primitive": "Some(GrammarComponent::Primitive)",
+    "structure": "Some(GrammarComponent::Structure)",
+    "executable": "Some(GrammarComponent::Executable)",
+    "document": "Some(GrammarComponent::Document)",
 }
 
 
@@ -137,26 +137,26 @@ def port_rows() -> list[dict[str, str]]:
                 f"{name}: unknown semantic status "
                 f"{row['semantic-status']}"
             )
-        if row["activation-status"] not in ACTIVATION_STATUSES:
+        if row["grammar-scope"] not in GRAMMAR_SCOPES:
             raise SystemExit(
-                f"{name}: unknown activation status "
-                f"{row['activation-status']}"
+                f"{name}: unknown grammar scope "
+                f"{row['grammar-scope']}"
             )
         if (
             row["syntax-status"] == "unported"
-            and row["activation-status"] != "inactive"
+            and row["grammar-scope"] != "outside-document"
         ):
-            raise SystemExit(f"{name}: unported rule is not inactive")
+            raise SystemExit(f"{name}: unported rule is inside Document scope")
         if (
             row["syntax-status"] == "certified"
-            and row["activation-status"] == "inactive"
+            and row["grammar-scope"] == "outside-document"
         ):
-            raise SystemExit(f"{name}: certified rule is inactive")
-        if row["activation-status"] == "candidate" and row["phase"] != "2I":
-            raise SystemExit(f"{name}: only Phase 2I may be an activation candidate")
+            raise SystemExit(f"{name}: certified rule is outside Document scope")
+        if row["grammar-scope"] == "executable-core" and row["component"] != "executable":
+            raise SystemExit(f"{name}: only executable grammar belongs to the executable core")
         node_policy(row["node-policy"])
-        if row["phase"] not in PHASES:
-            raise SystemExit(f"{name}: unknown phase {row['phase']}")
+        if row["component"] not in COMPONENTS:
+            raise SystemExit(f"{name}: unknown component {row['component']}")
     return rows
 
 
@@ -179,8 +179,8 @@ def render() -> str:
         "",
         "/// Rule-level source-semantic disposition evidence.",
         "///",
-        "/// `Certified` is not the milestone-level `behavior-demonstrated` gate",
-        "/// recorded by `phase-2i-semantic-completion.tsv`.",
+        "/// `Certified` records source-semantic evidence. Runtime execution support is",
+        "/// established by engine and runtime behavior tests.",
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
         "pub enum SemanticPortStatus {",
         "  Pending,",
@@ -188,12 +188,12 @@ def render() -> str:
         "  Certified,",
         "}",
         "",
-        "/// Milestone-level registry activation state.",
+        "/// Grammar dependency grouping; independent of execution support.",
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
-        "pub enum RegistryActivationStatus {",
-        "  Inactive,",
-        "  Candidate,",
-        "  Active,",
+        "pub enum GrammarScope {",
+        "  OutsideDocument,",
+        "  ExecutableCore,",
+        "  Supporting,",
         "}",
         "",
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
@@ -214,17 +214,17 @@ def render() -> str:
             "}",
             "",
             "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
-            "pub enum PortPhase {",
-            "  Phase2A,",
-            "  Phase2B,",
-            "  Phase2C,",
-            "  Phase2D,",
-            "  Phase2E,",
-            "  Phase2F,",
-            "  Phase2G,",
-            "  Phase2H,",
-            "  Phase2I,",
-            "  S7,",
+            "pub enum GrammarComponent {",
+            "  Lexical,",
+            "  DocumentMarkup,",
+            "  LiteralPathKind,",
+            "  Expression,",
+            "  ModuleImport,",
+            "  Declaration,",
+            "  Primitive,",
+            "  Structure,",
+            "  Executable,",
+            "  Document,",
             "}",
             "",
             "/// Generated audit metadata; parser and runtime dispatch do not read it.",
@@ -235,9 +235,9 @@ def render() -> str:
             "  pub family: RuleFamily,",
             "  pub syntax: SyntaxPortStatus,",
             "  pub semantic: SemanticPortStatus,",
-            "  pub activation: RegistryActivationStatus,",
+            "  pub scope: GrammarScope,",
             "  pub node_policy: NodePolicy,",
-            "  pub phase: Option<PortPhase>,",
+            "  pub component: Option<GrammarComponent>,",
             "  pub notes: &'static str,",
             "}",
             "",
@@ -257,10 +257,10 @@ def render() -> str:
                 f"{SYNTAX_STATUSES[row['syntax-status']]},",
                 "    semantic: SemanticPortStatus::"
                 f"{SEMANTIC_STATUSES[row['semantic-status']]},",
-                "    activation: RegistryActivationStatus::"
-                f"{ACTIVATION_STATUSES[row['activation-status']]},",
+                "    scope: GrammarScope::"
+                f"{GRAMMAR_SCOPES[row['grammar-scope']]},",
                 f"    node_policy: {node_policy(row['node-policy'])},",
-                f"    phase: {PHASES[row['phase']]},",
+                f"    component: {COMPONENTS[row['component']]},",
                 f'    notes: "{rust_string(row["notes"])}",',
                 "  },",
             ]

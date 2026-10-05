@@ -1,4 +1,4 @@
-//! Typed syntax views for the closed Phase 2H structure shell.
+//! Typed syntax views for the closed structure shell.
 
 use alloc::vec::Vec;
 

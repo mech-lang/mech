@@ -1,4 +1,4 @@
-//! Clean canonical recognizer for the frozen Phase 2I recursive core.
+//! Clean canonical recognizer for the canonical recursive core.
 
 mod calls;
 mod comprehensions;
@@ -22,7 +22,7 @@ use super::super::rule::rules;
 use super::combinator::Attempt;
 use super::{base, combinator};
 
-pub(crate) const PHASE_2I_RULES: &[RuleId; 80] = &[
+pub(crate) const EXECUTABLE_RULES: &[RuleId; 80] = &[
     rules::ARGUMENT_LIST,
     rules::BINDING,
     rules::BRACE_SUBSCRIPT,
@@ -193,7 +193,7 @@ pub(super) fn finish_provisional_marker(parser: &mut Parser<'_>, marker: Marker,
 }
 
 pub(crate) fn supports(rule: RuleId) -> bool {
-    PHASE_2I_RULES.contains(&rule)
+    EXECUTABLE_RULES.contains(&rule)
 }
 
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {

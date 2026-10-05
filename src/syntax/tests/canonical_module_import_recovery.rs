@@ -1,5 +1,5 @@
 use mech_syntax::document::parser::canonical::{
-    CanonicalRuleOutcome, parse_canonical_phase_2e_rule_for_test,
+    CanonicalRuleOutcome, parse_canonical_module_import_rule_for_test,
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
@@ -15,8 +15,8 @@ fn parse(
     text: &str,
     rule: RuleId,
 ) -> mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot {
-    parse_canonical_phase_2e_rule_for_test(source(text), rule, ParseConfig::default())
-        .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2E direct rule"))
+    parse_canonical_module_import_rule_for_test(source(text), rule, ParseConfig::default())
+        .unwrap_or_else(|| panic!("{rule:?} is not a module import grammar direct rule"))
 }
 
 fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -258,7 +258,7 @@ fn shared_sigil_alone_never_commits_recovery() {
 
 #[test]
 fn module_import_resource_exhaustion_keeps_nested_recovery_owners_lossless() {
-    use mech_syntax::document::parser::canonical::parse_canonical_phase_2e_rule_for_test;
+    use mech_syntax::document::parser::canonical::parse_canonical_module_import_rule_for_test;
     use mech_syntax::document::{DocumentId, Revision, TextSnapshot, validate_lossless_range};
     for input in [
         "+> @ctx/path;next",
@@ -275,9 +275,12 @@ fn module_import_resource_exhaustion_keeps_nested_recovery_owners_lossless() {
                 config.limits.fuel = fuel;
                 config.limits.max_events = max_events;
                 let source = TextSnapshot::new(DocumentId(826), Revision(0), input).unwrap();
-                let parsed =
-                    parse_canonical_phase_2e_rule_for_test(source, rules::MODULE_IMPORT, config)
-                        .unwrap();
+                let parsed = parse_canonical_module_import_rule_for_test(
+                    source,
+                    rules::MODULE_IMPORT,
+                    config,
+                )
+                .unwrap();
                 validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed)
                     .unwrap_or_else(|error| {
                         panic!("{input:?}, fuel {fuel}, events {max_events}: {error:?}")

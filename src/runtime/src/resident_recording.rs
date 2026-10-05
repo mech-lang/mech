@@ -573,7 +573,7 @@ mod tests {
                 .plan
                 .slots
                 .iter()
-                .filter(|slot| slot.storage == mech_engine::__resident::ResidentStorageClass::State)
+                .filter(|slot| slot.role == mech_engine::SlotRole::State)
                 .map(
                     |slot| match instance.state_borrow(slot.artifact_id).unwrap() {
                         mech_engine::__resident::ResidentValueBorrow::F64 { values, .. } => values
@@ -586,6 +586,7 @@ mod tests {
                 .collect::<Vec<_>>()
         };
         let initial = state(&instance);
+        assert_eq!(initial.iter().map(Vec::len).collect::<Vec<_>>(), [3, 9]);
         let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
         let permit = recorder.take_admission_permit(0).unwrap();
         let slot = instance.plan.inputs[0].slot;

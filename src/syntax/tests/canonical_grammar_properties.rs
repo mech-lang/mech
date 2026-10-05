@@ -1,7 +1,7 @@
 use mech_syntax::document::parser::canonical::{
     parse_canonical_base_rule_for_test, parse_canonical_tag_for_test,
 };
-use mech_syntax::document::parser::{CANONICAL_PORTS, PortPhase, RuleFamily, rules};
+use mech_syntax::document::parser::{CANONICAL_PORTS, GrammarComponent, RuleFamily, rules};
 use mech_syntax::document::{
     DocumentId, GrammarFragmentContext, GrammarFragmentKind, IdGenerator, ParseConfig,
     RecoveryAction, Revision, SyntaxKind, TextRange, TextSize, TextSnapshot, TokenFlags,
@@ -127,7 +127,7 @@ proptest! {
     let ports = CANONICAL_PORTS
       .iter()
       .filter(|port| {
-        port.phase == Some(PortPhase::Phase2A)
+        port.component == Some(GrammarComponent::Lexical)
           && (port.family == RuleFamily::Base
             || matches!(
               port.name,

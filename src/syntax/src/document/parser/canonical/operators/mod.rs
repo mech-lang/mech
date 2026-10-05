@@ -1,4 +1,4 @@
-//! Canonical closed expression-operator productions for Phase 2D.
+//! Canonical closed expression-operator productions for expression grammar.
 //!
 //! This module deliberately stops at the operator layer.  The recursive
 //! expression parents select these productions in a later closed phase.
@@ -14,8 +14,8 @@ mod continuation;
 mod spec;
 pub(crate) use continuation::{Continuation, Progress};
 
-/// The complete closed operator set directly ported by Phase 2D.
-pub(crate) const PHASE_2D_OPERATOR_RULES: &[RuleId; 53] = &[
+/// The complete closed operator set directly ported by expression grammar.
+pub(crate) const EXPRESSION_OPERATOR_RULES: &[RuleId; 53] = &[
     rules::ADD_SUB_OPERATOR,
     rules::MUL_DIV_OPERATOR,
     rules::POWER_OPERATOR,
@@ -85,9 +85,9 @@ enum OperatorGuard {
     NotGeneratorArrow,
 }
 
-/// Whether `rule` belongs to the Phase 2D closed operator layer.
+/// Whether `rule` belongs to the expression grammar closed operator layer.
 pub(crate) fn supports(rule: RuleId) -> bool {
-    PHASE_2D_OPERATOR_RULES.contains(&rule)
+    EXPRESSION_OPERATOR_RULES.contains(&rule)
 }
 
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
@@ -145,7 +145,7 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
         rules::ELEMENT_OF => parse_element_of(parser),
         rules::NOT_ELEMENT_OF => parse_not_element_of(parser),
         rules::SYMMETRIC_DIFFERENCE => parse_symmetric_difference(parser),
-        _ => unreachable!("Phase 2D support guard rejects every other RuleId"),
+        _ => unreachable!("expression grammar support guard rejects every other RuleId"),
     })
 }
 fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {

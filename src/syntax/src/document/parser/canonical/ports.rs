@@ -4,7 +4,7 @@ use super::base;
 use super::combinator::Attempt;
 use super::test_support::{CanonicalSourceRuleSnapshot, parse_source_rule_prefix};
 
-/// Backwards-compatible name for Phase 2A direct-rule snapshots.
+/// Snapshot returned by direct lexical-rule test helpers.
 pub type CanonicalRuleSnapshot = CanonicalSourceRuleSnapshot;
 
 #[doc(hidden)]

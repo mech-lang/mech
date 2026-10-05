@@ -1,4 +1,4 @@
-//! R25/G28: compute sample schemas come from the compiled region, not a host.
+//! Compute sample schemas derive from the compiled region.
 #![cfg(all(
     feature = "full_source",
     feature = "resident-routing-source",

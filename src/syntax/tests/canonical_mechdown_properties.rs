@@ -53,7 +53,7 @@ proptest! {
         source(&text),
         *rule,
         ParseConfig::default(),
-      ).expect("every Phase 2B rule has a direct fragment parser");
+      ).expect("every document markup rule has a direct fragment parser");
       prop_assert_eq!(parsed.rule, *rule);
       prop_assert_eq!(parsed.syntax().kind(), SyntaxKind::CanonicalFragment);
       prop_assert_eq!(parsed.consumed.start, TextSize::ZERO);

@@ -167,12 +167,11 @@ check_machine() {
   rm -rf "$scratch/$machine-target"
 }
 
-# These four profiles are also the reduced-closure contracts from PR3. They
+# These four profiles cover the reduced standard-machine feature closures. They
 # deliberately omit transpose, baselib, matrixd, and formulas respectively.
 if test "$mode" = representative
 then
-  # Exercise every layer on one machine plus each reduced-closure edge from
-  # PR3. The scheduled exhaustive workflow retains the 9 x 7 profile matrix.
+  # Exercise every layer on one machine plus each reduced-closure edge. The scheduled exhaustive workflow retains the 9 x 7 profile matrix.
   check_machine math "f64,add"
   check_profile range runtime "f64,row_vectord,inclusive"
   check_profile matrix runtime "f64,matrixd,vectord,solve"

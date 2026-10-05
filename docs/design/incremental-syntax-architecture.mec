@@ -145,7 +145,7 @@ Diagnostic messages are not stored in green nodes. A revisioned
 `DiagnosticStore` contains stable namespaced codes, phases, severity, canonical
 rule IDs, internal parser-context IDs, structural or absolute anchors, labels,
 expected and found syntax, fixes, related diagnostics, recovery actions, tags,
-and display messages. Canonical rule IDs are generated only from the Phase 0
+and display messages. Canonical rule IDs are generated only from the grammar reconstruction
 inventory; recovery machinery and partial prototype productions cannot mint
 canonical-looking IDs.
 

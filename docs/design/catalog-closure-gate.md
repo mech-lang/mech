@@ -66,7 +66,7 @@ are evidence from the current catalog, not a second frozen factory list.
 For each witness the gate requires source compilation to succeed. For
 catalog-backed source instructions it checks the selected `BoundCall`, exact
 catalog entry, physical signature, operation identity, execution target, and
-agreement with the R5 memory certificate's bound call. Every generated
+agreement with the memory certificate's bound call. Every generated
 operation with representative overloads must actually select at least one of
 them. Closed literals can always prefer a more specific declaration over a
 general dimension-variable overload; those visible but shadowed declarations

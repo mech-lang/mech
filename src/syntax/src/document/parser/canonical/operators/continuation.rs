@@ -452,7 +452,7 @@ mod tests {
             (rules::SYMMETRIC_DIFFERENCE, " Δ"),
             (rules::SYMMETRIC_DIFFERENCE, "\tΔ\u{2009}"),
         ];
-        for rule in PHASE_2D_OPERATOR_RULES {
+        for rule in EXPRESSION_OPERATOR_RULES {
             assert!(cases.iter().any(|(case, _)| case == rule));
         }
         for (rule, text) in cases {

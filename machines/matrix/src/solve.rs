@@ -29,7 +29,7 @@ where
 
     // The maintained algorithm is LU with partial row pivoting. Its exact
     // coefficient scaling and column-update order match the previous nalgebra
-    // implementation, but every mutable lane now belongs to R5 scratch.
+    // implementation, but every mutable lane now belongs to planned scratch.
     for pivot_column in 0..rows {
         let mut pivot_row = pivot_column;
         let mut magnitude = coefficients
@@ -141,8 +141,10 @@ where
     out.try_fill_column_major(|index| solution.get_column_major(index).ok_or_else(invalid))
 }
 
-static PURE_MATRIX_SOLVE_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| mech_core::maintained_operation_contract("matrix/solve", 2, false).expect("maintained operation contract"));
+static PURE_MATRIX_SOLVE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    mech_core::maintained_operation_contract("matrix/solve", 2, false)
+        .expect("maintained operation contract")
+});
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MatrixSolveSingular;

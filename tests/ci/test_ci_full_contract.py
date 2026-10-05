@@ -634,7 +634,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertIn("timeout-minutes: 8", block)
                 self.assertIn("--shard-count 4", block)
                 self.assertIn("--shard-index ${{ matrix.shard }}", block)
-                self.assertIn("scripts/tests/test_check_r6_memory_runtime.py", block)
+                self.assertIn("scripts/tests/test_check_memory_runtime.py", block)
                 self.assertIn(checkout, block)
                 self.assertNotIn("continue-on-error", block)
 
@@ -1193,14 +1193,14 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertNotIn("generate-value-system-inventory.py", block)
             self.assertNotIn("continue-on-error", block)
 
-    def test_r2_type_memory_boundary_is_unwaived(self):
-        r2 = "python3 scripts/check-r2-type-memory-boundary.py"
-        unit = "scripts/tests/test_check_r2_type_memory_boundary.py"
+    def test_type_memory_boundary_is_unwaived(self):
+        type_memory = "python3 scripts/check-type-memory-boundary.py"
+        unit = "scripts/tests/test_check_type_memory_boundary.py"
         for block in (
             normal_static_contracts(),
             full_architecture_contracts(),
         ):
-            self.assertIn(r2, block)
+            self.assertIn(type_memory, block)
             self.assertIn(unit, block)
             self.assertNotIn("continue-on-error", block)
         full = job_block(FULL, "architecture-contracts")
@@ -1214,17 +1214,17 @@ class FullWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(token, full)
 
-    def test_r3_type_system_is_unwaived_and_full_conformance_is_owned(self):
-        r2 = "python3 scripts/check-r2-type-memory-boundary.py"
-        r3 = "python3 scripts/check-r3-type-system.py"
-        unit = "scripts/tests/test_check_r3_type_system.py"
+    def test_type_system_is_unwaived_and_full_conformance_is_owned(self):
+        type_memory = "python3 scripts/check-type-memory-boundary.py"
+        type_system = "python3 scripts/check-type-system.py"
+        unit = "scripts/tests/test_check_type_system.py"
         for block in (
             normal_static_contracts(),
             full_architecture_contracts(),
         ):
-            self.assertIn(r2, block)
-            self.assertIn(r3, block)
-            self.assertLess(block.index(r2), block.index(r3))
+            self.assertIn(type_memory, block)
+            self.assertIn(type_system, block)
+            self.assertLess(block.index(type_memory), block.index(type_system))
             self.assertIn(unit, block)
             self.assertNotIn("continue-on-error", block)
         full = job_block(FULL, "architecture-contracts")
@@ -1237,34 +1237,34 @@ class FullWorkflowContractTests(unittest.TestCase):
         ):
             self.assertIn(target, full)
 
-    def test_r4_type_cutover_is_unwaived_and_full_conformance_is_owned(self):
-        r3 = "python3 scripts/check-r3-type-system.py"
-        r4 = "python3 scripts/check-r4-type-cutover.py"
-        unit = "scripts/tests/test_check_r4_type_cutover.py"
+    def test_semantic_type_authority_is_unwaived_and_full_conformance_is_owned(self):
+        type_system = "python3 scripts/check-type-system.py"
+        semantic_authority = "python3 scripts/check-semantic-type-authority.py"
+        unit = "scripts/tests/test_check_semantic_type_authority.py"
         for block in (
             normal_static_contracts(),
             full_architecture_contracts(),
         ):
-            self.assertIn(r3, block)
-            self.assertIn(r4, block)
-            self.assertLess(block.index(r3), block.index(r4))
+            self.assertIn(type_system, block)
+            self.assertIn(semantic_authority, block)
+            self.assertLess(block.index(type_system), block.index(semantic_authority))
             self.assertIn(unit, block)
             self.assertNotIn("continue-on-error", block)
         full = job_block(FULL, "architecture-contracts")
-        self.assertIn("Execute the complete R4 conformance boundary", full)
-        self.assertGreaterEqual(full.count("--test r4_type_cutover"), 3)
+        self.assertIn("Execute the complete semantic type authority contract", full)
+        self.assertGreaterEqual(full.count("--test canonical_type_contract"), 3)
 
     def test_managed_memory_and_miri_are_required_gates(self):
-        r5 = "python3 scripts/check-r5-memory-planner.py"
-        r6 = "python3 scripts/check-r6-memory-runtime.py"
-        unit = "scripts/tests/test_check_r6_memory_runtime.py"
+        memory_planner = "python3 scripts/check-memory-planner.py"
+        memory_runtime = "python3 scripts/check-memory-runtime.py"
+        unit = "scripts/tests/test_check_memory_runtime.py"
         for block in (
             normal_static_contracts(),
             full_architecture_contracts(),
         ):
-            self.assertIn(r5, block)
-            self.assertIn(r6, block)
-            self.assertLess(block.index(r5), block.index(r6))
+            self.assertIn(memory_planner, block)
+            self.assertIn(memory_runtime, block)
+            self.assertLess(block.index(memory_planner), block.index(memory_runtime))
             self.assertIn(unit, block)
             self.assertNotIn("continue-on-error", block)
 
@@ -1275,8 +1275,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn(FULL_CHECKOUT_REF, runtime)
         self.assertIn(FULL_CHECKOUT_REF, fixed)
         self.assertIn(FULL_CHECKOUT_REF, miri)
-        self.assertIn("--test r6_memory_runtime", runtime)
-        self.assertIn("--test r6_memory_safety", runtime)
+        self.assertIn("--test memory_runtime", runtime)
+        self.assertIn("--test memory_safety", runtime)
         safety_features = "--features functions,u8,u64,f64,string,matrixd"
         self.assertGreaterEqual(runtime.count(safety_features), 2)
         self.assertIn("--release -p mech-core", runtime)
@@ -1300,7 +1300,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"- {feature}", fixed)
         self.assertNotIn("for fixed in", fixed)
         self.assertIn('--features "full_compiler,${{ matrix.feature }}"', fixed)
-        self.assertIn("--test r6_managed_functions", fixed)
+        self.assertIn("--test managed_functions", fixed)
         self.assertIn("miri test --locked", miri)
         self.assertIn(safety_features, miri)
         self.assertIn("- managed-memory-runtime", cargo)
@@ -1310,7 +1310,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('test "$MANAGED_FIXED_PROFILES_RESULT" = success', cargo)
         self.assertIn('test "$MANAGED_MIRI_RESULT" = success', cargo)
 
-    def test_r6_retains_resident_live_admission_unit_tests(self):
+    def test_managed_memory_retains_resident_live_admission_unit_tests(self):
         runtime = job_block(FULL, "managed-memory-runtime")
         commands = [
             " ".join(line.split())
@@ -1324,10 +1324,10 @@ class FullWorkflowContractTests(unittest.TestCase):
         )
         self.assertNotIn("continue-on-error", runtime)
 
-    def test_r1_artifact_closure_prefetches_before_offline_native_build(self):
+    def test_artifact_completeness_prefetches_before_offline_native_build(self):
         block = job_block(FULL, "artifact-closure")
         fetch = "cargo fetch --locked"
-        closure = "python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}"
+        closure = "python3 scripts/check-artifact-completeness.py ${{ matrix.representative }}"
         self.assertIn(fetch, block)
         self.assertLess(block.index(fetch), block.index(closure))
 
@@ -1362,7 +1362,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             "canonical_port_registry", "canonical_rule_registry",
             "canonical_recursive_core_inventory", "canonical_recursive_core_schema",
             "canonical_grammar", "canonical_mechdown_closed_rules",
-            "canonical_phase_2i_certification", "canonical_phase_2i_recovery",
+            "canonical_executable_conformance", "canonical_executable_recovery",
         ):
             self.assertIn(f"--test {target}", grammar)
             self.assertTrue((ROOT / f"src/syntax/tests/{target}.rs").is_file())

@@ -906,7 +906,7 @@ pub(super) fn bind_inner(
                 }));
                 // Dense fixed kernels do not all create materialization permits.
                 // Qualify their bounded work here; repeated materializing calls
-                // additionally contribute their own admitted costs through R5.
+                // additionally contribute their own admitted costs through the memory plan.
                 let name = reference.canonical_name();
                 let scalar = primitive(artifact.schemas().get(output.schema).unwrap().body())
                     && input_layouts.iter().all(|port| {
@@ -1040,7 +1040,7 @@ fn source_for_value(
     }
 }
 
-/// R5 qualifies the actual resident control executor's materialization. This
+/// Memory planning qualifies the resident control executor's actual materialization. This
 /// target binding is derived from the validated typed declaration; it is not
 /// an ordinary artifact node or a replacement semantic contract for its body.
 fn materialization_memory(

@@ -23,9 +23,9 @@ PORT_COLUMNS = [
     "family",
     "syntax-status",
     "semantic-status",
-    "activation-status",
+    "grammar-scope",
     "node-policy",
-    "phase",
+    "component",
     "notes",
 ]
 

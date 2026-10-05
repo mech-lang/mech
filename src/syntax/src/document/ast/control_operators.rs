@@ -1,4 +1,4 @@
-//! Typed syntax views for the closed Phase 2G control-operator primitives.
+//! Typed syntax views for the closed executable primitives control-operator primitives.
 
 use crate::document::{AstNode, SyntaxKind, SyntaxNode};
 
@@ -33,7 +33,7 @@ pub enum CanonicalOpAssign {
     Exp,
 }
 
-/// A typed view over any node-valued Phase 2G assignment primitive.
+/// A typed view over any node-valued executable primitives assignment primitive.
 #[derive(Clone, Debug)]
 pub struct OpAssignPrimitiveSyntax(SyntaxNode);
 

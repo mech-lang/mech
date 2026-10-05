@@ -635,7 +635,7 @@ fn realize_managed_canonical_value(
     let object = owner.plan_object_key(realized.revision(), object_id)?;
     let payload = planned_payload_object(owner, &realized, object)?;
     let value = if value.has_retained_payload_ticket() {
-        // This cell admits its own logical envelope through the R5 plan, but
+        // This cell admits its own logical envelope through the memory plan, but
         // the shared immutable data already owns the one physical payload
         // ticket. Importing it must not mint another full allocation charge.
         realized.record_initialized(payload, footprint.retained_bytes)?;
@@ -1625,7 +1625,7 @@ impl ValueCell {
         )
     }
 
-    /// Constructs one owned logical cell over an initialized R5 plan object.
+    /// Constructs one owned logical cell over an initialized memory plan object.
     /// This boundary installs storage ownership; it never allocates backing
     /// from a runtime representation alone.
     pub fn allocate_planned(
@@ -1695,7 +1695,7 @@ impl ValueCell {
         crate::ResolvedValueDescriptor::from_schema(schema, shape).map_err(MechError::from)
     }
 
-    /// Measures the currently published semantic value for R5/R6 live
+    /// Measures the currently published semantic value for managed live
     /// footprint resolution. This walks an immutable snapshot without
     /// rebuilding its canonical tree.
     #[cfg(feature = "functions")]
@@ -3933,7 +3933,7 @@ impl ValueCell {
             let realized = owner.realize_owned_value_plan(plan)?;
             let plan = realized
                 .owned_value_plan()
-                .expect("owned realization retains its R5 plan");
+                .expect("owned realization retains its memory plan");
             let object = owner.plan_object_key(realized.revision(), object_id)?;
             let prepared = owner.prepare_owned_initialization(
                 &realized,
@@ -4110,7 +4110,7 @@ impl ValueCell {
         }
     }
 
-    /// Constructs an external-call argument snapshot through the R5
+    /// Constructs an external-call argument snapshot through the planned
     /// marshalling authority. Existing immutable canonical roots are shared;
     /// fixed managed storage debits draft and finalization allocations from
     /// the call's prepared scratch before materializing them.
@@ -4317,7 +4317,7 @@ impl ValueCell {
     }
 
     /// Materializes a replacement only in the unpublished region selected
-    /// by this value's R5 transaction. Callers can collect several candidates
+    /// by this value's managed memory transaction. Callers can collect several candidates
     /// before obtaining a single publication gate.
     pub(crate) fn stage_managed_replacement(
         &self,
@@ -4542,7 +4542,7 @@ impl ValueCell {
                 .ok_or_else(|| {
                     managed_host_shape_error(
                         managed.object,
-                        "published call output has no retained R5 storage authority",
+                        "published call output has no retained planned storage authority",
                     )
                 })?;
             Some((call.output_storage[output].clone(), call.target.clone()))
@@ -4562,7 +4562,7 @@ impl ValueCell {
         } else {
             return Err(managed_host_shape_error(
                 managed.object,
-                "whole-cell growth requires retained R5 storage authority",
+                "whole-cell growth requires retained planned storage authority",
             ));
         };
         let elements = descriptor

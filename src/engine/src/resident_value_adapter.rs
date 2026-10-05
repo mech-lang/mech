@@ -227,7 +227,7 @@ fn prepare_value_export(
     };
     let elements = u64::try_from(borrowed.len()).map_err(|_| overflow())?;
     // ValueData bounds every packed scalar lane header, including Box<str>.
-    // The existing R5 derivation supplies draft nodes, finalization roots,
+    // The existing memory planning derivation supplies draft nodes, finalization roots,
     // shape storage, and the complete cloned schema context.
     let mut payload = elements
         .checked_mul(core::mem::size_of::<ValueData>() as u64)

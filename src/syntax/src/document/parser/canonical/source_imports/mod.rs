@@ -1,4 +1,4 @@
-//! Canonical source-import productions for the Phase 2F closed island.
+//! Canonical source-import productions for the declaration grammar closed island.
 //!
 //! This module deliberately stops at declarations. It provides no statement or
 //! document dispatcher, so direct parser contracts remain independent from the
@@ -16,8 +16,8 @@ use super::super::rule::rules;
 use super::base;
 use super::combinator::Attempt;
 
-/// The complete closed source-import set directly ported by Phase 2F.
-pub(crate) const PHASE_2F_SOURCE_IMPORT_RULES: &[RuleId; 13] = &[
+/// The complete closed source-import set directly ported by declaration grammar.
+pub(crate) const DECLARATION_SOURCE_IMPORT_RULES: &[RuleId; 13] = &[
     rules::SOURCE_IMPORT_TAIL,
     rules::SOURCE_PATH_COMPONENT_TOKEN,
     rules::SOURCE_PATH_COMPONENT,
@@ -33,12 +33,12 @@ pub(crate) const PHASE_2F_SOURCE_IMPORT_RULES: &[RuleId; 13] = &[
     rules::IMPORT_DECLARATION,
 ];
 
-/// Whether `rule` belongs to the Phase 2F source-import layer.
+/// Whether `rule` belongs to the declaration grammar source-import layer.
 pub(crate) fn supports(rule: RuleId) -> bool {
-    PHASE_2F_SOURCE_IMPORT_RULES.contains(&rule)
+    DECLARATION_SOURCE_IMPORT_RULES.contains(&rule)
 }
 
-/// Dispatch one exact Phase 2F source-import production.
+/// Dispatch one exact declaration grammar source-import production.
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::SOURCE_IMPORT_TAIL => parse_source_import_tail(parser),
@@ -54,7 +54,9 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
         rules::URI_SOURCE_IMPORT_SPECIFIER => parse_uri_source_import_specifier(parser),
         rules::SOURCE_IMPORT_SPECIFIER => parse_source_import_specifier(parser),
         rules::IMPORT_DECLARATION => parse_import_declaration(parser),
-        _ => unreachable!("Phase 2F source-import support guard rejects every other RuleId"),
+        _ => unreachable!(
+            "declaration grammar source-import support guard rejects every other RuleId"
+        ),
     })
 }
 

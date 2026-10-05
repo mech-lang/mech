@@ -1,4 +1,4 @@
-//! Exact schema/publication regressions for canonical constant binding (R03/G25).
+//! Exact schema/publication regressions for canonical constant binding.
 //!
 //! These tests use canonical Value snapshots directly. RuntimeHostInputValue is
 //! deliberately not involved: its admitted input and returned-default subsets

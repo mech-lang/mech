@@ -1,4 +1,4 @@
-//! Typed syntax views for the closed Phase 2G pattern primitives.
+//! Typed syntax views for the closed executable primitives pattern primitives.
 
 use crate::document::{AstNode, SyntaxKind, SyntaxNode};
 

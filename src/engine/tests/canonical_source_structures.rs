@@ -5,7 +5,7 @@ use mech_core::{
 };
 use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram};
-use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+use mech_syntax::document::parser::{canonical::parse_canonical_executable_rule_for_test, rules};
 use mech_syntax::document::{
     AstNode, DocumentId, ParseConfig, Revision, SyntaxNode, TextSnapshot, VariableDefineSyntax,
 };
@@ -14,7 +14,7 @@ fn definition(source: &str) -> CanonicalSourceProgram {
     fn find(node: SyntaxNode) -> Option<VariableDefineSyntax> {
         VariableDefineSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
     }
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = parse_canonical_executable_rule_for_test(
         TextSnapshot::new(DocumentId(0x550), Revision(1), source).unwrap(),
         rules::VARIABLE_DEFINE,
         ParseConfig::default(),
@@ -1537,7 +1537,7 @@ fn mutable_initialization_uses_a_previously_computed_binding() {
         if index > 0 {
             builder.token(SyntaxKind::Newline, "\n").unwrap();
         }
-        let parsed = parse_canonical_phase_2i_rule_for_test(
+        let parsed = parse_canonical_executable_rule_for_test(
             TextSnapshot::new(DocumentId(0x555), Revision(1), *source).unwrap(),
             rules::VARIABLE_DEFINE,
             ParseConfig::default(),

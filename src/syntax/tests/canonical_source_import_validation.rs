@@ -1,5 +1,5 @@
 use mech_syntax::document::parser::canonical::{
-    CanonicalRuleOutcome, parse_canonical_phase_2f_rule_for_test,
+    CanonicalRuleOutcome, parse_canonical_declaration_rule_for_test,
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
@@ -20,7 +20,7 @@ fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
 #[test]
 fn invalid_completed_source_wildcards_are_committed_structural_errors() {
     for input in ["+> https://x/a*b", "+> https://x/*/y", "+> https://x/**"] {
-        let parsed = parse_canonical_phase_2f_rule_for_test(
+        let parsed = parse_canonical_declaration_rule_for_test(
             source(input),
             rules::IMPORT_DECLARATION,
             ParseConfig::default(),
@@ -47,7 +47,7 @@ fn valid_source_wildcards_and_prefix_only_file_forms_keep_their_boundaries() {
         "+> x:///*",
         "+> https://x/path/*   ",
     ] {
-        let parsed = parse_canonical_phase_2f_rule_for_test(
+        let parsed = parse_canonical_declaration_rule_for_test(
             source(input),
             rules::IMPORT_DECLARATION,
             ParseConfig::default(),
@@ -60,7 +60,7 @@ fn valid_source_wildcards_and_prefix_only_file_forms_keep_their_boundaries() {
         ("+> dep.mec/**", "+> dep.mec/*"),
         ("+> dep.mec*", "+> dep.mec"),
     ] {
-        let parsed = parse_canonical_phase_2f_rule_for_test(
+        let parsed = parse_canonical_declaration_rule_for_test(
             source(input),
             rules::IMPORT_DECLARATION,
             ParseConfig::default(),
@@ -77,7 +77,7 @@ fn syntax_specifier_rules_do_not_perform_declaration_wildcard_validation() {
         rules::URI_SOURCE_IMPORT_SPECIFIER,
         rules::SOURCE_IMPORT_SPECIFIER,
     ] {
-        let parsed = parse_canonical_phase_2f_rule_for_test(
+        let parsed = parse_canonical_declaration_rule_for_test(
             source("https://x/a*b"),
             rule,
             ParseConfig::default(),
@@ -91,7 +91,7 @@ fn syntax_specifier_rules_do_not_perform_declaration_wildcard_validation() {
 fn wildcard_diagnostics_keep_physical_unicode_ranges_and_all_labels() {
     use mech_syntax::document::{DiagnosticAnchor, TextRange, TextSize};
     let input = "+> x://é/*/💡*\u{a0}\u{2009}";
-    let parsed = parse_canonical_phase_2f_rule_for_test(
+    let parsed = parse_canonical_declaration_rule_for_test(
         source(input),
         rules::IMPORT_DECLARATION,
         ParseConfig::default(),
@@ -119,7 +119,7 @@ fn wildcard_diagnostics_keep_physical_unicode_ranges_and_all_labels() {
     assert_eq!(diagnostic.labels[0].message, "additional wildcard");
     for suffix in ["\u{a0}\u{2009}", "\t ", "\u{3000}"] {
         let text = format!("+> x://é/*{suffix}");
-        let parsed = parse_canonical_phase_2f_rule_for_test(
+        let parsed = parse_canonical_declaration_rule_for_test(
             source(&text),
             rules::IMPORT_DECLARATION,
             ParseConfig::default(),
@@ -145,7 +145,7 @@ fn source_import_resource_finalization_preserves_lossless_enclosing_owners() {
                 let mut config = ParseConfig::default();
                 config.limits.fuel = fuel;
                 config.limits.max_events = max_events;
-                let parsed = parse_canonical_phase_2f_rule_for_test(
+                let parsed = parse_canonical_declaration_rule_for_test(
                     source(input),
                     rules::IMPORT_DECLARATION,
                     config,

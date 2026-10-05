@@ -1,7 +1,7 @@
 #![cfg(feature = "source")]
 
 use mech_engine::CanonicalSourceFrontend;
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
+use mech_syntax::document::parser::canonical::parse_canonical_executable_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode,
@@ -16,7 +16,7 @@ fn find(node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
 }
 
 fn expression(source: &str) -> ExpressionSyntax {
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = parse_canonical_executable_rule_for_test(
         TextSnapshot::new(DocumentId(0x544), Revision(1), source).unwrap(),
         rules::EXPRESSION,
         ParseConfig::default(),

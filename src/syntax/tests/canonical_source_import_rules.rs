@@ -1,5 +1,5 @@
 use mech_syntax::document::parser::canonical::{
-    CanonicalRuleOutcome, parse_canonical_phase_2f_rule_for_test,
+    CanonicalRuleOutcome, parse_canonical_declaration_rule_for_test,
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
@@ -15,8 +15,8 @@ fn parse(
     text: &str,
     rule: RuleId,
 ) -> mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot {
-    parse_canonical_phase_2f_rule_for_test(source(text), rule, ParseConfig::default())
-        .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2F direct rule"))
+    parse_canonical_declaration_rule_for_test(source(text), rule, ParseConfig::default())
+        .unwrap_or_else(|| panic!("{rule:?} is not a declaration grammar direct rule"))
 }
 
 fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {

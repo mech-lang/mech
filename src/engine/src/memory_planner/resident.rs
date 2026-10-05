@@ -36,7 +36,7 @@ pub struct ResidentArenaProjection {
     pub element_offsets: BTreeMap<MemoryObjectOwner, usize>,
 }
 
-/// Projects the current typed Resident arenas into the shared R5 plan.
+/// Projects the current typed Resident arenas into the shared memory plan.
 ///
 /// Arena identities are stable by `(class, lane, state-buffer-index)`. The
 /// second state buffer is explicit in the plan; returned offsets address the

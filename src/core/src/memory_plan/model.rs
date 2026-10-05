@@ -363,7 +363,7 @@ pub struct TransferPlan {
     pub interface_name: Option<String>,
 }
 
-/// Pointer-free description of one backing selected by R4.
+/// Pointer-free description of one backing selected by semantic type authority.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PhysicalStorageDescriptor {
     pub capabilities: StorageCapabilityDescriptor,
@@ -416,7 +416,7 @@ pub struct CallMemoryPlan {
 pub enum MemoryPlanAuditStatus {
     Exact,
     WithinPlannedCapacity,
-    CapacityDeferredToR6,
+    CapacityDeferredToRuntime,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

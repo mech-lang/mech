@@ -1,4 +1,4 @@
-// Generated from the canonical S7 document rule closure.
+// Generated from the canonical Document document rule closure.
 // Do not edit by hand.
 
 use crate::document::{AstNode, SyntaxKind, SyntaxNode};

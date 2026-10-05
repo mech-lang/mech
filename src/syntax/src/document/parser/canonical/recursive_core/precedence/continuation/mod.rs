@@ -1,5 +1,5 @@
-//! Owned precedence, atom parents, and seeded formula completion. Recursive
-//! structure selection, match, and FSM-value children remain under B3 conversion.
+//! Resumable precedence and atom parsing, including recursive structures,
+//! pattern matching, and state-machine values.
 use super::super::super::{literals as leaf_literals, paths, primitives, strings};
 mod brace;
 mod bracket;
@@ -1398,7 +1398,7 @@ mod tests {
 
     #[test]
     fn every_frozen_recursive_rule_has_a_canonical_continuation() {
-        for rule in super::super::super::PHASE_2I_RULES {
+        for rule in super::super::super::EXECUTABLE_RULES {
             assert!(supports(*rule), "missing continuation for {rule:?}");
         }
     }

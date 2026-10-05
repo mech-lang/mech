@@ -1,4 +1,4 @@
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2c_rule_for_test;
+use mech_syntax::document::parser::canonical::parse_canonical_literal_path_kind_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     DocumentId, ParseConfig, ParseLimits, RecoveryAction, Revision, RuleId, SyntaxKind, TextRange,
@@ -7,7 +7,7 @@ use mech_syntax::document::{
 };
 use proptest::prelude::*;
 
-const PHASE_2C_RULES: &[RuleId] = &[
+const LITERAL_PATH_KIND_RULES: &[RuleId] = &[
     rules::EMPTY,
     rules::ATOM,
     rules::STRING,
@@ -58,8 +58,8 @@ fn parse(
     rule: RuleId,
     config: ParseConfig,
 ) -> mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot {
-    parse_canonical_phase_2c_rule_for_test(source, rule, config)
-        .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2C direct rule"))
+    parse_canonical_literal_path_kind_rule_for_test(source, rule, config)
+        .unwrap_or_else(|| panic!("{rule:?} is not a literal, path, and kind grammar direct rule"))
 }
 
 fn assert_diagnostic_ranges_are_bounded(
@@ -158,11 +158,11 @@ proptest! {
   })]
 
   #[test]
-  fn every_phase_2c_direct_rule_is_total_lossless_and_bounded(
+  fn every_literal_path_kind_direct_rule_is_total_lossless_and_bounded(
     characters in proptest::collection::vec(any::<char>(), 0..48),
   ) {
     let text = characters.into_iter().collect::<String>();
-    for rule in PHASE_2C_RULES {
+    for rule in LITERAL_PATH_KIND_RULES {
       let config = ParseConfig::default();
       let parsed = parse(source(&text), *rule, config);
       assert_snapshot_invariants(&parsed, *rule, config);
@@ -171,8 +171,8 @@ proptest! {
 }
 
 #[test]
-fn all_phase_2c_direct_rules_restore_a_clean_nomatch() {
-    for rule in PHASE_2C_RULES {
+fn all_literal_path_kind_direct_rules_restore_a_clean_nomatch() {
+    for rule in LITERAL_PATH_KIND_RULES {
         let parsed = parse(source("!"), *rule, ParseConfig::default());
         assert!(!parsed.matched, "{rule:?}");
         assert!(parsed.diagnostics.is_empty(), "{rule:?}");
@@ -207,7 +207,7 @@ fn direct_rules_respect_hard_fuel_and_event_limits() {
 }
 
 #[test]
-fn contiguous_and_piece_backed_phase_2c_sources_are_equivalent() {
+fn contiguous_and_piece_backed_literal_path_kind_sources_are_equivalent() {
     let cases: &[(RuleId, &[&str])] = &[
         (rules::UTF8_STRING, &["\"", "e", "\u{301}", "\""]),
         (rules::RAW_STRING, &["\"", "\"", "\"raw", "\"", "\""]),

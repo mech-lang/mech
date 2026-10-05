@@ -1,4 +1,4 @@
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2c_rule_for_test;
+use mech_syntax::document::parser::canonical::parse_canonical_literal_path_kind_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode, TextRange, TextSize,
@@ -13,8 +13,8 @@ fn parse(
     text: &str,
     rule: RuleId,
 ) -> mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot {
-    parse_canonical_phase_2c_rule_for_test(source(text), rule, ParseConfig::default())
-        .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2C direct rule"))
+    parse_canonical_literal_path_kind_rule_for_test(source(text), rule, ParseConfig::default())
+        .unwrap_or_else(|| panic!("{rule:?} is not a literal, path, and kind grammar direct rule"))
 }
 
 fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {

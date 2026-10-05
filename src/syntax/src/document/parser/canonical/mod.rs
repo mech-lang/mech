@@ -35,11 +35,11 @@ pub use terminal_spec::{
     FIXED_TERMINAL_COUNT, FIXED_TERMINALS, FixedTerminalSpec, TerminalSpacing, fixed_terminal_spec,
 };
 pub use test_support::{
-    CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_document_rule_for_test,
-    parse_canonical_phase_2c_rule_for_test, parse_canonical_phase_2d_rule_for_test,
-    parse_canonical_phase_2e_rule_for_test, parse_canonical_phase_2f_rule_for_test,
-    parse_canonical_phase_2g_rule_for_test, parse_canonical_phase_2h_rule_for_test,
-    parse_canonical_phase_2i_rule_for_test,
+    CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_declaration_rule_for_test,
+    parse_canonical_document_rule_for_test, parse_canonical_executable_rule_for_test,
+    parse_canonical_expression_rule_for_test, parse_canonical_literal_path_kind_rule_for_test,
+    parse_canonical_module_import_rule_for_test, parse_canonical_primitive_rule_for_test,
+    parse_canonical_structure_rule_for_test,
 };
 
 #[cfg(test)]

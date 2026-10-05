@@ -1,6 +1,6 @@
-/// The way one canonical Phase 2I production participates in source semantics.
+/// The way one canonical executable production participates in source semantics.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Phase2iSemanticDisposition {
+pub enum CanonicalSemanticDisposition {
     /// Produces an executable source value or operation.
     Executable,
     /// Contributes ordered structure to an enclosing executable form.
@@ -10,18 +10,18 @@ pub enum Phase2iSemanticDisposition {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Phase2iSemanticRule {
+pub struct CanonicalSemanticRule {
     pub grammar_name: &'static str,
-    pub disposition: Phase2iSemanticDisposition,
+    pub disposition: CanonicalSemanticDisposition,
 }
 
-use Phase2iSemanticDisposition::{CompileTime, Executable, Structural};
+use CanonicalSemanticDisposition::{CompileTime, Executable, Structural};
 
 /// Closed semantic policy for the generated 80-rule recursive component.
 ///
-/// Keep this in the same lexical order as `phase-2i-syntax-schema.tsv` so the
+/// Keep this in the same lexical order as `recursive-core-syntax-schema.tsv` so the
 /// certification gate can compare the two authorities without heuristics.
-pub const PHASE_2I_SEMANTIC_RULES: [Phase2iSemanticRule; 80] = [
+pub const CANONICAL_SEMANTIC_RULES: [CanonicalSemanticRule; 80] = [
     rule("argument-list", Structural),
     rule("binding", Structural),
     rule("brace-subscript", Structural),
@@ -106,16 +106,16 @@ pub const PHASE_2I_SEMANTIC_RULES: [Phase2iSemanticRule; 80] = [
 
 const fn rule(
     grammar_name: &'static str,
-    disposition: Phase2iSemanticDisposition,
-) -> Phase2iSemanticRule {
-    Phase2iSemanticRule {
+    disposition: CanonicalSemanticDisposition,
+) -> CanonicalSemanticRule {
+    CanonicalSemanticRule {
         grammar_name,
         disposition,
     }
 }
 
-pub fn phase_2i_semantic_disposition(grammar_name: &str) -> Option<Phase2iSemanticDisposition> {
-    PHASE_2I_SEMANTIC_RULES
+pub fn canonical_semantic_disposition(grammar_name: &str) -> Option<CanonicalSemanticDisposition> {
+    CANONICAL_SEMANTIC_RULES
         .iter()
         .find(|rule| rule.grammar_name == grammar_name)
         .map(|rule| rule.disposition)

@@ -1,11 +1,11 @@
 # Type System v1
 
-## 1. Status and scope
+## 1. Scope
 
-**Status: R3 semantic solver complete; R4 authority cutover complete.**
+Type System v1 defines the semantic result required by physical binding.
 
 Type System v1 is the semantic authority for the language Mech already
-exposes. R3 covers first-order, expression-local inference; built-in semantic
+exposes. The type system covers first-order, expression-local inference; built-in semantic
 predicates; overload resolution; lossless implicit conversions; numeric
 promotion; checked explicit casts; and structured diagnostics. It adds no new
 language syntax.
@@ -25,13 +25,13 @@ The compiler resolves calls in this order:
 3. `TypeConstraintEnvironment` resolves a semantic overload.
 4. `ConversionPlan` records every selected input conversion or explicit cast.
 5. Converted inputs and outputs become validated `ResolvedValueDescriptor` values.
-6. R2 compatibility validates candidate storage against those descriptors.
+6. Type-memory compatibility validates candidate storage against those descriptors.
 7. Exact operation declarations select one physical runtime implementation.
 8. `BoundCall` preserves the result through compiler, resident, and native planning.
 
 `FunctionValueRepresentation` and `RuntimeFunctionSignature` are temporary
 physical execution metadata. They cannot select a semantic overload or output.
-R2 storage compatibility is an authoritative precondition of physical binding.
+Type-memory compatibility is an authoritative precondition of physical binding.
 
 ## 3. Builtin scalar registry
 
@@ -56,7 +56,7 @@ representation.
 
 ## 4. Built-in predicate table
 
-R3 provides a small closed set of compiler-defined type predicates. They
+The type system provides a small closed set of compiler-defined type predicates. They
 classify semantic kinds but provide no methods, instances, inheritance,
 declaration syntax, or runtime dispatch.
 
@@ -171,7 +171,7 @@ Examples include `u8 + u16 -> u16`, `u8 + i8 -> i16`,
 ## 13. Explicit cast table
 
 Explicit casts permit checked integer-to-integer conversion; integer/float,
-real/complex, complex/real, and rational conversions described by the R3
+real/complex, complex/real, and rational conversions described by the type system
 contract; numeric and Bool display as String; and equal-dimension matrix or
 Option payload casts. They do not permit String parsing, String-to-Bool,
 arbitrary structural casts, collection element coercion, or Dynamic escape.
@@ -218,36 +218,22 @@ factory names, pointers, or storage identities.
 ## 18. Serialization and artifact policy
 
 Schemes, predicate evidence, resolved calls, and conversion plans are derived
-in-memory compiler data. R3 does not change bytecode-v1, canonical schema or
+in-memory compiler data. The type system does not change bytecode-v1, canonical schema or
 operation-contract encoding, `ProgramArtifact`, stable operation IDs, native
 linkage names, dynamic-module ABI v1, or package version 0.3.6. Selected
 conversions lower through existing semantic operations.
 
-## 19. R4 authority cutover
+## 19. Physical binding
 
-R4 carries the R3 result through `ResolvedValueDescriptor` and `BoundCall`.
+Physical binding carries the type-system result through `ResolvedValueDescriptor` and `BoundCall`.
 Physical runtime representations remain implementation metadata, while exact
-R2 compatibility is required before allocation or binding. Runtime names and
+Type-memory compatibility is required before allocation or binding. Runtime names and
 Rust backing types no longer select operations, overloads, conversions,
 semantic dimensions, or output schemas.
 
 ## 20. Non-goals
 
-R3 does not implement higher-order types, generalized dependent types,
+The type system does not implement higher-order types, generalized dependent types,
 let-polymorphism, polymorphic recursion, higher-rank types, new function or
 pattern syntax, user-defined predicates or instances, traits, effects,
 refinements, coeffects, ownership syntax, or a new bytecode format.
-
-## 21. R3 completion criteria
-
-R3 completes only when builtin scalar identities have one canonical definition
-and predicate membership uses one closed compiler-defined classifier; resolved
-types and dimensions are closed and sound; exact equality, implicit
-conversion, promotion, and explicit casting are separate planned relations;
-every named source operation has explicit schemes; semantic resolution occurs
-before physical binding; conversions remain reactive and lower into compiled
-programs; diagnostics are structured and semantic; standard and full catalogs
-and product artifacts pass; the architecture checker runs in normal and Full
-CI; both CIs pass on one exact head; and the PR retains the required eight
-commits. R4 subsequently makes that semantic result authoritative at every
-physical binding boundary.

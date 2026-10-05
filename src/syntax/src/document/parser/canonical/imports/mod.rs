@@ -1,4 +1,4 @@
-//! Canonical module-import productions for the Phase 2E closed island.
+//! Canonical module-import productions for the module import grammar closed island.
 //!
 //! This module deliberately stops at module imports. Source-import
 //! declarations and the complete code-level alternative remain outside this
@@ -15,8 +15,8 @@ use super::super::rule::rules;
 use super::base;
 use super::combinator::{self, Attempt};
 
-/// The complete closed module-import set directly ported by Phase 2E.
-pub(crate) const PHASE_2E_IMPORT_RULES: &[RuleId; 19] = &[
+/// The complete closed module-import set directly ported by module import grammar.
+pub(crate) const MODULE_IMPORT_RULES: &[RuleId; 19] = &[
     rules::MODULE_IMPORT_NAME_SEGMENT,
     rules::MODULE_IMPORT_INTRINSIC_SEGMENT,
     rules::MODULE_IMPORT_PATH_SEGMENT,
@@ -38,12 +38,12 @@ pub(crate) const PHASE_2E_IMPORT_RULES: &[RuleId; 19] = &[
     rules::MODULE_IMPORT,
 ];
 
-/// Whether `rule` belongs to the Phase 2E closed module-import layer.
+/// Whether `rule` belongs to the module import grammar closed module-import layer.
 pub(crate) fn supports(rule: RuleId) -> bool {
-    PHASE_2E_IMPORT_RULES.contains(&rule)
+    MODULE_IMPORT_RULES.contains(&rule)
 }
 
-/// Dispatch one exact Phase 2E module-import production.
+/// Dispatch one exact module-import production.
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::MODULE_IMPORT_NAME_SEGMENT => parse_module_import_name_segment(parser),
@@ -65,7 +65,7 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
         rules::MODULE_SUFFIX_IMPORT => parse_module_suffix_import(parser),
         rules::MODULE_ONLY_IMPORT => parse_module_only_import(parser),
         rules::MODULE_IMPORT => parse_module_import(parser),
-        _ => unreachable!("Phase 2E support guard rejects every other RuleId"),
+        _ => unreachable!("module import grammar support guard rejects every other RuleId"),
     })
 }
 

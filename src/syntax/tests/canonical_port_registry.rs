@@ -3,27 +3,26 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use mech_syntax::document::parser::{
-    CANONICAL_PORT_COUNT, CANONICAL_PORTS, CANONICAL_RULE_COUNT, CANONICAL_RULES, NodePolicy,
-    PortPhase, RegistryActivationStatus, RuleFamily, SemanticPortStatus, SyntaxPortStatus,
-    canonical_rule_id,
+    CANONICAL_PORT_COUNT, CANONICAL_PORTS, CANONICAL_RULE_COUNT, CANONICAL_RULES, GrammarComponent,
+    GrammarScope, NodePolicy, RuleFamily, SemanticPortStatus, SyntaxPortStatus, canonical_rule_id,
 };
 
 const EXPECTED_RULES: usize = 539;
-const EXPECTED_PHASE_2A: usize = 167;
-const EXPECTED_PHASE_2B: usize = 13;
-const EXPECTED_PHASE_2C: usize = 30;
-const EXPECTED_PHASE_2D: usize = 53;
-const EXPECTED_PHASE_2E: usize = 19;
-const EXPECTED_PHASE_2F: usize = 21;
-const EXPECTED_PHASE_2G: usize = 15;
-const EXPECTED_PHASE_2H: usize = 10;
-const EXPECTED_PHASE_2I: usize = 80;
-const EXPECTED_S7: usize = 112;
+const EXPECTED_LEXICAL: usize = 167;
+const EXPECTED_DOCUMENT_MARKUP: usize = 13;
+const EXPECTED_LITERAL_PATH_KIND: usize = 30;
+const EXPECTED_EXPRESSION: usize = 53;
+const EXPECTED_MODULE_IMPORT: usize = 19;
+const EXPECTED_DECLARATION: usize = 21;
+const EXPECTED_PRIMITIVE: usize = 15;
+const EXPECTED_STRUCTURE: usize = 10;
+const EXPECTED_EXECUTABLE: usize = 80;
+const EXPECTED_DOCUMENT: usize = 112;
 const EXPECTED_CERTIFIED: usize = 520;
 const EXPECTED_UNPORTED: usize = 19;
-const EXPECTED_ACTIVE: usize = 440;
-const EXPECTED_CANDIDATE: usize = 80;
-const EXPECTED_INACTIVE: usize = 19;
+const EXPECTED_SUPPORTING: usize = 440;
+const EXPECTED_EXECUTABLE_CORE: usize = 80;
+const EXPECTED_OUTSIDE_DOCUMENT: usize = 19;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -120,11 +119,11 @@ fn semantic_name(status: SemanticPortStatus) -> &'static str {
     }
 }
 
-fn activation_name(status: RegistryActivationStatus) -> &'static str {
+fn scope_name(status: GrammarScope) -> &'static str {
     match status {
-        RegistryActivationStatus::Inactive => "inactive",
-        RegistryActivationStatus::Candidate => "candidate",
-        RegistryActivationStatus::Active => "active",
+        GrammarScope::OutsideDocument => "outside-document",
+        GrammarScope::ExecutableCore => "executable-core",
+        GrammarScope::Supporting => "supporting",
     }
 }
 
@@ -138,19 +137,19 @@ fn policy_name(policy: NodePolicy) -> String {
     }
 }
 
-fn phase_name(phase: Option<PortPhase>) -> &'static str {
-    match phase {
+fn component_name(component: Option<GrammarComponent>) -> &'static str {
+    match component {
         None => "",
-        Some(PortPhase::Phase2A) => "2A",
-        Some(PortPhase::Phase2B) => "2B",
-        Some(PortPhase::Phase2C) => "2C",
-        Some(PortPhase::Phase2D) => "2D",
-        Some(PortPhase::Phase2E) => "2E",
-        Some(PortPhase::Phase2F) => "2F",
-        Some(PortPhase::Phase2G) => "2G",
-        Some(PortPhase::Phase2H) => "2H",
-        Some(PortPhase::Phase2I) => "2I",
-        Some(PortPhase::S7) => "S7",
+        Some(GrammarComponent::Lexical) => "lexical",
+        Some(GrammarComponent::DocumentMarkup) => "document-markup",
+        Some(GrammarComponent::LiteralPathKind) => "literal-path-kind",
+        Some(GrammarComponent::Expression) => "expression",
+        Some(GrammarComponent::ModuleImport) => "module-import",
+        Some(GrammarComponent::Declaration) => "declaration",
+        Some(GrammarComponent::Primitive) => "primitive",
+        Some(GrammarComponent::Structure) => "structure",
+        Some(GrammarComponent::Executable) => "executable",
+        Some(GrammarComponent::Document) => "document",
     }
 }
 
@@ -163,7 +162,7 @@ fn checked_in_port_registry_exactly_matches_ports_tsv() {
         lines.next(),
         Some(
             "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
-       activation-status\tnode-policy\tphase\tnotes"
+       grammar-scope\tnode-policy\tcomponent\tnotes"
         )
     );
     let rows = lines.map(fields).collect::<Vec<_>>();
@@ -183,9 +182,9 @@ fn checked_in_port_registry_exactly_matches_ports_tsv() {
         assert_eq!(family_name(generated.family), row[1]);
         assert_eq!(syntax_name(generated.syntax), row[2]);
         assert_eq!(semantic_name(generated.semantic), row[3]);
-        assert_eq!(activation_name(generated.activation), row[4]);
+        assert_eq!(scope_name(generated.scope), row[4]);
         assert_eq!(policy_name(generated.node_policy), row[5]);
-        assert_eq!(phase_name(generated.phase), row[6]);
+        assert_eq!(component_name(generated.component), row[6]);
         assert_eq!(generated.notes, row[7]);
     }
 
@@ -199,73 +198,23 @@ fn checked_in_port_registry_exactly_matches_ports_tsv() {
     assert_eq!(
         CANONICAL_PORTS
             .iter()
-            .filter(|port| port.activation == RegistryActivationStatus::Active)
+            .filter(|port| port.scope == GrammarScope::Supporting)
             .count(),
-        EXPECTED_ACTIVE
+        EXPECTED_SUPPORTING
     );
     assert_eq!(
         CANONICAL_PORTS
             .iter()
-            .filter(|port| port.activation == RegistryActivationStatus::Candidate)
+            .filter(|port| port.scope == GrammarScope::ExecutableCore)
             .count(),
-        EXPECTED_CANDIDATE
+        EXPECTED_EXECUTABLE_CORE
     );
     assert_eq!(
         CANONICAL_PORTS
             .iter()
-            .filter(|port| port.activation == RegistryActivationStatus::Inactive)
+            .filter(|port| port.scope == GrammarScope::OutsideDocument)
             .count(),
-        EXPECTED_INACTIVE
-    );
-}
-
-#[test]
-fn phase_2i_activation_is_directly_gated_by_semantic_completion() {
-    let completion = fs::read_to_string(
-        repository_root().join("docs/design/grammar-audit/phase-2i-semantic-completion.tsv"),
-    )
-    .expect("read phase-2i-semantic-completion.tsv");
-    let mut lines = completion.lines();
-    assert_eq!(
-        lines.next(),
-        Some("capability\tgrammar-name\tresult\ttarget\towner\trequired-for-s6\tevidence")
-    );
-    let required = lines
-        .map(fields)
-        .filter(|row| {
-            assert_eq!(row.len(), 7, "invalid semantic-completion row");
-            row[5] == "true"
-        })
-        .collect::<Vec<_>>();
-    assert!(
-        !required.is_empty(),
-        "S6 must have required completion rows"
-    );
-    let completion_ready = required.iter().all(|row| row[2] == "behavior-demonstrated");
-    let phase_2i = CANONICAL_PORTS
-        .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2I))
-        .collect::<Vec<_>>();
-    assert_eq!(phase_2i.len(), EXPECTED_PHASE_2I);
-    if completion_ready {
-        assert!(
-            phase_2i
-                .iter()
-                .all(|port| port.activation == RegistryActivationStatus::Active)
-        );
-    } else {
-        assert!(
-            phase_2i
-                .iter()
-                .all(|port| port.activation == RegistryActivationStatus::Candidate)
-        );
-    }
-    assert!(
-        phase_2i
-            .iter()
-            .all(|port| port.activation != RegistryActivationStatus::Active)
-            || completion_ready,
-        "Phase 2I cannot activate before every S6-required capability demonstrates behavior"
+        EXPECTED_OUTSIDE_DOCUMENT
     );
 }
 
@@ -299,19 +248,19 @@ fn canonical_port_registry_is_audit_metadata_not_runtime_dispatch() {
 }
 
 #[test]
-fn phase_2a_is_the_exact_closed_167_rule_set() {
-    let phase_2a = CANONICAL_PORTS
+fn lexical_is_the_exact_closed_167_rule_set() {
+    let lexical = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2A))
+        .filter(|port| port.component == Some(GrammarComponent::Lexical))
         .collect::<Vec<_>>();
-    assert_eq!(phase_2a.len(), EXPECTED_PHASE_2A);
+    assert_eq!(lexical.len(), EXPECTED_LEXICAL);
     assert!(
-        phase_2a
+        lexical
             .iter()
             .all(|port| port.syntax == SyntaxPortStatus::Certified)
     );
 
-    let names = phase_2a
+    let names = lexical
         .iter()
         .map(|port| port.name)
         .collect::<BTreeSet<_>>();
@@ -328,17 +277,17 @@ fn phase_2a_is_the_exact_closed_167_rule_set() {
     assert_dependencies_are_ported(&names);
 }
 #[test]
-fn every_phase_2a_rule_has_closed_canonical_dependencies() {
-    let phase_2a = CANONICAL_PORTS
+fn every_lexical_rule_has_closed_canonical_dependencies() {
+    let lexical = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2A))
+        .filter(|port| port.component == Some(GrammarComponent::Lexical))
         .map(|port| port.name)
         .collect::<BTreeSet<_>>();
-    assert_eq!(phase_2a.len(), EXPECTED_PHASE_2A);
-    assert_dependencies_are_ported(&phase_2a);
+    assert_eq!(lexical.len(), EXPECTED_LEXICAL);
+    assert_dependencies_are_ported(&lexical);
 }
 #[test]
-fn phase_2a_node_and_semantic_policies_are_exact() {
+fn lexical_node_and_semantic_policies_are_exact() {
     let structural = BTreeMap::from([
         ("digit-sequence", "node:DigitSequence"),
         ("escaped-char", "node:EscapedCharacter"),
@@ -378,7 +327,7 @@ fn phase_2a_node_and_semantic_policies_are_exact() {
     let mut counts = BTreeMap::new();
     for port in CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2A))
+        .filter(|port| port.component == Some(GrammarComponent::Lexical))
     {
         *counts
             .entry(policy_name(port.node_policy))
@@ -416,7 +365,10 @@ fn phase_2a_node_and_semantic_policies_are_exact() {
         1
     );
 
-    for port in CANONICAL_PORTS.iter().filter(|port| port.phase.is_none()) {
+    for port in CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.component.is_none())
+    {
         assert_eq!(port.syntax, SyntaxPortStatus::Unported);
         assert_eq!(port.node_policy, NodePolicy::Undecided);
         assert_eq!(port.semantic, SemanticPortStatus::Pending);
@@ -424,7 +376,7 @@ fn phase_2a_node_and_semantic_policies_are_exact() {
 }
 
 #[test]
-fn phase_2b_registry_accounting_and_policies_are_exact() {
+fn document_markup_registry_accounting_and_policies_are_exact() {
     let expected = BTreeMap::from([
         (
             "blank-line",
@@ -473,17 +425,17 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             (SemanticPortStatus::Certified, "node:ThematicBreak"),
         ),
     ]);
-    assert_eq!(expected.len(), EXPECTED_PHASE_2B);
+    assert_eq!(expected.len(), EXPECTED_DOCUMENT_MARKUP);
 
-    let phase_2b = CANONICAL_PORTS
+    let document_markup = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2B))
+        .filter(|port| port.component == Some(GrammarComponent::DocumentMarkup))
         .collect::<Vec<_>>();
-    assert_eq!(phase_2b.len(), EXPECTED_PHASE_2B);
-    for port in phase_2b {
+    assert_eq!(document_markup.len(), EXPECTED_DOCUMENT_MARKUP);
+    for port in document_markup {
         let (semantic, policy) = expected
             .get(port.name)
-            .unwrap_or_else(|| panic!("unexpected Phase 2B rule {}", port.name));
+            .unwrap_or_else(|| panic!("unexpected document markup rule {}", port.name));
         assert_eq!(port.syntax, SyntaxPortStatus::Certified);
         assert_eq!(port.semantic, *semantic);
         assert_eq!(policy_name(port.node_policy), *policy);
@@ -505,72 +457,72 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::Phase2A))
+            .filter(|port| port.component == Some(GrammarComponent::Lexical))
             .count(),
-        EXPECTED_PHASE_2A
+        EXPECTED_LEXICAL
     );
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::Phase2B))
+            .filter(|port| port.component == Some(GrammarComponent::DocumentMarkup))
             .count(),
-        EXPECTED_PHASE_2B
+        EXPECTED_DOCUMENT_MARKUP
     );
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::Phase2C))
+            .filter(|port| port.component == Some(GrammarComponent::LiteralPathKind))
             .count(),
-        EXPECTED_PHASE_2C
+        EXPECTED_LITERAL_PATH_KIND
     );
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::Phase2D))
+            .filter(|port| port.component == Some(GrammarComponent::Expression))
             .count(),
-        EXPECTED_PHASE_2D
+        EXPECTED_EXPRESSION
     );
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::Phase2E))
+            .filter(|port| port.component == Some(GrammarComponent::ModuleImport))
             .count(),
-        EXPECTED_PHASE_2E
+        EXPECTED_MODULE_IMPORT
     );
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::Phase2F))
+            .filter(|port| port.component == Some(GrammarComponent::Declaration))
             .count(),
-        EXPECTED_PHASE_2F
+        EXPECTED_DECLARATION
     );
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::Phase2G))
+            .filter(|port| port.component == Some(GrammarComponent::Primitive))
             .count(),
-        EXPECTED_PHASE_2G
+        EXPECTED_PRIMITIVE
     );
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::Phase2H))
+            .filter(|port| port.component == Some(GrammarComponent::Structure))
             .count(),
-        EXPECTED_PHASE_2H
+        EXPECTED_STRUCTURE
     );
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::Phase2I))
+            .filter(|port| port.component == Some(GrammarComponent::Executable))
             .count(),
-        EXPECTED_PHASE_2I
+        EXPECTED_EXECUTABLE
     );
     assert_eq!(
         certified
             .iter()
-            .filter(|port| port.phase == Some(PortPhase::S7))
+            .filter(|port| port.component == Some(GrammarComponent::Document))
             .count(),
-        EXPECTED_S7
+        EXPECTED_DOCUMENT
     );
     assert_eq!(
         CANONICAL_PORTS
@@ -596,7 +548,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
 }
 
 #[test]
-fn phase_2c_registry_accounting_and_policies_are_exact() {
+fn literal_path_kind_registry_accounting_and_policies_are_exact() {
     let node_policies = [
         ("empty", "EmptyLiteral"),
         ("atom", "AtomLiteral"),
@@ -636,24 +588,24 @@ fn phase_2c_registry_accounting_and_policies_are_exact() {
         .map(|(name, _)| *name)
         .chain(token_rules)
         .collect::<BTreeSet<_>>();
-    assert_eq!(expected_names.len(), EXPECTED_PHASE_2C);
+    assert_eq!(expected_names.len(), EXPECTED_LITERAL_PATH_KIND);
     assert_eq!(node_policies.len(), 26);
     assert_eq!(token_rules.len(), 4);
 
-    let phase_2c = CANONICAL_PORTS
+    let literal_path_kind = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2C))
+        .filter(|port| port.component == Some(GrammarComponent::LiteralPathKind))
         .collect::<Vec<_>>();
-    assert_eq!(phase_2c.len(), EXPECTED_PHASE_2C);
+    assert_eq!(literal_path_kind.len(), EXPECTED_LITERAL_PATH_KIND);
     assert_eq!(
-        phase_2c
+        literal_path_kind
             .iter()
             .map(|port| port.name)
             .collect::<BTreeSet<_>>(),
         expected_names
     );
 
-    for port in phase_2c {
+    for port in literal_path_kind {
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
             assert_eq!(port.syntax, SyntaxPortStatus::Certified, "{}", port.name);
@@ -680,15 +632,16 @@ fn phase_2c_registry_accounting_and_policies_are_exact() {
         CANONICAL_PORTS
             .iter()
             .filter(|port| {
-                port.phase == Some(PortPhase::Phase2C) && port.syntax == SyntaxPortStatus::Certified
+                port.component == Some(GrammarComponent::LiteralPathKind)
+                    && port.syntax == SyntaxPortStatus::Certified
             })
             .count(),
-        EXPECTED_PHASE_2C
+        EXPECTED_LITERAL_PATH_KIND
     );
 }
 
 #[test]
-fn phase_2d_registry_accounting_and_policies_are_exact() {
+fn expression_registry_accounting_and_policies_are_exact() {
     let node_policies = [
         ("add-sub-operator", "AddSubOperator"),
         ("mul-div-operator", "MulDivOperator"),
@@ -749,22 +702,22 @@ fn phase_2d_registry_accounting_and_policies_are_exact() {
         .chain(["transpose"])
         .collect::<BTreeSet<_>>();
     assert_eq!(node_policies.len(), 52);
-    assert_eq!(expected_names.len(), EXPECTED_PHASE_2D);
+    assert_eq!(expected_names.len(), EXPECTED_EXPRESSION);
 
-    let phase_2d = CANONICAL_PORTS
+    let expression = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2D))
+        .filter(|port| port.component == Some(GrammarComponent::Expression))
         .collect::<Vec<_>>();
-    assert_eq!(phase_2d.len(), EXPECTED_PHASE_2D);
+    assert_eq!(expression.len(), EXPECTED_EXPRESSION);
     assert_eq!(
-        phase_2d
+        expression
             .iter()
             .map(|port| port.name)
             .collect::<BTreeSet<_>>(),
         expected_names
     );
 
-    for port in phase_2d {
+    for port in expression {
         assert_eq!(port.syntax, SyntaxPortStatus::Certified, "{}", port.name);
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
@@ -780,7 +733,7 @@ fn phase_2d_registry_accounting_and_policies_are_exact() {
         CANONICAL_PORTS
             .iter()
             .filter(|port| {
-                port.phase == Some(PortPhase::Phase2D)
+                port.component == Some(GrammarComponent::Expression)
                     && port.semantic == SemanticPortStatus::Certified
             })
             .count(),
@@ -790,7 +743,7 @@ fn phase_2d_registry_accounting_and_policies_are_exact() {
         CANONICAL_PORTS
             .iter()
             .filter(|port| {
-                port.phase == Some(PortPhase::Phase2D)
+                port.component == Some(GrammarComponent::Expression)
                     && port.semantic == SemanticPortStatus::Pending
             })
             .count(),
@@ -800,7 +753,7 @@ fn phase_2d_registry_accounting_and_policies_are_exact() {
         CANONICAL_PORTS
             .iter()
             .filter(|port| {
-                port.phase == Some(PortPhase::Phase2D)
+                port.component == Some(GrammarComponent::Expression)
                     && port.semantic == SemanticPortStatus::SyntaxOnly
             })
             .count(),
@@ -809,7 +762,7 @@ fn phase_2d_registry_accounting_and_policies_are_exact() {
 }
 
 #[test]
-fn phase_2e_registry_accounting_and_policies_are_exact() {
+fn module_import_registry_accounting_and_policies_are_exact() {
     let node_policies = [
         ("aliased-item-import", "AliasedItemImport"),
         ("context-import-alias-segment", "ContextImportAliasSegment"),
@@ -840,22 +793,22 @@ fn phase_2e_registry_accounting_and_policies_are_exact() {
         .collect::<BTreeSet<_>>();
     assert_eq!(node_policies.len(), 17);
     assert_eq!(transparent.len(), 2);
-    assert_eq!(expected_names.len(), EXPECTED_PHASE_2E);
+    assert_eq!(expected_names.len(), EXPECTED_MODULE_IMPORT);
 
-    let phase_2e = CANONICAL_PORTS
+    let module_import = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2E))
+        .filter(|port| port.component == Some(GrammarComponent::ModuleImport))
         .collect::<Vec<_>>();
-    assert_eq!(phase_2e.len(), EXPECTED_PHASE_2E);
+    assert_eq!(module_import.len(), EXPECTED_MODULE_IMPORT);
     assert_eq!(
-        phase_2e
+        module_import
             .iter()
             .map(|port| port.name)
             .collect::<BTreeSet<_>>(),
         expected_names
     );
 
-    for port in &phase_2e {
+    for port in &module_import {
         assert_eq!(port.syntax, SyntaxPortStatus::Certified, "{}", port.name);
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
@@ -868,21 +821,21 @@ fn phase_2e_registry_accounting_and_policies_are_exact() {
     }
 
     assert_eq!(
-        phase_2e
+        module_import
             .iter()
             .filter(|port| port.semantic == SemanticPortStatus::Certified)
             .count(),
         17
     );
     assert_eq!(
-        phase_2e
+        module_import
             .iter()
             .filter(|port| port.semantic == SemanticPortStatus::Pending)
             .count(),
         0
     );
     assert_eq!(
-        phase_2e
+        module_import
             .iter()
             .filter(|port| port.semantic == SemanticPortStatus::SyntaxOnly)
             .count(),
@@ -893,7 +846,7 @@ fn phase_2e_registry_accounting_and_policies_are_exact() {
         .iter()
         .find(|port| port.name == "import-sigil")
         .expect("import-sigil port");
-    assert_eq!(import_sigil.phase, Some(PortPhase::Phase2A));
+    assert_eq!(import_sigil.component, Some(GrammarComponent::Lexical));
     assert_eq!(import_sigil.syntax, SyntaxPortStatus::Certified);
     assert_eq!(import_sigil.semantic, SemanticPortStatus::SyntaxOnly);
     assert_eq!(import_sigil.node_policy, NodePolicy::Token);
@@ -907,7 +860,7 @@ fn phase_2e_registry_accounting_and_policies_are_exact() {
 }
 
 #[test]
-fn phase_2f_registry_accounting_and_policies_are_exact() {
+fn declaration_registry_accounting_and_policies_are_exact() {
     let node_policies = [
         ("source-import-tail", "SourceImportTail"),
         ("source-path-component", "SourcePathComponent"),
@@ -951,21 +904,21 @@ fn phase_2f_registry_accounting_and_policies_are_exact() {
     assert_eq!(node_policies.len(), 17);
     assert_eq!(tokens.len(), 3);
     assert_eq!(transparent.len(), 1);
-    assert_eq!(expected_names.len(), EXPECTED_PHASE_2F);
+    assert_eq!(expected_names.len(), EXPECTED_DECLARATION);
 
-    let phase_2f = CANONICAL_PORTS
+    let declaration = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2F))
+        .filter(|port| port.component == Some(GrammarComponent::Declaration))
         .collect::<Vec<_>>();
-    assert_eq!(phase_2f.len(), EXPECTED_PHASE_2F);
+    assert_eq!(declaration.len(), EXPECTED_DECLARATION);
     assert_eq!(
-        phase_2f
+        declaration
             .iter()
             .map(|port| port.name)
             .collect::<BTreeSet<_>>(),
         expected_names
     );
-    for port in &phase_2f {
+    for port in &declaration {
         assert_eq!(port.syntax, SyntaxPortStatus::Certified, "{}", port.name);
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
@@ -980,7 +933,7 @@ fn phase_2f_registry_accounting_and_policies_are_exact() {
         }
     }
     assert_eq!(
-        phase_2f
+        declaration
             .iter()
             .filter(|port| port.semantic == SemanticPortStatus::Certified)
             .count(),
@@ -991,7 +944,7 @@ fn phase_2f_registry_accounting_and_policies_are_exact() {
 }
 
 #[test]
-fn phase_2g_registry_accounting_and_policies_are_exact() {
+fn primitive_registry_accounting_and_policies_are_exact() {
     let node_policies = [
         ("select-all", "SelectAllSubscript"),
         ("swizzle-subscript", "SwizzleSubscript"),
@@ -1018,21 +971,21 @@ fn phase_2g_registry_accounting_and_policies_are_exact() {
         .collect::<BTreeSet<_>>();
     assert_eq!(node_policies.len(), 11);
     assert_eq!(transparent.len(), 4);
-    assert_eq!(expected_names.len(), EXPECTED_PHASE_2G);
+    assert_eq!(expected_names.len(), EXPECTED_PRIMITIVE);
 
-    let phase_2g = CANONICAL_PORTS
+    let primitive = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2G))
+        .filter(|port| port.component == Some(GrammarComponent::Primitive))
         .collect::<Vec<_>>();
-    assert_eq!(phase_2g.len(), EXPECTED_PHASE_2G);
+    assert_eq!(primitive.len(), EXPECTED_PRIMITIVE);
     assert_eq!(
-        phase_2g
+        primitive
             .iter()
             .map(|port| port.name)
             .collect::<BTreeSet<_>>(),
         expected_names,
     );
-    for port in phase_2g {
+    for port in primitive {
         assert_eq!(port.syntax, SyntaxPortStatus::Certified, "{}", port.name);
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
@@ -1046,7 +999,7 @@ fn phase_2g_registry_accounting_and_policies_are_exact() {
 }
 
 #[test]
-fn phase_2h_registry_accounting_and_policies_are_exact() {
+fn structure_registry_accounting_and_policies_are_exact() {
     let node_policies = [
         ("row-separator", "TableRowSeparator"),
         ("empty-map", "EmptyMap"),
@@ -1070,21 +1023,21 @@ fn phase_2h_registry_accounting_and_policies_are_exact() {
     assert_eq!(node_policies.len(), 3);
     assert_eq!(token.len(), 6);
     assert_eq!(transparent.len(), 1);
-    assert_eq!(expected_names.len(), EXPECTED_PHASE_2H);
+    assert_eq!(expected_names.len(), EXPECTED_STRUCTURE);
 
-    let phase_2h = CANONICAL_PORTS
+    let structure = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2H))
+        .filter(|port| port.component == Some(GrammarComponent::Structure))
         .collect::<Vec<_>>();
-    assert_eq!(phase_2h.len(), EXPECTED_PHASE_2H);
+    assert_eq!(structure.len(), EXPECTED_STRUCTURE);
     assert_eq!(
-        phase_2h
+        structure
             .iter()
             .map(|port| port.name)
             .collect::<BTreeSet<_>>(),
         expected_names,
     );
-    for port in phase_2h {
+    for port in structure {
         assert_eq!(port.syntax, SyntaxPortStatus::Certified, "{}", port.name);
         if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
             assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
@@ -1101,10 +1054,10 @@ fn phase_2h_registry_accounting_and_policies_are_exact() {
 }
 
 #[test]
-fn phase_2i_registry_matches_the_certified_recursive_core() {
+fn executable_registry_matches_the_certified_recursive_core() {
     let audit_root = repository_root().join("docs/design/grammar-audit");
-    let schema_source = fs::read_to_string(audit_root.join("phase-2i-syntax-schema.tsv"))
-        .expect("read phase-2i-syntax-schema.tsv");
+    let schema_source = fs::read_to_string(audit_root.join("recursive-core-syntax-schema.tsv"))
+        .expect("read recursive-core-syntax-schema.tsv");
     let mut schema_lines = schema_source.lines();
     assert_eq!(
         schema_lines.next(),
@@ -1118,13 +1071,14 @@ fn phase_2i_registry_matches_the_certified_recursive_core() {
         })
         .collect::<BTreeMap<_, _>>();
 
-    let certification_source = fs::read_to_string(audit_root.join("phase-2i-certification.tsv"))
-        .expect("read phase-2i-certification.tsv");
+    let certification_source =
+        fs::read_to_string(audit_root.join("recursive-core-certification.tsv"))
+            .expect("read recursive-core-certification.tsv");
     let mut certification_lines = certification_source.lines();
     let certification_header = fields(
         certification_lines
             .next()
-            .expect("phase-2i-certification.tsv header"),
+            .expect("recursive-core-certification.tsv header"),
     );
     let disposition = certification_header
         .iter()
@@ -1135,9 +1089,9 @@ fn phase_2i_registry_matches_the_certified_recursive_core() {
         .map(|row| (row[0], row[disposition]))
         .collect::<BTreeMap<_, _>>();
 
-    let phase_source = fs::read_to_string(audit_root.join("phase-2i-recursive-core.tsv"))
-        .expect("read phase-2i-recursive-core.tsv");
-    let phase_names = phase_source
+    let component_source =
+        fs::read_to_string(audit_root.join("recursive-core.tsv")).expect("read recursive-core.tsv");
+    let component_names = component_source
         .lines()
         .skip(1)
         .map(fields)
@@ -1145,14 +1099,14 @@ fn phase_2i_registry_matches_the_certified_recursive_core() {
         .collect::<BTreeSet<_>>();
     let ports = CANONICAL_PORTS
         .iter()
-        .filter(|port| port.phase == Some(PortPhase::Phase2I))
+        .filter(|port| port.component == Some(GrammarComponent::Executable))
         .collect::<Vec<_>>();
     let port_names = ports.iter().map(|port| port.name).collect::<BTreeSet<_>>();
 
-    assert_eq!(ports.len(), EXPECTED_PHASE_2I);
-    assert_eq!(schema.len(), EXPECTED_PHASE_2I);
-    assert_eq!(certification.len(), EXPECTED_PHASE_2I);
-    assert_eq!(port_names, phase_names);
+    assert_eq!(ports.len(), EXPECTED_EXECUTABLE);
+    assert_eq!(schema.len(), EXPECTED_EXECUTABLE);
+    assert_eq!(certification.len(), EXPECTED_EXECUTABLE);
+    assert_eq!(port_names, component_names);
     assert_eq!(port_names, schema.keys().copied().collect());
     assert_eq!(port_names, certification.keys().copied().collect());
 
@@ -1174,15 +1128,11 @@ fn phase_2i_registry_matches_the_certified_recursive_core() {
             disposition,
             "executable" | "structural" | "compile-time"
         ));
-        assert_eq!(
-            port.notes,
-            format!("Phase 2I canonical recursive core; semantic disposition: {disposition}.")
-        );
     }
 }
 
 #[test]
-fn phase_2c_closed_dependencies_are_all_certified() {
+fn literal_path_kind_closed_dependencies_are_all_certified() {
     let dependencies: &[(&str, &[&str])] = &[
         ("empty", &["underscore"]),
         ("atom", &["colon", "identifier"]),
@@ -1265,14 +1215,18 @@ fn phase_2c_closed_dependencies_are_all_certified() {
         ("kind-empty", &["underscore"]),
         ("kind-atom", &["colon", "identifier"]),
     ];
-    assert_eq!(dependencies.len(), EXPECTED_PHASE_2C);
+    assert_eq!(dependencies.len(), EXPECTED_LITERAL_PATH_KIND);
 
     for (name, children) in dependencies {
         let parent = CANONICAL_PORTS
             .iter()
             .find(|port| port.name == *name)
             .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
-        assert_eq!(parent.phase, Some(PortPhase::Phase2C), "{name}");
+        assert_eq!(
+            parent.component,
+            Some(GrammarComponent::LiteralPathKind),
+            "{name}"
+        );
         for child in *children {
             let child_port = CANONICAL_PORTS
                 .iter()
@@ -1288,7 +1242,7 @@ fn phase_2c_closed_dependencies_are_all_certified() {
 }
 
 #[test]
-fn s7_activates_the_rich_document_parent_closure() {
+fn document_activates_the_rich_document_parent_closure() {
     for name in [
         "inline-paragraph",
         "paragraph-element",
@@ -1311,12 +1265,12 @@ fn s7_activates_the_rich_document_parent_closure() {
             .find(|port| port.name == name)
             .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
         assert_eq!(port.syntax, SyntaxPortStatus::Certified, "{name}");
-        assert_eq!(port.phase, Some(PortPhase::S7), "{name}");
+        assert_eq!(port.component, Some(GrammarComponent::Document), "{name}");
     }
 }
 
 #[test]
-fn s7_activates_the_remaining_document_boundaries() {
+fn document_activates_the_remaining_document_boundaries() {
     let remaining = [
         "slice-ref",
         "context-send",
@@ -1336,14 +1290,14 @@ fn s7_activates_the_remaining_document_boundaries() {
             .find(|port| port.name == name)
             .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
         assert_eq!(port.syntax, SyntaxPortStatus::Certified, "{name}");
-        assert_eq!(port.phase, Some(PortPhase::S7), "{name}");
+        assert_eq!(port.component, Some(GrammarComponent::Document), "{name}");
         assert_ne!(port.node_policy, NodePolicy::Undecided, "{name}");
         assert_ne!(port.semantic, SemanticPortStatus::Pending, "{name}");
     }
 }
 
 #[test]
-fn s7_does_not_activate_rules_outside_document_reachability() {
+fn document_does_not_activate_rules_outside_document_reachability() {
     for name in ["match-expression", "table-column"] {
         let port = CANONICAL_PORTS
             .iter()
@@ -1352,6 +1306,6 @@ fn s7_does_not_activate_rules_outside_document_reachability() {
         assert_eq!(port.syntax, SyntaxPortStatus::Unported, "{name}");
         assert_eq!(port.semantic, SemanticPortStatus::Pending, "{name}");
         assert_eq!(port.node_policy, NodePolicy::Undecided, "{name}");
-        assert_eq!(port.phase, None, "{name}");
+        assert_eq!(port.component, None, "{name}");
     }
 }

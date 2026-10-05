@@ -1,10 +1,8 @@
-# Immutable value semantics and migration contract
+# Immutable value semantics
 
-This document records the semantic value model and the completed migration
-from the former mutable universal value system. The canonical model is
-normative. Sections describing the staged C0–C4 transition are retained as
-historical design rationale; the compatibility types and adapters they name
-were removed by the final cutover.
+This document defines immutable values, canonical schemas and snapshot encoding.
+Runtime storage and publication are governed by the resident activation and
+managed-memory contracts.
 
 ## Semantic layers
 
@@ -25,7 +23,7 @@ The value system must keep the following layers distinct:
 - `StateArena` is mutable, versioned runtime storage owned by a resident
   instance.
 
-The target value shape is conceptually:
+The semantic value shape is conceptually:
 
 ```rust
 pub struct Value {
@@ -34,51 +32,25 @@ pub struct Value {
 }
 ```
 
-This declaration is illustrative and must not be added by C0. A semantic
-`Value` must not contain `Ref`, `ValRef`, `MutableReference`, `CellId`,
+This declaration is illustrative. A semantic `Value` must not contain `Ref`, `ValRef`, `MutableReference`, `CellId`,
 `CellSlotId`, `InstanceEpoch`, `ProducerId`, `NodeId`, borrow state, a mutable
 buffer, reactive dependencies, allocation capacity, or pointer-derived
 identity. Runtime storage and execution identity are not semantic payload.
 
 ## Kinds, schemas, and reified type values
 
-The current `Kind` enum is the basis of `KindExpr`. Its migration is exact:
-
-| Current `Kind` variant | Final concept |
-|---|---|
-| `Any` | `KindExpr::Wildcard` |
-| `None` | `KindExpr::Never` |
-| `Empty` | `KindExpr::Hole` |
-| `Scalar(id)` | `KindExpr::Named(KindId)` |
-| `Id` | primitive `KindExpr::Id` |
-| `Index` | primitive `KindExpr::Index` |
-| `Atom` | nominal atom `KindExpr` |
-| `Enum` | nominal enum `KindExpr` |
-| `Matrix` | structural matrix `KindExpr` with dimension expressions |
-| `Option` | structural option `KindExpr` |
-| `Tuple` | structural tuple `KindExpr` |
-| `Record` | structural record `KindExpr` |
-| `Table` | structural table `KindExpr` |
-| `Set` | structural set `KindExpr` |
-| `Map` | structural map `KindExpr` |
-| `Reference` | non-instantiable binding qualifier represented in C1 and lowered into port/access metadata in C4 |
-| `Kind(inner)` | `KindExpr::TypeOf(inner)` |
+`KindExpr` describes semantic types, including wildcard, never, inference holes,
+nominal and structural types, and reified types. A reference qualifier belongs
+to binding and port-access metadata; it is not an immutable snapshot schema.
 
 `KindExpr::Hole` is a compiler inference or unspecified-shape hole. It is not
 an immutable value and cannot produce a `Schema` until resolved.
 `KindExpr::Never` is uninhabited compiler type state; it is not execution
 control for an operation that produced no result.
 
-The current `ValueKind` enum is a legacy resolved type descriptor and is
-eliminated. Its instantiable scalar and aggregate variants become a resolved
-`Schema` plus `ShapeInstance`. `Any`, `None`, and `Empty` become
-`KindExpr::Wildcard`, `KindExpr::Never`, and `KindExpr::Hole`, respectively.
-`ValueKind::Reference` becomes binding and port metadata and must never become
-a snapshot schema containing a runtime reference. `ValueKind::Kind` becomes
-`Schema::ReifiedType`.
-
 Kinds remain first-class reified meta-values because current language
-evaluation constructs and passes kind values at runtime. The final target is:
+evaluation constructs and passes kind values at runtime. Their conceptual
+representation is:
 
 ```rust
 pub enum ReifiedType {
@@ -93,12 +65,11 @@ pub enum ValueData {
 ```
 
 Every reified type value has the resolved schema `meta/type`. It is immutable,
-may be a constant, and contains no runtime storage identity. This is the sole
-destination of current `Value::Kind`; it is not an unresolved compiler-only
-placeholder.
+may be a constant, and contains no runtime storage identity. A reified type
+value is not an unresolved compiler-only placeholder.
 
-`KindScheme` is not a current enum variant. It is the semantic, quantified
-representation of generic functions and operations. Its conceptual target is:
+`KindScheme` is the semantic, quantified representation of generic functions
+and operations. Its conceptual shape is:
 
 ```rust
 pub struct KindScheme {
@@ -153,11 +124,11 @@ matrix backing, runtime extraction rules, native ABI requirements, and required
 Cargo or native features. The current `FunctionRuntimeType`,
 `FunctionValueRepresentation`, `RuntimeFunctionInputs`, and
 `RuntimeFunctionSignature` describe this runtime contract; they do not become
-`KindScheme`. C0 freezes the separation without renaming production types.
+`KindScheme`.
 
 ## Schema identity
 
-The target identity types are conceptually:
+The identity types are conceptually:
 
 ```rust
 pub struct SchemaId(pub u32);
@@ -251,7 +222,6 @@ record are distinct snapshots. Empty payload must not erase schema.
 
 The durable canonical encoding is named `MechSnapshotEncodingV1`. This section
 and `tests/architecture/value-system/canonical-encoding-v1.json` are normative.
-C0 freezes the format but does not implement it.
 
 `SchemaKey`, `ValueHash`, and `KeyHash` are exactly 32 bytes and use SHA-256
 with distinct domain separators:
@@ -301,7 +271,7 @@ NominalKey = SHA-256(
 0x02 enum
 ```
 
-C3 derives this path from the resolved defining declaration, with no discretion:
+Artifact compilation derives this path from the resolved defining declaration:
 the first segment is the exact UTF-8 package name declared by the resolved
 package manifest; zero or more following segments are the defining module's
 canonical namespace relative to that package root; and the final segment is
@@ -561,181 +531,30 @@ pub enum ReadSource {
 Constants live in `ConstantStore`. A constant has no epoch, write barrier,
 rollback entry, journal entry, or mutable producer. A literal must not receive
 a mutable cell merely because a legacy machine interface expects `Ref<T>`.
-`ConstantStore` is not implemented in C0.
 
-## Historical dual-value boundary
+## Construction and storage boundaries
 
-This boundary no longer exists. The following rules governed the transition
-and explain why no reverse conversion or compatibility alias survives.
+Snapshot modules must not import mutable references or runtime cell identities.
+Schema modules must not depend on runtime or engine crates. Canonical values are
+built through validated constructors; engine artifacts accept immutable values.
+The retired value enum and conversion adapters have no compatibility alias.
+`scripts/check-no-retired-value-system.py` enforces their absence.
 
-The transition names are normative:
+An unresolved empty expression, an absent option, an operation with no result,
+and an uninitialized runtime slot are distinct concepts. Only an absent option
+under a resolved option schema becomes `ValueData::Option(None)`. Empty
+aggregates retain their resolved element schema and concrete shape. Matrices
+are homogeneous; heterogeneous data uses tuples, records, or tables.
 
-```text
-legacy_value::LegacyValue
-snapshot::Value
-```
+## Performance and publication
 
-The existing enum becomes `LegacyValue` only when C2 begins. The immutable
-snapshot type is introduced separately and ultimately becomes
-`mech_core::Value`. Every new Gate C API must accept immutable snapshots only;
-the legacy executor may temporarily accept `LegacyValue`.
+Resident performance changes require fresh controlled measurements under
+benchmark ownership. Historical timing ratios are advisory. Correctness,
+steady-state allocation behavior, candidate isolation, publication, effects,
+replay, and bounded history remain required behavioral contracts.
 
-Conversions may exist only in declared legacy-adapter modules. Blanket `From`
-or `Into` implementations are prohibited. Both directions must be fallible and
-context-aware:
-
-```rust
-fn snapshot_from_legacy(
-    value: &LegacyValue,
-    context: &LegacySnapshotContext,
-) -> MResult<Value>;
-
-fn legacy_from_snapshot(
-    value: &Value,
-    context: &LegacyMaterializationContext,
-) -> MResult<LegacyValue>;
-```
-
-A converted snapshot must not retain `Ref` or pointer identity. Aliased legacy
-references become equal snapshot payloads rather than one semantic cell. A
-recursive legacy-reference cycle must be rejected unless an explicit future
-graph-value schema supports cycles. Reverse conversion creates fresh legacy
-storage and must not preserve legacy identity. Legacy and snapshot
-representations must never be treated as two authoritative mutable states.
-
-## Frozen legacy concept destinations
-
-Every current `Value::Empty` occurrence has one of six meanings:
-
-- `source-empty-expression` constructs an unresolved source expression before
-  context resolves it. It becomes compiler expression IR, never a snapshot.
-- `option-absence` is valid only under resolved `Option<T>` and becomes
-  `ValueData::Option(None)`.
-- `execution-no-result` marks a completed operation, statement, source load,
-  or host action with no language value. It becomes execution control.
-- `uninitialized-storage` marks an unassigned register, slot, sink, or mutable
-  location. It becomes runtime slot initialization state.
-- `unspecified-extent` represents matrix dimensions, table row count, set
-  cardinality, or another shape-inference hole. It becomes `KindExpr::Hole` or
-  a dimension-expression hole.
-- `generic-dispatch` merely visits, matches, hashes, serializes, journals,
-  copies, pretty-prints, or propagates an already-existing legacy sentinel. It
-  becomes dispatch over the explicit tagged concepts above.
-
-No untyped `Value::Empty` is a published immutable snapshot.
-
-Current `Value::EmptyKind` is eliminated through one
-`legacy-typed-empty-adapter` rule in C2. A resolved option schema yields
-`ValueData::Option(None)`; a resolved empty-capable aggregate schema yields its
-ordinary zero-element aggregate `ValueData`. `Any`, `Never`, binding, and
-reified-type schemas fail with `InvalidTypedEmptySchema`. There is no final
-`EmptyKind` wrapper.
-
-Final matrices are homogeneous. Current `Value::MatrixValue` uses that occur
-before element-schema resolution become `MatrixLiteralIR` in C3. Uses whose
-elements resolve to one schema become ordinary `ValueData::Matrix` snapshots
-in C2. Any legacy use that depends on multiple element schemas is rejected by
-the adapter with `HeterogeneousMatrixUnsupported`; heterogeneous data must use
-a tuple, record, or table.
-
-`LegacyMatrixValueAdapter` follows this normative algorithm:
-
-1. Read every legacy element as an immutable candidate snapshot.
-2. Resolve one element `Schema`.
-3. When the matrix is non-empty, every element must have the same `SchemaKey`.
-4. When the matrix is empty, the surrounding typed context must supply the
-   element `Schema`.
-5. If no element `Schema` can be resolved for an empty matrix, return
-   `UnresolvedEmptyMatrixElementSchema`.
-6. If element `SchemaKey`s differ, return `HeterogeneousMatrixUnsupported`.
-7. Otherwise materialize `ValueData::Matrix` with the resolved element
-   `Schema` and concrete `ShapeInstance`.
-8. Do not preserve `Ref` identity from any element.
-
-`Value::Typed` is eliminated in C2 and its resolved schema moves to
-`Value.schema`. `Value::MutableReference` becomes runtime binding and arena
-storage in D. `Value::IndexAll` becomes selection IR in C3.
-
-Numeric and boolean scalars become immutable inline snapshots; strings become
-immutable owned snapshots; ID and index become immutable scalar snapshots;
-atoms and enums become immutable nominal snapshots; typed matrices become
-immutable matrix snapshots; tuples, records, tables, sets, and maps become
-immutable aggregates with the canonical rules above.
-
-The migration manifest classifies every production occurrence by enum,
-variant, path, line, and column. Adding an occurrence without an explicit
-reviewed classification, duplicating a classification, or retaining a stale
-classification fails the C0 contract. A separate frozen projection fixes the
-target of each exact occurrence, so two otherwise-applicable destinations
-cannot be swapped without explicit contract drift.
-
-## Retired conversion boundaries
-
-The reserved adapter locations below were temporary migration coordinates.
-They no longer exist; new code must use canonical snapshots and cells directly.
-
-The following future locations are reserved:
-
-```text
-src/core/src/legacy_value.rs or src/core/src/legacy_value/
-src/core/src/snapshot.rs or src/core/src/snapshot/
-src/core/src/schema.rs or src/core/src/schema/
-src/core/src/legacy_adapter.rs or src/core/src/legacy_adapter/
-```
-
-Snapshot modules must not import `Ref`, `ValRef`, `MutableReference`, or
-`ReactiveCellId`. Schema modules must not depend on runtime or engine crates.
-Legacy adapters are the only modules that may mention both `LegacyValue` and
-`snapshot::Value`. Blanket legacy/snapshot `From` and `Into` conversions must
-fail the architecture contract. New engine artifact modules must not accept
-`LegacyValue`.
-
-## Historical growth boundary
-
-The shrink-only inventory described below was removed after reaching zero.
-`scripts/check-no-retired-value-system.py` is now the permanent exact-symbol
-and path absence contract.
-
-The permanent value-execution boundary manifest remains authoritative.
-Approved production uses may disappear and occurrence counts may shrink, but
-new paths and count growth fail its focused checker. Pointer-derived
-live-resource identity is enforced by exact boundary identifiers rather than
-globally interpreting unrelated `.id()`, `.as_ptr()`, `.as_mut_ptr()`, or
-`.addr()` method calls. Zero-use boundaries remain forbidden.
-
-## Resident EKF performance history
-
-The completed controlled-machine measurements are archived under
-`benchmarks/archive/runtime-gate-b`. They are historical evidence, not a live
-pull-request gate. Future resident performance work must establish a fresh
-benchmark baseline under benchmark ownership instead of mutating the archive.
-
-The following are hard requirements:
-
-- `raw_epoch_ratio <= 1.25`;
-- `legacy_gap_closure >= 0.80`;
-- steady-state allocation count is zero;
-- one publication store occurs per accepted turn;
-- complete full-write output uses zero candidate seed bytes;
-- published-buffer copy bytes are zero;
-- history 1k/history 0, history 100k/history 0, and high-epoch/low-epoch median
-  ratios are each at most `1.05`;
-- the post-publication append is infallible.
-
-A future benchmark regression policy may reuse these structural requirements,
-but any timing threshold must be qualified from fresh controlled evidence.
-
-## Gate ownership
-
-C0 freezes semantics, inventory, migration destinations, and enforcement. C1
-implements `KindExpr`, `KindScheme`, `Schema`, `ShapeInstance`, wildcard,
-never, type holes, and the reified-type schema. C2 implements immutable scalar,
-string, nominal, homogeneous-matrix, tuple, record, table, set, map, option,
-and empty-aggregate snapshots; removes `Value::Typed`; adds the reified
-`Value::Kind` snapshot and legacy adapters. C3 implements `MatrixLiteralIR`,
-source-empty-expression IR, `IndexAll` selection IR, and compiler
-representations associated with `ProgramArtifact`. C4 lowers reference and
-binding qualifiers into port and access contracts. D migrates
-`MutableReference`, `ValRef`-backed runtime storage, `CellId` bindings, and the
-resident arena. `final-cutover` deletes legacy types only. No implementation
-gate may weaken this contract merely to preserve a legacy representation.
+For complete full-write resident outputs, publication uses one release store,
+zero candidate seed bytes and zero published-buffer copy bytes. The prepared
+post-publication append is infallible. Benchmark checks retain their sample
+protocols, exact probe identities, isolated comparison processes and Cargo
+targets, and numerical correctness checks.

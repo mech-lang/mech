@@ -7,7 +7,7 @@ use mech_syntax::document::ast::{
     ModuleImportValueAliasSyntax, ModuleOnlyImportSyntax, ModuleRootSyntax,
     ModuleSuffixImportSyntax,
 };
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2e_rule_for_test;
+use mech_syntax::document::parser::canonical::parse_canonical_module_import_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, ParseConfig, Revision, RuleId, SyntaxKind, SyntaxNode, TextSnapshot,
@@ -26,8 +26,8 @@ fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
 
 fn parse_typed<N: AstNode>(input: &str, rule: RuleId, kind: SyntaxKind) -> N {
     let parsed =
-        parse_canonical_phase_2e_rule_for_test(source(input), rule, ParseConfig::default())
-            .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2E direct rule"));
+        parse_canonical_module_import_rule_for_test(source(input), rule, ParseConfig::default())
+            .unwrap_or_else(|| panic!("{rule:?} is not a module import grammar direct rule"));
     assert!(parsed.is_strictly_clean(), "{rule:?} on {input:?}");
     assert_eq!(parsed.consumed.end, parsed.source.byte_len(), "{input:?}");
     let node = find_node(&parsed.syntax(), kind)

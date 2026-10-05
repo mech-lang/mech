@@ -12,7 +12,7 @@ use mech_engine::{
     ControlOperationBody, ControlParameterSource, ExecutableNodeBody, MatchPattern,
     ProgramArtifactDraft,
 };
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
+use mech_syntax::document::parser::canonical::parse_canonical_executable_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
@@ -23,7 +23,7 @@ fn definition(source: &str) -> VariableDefineSyntax {
     fn find(node: SyntaxNode) -> Option<VariableDefineSyntax> {
         VariableDefineSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
     }
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = parse_canonical_executable_rule_for_test(
         TextSnapshot::new(DocumentId(0x555), Revision(1), source).unwrap(),
         rules::VARIABLE_DEFINE,
         ParseConfig::default(),

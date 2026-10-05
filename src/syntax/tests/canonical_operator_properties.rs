@@ -1,5 +1,5 @@
 use mech_syntax::document::ast::OperatorSyntax;
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2d_rule_for_test;
+use mech_syntax::document::parser::canonical::parse_canonical_expression_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, ParseConfig, ParseLimits, Revision, RuleId, SyntaxKind, TextRange,
@@ -8,7 +8,7 @@ use mech_syntax::document::{
 };
 use proptest::prelude::*;
 
-const PHASE_2D_RULES: &[RuleId] = &[
+const EXPRESSION_RULES: &[RuleId] = &[
     rules::ADD_SUB_OPERATOR,
     rules::MUL_DIV_OPERATOR,
     rules::POWER_OPERATOR,
@@ -82,8 +82,8 @@ fn parse(
     rule: RuleId,
     config: ParseConfig,
 ) -> mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot {
-    parse_canonical_phase_2d_rule_for_test(source, rule, config)
-        .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2D direct rule"))
+    parse_canonical_expression_rule_for_test(source, rule, config)
+        .unwrap_or_else(|| panic!("{rule:?} is not a expression grammar direct rule"))
 }
 
 fn operator_semantic(
@@ -154,11 +154,11 @@ proptest! {
   })]
 
   #[test]
-  fn every_phase_2d_direct_rule_is_total_lossless_and_non_diagnostic(
+  fn every_expression_direct_rule_is_total_lossless_and_non_diagnostic(
     characters in proptest::collection::vec(any::<char>(), 0..48),
   ) {
     let text = characters.into_iter().collect::<String>();
-    for rule in PHASE_2D_RULES {
+    for rule in EXPRESSION_RULES {
       let parsed = parse(source(&text), *rule, ParseConfig::default());
       assert_default_invariants(&parsed, *rule);
     }
@@ -166,8 +166,8 @@ proptest! {
 }
 
 #[test]
-fn every_phase_2d_nomatch_is_transactional() {
-    for rule in PHASE_2D_RULES {
+fn every_expression_nomatch_is_transactional() {
+    for rule in EXPRESSION_RULES {
         let parsed = parse(source("\n"), *rule, ParseConfig::default());
         assert!(!parsed.matched, "{rule:?}");
         assert_default_invariants(&parsed, *rule);

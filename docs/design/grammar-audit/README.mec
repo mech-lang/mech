@@ -12,20 +12,19 @@ Current responsibilities
 - ports.tsv maps specification grammar names to stable RuleIds, syntax node
   policies, semantic dispositions, and parser reachability. The rule and port
   registries are generated from this input.
-- canonical-dependencies.tsv and inactive-sccs.tsv describe the specification
-  dependency graph. phase-2i-recursive-core.tsv identifies the recursive component.
-- phase-2i-syntax-schema.tsv defines typed syntax structure and accessor contracts.
-- phase-2i-certification.tsv and s7-document-certification.tsv contain executable
-  accepted, rejected, recovery, and typed-view expectations. Despite historical
-  filenames, these are live conformance data and generator inputs.
-- phase-2i-semantic-errors.tsv and phase-2i-semantic-completion.tsv contain current
-  semantic witnesses and supported target outcomes. Syntax acceptance alone does
+- canonical-dependencies.tsv and grammar-component-boundaries.tsv describe the specification
+  dependency graph. recursive-core.tsv identifies the recursive component.
+- recursive-core-syntax-schema.tsv defines typed syntax structure and accessor contracts.
+- recursive-core-certification.tsv and document-certification.tsv contain executable
+  accepted, rejected, recovery, and typed-view expectations. These are live conformance data and generator inputs.
+- recursive-core-semantic-errors.tsv contains current semantic-error witnesses.
+  Runtime behavior and supported target outcomes belong to their owner tests. Syntax acceptance alone does
   not imply that every target can activate the resulting artifact.
-- s7-dispositions.tsv is generated document-reachability data used by the parser
+- document-rule-dispositions.tsv is generated document-reachability data used by the parser
   and its certification suite.
 - corrections.tsv and discrepancies.mec preserve stable specification decisions
   referenced by conformance cases.
-- r15-fixed-integer-intervals.md documents the current fixed-integer interval
+- fixed-integer-intervals.md documents the current fixed-integer interval
   language, type, publication, and transport contract.
 - acceptance-receipt.json records the selected pre-cleanup source and qualification
   evidence. It does not qualify later changes automatically.

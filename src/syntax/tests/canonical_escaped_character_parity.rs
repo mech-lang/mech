@@ -21,7 +21,7 @@ const GRAPHEME_EXTENSIONS: &[(&str, &str)] = &[
 fn canonical(input: &str) -> CanonicalRuleSnapshot {
     let source = TextSnapshot::new(DocumentId(72), Revision(0), input).unwrap();
     parse_canonical_base_rule_for_test(source, rules::ESCAPED_CHAR, ParseConfig::default())
-        .expect("escaped-char has a canonical Phase 2A port")
+        .expect("escaped-char has a canonical lexical grammar port")
 }
 
 fn assert_acceptance(input: &str, expected: bool, case: &str) {

@@ -385,12 +385,12 @@ mod tests {
 
     fn compile(source: &str) -> ProgramArtifact {
         use mech_syntax::document::parser::{
-            canonical::parse_canonical_phase_2i_rule_for_test, rules,
+            canonical::parse_canonical_executable_rule_for_test, rules,
         };
         fn expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
             ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(expression))
         }
-        let parsed = parse_canonical_phase_2i_rule_for_test(
+        let parsed = parse_canonical_executable_rule_for_test(
             TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
             rules::EXPRESSION,
             ParseConfig::default(),

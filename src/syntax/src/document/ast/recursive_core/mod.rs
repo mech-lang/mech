@@ -1,4 +1,4 @@
-//! Typed, zero-copy red-tree views for the frozen Phase 2I recursive grammar.
+//! Typed, zero-copy red-tree views for the canonical recursive grammar.
 //!
 //! Each view owns only a cheap [`SyntaxNode`] handle. Accessors retain the
 //! parser's physical child order and expose tokens directly, so source tools do
@@ -202,9 +202,9 @@ pub trait RecursiveSyntaxNode: AstNode {
 
 impl<N: AstNode> RecursiveSyntaxNode for N {}
 
-macro_rules! phase_2i_nodes {
+macro_rules! executable_nodes {
     ($(($variant:ident, $view:ty, $kind:ident, $rule:literal)),+ $(,)?) => {
-        /// A closed typed view over every node-valued Phase 2I schema row.
+        /// A closed typed view over every node-valued executable grammar schema row.
         #[derive(Clone, Debug)]
         pub enum RecursiveCoreSyntax {
             $($variant($view)),+
@@ -230,7 +230,7 @@ macro_rules! phase_2i_nodes {
         }
 
         /// Resolve a node-valued schema row to its sole physical syntax kind.
-        pub fn phase_2i_node_kind(rule_name: &str) -> Option<SyntaxKind> {
+        pub fn executable_node_kind(rule_name: &str) -> Option<SyntaxKind> {
             match rule_name {
                 $($rule => Some(SyntaxKind::$kind),)+
                 _ => None,
@@ -239,7 +239,7 @@ macro_rules! phase_2i_nodes {
     };
 }
 
-phase_2i_nodes! {
+executable_nodes! {
     (ArgumentList, ArgumentListSyntax, ArgumentList, "argument-list"),
     (RecordBinding, RecordBindingSyntax, RecordBinding, "binding"),
     (BraceSubscript, BraceSubscriptSyntax, BraceSubscript, "brace-subscript"),
@@ -320,17 +320,17 @@ phase_2i_nodes! {
     (VariableDefine, crate::document::VariableDefineSyntax, VariableDefine, "variable-define"),
 }
 
-/// The two Phase 2I productions that intentionally emit no wrapper node.
+/// The two executable grammar productions that intentionally emit no wrapper node.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Phase2iTransparentAlias {
+pub enum ExecutableTransparentAlias {
     Formula,
     PatternArrayItem,
 }
 
-pub fn phase_2i_transparent_alias(rule_name: &str) -> Option<Phase2iTransparentAlias> {
+pub fn executable_transparent_alias(rule_name: &str) -> Option<ExecutableTransparentAlias> {
     match rule_name {
-        "formula" => Some(Phase2iTransparentAlias::Formula),
-        "pattern-array-item" => Some(Phase2iTransparentAlias::PatternArrayItem),
+        "formula" => Some(ExecutableTransparentAlias::Formula),
+        "pattern-array-item" => Some(ExecutableTransparentAlias::PatternArrayItem),
         _ => None,
     }
 }

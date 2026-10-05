@@ -101,7 +101,7 @@ fn port_names() -> BTreeSet<String> {
         lines.next(),
         Some(
             "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
-             activation-status\tnode-policy\tphase\tnotes"
+             grammar-scope\tnode-policy\tcomponent\tnotes"
         )
     );
     let names = lines

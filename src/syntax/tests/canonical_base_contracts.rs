@@ -4,7 +4,7 @@ use mech_syntax::document::parser::canonical::{
     parse_canonical_tag_for_test,
 };
 use mech_syntax::document::parser::{
-    CANONICAL_PORTS, PortPhase, RuleFamily, canonical_rule_name, rules,
+    CANONICAL_PORTS, GrammarComponent, RuleFamily, canonical_rule_name, rules,
 };
 use mech_syntax::document::{
     DocumentId, ParseConfig, Revision, SyntaxKind, TextRange, TextSize, TextSnapshot,
@@ -20,7 +20,7 @@ fn parse(
     rule: mech_syntax::document::RuleId,
 ) -> mech_syntax::document::parser::canonical::CanonicalRuleSnapshot {
     parse_canonical_base_rule_for_test(source(text), rule, ParseConfig::default())
-        .expect("Phase 2A base rule must have a canonical port")
+        .expect("lexical grammar base rule must have a canonical port")
 }
 
 #[test]
@@ -98,7 +98,7 @@ fn the_complete_149_rule_lexical_selection_has_a_canonical_entry() {
     let selected = CANONICAL_PORTS
         .iter()
         .filter(|port| {
-            port.phase == Some(PortPhase::Phase2A)
+            port.component == Some(GrammarComponent::Lexical)
                 && (port.family == RuleFamily::Base
                     || matches!(
                         port.name,

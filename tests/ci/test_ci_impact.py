@@ -121,7 +121,7 @@ class ImpactClassifierTests(unittest.TestCase):
         self.assertEqual(combined["changed_owners"], ["machine-functions"])
         self.assertEqual(len(combined["owner_shards"]), 1)
         command = OWNERS["machine-functions"]["command"]
-        self.assertIn("r6_managed_functions", command)
+        self.assertIn("managed_functions", command)
         self.assertNotIn("--exact", command)
         self.assertNotIn("machine-functions", self.classify(["src/core/src/lib.rs"])["changed_owners"])
 
@@ -130,12 +130,12 @@ class ImpactClassifierTests(unittest.TestCase):
             ".github/workflows/ci-full.yml",
             ".github/workflows/ci-native-plan.yml",
             "scripts/check-operation-contract.py",
-            "scripts/check-r2-type-memory-boundary.py",
-            "scripts/tests/test_check_r2_type_memory_boundary.py",
-            "scripts/check-r3-type-system.py",
-            "scripts/tests/test_check_r3_type_system.py",
-            "scripts/check-r4-type-cutover.py",
-            "scripts/tests/test_check_r4_type_cutover.py",
+            "scripts/check-type-memory-boundary.py",
+            "scripts/tests/test_check_type_memory_boundary.py",
+            "scripts/check-type-system.py",
+            "scripts/tests/test_check_type_system.py",
+            "scripts/check-semantic-type-authority.py",
+            "scripts/tests/test_check_semantic_type_authority.py",
             "tests/architecture/program-artifact/v1.json",
         ):
             with self.subTest(path=path):
@@ -204,7 +204,8 @@ class ImpactClassifierTests(unittest.TestCase):
                 result = self.classify([path])
                 self.assertTrue(result["browser_applications_required"])
                 self.assertTrue(result["browser_canary_required"])
-        self.assertFalse(self.classify(["machines/math/src/add.rs"])["browser_applications_required"])
+        self.assertTrue(self.classify(["machines/math/src/ops/add.rs"])["browser_applications_required"])
+        self.assertFalse(self.classify(["hosts/time/src/lib.rs"])["browser_applications_required"])
         self.assertFalse(self.classify(["docs/distributions.md"])["browser_applications_required"])
 
     def test_syntax_owner_keeps_compact_growth_and_stream_contracts(self):
@@ -220,8 +221,8 @@ class ImpactClassifierTests(unittest.TestCase):
             "docs/design/specification.mec",
             "docs/design/grammar-audit/ports.tsv",
             "docs/design/grammar-audit/canonical-dependencies.tsv",
-            "docs/design/grammar-audit/phase-2i-recursive-core.tsv",
-            "docs/design/grammar-audit/phase-2i-certification.tsv",
+            "docs/design/grammar-audit/recursive-core.tsv",
+            "docs/design/grammar-audit/recursive-core-certification.tsv",
             "docs/design/grammar-audit/canonical-syntax-schema.json",
         ):
             with self.subTest(path=path):

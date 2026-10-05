@@ -134,11 +134,11 @@ jobs:
           python3 scripts/check-value-execution-boundary.py
           python3 scripts/check-value-system-contract.py
           python3 scripts/check-no-retired-value-system.py
-          python3 scripts/check-r2-type-memory-boundary.py
-          python3 scripts/check-r3-type-system.py
-          python3 scripts/check-r4-type-cutover.py
-          python3 scripts/check-r5-memory-planner.py
-          python3 scripts/check-r6-memory-runtime.py
+          python3 scripts/check-type-memory-boundary.py
+          python3 scripts/check-type-system.py
+          python3 scripts/check-semantic-type-authority.py
+          python3 scripts/check-memory-planner.py
+          python3 scripts/check-memory-runtime.py
           python3 scripts/check-bytecode-v1-format.py
 
   static-mutations:
@@ -184,11 +184,11 @@ jobs:
             scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_rust_source.py \
-            scripts/tests/test_check_r2_type_memory_boundary.py \
-            scripts/tests/test_check_r3_type_system.py \
-            scripts/tests/test_check_r4_type_cutover.py \
-            scripts/tests/test_check_r5_memory_planner.py \
-            scripts/tests/test_check_r6_memory_runtime.py \
+            scripts/tests/test_check_type_memory_boundary.py \
+            scripts/tests/test_check_type_system.py \
+            scripts/tests/test_check_semantic_type_authority.py \
+            scripts/tests/test_check_memory_planner.py \
+            scripts/tests/test_check_memory_runtime.py \
             scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_value_execution_boundary.py \
             scripts/tests/test_warning_policy.py
@@ -461,7 +461,7 @@ jobs:
     needs: impact
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
-    # The last green cold run took 28m02s before R22's lifecycle checks.
+    # Browser builds and lifecycle checks need headroom on cold runners.
     # Cache compilation separately and leave room for all browser suites.
     timeout-minutes: 45
     env:

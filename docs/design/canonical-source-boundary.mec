@@ -1,17 +1,17 @@
 Canonical Source Boundary
 ===============================================================================
 
-Status: S1 contract.
+Status: source boundaries contract.
 
 This document defines the source ownership boundary for the syntax
-reimplementation after R1-R6. `docs/design/specification.mec` is the sole
+reimplementation after declared operation contracts-the managed memory runtime. `docs/design/specification.mec` is the sole
 language authority. The current Nom entry point is inventoried only so the
 atomic cutover can remove every caller.
 
 The authoritative inventories are:
 
-- `grammar-audit/phase-2i-recursive-core.tsv`: the exact 80-rule component; and
-- `grammar-audit/phase-2i-syntax-schema.tsv`: the rule-level canonical tree
+- `grammar-audit/recursive-core.tsv`: the exact 80-rule component; and
+- `grammar-audit/recursive-core-syntax-schema.tsv`: the rule-level canonical tree
   contract.
 
 1. Ownership

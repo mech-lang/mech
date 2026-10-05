@@ -1,5 +1,5 @@
 use mech_syntax::document::parser::canonical::{
-    CanonicalRuleOutcome, parse_canonical_phase_2e_rule_for_test,
+    CanonicalRuleOutcome, parse_canonical_module_import_rule_for_test,
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
@@ -15,8 +15,8 @@ fn parse(
     text: &str,
     rule: RuleId,
 ) -> mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot {
-    parse_canonical_phase_2e_rule_for_test(source(text), rule, ParseConfig::default())
-        .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2E direct rule"))
+    parse_canonical_module_import_rule_for_test(source(text), rule, ParseConfig::default())
+        .unwrap_or_else(|| panic!("{rule:?} is not a module import grammar direct rule"))
 }
 
 fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -58,7 +58,7 @@ fn assert_no_match(rule: RuleId, input: &str) {
 }
 
 #[test]
-fn every_phase_2e_rule_accepts_its_direct_contract() {
+fn every_module_import_rule_accepts_its_direct_contract() {
     let cases = [
         (
             rules::MODULE_IMPORT_NAME_SEGMENT,

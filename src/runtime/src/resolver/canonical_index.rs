@@ -539,8 +539,8 @@ std::thread_local! {
 mod tests {
     use super::*;
     use mech_syntax::document::parser::canonical::{
-        parse_canonical_document_rule_for_test, parse_canonical_phase_2f_rule_for_test,
-        parse_canonical_phase_2i_rule_for_test,
+        parse_canonical_declaration_rule_for_test, parse_canonical_document_rule_for_test,
+        parse_canonical_executable_rule_for_test,
     };
     use mech_syntax::document::parser::canonical_rule_id;
     use mech_syntax::document::{
@@ -555,12 +555,12 @@ mod tests {
         let source = TextSnapshot::new(DocumentId(77), Revision(1), source).unwrap();
         let rule_id = canonical_rule_id(rule).unwrap();
         let snapshot = if rule == "variable-define" {
-            parse_canonical_phase_2i_rule_for_test(source, rule_id, ParseConfig::default())
+            parse_canonical_executable_rule_for_test(source, rule_id, ParseConfig::default())
         } else if matches!(
             rule,
             "import-declaration" | "export-declaration" | "context-declaration"
         ) {
-            parse_canonical_phase_2f_rule_for_test(source, rule_id, ParseConfig::default())
+            parse_canonical_declaration_rule_for_test(source, rule_id, ParseConfig::default())
         } else {
             parse_canonical_document_rule_for_test(source, rule_id, ParseConfig::default())
         }

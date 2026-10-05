@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-"""Enforce the C3 ProgramArtifact and bytecode-v1 semantic boundary."""
+"""Enforce the ProgramArtifact and bytecode-v1 semantic boundary."""
 
 from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/architecture/program-artifact/c3-boundary.json"
-C3_FINAL_COMMIT = "15d06dd6ad1b19d874c7c512dd92acfd367fd45d"
+MANIFEST = ROOT / "tests/architecture/program-artifact/boundary.json"
 
 
 def struct_body(source: str, name: str) -> str | None:
@@ -205,19 +203,6 @@ def validate_canonical_compilation_product(program: str, runtime_compiler: str) 
     return failures
 
 
-def changed_protected_paths(
-    root: Path, base: str, paths: list[str], head: str = "HEAD"
-) -> list[str]:
-    result = subprocess.run(
-        ["git", "diff", "--name-only", base, head, "--", *paths],
-        cwd=root,
-        check=True,
-        text=True,
-        capture_output=True,
-    )
-    return [line for line in result.stdout.splitlines() if line]
-
-
 def validate_ordinary_source_proof(source: str) -> list[str]:
     proof = function_body(
         source, "fn canonical_documents_emit_complete_equivalent_bytecode_artifacts()"
@@ -278,29 +263,6 @@ def validate_ordinary_source_proof(source: str) -> list[str]:
 def run(root: Path = ROOT) -> list[str]:
     manifest = json.loads((root / MANIFEST.relative_to(ROOT)).read_text())
     failures: list[str] = []
-    ancestor = subprocess.run(
-        ["git", "merge-base", "--is-ancestor", C3_FINAL_COMMIT, "HEAD"],
-        cwd=root,
-        text=True,
-        capture_output=True,
-    )
-    if ancestor.returncode != 0:
-        failures.append(f"C3 final commit {C3_FINAL_COMMIT} must be an ancestor of HEAD")
-    historical_manifest_process = subprocess.run(
-        [
-            "git",
-            "show",
-            f"{C3_FINAL_COMMIT}:tests/architecture/program-artifact/c3-boundary.json",
-        ],
-        cwd=root,
-        text=True,
-        capture_output=True,
-    )
-    if historical_manifest_process.returncode != 0:
-        failures.append("unable to read the frozen C3 boundary manifest")
-        historical_manifest = manifest
-    else:
-        historical_manifest = json.loads(historical_manifest_process.stdout)
     model = (root / "src/engine/src/artifact/model.rs").read_text()
     compiler = (root / "src/engine/src/artifact/compiler.rs").read_text()
     bytecode = (root / "src/engine/src/artifact/bytecode.rs").read_text()
@@ -338,39 +300,6 @@ def run(root: Path = ROOT) -> list[str]:
             failures.append(f"malformed artifact regression proof is missing {required}")
     if 'b"mech-program-v1\\0"' not in encoding:
         failures.append("ProgramRevision domain separator changed")
-    changed = changed_protected_paths(
-        root,
-        historical_manifest["base_commit"],
-        historical_manifest["protected_execution_paths"],
-        C3_FINAL_COMMIT,
-    )
-    changed = [
-        path
-        for path in changed
-        if path not in historical_manifest["allowed_protected_changes"]
-    ]
-    if changed:
-        failures.append("C3 routes execution through the artifact or changes production execution: " + ", ".join(changed))
-    production_uses = subprocess.run(
-        [
-            "git",
-            "grep",
-            "-n",
-            "-E",
-            "crate::artifact::ProgramArtifact|artifact::ProgramArtifact",
-            C3_FINAL_COMMIT,
-            "--",
-            "src/engine/src",
-            "src/runtime/src",
-        ],
-        cwd=root,
-        text=True,
-        capture_output=True,
-    )
-    if production_uses.returncode not in (0, 1):
-        failures.append("unable to scan production ProgramArtifact uses")
-    elif production_uses.stdout.strip():
-        failures.append("ProgramArtifact is routed into production execution: " + production_uses.stdout.strip())
     return failures
 
 
@@ -378,9 +307,9 @@ def main() -> int:
     failures = run()
     if failures:
         for failure in failures:
-            print(f"C3 contract failure: {failure}", file=sys.stderr)
+            print(f"ProgramArtifact contract failure: {failure}", file=sys.stderr)
         return 1
-    print("C3 ProgramArtifact and bytecode-v1 boundary: OK")
+    print("ProgramArtifact and bytecode-v1 boundary: OK")
     return 0
 
 

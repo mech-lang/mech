@@ -13,7 +13,7 @@ use mech_engine::{ComputeRegionDeclaration, ProgramArtifact};
 
 use crate::{ComputePhysicalPlan, TransferBoundary, TransferDirection, plan_compute_artifact};
 
-/// CPU/GPU placement plus the process-local R5 memory template derived from
+/// CPU/GPU placement plus the process-local memory template derived from
 /// that exact placement. The artifact and wire plans remain unchanged.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PlannedComputeArtifact {

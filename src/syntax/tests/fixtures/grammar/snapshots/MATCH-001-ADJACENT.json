@@ -7,6 +7,6 @@
     "remaining_source": "",
     "source_graphemes": 11
   },
-  "entry_point": "canonical-phase-2i-expression",
+  "entry_point": "canonical-executable-expression",
   "rule": "expression"
 }

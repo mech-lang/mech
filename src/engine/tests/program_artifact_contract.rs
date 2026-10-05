@@ -2034,7 +2034,7 @@ fn one_entry_operation_contract_table(contract: &[u8]) -> Vec<u8> {
 }
 
 #[test]
-fn bytecode_v1_rejects_pre_r1_experimental_schema_only_contracts() {
+fn bytecode_v1_rejects_experimental_schema_only_contracts() {
     let data = fixture_data();
     let artifact = build_both(&data, scalar_add(&data)).0;
     let node = &artifact.nodes()[0];
@@ -2770,7 +2770,7 @@ fn contract_insertion_order_does_not_change_program_revision() {
 }
 
 #[test]
-fn bytecode_v1_round_trips_every_c2_snapshot_family() {
+fn bytecode_v1_round_trips_every_snapshot_family() {
     let atom_path =
         CanonicalNominalPath::new(vec!["test".to_owned(), "atom".to_owned()].into_boxed_slice())
             .unwrap();

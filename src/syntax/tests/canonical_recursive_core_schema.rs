@@ -6,13 +6,13 @@ use std::path::PathBuf;
 const EXPECTED_SCHEMA_ROWS: usize = 80;
 const SCHEMA_HEADER: &str =
     "grammar-name\tparser-module\temission-policy\tsyntax-kind\tkind-origin\tnotes";
-const PHASE_HEADER: &str = "grammar-name\tfamily\tcomponent-id\tcomponent-size\t\
+const COMPONENT_HEADER: &str = "grammar-name\tfamily\tcomponent-id\tcomponent-size\t\
                             recursive-component\tsame-component-children\tclosure-children\t\
-                            active-external-children";
+                            supporting-external-children";
 const PORTS_HEADER: &str = "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
-                            activation-status\tnode-policy\tphase\tnotes";
+                            grammar-scope\tnode-policy\tcomponent\tnotes";
 
-const PHASE_2I_NEW_KINDS: &[SyntaxKind] = &[
+const EXECUTABLE_NEW_KINDS: &[SyntaxKind] = &[
     SyntaxKind::Literal,
     SyntaxKind::Kind,
     SyntaxKind::KindWithOption,
@@ -100,9 +100,9 @@ struct SchemaRow {
 struct PortRow {
     syntax: String,
     semantic: String,
-    activation: String,
+    scope: String,
     policy: String,
-    phase: String,
+    component: String,
 }
 
 fn repository_root() -> PathBuf {
@@ -119,9 +119,9 @@ fn names(values: &[&str]) -> BTreeSet<String> {
 
 fn schema() -> BTreeMap<String, SchemaRow> {
     let source = fs::read_to_string(
-        repository_root().join("docs/design/grammar-audit/phase-2i-syntax-schema.tsv"),
+        repository_root().join("docs/design/grammar-audit/recursive-core-syntax-schema.tsv"),
     )
-    .expect("read phase-2i-syntax-schema.tsv");
+    .expect("read recursive-core-syntax-schema.tsv");
     let mut lines = source.lines();
     assert_eq!(lines.next(), Some(SCHEMA_HEADER));
     let mut previous = String::new();
@@ -145,19 +145,21 @@ fn schema() -> BTreeMap<String, SchemaRow> {
     rows
 }
 
-fn phase_names() -> BTreeSet<String> {
-    let source = fs::read_to_string(
-        repository_root().join("docs/design/grammar-audit/phase-2i-recursive-core.tsv"),
-    )
-    .expect("read phase-2i-recursive-core.tsv");
+fn component_names() -> BTreeSet<String> {
+    let source =
+        fs::read_to_string(repository_root().join("docs/design/grammar-audit/recursive-core.tsv"))
+            .expect("read recursive-core.tsv");
     let mut lines = source.lines();
-    assert_eq!(lines.next(), Some(PHASE_HEADER));
+    assert_eq!(lines.next(), Some(COMPONENT_HEADER));
     let mut previous = String::new();
     let mut result = BTreeSet::new();
     for (index, line) in lines.enumerate() {
         let row = fields(line);
-        assert_eq!(row.len(), 8, "invalid Phase 2I row {}", index + 2);
-        assert!(row[0] > previous.as_str(), "Phase 2I rows are not ordered");
+        assert_eq!(row.len(), 8, "invalid executable grammar row {}", index + 2);
+        assert!(
+            row[0] > previous.as_str(),
+            "executable grammar rows are not ordered"
+        );
         previous = row[0].to_owned();
         assert!(result.insert(row[0].to_owned()));
     }
@@ -180,9 +182,9 @@ fn ports() -> BTreeMap<String, PortRow> {
                 PortRow {
                     syntax: row[2].to_owned(),
                     semantic: row[3].to_owned(),
-                    activation: row[4].to_owned(),
+                    scope: row[4].to_owned(),
                     policy: row[5].to_owned(),
-                    phase: row[6].to_owned(),
+                    component: row[6].to_owned(),
                 },
             )
             .is_none()
@@ -196,7 +198,7 @@ fn schema_inventory_and_categorical_contracts_are_exact() {
     let schema = schema();
     assert_eq!(
         schema.keys().cloned().collect::<BTreeSet<_>>(),
-        phase_names()
+        component_names()
     );
 
     let allowed_modules = names(&[
@@ -344,8 +346,8 @@ fn concrete_role_mappings_are_exact() {
 
 #[test]
 fn new_kinds_match_the_exact_append_only_schema() {
-    assert_eq!(PHASE_2I_NEW_KINDS.len(), 73);
-    let expected = PHASE_2I_NEW_KINDS
+    assert_eq!(EXECUTABLE_NEW_KINDS.len(), 73);
+    let expected = EXECUTABLE_NEW_KINDS
         .iter()
         .enumerate()
         .map(|(offset, kind)| {
@@ -372,13 +374,13 @@ fn recursive_core_port_status_matches_the_certified_schema() {
         let port = &ports[name];
         assert_eq!(port.syntax, "certified", "syntax status for {name}");
         assert_eq!(port.semantic, "certified", "semantic status for {name}");
-        assert_eq!(port.activation, "candidate", "activation status for {name}");
+        assert_eq!(port.scope, "executable-core", "grammar scope for {name}");
         let expected_policy = if schema.policy == "transparent" {
             "transparent".to_owned()
         } else {
             format!("node:{}", schema.kind)
         };
         assert_eq!(port.policy, expected_policy, "node policy for {name}");
-        assert_eq!(port.phase, "2I", "phase for {name}");
+        assert_eq!(port.component, "executable", "component for {name}");
     }
 }

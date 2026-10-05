@@ -1,7 +1,7 @@
 //! Lossless projection of finalized snapshot data back into validated drafts.
 //!
 //! Bytecode-v1 and compiler literal folding share this one conversion so every
-//! C2 snapshot family has the same total semantic representation.
+//! canonical snapshot family has the same total semantic representation.
 
 use mech_core::snapshot::{
     EnumDraft, MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedType, ReifiedTypeDraft,

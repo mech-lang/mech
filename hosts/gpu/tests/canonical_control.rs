@@ -1,7 +1,7 @@
 use mech_core::NodeId;
 use mech_engine::{CanonicalSourceFrontend, ExecutableNodeBody, ProgramArtifact};
 use mech_gpu::{ComputeLowerer, GpuDiagnosticCode, lower_elementwise_compute_program};
-use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+use mech_syntax::document::parser::{canonical::parse_canonical_executable_rule_for_test, rules};
 use mech_syntax::document::{
     AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
     VariableDefineSyntax,
@@ -11,7 +11,7 @@ fn artifact(source: &str) -> ProgramArtifact {
     fn expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
         ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(expression))
     }
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = parse_canonical_executable_rule_for_test(
         TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
         rules::EXPRESSION,
         ParseConfig::default(),
@@ -86,7 +86,7 @@ fn compute_targets_ignore_unreachable_control_and_its_private_slots() {
             if index != 0 {
                 builder.token(SyntaxKind::Newline, "\n").unwrap();
             }
-            let parsed = parse_canonical_phase_2i_rule_for_test(
+            let parsed = parse_canonical_executable_rule_for_test(
                 TextSnapshot::new(DocumentId(822), Revision(2), source).unwrap(),
                 rule,
                 ParseConfig::default(),

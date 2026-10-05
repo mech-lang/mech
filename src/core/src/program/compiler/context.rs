@@ -82,7 +82,7 @@ pub struct CompiledBytecode {
     /// Immutable semantic call certificate for each executable instruction,
     /// parallel to `program.instructions`.
     pub instruction_type_bindings: Vec<Option<crate::BoundCall>>,
-    /// Process-local R5 memory plan parallel to `program.instructions`.
+    /// Process-local memory plan parallel to `program.instructions`.
     /// This sidecar is intentionally absent from bytecode-v1.
     pub instruction_memory_plans: Vec<Option<crate::CallMemoryPlan>>,
     /// Canonical schema authority for registers owned by canonical cells.
@@ -602,7 +602,7 @@ impl CompileCtx {
                 ));
             }
         }
-        // The resolved descriptor is the R4 schema authority. Compiler
+        // The resolved descriptor is the semantic schema authority. Compiler
         // constants can still contribute a closed physical schema body while
         // their source call carries a dynamic semantic dimension; once the
         // immutable BoundCall completes the descriptor sidecar, keep the
@@ -903,7 +903,7 @@ impl BytecodeCompilerContext for CompileCtx {
         if let Some(descriptor) = self.register_type_descriptors.get(&register) {
             // Physical constant encoders still report a closed storage body.
             // Once a semantic descriptor exists, that compatibility metadata
-            // cannot replace or contradict the R4 type authority.
+            // cannot replace or contradict the semantic type authority.
             if descriptor.schema().body() != &schema {
                 return Ok(());
             }

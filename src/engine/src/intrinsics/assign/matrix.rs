@@ -1361,7 +1361,7 @@ macro_rules! impl_set_all_fxn_s {
 // Assignment keeps its legacy runtime IDs, but the implementations retain
 // only logical cells. This local definition deliberately shadows the older
 // repository-wide matrix macro, whose concrete `Ref<Matrix<..>>` capture is
-// not a valid R6 execution path.
+// not a valid managed execution path.
 macro_rules! impl_all_fxn_v {
     ($struct_name:ident, $op:ident, $ix:ty $(, $semantic_contract:path)?) => {
         #[derive(Debug)]

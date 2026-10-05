@@ -1,12 +1,12 @@
 use super::*;
-use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+use mech_syntax::document::parser::{canonical::parse_canonical_executable_rule_for_test, rules};
 use mech_syntax::document::{ParseConfig, RuleId, TextSnapshot};
 
 fn parse<T: AstNode>(source: &str, rule: RuleId) -> T {
     fn find<T: AstNode>(node: SyntaxNode) -> Option<T> {
         T::cast(node.clone()).or_else(|| node.children().find_map(find::<T>))
     }
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = parse_canonical_executable_rule_for_test(
         TextSnapshot::new(DocumentId(0x54b), Revision(1), source).unwrap(),
         rule,
         ParseConfig::default(),

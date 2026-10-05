@@ -9170,7 +9170,7 @@ mod tests {
         }
         for source in ["_", "unknown(math/add(1,2))"] {
             let parsed =
-                mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test(
+                mech_syntax::document::parser::canonical::parse_canonical_executable_rule_for_test(
                     mech_syntax::document::TextSnapshot::new(
                         DocumentId(0x548),
                         Revision(1),

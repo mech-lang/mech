@@ -1675,7 +1675,7 @@ mod tests {
     fn all_document_rule_phases_survive_one_transition_resumes() {
         let table = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../docs/design/grammar-audit/s7-document-certification.tsv"
+            "/../../docs/design/grammar-audit/document-certification.tsv"
         ));
         let mut count = 0;
         for row in table.lines().skip(1) {

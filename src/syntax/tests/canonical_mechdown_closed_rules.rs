@@ -18,7 +18,7 @@ fn parse(
     parse_canonical_mechdown_rule_for_test(source(text), rule, ParseConfig::default())
         .unwrap_or_else(|| {
             panic!(
-                "{} is not a Phase 2B rule",
+                "{} is not a document markup rule",
                 canonical_rule_name(rule).unwrap()
             )
         })

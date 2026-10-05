@@ -2762,7 +2762,7 @@ fn resident_observation_value<'a>(
             })
         }
         mech_core::MemoryObjectOwner::NodeScratch { .. } => {
-            // Block locals are value-bearing scratch objects in the same R5
+            // Block locals are value-bearing scratch objects in the same memory
             // plan. Kernel-private scratch has no value slot and stays absent.
             let value = activated
                 .memory_plan

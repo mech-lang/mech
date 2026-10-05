@@ -1,5 +1,5 @@
 use mech_syntax::document::parser::canonical::{
-    CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_phase_2e_rule_for_test,
+    CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_module_import_rule_for_test,
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
@@ -9,7 +9,7 @@ use mech_syntax::document::{
 };
 use proptest::prelude::*;
 
-const PHASE_2E_RULES: &[RuleId] = &[
+const MODULE_IMPORT_RULES: &[RuleId] = &[
     rules::MODULE_IMPORT_NAME_SEGMENT,
     rules::MODULE_IMPORT_INTRINSIC_SEGMENT,
     rules::MODULE_IMPORT_PATH_SEGMENT,
@@ -45,8 +45,8 @@ fn piece_source(parts: &[&str]) -> TextSnapshot {
 }
 
 fn parse(source: TextSnapshot, rule: RuleId, config: ParseConfig) -> CanonicalSourceRuleSnapshot {
-    parse_canonical_phase_2e_rule_for_test(source, rule, config)
-        .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2E direct rule"))
+    parse_canonical_module_import_rule_for_test(source, rule, config)
+        .unwrap_or_else(|| panic!("{rule:?} is not a module import grammar direct rule"))
 }
 
 fn assert_diagnostic_ranges_are_bounded(parsed: &CanonicalSourceRuleSnapshot) {
@@ -183,11 +183,11 @@ proptest! {
   })]
 
   #[test]
-  fn every_phase_2e_direct_rule_is_total_lossless_and_bounded(
+  fn every_module_import_direct_rule_is_total_lossless_and_bounded(
     characters in proptest::collection::vec(any::<char>(), 0..48),
   ) {
     let text = characters.into_iter().collect::<String>();
-    for rule in PHASE_2E_RULES {
+    for rule in MODULE_IMPORT_RULES {
       let config = ParseConfig::default();
       let parsed = parse(source(&text), *rule, config);
       assert_snapshot_invariants(&parsed, *rule, config);
@@ -196,9 +196,9 @@ proptest! {
 }
 
 #[test]
-fn all_phase_2e_direct_rules_restore_a_clean_nomatch() {
-    assert_eq!(PHASE_2E_RULES.len(), 19);
-    for rule in PHASE_2E_RULES {
+fn all_module_import_direct_rules_restore_a_clean_nomatch() {
+    assert_eq!(MODULE_IMPORT_RULES.len(), 19);
+    for rule in MODULE_IMPORT_RULES {
         let parsed = parse(source("$"), *rule, ParseConfig::default());
         assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch, "{rule:?}");
         assert_snapshot_invariants(&parsed, *rule, ParseConfig::default());

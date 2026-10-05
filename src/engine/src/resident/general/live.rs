@@ -118,7 +118,7 @@ fn check_measurement(
     let target = TargetMemoryProfile::current_resident_cpu()?;
     // Inspecting an input or the old publication produces no new output.
     // Keep call-scoped traversal/retention guards here; facts() carries the
-    // complete measured storage into R5's coexistence and candidate admission.
+    // complete measured storage into memory planning's coexistence and candidate admission.
     // Aggregate-only admission would incorrectly drop the traversal guards.
     let demand = ResourceDemand {
         output_elements: 0,

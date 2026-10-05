@@ -47,7 +47,7 @@ pub struct SnapshotValidationContext<'a> {
 
 /// Sealed allocation authority used by managed canonical construction. The
 /// ordinary detached-value API has no authority and retains its historical
-/// behavior; R6 builders install this capability so every allocation made by
+/// behavior; managed builders install this capability so every allocation made by
 /// the common finalizer is checked before it is attempted.
 pub(crate) trait SnapshotConstructionAuthority {
     fn admit_snapshot_allocation(

@@ -18,7 +18,7 @@ use super::{
     pattern_primitives, recursive_core, source_imports, structure_shell, subscript_primitives,
 };
 
-/// Parse one rule from the generated S7 document closure as a deterministic
+/// Parse one rule from the generated document closure as a deterministic
 /// source prefix.
 #[doc(hidden)]
 pub fn parse_canonical_document_rule_for_test(
@@ -33,8 +33,8 @@ pub fn parse_canonical_document_rule_for_test(
     })
 }
 
-/// The exact combined Phase 2F direct-rule surface.
-pub(crate) const PHASE_2F_RULES: &[RuleId; 21] = &[
+/// The exact combined declaration grammar direct-rule surface.
+pub(crate) const DECLARATION_RULES: &[RuleId; 21] = &[
     rules::SOURCE_IMPORT_TAIL,
     rules::SOURCE_PATH_COMPONENT_TOKEN,
     rules::SOURCE_PATH_COMPONENT,
@@ -58,8 +58,8 @@ pub(crate) const PHASE_2F_RULES: &[RuleId; 21] = &[
     rules::CONTEXT_CAPABILITY_SCOPE,
 ];
 
-/// The exact combined Phase 2G direct executable-primitive surface.
-pub(crate) const PHASE_2G_RULES: &[RuleId; 15] = &[
+/// The exact combined executable-primitive surface.
+pub(crate) const PRIMITIVE_RULES: &[RuleId; 15] = &[
     rules::STATEMENT_SEPARATOR,
     rules::SELECT_ALL,
     rules::SWIZZLE_SUBSCRIPT,
@@ -77,8 +77,8 @@ pub(crate) const PHASE_2G_RULES: &[RuleId; 15] = &[
     rules::GUARD_OPERATOR,
 ];
 
-/// The exact closed Phase 2H structure-shell surface.
-pub(crate) const PHASE_2H_RULES: &[RuleId; 10] = &[
+/// The exact closed structure-shell surface.
+pub(crate) const STRUCTURE_RULES: &[RuleId; 10] = &[
     rules::MATRIX_START,
     rules::MATRIX_END,
     rules::TABLE_START,
@@ -237,18 +237,18 @@ pub(crate) fn parse_source_rule_prefix(
     }
 }
 
-/// Parse one exact Phase 2C production as a deterministic source prefix.
+/// Parse one exact literal, path, and kind grammar production as a deterministic source prefix.
 ///
 /// This hidden test surface deliberately exposes only the selected closed
 /// island. It is not a production parser root and does not dispatch any
 /// enclosing literal, kind, variable, expression, or document production.
 #[doc(hidden)]
-pub fn parse_canonical_phase_2c_rule_for_test(
+pub fn parse_canonical_literal_path_kind_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
 ) -> Option<CanonicalSourceRuleSnapshot> {
-    is_phase_2c_rule(rule).then(|| {
+    is_literal_path_kind_rule(rule).then(|| {
         parse_source_rule_prefix(source, rule, config, |parser| match rule {
             rules::EMPTY => literals::parse_empty(parser),
             rules::ATOM => literals::parse_atom(parser),
@@ -280,101 +280,105 @@ pub fn parse_canonical_phase_2c_rule_for_test(
             rules::KIND_ANY => kinds::parse_kind_any(parser),
             rules::KIND_EMPTY => kinds::parse_kind_empty(parser),
             rules::KIND_ATOM => kinds::parse_kind_atom(parser),
-            _ => unreachable!("Phase 2C support guard rejects every other RuleId"),
+            _ => unreachable!(
+                "literal, path, and kind grammar support guard rejects every other RuleId"
+            ),
         })
     })
 }
 
-/// Parse one exact Phase 2D operator production as a deterministic source
+/// Parse one exact expression grammar operator production as a deterministic source
 /// prefix. This hidden surface deliberately exposes only the closed operator
 /// layer; it does not introduce a production parser root.
 #[doc(hidden)]
-pub fn parse_canonical_phase_2d_rule_for_test(
+pub fn parse_canonical_expression_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
 ) -> Option<CanonicalSourceRuleSnapshot> {
     operators::supports(rule).then(|| {
         parse_source_rule_prefix(source, rule, config, |parser| {
-            operators::parse_rule(parser, rule).expect("Phase 2D support guard accepts this RuleId")
+            operators::parse_rule(parser, rule)
+                .expect("expression grammar support guard accepts this RuleId")
         })
     })
 }
 
-/// Parse one exact Phase 2E module-import production as a deterministic
+/// Parse one exact module-import production as a deterministic
 /// source prefix. This hidden surface exposes only the closed module-import
 /// layer and deliberately does not introduce an import parser root.
 #[doc(hidden)]
-pub fn parse_canonical_phase_2e_rule_for_test(
+pub fn parse_canonical_module_import_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
 ) -> Option<CanonicalSourceRuleSnapshot> {
     imports::supports(rule).then(|| {
         parse_source_rule_prefix(source, rule, config, |parser| {
-            imports::parse_rule(parser, rule).expect("Phase 2E support guard accepts this RuleId")
+            imports::parse_rule(parser, rule)
+                .expect("module import grammar support guard accepts this RuleId")
         })
     })
 }
 
-/// Parse one exact Phase 2F declaration or source-import production as a
+/// Parse one exact declaration or source-import production as a
 /// deterministic source prefix. This hidden surface stays within the closed
 /// island and does not introduce a statement or document parser root.
 #[doc(hidden)]
-pub fn parse_canonical_phase_2f_rule_for_test(
+pub fn parse_canonical_declaration_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
 ) -> Option<CanonicalSourceRuleSnapshot> {
-    PHASE_2F_RULES.contains(&rule).then(|| {
+    DECLARATION_RULES.contains(&rule).then(|| {
         parse_source_rule_prefix(source, rule, config, |parser| {
             source_imports::parse_rule(parser, rule)
                 .or_else(|| declarations::parse_rule(parser, rule))
-                .expect("Phase 2F support guard accepts this RuleId")
+                .expect("declaration grammar support guard accepts this RuleId")
         })
     })
 }
 
-/// Parse one exact Phase 2G executable primitive as a deterministic source
+/// Parse one exact executable primitive as a deterministic source
 /// prefix. This hidden surface deliberately does not introduce a subscript,
 /// pattern, statement, expression, state-machine, or document root.
 #[doc(hidden)]
-pub fn parse_canonical_phase_2g_rule_for_test(
+pub fn parse_canonical_primitive_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
 ) -> Option<CanonicalSourceRuleSnapshot> {
-    PHASE_2G_RULES.contains(&rule).then(|| {
+    PRIMITIVE_RULES.contains(&rule).then(|| {
         parse_source_rule_prefix(source, rule, config, |parser| {
             subscript_primitives::parse_rule(parser, rule)
                 .or_else(|| pattern_primitives::parse_rule(parser, rule))
                 .or_else(|| control_operators::parse_rule(parser, rule))
-                .expect("Phase 2G support guard accepts this RuleId")
+                .expect("executable primitives support guard accepts this RuleId")
         })
     })
 }
 
-/// Parse one exact Phase 2H structure-shell rule as a deterministic source
+/// Parse one exact structure-shell rule as a deterministic source
 /// prefix. This hidden surface deliberately does not introduce a matrix,
 /// table, map, set, structure, expression, or document root.
 #[doc(hidden)]
-pub fn parse_canonical_phase_2h_rule_for_test(
+pub fn parse_canonical_structure_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
 ) -> Option<CanonicalSourceRuleSnapshot> {
-    PHASE_2H_RULES.contains(&rule).then(|| {
+    STRUCTURE_RULES.contains(&rule).then(|| {
         parse_source_rule_prefix(source, rule, config, |parser| {
             structure_shell::parse_rule(parser, rule)
-                .expect("Phase 2H support guard accepts this RuleId")
+                .expect("structure grammar support guard accepts this RuleId")
         })
     })
 }
 
-/// Parse one frozen Phase 2I recursive-core rule as a deterministic source
-/// prefix without activating it in the public canonical registry.
+/// Parse one canonical recursive-core rule as a deterministic source
+/// prefix for focused recursive grammar tests.
 #[doc(hidden)]
-pub fn parse_canonical_phase_2i_rule_for_test(
+pub fn parse_canonical_executable_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
@@ -382,12 +386,12 @@ pub fn parse_canonical_phase_2i_rule_for_test(
     recursive_core::supports(rule).then(|| {
         parse_source_rule_prefix(source, rule, config, |parser| {
             recursive_core::parse_rule(parser, rule)
-                .expect("Phase 2I support guard accepts this RuleId")
+                .expect("executable grammar support guard accepts this RuleId")
         })
     })
 }
 
-fn is_phase_2c_rule(rule: RuleId) -> bool {
+fn is_literal_path_kind_rule(rule: RuleId) -> bool {
     matches!(
         rule,
         rules::EMPTY
@@ -430,9 +434,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn phase_2c_helper_accepts_exactly_the_closed_30_rule_set() {
+    fn literal_path_kind_helper_accepts_exactly_the_closed_30_rule_set() {
         let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
-        let phase_rules = [
+        let component_rules = [
             rules::EMPTY,
             rules::ATOM,
             rules::STRING,
@@ -464,10 +468,10 @@ mod tests {
             rules::KIND_EMPTY,
             rules::KIND_ATOM,
         ];
-        assert_eq!(phase_rules.len(), 30);
-        for rule in phase_rules {
+        assert_eq!(component_rules.len(), 30);
+        for rule in component_rules {
             assert!(
-                parse_canonical_phase_2c_rule_for_test(
+                parse_canonical_literal_path_kind_rule_for_test(
                     source.clone(),
                     rule,
                     ParseConfig::default(),
@@ -477,18 +481,22 @@ mod tests {
             );
         }
         assert!(
-            parse_canonical_phase_2c_rule_for_test(source, rules::LITERAL, ParseConfig::default(),)
-                .is_none()
+            parse_canonical_literal_path_kind_rule_for_test(
+                source,
+                rules::LITERAL,
+                ParseConfig::default(),
+            )
+            .is_none()
         );
     }
 
     #[test]
-    fn phase_2d_helper_accepts_exactly_the_closed_53_rule_set() {
+    fn expression_helper_accepts_exactly_the_closed_53_rule_set() {
         let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
-        assert_eq!(operators::PHASE_2D_OPERATOR_RULES.len(), 53);
-        for rule in operators::PHASE_2D_OPERATOR_RULES {
+        assert_eq!(operators::EXPRESSION_OPERATOR_RULES.len(), 53);
+        for rule in operators::EXPRESSION_OPERATOR_RULES {
             assert!(
-                parse_canonical_phase_2d_rule_for_test(
+                parse_canonical_expression_rule_for_test(
                     source.clone(),
                     *rule,
                     ParseConfig::default(),
@@ -498,7 +506,7 @@ mod tests {
             );
         }
         assert!(
-            parse_canonical_phase_2d_rule_for_test(
+            parse_canonical_expression_rule_for_test(
                 source,
                 rules::EXPRESSION,
                 ParseConfig::default(),
@@ -508,12 +516,12 @@ mod tests {
     }
 
     #[test]
-    fn phase_2e_helper_accepts_exactly_the_closed_19_rule_set() {
+    fn module_import_helper_accepts_exactly_the_closed_19_rule_set() {
         let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
-        assert_eq!(imports::PHASE_2E_IMPORT_RULES.len(), 19);
-        for rule in imports::PHASE_2E_IMPORT_RULES {
+        assert_eq!(imports::MODULE_IMPORT_RULES.len(), 19);
+        for rule in imports::MODULE_IMPORT_RULES {
             assert!(
-                parse_canonical_phase_2e_rule_for_test(
+                parse_canonical_module_import_rule_for_test(
                     source.clone(),
                     *rule,
                     ParseConfig::default(),
@@ -523,7 +531,7 @@ mod tests {
             );
         }
         assert!(
-            parse_canonical_phase_2e_rule_for_test(
+            parse_canonical_module_import_rule_for_test(
                 source,
                 rules::IMPORT_DECLARATION,
                 ParseConfig::default(),

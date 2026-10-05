@@ -516,7 +516,7 @@ pub(crate) use mech_core::{
 };
 
 /// Private compatibility shell for existing Resident call sites. It contains
-/// exactly one shared R5 `ResourceDemand`; it has no parallel cost authority.
+/// exactly one shared `ResourceDemand`; it has no parallel cost authority.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(crate) struct KernelCostEstimate {
     demand: ResourceDemand,

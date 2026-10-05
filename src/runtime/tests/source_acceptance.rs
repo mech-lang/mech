@@ -1,11 +1,11 @@
 //! Public source, artifact, and resident execution contracts.
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 
-#[path = "source_acceptance/activation_facts.rs"]
+#[path = "source_acceptance_cases/activation_facts.rs"]
 mod activation_facts;
-#[path = "source_acceptance/index_range.rs"]
+#[path = "source_acceptance_cases/index_range.rs"]
 mod index_range;
-#[path = "source_acceptance/numeric.rs"]
+#[path = "source_acceptance_cases/numeric.rs"]
 mod numeric;
 
 use mech_engine::ProgramArtifact;
