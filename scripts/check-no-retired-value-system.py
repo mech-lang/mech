@@ -36,6 +36,7 @@ STATIC_INCLUDE_ARGUMENT = re.compile(
 CHAR_LITERAL = re.compile(
     r"(?:b)?'(?:\\(?:[nrt0\\'\"]|x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]{1,6}\})|[^\\'\r\n])'"
 )
+RAW_STRING_START = re.compile(r'(?:br|rb|r)(?P<hashes>#{0,255})"')
 
 
 def mask_non_code(source: str) -> str:
@@ -78,10 +79,12 @@ def mask_non_code(source: str) -> str:
             index = character.end()
             continue
 
-        raw = re.match(r"(?:br|rb|r)(?P<hashes>#{0,255})\"", source[index:])
+        # Match against the borrowed source at its current offset. Copying the
+        # remaining suffix at every character makes this scan quadratic.
+        raw = RAW_STRING_START.match(source, index)
         if raw is not None:
             terminator = '"' + raw.group("hashes")
-            content = index + raw.end()
+            content = raw.end()
             close = source.find(terminator, content)
             end = len(source) if close < 0 else close + len(terminator)
             blank(index, end)
