@@ -23,6 +23,7 @@ pub mod intrinsics;
 pub mod memory_planner;
 #[cfg(any(feature = "semantic-compiler", feature = "resident-artifact"))]
 pub mod memory_runtime;
+#[cfg(feature = "semantic-compiler")]
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
 mod resident;
@@ -125,8 +126,9 @@ pub use mech_core::*;
 pub use crate::function::*;
 #[cfg(feature = "semantic-compiler")]
 pub use crate::intrinsics::aggregate::*;
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(feature = "semantic-compiler", feature = "convert"))]
 pub use crate::intrinsics::kind_conversion::*;
+#[cfg(feature = "semantic-compiler")]
 pub use crate::program::*;
 #[cfg(feature = "source")]
 pub use crate::source_semantics::*;
