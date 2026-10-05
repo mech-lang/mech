@@ -264,10 +264,74 @@ jobs:
           test "$MUTATIONS_RESULT" = success
           test "$DISTRIBUTION_RESULT" = success
 
+  canonical-source-products:
+    name: Canonical source products
+    needs: impact
+    if: (needs.impact.outputs.standard_canaries_required == 'true' && needs.impact.outputs.landing_candidate == 'true') || needs.impact.outputs.browser_canary_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_TARGET_DIR: target/canonical-source-products
+      MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-source-products
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record integration checkout identity
+        env:
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Verify physical parser retirement for the landing candidate
+        if: needs.impact.outputs.landing_candidate == 'true'
+        run: |
+          test ! -e src/syntax/src/parser.rs
+          test ! -e src/syntax/src/document/lower/legacy
+      - name: Fetch the locked source fixture dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+      - name: Prepare and execute the canonical source products once
+        run: |
+          python3 scripts/run-native-plan-stage.py \
+            --stage canonical-source-products --timeout-secs 540 \
+            --log-dir target/canonical-source-product-logs -- \
+            cargo +nightly-2026-03-03 run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+          cp target/canonical-source-products/debug/full-source-runtime "$MECH_BROWSER_BUNDLE_FIXTURES/full-source-runtime"
+          git rev-parse 'HEAD^{tree}' > "$MECH_BROWSER_BUNDLE_FIXTURES/producer-tree.txt"
+          git rev-parse HEAD > "$MECH_BROWSER_BUNDLE_FIXTURES/producer-sha.txt"
+      - name: Upload the prepared source products
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-source-products
+          path: ${{ runner.temp }}/canonical-source-products
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 1
+      - name: Retain bounded preparation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-source-product-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/canonical-source-product-logs
+          if-no-files-found: warn
+          retention-days: 7
+
   standard-linux:
     name: Standard Linux
-    needs: impact
-    if: needs.impact.outputs.standard_canaries_required == 'true'
+    needs:
+      - impact
+      - canonical-source-products
+    if: >-
+      always() && !cancelled() && needs.impact.outputs.standard_canaries_required == 'true' &&
+      (needs.impact.outputs.landing_candidate != 'true' || needs.canonical-source-products.result == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
@@ -290,9 +354,12 @@ jobs:
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Fetch the accumulated C source fixture dependencies
+      - name: Download the accumulated C source products
         if: needs.impact.outputs.landing_candidate == 'true'
-        run: cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+        uses: actions/download-artifact@v4
+        with:
+          name: canonical-source-products
+          path: ${{ runner.temp }}/canonical-source-products
       - name: Build and exercise the lean standard distribution
         run: |
           cargo +nightly-2026-03-03 fetch --locked
@@ -324,10 +391,15 @@ jobs:
 
       - name: Probe accumulated C with the parser physically deleted
         if: ${{ !cancelled() && needs.impact.outputs.landing_candidate == 'true' }}
+        env:
+          SOURCE_PRODUCTS: ${{ runner.temp }}/canonical-source-products
         run: |
           test ! -e src/syntax/src/parser.rs
           test ! -e src/syntax/src/document/lower/legacy
-          cargo +nightly-2026-03-03 run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+          test "$(cat "$SOURCE_PRODUCTS/producer-tree.txt")" = "$(git rev-parse 'HEAD^{tree}')"
+          test "$(cat "$SOURCE_PRODUCTS/producer-sha.txt")" = "$GITHUB_SHA"
+          chmod u+x "$SOURCE_PRODUCTS/full-source-runtime"
+          "$SOURCE_PRODUCTS/full-source-runtime"
 
   changed-owner-tests:
     name: Owner ${{ matrix.id }} (${{ matrix.owners }})
@@ -625,6 +697,7 @@ jobs:
     needs:
       - impact
       - browser-compute-build
+      - canonical-source-products
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -648,6 +721,11 @@ jobs:
           path: /tmp/browser-compute-canary
       - name: Restore the shared compute browser build
         run: tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+      - name: Download the prepared canonical document bundles
+        uses: actions/download-artifact@v4
+        with:
+          name: canonical-source-products
+          path: ${{ runner.temp }}/canonical-source-products
       - name: Install Node for static compute package admission
         uses: actions/setup-node@v7.0.0
         with:
@@ -659,10 +737,10 @@ jobs:
           --wasm-pkg src/wasm/pkg --software-adapter
       - name: Verify canonical document bundle activation and replacement
         env:
-          MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-document-bundles
+          MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-source-products
         run: |
-          cargo fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
-          cargo run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+          test "$(cat "$MECH_BROWSER_BUNDLE_FIXTURES/producer-tree.txt")" = "$(git rev-parse 'HEAD^{tree}')"
+          test "$(cat "$MECH_BROWSER_BUNDLE_FIXTURES/producer-sha.txt")" = "$GITHUB_SHA"
           python3 scripts/smoke-canonical-document-bundle-browser.py --fixtures "$MECH_BROWSER_BUNDLE_FIXTURES" --served-compute
       - name: Verify report-only particle WebGPU execution
         run: >-
@@ -923,6 +1001,7 @@ jobs:
     if: always() && needs.impact.result != 'cancelled'
     needs:
       - impact
+      - canonical-source-products
       - static-contracts
       - standard-linux
       - changed-owner-tests
@@ -939,6 +1018,8 @@ jobs:
           REVIEW_ONLY: ${{ needs.impact.outputs.review_only }}
           FULL_REQUIRED: ${{ needs.impact.outputs.full_validation_required }}
           IMPACT_RESULT: ${{ needs.impact.result }}
+          SOURCE_REQUIRED: ${{ (needs.impact.outputs.standard_canaries_required == 'true' && needs.impact.outputs.landing_candidate == 'true') || needs.impact.outputs.browser_canary_required == 'true' }}
+          SOURCE_RESULT: ${{ needs.canonical-source-products.result }}
           STATIC_RESULT: ${{ needs.static-contracts.result }}
           LINUX_RESULT: ${{ needs.standard-linux.result }}
           OWNER_RESULT: ${{ needs.changed-owner-tests.result }}
@@ -948,6 +1029,11 @@ jobs:
           NATIVE_PLAN_RESULT: ${{ needs.early-native-plan.result }}
         run: |
           test "$IMPACT_RESULT" = success
+          case "$SOURCE_REQUIRED" in
+            true) test "$SOURCE_RESULT" = success ;;
+            false) test "$SOURCE_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
           if test "$REVIEW_ONLY" = true
           then
             if test "$DOCS_ONLY" = true; then test "$STATIC_RESULT" = skipped; else test "$STATIC_RESULT" = success; fi

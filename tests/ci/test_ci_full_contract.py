@@ -61,6 +61,7 @@ SIZE_PROFILES = (
 )
 INTEGRATION_CHECKOUT_JOBS = {
     "impact",
+    "canonical-source-products",
     "standard-linux",
     "changed-owner-tests",
     "standard-windows",
@@ -196,13 +197,81 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--lib resident::general::shape_fact_tests::", step)
         self.assertIn(step, block)
 
-    def test_landing_source_fixture_is_fetched_before_offline_execution(self):
-        block = job_block(CI, "standard-linux")
+    def test_source_fixture_preparation_is_bounded_and_shared_not_rebuilt_by_consumers(self):
+        producer = job_block(CI, "canonical-source-products")
+        self.assertIn("landing_candidate == 'true'", producer)
+        self.assertIn("standard_canaries_required == 'true'", producer)
+        self.assertIn("browser_canary_required == 'true'", producer)
+        self.assertIn('CARGO_BUILD_JOBS: "2"', producer)
+        self.assertIn('CARGO_INCREMENTAL: 0', producer)
+        self.assertIn('CARGO_PROFILE_DEV_DEBUG: "0"', producer)
+        self.assertIn("timeout-minutes: 12", producer)
         fetch = "cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml"
         run = "cargo +nightly-2026-03-03 run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml"
-        self.assertLess(block.index(fetch), block.index("Build and exercise"))
-        self.assertLess(block.index(fetch), block.index(run))
-        self.assertIn("if: needs.impact.outputs.landing_candidate == 'true'", block)
+        self.assertLess(producer.index(fetch), producer.index(run))
+        self.assertIn("scripts/run-native-plan-stage.py", producer)
+        self.assertIn("--timeout-secs 540", producer)
+        self.assertIn("test ! -e src/syntax/src/parser.rs", producer)
+        self.assertIn("test ! -e src/syntax/src/document/lower/legacy", producer)
+        self.assertIn("canonical-source-products", job_block(CI, "pr-gate"))
+        self.assertIn('test "$SOURCE_RESULT" = success', job_block(CI, "pr-gate"))
+        for consumer, deadline in (("standard-linux", 12), ("browser-compute-smoke", 10)):
+            block = job_block(CI, consumer)
+            self.assertIn("- canonical-source-products", block)
+            self.assertIn("actions/download-artifact@", block)
+            self.assertIn("producer-tree.txt", block)
+            self.assertIn("HEAD^{tree}", block)
+            self.assertNotIn("full-source-runtime/Cargo.toml", block)
+            self.assertIn(f"timeout-minutes: {deadline}", block)
+        self.assertIn("full-source-runtime", job_block(CI, "standard-linux"))
+        self.assertIn("--served-compute", job_block(CI, "browser-compute-smoke"))
+
+    def test_source_fixture_default_profile_has_no_large_debug_or_incremental_build(self):
+        import tomllib
+
+        source = (ROOT / "tests/fixtures/full-source-runtime/Cargo.toml").read_text()
+        profile = re.search(r"(?ms)^\[profile\.dev\]\n.*?(?=^\[|\Z)", source)
+        self.assertIsNotNone(profile, "the isolated fixture must own its build profile")
+        manifest = tomllib.loads(profile.group())
+        self.assertEqual(manifest["profile"]["dev"]["debug"], 0)
+        self.assertIs(manifest["profile"]["dev"]["incremental"], False)
+
+    def test_prepared_source_products_refuse_wrong_or_missing_checkout_evidence(self):
+        tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip()
+        sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+        for consumer, marker, variable in (
+            ("standard-linux", "Probe accumulated C", "SOURCE_PRODUCTS"),
+            ("browser-compute-smoke", "Verify canonical document bundle", "MECH_BROWSER_BUNDLE_FIXTURES"),
+        ):
+            step = next(step for step in job_steps(CI, consumer) if marker in step)
+            guards = "\n".join(
+                line.strip() for line in step.split("        run: |\n", 1)[1].splitlines()
+                if "producer-tree.txt" in line or "producer-sha.txt" in line
+            )
+            self.assertEqual(len(guards.splitlines()), 2)
+            with self.subTest(consumer=consumer), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory)
+                tree_file, sha_file = path / "producer-tree.txt", path / "producer-sha.txt"
+
+                def accepts():
+                    return subprocess.run(
+                        ["/bin/bash", "-e", "-c", guards], cwd=ROOT,
+                        env=os.environ | {variable: directory, "GITHUB_SHA": sha},
+                        capture_output=True,
+                    ).returncode == 0
+
+                tree_file.write_text(tree + "\n")
+                sha_file.write_text(sha + "\n")
+                self.assertTrue(accepts())
+                tree_file.write_text("0" * 40 + "\n")
+                self.assertFalse(accepts())
+                tree_file.write_text(tree + "\n")
+                sha_file.write_text("0" * 40 + "\n")
+                self.assertFalse(accepts())
+                sha_file.unlink()
+                self.assertFalse(accepts())
+                sha_file.write_text(sha + "\n")
+                self.assertTrue(accepts())
 
     def test_native_plan_starts_early_once_on_the_exact_head(self):
         early = job_block(CI, "early-native-plan")
@@ -514,6 +583,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         def accepts(block, **overrides):
             script = textwrap.dedent(block.split("        run: |\n", 1)[1])
             environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "success")
+            environment["SOURCE_REQUIRED"] = "true"
             environment.update(overrides)
             return subprocess.run(
                 ["/bin/bash", "-e", "-c", script], env=environment,
@@ -526,8 +596,11 @@ class FullWorkflowContractTests(unittest.TestCase):
         for result in ("failure", "cancelled", "skipped", ""):
             with self.subTest(result=result):
                 self.assertFalse(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="true", NATIVE_PLAN_RESULT=result))
+                self.assertFalse(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="true", SOURCE_RESULT=result))
                 self.assertFalse(accepts(cargo, NATIVE_PLAN_IN_CALLER="false", NATIVE_PLAN_RESULT=result))
         self.assertTrue(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="false", FULL_RESULT="skipped", NATIVE_PLAN_RESULT="skipped"))
+        self.assertTrue(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="false", FULL_RESULT="skipped", NATIVE_PLAN_RESULT="skipped", SOURCE_REQUIRED="false", SOURCE_RESULT="skipped"))
+        self.assertFalse(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="true", SOURCE_REQUIRED="unknown"))
         self.assertTrue(accepts(cargo, NATIVE_PLAN_IN_CALLER="false"))
         self.assertTrue(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="skipped"))
         self.assertFalse(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="failure"))
@@ -536,7 +609,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         block = job_block(CI, "pr-gate")
         script = textwrap.dedent(block.split("        run: |\n", 1)[1])
         environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "skipped")
-        environment.update(DOCS_ONLY="true", FULL_REQUIRED="false", IMPACT_RESULT="success", BROWSER_RESULT="success")
+        environment.update(DOCS_ONLY="true", FULL_REQUIRED="false", IMPACT_RESULT="success", BROWSER_RESULT="success", SOURCE_REQUIRED="false")
         def accepts(**changes):
             return subprocess.run(["/bin/bash", "-e", "-c", script],
                 env=environment | changes, capture_output=True).returncode == 0

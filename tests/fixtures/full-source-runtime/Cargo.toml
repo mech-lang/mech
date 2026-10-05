@@ -40,3 +40,10 @@ mech-stats = { path = "../../../machines/stats" }
 mech-string = { path = "../../../machines/string" }
 
 [workspace]
+
+# This isolated product fixture does not inherit the workspace's build profile.
+# Its large source catalog must use the same bounded preparation policy in CI
+# and local invocations, including browser consumers without Cargo environment.
+[profile.dev]
+debug = 0
+incremental = false
