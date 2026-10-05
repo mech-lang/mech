@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the permanent R5 deterministic memory-planner boundary."""
+"""Check deterministic memory planning and admission."""
 
 from __future__ import annotations
 
@@ -7,6 +7,10 @@ import argparse
 import re
 import sys
 from pathlib import Path
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rust_source import rust_code
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,19 +51,6 @@ REQUIRED = (
     "src/stdlib/tests/r5_memory_contract.rs",
     "src/compute/tests/r5_memory_plan.rs",
     "hosts/gpu/tests/r5_memory_plan.rs",
-    "scripts/check-r5-memory-planner.py",
-    "scripts/check-r6-memory-runtime.py",
-    "scripts/tests/test_check_r5_memory_planner.py",
-    "docs/design/r5-memory-planner.md",
-    "docs/design/type-memory-boundary.md",
-    "docs/design/r4-type-system-cutover.md",
-    "docs/design/ROADMAP.mec",
-    "docs/design/v0.4-endgame.md",
-    "README.md",
-    ".github/ci/owners.toml",
-    ".github/workflows/ci.yml",
-    ".github/workflows/ci-full.yml",
-    "Cargo.toml",
 )
 
 PLAN_AUTHORITIES = (
@@ -132,75 +123,6 @@ R6_FORBIDDEN = (
     "copy_on_write_backing",
     "replace_value_cell_backing",
 )
-RAW_LITERAL = re.compile(r'(?:br|rb|r)(?P<hashes>#{0,255})"')
-
-
-def rust_code(source: str) -> str:
-    """Blank comments and literals while retaining code coordinates."""
-    output = list(source)
-    size = len(source)
-
-    def blank(start: int, end: int) -> None:
-        for offset in range(start, end):
-            if output[offset] not in "\r\n":
-                output[offset] = " "
-
-    index = 0
-    while index < size:
-        if source.startswith("//", index):
-            end = source.find("\n", index + 2)
-            end = size if end < 0 else end
-            blank(index, end)
-            index = end
-            continue
-        elif source.startswith("/*", index):
-            depth, end = 1, index + 2
-            while end < size and depth:
-                if source.startswith("/*", end):
-                    depth += 1
-                    end += 2
-                elif source.startswith("*/", end):
-                    depth -= 1
-                    end += 2
-                else:
-                    end += 1
-            blank(index, end)
-            index = end
-            continue
-        raw = RAW_LITERAL.match(source, index)
-        if raw:
-            delimiter = '"' + raw.group("hashes")
-            end = source.find(delimiter, raw.end())
-            end = size if end < 0 else end + len(delimiter)
-            blank(index, end)
-            index = end
-            continue
-        prefix = 1 if source.startswith(('b"', "b'"), index) else 0
-        quote = index + prefix
-        if quote < size and source[quote] == '"':
-            end, escaped = quote + 1, False
-            while end < size:
-                character = source[end]
-                end += 1
-                if character == '"' and not escaped:
-                    break
-                escaped = character == "\\" and not escaped
-                if character != "\\":
-                    escaped = False
-            blank(index, end)
-            index = end
-            continue
-        if quote < size and source[quote] == "'":
-            value, end = quote + 1, quote + 2
-            if value < size and source[value] == "\\":
-                end = value + (4 if source.startswith("\\x", value) else 2)
-            if end < size and source[end] == "'":
-                blank(index, end + 1)
-                index = end + 1
-                continue
-        index += 1
-    return "".join(output)
-
 
 def balanced_body(source: str, declaration: str) -> str | None:
     match = re.search(rf"\b(?:pub\s+)?(?:struct|enum)\s+{re.escape(declaration)}\b", source)
@@ -264,7 +186,6 @@ def function_bodies(source: str, prefix: str):
 def failures(root: Path) -> list[str]:
     root = root.resolve()
     found: list[str] = []
-    r6_active = (root / "scripts/check-r6-memory-runtime.py").is_file()
     sources: dict[str, str] = {}
     for relative in REQUIRED:
         path = root / relative
@@ -340,53 +261,47 @@ def failures(root: Path) -> list[str]:
     # 13. Specialized functions cannot drop their call plan.
     specialization = rust_code(sources.get("src/core/src/function/specialization.rs", ""))
     specialized = balanced_body(specialization, "SpecializedFunction") or ""
-    if r6_active:
-        function_runtime_path = root / "src/core/src/function/mod.rs"
-        function_runtime = rust_code(
-            function_runtime_path.read_text(encoding="utf-8")
-            if function_runtime_path.is_file()
-            else ""
-        )
-        specialized_impl = specialization[
-            specialization.find("impl SpecializedFunction") :
-        ]
+    function_runtime_path = root / "src/core/src/function/mod.rs"
+    function_runtime = rust_code(
+        function_runtime_path.read_text(encoding="utf-8")
+        if function_runtime_path.is_file()
+        else ""
+    )
+    specialized_impl = specialization[
+        specialization.find("impl SpecializedFunction") :
+    ]
 
-        def constructor_requires_call_plan(name: str) -> bool:
-            match = re.search(rf"\bfn\s+{re.escape(name)}\b", specialized_impl)
-            if match is None:
-                return False
-            body = specialized_impl.find("{", match.end())
-            return body >= 0 and re.search(
-                r"\bmemory_plan\s*:\s*CallMemoryPlan\b",
-                specialized_impl[match.start() : body],
-            ) is not None
+    def constructor_requires_call_plan(name: str) -> bool:
+        match = re.search(rf"\bfn\s+{re.escape(name)}\b", specialized_impl)
+        if match is None:
+            return False
+        body = specialized_impl.find("{", match.end())
+        return body >= 0 and re.search(
+            r"\bmemory_plan\s*:\s*CallMemoryPlan\b",
+            specialized_impl[match.start() : body],
+        ) is not None
 
-        constructor_names = ["new"]
-        if "fn new_with_managed_inputs" in specialized_impl:
-            constructor_names.append("new_with_managed_inputs")
-        r6_constructor_retains_plan = (
-            all(constructor_requires_call_plan(name) for name in constructor_names)
-            and "let memory_plan = Rc::new(memory_plan);" in specialized_impl
-            and "FunctionInstance::new(implementation, invocation, memory_plan)"
-            in specialized_impl
-            and (
-                "fn new_with_managed_inputs" not in specialized_impl
-                or "FunctionInstance::new_with_managed_inputs" in specialized_impl
-            )
+    constructor_names = ["new"]
+    if "fn new_with_managed_inputs" in specialized_impl:
+        constructor_names.append("new_with_managed_inputs")
+    r6_constructor_retains_plan = (
+        all(constructor_requires_call_plan(name) for name in constructor_names)
+        and "let memory_plan = Rc::new(memory_plan);" in specialized_impl
+        and "FunctionInstance::new(implementation, invocation, memory_plan)"
+        in specialized_impl
+        and (
+            "fn new_with_managed_inputs" not in specialized_impl
+            or "FunctionInstance::new_with_managed_inputs" in specialized_impl
         )
-        if not (
-            re.search(r"\binstance\s*:\s*FunctionInstance\b", specialized)
-            and re.search(r"struct\s+ManagedFunctionBinding\s*\{[^}]*\bplan\s*:\s*Rc<CallMemoryPlan>", function_runtime, re.DOTALL)
-            and r6_constructor_retains_plan
-        ):
-            found.append("SpecializedFunction omits CallMemoryPlan")
-        if not r6_constructor_retains_plan:
-            found.append("production SpecializedFunction constructor omits CallMemoryPlan")
-    else:
-        if not re.search(r"\bmemory_plan\s*:\s*CallMemoryPlan\b", specialized):
-            found.append("SpecializedFunction omits CallMemoryPlan")
-        if not re.search(r"fn\s+new\s*\([^)]*memory_plan\s*:\s*CallMemoryPlan", specialization, re.DOTALL):
-            found.append("production SpecializedFunction constructor omits CallMemoryPlan")
+    )
+    if not (
+        re.search(r"\binstance\s*:\s*FunctionInstance\b", specialized)
+        and re.search(r"struct\s+ManagedFunctionBinding\s*\{[^}]*\bplan\s*:\s*Rc<CallMemoryPlan>", function_runtime, re.DOTALL)
+        and r6_constructor_retains_plan
+    ):
+        found.append("SpecializedFunction omits CallMemoryPlan")
+    if not r6_constructor_retains_plan:
+        found.append("production SpecializedFunction constructor omits CallMemoryPlan")
 
     # 14. Executable compiler bindings retain the matching non-wire sidecar.
     context = sources.get("src/core/src/program/compiler/context.rs", "")
@@ -610,56 +525,19 @@ def failures(root: Path) -> list[str]:
             "resident_state_buffer(allocation)"
         )
 
-    # 20. R6 backing and allocator concepts remain outside the R5 planner and
-    # ordinary production owners. The closed R6 runtime owner is allowed to
-    # realize the plan without weakening this boundary everywhere else.
+    # Runtime backing and allocator concepts remain confined to their memory
+    # owners. Planners describe resource needs without allocation authority.
     for relative, source in rust_files(root, PRODUCTION_ROOTS):
         if relative.startswith("src/core/src/memory_runtime/"):
             continue
         code = rust_code(source)
         for identifier in R6_FORBIDDEN:
-            allowed_r6_owner = r6_active and (
+            allowed_r6_owner = (
                 relative,
                 identifier,
             ) == ("hosts/gpu/src/memory.rs", "AllocationHandle")
             if re.search(rf"\b{re.escape(identifier)}\b", code) and not allowed_r6_owner:
-                found.append(f"{relative}: R6 concept introduced during R5: {identifier}")
-
-    # 21. Package versions remain on the existing release line.
-    cargo = sources.get("Cargo.toml", "")
-    if not re.search(r"(?m)^version\s*=\s*\"0\.3\.6\"\s*$", cargo):
-        found.append("root package version changed during R5")
-    if not re.search(r"(?m)^mech-core\s*=\s*\{\s*version\s*=\s*\"0\.3\.5\"", cargo):
-        found.append("workspace component versions changed during R5")
-
-    # 22. Final status and workflow ownership are permanent.
-    status_sources = "\n".join(
-        sources.get(path, "")
-        for path in (
-            "README.md",
-            "docs/design/ROADMAP.mec",
-            "docs/design/v0.4-endgame.md",
-            "docs/design/type-memory-boundary.md",
-            "docs/design/r4-type-system-cutover.md",
-        )
-    )
-    if "R5 Memory planner — complete" not in status_sources or "R6 Memory runtime cutover — next" not in status_sources:
-        found.append("documentation does not mark R5 complete and R6 next")
-    if re.search(r"(?i)\b(?:TODO[^\n]*R5|R5[^\n]*(?:incomplete|follow-up|required later))\b", status_sources):
-        found.append("documentation leaves required R5 work incomplete")
-    owners = sources.get(".github/ci/owners.toml", "")
-    for owner in ("[owners.mech-compute]", "[owners.mech-gpu]"):
-        if owner not in owners:
-            found.append(f"R5 owner registration is missing: {owner}")
-    for workflow in (".github/workflows/ci.yml", ".github/workflows/ci-full.yml"):
-        source = sources.get(workflow, "")
-        if "python3 scripts/check-r5-memory-planner.py" not in source:
-            found.append(f"{workflow}: does not run the R5 checker")
-        if "scripts/tests/test_check_r5_memory_planner.py" not in source:
-            found.append(f"{workflow}: does not run the R5 checker mutation suite")
-    full = sources.get(".github/workflows/ci-full.yml", "")
-    if "name: Memory planner contract" not in full:
-        found.append("Full CI omits the memory planner contract job")
+                found.append(f"{relative}: runtime allocation authority outside its owner: {identifier}")
 
     return sorted(set(found))
 

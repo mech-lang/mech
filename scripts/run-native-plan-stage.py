@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 CLEANUP_SECONDS = 30
-RESOURCE_INTERVAL_SECONDS = 15
+PROGRESS_INTERVAL_SECONDS = 15
 CONSOLE_WRITE_LIMIT_BYTES = 16 * 1024
 
 
@@ -147,7 +147,7 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
     resources = log_dir / f"{stage}.resources.log"
     started = time.monotonic()
     deadline = started + timeout
-    next_snapshot = started + RESOURCE_INTERVAL_SECONDS
+    next_progress = started + PROGRESS_INTERVAL_SECONDS
     resource_snapshot(resources, stage, "before")
     reason = "exit"
     process = None
@@ -178,9 +178,8 @@ def run_stage(stage: str, command: list[str], timeout: float, log_dir: Path) -> 
                 if pending:
                     mirror_console(pending)
                 now = time.monotonic()
-                if now >= next_snapshot:
-                    resource_snapshot(resources, stage, "running")
-                    next_snapshot = now + RESOURCE_INTERVAL_SECONDS
+                if now >= next_progress:
+                    next_progress = now + PROGRESS_INTERVAL_SECONDS
                     mirror_console(
                         f"MECH_NATIVE_CI_PROGRESS stage={stage} elapsed_seconds={now-started:.1f}\n"
                     )

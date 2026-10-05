@@ -338,7 +338,6 @@ dependencies = [
  "mech-core",
  "mech-runtime",
  "mech-stdlib",
- "mech-syntax",
  "serde",
  "serde_json",
 ]

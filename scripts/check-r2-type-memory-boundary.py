@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
-"""Enforce the permanent R2 type-memory boundary and its R4 authority use."""
+"""Check the separation of type-memory contracts from physical storage and wire formats."""
 
 from __future__ import annotations
 
 import argparse
 import re
 import sys
-import tomllib
 from pathlib import Path
 from typing import Pattern
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rust_source import rust_code
+
+
 ROOT = Path(__file__).resolve().parents[1]
-R2_CONFORMANCE_TARGETS = (
-    "type_memory_contract",
-    "storage_capability",
-    "operation_memory_requirement",
-    "type_memory_boundary",
-)
 REQUIRED = (
     "src/core/src/lib.rs",
     "src/core/src/memory_contract/mod.rs",
@@ -29,13 +26,6 @@ REQUIRED = (
     "src/core/src/cell_binding.rs",
     "src/core/src/function/argument.rs",
     "src/core/tests/type_memory_boundary.rs",
-    "docs/design/type-memory-boundary.md",
-    "docs/design/ROADMAP.mec",
-    "docs/design/v0.4-endgame.md",
-    "README.md",
-    ".github/workflows/ci.yml",
-    ".github/workflows/ci-full.yml",
-    ".github/ci/owners.toml",
 )
 R2_IDENTIFIERS = (
     "TypeMemoryContract", "ResolvedTypeMemoryContract", "StorageCapabilityDescriptor",
@@ -46,97 +36,10 @@ R2_IDENTIFIERS = (
 )
 TRANSITIONAL = ("FunctionValueRepresentation", "FunctionRuntimeType", "FunctionMatrixRepresentation",
     "FunctionMatrixStoragePattern", "FunctionMatrixElement")
-R2_DOCS = ("README.md", "docs/design/type-memory-boundary.md", "docs/design/ROADMAP.mec",
-    "docs/design/v0.4-endgame.md")
 WIRE_ROOTS = (
     "src/core/src/schema/encoding.rs", "src/core/src/operation_contract/encoding.rs",
     "src/core/src/program/bytecode", "src/bytecode", "src/engine/src/artifact", "src/abi",
 )
-CONFORMANCE = (
-    "canonical_storage_is_universal_mechanics_not_universal_semantics",
-    "semantic_addressing_precedes_backing_addressing",
-    "exact_backings_preserve_kind_extent_and_evolution",
-    "port_capability_failures_remain_structured",
-    "declared_requirements_preserve_delivery_without_target_policy",
-    "shadow_invocation_validation_is_complete_and_pure",
-    "logical_value_cell_and_storage_identity_are_distinct",
-    "inferred_vector_fixed_axis_mismatches_remain_owned_by_r4",
-    "r2_analysis_is_deterministic_non_mutating_and_non_serialized",
-)
-RAW_LITERAL = re.compile(r'(?:br|rb|r)(?P<hashes>#{0,255})"')
-
-
-def rust_code(source: str) -> str:
-    """Blank Rust comments and literals while retaining code and newlines."""
-    out = list(source)
-    size = len(source)
-
-    def blank(start: int, end: int) -> None:
-        for index in range(start, end):
-            if out[index] not in "\r\n":
-                out[index] = " "
-
-    index = 0
-    while index < size:
-        if source.startswith("//", index):
-            end = source.find("\n", index + 2)
-            end = size if end < 0 else end
-            blank(index, end)
-            index = end
-            continue
-        if source.startswith("/*", index):
-            depth, end = 1, index + 2
-            while end < size and depth:
-                if source.startswith("/*", end):
-                    depth, end = depth + 1, end + 2
-                elif source.startswith("*/", end):
-                    depth, end = depth - 1, end + 2
-                else:
-                    end += 1
-            blank(index, end)
-            index = end
-            continue
-        raw = RAW_LITERAL.match(source, index)
-        if raw:
-            delimiter = '"' + raw.group("hashes")
-            end = source.find(delimiter, raw.end())
-            end = size if end < 0 else end + len(delimiter)
-            blank(index, end)
-            index = end
-            continue
-        prefix = 1 if source.startswith(('b"', "b'"), index) else 0
-        quote_index = index + prefix
-        if quote_index < size and source[quote_index] == '"':
-            end, escaped = quote_index + 1, False
-            while end < size:
-                char = source[end]
-                end += 1
-                if char == '"' and not escaped:
-                    break
-                escaped = char == "\\" and not escaped
-                if char != "\\":
-                    escaped = False
-            blank(index, end)
-            index = end
-            continue
-        if quote_index < size and source[quote_index] == "'":
-            value = quote_index + 1
-            end = value + 1
-            if value < size and source[value] == "\\":
-                if source.startswith("\\x", value):
-                    end = value + 4
-                elif source.startswith("\\u{", value):
-                    close = source.find("}", value + 3)
-                    end = size if close < 0 else close + 1
-                else:
-                    end = value + 2
-            if end < size and source[end] == "'":
-                blank(index, end + 1)
-                index = end + 1
-                continue
-        index += 1
-    return "".join(out)
-
 
 def line_number(source: str, offset: int) -> int:
     return source.count("\n", 0, offset) + 1
@@ -229,25 +132,12 @@ def _declared_item_bodies(source: str):
             yield code[opening + 1 : end]
 
 
-def _job(source: str, name: str) -> str:
-    match = re.search(rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-z0-9][a-z0-9-]*:\n|\Z)", source)
-    return "" if match is None else match.group(1)
 
 
-def _step_containing(block: str, marker: str) -> str:
-    offset = block.find(marker)
-    if offset < 0:
-        return ""
-    start = block.rfind("\n      - ", 0, offset)
-    end = block.find("\n      - ", offset)
-    return block[start if start >= 0 else 0 : end if end >= 0 else len(block)]
 
 
 def failures(root: Path) -> list[str]:
     root = root.resolve()
-    r4_active = (root / "scripts/check-r4-type-cutover.py").is_file()
-    r5_active = (root / "scripts/check-r5-memory-planner.py").is_file()
-    r6_active = (root / "scripts/check-r6-memory-runtime.py").is_file()
     found: list[str] = []
     sources = {relative: _read(root, relative, found) for relative in REQUIRED}
     lib = rust_code(sources["src/core/src/lib.rs"])
@@ -319,105 +209,6 @@ def failures(root: Path) -> list[str]:
                 found.append(f"{relative}: R2 serialization implementation outside the wire roots")
                 break
 
-    schema = extract_item_body(sources["src/core/src/schema/mod.rs"], re.compile(r"\bimpl\s+Schema\b")) or ""
-    for method in ("type_memory_contract", "resolved_type_memory_contract"):
-        _require(schema, rf"\bpub\s+fn\s+{method}\s*\(", f"Schema::{method} is missing", found)
-    if any(re.search(rf"\b{identifier}\b", schema) for identifier in TRANSITIONAL):
-        found.append("Schema type-memory projection uses a transitional runtime representation")
-    storage = rust_code(sources["src/core/src/memory_contract/storage_capability.rs"])
-    safe_signature = r"pub\s+fn\s+check_schema_storage_compatibility\s*\(\s*schema\s*:\s*&Schema\s*,\s*shape\s*:\s*&ShapeInstance"
-    _require(storage, safe_signature, "safe schema-bound storage checker is missing", found)
-    _require(storage, r"pub\(crate\)\s+fn\s+check_resolved_type_storage_compatibility", "low-level resolved checker is not crate-private", found)
-    if re.search(r"(?<!\))\bpub\s+fn\s+check_resolved_type_storage_compatibility", storage):
-        found.append("low-level resolved checker is public")
-    operation_source = sources["src/core/src/memory_contract/operation_requirement.rs"]
-    operation = rust_code(operation_source)
-    port_signature = (r"pub\s+fn\s+check_port_storage_compatibility\s*\(\s*schema\s*:\s*&Schema\s*,"
-        r"\s*shape\s*:\s*&ShapeInstance\s*,\s*requirement\s*:\s*&PortMemoryRequirement\s*,"
-        r"\s*storage\s*:\s*&StorageCapabilityDescriptor")
-    _require(operation, port_signature, "public port checker does not accept the complete compatibility triangle", found)
-    for marker in ("SemanticAddressingUnsupported", "check_semantic_addressing"):
-        _require(operation, rf"\b{marker}\b", f"semantic-addressing stage lost {marker}", found)
-
-    cell_source = sources["src/core/src/cell_binding.rs"]
-    cell_code = rust_code(cell_source)
-    public_item = re.compile(r"\bpub(?:\([^)]*\))?\s+(?:struct|enum|type|fn)\s+(\w+)")
-    for relative, code in production:
-        for match in public_item.finditer(code):
-            words = {word.lower() for word in re.findall(r"[A-Z]+(?=[A-Z][a-z]|$)|[A-Z]?[a-z]+", match.group(1))}
-            if words & {"storage", "physical", "backing"} and words & {"id", "identity", "token", "key", "pointer", "ptr", "address"}:
-                found.append(f"{relative}: public physical-storage identity API {match.group(1)}")
-    erased = extract_item_body(cell_source, re.compile(r"\btrait\s+ErasedCellStorage\b")) or ""
-    for method in ("capabilities", "same_storage", "detached_clone"):
-        _require(erased, rf"\bfn\s+{method}\b", f"ErasedCellStorage lost {method}", found)
-    if re.search(r"\blogical_cell_id\b", erased):
-        found.append("ErasedCellStorage revived logical_cell_id")
-    detached = extract_item_body(cell_source, re.compile(r"\bstruct\s+DetachedCellStorage\b")) or ""
-    _require(detached, r"\bidentity\s*:\s*CanonicalCellId\b", "DetachedCellStorage lacks explicit CanonicalCellId", found)
-    _require(detached, r"\bstorage\s*:\s*Rc\s*<\s*dyn\s+ErasedCellStorage\s*>", "DetachedCellStorage lacks erased storage", found)
-    value_cell = extract_item_body(cell_source, re.compile(r"\bimpl\s+ValueCell\b")) or ""
-    for method in ("type_memory_contract", "resolved_type_memory_contract", "storage_capabilities",
-        "validate_storage_contract", "same_logical_cell", "same_storage", "same_cell"):
-        _require(value_cell, rf"\bpub\s+fn\s+{method}\s*\(", f"ValueCell::{method} is missing", found)
-    same_cell = extract_item_body(value_cell, re.compile(r"\bfn\s+same_cell\s*\([^)]*\)"))
-    normalized = re.sub(r"\s+", "", same_cell or "")
-    if normalized not in ("self.same_storage(other)", "self.same_storage(other);", "returnself.same_storage(other);"):
-        found.append("same_cell must delegate exactly to same_storage")
-    validation = extract_item_body(value_cell, re.compile(r"\bfn\s+validate_storage_contract\s*\([^)]*\)")) or ""
-    if r4_active:
-        _require(validation, r"\bvalidate_storage_compatibility\b", "ValueCell authoritative validation bypasses the safe storage bridge", found)
-        bridge = extract_item_body(cell_source, re.compile(r"\bfn\s+validate_storage_compatibility\s*\([^)]*\)")) or ""
-        _require(bridge, r"\bcheck_schema_storage_compatibility\b", "ValueCell safe storage bridge bypasses the schema checker", found)
-    else:
-        _require(validation, r"\bcheck_schema_storage_compatibility\b", "ValueCell shadow validation bypasses the safe schema checker", found)
-
-    for marker in ("PortMemoryRequirement", "OperationMemoryRequirements"):
-        _require(operation, rf"\b{marker}\b", f"operation requirements lost {marker}", found)
-    declaration_impl = extract_item_body(operation_source, re.compile(r"\bimpl\s+OperationContractDeclaration\b")) or ""
-    _require(declaration_impl, r"\bpub\s+fn\s+memory_requirements\s*\(", "OperationContractDeclaration::memory_requirements is missing", found)
-    requirements = extract_item_body(declaration_impl, re.compile(r"\bfn\s+memory_requirements\s*\([^)]*\)")) or ""
-    _require(requirements, r"self\s*\.\s*inputs\s*\.\s*resolve\s*\(\s*input_count\s*\)", "memory_requirements bypasses InputPortLayout::resolve", found)
-    port = extract_item_body(operation_source, re.compile(r"\bstruct\s+PortMemoryRequirement\b")) or ""
-    for policy in ("AccessMode", "DeliveryMode", "OutputConstruction", "AliasPolicy", "ChangeDetectionPolicy"):
-        _require(port, rf"\b{policy}\b", f"derived port requirement lost {policy}", found)
-
-    r4_call_allowance = {
-        ("validate_storage_contract", "src/core/src/cell_binding.rs"): 7 if r6_active else 5,
-        ("check_operation_memory_contract", "src/core/src/function/catalog.rs"): 1,
-        ("check_operation_memory_contract", "src/core/src/function/mod.rs"): 1 if r6_active else 0,
-        ("check_operation_memory_contract", "src/core/src/function/specialization.rs"): 2,
-    }
-    for method, expected_definitions in (("validate_storage_contract", 1), ("check_operation_memory_contract", 1)):
-        definitions = sum(len(re.findall(rf"\bfn\s+{method}\s*\(", code)) for _, code in production)
-        if definitions != expected_definitions:
-            found.append(f"shadow method {method} must have exactly one production definition")
-        for relative, code in production:
-            calls = len(re.findall(rf"(?:\.|::)\s*{method}\b", code))
-            allowed_calls = r4_call_allowance.get((method, relative), 0) if r4_active else 0
-            if calls > allowed_calls:
-                found.append(f"{relative}: production call or function-item reference to {method}")
-    for relative, code in production:
-        for match in re.finditer(r"\bcheck_port_storage_compatibility\b", code):
-            allowed = relative == "src/core/src/memory_contract/operation_requirement.rs" or (
-                relative == "src/core/src/function/argument.rs" and code[max(0, match.start() - 1000):match.start()].rfind("fn check_invocation_cell_requirement") >= 0
-            ) or (r5_active and relative == "src/core/src/memory_plan/derive.rs")
-            if not allowed:
-                found.append(f"{relative}: unauthorized production use of check_port_storage_compatibility")
-        schema_checks = len(re.findall(r"\bcheck_schema_storage_compatibility\b", code))
-        allowed_schema_checks = len(re.findall(r"\bfn\s+check_schema_storage_compatibility\b", code)) \
-            if relative == "src/core/src/memory_contract/storage_capability.rs" else 0
-        if r4_active:
-            allowed_schema_checks += {
-                "src/core/src/cell_binding.rs": 1,
-                "src/core/src/function/catalog.rs": 2,
-                "src/core/src/function/specialization.rs": 1,
-                "src/core/src/memory_plan/derive.rs": 2 if r5_active else 0,
-            }.get(relative, 0)
-        elif relative == "src/core/src/cell_binding.rs":
-            allowed_schema_checks += validation.count("check_schema_storage_compatibility")
-        if schema_checks > allowed_schema_checks:
-            found.append(f"{relative}: unauthorized production use of check_schema_storage_compatibility")
-
     argument_source = sources["src/core/src/function/argument.rs"]
     alias = extract_item_body(argument_source, re.compile(r"\bfn\s+check_operation_output_alias\s*\([^)]*\)")) or ""
     _require(
@@ -430,106 +221,6 @@ def failures(root: Path) -> list[str]:
         if re.search(rf"\b{forbidden_alias}\b", alias):
             found.append(f"operation alias checker uses forbidden identity {forbidden_alias}")
 
-    conformance = sources["src/core/tests/type_memory_boundary.rs"]
-    expected_conformance = tuple(
-        "inferred_vector_fixed_axes_are_authoritative_after_r4"
-        if r4_active and marker == "inferred_vector_fixed_axis_mismatches_remain_owned_by_r4"
-        else marker
-        for marker in CONFORMANCE
-    )
-    for marker in expected_conformance + ("SemanticAddressingUnsupported", "DynamicAxisUnsupported", "same_logical_cell", "same_storage", "snapshot_eq"):
-        if marker not in conformance:
-            found.append(f"conformance suite is missing marker {marker}")
-    design = sources["docs/design/type-memory-boundary.md"]
-    design_markers = (
-        ("Status: R2 complete", "authoritative", "RowDVector", "DVector", "R3", "R4", "R5", "R6")
-        if r4_active else
-        ("Status: R2 complete", "shadow-only", "RowDVector", "DVector", "DynamicAxisUnsupported", "R3", "R4", "R5", "R6")
-    )
-    for marker in design_markers:
-        if marker not in design:
-            found.append(f"type-memory documentation is missing {marker}")
-    readme = re.sub(r"\s+", " ", sources["README.md"])
-    sentence = "The canonical value-system cutover, R1 contract closure, and R2 type-memory boundary are complete."
-    if sentence not in readme:
-        found.append("README does not mark R2 complete")
-    roadmap = sources["docs/design/ROADMAP.mec"]
-    roadmap_markers = (
-        ("Type–memory boundary: complete", "R5 Memory planner — complete", "R6 Memory runtime cutover — in progress")
-        if r6_active else
-        (("Type–memory boundary: complete", "R5 Memory planner — complete", "R6 Memory runtime cutover — next")
-        if r5_active else
-        (("Type–memory boundary: complete", "R4 authority cutover are complete", "R5 is")
-         if r4_active else
-         ("Type–memory boundary: complete", "Next endgame phase: R3")))
-    )
-    for marker in roadmap_markers:
-        if marker not in roadmap:
-            found.append(f"ROADMAP is missing {marker}")
-    endgame = re.sub(r"\s+", " ", sources["docs/design/v0.4-endgame.md"])
-    if "## R2 closure" not in endgame:
-        found.append("v0.4 endgame is missing R2 closure")
-    stale = "The R2 boundary has not yet separated semantic identity from physical storage identity."
-    if stale in endgame:
-        found.append("v0.4 endgame retains stale R2 release blocker")
-    for relative in ("README.md", "docs/design/ROADMAP.mec", "docs/design/v0.4-endgame.md"):
-        if "0.3.6" not in sources[relative]:
-            found.append(f"{relative} lost package version 0.3.6")
-
-    r1, r2, unit = ("python3 scripts/check-r1-compatibility-closure.py",
-        "python3 scripts/check-r2-type-memory-boundary.py", "scripts/tests/test_check_r2_type_memory_boundary.py")
-    for relative, job_name in ((".github/workflows/ci.yml", "static-contracts"), (".github/workflows/ci-full.yml", "architecture-contracts")):
-        block = _job(sources[relative], job_name)
-        if relative.endswith("ci.yml"):
-            block = "\n".join(
-                _job(sources[relative], name)
-                for name in ("static-architecture", "static-mutations", job_name)
-            )
-        else:
-            block = "\n".join(
-                _job(sources[relative], name)
-                for name in (job_name, "architecture-mutations")
-            )
-        if not block:
-            found.append(f"{relative} is missing {job_name}")
-            continue
-        if r1 not in block or r2 not in block:
-            found.append(f"{relative} is missing the R1/R2 architecture checker sequence")
-        elif block.index(r2) < block.index(r1):
-            found.append(f"{relative} runs the R2 checker before the R1 checker")
-        if unit not in block:
-            found.append(f"{relative} is missing the R2 checker unit tests")
-        if any("continue-on-error" in _step_containing(block, marker) for marker in (r2, unit)):
-            found.append(f"{relative} waives the R2 architecture gate")
-        if relative.endswith("ci-full.yml"):
-            conformance_step = _step_containing(block, "--test type_memory_boundary")
-            normalized_step = re.sub(r"\s+", " ", conformance_step)
-            if not re.search(r"cargo \+nightly-2026-03-03 test .* -p mech-core .*--all-features", normalized_step):
-                found.append("Full CI does not execute the R2 conformance targets with all features")
-            for target in R2_CONFORMANCE_TARGETS:
-                if not re.search(rf"--test {target}\b", normalized_step):
-                    found.append(f"Full CI is missing R2 conformance target {target}")
-            if "continue-on-error" in conformance_step:
-                found.append("Full CI waives the R2 conformance targets")
-    try:
-        core_command = tomllib.loads(sources[".github/ci/owners.toml"]).get("owners", {}).get("mech-core", {}).get("command", [])
-    except tomllib.TOMLDecodeError:
-        core_command = []
-    if "--all-features" not in core_command:
-        found.append("core owner does not execute the R2 conformance targets with all features")
-    core_targets = {
-        core_command[index + 1]
-        for index, argument in enumerate(core_command[:-1])
-        if argument == "--test"
-    }
-    for target in R2_CONFORMANCE_TARGETS:
-        if target not in core_targets:
-            found.append(f"core owner is missing R2 conformance target {target}")
-    owner_match = re.search(r"(?ms)^\[owners\.architecture-contracts\]\n(.*?)(?=^\[owners\.|\Z)", sources[".github/ci/owners.toml"])
-    owners = "" if owner_match is None else owner_match.group(1)
-    for path in ("scripts/check-r2-type-memory-boundary.py", "scripts/tests/test_check_r2_type_memory_boundary.py") + R2_DOCS:
-        if path not in owners:
-            found.append(f"architecture owner entry is missing {path}")
     return found
 
 

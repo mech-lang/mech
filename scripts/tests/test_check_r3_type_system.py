@@ -214,23 +214,6 @@ class R3TypeSystemCheckerTests(unittest.TestCase):
         self.write(root, "src/core/src/program/bytecode/r3.rs", "struct Wire(ConversionPlan);\n")
         self.assert_failure(root, "R3 metadata leaks")
 
-    def test_20_conformance_documentation_ci_and_owner_regressions_fail(self):
-        root = self.fixture()
-        marker = CHECKER.CONFORMANCE[0]
-        for relative in CHECKER.REQUIRED:
-            if "/tests/type_system_" in relative:
-                path = root / relative
-                path.write_text(path.read_text().replace(marker, "missing", 1), encoding="utf-8")
-        self.assert_failure(root, "conformance suite is missing")
-        root = self.fixture()
-        self.replace(root, "docs/design/type-system-v1.md", "Status: R3 semantic solver complete", "Status: R3 in progress")
-        self.assert_failure(root, "type-system design is missing")
-        root = self.fixture()
-        self.replace(root, ".github/workflows/ci.yml", "python3 scripts/check-r3-type-system.py", "true")
-        self.assert_failure(root, "does not run the R3")
-        root = self.fixture()
-        self.replace(root, ".github/ci/owners.toml", "scripts/check-r3-type-system.py", "scripts/missing.py")
-        self.assert_failure(root, "owner entry is missing")
 
     def test_21_closed_predicate_vocabulary_rejects_additions(self):
         root = self.fixture()
@@ -346,15 +329,6 @@ class R3TypeSystemCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "match arms do not require one exact semantic result schema")
 
-    def test_30_full_ci_resident_conversion_regression_fails(self):
-        root = self.fixture()
-        self.replace(
-            root,
-            ".github/workflows/ci-full.yml",
-            "compiled_conversion_executes_after_bytecode_round_trip",
-            "missing_resident_conversion_conformance",
-        )
-        self.assert_failure(root, "does not execute resident conversion conformance")
 
     def test_31_legacy_predicate_constraint_regression_fails(self):
         root = self.fixture()

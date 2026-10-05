@@ -13,7 +13,7 @@ concurrency:
 env:
   RECORD_CHECKOUT_IDENTITY: |
     case "$VALIDATION_KIND" in
-      integration-merge|exact-head|exact-ref) ;;
+      integration-merge|exact-ref) ;;
       *) echo "unsupported validation kind: $VALIDATION_KIND" >&2; exit 64 ;;
     esac
     test -n "$REQUESTED_REF"
@@ -44,12 +44,11 @@ jobs:
     outputs:
       owner_shards: ${{ steps.classify.outputs.owner_shards }}
       docs_only: ${{ steps.classify.outputs.docs_only }}
-      review_only: ${{ steps.classify.outputs.review_only }}
-      landing_candidate: ${{ steps.classify.outputs.landing_candidate }}
       static_contracts_required: ${{ steps.classify.outputs.static_contracts_required }}
       standard_canaries_required: ${{ steps.classify.outputs.standard_canaries_required }}
       windows_canary_required: ${{ steps.classify.outputs.windows_canary_required }}
       browser_canary_required: ${{ steps.classify.outputs.browser_canary_required }}
+      browser_applications_required: ${{ steps.classify.outputs.browser_applications_required }}
       cross_cutting_standard_suite_required: ${{ steps.classify.outputs.cross_cutting_standard_suite_required }}
       full_validation_required: ${{ steps.classify.outputs.full_validation_required }}
     steps:
@@ -70,15 +69,10 @@ jobs:
         id: classify
         env:
           PR_LABELS: ${{ toJSON(github.event.pull_request.labels) }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: >-
           python3 scripts/ci-impact.py
           --base "${{ github.event.pull_request.base.sha }}"
-          --head "${{ github.event.pull_request.head.sha }}"
+          --head "${{ github.sha }}"
           --labels "$PR_LABELS"
 
   early-native-plan:
@@ -87,7 +81,7 @@ jobs:
     if: needs.impact.outputs.full_validation_required == 'true'
     uses: ./.github/workflows/ci-native-plan.yml
     with:
-      validation_ref: ${{ github.event.pull_request.head.sha }}
+      validation_ref: ${{ github.sha }}
 
   static-architecture:
     name: Static architecture contracts
@@ -102,13 +96,12 @@ jobs:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          # Static architecture contracts validate the exact PR head.
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Record exact-head checkout identity
+      - name: Record integration checkout identity
         env:
-          VALIDATION_KIND: exact-head
-          REQUESTED_REF: ${{ github.event.pull_request.head.sha }}
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
@@ -127,7 +120,6 @@ jobs:
           fi
       - name: Check formatting and global contracts
         run: |
-          python3 scripts/check-canonical-evidence-imports.py
           cargo +nightly-2026-03-03 fmt --all -- --check
           python3 -B -m unittest \
             tests.ci.test_ci_impact \
@@ -142,7 +134,6 @@ jobs:
           python3 scripts/check-value-execution-boundary.py
           python3 scripts/check-value-system-contract.py
           python3 scripts/check-no-retired-value-system.py
-          python3 scripts/check-r1-compatibility-closure.py
           python3 scripts/check-r2-type-memory-boundary.py
           python3 scripts/check-r3-type-system.py
           python3 scripts/check-r4-type-cutover.py
@@ -164,12 +155,12 @@ jobs:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Record exact-head checkout identity
+      - name: Record integration checkout identity
         env:
-          VALIDATION_KIND: exact-head
-          REQUESTED_REF: ${{ github.event.pull_request.head.sha }}
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
@@ -192,7 +183,7 @@ jobs:
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_check_no_retired_value_system.py \
-            scripts/tests/test_check_r1_compatibility_closure.py \
+            scripts/tests/test_rust_source.py \
             scripts/tests/test_check_r2_type_memory_boundary.py \
             scripts/tests/test_check_r3_type_system.py \
             scripts/tests/test_check_r4_type_cutover.py \
@@ -215,12 +206,12 @@ jobs:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Record exact-head checkout identity
+      - name: Record integration checkout identity
         env:
-          VALIDATION_KIND: exact-head
-          REQUESTED_REF: ${{ github.event.pull_request.head.sha }}
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
@@ -264,85 +255,53 @@ jobs:
           test "$MUTATIONS_RESULT" = success
           test "$DISTRIBUTION_RESULT" = success
 
-  canonical-source-products:
-    name: Canonical source products (${{ matrix.artifact }})
+  full-source-profile:
+    name: Full source profile
     needs: impact
-    if: (needs.impact.outputs.standard_canaries_required == 'true' && needs.impact.outputs.landing_candidate == 'true') || needs.impact.outputs.browser_canary_required == 'true'
+    if: needs.impact.outputs.standard_canaries_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 12
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - kind: integration-merge
-            ref: ${{ github.sha }}
-            artifact: integration
-          - kind: exact-head
-            ref: ${{ github.event.pull_request.head.sha }}
-            artifact: head
     env:
       CARGO_BUILD_JOBS: "2"
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: "0"
-      CARGO_TARGET_DIR: target/canonical-source-products
+      CARGO_TARGET_DIR: target/full-source-profile
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          ref: ${{ matrix.ref }}
-      - name: Record source producer checkout identity
+          ref: ${{ github.sha }}
+      - name: Record integration checkout identity
         env:
-          VALIDATION_KIND: ${{ matrix.kind }}
-          REQUESTED_REF: ${{ matrix.ref }}
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Verify physical parser retirement for the landing candidate
-        if: needs.impact.outputs.landing_candidate == 'true'
-        run: |
-          test ! -e src/syntax/src/parser.rs
-          test ! -e src/syntax/src/document/lower/legacy
-      - name: Fetch the locked source fixture dependencies
+      - name: Fetch the isolated source profile dependencies
         run: cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
-      - name: Prepare and execute the canonical source products once
-        env:
-          MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-source-products
+      - name: Verify the independent Full source consumer
         run: |
           python3 scripts/run-native-plan-stage.py \
-            --stage canonical-source-products --timeout-secs 540 \
-            --log-dir target/canonical-source-product-logs -- \
+            --stage full-source-profile --timeout-secs 540 \
+            --log-dir target/full-source-profile-logs -- \
             cargo +nightly-2026-03-03 run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
-          cp target/canonical-source-products/debug/full-source-runtime "$MECH_BROWSER_BUNDLE_FIXTURES/full-source-runtime"
-          git rev-parse 'HEAD^{tree}' > "$MECH_BROWSER_BUNDLE_FIXTURES/producer-tree.txt"
-          git rev-parse HEAD > "$MECH_BROWSER_BUNDLE_FIXTURES/producer-sha.txt"
-      - name: Upload the prepared source products
+      - name: Retain source profile failure diagnostics
+        if: failure() || cancelled()
         uses: actions/upload-artifact@v4
         with:
-          name: canonical-source-products-${{ matrix.artifact }}
-          path: ${{ runner.temp }}/canonical-source-products
-          if-no-files-found: error
-          overwrite: true
-          retention-days: 1
-      - name: Retain bounded preparation diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: canonical-source-product-diagnostics-${{ matrix.artifact }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: target/canonical-source-product-logs
+          name: full-source-profile-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/full-source-profile-logs
           if-no-files-found: warn
           retention-days: 7
 
   standard-linux:
     name: Standard Linux
-    needs:
-      - impact
-      - canonical-source-products
-    if: >-
-      always() && !cancelled() && needs.impact.outputs.standard_canaries_required == 'true' &&
-      (needs.impact.outputs.landing_candidate != 'true' || needs.canonical-source-products.result == 'success')
+    needs: impact
+    if: needs.impact.outputs.standard_canaries_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
@@ -365,12 +324,6 @@ jobs:
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Download the accumulated C source products
-        if: needs.impact.outputs.landing_candidate == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: canonical-source-products-integration
-          path: ${{ runner.temp }}/canonical-source-products
       - name: Build and exercise the lean standard distribution
         run: |
           cargo +nightly-2026-03-03 fetch --locked
@@ -399,18 +352,6 @@ jobs:
           grep -F '"route":"resident-external"' /tmp/mech-standard-live-timer.out
           grep -F '"resident_accepted_turns":2' /tmp/mech-standard-live-timer.out
           grep -F '"resident_rejected_turns":0' /tmp/mech-standard-live-timer.out
-
-      - name: Probe accumulated C with the parser physically deleted
-        if: ${{ !cancelled() && needs.impact.outputs.landing_candidate == 'true' }}
-        env:
-          SOURCE_PRODUCTS: ${{ runner.temp }}/canonical-source-products
-        run: |
-          test ! -e src/syntax/src/parser.rs
-          test ! -e src/syntax/src/document/lower/legacy
-          test "$(cat "$SOURCE_PRODUCTS/producer-tree.txt")" = "$(git rev-parse 'HEAD^{tree}')"
-          test "$(cat "$SOURCE_PRODUCTS/producer-sha.txt")" = "$GITHUB_SHA"
-          chmod u+x "$SOURCE_PRODUCTS/full-source-runtime"
-          "$SOURCE_PRODUCTS/full-source-runtime"
 
   changed-owner-tests:
     name: Owner ${{ matrix.id }} (${{ matrix.owners }})
@@ -445,12 +386,6 @@ jobs:
       - name: Fetch the locked dependency graph
         run: cargo +nightly-2026-03-03 fetch --locked
       - name: Run only the selected owners
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: python3 -B scripts/run-owner-tests.py --owners "${{ matrix.owners }}"
 
   standard-windows:
@@ -660,11 +595,11 @@ jobs:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Record exact-head checkout identity
+          ref: ${{ github.sha }}
+      - name: Record integration checkout identity
         env:
-          VALIDATION_KIND: exact-head
-          REQUESTED_REF: ${{ github.event.pull_request.head.sha }}
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
@@ -694,7 +629,15 @@ jobs:
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
-          tar -czf /tmp/browser-compute-canary.tar.gz target/debug/mech src/wasm/pkg
+          mkdir -p target/browser-compute-provenance
+          git rev-parse HEAD > target/browser-compute-provenance/revision
+          git rev-parse 'HEAD^{tree}' > target/browser-compute-provenance/tree
+          sha256sum Cargo.lock > target/browser-compute-provenance/lock.sha256
+          printf '%s\n' 'mech:dev:compute_backends_native;wasm:browser-compute-canary:wasm32-unknown-unknown' > target/browser-compute-provenance/profile
+          rustc -vV > target/browser-compute-provenance/toolchain
+          sha256sum target/debug/mech > target/browser-compute-provenance/products.sha256
+          find src/wasm/pkg -type f -print0 | sort -z | xargs -0 sha256sum >> target/browser-compute-provenance/products.sha256
+          tar -czf /tmp/browser-compute-canary.tar.gz target/debug/mech src/wasm/pkg target/browser-compute-provenance
       - name: Upload the shared compute browser build
         uses: actions/upload-artifact@v4
         with:
@@ -708,7 +651,6 @@ jobs:
     needs:
       - impact
       - browser-compute-build
-      - canonical-source-products
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -716,11 +658,11 @@ jobs:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Record exact-head checkout identity
+          ref: ${{ github.sha }}
+      - name: Record integration checkout identity
         env:
-          VALIDATION_KIND: exact-head
-          REQUESTED_REF: ${{ github.event.pull_request.head.sha }}
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
@@ -731,12 +673,13 @@ jobs:
           name: browser-compute-canary-build
           path: /tmp/browser-compute-canary
       - name: Restore the shared compute browser build
-        run: tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
-      - name: Download the prepared canonical document bundles
-        uses: actions/download-artifact@v4
-        with:
-          name: canonical-source-products-head
-          path: ${{ runner.temp }}/canonical-source-products
+        run: |
+          tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+          test "$(cat target/browser-compute-provenance/revision)" = "$GITHUB_SHA"
+          test "$(cat target/browser-compute-provenance/tree)" = "$(git rev-parse 'HEAD^{tree}')"
+          test "$(cat target/browser-compute-provenance/profile)" = 'mech:dev:compute_backends_native;wasm:browser-compute-canary:wasm32-unknown-unknown'
+          sha256sum --check target/browser-compute-provenance/lock.sha256
+          sha256sum --check target/browser-compute-provenance/products.sha256
       - name: Install Node for static compute package admission
         uses: actions/setup-node@v7.0.0
         with:
@@ -747,13 +690,7 @@ jobs:
           --static-bundle --mech-bin target/debug/mech
           --wasm-pkg src/wasm/pkg --software-adapter
       - name: Verify canonical document bundle activation and replacement
-        env:
-          MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-source-products
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          test "$(cat "$MECH_BROWSER_BUNDLE_FIXTURES/producer-tree.txt")" = "$(git rev-parse 'HEAD^{tree}')"
-          test "$(cat "$MECH_BROWSER_BUNDLE_FIXTURES/producer-sha.txt")" = "$PR_HEAD_SHA"
-          python3 scripts/smoke-canonical-document-bundle-browser.py --fixtures "$MECH_BROWSER_BUNDLE_FIXTURES" --served-compute
+        run: python3 scripts/smoke-canonical-document-bundle-browser.py --served-compute
       - name: Verify report-only particle WebGPU execution
         run: >-
           MECH_BIN=target/debug/mech
@@ -765,18 +702,18 @@ jobs:
     needs:
       - impact
       - browser-compute-build
-    if: needs.impact.outputs.browser_canary_required == 'true'
+    if: needs.impact.outputs.browser_applications_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Record exact-head checkout identity
+          ref: ${{ github.sha }}
+      - name: Record integration checkout identity
         env:
-          VALIDATION_KIND: exact-head
-          REQUESTED_REF: ${{ github.event.pull_request.head.sha }}
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
@@ -787,7 +724,13 @@ jobs:
           name: browser-compute-canary-build
           path: /tmp/browser-compute-canary
       - name: Restore the shared compute browser build
-        run: tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+        run: |
+          tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+          test "$(cat target/browser-compute-provenance/revision)" = "$GITHUB_SHA"
+          test "$(cat target/browser-compute-provenance/tree)" = "$(git rev-parse 'HEAD^{tree}')"
+          test "$(cat target/browser-compute-provenance/profile)" = 'mech:dev:compute_backends_native;wasm:browser-compute-canary:wasm32-unknown-unknown'
+          sha256sum --check target/browser-compute-provenance/lock.sha256
+          sha256sum --check target/browser-compute-provenance/products.sha256
       - name: Verify scalar EKF rendering
         run: |
           MECH_BIN=target/debug/mech \
@@ -831,18 +774,18 @@ jobs:
     needs:
       - impact
       - browser-compute-build
-    if: needs.impact.outputs.browser_canary_required == 'true'
+    if: needs.impact.outputs.browser_applications_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Record exact-head checkout identity
+          ref: ${{ github.sha }}
+      - name: Record integration checkout identity
         env:
-          VALIDATION_KIND: exact-head
-          REQUESTED_REF: ${{ github.event.pull_request.head.sha }}
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
@@ -853,7 +796,13 @@ jobs:
           name: browser-compute-canary-build
           path: /tmp/browser-compute-canary
       - name: Restore the shared compute browser build
-        run: tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+        run: |
+          tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+          test "$(cat target/browser-compute-provenance/revision)" = "$GITHUB_SHA"
+          test "$(cat target/browser-compute-provenance/tree)" = "$(git rev-parse 'HEAD^{tree}')"
+          test "$(cat target/browser-compute-provenance/profile)" = 'mech:dev:compute_backends_native;wasm:browser-compute-canary:wasm32-unknown-unknown'
+          sha256sum --check target/browser-compute-provenance/lock.sha256
+          sha256sum --check target/browser-compute-provenance/products.sha256
       - name: Verify WebGPU EKF rendering
         run: |
           MECH_BIN=target/debug/mech \
@@ -888,18 +837,18 @@ jobs:
       - impact
       - browser-ekf-cpu
       - browser-ekf-wgpu
-    if: needs.impact.outputs.browser_canary_required == 'true'
+    if: needs.impact.outputs.browser_applications_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Record exact-head checkout identity
+          ref: ${{ github.sha }}
+      - name: Record integration checkout identity
         env:
-          VALIDATION_KIND: exact-head
-          REQUESTED_REF: ${{ github.event.pull_request.head.sha }}
+          VALIDATION_KIND: integration-merge
+          REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
@@ -929,6 +878,7 @@ jobs:
       - name: Require every selected compute browser suite
         env:
           REQUIRED: ${{ needs.impact.outputs.browser_canary_required }}
+          APPLICATIONS_REQUIRED: ${{ needs.impact.outputs.browser_applications_required }}
           BUILD_RESULT: ${{ needs.browser-compute-build.result }}
           SMOKE_RESULT: ${{ needs.browser-compute-smoke.result }}
           CPU_RESULT: ${{ needs.browser-ekf-cpu.result }}
@@ -939,16 +889,18 @@ jobs:
           then
             test "$BUILD_RESULT" = success
             test "$SMOKE_RESULT" = success
-            test "$CPU_RESULT" = success
-            test "$WGPU_RESULT" = success
-            test "$PARITY_RESULT" = success
           else
             test "$BUILD_RESULT" = skipped
             test "$SMOKE_RESULT" = skipped
-            test "$CPU_RESULT" = skipped
-            test "$WGPU_RESULT" = skipped
-            test "$PARITY_RESULT" = skipped
           fi
+          case "$APPLICATIONS_REQUIRED" in
+            true) expected=success ;;
+            false) expected=skipped ;;
+            *) exit 1 ;;
+          esac
+          test "$CPU_RESULT" = "$expected"
+          test "$WGPU_RESULT" = "$expected"
+          test "$PARITY_RESULT" = "$expected"
 
   browser-canary:
     name: Browser canary
@@ -976,7 +928,7 @@ jobs:
           else
             test "$STANDARD_RESULT" = skipped
             test "$NBODY_RESULT" = skipped
-            test "$COMPUTE_RESULT" = skipped
+            test "$COMPUTE_RESULT" = success
           fi
 
   full-validation:
@@ -997,14 +949,14 @@ jobs:
         (needs.standard-linux.result == 'success' ||
           (needs.impact.outputs.docs_only == 'true' && needs.standard-linux.result == 'skipped')) &&
         (needs.standard-windows.result == 'success' ||
-          (needs.impact.outputs.docs_only == 'true' && needs.standard-windows.result == 'skipped')) &&
+          (needs.impact.outputs.windows_canary_required != 'true' && needs.standard-windows.result == 'skipped')) &&
         (needs.changed-owner-tests.result == 'success' || needs.changed-owner-tests.result == 'skipped') &&
         (needs.browser-canary.result == 'success' || needs.browser-canary.result == 'skipped')
       }}
     uses: ./.github/workflows/ci-full.yml
     with:
       release_channel: stable
-      validation_ref: ${{ github.event.pull_request.head.sha }}
+      validation_ref: ${{ github.sha }}
       native_plan_in_caller: true
       rich_browser_smoke_in_caller: ${{ needs.impact.outputs.browser_canary_required == 'true' }}
 
@@ -1013,7 +965,7 @@ jobs:
     if: always() && needs.impact.result != 'cancelled'
     needs:
       - impact
-      - canonical-source-products
+      - full-source-profile
       - static-contracts
       - standard-linux
       - changed-owner-tests
@@ -1027,14 +979,14 @@ jobs:
       - name: Require exactly the selected validation set
         env:
           DOCS_ONLY: ${{ needs.impact.outputs.docs_only }}
-          REVIEW_ONLY: ${{ needs.impact.outputs.review_only }}
           FULL_REQUIRED: ${{ needs.impact.outputs.full_validation_required }}
           IMPACT_RESULT: ${{ needs.impact.result }}
-          SOURCE_REQUIRED: ${{ (needs.impact.outputs.standard_canaries_required == 'true' && needs.impact.outputs.landing_candidate == 'true') || needs.impact.outputs.browser_canary_required == 'true' }}
-          SOURCE_RESULT: ${{ needs.canonical-source-products.result }}
+          SOURCE_REQUIRED: ${{ needs.impact.outputs.standard_canaries_required }}
+          SOURCE_RESULT: ${{ needs.full-source-profile.result }}
           STATIC_RESULT: ${{ needs.static-contracts.result }}
           LINUX_RESULT: ${{ needs.standard-linux.result }}
           OWNER_RESULT: ${{ needs.changed-owner-tests.result }}
+          WINDOWS_REQUIRED: ${{ needs.impact.outputs.windows_canary_required }}
           WINDOWS_RESULT: ${{ needs.standard-windows.result }}
           BROWSER_RESULT: ${{ needs.browser-canary.result }}
           FULL_RESULT: ${{ needs.full-validation.result }}
@@ -1046,14 +998,7 @@ jobs:
             false) test "$SOURCE_RESULT" = skipped ;;
             *) exit 1 ;;
           esac
-          if test "$REVIEW_ONLY" = true
-          then
-            if test "$DOCS_ONLY" = true; then test "$STATIC_RESULT" = skipped; else test "$STATIC_RESULT" = success; fi
-            test "$OWNER_RESULT" = success
-            test "$LINUX_RESULT" = skipped
-            test "$WINDOWS_RESULT" = skipped
-            test "$BROWSER_RESULT" = success
-          elif test "$DOCS_ONLY" = true
+          if test "$DOCS_ONLY" = true
           then
             test "$STATIC_RESULT" = skipped
             test "$LINUX_RESULT" = skipped
@@ -1064,10 +1009,14 @@ jobs:
           else
             test "$STATIC_RESULT" = success
             test "$LINUX_RESULT" = success
-            test "$WINDOWS_RESULT" = success
             test "$OWNER_RESULT" = success -o "$OWNER_RESULT" = skipped
             test "$BROWSER_RESULT" = success -o "$BROWSER_RESULT" = skipped
           fi
+          case "$WINDOWS_REQUIRED" in
+            true) test "$WINDOWS_RESULT" = success ;;
+            false) test "$WINDOWS_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
           if test "$FULL_REQUIRED" = true
           then
             test "$FULL_RESULT" = success

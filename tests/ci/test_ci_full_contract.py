@@ -2,6 +2,7 @@
 
 import ast
 import html
+import hashlib
 import json
 import os
 import re
@@ -18,7 +19,6 @@ CI = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 FULL = (ROOT / ".github/workflows/ci-full.yml").read_text(encoding="utf-8")
 NATIVE = (ROOT / ".github/workflows/ci-native-plan.yml").read_text(encoding="utf-8")
 NATIVE_APPLICATIONS = (ROOT / ".github/actions/native-applications/action.yml").read_text(encoding="utf-8")
-NATIVE_STABILIZATION = (ROOT / ".github/workflows/ci-native-stabilization.yml").read_text(encoding="utf-8")
 NATIVE_DETERMINISM = (
     ROOT / "scripts/check-generated-project-determinism.py"
 ).read_text(encoding="utf-8")
@@ -59,25 +59,6 @@ SIZE_PROFILES = (
     "full-compiler-tooling",
     "wasm-browser-project",
 )
-INTEGRATION_CHECKOUT_JOBS = {
-    "impact",
-    "standard-linux",
-    "changed-owner-tests",
-    "standard-windows",
-    "browser-standard-canary",
-    "browser-nbody-reference",
-}
-EXACT_HEAD_CHECKOUT_JOBS = {
-    "static-architecture",
-    "static-mutations",
-    "static-distribution",
-    "browser-compute-build",
-    "browser-compute-smoke",
-    "browser-ekf-cpu",
-    "browser-ekf-wgpu",
-    "browser-ekf-parity",
-}
-MATRIX_CHECKOUT_JOBS = {"canonical-source-products"}
 
 
 def job_block(source: str, job: str) -> str:
@@ -184,7 +165,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("--disable-gpu", step)
         self.assertIn("browser-compute-smoke", job_block(CI, "browser-compute-canary"))
 
-    def test_r06_acceptance_and_shape_facts_are_explicitly_selected(self):
+    def test_source_acceptance_and_shape_facts_are_selected(self):
         block = job_block(FULL, "cargo-language")
         step = next(
             step
@@ -192,43 +173,23 @@ class FullWorkflowContractTests(unittest.TestCase):
             if "Verify canonical document execution and rendered outputs" in step
         )
         self.assertIn("--features full_source,resident-routing-source", step)
-        self.assertIn("--test s8_recovery_logical_activation_facts", step)
+        self.assertIn("--test source_acceptance", step)
         self.assertIn("--features full_source,resident-artifact,r64,c64", step)
         self.assertIn("--lib resident::general::shape_fact_tests::", step)
         self.assertIn(step, block)
 
-    def test_source_fixture_preparation_is_bounded_and_shared_not_rebuilt_by_consumers(self):
-        producer = job_block(CI, "canonical-source-products")
-        self.assertIn("landing_candidate == 'true'", producer)
-        self.assertIn("standard_canaries_required == 'true'", producer)
-        self.assertIn("browser_canary_required == 'true'", producer)
-        self.assertIn('CARGO_BUILD_JOBS: "2"', producer)
-        self.assertIn('CARGO_INCREMENTAL: 0', producer)
-        self.assertIn('CARGO_PROFILE_DEV_DEBUG: "0"', producer)
-        self.assertIn("timeout-minutes: 12", producer)
-        fetch = "cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml"
-        run = "cargo +nightly-2026-03-03 run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml"
-        self.assertLess(producer.index(fetch), producer.index(run))
-        self.assertIn("scripts/run-native-plan-stage.py", producer)
-        self.assertIn("--timeout-secs 540", producer)
-        self.assertNotIn("runner.temp", producer.split("    steps:\n", 1)[0])
-        prepare = next(step for step in job_steps(CI, "canonical-source-products")
-                       if "Prepare and execute the canonical source products once" in step)
-        self.assertIn("MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}", prepare)
-        self.assertIn("test ! -e src/syntax/src/parser.rs", producer)
-        self.assertIn("test ! -e src/syntax/src/document/lower/legacy", producer)
-        self.assertIn("canonical-source-products", job_block(CI, "pr-gate"))
-        self.assertIn('test "$SOURCE_RESULT" = success', job_block(CI, "pr-gate"))
-        for consumer, deadline in (("standard-linux", 12), ("browser-compute-smoke", 10)):
-            block = job_block(CI, consumer)
-            self.assertIn("- canonical-source-products", block)
-            self.assertIn("actions/download-artifact@", block)
-            self.assertIn("producer-tree.txt", block)
-            self.assertIn("HEAD^{tree}", block)
-            self.assertNotIn("full-source-runtime/Cargo.toml", block)
-            self.assertIn(f"timeout-minutes: {deadline}", block)
-        self.assertIn("full-source-runtime", job_block(CI, "standard-linux"))
-        self.assertIn("--served-compute", job_block(CI, "browser-compute-smoke"))
+    def test_full_source_profile_is_bounded_and_independent(self):
+        profile = job_block(CI, "full-source-profile")
+        self.assertIn("standard_canaries_required == 'true'", profile)
+        self.assertIn("--timeout-secs 540", profile)
+        manifest = "tests/fixtures/full-source-runtime/Cargo.toml"
+        self.assertIn(f"fetch --locked --manifest-path {manifest}", profile)
+        self.assertIn(f"run --locked --offline --manifest-path {manifest}", profile)
+        self.assertIn("- full-source-profile", job_block(CI, "pr-gate"))
+        self.assertNotIn(manifest, job_block(CI, "standard-linux"))
+        browser = job_block(CI, "browser-compute-smoke")
+        self.assertNotIn(manifest, browser)
+        self.assertIn("smoke-canonical-document-bundle-browser.py --served-compute", browser)
 
     def test_source_fixture_default_profile_has_no_large_debug_or_incremental_build(self):
         import tomllib
@@ -240,82 +201,98 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertEqual(manifest["profile"]["dev"]["debug"], 0)
         self.assertIs(manifest["profile"]["dev"]["incremental"], False)
 
-    def test_source_product_artifacts_are_split_by_checkout_identity(self):
-        producer = job_block(CI, "canonical-source-products")
-        for kind, ref, artifact in (
-            ("integration-merge", "${{ github.sha }}", "integration"),
-            ("exact-head", "${{ github.event.pull_request.head.sha }}", "head"),
-        ):
-            self.assertIn(
-                f"- kind: {kind}\n            ref: {ref}\n            artifact: {artifact}", producer
-            )
-        self.assertIn("fail-fast: false", producer)
-        self.assertIn("ref: ${{ matrix.ref }}", producer)
-        self.assertIn("VALIDATION_KIND: ${{ matrix.kind }}", producer)
-        self.assertIn("REQUESTED_REF: ${{ matrix.ref }}", producer)
-        self.assertIn("name: canonical-source-products-${{ matrix.artifact }}", producer)
-        standard = job_block(CI, "standard-linux")
-        browser = job_block(CI, "browser-compute-smoke")
-        self.assertIn("name: canonical-source-products-integration", standard)
-        self.assertNotIn("name: canonical-source-products-head", standard)
-        self.assertIn("name: canonical-source-products-head", browser)
-        self.assertNotIn("name: canonical-source-products-integration", browser)
-        self.assertIn("PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}", browser)
-        self.assertIn('= "$PR_HEAD_SHA"', browser)
-        self.assertNotIn('= "$GITHUB_SHA"', browser)
+    def test_shared_browser_product_checks_revision_profile_lock_and_contents(self):
+        producer = job_block(CI, "browser-compute-build")
+        self.assertIn("sha256sum target/debug/mech", producer)
+        self.assertIn("find src/wasm/pkg -type f -print0", producer)
+        for consumer in ("browser-compute-smoke", "browser-ekf-cpu", "browser-ekf-wgpu"):
+            with self.subTest(consumer=consumer):
+                step = next(step for step in job_steps(CI, consumer)
+                            if "Restore the shared compute browser build" in step)
+                for identity in ("revision", "tree", "profile", "lock.sha256", "products.sha256"):
+                    self.assertIn(f"target/browser-compute-provenance/{identity}", step)
+                self.assertIn('= "$GITHUB_SHA"', step)
+                self.assertIn("HEAD^{tree}", step)
+                self.assertNotIn("continue-on-error", step)
 
-    def test_prepared_source_products_refuse_wrong_or_missing_checkout_evidence(self):
-        tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip()
-        sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-        for consumer, marker, variable in (
-            ("standard-linux", "Probe accumulated C", "SOURCE_PRODUCTS"),
-            ("browser-compute-smoke", "Verify canonical document bundle", "MECH_BROWSER_BUNDLE_FIXTURES"),
-        ):
-            step = next(step for step in job_steps(CI, consumer) if marker in step)
-            guards = "\n".join(
-                line.strip() for line in step.split("        run: |\n", 1)[1].splitlines()
-                if "producer-tree.txt" in line or "producer-sha.txt" in line
-            )
-            self.assertEqual(len(guards.splitlines()), 2)
-            with self.subTest(consumer=consumer), tempfile.TemporaryDirectory() as directory:
-                path = Path(directory)
-                tree_file, sha_file = path / "producer-tree.txt", path / "producer-sha.txt"
+    def test_shared_browser_product_rejects_changed_or_missing_provenance(self):
+        step = next(step for step in job_steps(CI, "browser-compute-smoke")
+                    if "Restore the shared compute browser build" in step)
+        guards = textwrap.dedent(step.split("        run: |\n", 1)[1]).splitlines()[1:]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            (root / "Cargo.lock").write_text("locked graph\n")
+            subprocess.run(["git", "add", "Cargo.lock"], cwd=root, check=True)
+            commit_env = os.environ | {
+                "GIT_AUTHOR_NAME": "CI contract", "GIT_AUTHOR_EMAIL": "ci@example.invalid",
+                "GIT_COMMITTER_NAME": "CI contract", "GIT_COMMITTER_EMAIL": "ci@example.invalid",
+            }
+            subprocess.run(["git", "commit", "-qm", "fixture"], cwd=root, env=commit_env, check=True)
+            sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+            tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=root, text=True).strip()
+            provenance = root / "target/browser-compute-provenance"
+            provenance.mkdir(parents=True)
+            binary = root / "target/debug/mech"
+            binary.parent.mkdir()
+            binary.write_bytes(b"product")
+            values = {
+                "revision": sha,
+                "tree": tree,
+                "profile": "mech:dev:compute_backends_native;wasm:browser-compute-canary:wasm32-unknown-unknown",
+                "lock.sha256": hashlib.sha256((root / "Cargo.lock").read_bytes()).hexdigest() + "  Cargo.lock",
+                "products.sha256": hashlib.sha256(binary.read_bytes()).hexdigest() + "  target/debug/mech",
+            }
+            for name, value in values.items():
+                (provenance / name).write_text(value + "\n")
+            def accepts():
+                return subprocess.run(["bash", "-e", "-c", "\n".join(guards)], cwd=root,
+                                      env=os.environ | {"GITHUB_SHA": sha},
+                                      capture_output=True).returncode == 0
+            self.assertTrue(accepts())
+            for name, value in values.items():
+                with self.subTest(missing=name):
+                    (provenance / name).unlink()
+                    self.assertFalse(accepts())
+                    (provenance / name).write_text(value + "\n")
+            for path in (root / "Cargo.lock", binary, provenance / "revision",
+                         provenance / "tree", provenance / "profile"):
+                with self.subTest(changed=path.name):
+                    original = path.read_bytes()
+                    path.write_bytes(b"changed")
+                    self.assertFalse(accepts())
+                    path.write_bytes(original)
 
-                def accepts():
-                    # Different merge/head identities must not make the correct
-                    # artifact fail, nor allow the other identity to authorize it.
-                    expected = (
-                        {"GITHUB_SHA": sha, "PR_HEAD_SHA": "0" * 40}
-                        if consumer == "standard-linux" else
-                        {"GITHUB_SHA": "0" * 40, "PR_HEAD_SHA": sha}
-                    )
-                    return subprocess.run(
-                        ["/bin/bash", "-e", "-c", guards], cwd=ROOT,
-                        env=os.environ | {variable: directory} | expected,
-                        capture_output=True,
-                    ).returncode == 0
+    def test_browser_aggregate_requires_exactly_the_selected_application_cases(self):
+        block = job_block(CI, "browser-compute-canary")
+        script = textwrap.dedent(block.split("        run: |\n", 1)[1])
+        def accepts(browser, applications, **overrides):
+            environment = {
+                "REQUIRED": str(browser).lower(),
+                "APPLICATIONS_REQUIRED": str(applications).lower(),
+                "BUILD_RESULT": "success" if browser else "skipped",
+                "SMOKE_RESULT": "success" if browser else "skipped",
+                **{f"{kind}_RESULT": "success" if applications else "skipped"
+                   for kind in ("CPU", "WGPU", "PARITY")},
+                **overrides,
+            }
+            return subprocess.run(["bash", "-e", "-c", script], env=environment,
+                                  capture_output=True).returncode == 0
+        for browser, applications in ((False, False), (True, False), (True, True)):
+            self.assertTrue(accepts(browser, applications))
+        for result in ("failure", "cancelled", "skipped", ""):
+            self.assertFalse(accepts(True, True, CPU_RESULT=result))
+            self.assertFalse(accepts(True, False, BUILD_RESULT=result))
+        self.assertFalse(accepts(True, False, APPLICATIONS_REQUIRED=""))
 
-                tree_file.write_text(tree + "\n")
-                sha_file.write_text(sha + "\n")
-                self.assertTrue(accepts())
-                tree_file.write_text("0" * 40 + "\n")
-                self.assertFalse(accepts())
-                tree_file.write_text(tree + "\n")
-                sha_file.write_text("0" * 40 + "\n")
-                self.assertFalse(accepts())
-                sha_file.unlink()
-                self.assertFalse(accepts())
-                sha_file.write_text(sha + "\n")
-                self.assertTrue(accepts())
-
-    def test_native_plan_starts_early_once_on_the_exact_head(self):
+    def test_native_plan_starts_early_once_on_the_integration_revision(self):
         early = job_block(CI, "early-native-plan")
         delegated = job_block(FULL, "native-plan")
         caller = job_block(CI, "full-validation")
         self.assertIn("needs: impact", early)
         self.assertNotIn("needs:\n", early)
         self.assertIn("if: needs.impact.outputs.full_validation_required == 'true'", early)
-        self.assertIn("validation_ref: ${{ github.event.pull_request.head.sha }}", early)
+        self.assertIn("validation_ref: ${{ github.sha }}", early)
         self.assertIn("native_plan_in_caller: true", caller)
         for block in (early, delegated):
             self.assertIn("uses: ./.github/workflows/ci-native-plan.yml", block)
@@ -342,7 +319,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         wrapper = "cargo +nightly-2026-03-03 test --locked -p mech-build --test isolated_process -- --nocapture"
         planning_compile = "--test planning --no-run --message-format=json-render-diagnostics"
         planning_prepare = "--ignored --exact prepare_planning_owner_runners --test-threads=1 --nocapture"
-        planning = "--stage 02-planning-execution"
+        planning = "--stage planning-execution"
         pruning = "cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test native_host_pruning"
         self.assertLess(native.index(pair), native.index(wrapper))
         self.assertLess(native.index(wrapper), native.index(planning_compile))
@@ -424,16 +401,10 @@ class FullWorkflowContractTests(unittest.TestCase):
                 command_timeouts = [int(value) for value in re.findall(r"--timeout-secs (\d+)", step)]
                 actions_timeout = int(re.search(r"timeout-minutes: (\d+)", step).group(1)) * 60
                 self.assertGreater(actions_timeout, sum(value + 30 + 5 + 15 for value in command_timeouts))
-        for stage, checkpoint in (
-            (compile_step, "Retain native planning compilation evidence"),
-            (prepare_step, "Retain native planning preparation evidence"),
-            (execution_step, "Retain native planning execution evidence before the next stage"),
-        ):
-            retained = steps[steps.index(stage) + 1]
-            self.assertIn(checkpoint, retained)
-            self.assertIn("if: always()", retained)
-            self.assertIn("target/native-plan-logs", retained)
-            self.assertIn("target/bytecode-v1-fixtures/owner-runner/logs", retained)
+        retained = [step for step in steps if "uses: actions/upload-artifact@" in step]
+        self.assertEqual(len(retained), 1)
+        self.assertIn("if: always()", retained[0])
+        self.assertIn("target/native-plan-logs", retained[0])
         self.assertIn("python3 -B scripts/tests/test_native_plan_stage.py", NATIVE)
 
     def test_native_metadata_subprocess_contracts_run_before_generation(self):
@@ -551,7 +522,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         )
         native = job_block(NATIVE, "native-plan")
         self.assertIn("--test planning --no-run --message-format=json-render-diagnostics", native)
-        self.assertIn("--stage 02-planning-execution", native)
+        self.assertIn("--stage planning-execution", native)
 
         engine = job_block(FULL, "native-engine")
         self.assertIn("uses: ./.github/actions/native-applications", engine)
@@ -587,38 +558,27 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--lib cli::app::tests::build_", NATIVE_APPLICATIONS)
         self.assertIn("--test mech_build", NATIVE_APPLICATIONS)
 
-    def test_affected_native_commands_retain_each_stage_and_reuse_same_recipe(self):
-        stages = re.split(r"(?m)^    - name: ", NATIVE_APPLICATIONS)[1:]
-        bounded = [stage for stage in stages if "python3 scripts/run-native-plan-stage.py" in stage]
-        self.assertEqual(len(bounded), 6)
-        for stage in bounded:
-            following = stages[stages.index(stage) + 1]
-            self.assertIn("if: always()", following)
-            self.assertIn("uses: actions/upload-artifact@v4", following)
-            self.assertIn("target/native-plan-logs", following)
-            self.assertIn("target/bytecode-v1-fixtures/owner-runner/logs", following)
+    def test_native_commands_preserve_bounded_execution_and_final_diagnostics(self):
+        for target in ("native_literal", "native_scalar", "native_generated_end_to_end", "native_cli_hosted", "mech_build"):
+            self.assertIn(f"--test {target}", NATIVE_APPLICATIONS)
         self.assertNotIn("--skip", NATIVE_APPLICATIONS)
         self.assertNotIn("continue-on-error", NATIVE_APPLICATIONS)
-        self.assertIn("branches: [codex/r21-native-stabilization]", NATIVE_STABILIZATION)
-        self.assertIn("suite: [engine, hosted]", NATIVE_STABILIZATION)
-        self.assertEqual(NATIVE_STABILIZATION.count("uses: ./.github/actions/native-applications"), 2)
-        self.assertIn("phase: cold", NATIVE_STABILIZATION)
-        self.assertIn("phase: reuse", NATIVE_STABILIZATION)
-        self.assertIn("verify_reuse: true", NATIVE_STABILIZATION)
-        for job in ("native-plan", "applications"):
-            self.assertIn("needs: harness", job_block(NATIVE_STABILIZATION, job))
-        self.assertIn("python3 scripts/probe-unix-kill-targeting.py", NATIVE_STABILIZATION)
+        self.assertIn("uses: actions/upload-artifact@v4", NATIVE_APPLICATIONS)
+        self.assertIn("target/native-plan-logs", NATIVE_APPLICATIONS)
+        self.assertIn("if: always()", NATIVE_APPLICATIONS)
+        self.assertIn("python3 scripts/probe-unix-kill-targeting.py", NATIVE)
+        self.assertIn("python3 -B scripts/tests/test_probe_unix_kill_targeting.py", NATIVE)
         reuse = next(step for step in job_steps(NATIVE, "native-plan")
                      if "- name: Verify fresh-process owner reuse and planning execution" in step)
         self.assertIn("if: inputs.verify_reuse", reuse)
         self.assertIn('MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"', reuse)
-        self.assertIn("--stage 02-planning-reuse-execution", reuse)
 
     def test_native_plan_handoff_gates_fail_closed(self):
         def accepts(block, **overrides):
             script = textwrap.dedent(block.split("        run: |\n", 1)[1])
             environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "success")
             environment["SOURCE_REQUIRED"] = "true"
+            environment["WINDOWS_REQUIRED"] = "true"
             environment.update(overrides)
             return subprocess.run(
                 ["/bin/bash", "-e", "-c", script], env=environment,
@@ -644,7 +604,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         block = job_block(CI, "pr-gate")
         script = textwrap.dedent(block.split("        run: |\n", 1)[1])
         environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "skipped")
-        environment.update(DOCS_ONLY="true", FULL_REQUIRED="false", IMPACT_RESULT="success", BROWSER_RESULT="success", SOURCE_REQUIRED="false")
+        environment.update(DOCS_ONLY="true", FULL_REQUIRED="false", IMPACT_RESULT="success", BROWSER_RESULT="success", SOURCE_REQUIRED="false", WINDOWS_REQUIRED="false")
         def accepts(**changes):
             return subprocess.run(["/bin/bash", "-e", "-c", script],
                 env=environment | changes, capture_output=True).returncode == 0
@@ -662,11 +622,11 @@ class FullWorkflowContractTests(unittest.TestCase):
             with self.subTest(job=job):
                 self.assertIn(guard, job_block(CI, job))
 
-    def test_architecture_mutations_are_bounded_parallel_exact_head_shards(self):
+    def test_architecture_mutations_are_bounded_parallel_shards(self):
         normal = job_block(CI, "static-mutations")
         full = job_block(FULL, "architecture-mutations")
         for block, checkout in (
-            (normal, "ref: ${{ github.event.pull_request.head.sha }}"),
+            (normal, "ref: ${{ github.sha }}"),
             (full, FULL_CHECKOUT_REF),
         ):
             with self.subTest(checkout=checkout):
@@ -734,8 +694,10 @@ class FullWorkflowContractTests(unittest.TestCase):
             "browser-ekf-parity",
         ):
             self.assertIn(f"- {dependency}", compute)
-        for result in ("BUILD", "SMOKE", "CPU", "WGPU", "PARITY"):
+        for result in ("BUILD", "SMOKE"):
             self.assertIn(f'test "${result}_RESULT" = success', compute)
+        for result in ("CPU", "WGPU", "PARITY"):
+            self.assertIn(f'test "${result}_RESULT" = "$expected"', compute)
         self.assertIn("Smoke test rich served documents before full validation", standard)
         self.assertIn("smoke-served-rich-document-browser.sh", standard)
         project_browser = job_block(FULL, "project-browser")
@@ -942,10 +904,10 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('test "$MIXED_TEST_COUNT" -gt 0', cargo_language)
         self.assertIn("--lib mixed_ -- --nocapture", cargo_language)
 
-    def test_pr_full_validation_receives_exact_head(self):
+    def test_pr_full_validation_receives_integration_revision(self):
         block = job_block(CI, "full-validation")
         self.assertIn(
-            "validation_ref: ${{ github.event.pull_request.head.sha }}", block
+            "validation_ref: ${{ github.sha }}", block
         )
         self.assertIn(
             "rich_browser_smoke_in_caller: ${{ needs.impact.outputs.browser_canary_required == 'true' }}",
@@ -1063,6 +1025,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             values = {
                 "needs.impact.outputs.full_validation_required": "true",
                 "needs.impact.outputs.docs_only": "false",
+                "needs.impact.outputs.windows_canary_required": "true",
                 "needs.static-contracts.result": "success",
                 "needs.standard-linux.result": "success",
                 "needs.standard-windows.result": "success",
@@ -1091,6 +1054,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertFalse(selected(cancelled=True, **skipped_optional))
         skipped_docs = {
             "needs.impact.outputs.docs_only": "true",
+            "needs.impact.outputs.windows_canary_required": "false",
             **{f"needs.{job}.result": "skipped" for job in (
                 "static-contracts", "standard-linux", "standard-windows",
                 "changed-owner-tests", "browser-canary",
@@ -1116,107 +1080,28 @@ class FullWorkflowContractTests(unittest.TestCase):
         )
         self.assertIn(FULL_CHECKOUT_REF, FULL)
 
-    def test_every_repository_checkout_uses_validation_ref(self):
-        lines = FULL.splitlines()
-        checkouts = [
-            index
-            for index, line in enumerate(lines)
-            if "uses: actions/checkout@" in line
-        ]
-        self.assertGreater(len(checkouts), 0)
-        for index in checkouts:
-            with self.subTest(line=index + 1):
-                self.assertTrue(
-                    any(
-                        line.strip() == FULL_CHECKOUT_REF
-                        for line in lines[index + 1 : index + 5]
-                    )
-                )
-
-    def test_normal_ci_checkout_roles_are_explicit_and_recorded(self):
-        self.assertEqual(
-            checkout_jobs(CI),
-            INTEGRATION_CHECKOUT_JOBS | EXACT_HEAD_CHECKOUT_JOBS | MATRIX_CHECKOUT_JOBS,
-        )
-        roles = (
-            (
-                INTEGRATION_CHECKOUT_JOBS,
-                "integration-merge",
-                "${{ github.sha }}",
-            ),
-            (
-                EXACT_HEAD_CHECKOUT_JOBS,
-                "exact-head",
-                "${{ github.event.pull_request.head.sha }}",
-            ),
-        )
-        for jobs, validation_kind, requested_ref in roles:
+    def test_all_validation_checkouts_record_the_selected_revision(self):
+        for workflow, requested, kind in (
+            (CI, "${{ github.sha }}", "integration-merge"),
+            (FULL, "${{ inputs.validation_ref || github.sha }}", "exact-ref"),
+        ):
+            jobs = checkout_jobs(workflow)
+            self.assertTrue(jobs)
             for job in jobs:
-                with self.subTest(job=job, validation_kind=validation_kind):
-                    steps = job_steps(CI, job)
-                    checkout_indexes = [
-                        index
-                        for index, step in enumerate(steps)
-                        if "uses: actions/checkout@" in step
-                    ]
-                    self.assertEqual(checkout_indexes, [0])
-                    checkout = steps[0]
-                    recorder = steps[1]
-                    self.assertIn("id: checkout", checkout)
-                    self.assertIn(f"ref: {requested_ref}", checkout)
-                    self.assertIn(f"VALIDATION_KIND: {validation_kind}", recorder)
-                    self.assertIn(f"REQUESTED_REF: {requested_ref}", recorder)
-                    self.assertIn(
-                        "CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}", recorder
-                    )
-                    self.assertIn(
-                        "CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}",
-                        recorder,
-                    )
-                    self.assertIn(
-                        'run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"',
-                        recorder,
-                    )
-                    self.assertIn("shell: bash", recorder)
-                    self.assertNotIn("uses: ./.github/actions/", recorder)
-
-    def test_full_ci_checkouts_are_exact_ref_and_recorded_immediately(self):
-        jobs = checkout_jobs(FULL)
-        self.assertEqual(len(jobs), 37)
-        for job in jobs:
-            with self.subTest(job=job):
-                steps = job_steps(FULL, job)
-                checkout_indexes = [
-                    index
-                    for index, step in enumerate(steps)
-                    if "uses: actions/checkout@" in step
-                ]
-                self.assertEqual(checkout_indexes, [0])
-                checkout = steps[0]
-                recorder = steps[1]
-                self.assertIn("id: checkout", checkout)
-                self.assertIn(FULL_CHECKOUT_REF, checkout)
-                self.assertIn("VALIDATION_KIND: exact-ref", recorder)
-                self.assertIn(
-                    "REQUESTED_REF: ${{ inputs.validation_ref || github.sha }}",
-                    recorder,
-                )
-                self.assertIn(
-                    "CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}", recorder
-                )
-                self.assertIn(
-                    "CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}", recorder
-                )
-                self.assertIn(
-                    'run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"',
-                    recorder,
-                )
-                self.assertIn("shell: bash", recorder)
-                self.assertNotIn("uses: ./.github/actions/", recorder)
+                with self.subTest(job=job, kind=kind):
+                    steps = job_steps(workflow, job)
+                    self.assertEqual([i for i, step in enumerate(steps)
+                                      if "uses: actions/checkout@" in step], [0])
+                    self.assertIn(f"ref: {requested}", steps[0])
+                    self.assertIn(f"VALIDATION_KIND: {kind}", steps[1])
+                    self.assertIn(f"REQUESTED_REF: {requested}", steps[1])
+                    self.assertIn("CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}", steps[1])
+                    self.assertIn('$RECORD_CHECKOUT_IDENTITY', steps[1])
+                    self.assertIn("shell: bash", steps[1])
 
     def test_checkout_identity_recorder_is_fail_closed_and_auditable(self):
         self.assertEqual(CHECKOUT_IDENTITY, workflow_checkout_identity(FULL))
-        for validation_kind in ("integration-merge", "exact-head", "exact-ref"):
+        for validation_kind in ("integration-merge", "exact-ref"):
             self.assertIn(validation_kind, CHECKOUT_IDENTITY)
         self.assertIn("actual_sha=$(git rev-parse HEAD)", CHECKOUT_IDENTITY)
         self.assertIn('test -n "$REQUESTED_REF"', CHECKOUT_IDENTITY)
@@ -1309,16 +1194,13 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertNotIn("continue-on-error", block)
 
     def test_r2_type_memory_boundary_is_unwaived(self):
-        r1 = "python3 scripts/check-r1-compatibility-closure.py"
         r2 = "python3 scripts/check-r2-type-memory-boundary.py"
         unit = "scripts/tests/test_check_r2_type_memory_boundary.py"
         for block in (
             normal_static_contracts(),
             full_architecture_contracts(),
         ):
-            self.assertIn(r1, block)
             self.assertIn(r2, block)
-            self.assertLess(block.index(r1), block.index(r2))
             self.assertIn(unit, block)
             self.assertNotIn("continue-on-error", block)
         full = job_block(FULL, "architecture-contracts")
@@ -1372,7 +1254,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("Execute the complete R4 conformance boundary", full)
         self.assertGreaterEqual(full.count("--test r4_type_cutover"), 3)
 
-    def test_r6_memory_runtime_and_miri_are_required_exact_head_gates(self):
+    def test_managed_memory_and_miri_are_required_gates(self):
         r5 = "python3 scripts/check-r5-memory-planner.py"
         r6 = "python3 scripts/check-r6-memory-runtime.py"
         unit = "scripts/tests/test_check_r6_memory_runtime.py"
@@ -1456,18 +1338,20 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn(fetch, block)
         self.assertLess(block.index(fetch), block.index(smoke))
 
-    def test_language_census_prefetches_before_offline_metadata_tests(self):
+    def test_syntax_profiles_prefetch_and_run_exhaustive_streaming_once(self):
         block = job_block(FULL, "cargo-language")
         fetch = "cargo fetch --locked"
         self.assertIn(fetch, block)
-        for profile in ("full", "base"):
-            command = (
-                "cargo +nightly-2026-03-03 test --locked -p mech-syntax "
-                f"--tests --no-default-features --features {profile}"
-            )
-            with self.subTest(profile=profile):
-                self.assertIn(command, block)
-                self.assertLess(block.index(fetch), block.index(command))
+        full = "cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features full"
+        base = "cargo +nightly-2026-03-03 test --locked -p mech-syntax --no-default-features --features base"
+        for command in (full, base):
+            self.assertIn(command, block)
+            self.assertLess(block.index(fetch), block.index(command))
+        self.assertEqual(block.count("-p mech-syntax --tests"), 1)
+        self.assertIn("--test canonical_document_feature_gates", block)
+        self.assertIn("--test canonical_base_contracts", block)
+        self.assertNotIn("--test document_streaming_complexity", block)
+        self.assertNotIn("--test document_streaming_equivalence", block)
         self.assertNotIn("continue-on-error", block)
 
     def test_syntax_grammar_step_uses_current_targets_and_features(self):

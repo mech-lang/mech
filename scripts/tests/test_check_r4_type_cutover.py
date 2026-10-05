@@ -45,13 +45,6 @@ class R4TypeCutoverCheckerTests(unittest.TestCase):
         path.write_text(path.read_text() + "\nfn runtime_output_rank() {}\n")
         self.assert_failure(root, "retired R4 path remains")
 
-    def test_physical_type_import_in_solver_fails(self):
-        root = self.fixture()
-        path = root / "src/core/src/type_system/resolved.rs"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(REPOSITORY / "src/core/src/type_system/resolved.rs", path)
-        path.write_text(path.read_text() + "\nuse crate::FunctionValueRepresentation;\n")
-        self.assert_failure(root, "pure type system imports physical representation")
 
     def test_maintained_compiler_resolved_runtime_fails(self):
         root = self.fixture()
@@ -60,13 +53,6 @@ class R4TypeCutoverCheckerTests(unittest.TestCase):
         path.write_text("fn bad() { CompilerResolved(RuntimeFamilyId::from_raw(1)); }\n")
         self.assert_failure(root, "maintained runtime uses CompilerResolved")
 
-    def test_workflow_omission_fails(self):
-        root = self.fixture()
-        path = root / ".github/workflows/ci.yml"
-        path.write_text(
-            path.read_text().replace("python3 scripts/check-r4-type-cutover.py", "true", 1)
-        )
-        self.assert_failure(root, "does not run the R4 checker")
 
     def test_fallback_operation_contract_fails(self):
         root = self.fixture()

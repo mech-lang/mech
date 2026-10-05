@@ -1,6 +1,6 @@
-//! Exact source/decoded acceptance for recovery finding G02's canonical
-//! numeric target families.
-#![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
+//! Exact numeric values, shapes, and state through source and bytecode.
+
+use super::{compile, roundtrip};
 
 use std::collections::BTreeMap;
 
@@ -19,25 +19,6 @@ use mech_runtime::{
     ResidentDurabilityPolicy, RuntimeBuilder, RuntimeValueSnapshot, SourceDocument,
 };
 use mech_syntax::document::{ParseConfig, Revision};
-
-fn compile(source: &str) -> ProgramArtifact {
-    let document = SourceDocument::parse_resolved(
-        "s8-recovery-numeric-targets.mec",
-        Revision(0),
-        source,
-        ParseConfig::default(),
-    )
-    .unwrap();
-    assert!(document.is_strictly_clean());
-    RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
-        .build_compiler()
-        .unwrap()
-        .compile_document(&document)
-        .unwrap()
-        .artifact()
-        .clone()
-}
 
 fn exact_outputs(artifact: &ProgramArtifact, expected: &[&str]) {
     let catalog = mech_stdlib::source_catalog();
@@ -59,10 +40,7 @@ fn exact_outputs(artifact: &ProgramArtifact, expected: &[&str]) {
 
 fn source_and_decoded(source: &str, expected: &[&str]) {
     let artifact = compile(source);
-    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
-        &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
-    )
-    .unwrap();
+    let decoded = roundtrip(&artifact);
     exact_outputs(&artifact, expected);
     exact_outputs(&decoded, expected);
 }

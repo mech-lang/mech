@@ -1,6 +1,7 @@
-//! Exact source/decoded acceptance for recovery finding G27's resident Index
-//! range cardinality, physical binding, execution, and rejection boundaries.
-#![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
+//! Index range cardinality, physical binding, execution, and rejection.
+
+use super::roundtrip;
+
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
     ReactiveInstanceId, ResidentKernelBindError, SchemaBody, SchemaDraft, SchemaTableBuilder,
@@ -87,10 +88,7 @@ fn compile(source: &str, bindings: &[(u32, Value)]) -> ProgramArtifact {
 
 fn source_and_decoded(source: &str, bindings: &[(u32, Value)], expected: &[u64]) {
     let artifact = compile(source, bindings);
-    let bytecode = mech_engine::decode_program_artifact_bytecode_v1(
-        &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
-    )
-    .unwrap();
+    let bytecode = roundtrip(&artifact);
     exact_range(&artifact, expected);
     exact_range(&bytecode, expected);
 }

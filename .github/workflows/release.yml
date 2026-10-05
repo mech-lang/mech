@@ -19,6 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Match the tag, package version, and checkout commit
         run: python3 scripts/check-release-tag.py --tag "${{ github.ref_name }}"
@@ -28,6 +29,7 @@ jobs:
     needs: verify-tag
     uses: ./.github/workflows/ci-full.yml
     with:
+      validation_ref: ${{ github.sha }}
       release_channel: stable
 
   publish:
@@ -39,6 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Download validated standard and full packages
         uses: actions/download-artifact@v4

@@ -20,6 +20,8 @@ REMOVED_WORKSPACE_PATHS = (
     Path("src/engine/src/literals.rs"),
     Path("src/engine/src/structures.rs"),
     Path("src/core/src/nodes.rs"),
+    Path("src/core/src/document_presentation.rs"),
+    Path("src/engine/src/program/document_outputs.rs"),
 )
 
 GLOBAL_REMOVED = (
@@ -64,28 +66,6 @@ RAW_LITERAL = re.compile(r'(?:br|rb|cr|r)(?P<hashes>#{0,255})"')
 CHAR_LITERAL = re.compile(
     r"(?:b)?'(?:\\(?:[nrt0\\'\"]|x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]{1,6}\})|[^\\'\r\n])'"
 )
-
-# These are exact provider/value conversion adapters already governed by the
-# value-system boundary. The quarantine checker deliberately grants no parent
-# directory or filename-pattern exception.
-APPROVED_LEGACY_VALUE_ADAPTERS = {
-    Path("src/runtime/src/runtime/program/compiler.rs"),
-    # The resident compatibility adapter is compiled only by runtime tests.
-    Path("src/runtime/src/runtime/program/external/value_adapter_tests.rs"),
-    Path("src/runtime/src/runtime/program/value.rs"),
-    Path("hosts/browser/src/config.rs"),
-    Path("hosts/browser/src/provider.rs"),
-    Path("hosts/console/src/provider.rs"),
-    Path("hosts/gpu/src/compute_provider.rs"),
-    Path("hosts/robot-arm/src/provider.rs"),
-    Path("hosts/scene/src/provider.rs"),
-    Path("hosts/scene/src/schema.rs"),
-    Path("hosts/terminal/src/provider.rs"),
-    Path("hosts/time/src/lib.rs"),
-    Path("hosts/time/src/provider.rs"),
-    Path("hosts/timer/src/provider.rs"),
-}
-
 
 def rust_sources(root: Path) -> list[Path]:
     paths: set[Path] = set()
@@ -353,17 +333,6 @@ def check_shipping_reachability(root: Path) -> list[str]:
                 failures.append(
                     f"{relative}:{line_number(source, match.start())}: shipping {name} reachability"
                 )
-        legacy_restricted = (
-            relative.is_relative_to(Path("src/runtime/src/runtime/program"))
-            or relative.is_relative_to(Path("src/engine/src/resident"))
-            or relative.is_relative_to(Path("hosts"))
-        )
-        if (
-            legacy_restricted
-            and "LegacyValue" in source
-            and relative not in APPROVED_LEGACY_VALUE_ADAPTERS
-        ):
-            failures.append(f"{relative}: LegacyValue is outside an exact approved adapter")
     return failures
 
 

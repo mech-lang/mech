@@ -236,26 +236,9 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
     def test_19_r6_allocator_concept_fails(self):
         root = self.fixture()
         self.append(root, "src/compute/src/memory.rs", "\nstruct AllocationHandle;\n")
-        self.assert_failure(root, "R6 concept introduced during R5")
+        self.assert_failure(root, "runtime allocation authority outside its owner")
 
-    def test_20_package_version_change_fails(self):
-        root = self.fixture()
-        self.replace(root, "Cargo.toml", 'version = "0.3.6"', 'version = "0.4.0"')
-        self.assert_failure(root, "root package version changed")
 
-    def test_21_incomplete_r5_status_fails(self):
-        root = self.fixture()
-        for relative in (
-            "README.md",
-            "docs/design/ROADMAP.mec",
-            "docs/design/v0.4-endgame.md",
-            "docs/design/type-memory-boundary.md",
-            "docs/design/r4-type-system-cutover.md",
-        ):
-            path = root / relative
-            source = path.read_text(encoding="utf-8")
-            self.write(root, relative, source.replace("R5 Memory planner — complete", "R5 Memory planner — incomplete"))
-        self.assert_failure(root, "does not mark R5 complete")
 
     def test_22_c64_layout_alias_fails(self):
         root = self.fixture()

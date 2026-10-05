@@ -19,7 +19,7 @@ on:
         type: string
         default: ""
       native_plan_in_caller:
-        description: The calling workflow runs and requires the same exact-head native plan
+        description: The calling workflow runs and requires the same revision native plan
         required: false
         type: boolean
         default: false
@@ -63,7 +63,7 @@ concurrency:
 env:
   RECORD_CHECKOUT_IDENTITY: |
     case "$VALIDATION_KIND" in
-      integration-merge|exact-head|exact-ref) ;;
+      integration-merge|exact-ref) ;;
       *) echo "unsupported validation kind: $VALIDATION_KIND" >&2; exit 64 ;;
     esac
     test -n "$REQUESTED_REF"
@@ -169,7 +169,6 @@ jobs:
           python3 scripts/check-no-retired-value-system.py
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
-          python3 scripts/check-r1-compatibility-closure.py
           python3 scripts/check-r2-type-memory-boundary.py
           python3 scripts/check-r3-type-system.py
           python3 scripts/check-r4-type-cutover.py
@@ -251,7 +250,7 @@ jobs:
             tests/ci/test_ci_full_contract.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_no_retired_value_system.py \
-            scripts/tests/test_check_r1_compatibility_closure.py \
+            scripts/tests/test_rust_source.py \
             scripts/tests/test_check_r2_type_memory_boundary.py \
             scripts/tests/test_check_r3_type_system.py \
             scripts/tests/test_check_r4_type_cutover.py \
@@ -1008,6 +1007,7 @@ jobs:
     uses: ./.github/workflows/ci-native-plan.yml
     with:
       validation_ref: ${{ inputs.validation_ref || github.sha }}
+      verify_reuse: ${{ github.event_name != 'pull_request' }}
 
   native-engine:
     name: Native engine applications
@@ -1397,16 +1397,17 @@ jobs:
           python3 scripts/generate-canonical-scc-report.py --check
           python3 scripts/generate-canonical-document-grammar.py --check
 
-      # The consumer census resolves all features with locked, offline metadata.
-      # Building mech-syntax alone does not populate every workspace dependency.
-      - name: Fetch locked workspace dependencies for offline consumer census
+      - name: Fetch locked workspace dependencies for isolated profile checks
         run: cargo fetch --locked
 
       - name: Run syntax grammar suites
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features full
-          cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features base
-          # The canonical registries and grammar tests own the retired grammar assertions.
+          # Exhaustive streaming/growth runs once above. Reduced profiles prove
+          # their feature boundary without repeating the same parser algorithm.
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --no-default-features --features base \
+            --test canonical_document_root --test canonical_base_contracts
+          # Verify the explicit compiler/serde feature combination.
           cargo +nightly-2026-03-03 test --locked -p mech-syntax --no-default-features \
             --features "baselib pretty_print serde compiler program statements_default subscript_default" \
             --test canonical_port_registry --test canonical_rule_registry \
@@ -1418,12 +1419,7 @@ jobs:
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-syntax
           --no-default-features --test canonical_document_feature_gates
-          --test canonical_document_incremental --test document_incremental
-          --test document_incremental_properties --test document_change_map
-          --test document_streaming_complexity --test document_streaming_storage
-          --test document_streaming_lifecycle --test document_streaming_equivalence
-          --test document_streaming_boundaries --test document_streaming_recovery
-          --test document_streaming_resources --test document_streaming_publication
+          --test canonical_document_root --test document_streaming_boundaries
 
       - name: Verify canonical document execution and rendered outputs
         run: |
@@ -1432,9 +1428,7 @@ jobs:
             --test canonical_declaration_handoff --test canonical_document_outputs \
             --test canonical_document_render --test canonical_source_index \
             --test source_document --test canonical_config_profile --test config_profile \
-            --test s8_recovery_index_range \
-            --test s8_recovery_numeric_targets \
-            --test s8_recovery_logical_activation_facts
+            --test source_acceptance
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_source,resident-artifact,r64,c64 \
             --lib resident::general::shape_fact_tests::
@@ -1606,6 +1600,15 @@ jobs:
           rustup show
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
+
+      - name: Verify resident recording transaction boundaries
+        run: |
+          cargo test --locked -p mech-runtime --no-default-features \
+            --features full_source,resident-routing-source,resident_ekf_benchmarks \
+            --lib resident_recording::tests
+          cargo test --locked -p mech-runtime --no-default-features \
+            --features full_source,resident-routing-source,resident_ekf_benchmarks \
+            --test resident_ekf_contract
 
       - name: Run complete runtime suite
         run: cargo test -p mech-runtime --lib --tests

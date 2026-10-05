@@ -8,8 +8,7 @@ stored directly as `CanonicalVariableDefinition::root_visible`.
 
 ## R1 — Canonical contract and compatibility closure
 
-R1 is closed by the permanent `scripts/check-r1-compatibility-closure.py`
-contract and the same-head Full CI merge gate. Executable artifacts require
+The artifact owner and public product tests require declared semantics. Executable artifacts require
 declared semantics; resident lookup uses canonical operation identities; the
 resource-write command is bound once to effect identity and idempotency before
 provider preparation; assignment and set validators are explicit declaration

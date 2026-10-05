@@ -42,36 +42,76 @@ fn count(node: &SyntaxNode, kind: SyntaxKind) -> usize {
 
 #[test]
 fn canonical_document_root_owns_the_whole_source_fixture_corpus() {
-    let matrix = fs::read_to_string(
-        repository_root().join("docs/design/grammar-audit/source-parser-consumer-fixtures.tsv"),
-    )
-    .unwrap();
-    for row in matrix.lines().skip(1) {
-        let fields = row.split('\t').collect::<Vec<_>>();
-        assert_eq!(fields.len(), 6, "invalid fixture row: {row}");
-        let text = fs::read_to_string(repository_root().join(fields[1])).unwrap();
+    for (id, path, accepted) in [
+        (
+            "compiler",
+            "tests/fixtures/syntax-source-boundary/compiler.mec",
+            true,
+        ),
+        (
+            "config",
+            "tests/fixtures/syntax-source-boundary/config.mec",
+            true,
+        ),
+        (
+            "document",
+            "tests/fixtures/syntax-source-boundary/document.mec",
+            true,
+        ),
+        (
+            "empty",
+            "tests/fixtures/syntax-source-boundary/empty.mec",
+            true,
+        ),
+        (
+            "executable",
+            "tests/fixtures/syntax-source-boundary/executable.mec",
+            true,
+        ),
+        (
+            "interactive",
+            "tests/fixtures/syntax-source-boundary/interactive.mec",
+            true,
+        ),
+        (
+            "malformed",
+            "tests/fixtures/syntax-source-boundary/malformed.mec",
+            false,
+        ),
+        (
+            "resolver-index",
+            "tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            true,
+        ),
+        (
+            "wasm-document",
+            "tests/fixtures/syntax-source-boundary/wasm-document.mec",
+            true,
+        ),
+    ] {
+        let text = fs::read_to_string(repository_root().join(path)).unwrap();
         let snapshot = parse_canonical_document(source(&text), ParseConfig::default());
         validate_lossless(&snapshot.root, &snapshot.source).unwrap();
         assert_eq!(
             reconstruct_source(&snapshot.root, &snapshot.source).unwrap(),
             text,
             "{}",
-            fields[0]
+            id
         );
         assert_eq!(snapshot.syntax().kind(), SyntaxKind::Document);
         let document = DocumentSyntax::cast(snapshot.syntax()).unwrap();
-        if fields[3] == "accept" {
+        if accepted {
             assert!(
                 snapshot.diagnostics.is_empty(),
                 "{}: {:#?}",
-                fields[0],
+                id,
                 snapshot.diagnostics.as_slice()
             );
-            if fields[0] != "empty" {
-                assert!(!document.sections().is_empty(), "{}", fields[0]);
+            if id != "empty" {
+                assert!(!document.sections().is_empty(), "{}", id);
             }
         } else {
-            assert!(!snapshot.diagnostics.is_empty(), "{}", fields[0]);
+            assert!(!snapshot.diagnostics.is_empty(), "{}", id);
         }
     }
 }

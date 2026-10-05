@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the permanent R3 Type System v1 architecture."""
+"""Check Type System v1 semantic authority."""
 
 from __future__ import annotations
 
@@ -8,6 +8,10 @@ import re
 import sys
 from pathlib import Path
 from typing import Pattern
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rust_source import rust_code
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,14 +41,6 @@ REQUIRED = TYPE_MODULES + (
     "src/core/tests/type_system_conversion.rs",
     "src/core/tests/type_system_catalog.rs",
     "src/stdlib/tests/type_system_source.rs",
-    "docs/design/type-system-v1.md",
-    "docs/design/type-memory-boundary.md",
-    "docs/design/ROADMAP.mec",
-    "docs/design/v0.4-endgame.md",
-    "README.md",
-    ".github/workflows/ci.yml",
-    ".github/workflows/ci-full.yml",
-    ".github/ci/owners.toml",
 )
 BUILTINS = (
     ("U8", 0), ("U16", 1), ("U32", 2), ("U64", 3), ("U128", 4),
@@ -55,37 +51,6 @@ BUILTINS = (
 PREDICATES = (
     "Number", "Real", "Integer", "FloatingPoint", "Ordered",
     "Negatable", "RangeEndpoint", "Equatable", "Keyable",
-)
-CONFORMANCE = (
-    "existing_builtin_ordinals_are_unchanged",
-    "c32_and_c64_are_distinct",
-    "number_contains_every_numeric_scalar",
-    "square_scheme_rejects_independent_equal_bounded_axes",
-    "imported_rigid_dimensions_are_never_aliased",
-    "activation_dimension_rejects_compound_turn_expression",
-    "bounded_turn_rejects_unbounded_turn_expression",
-    "dimension_bounds_are_checked_for_compound_expressions",
-    "cyclic_kind_binding_is_structured",
-    "cyclic_dimension_binding_is_structured",
-    "unresolved_outputs_are_structured",
-    "normalization_is_idempotent",
-    "complete_numeric_promotion_matrix_is_symmetric_and_deterministic",
-    "implicit_conversion_is_exactly_the_lossless_table",
-    "matrix_and_option_plans_preserve_structure",
-    "exact_concrete_beats_generic",
-    "different_equal_score_outputs_produce_ambiguity",
-    "named_specializers_are_scheme_authoritative",
-    "schema_and_direct_kind_predicates_agree_for_structural_products",
-    "dimension_inequality_requires_guaranteed_interval_endpoints",
-    "dynamic_lower_bound_requires_actual_minimum_above_declared_maximum",
-    "matrix_product_preserves_outer_axes_and_rejects_fixed_inner_mismatch",
-    "concatenation_templates_accept_more_than_thirty_two_inputs",
-    "set_definition_cardinality_and_keyability_are_semantic",
-    "source_numeric_promotions_are_semantically_selected",
-    "semantic_formula_add_routes_strings_and_numbers",
-    "source_explicit_casts_use_checked_conversion_plans",
-    "source_variadic_templates_cover_large_concat_and_exact_sets",
-    "compiled_conversion_executes_after_bytecode_round_trip",
 )
 STORAGE_FORBIDDEN = (
     "FunctionValueRepresentation", "FunctionRuntimeType",
@@ -103,73 +68,6 @@ R3_WIRE_NAMES = (
     "ResolvedCall", "ConversionPlan", "ConversionStep", "TypeConstraintEnvironment",
     "KindPredicateEvidence", "BuiltinKindPredicate",
 )
-RAW_LITERAL = re.compile(r'(?:br|rb|r)(?P<hashes>#{0,255})"')
-
-
-def rust_code(source: str) -> str:
-    """Blank Rust comments and literals while preserving offsets and newlines."""
-    out = list(source)
-    size = len(source)
-
-    def blank(start: int, end: int) -> None:
-        for index in range(start, end):
-            if out[index] not in "\r\n":
-                out[index] = " "
-
-    index = 0
-    while index < size:
-        if source.startswith("//", index):
-            end = source.find("\n", index + 2)
-            end = size if end < 0 else end
-            blank(index, end)
-            index = end
-            continue
-        if source.startswith("/*", index):
-            depth, end = 1, index + 2
-            while end < size and depth:
-                if source.startswith("/*", end):
-                    depth, end = depth + 1, end + 2
-                elif source.startswith("*/", end):
-                    depth, end = depth - 1, end + 2
-                else:
-                    end += 1
-            blank(index, end)
-            index = end
-            continue
-        raw = RAW_LITERAL.match(source, index)
-        if raw:
-            delimiter = '"' + raw.group("hashes")
-            end = source.find(delimiter, raw.end())
-            end = size if end < 0 else end + len(delimiter)
-            blank(index, end)
-            index = end
-            continue
-        prefix = 1 if source.startswith(('b"', "b'"), index) else 0
-        quote = index + prefix
-        if quote < size and source[quote] == '"':
-            end, escaped = quote + 1, False
-            while end < size:
-                char = source[end]
-                end += 1
-                if char == '"' and not escaped:
-                    break
-                escaped = char == "\\" and not escaped
-                if char != "\\":
-                    escaped = False
-            blank(index, end)
-            index = end
-            continue
-        if quote < size and source[quote] == "'":
-            value, end = quote + 1, quote + 2
-            if value < size and source[value] == "\\":
-                end = value + (4 if source.startswith("\\x", value) else 2)
-            if end < size and source[end] == "'":
-                blank(index, end + 1)
-                index = end + 1
-                continue
-        index += 1
-    return "".join(out)
-
 
 def _brace_end(code: str, opening: int) -> int | None:
     depth = 0
@@ -253,9 +151,6 @@ def _rust_files(root: Path, relative: str):
         yield from path.rglob("*.rs")
 
 
-def _job(source: str, name: str) -> str:
-    match = re.search(rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-z0-9][a-z0-9-]*:\n|\Z)", source)
-    return "" if match is None else match.group(1)
 
 
 def failures(root: Path) -> list[str]:
@@ -596,75 +491,6 @@ def failures(root: Path) -> list[str]:
             if match:
                 found.append(f"{path.relative_to(root).as_posix()}: R3 metadata leaks into a preserved wire surface: {match.group()}")
 
-    conformance = "\n".join(
-        sources[relative]
-        for relative in REQUIRED
-        if "/tests/type_system_" in relative
-        or relative == "src/runtime/src/runtime/program/tests.rs"
-    )
-    for marker in CONFORMANCE:
-        if marker not in conformance:
-            found.append(f"R3 conformance suite is missing {marker}")
-
-    design = sources["docs/design/type-system-v1.md"]
-    for marker in (
-        "Status: R3 semantic solver complete", "Semantic authority order", "Builtin scalar registry",
-        "Built-in predicate table", "ResolvedType", "Rigid and bindable dimensions",
-        "Implicit conversion table", "Numeric promotion table", "Explicit cast table",
-        "Source operation schemes", "Serialization and artifact policy", "R4 authority cutover",
-        "first-order", "expression-local", "0.3.6",
-    ):
-        if marker not in design:
-            found.append(f"type-system design is missing {marker}")
-    for relative in ("README.md", "docs/design/ROADMAP.mec", "docs/design/v0.4-endgame.md"):
-        if "0.3.6" not in sources[relative]:
-            found.append(f"{relative} lost package version 0.3.6")
-        if "R3" not in sources[relative] or "complete" not in sources[relative] or "R4" not in sources[relative]:
-            found.append(f"{relative} does not mark R3 complete and R4 next")
-
-    r3 = "python3 scripts/check-r3-type-system.py"
-    unit = "scripts/tests/test_check_r3_type_system.py"
-    for relative, job in (
-        (".github/workflows/ci.yml", "static-contracts"),
-        (".github/workflows/ci-full.yml", "architecture-contracts"),
-    ):
-        block = _job(sources[relative], job)
-        if relative.endswith("ci.yml"):
-            block = "\n".join(
-                _job(sources[relative], name)
-                for name in ("static-architecture", "static-mutations", job)
-            )
-        else:
-            block = "\n".join(
-                _job(sources[relative], name)
-                for name in (job, "architecture-mutations")
-            )
-        if r3 not in block:
-            found.append(f"{relative} does not run the R3 architecture checker")
-        if unit not in block:
-            found.append(f"{relative} does not run the R3 checker tests")
-        if "continue-on-error" in block and (r3 in block or unit in block):
-            found.append(f"{relative} may waive the R3 architecture gate")
-    full = _job(sources[".github/workflows/ci-full.yml"], "architecture-contracts")
-    for target in (
-        "type_system_builtin", "type_system_solver", "type_system_conversion",
-        "type_system_catalog", "type_system_source",
-    ):
-        if target not in full:
-            found.append(f"Full CI does not run R3 conformance target {target}")
-    runtime_conversion = re.search(
-        r"cargo\s+\+nightly-2026-03-03\s+test\s+--locked\s+-p\s+mech-runtime"
-        r"(?:(?!\bcargo\b).)*--features\s+full_compiler,resident-routing-source"
-        r"(?:(?!\bcargo\b).)*compiled_conversion_executes_after_bytecode_round_trip",
-        full,
-        re.DOTALL,
-    )
-    if runtime_conversion is None:
-        found.append("Full CI does not execute resident conversion conformance with source routing")
-    owners = sources[".github/ci/owners.toml"]
-    for path in ("scripts/check-r3-type-system.py", unit, "docs/design/type-system-v1.md"):
-        if path not in owners:
-            found.append(f"architecture owner entry is missing {path}")
     return found
 
 

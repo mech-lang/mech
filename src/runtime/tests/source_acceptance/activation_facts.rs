@@ -1,6 +1,6 @@
-//! Exact source/decoded acceptance for recovery finding G17's fixed-population
-//! logical-mask activation facts.
-#![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
+//! Logical-mask activation facts and resource admission.
+
+use super::{compile, compile_with_catalog, roundtrip};
 
 use mech_core::{
     DimensionExpr, FloatWidth, ReactiveInstanceId, ResidentValueRef, SchemaBody, Value,
@@ -79,43 +79,6 @@ fn assert_closed_selector_artifact(source: &str, artifact: &ProgramArtifact) {
         );
         assert_selected_identity(artifact, &selected, 1, 1);
     }
-}
-
-fn compile(source: &str) -> ProgramArtifact {
-    compile_with_catalog(source, mech_stdlib::source_catalog())
-}
-
-fn compile_with_catalog(
-    source: &str,
-    catalog: std::sync::Arc<mech_core::FunctionCatalog>,
-) -> ProgramArtifact {
-    let document = SourceDocument::parse_resolved(
-        "s8-recovery-logical-activation-facts.mec",
-        Revision(0),
-        source,
-        ParseConfig::default(),
-    )
-    .unwrap();
-    assert!(
-        document.is_strictly_clean(),
-        "source did not parse cleanly: {:?}",
-        document.snapshot().diagnostics.as_slice(),
-    );
-    RuntimeBuilder::new()
-        .function_catalog(catalog)
-        .build_compiler()
-        .unwrap()
-        .compile_document(&document)
-        .unwrap_or_else(|error| panic!("failed to compile:\n{source}\n{error:?}"))
-        .artifact()
-        .clone()
-}
-
-fn roundtrip(artifact: &ProgramArtifact) -> ProgramArtifact {
-    mech_engine::decode_program_artifact_bytecode_v1(
-        &mech_engine::encode_program_artifact_bytecode_v1(artifact).unwrap(),
-    )
-    .unwrap()
 }
 
 fn output(instance: &mech_engine::resident::ReactiveInstance) -> String {

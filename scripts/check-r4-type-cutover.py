@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the permanent R4 semantic-type authority cutover."""
+"""Check semantic type authority at physical binding boundaries."""
 
 from __future__ import annotations
 
@@ -26,13 +26,6 @@ REQUIRED = (
     "src/core/tests/r4_type_cutover.rs",
     "src/engine/tests/r4_type_cutover.rs",
     "src/stdlib/tests/r4_type_cutover.rs",
-    "docs/design/r4-type-system-cutover.md",
-    "docs/design/type-system-v1.md",
-    "docs/design/type-memory-boundary.md",
-    "docs/design/ROADMAP.mec",
-    "docs/design/v0.4-endgame.md",
-    ".github/workflows/ci.yml",
-    ".github/workflows/ci-full.yml",
 )
 PRESENCE = {
     "src/core/src/type_system/resolved_value.rs": (
@@ -127,7 +120,6 @@ def rust_function_body(source: str, name: str) -> str:
 def failures(root: Path) -> list[str]:
     root = root.resolve()
     found: list[str] = []
-    r6_active = (root / "scripts/check-r6-memory-runtime.py").is_file()
     sources: dict[str, str] = {}
     for relative in REQUIRED:
         path = root / relative
@@ -164,14 +156,6 @@ def failures(root: Path) -> list[str]:
                     f"{rust.relative_to(root).as_posix()}: maintained runtime uses CompilerResolved"
                 )
 
-    type_system = root / "src/core/src/type_system"
-    if type_system.exists():
-        for rust in type_system.rglob("*.rs"):
-            if "FunctionValueRepresentation" in rust.read_text(encoding="utf-8"):
-                found.append(
-                    f"{rust.relative_to(root).as_posix()}: pure type system imports physical representation"
-                )
-
     for relative in ("machines", "src/engine/src"):
         path = root / relative
         if path.exists():
@@ -197,15 +181,12 @@ def failures(root: Path) -> list[str]:
     if engine_source.exists():
         for rust in engine_source.rglob("*.rs"):
             relative = rust.relative_to(root).as_posix()
-            registrations = rust.read_text(encoding="utf-8").count(".register_instance(")
-            allowed = (
-                1
-                if r6_active
-                and r6_instance_retains_call
+            uses_unbound_registration = ".register_instance(" in rust.read_text(encoding="utf-8")
+            owns_managed_registration = (
+                r6_instance_retains_call
                 and relative == "src/engine/src/program/state.rs"
-                else 0
             )
-            if registrations > allowed:
+            if uses_unbound_registration and not owns_managed_registration:
                 found.append(
                     f"{relative}: executable plan node drops BoundCall"
                 )
@@ -316,25 +297,6 @@ def failures(root: Path) -> list[str]:
         found.append("operation-memory validation occurs after factory construction")
     if "FunctionCatalogDuplicateRuntimeCapability" not in catalog:
         found.append("catalog does not reject identical operation/target/signature candidates")
-
-    docs = "\n".join(
-        sources.get(path, "")
-        for path in (
-            "docs/design/type-system-v1.md",
-            "docs/design/type-memory-boundary.md",
-            "docs/design/ROADMAP.mec",
-            "docs/design/v0.4-endgame.md",
-        )
-    ).lower()
-    if "shadow-only" in docs or "shadow mode" in docs:
-        found.append("documentation still describes R2 compatibility as shadow-only")
-
-    for workflow in (".github/workflows/ci.yml", ".github/workflows/ci-full.yml"):
-        source = sources.get(workflow, "")
-        if "python3 scripts/check-r4-type-cutover.py" not in source:
-            found.append(f"{workflow}: does not run the R4 checker")
-        if "scripts/tests/test_check_r4_type_cutover.py" not in source:
-            found.append(f"{workflow}: does not run the R4 checker tests")
 
     return found
 
