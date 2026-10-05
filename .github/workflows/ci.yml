@@ -265,26 +265,35 @@ jobs:
           test "$DISTRIBUTION_RESULT" = success
 
   canonical-source-products:
-    name: Canonical source products
+    name: Canonical source products (${{ matrix.artifact }})
     needs: impact
     if: (needs.impact.outputs.standard_canaries_required == 'true' && needs.impact.outputs.landing_candidate == 'true') || needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: integration-merge
+            ref: ${{ github.sha }}
+            artifact: integration
+          - kind: exact-head
+            ref: ${{ github.event.pull_request.head.sha }}
+            artifact: head
     env:
       CARGO_BUILD_JOBS: "2"
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: "0"
       CARGO_TARGET_DIR: target/canonical-source-products
-      MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-source-products
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
-          ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+          ref: ${{ matrix.ref }}
+      - name: Record source producer checkout identity
         env:
-          VALIDATION_KIND: integration-merge
-          REQUESTED_REF: ${{ github.sha }}
+          VALIDATION_KIND: ${{ matrix.kind }}
+          REQUESTED_REF: ${{ matrix.ref }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
@@ -299,6 +308,8 @@ jobs:
       - name: Fetch the locked source fixture dependencies
         run: cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
       - name: Prepare and execute the canonical source products once
+        env:
+          MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-source-products
         run: |
           python3 scripts/run-native-plan-stage.py \
             --stage canonical-source-products --timeout-secs 540 \
@@ -310,7 +321,7 @@ jobs:
       - name: Upload the prepared source products
         uses: actions/upload-artifact@v4
         with:
-          name: canonical-source-products
+          name: canonical-source-products-${{ matrix.artifact }}
           path: ${{ runner.temp }}/canonical-source-products
           if-no-files-found: error
           overwrite: true
@@ -319,7 +330,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: canonical-source-product-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          name: canonical-source-product-diagnostics-${{ matrix.artifact }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: target/canonical-source-product-logs
           if-no-files-found: warn
           retention-days: 7
@@ -358,7 +369,7 @@ jobs:
         if: needs.impact.outputs.landing_candidate == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: canonical-source-products
+          name: canonical-source-products-integration
           path: ${{ runner.temp }}/canonical-source-products
       - name: Build and exercise the lean standard distribution
         run: |
@@ -724,7 +735,7 @@ jobs:
       - name: Download the prepared canonical document bundles
         uses: actions/download-artifact@v4
         with:
-          name: canonical-source-products
+          name: canonical-source-products-head
           path: ${{ runner.temp }}/canonical-source-products
       - name: Install Node for static compute package admission
         uses: actions/setup-node@v7.0.0
@@ -738,9 +749,10 @@ jobs:
       - name: Verify canonical document bundle activation and replacement
         env:
           MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-source-products
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           test "$(cat "$MECH_BROWSER_BUNDLE_FIXTURES/producer-tree.txt")" = "$(git rev-parse 'HEAD^{tree}')"
-          test "$(cat "$MECH_BROWSER_BUNDLE_FIXTURES/producer-sha.txt")" = "$GITHUB_SHA"
+          test "$(cat "$MECH_BROWSER_BUNDLE_FIXTURES/producer-sha.txt")" = "$PR_HEAD_SHA"
           python3 scripts/smoke-canonical-document-bundle-browser.py --fixtures "$MECH_BROWSER_BUNDLE_FIXTURES" --served-compute
       - name: Verify report-only particle WebGPU execution
         run: >-

@@ -61,7 +61,6 @@ SIZE_PROFILES = (
 )
 INTEGRATION_CHECKOUT_JOBS = {
     "impact",
-    "canonical-source-products",
     "standard-linux",
     "changed-owner-tests",
     "standard-windows",
@@ -78,6 +77,7 @@ EXACT_HEAD_CHECKOUT_JOBS = {
     "browser-ekf-wgpu",
     "browser-ekf-parity",
 }
+MATRIX_CHECKOUT_JOBS = {"canonical-source-products"}
 
 
 def job_block(source: str, job: str) -> str:
@@ -211,6 +211,10 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertLess(producer.index(fetch), producer.index(run))
         self.assertIn("scripts/run-native-plan-stage.py", producer)
         self.assertIn("--timeout-secs 540", producer)
+        self.assertNotIn("runner.temp", producer.split("    steps:\n", 1)[0])
+        prepare = next(step for step in job_steps(CI, "canonical-source-products")
+                       if "Prepare and execute the canonical source products once" in step)
+        self.assertIn("MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}", prepare)
         self.assertIn("test ! -e src/syntax/src/parser.rs", producer)
         self.assertIn("test ! -e src/syntax/src/document/lower/legacy", producer)
         self.assertIn("canonical-source-products", job_block(CI, "pr-gate"))
@@ -236,6 +240,30 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertEqual(manifest["profile"]["dev"]["debug"], 0)
         self.assertIs(manifest["profile"]["dev"]["incremental"], False)
 
+    def test_source_product_artifacts_are_split_by_checkout_identity(self):
+        producer = job_block(CI, "canonical-source-products")
+        for kind, ref, artifact in (
+            ("integration-merge", "${{ github.sha }}", "integration"),
+            ("exact-head", "${{ github.event.pull_request.head.sha }}", "head"),
+        ):
+            self.assertIn(
+                f"- kind: {kind}\n            ref: {ref}\n            artifact: {artifact}", producer
+            )
+        self.assertIn("fail-fast: false", producer)
+        self.assertIn("ref: ${{ matrix.ref }}", producer)
+        self.assertIn("VALIDATION_KIND: ${{ matrix.kind }}", producer)
+        self.assertIn("REQUESTED_REF: ${{ matrix.ref }}", producer)
+        self.assertIn("name: canonical-source-products-${{ matrix.artifact }}", producer)
+        standard = job_block(CI, "standard-linux")
+        browser = job_block(CI, "browser-compute-smoke")
+        self.assertIn("name: canonical-source-products-integration", standard)
+        self.assertNotIn("name: canonical-source-products-head", standard)
+        self.assertIn("name: canonical-source-products-head", browser)
+        self.assertNotIn("name: canonical-source-products-integration", browser)
+        self.assertIn("PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}", browser)
+        self.assertIn('= "$PR_HEAD_SHA"', browser)
+        self.assertNotIn('= "$GITHUB_SHA"', browser)
+
     def test_prepared_source_products_refuse_wrong_or_missing_checkout_evidence(self):
         tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip()
         sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -254,9 +282,16 @@ class FullWorkflowContractTests(unittest.TestCase):
                 tree_file, sha_file = path / "producer-tree.txt", path / "producer-sha.txt"
 
                 def accepts():
+                    # Different merge/head identities must not make the correct
+                    # artifact fail, nor allow the other identity to authorize it.
+                    expected = (
+                        {"GITHUB_SHA": sha, "PR_HEAD_SHA": "0" * 40}
+                        if consumer == "standard-linux" else
+                        {"GITHUB_SHA": "0" * 40, "PR_HEAD_SHA": sha}
+                    )
                     return subprocess.run(
                         ["/bin/bash", "-e", "-c", guards], cwd=ROOT,
-                        env=os.environ | {variable: directory, "GITHUB_SHA": sha},
+                        env=os.environ | {variable: directory} | expected,
                         capture_output=True,
                     ).returncode == 0
 
@@ -1101,7 +1136,7 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_normal_ci_checkout_roles_are_explicit_and_recorded(self):
         self.assertEqual(
             checkout_jobs(CI),
-            INTEGRATION_CHECKOUT_JOBS | EXACT_HEAD_CHECKOUT_JOBS,
+            INTEGRATION_CHECKOUT_JOBS | EXACT_HEAD_CHECKOUT_JOBS | MATRIX_CHECKOUT_JOBS,
         )
         roles = (
             (
