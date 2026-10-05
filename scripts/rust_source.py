@@ -74,4 +74,3 @@ def rust_code(source: str) -> str:
             continue
         index += 1
     return "".join(output)
-
