@@ -3546,105 +3546,6 @@ impl ValueCell {
         )
     }
 
-    /// Constructs a matrix whose schema is the already-resolved semantic
-    /// output type. Direct source specializers use this boundary adapter when
-    /// the result retains a compound dimension relation such as a sum of
-    /// concatenated axes. Runtime storage remains selected independently.
-    #[doc(hidden)]
-    pub fn matrix_from_resolved_type_cells(
-        resolved: &ResolvedType,
-        rows: usize,
-        columns: usize,
-        cells: &[Self],
-        schema_sources: &[Self],
-    ) -> MResult<Self> {
-        if rows.saturating_mul(columns) != cells.len() {
-            return Err(MechError::new(
-                ValueCellOutputConstructionUnsupported {
-                    representation: FunctionValueRepresentation::AnyValue,
-                    reason: format!(
-                        "matrix dimensions require {} elements but {} were supplied",
-                        rows.saturating_mul(columns),
-                        cells.len()
-                    ),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let crate::KindExpr::Matrix { dimensions, .. } = resolved.kind() else {
-            return Err(MechError::from(TypeResolutionError::incompatible(
-                "resolved matrix output",
-                TypeConstraintFailure::StructuralMismatch {
-                    expected: "matrix".into(),
-                    actual: resolved.semantic_name(),
-                },
-            )));
-        };
-        let element = if let Some(first) = cells.first() {
-            first.closed_schema_body()?
-        } else if let Some(element) = schema_sources.iter().find_map(|source| {
-            let SchemaBody::Matrix { element, .. } = source.closed_schema_body().ok()? else {
-                return None;
-            };
-            Some(*element)
-        }) {
-            element
-        } else {
-            return Err(MechError::new(
-                ValueCellOutputConstructionUnsupported {
-                    representation: FunctionValueRepresentation::AnyValue,
-                    reason: "an empty resolved matrix requires an element schema template".into(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        };
-        let mut values = Vec::with_capacity(cells.len());
-        for cell in cells {
-            if cell.closed_schema_body()? != element {
-                return Err(MechError::new(
-                    ValueCellOutputConstructionUnsupported {
-                        representation: cell.representation(),
-                        reason: "matrix elements must share one canonical schema".into(),
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-            values.push(canonical_cell_draft(cell)?);
-        }
-        let draft = crate::SchemaDraft {
-            dimension_parameters: resolved.dimension_parameters().to_vec().into_boxed_slice(),
-            body: SchemaBody::Matrix {
-                element: Box::new(element),
-                dimensions: dimensions.clone(),
-            },
-        };
-        let (schema, shape, schemas) = merged_resolved_matrix_schema(
-            draft,
-            vec![rows as u64, columns as u64].into_boxed_slice(),
-            schema_sources,
-        )?;
-        let value = finalize_draft(
-            schema,
-            &shape,
-            schemas.as_ref(),
-            ValueDataDraft::Matrix(values.into_boxed_slice()),
-        )?;
-        let owner = cells
-            .first()
-            .or_else(|| schema_sources.first())
-            .and_then(ValueCell::memory_domain)
-            .ok_or_else(|| {
-                MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
-                    object: None,
-                    reason: "resolved matrix output has no owning memory session".into(),
-                })
-            })?;
-        Self::from_runtime_value_in(&owner, value, schemas)
-    }
-
     /// Constructs one homogeneous matrix directly from canonical drafts while
     /// retaining the solver's resolved dimension expressions. Source matrix
     /// constructors use this path so a dense input is never expanded into one
@@ -3731,20 +3632,6 @@ impl ValueCell {
             unreachable!("validated tuple schema retains tuple data")
         };
         child_cells(schemas.into_vec(), values.into_vec()).map(Some)
-    }
-
-    /// Returns tuple child cells while retaining identities captured during
-    /// canonical tuple assembly. Source destructuring uses this narrow path
-    /// to keep reactive topology; ordinary value inspection remains detached.
-    #[doc(hidden)]
-    pub fn reactive_tuple_elements(&self) -> MResult<Option<Vec<Self>>> {
-        let SchemaBody::Tuple(_) = self.closed_schema_body()? else {
-            return Ok(None);
-        };
-        match &self.binding.compiler_children {
-            Some(children) => Ok(Some(children.to_vec())),
-            None => self.tuple_elements(),
-        }
     }
 
     #[cfg(feature = "semantic-compiler")]

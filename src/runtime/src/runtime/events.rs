@@ -3,41 +3,6 @@ use crate::{EventId, RuntimeContext, RuntimeEvent, RuntimeEventKind};
 use mech_core::MResult;
 
 impl MechRuntime {
-    #[cfg(feature = "runtime_bench_probes")]
-    #[doc(hidden)]
-    pub fn emit_representative_event_for_benchmark(
-        &mut self,
-        context: &mut RuntimeContext,
-    ) -> MResult<EventId> {
-        self.emit_event_to_context(context, RuntimeEventKind::RuntimeTickStarted)
-    }
-
-    #[cfg(feature = "runtime_bench_probes")]
-    #[doc(hidden)]
-    pub fn seed_context_event_history_for_benchmark(
-        &mut self,
-        context: &mut RuntimeContext,
-        count: usize,
-    ) -> MResult<()> {
-        self.validate_context_for_runtime(context)?;
-        for _ in 0..count {
-            let event = self.make_event(RuntimeEventKind::RuntimeTickStarted);
-            context.push_event(event);
-        }
-        context.reserve_benchmark_event_append();
-        Ok(())
-    }
-
-    #[cfg(feature = "runtime_bench_probes")]
-    #[doc(hidden)]
-    pub fn context_event_lengths_for_benchmark(
-        &self,
-        context: &RuntimeContext,
-    ) -> MResult<(usize, usize)> {
-        self.validate_context_for_runtime(context)?;
-        Ok((context.events().len(), context.event_storage_physical_len()))
-    }
-
     pub fn next_event_sequence(&mut self) -> u64 {
         let sequence = self.event_sequence;
         self.event_sequence = self.event_sequence.saturating_add(1);
