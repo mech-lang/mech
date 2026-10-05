@@ -720,7 +720,7 @@ jobs:
       - name: Check complete function-system migration contracts
         run: bash scripts/check-complete-function-system-migration.sh
       - name: Exercise the complete source catalog through the public runtime
-        run: cargo +nightly-2026-03-03 test --locked -p mech --no-default-features --features full_source,project --test lazy_stdlib
+        run: cargo +nightly-2026-03-03 test --locked -p mech --no-default-features --features full_compiler,project --test lazy_stdlib
 
   bytecode-v1-format:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'artifact') }}
