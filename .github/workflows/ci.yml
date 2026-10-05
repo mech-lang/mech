@@ -150,6 +150,7 @@ jobs:
           python3 -B -m unittest \
             tests.ci.test_ci_impact \
             tests.ci.test_ci_full_contract \
+            tests.browser.harness.test_chrome_session \
             tests.browser.harness.test_completion_server
           python3 scripts/check-production-resident-routing.py
           python3 scripts/check-warning-policy.py
