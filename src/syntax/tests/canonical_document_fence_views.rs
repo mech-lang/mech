@@ -93,6 +93,7 @@ fn comments_in_executable_fences_preserve_the_closer_prose_and_inline_owners() {
 fn streamed_comments_in_executable_fences_keep_local_frontiers_at_every_scalar_cut() {
     for delimiter in ["```", "~~~"] {
         let (text, body) = comment_fence(delimiter, "`literal` {{answer + 99}}: {ans}, {ans + 1}.");
+        let expected = parse_canonical_document(source(&text), ParseConfig::default());
         for allowance in [13, 1] {
             for cut in text
                 .char_indices()
@@ -105,7 +106,7 @@ fn streamed_comments_in_executable_fences_keep_local_frontiers_at_every_scalar_c
                 }
                 let snapshot = support::finish(&mut stream, allowance);
                 assert_comment_fence(&snapshot, &text, &body, delimiter);
-                support::equivalent(&snapshot, &text);
+                support::equivalent_to(&snapshot, &text, &expected);
             }
         }
     }
