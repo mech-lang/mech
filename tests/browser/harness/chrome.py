@@ -393,7 +393,7 @@ class ChromeSession:
         log: str | os.PathLike[str],
         *,
         flags: list[str] | tuple[str, ...] = (),
-        startup_timeout: float = 30,
+        startup_timeout: float = 60,
         window_size: tuple[int, int] | None = None,
     ) -> None:
         self.browser = find_browser(browser)
@@ -454,6 +454,8 @@ class ChromeSession:
             start_new_session=True,
         )
         endpoint = f"http://127.0.0.1:{debug_port}/json/version"
+        # A listening socket can precede a responsive browser UI thread.
+        # Match ChromeDriver's startup allowance without extending page tests.
         deadline = time.monotonic() + self.startup_timeout
         websocket_url = None
         last_error = None

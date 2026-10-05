@@ -43,6 +43,10 @@ class ChromeSessionStartupTests(unittest.TestCase):
         self.assertIsNone(self.session._log_handle)
 
     def test_timeout_reports_endpoint_error_and_bounded_stderr_tail(self) -> None:
+        self.session = chrome.ChromeSession(
+            None, self.directory / "profile", self.directory / "chrome.log",
+            startup_timeout=30,
+        )
         process = self.process_writing(
             b"discarded-prefix\n" + b"x" * 16000 + b"\xffGPU initialization stalled\n"
         )
@@ -72,6 +76,36 @@ class ChromeSessionStartupTests(unittest.TestCase):
         self.assertIn("\ufffdGPU initialization stalled", output)
         self.assertNotIn("discarded-prefix", output)
         self.assertLess(len(output), 17000)
+        self.assert_closed(process)
+
+    def test_default_startup_budget_accepts_readiness_after_thirty_seconds(self) -> None:
+        process = self.process_writing(b"")
+        version = mock.Mock()
+        version.get.return_value = "ws://127.0.0.1:43210/browser"
+        devtools = mock.Mock()
+        devtools.call.side_effect = [
+            {"targetId": "target"}, {"sessionId": "session"}, {}, {},
+        ]
+        try:
+            with (
+                mock.patch.object(chrome.time, "monotonic", side_effect=(0.0, 0.0, 31.0)),
+                mock.patch.object(chrome.time, "sleep"),
+                mock.patch.object(
+                    chrome.urllib.request, "urlopen",
+                    side_effect=[OSError("not ready yet"), mock.MagicMock()],
+                ),
+                mock.patch.object(chrome.json, "load", return_value=version),
+                mock.patch.object(chrome, "DevTools", return_value=devtools) as connect,
+            ):
+                self.assertIs(self.session.start(), self.session)
+
+            connect.assert_called_once_with(process, version.get.return_value)
+            self.assertIs(self.session.process, process)
+            self.assertIs(self.session.devtools, devtools)
+            self.assertEqual(self.session.session_id, "session")
+            process.wait.assert_not_called()
+        finally:
+            self.session.close()
         self.assert_closed(process)
 
     def test_early_exit_reports_stderr_and_keeps_exit_status(self) -> None:
