@@ -2,24 +2,45 @@ use mech_core::*;
 #[cfg(any(feature = "bundle_web_core", feature = "formatter"))]
 use std::path::Component;
 use std::path::Path;
-#[cfg(any(feature = "build", feature = "formatter", feature = "run"))]
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
 use std::path::PathBuf;
 
-#[cfg(any(feature = "build", feature = "formatter", feature = "run"))]
+// These helpers belong to source discovery, including standalone serve builds.
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
 pub(crate) fn source_extension(path: &Path) -> Option<String> {
     path.extension()
         .and_then(|e| e.to_str())
         .map(|e| e.to_ascii_lowercase())
 }
 
-#[cfg(any(feature = "build", feature = "formatter", feature = "run"))]
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
 pub(crate) fn extension_allowed(path: &Path, allowed_extensions: &[&str]) -> bool {
     source_extension(path)
         .map(|ext| allowed_extensions.iter().any(|allowed| *allowed == ext))
         .unwrap_or(false)
 }
 
-#[cfg(any(feature = "build", feature = "formatter", feature = "run"))]
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
 pub(crate) fn unsupported_source_path_error(path: &Path, allowed_extensions: &[&str]) -> MechError {
     MechError::new(
         GenericError {
@@ -102,7 +123,12 @@ pub(crate) fn relative_to_base(
     Ok(relative.to_path_buf())
 }
 
-#[cfg(any(feature = "build", feature = "formatter", feature = "run"))]
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
 pub(crate) fn is_directory_symlink(path: &Path) -> MResult<bool> {
     if !std::fs::symlink_metadata(path)?.file_type().is_symlink() {
         return Ok(false);
@@ -110,7 +136,12 @@ pub(crate) fn is_directory_symlink(path: &Path) -> MResult<bool> {
     Ok(path.canonicalize()?.is_dir())
 }
 
-#[cfg(any(feature = "build", feature = "formatter", feature = "run"))]
+#[cfg(any(
+    feature = "build",
+    feature = "formatter",
+    feature = "run",
+    feature = "serve"
+))]
 pub(crate) fn canonicalize_for_read(path: &Path) -> MResult<PathBuf> {
     Ok(path.canonicalize()?)
 }

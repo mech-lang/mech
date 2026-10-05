@@ -305,6 +305,50 @@ fn collect_dir(
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn discovery_keeps_source_and_refusal_contracts_in_reduced_profiles() {
+        let root = tempfile::Builder::new()
+            .prefix("mech-source-discovery-ü # % ")
+            .tempdir()
+            .unwrap();
+        let source = root.path().join("main.MEC");
+        let unsupported = root.path().join("notes.txt");
+        fs::write(&source, "answer := 42\n").unwrap();
+        fs::write(&unsupported, "not executable source").unwrap();
+        let options = DiscoveryOptions {
+            allowed_file_extensions: &["mec"],
+            recursive_file_extensions: &["mec"],
+            skip_dir_names: &[],
+            follow_file_symlinks: false,
+            follow_dir_symlinks: false,
+            missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
+        };
+
+        let discover = || {
+            collect_sources_with_events(&[root.path().to_path_buf()], root.path(), options.clone())
+                .unwrap()
+        };
+        let result = discover();
+        assert_eq!(result.entries.len(), 1);
+        assert_eq!(result.entries[0].logical_path, source);
+        assert!(result.events.is_empty());
+
+        let error =
+            collect_sources_with_events(&[unsupported], root.path(), options.clone()).unwrap_err();
+        assert!(
+            error
+                .kind_message()
+                .contains("Unsupported source extension")
+        );
+        assert_eq!(discover().entries[0].logical_path, source);
+        assert_eq!(fs::read_to_string(source).unwrap(), "answer := 42\n");
+    }
+}
+
 fn collect_file(
     logical_path: &Path,
     #[cfg(feature = "formatter")] base_dir: &Path,

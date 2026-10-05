@@ -2767,13 +2767,38 @@ result\n",
         );
         if requires_compute && !cfg!(feature = "compute_backends_native") {
             // A configured compute host must not suppress ordinary bundles.
-            // Actual mixed compilation remains owned by the compute profile.
-            let error = result.unwrap_err().full_chain_message();
-            assert!(
-                error.contains("no runtime resource provider registered for scheme `compute`"),
-                "{error}"
+            // Mixed source must refuse at the explicit capability boundary,
+            // before attempting to install a compute resource provider.
+            let error = result.unwrap_err();
+            let capability = error
+                .kind_downcast_ref::<mech_core::GenericError>()
+                .expect("mixed source must reach the compute capability refusal");
+            assert_eq!(
+                capability.msg,
+                "browser compute compilation requires compute_backends_native"
             );
             assert!(registry.get_route("/code/main.mec").is_none());
+
+            // Removing the mixed region must recover on the same registry;
+            // its configured compute host alone does not require that backend.
+            let ordinary = "answer := 43\nanswer\n";
+            std::fs::write(&path, ordinary).unwrap();
+            registry
+                .sync_workspace_snapshot(
+                    &root,
+                    &snapshot(&root, "main.mec"),
+                    "",
+                    include_str!("../include/index.html"),
+                    &[],
+                )
+                .unwrap();
+            let code = registry.get_route("/code/main.mec").unwrap();
+            let payload = mech_runtime::BrowserDocumentPayload::decode(
+                std::str::from_utf8(&code.bytes).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(payload.root_specifier(), "main.mec");
+            assert_eq!(payload.source(), ordinary);
         } else {
             result.unwrap();
             let code = registry.get_route("/code/main.mec").unwrap();
