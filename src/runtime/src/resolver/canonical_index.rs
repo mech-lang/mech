@@ -538,58 +538,48 @@ std::thread_local! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_syntax::document::parser::canonical::{
-        parse_canonical_declaration_rule_for_test, parse_canonical_document_rule_for_test,
-        parse_canonical_executable_rule_for_test,
-    };
-    use mech_syntax::document::parser::canonical_rule_id;
     use mech_syntax::document::{
         DocumentId, DocumentSyntax, GreenBuilder, IdGenerator, ParseConfig, TextSnapshot,
         parse_canonical_document,
     };
 
-    fn direct_fragment(
-        rule: &str,
+    fn document_node(
+        kind: SyntaxKind,
         source: &str,
     ) -> std::sync::Arc<mech_syntax::document::GreenNode> {
-        let source = TextSnapshot::new(DocumentId(77), Revision(1), source).unwrap();
-        let rule_id = canonical_rule_id(rule).unwrap();
-        let snapshot = if rule == "variable-define" {
-            parse_canonical_executable_rule_for_test(source, rule_id, ParseConfig::default())
-        } else if matches!(
-            rule,
-            "import-declaration" | "export-declaration" | "context-declaration"
-        ) {
-            parse_canonical_declaration_rule_for_test(source, rule_id, ParseConfig::default())
-        } else {
-            parse_canonical_document_rule_for_test(source, rule_id, ParseConfig::default())
+        fn find(node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
+            if node.kind() == kind {
+                return Some(node);
+            }
+            node.children().find_map(|child| find(child, kind))
         }
-        .unwrap();
+        let snapshot = parse_canonical_document(
+            TextSnapshot::new(DocumentId(77), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
         assert!(
             snapshot.is_strictly_clean(),
-            "{rule}: outcome={:?}, consumed={:?}, full={:?}, flags={:?}, diagnostics={:#?}",
-            snapshot.outcome,
-            snapshot.consumed,
-            snapshot.source.full_range(),
-            snapshot.root.flags,
+            "{kind:?}: {:#?}",
             snapshot.diagnostics
         );
-        assert_eq!(snapshot.consumed, snapshot.source.full_range());
-        snapshot.root
+        let node =
+            find(snapshot.syntax(), kind).expect("document contains the requested statement");
+        assert_eq!(node.range(), snapshot.source.full_range());
+        node.green().clone()
     }
 
     fn nested_index(kind: SyntaxKind) -> SourceIndex {
         let fragments = [
-            ("import-declaration", "+> ./hidden.mec"),
-            ("export-declaration", "<+ hidden"),
-            ("context-declaration", "@local := @env"),
-            ("variable-assign", "value = @live/VALUE"),
+            (SyntaxKind::ImportDeclaration, "+> ./hidden.mec"),
+            (SyntaxKind::ExportDeclaration, "<+ hidden"),
+            (SyntaxKind::ContextDeclaration, "@local := @env"),
+            (SyntaxKind::VariableAssign, "value = @live/VALUE"),
         ];
         let mut source = String::new();
         let mut roots = Vec::new();
-        for (rule, text) in fragments {
+        for (kind, text) in fragments {
             source.push_str(text);
-            roots.push(direct_fragment(rule, text));
+            roots.push(document_node(kind, text));
         }
 
         let mut ids = IdGenerator::with_next(10_000, 10_000, 10_000);
@@ -626,7 +616,7 @@ mod tests {
     fn variable_definitions_traverse_only_their_values() {
         let source = "answer := @env/HOME";
         let root = SyntaxNode::new_root(
-            direct_fragment("variable-define", source),
+            document_node(SyntaxKind::VariableDefine, source),
             TextSnapshot::new(DocumentId(80), Revision(1), source).unwrap(),
         );
         let index = SourceIndex::from_local_owner(&root).unwrap();

@@ -1,26 +1,24 @@
 use mech_core::NodeId;
 use mech_engine::{CanonicalSourceFrontend, ExecutableNodeBody, ProgramArtifact};
 use mech_gpu::{ComputeLowerer, GpuDiagnosticCode, lower_elementwise_compute_program};
-use mech_syntax::document::parser::{canonical::parse_canonical_executable_rule_for_test, rules};
+
 use mech_syntax::document::{
     AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
-    VariableDefineSyntax,
 };
 
 fn artifact(source: &str) -> ProgramArtifact {
     fn expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
         ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(expression))
     }
-    let parsed = parse_canonical_executable_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
-        rules::EXPRESSION,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(parsed.is_strictly_clean());
-    assert_eq!(parsed.consumed.end.0 as usize, source.len());
+    let syntax = expression(parsed.syntax()).unwrap();
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
     CanonicalSourceFrontend
-        .compile_expression(&expression(parsed.syntax()).unwrap())
+        .compile_expression(&syntax)
         .unwrap()
         .compile_artifact()
         .unwrap()
@@ -31,6 +29,7 @@ fn compute_targets_report_typed_control_without_dropping_or_flattening_arms() {
     for source in [
         "flag<bool> ? | true => 1f32 | false => 2f32",
         "true ? | true => 1f32 | false => 2f32",
+        "signal<f32> ? | 0f32 => 1f32 | * => 2f32",
     ] {
         let artifact = artifact(source);
         let control: NodeId = artifact
@@ -52,7 +51,17 @@ fn compute_targets_report_typed_control_without_dropping_or_flattening_arms() {
         );
         let elementwise = lower_elementwise_compute_program(&artifact).unwrap_err();
         let batched = ComputeLowerer.compile_batched(&artifact, 1).unwrap_err();
-        for error in [elementwise, batched] {
+        for (error, input_schema_checked_first) in [(elementwise, false), (batched, true)] {
+            if input_schema_checked_first && source.starts_with("flag<bool>") {
+                assert!(
+                    error.diagnostics().iter().any(|diagnostic| {
+                        diagnostic.code == GpuDiagnosticCode::SchemaUnsupported
+                            && diagnostic.detail.contains("port `flag`")
+                    }),
+                    "{error}"
+                );
+                continue;
+            }
             assert!(
                 error
                     .diagnostics()
@@ -68,52 +77,15 @@ fn compute_targets_report_typed_control_without_dropping_or_flattening_arms() {
 
 #[test]
 fn compute_targets_ignore_unreachable_control_and_its_private_slots() {
-    use mech_syntax::document::{DocumentSyntax, GreenBuilder, IdGenerator, SyntaxKind};
+    use mech_syntax::document::DocumentSyntax;
     for result in ["1f32", "1"] {
-        let first = format!("unused := flag<bool> ? | * => {result}");
-        let last = "~value := 3f32";
-        let mut ids = IdGenerator::default();
-        let mut builder = GreenBuilder::new(&mut ids);
-        builder.start_node(SyntaxKind::Document);
-        builder.start_node(SyntaxKind::Body);
-        for (index, (source, rule)) in [
-            (first.as_str(), rules::VARIABLE_DEFINE),
-            (last, rules::VARIABLE_DEFINE),
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            if index != 0 {
-                builder.token(SyntaxKind::Newline, "\n").unwrap();
-            }
-            let parsed = parse_canonical_executable_rule_for_test(
-                TextSnapshot::new(DocumentId(822), Revision(2), source).unwrap(),
-                rule,
-                ParseConfig::default(),
-            )
-            .unwrap();
-            assert!(parsed.is_strictly_clean());
-            assert_eq!(parsed.consumed.end.0 as usize, source.len());
-            fn unit(node: SyntaxNode) -> Option<SyntaxNode> {
-                if VariableDefineSyntax::cast(node.clone()).is_some()
-                    || ExpressionSyntax::cast(node.clone()).is_some()
-                {
-                    Some(node)
-                } else {
-                    node.children().find_map(unit)
-                }
-            }
-            builder
-                .reuse_node(unit(parsed.syntax()).unwrap().green().clone())
-                .unwrap();
-        }
-        builder.finish_node().unwrap();
-        builder.finish_node().unwrap();
-        let document = DocumentSyntax::cast(SyntaxNode::new_root(
-            builder.finish().unwrap(),
-            TextSnapshot::new(DocumentId(822), Revision(2), format!("{first}\n{last}")).unwrap(),
-        ))
-        .unwrap();
+        let source = format!("unused := flag<bool> ? | * => {result}.\n~value := 3f32");
+        let parsed = mech_syntax::document::parse_canonical_document(
+            TextSnapshot::new(DocumentId(822), Revision(2), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
         let artifact = CanonicalSourceFrontend
             .compile_document(&document)
             .unwrap()

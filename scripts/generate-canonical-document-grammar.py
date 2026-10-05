@@ -455,8 +455,6 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
         "    pub(crate) feature: Option<&'static str>,",
         "}",
         "",
-        f"pub(crate) const DOCUMENT_RULE_COUNT: usize = {len(names)};",
-        "",
         "pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[",
     ]
     for name in names:

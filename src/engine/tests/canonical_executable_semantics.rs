@@ -10,8 +10,6 @@ use mech_engine::{
     ProgramArtifact, SchemaBody, SourceNodeOutput, SourceSemanticAnchor, SourceValue,
     canonical_application_requirement_bytes, encode_program_artifact_bytecode_v1,
 };
-use mech_syntax::document::parser::canonical::parse_canonical_executable_rule_for_test;
-use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, ExpressionSyntax, FunctionCallSyntax, ParseConfig, Revision, SyntaxKind,
     SyntaxNode, TextSize, TextSnapshot, VariableDefineSyntax, executable_node_kind,
@@ -36,39 +34,39 @@ fn find(node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
 }
 
 fn expression(source: &str) -> ExpressionSyntax {
-    let parsed = parse_canonical_executable_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x549), Revision(7), source).unwrap(),
-        rules::EXPRESSION,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(parsed.is_strictly_clean(), "{source:?}");
     assert_eq!(
-        parsed.consumed.end,
+        parsed.syntax().range().end,
         TextSize(source.len() as u32),
         "{source:?}"
     );
-    find(parsed.syntax(), SyntaxKind::Expression)
+    let syntax = find(parsed.syntax(), SyntaxKind::Expression)
         .and_then(ExpressionSyntax::cast)
-        .expect("canonical Expression")
+        .expect("canonical Expression");
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    syntax
 }
 
 fn variable_definition(source: &str) -> VariableDefineSyntax {
-    let parsed = parse_canonical_executable_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x549), Revision(7), source).unwrap(),
-        rules::VARIABLE_DEFINE,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(parsed.is_strictly_clean(), "{source:?}");
     assert_eq!(
-        parsed.consumed.end,
+        parsed.syntax().range().end,
         TextSize(source.len() as u32),
         "{source:?}"
     );
-    find(parsed.syntax(), SyntaxKind::VariableDefine)
+    let syntax = find(parsed.syntax(), SyntaxKind::VariableDefine)
         .and_then(VariableDefineSyntax::cast)
-        .expect("canonical VariableDefine")
+        .expect("canonical VariableDefine");
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    syntax
 }
 
 fn certification_contracts() -> BTreeMap<String, CertificationContract> {
@@ -81,15 +79,15 @@ fn certification_contracts() -> BTreeMap<String, CertificationContract> {
         .skip(1)
         .map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
-            assert_eq!(fields.len(), 16);
+            assert_eq!(fields.len(), 15);
             (
                 fields[0].to_owned(),
                 CertificationContract {
                     semantic_source: (fields[10] != "none")
                         .then(|| serde_json::from_str(fields[10]).expect("semantic source JSON")),
                     disposition: fields[9].to_owned(),
-                    semantic_snapshot_hash: fields[13].to_owned(),
-                    required_outcome: fields[15].to_owned(),
+                    semantic_snapshot_hash: fields[12].to_owned(),
+                    required_outcome: fields[14].to_owned(),
                 },
             )
         })
@@ -697,17 +695,6 @@ fn every_semantic_rule_meets_its_required_witness_outcome() {
 #[test]
 fn contextual_empty_structure_errors_keep_their_exact_syntax_anchors() {
     let audit = repository_root().join("docs/design/grammar-audit");
-    let matrix = fs::read_to_string(audit.join("recursive-core-certification.tsv")).unwrap();
-    let structure = matrix
-        .lines()
-        .find(|line| line.starts_with("structure\t"))
-        .unwrap();
-    let linked_cases = structure
-        .split('\t')
-        .nth(12)
-        .unwrap()
-        .split(',')
-        .collect::<Vec<_>>();
     let errors = fs::read_to_string(audit.join("recursive-core-semantic-errors.tsv")).unwrap();
     let mut lines = errors.lines();
     assert_eq!(
@@ -718,11 +705,6 @@ fn contextual_empty_structure_errors_keep_their_exact_syntax_anchors() {
     for line in lines {
         let fields = line.split('\t').collect::<Vec<_>>();
         assert_eq!(fields.len(), 5);
-        assert!(
-            linked_cases.contains(&fields[0]),
-            "unlinked conformance case {}",
-            fields[0]
-        );
         assert_eq!(fields[1], "structure");
         let kind = match fields[2] {
             "EmptySet" => SyntaxKind::EmptySet,

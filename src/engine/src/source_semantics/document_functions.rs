@@ -1036,23 +1036,21 @@ impl SemanticBuilder {
 #[cfg(test)]
 mod recursive_capture_tests {
     use super::*;
-    use mech_syntax::document::parser::{
-        canonical::parse_canonical_executable_rule_for_test, rules,
-    };
+
     use mech_syntax::document::{DocumentId, ParseConfig, Revision, TextSnapshot};
 
     fn expression(source: &str) -> ExpressionSyntax {
         fn find(node: SyntaxNode) -> Option<ExpressionSyntax> {
             ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
         }
-        let parsed = parse_canonical_executable_rule_for_test(
+        let parsed = mech_syntax::document::parse_canonical_document(
             TextSnapshot::new(DocumentId(0x557), Revision(1), source).unwrap(),
-            rules::EXPRESSION,
             ParseConfig::default(),
-        )
-        .unwrap();
+        );
         assert!(parsed.is_strictly_clean(), "{source}");
-        find(parsed.syntax()).unwrap()
+        let syntax = find(parsed.syntax()).unwrap();
+        assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+        syntax
     }
 
     #[test]

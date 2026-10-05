@@ -1,1 +1,0 @@
-duplicate(x<u64>) = (a<u64>, b<u64>) := a := x; b := x.

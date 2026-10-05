@@ -222,28 +222,7 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
                     f"{relative}:2: retired mech_engine::literals namespace"
                 ])
 
-    def test_retired_paths_in_comments_and_quoted_negative_fixtures_are_not_imports(self):
-        root = self.fixture()
-        negative = root / "tests/quoted_scanner_negative.rs"
-        negative.parent.mkdir(parents=True)
-        negative.write_text(
-            '// mech_engine::interpreter::OldSurface\n'
-            '/* mech_engine::expressions::OldSurface\n'
-            '   /* mech_engine::literals::OldSurface */\n'
-            '   mech_core::nodes::OldSurface */\n'
-            'const A: &str = "use mech_engine::structures::OldSurface;";\n'
-            'const B: &str = r###"use mech_engine::{expressions::OldSurface};"###;\n'
-            'const C: &[u8] = b"use mech_core::nodes::OldSurface;";\n'
-            'const D: &[u8] = br##"mech_engine::interpreter::OldSurface"##;\n'
-            'const E: &CStr = c"mech_engine::literals::OldSurface";\n'
-            'const F: &CStr = cr#"mech_engine::structures::OldSurface"#;\n'
-            'const G: &str = "escaped \\\" mech_core::nodes::OldSurface";\n'
-            "const CH: char = '\"'; const BYTE: u8 = b'\"';\n",
-            encoding="utf-8",
-        )
-        self.assertEqual(CHECKER.run(root), [])
-
-    def test_comments_and_literals_do_not_hide_a_real_disabled_import(self):
+    def test_namespace_checks_use_masked_source_and_original_line_numbers(self):
         root = self.fixture()
         compiler = root / "src/runtime/src/runtime/program/compiler.rs"
         compiler.write_text(

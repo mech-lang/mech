@@ -11,7 +11,6 @@ use crate::document::{
 };
 
 pub mod canonical;
-mod canonical_ports;
 mod canonical_rules;
 pub mod checkpoint;
 mod context_probe;

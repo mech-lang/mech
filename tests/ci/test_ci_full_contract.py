@@ -131,6 +131,18 @@ def literal_assignment(source: str, name: str):
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_runtime_family_keeps_minimal_and_complete_source_profiles(self):
+        block = job_block(FULL, "cargo-runtime")
+        self.assertIn("run: cargo test -p mech-runtime --lib --tests", block)
+        step = next(step for step in job_steps(FULL, "cargo-runtime")
+                    if "Run complete source and compiler runtime contracts" in step)
+        self.assertIn("-p mech-runtime --lib --tests", step)
+        self.assertIn("'runtime'", step)
+        features = set(re.search(r"--features (\S+)", step).group(1).split(","))
+        self.assertTrue({"full_source", "full_compiler", "resident-routing-source",
+                         "resident_external_test_support", "resident_ekf_benchmarks",
+                         "runtime_bench_probes", "compute", "watcher"} <= features)
+
     def test_native_mixed_cli_product_coverage_is_selected_and_nonempty(self):
         block = job_block(FULL, "cargo-runtime")
         step = next(
@@ -146,7 +158,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('CARGO_PROFILE_DEV_DEBUG: "0"', step)
         self.assertIn('CARGO_PROFILE_TEST_DEBUG: "0"', step)
         self.assertNotIn("continue-on-error", step)
-        self.assertNotIn("if:", step)
+        self.assertIn("'numeric'", step)
+        self.assertIn("'runtime'", step)
         self.assertIn("--features distribution-standard", block)
 
     def test_static_compute_product_uses_matching_build_and_is_a_required_browser_step(self):
@@ -291,14 +304,14 @@ class FullWorkflowContractTests(unittest.TestCase):
         caller = job_block(CI, "full-validation")
         self.assertIn("needs: impact", early)
         self.assertNotIn("needs:\n", early)
-        self.assertIn("if: needs.impact.outputs.full_validation_required == 'true'", early)
+        self.assertIn("if: needs.impact.outputs.native_validation_required == 'true'", early)
         self.assertIn("validation_ref: ${{ github.sha }}", early)
         self.assertIn("native_plan_in_caller: true", caller)
         for block in (early, delegated):
             self.assertIn("uses: ./.github/workflows/ci-native-plan.yml", block)
             self.assertNotIn("steps:", block)
             self.assertNotIn("continue-on-error", block)
-        self.assertIn("if: ${{ !inputs.native_plan_in_caller }}", delegated)
+        self.assertIn("&& !inputs.native_plan_in_caller", delegated)
         self.assertIn("validation_ref: ${{ inputs.validation_ref || github.sha }}", delegated)
         call, dispatch = FULL.split("  workflow_dispatch:", 1)
         self.assertRegex(call, r"(?s)native_plan_in_caller:.*?type: boolean\n        default: false")
@@ -579,6 +592,8 @@ class FullWorkflowContractTests(unittest.TestCase):
             environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "success")
             environment["SOURCE_REQUIRED"] = "true"
             environment["WINDOWS_REQUIRED"] = "true"
+            environment["NATIVE_REQUIRED"] = "true"
+            environment["OWNERS_REQUIRED"] = "true"
             environment.update(overrides)
             return subprocess.run(
                 ["/bin/bash", "-e", "-c", script], env=environment,
@@ -586,25 +601,24 @@ class FullWorkflowContractTests(unittest.TestCase):
             ).returncode == 0
 
         pr = job_block(CI, "pr-gate")
-        cargo = job_block(FULL, "cargo")
-        self.assertTrue(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="true"))
+        self.assertTrue(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true"))
         for result in ("failure", "cancelled", "skipped", ""):
             with self.subTest(result=result):
-                self.assertFalse(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="true", NATIVE_PLAN_RESULT=result))
-                self.assertFalse(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="true", SOURCE_RESULT=result))
-                self.assertFalse(accepts(cargo, NATIVE_PLAN_IN_CALLER="false", NATIVE_PLAN_RESULT=result))
-        self.assertTrue(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="false", FULL_RESULT="skipped", NATIVE_PLAN_RESULT="skipped"))
-        self.assertTrue(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="false", FULL_RESULT="skipped", NATIVE_PLAN_RESULT="skipped", SOURCE_REQUIRED="false", SOURCE_RESULT="skipped"))
-        self.assertFalse(accepts(pr, DOCS_ONLY="false", FULL_REQUIRED="true", SOURCE_REQUIRED="unknown"))
-        self.assertTrue(accepts(cargo, NATIVE_PLAN_IN_CALLER="false"))
-        self.assertTrue(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="skipped"))
-        self.assertFalse(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="failure"))
+                self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", NATIVE_PLAN_RESULT=result))
+                self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", SOURCE_RESULT=result))
+                self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", OWNER_RESULT=result))
+        self.assertTrue(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="false", NATIVE_REQUIRED="false", FULL_RESULT="skipped", NATIVE_PLAN_RESULT="skipped"))
+        self.assertTrue(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="false", NATIVE_REQUIRED="false", FULL_RESULT="skipped", NATIVE_PLAN_RESULT="skipped", SOURCE_REQUIRED="false", SOURCE_RESULT="skipped"))
+        self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", SOURCE_REQUIRED="unknown"))
+        self.assertTrue(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", NATIVE_REQUIRED="false", NATIVE_PLAN_RESULT="skipped"))
+        self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="unknown"))
+        self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", NATIVE_REQUIRED="unknown"))
 
     def test_docs_only_gate_accepts_successful_browser_skip_verification(self):
         block = job_block(CI, "pr-gate")
         script = textwrap.dedent(block.split("        run: |\n", 1)[1])
         environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "skipped")
-        environment.update(DOCS_ONLY="true", FULL_REQUIRED="false", IMPACT_RESULT="success", BROWSER_RESULT="success", SOURCE_REQUIRED="false", WINDOWS_REQUIRED="false")
+        environment.update(DOCS_ONLY="true", CONTRACTS_REQUIRED="false", NATIVE_REQUIRED="false", OWNERS_REQUIRED="false", IMPACT_RESULT="success", BROWSER_RESULT="success", SOURCE_REQUIRED="false", WINDOWS_REQUIRED="false")
         def accepts(**changes):
             return subprocess.run(["/bin/bash", "-e", "-c", script],
                 env=environment | changes, capture_output=True).returncode == 0
@@ -613,8 +627,84 @@ class FullWorkflowContractTests(unittest.TestCase):
             with self.subTest(result=result):
                 self.assertFalse(accepts(BROWSER_RESULT=result))
         self.assertFalse(accepts(STATIC_RESULT="failure"))
-        self.assertFalse(accepts(FULL_REQUIRED="true"))
-        self.assertTrue(accepts(FULL_REQUIRED="true", FULL_RESULT="success", NATIVE_PLAN_RESULT="success"))
+        self.assertFalse(accepts(CONTRACTS_REQUIRED="true"))
+        self.assertTrue(accepts(CONTRACTS_REQUIRED="true", NATIVE_REQUIRED="true", FULL_RESULT="success", NATIVE_PLAN_RESULT="success"))
+
+    def test_selected_contract_gate_rejects_missing_failed_and_unselected_work(self):
+        block = job_block(FULL, "cargo")
+        shell = textwrap.dedent(block.split("        run: |\n", 1)[1])
+        python = shell.split("python3 - <<'PY'\n", 1)[1].rsplit("\nPY", 1)[0]
+        groups = literal_assignment(python, "groups")
+        dependencies = set(re.findall(r"^      - ([a-z0-9-]+)$", block, re.M))
+        self.assertEqual(dependencies, {job for jobs in groups.values() for job in jobs})
+        all_jobs = set(re.findall(r"^  ([a-z0-9-]+):$", FULL.split("jobs:\n", 1)[1], re.M))
+        self.assertEqual(dependencies, all_jobs - {"cargo"})
+        for job in dependencies:
+            expected_families = {family for family, jobs in groups.items() if job in jobs}
+            condition = job_block(FULL, job).splitlines()[0]
+            self.assertEqual(set(re.findall(r"'([a-z]+)'", condition)), expected_families | {"all"})
+
+        def accepts(selected, in_caller=False, changes=None, omitted=None):
+            expected = {job for family, jobs in groups.items()
+                        if "all" in selected or family in selected for job in jobs}
+            if in_caller:
+                expected.discard("native-plan")
+            results = {job: {"result": "success" if job in expected else "skipped"}
+                       for job in dependencies}
+            for job, result in (changes or {}).items():
+                results[job] = {"result": result}
+            if omitted:
+                results.pop(omitted)
+            environment = os.environ | {
+                "CONTRACT_FAMILIES": json.dumps(selected),
+                "CONTRACT_RESULTS": json.dumps(results),
+                "NATIVE_PLAN_IN_CALLER": str(in_caller).lower(),
+            }
+            return subprocess.run(["/bin/bash", "-e", "-c", shell], env=environment,
+                                  capture_output=True).returncode == 0
+
+        for family in ["all", *groups]:
+            with self.subTest(family=family):
+                self.assertTrue(accepts([family]))
+                selected_job = next(iter(dependencies)) if family == "all" else groups[family][0]
+                for result in ("failure", "cancelled", "skipped", ""):
+                    self.assertFalse(accepts([family], changes={selected_job: result}))
+        self.assertTrue(accepts(["all"], in_caller=True))
+        self.assertFalse(accepts(["native"], in_caller=True, changes={"native-plan": "failure"}))
+        self.assertFalse(accepts(["cli"], changes={"release-package-dry-run": "success"}))
+        self.assertFalse(accepts(["cli"], omitted="native-engine"))
+        for invalid in ([], ["misspelled"]):
+            self.assertFalse(accepts(invalid))
+
+    def test_manual_measurement_uses_same_selection_and_immutable_products(self):
+        impact = job_block(CI, "impact")
+        self.assertIn('test "$GITHUB_EVENT_NAME" = pull_request', impact)
+        self.assertIn('--base "$PR_BASE" --head "$GITHUB_SHA"', impact)
+        self.assertIn('elif test "$GITHUB_EVENT_NAME" = workflow_dispatch', impact)
+        self.assertIn('--representative-paths "$REPRESENTATIVE_PATHS"', impact)
+        self.assertIn('--expected-revision "$EXPECTED_REVISION"', impact)
+        self.assertIn('cat /tmp/ci-impact.json >> "$GITHUB_STEP_SUMMARY"', impact)
+        classifier = next(step for step in job_steps(CI, "impact") if "id: classify" in step)
+        self.assertIn("shell: bash", classifier)
+        self.assertIn("set -euo pipefail", classifier)
+        script = textwrap.dedent(classifier.split("        run: |\n", 1)[1])
+        sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+        with tempfile.TemporaryDirectory() as directory:
+            summary = Path(directory) / "summary"
+            script = script.replace("/tmp/ci-impact.json", str(Path(directory) / "impact.json"))
+            environment = os.environ | {
+                "GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_SHA": sha,
+                "EXPECTED_REVISION": "b" * 40,
+                "REPRESENTATIVE_PATHS": '["src/cli/outcome.rs"]',
+                "GITHUB_STEP_SUMMARY": str(summary),
+            }
+            rejected = subprocess.run(["/bin/bash", "-e", "-c", script], cwd=ROOT,
+                                      env=environment, capture_output=True)
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertFalse(summary.exists())
+        self.assertIn('github.event.pull_request.number || github.run_id', CI)
+        self.assertIn('group: ci-full-${{ github.run_id }}-', FULL)
+        self.assertEqual(FULL.split("\nconcurrency:", 1)[0].count("default: '[\"all\"]'"), 2)
 
     def test_cancelled_impact_skips_aggregate_gates(self):
         guard = "if: always() && needs.impact.result != 'cancelled'"
@@ -1023,7 +1113,7 @@ class FullWorkflowContractTests(unittest.TestCase):
 
         def selected(cancelled=False, **overrides):
             values = {
-                "needs.impact.outputs.full_validation_required": "true",
+                "needs.impact.outputs.dependent_contracts_required": "true",
                 "needs.impact.outputs.docs_only": "false",
                 "needs.impact.outputs.windows_canary_required": "true",
                 "needs.static-contracts.result": "success",
@@ -1045,7 +1135,7 @@ class FullWorkflowContractTests(unittest.TestCase):
 
         self.assertTrue(selected())
         self.assertFalse(selected(cancelled=True))
-        self.assertFalse(selected(**{"needs.impact.outputs.full_validation_required": "false"}))
+        self.assertFalse(selected(**{"needs.impact.outputs.dependent_contracts_required": "false"}))
         skipped_optional = {
             "needs.changed-owner-tests.result": "skipped",
             "needs.browser-canary.result": "skipped",
@@ -1082,7 +1172,7 @@ class FullWorkflowContractTests(unittest.TestCase):
 
     def test_all_validation_checkouts_record_the_selected_revision(self):
         for workflow, requested, kind in (
-            (CI, "${{ github.sha }}", "integration-merge"),
+            (CI, "${{ github.sha }}", "${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}"),
             (FULL, "${{ inputs.validation_ref || github.sha }}", "exact-ref"),
         ):
             jobs = checkout_jobs(workflow)
@@ -1306,9 +1396,6 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("- managed-memory-runtime", cargo)
         self.assertIn("- managed-memory-fixed-profiles", cargo)
         self.assertIn("- managed-memory-miri", cargo)
-        self.assertIn('test "$MANAGED_MEMORY_RESULT" = success', cargo)
-        self.assertIn('test "$MANAGED_FIXED_PROFILES_RESULT" = success', cargo)
-        self.assertIn('test "$MANAGED_MIRI_RESULT" = success', cargo)
 
     def test_managed_memory_retains_resident_live_admission_unit_tests(self):
         runtime = job_block(FULL, "managed-memory-runtime")
@@ -1342,14 +1429,14 @@ class FullWorkflowContractTests(unittest.TestCase):
         block = job_block(FULL, "cargo-language")
         fetch = "cargo fetch --locked"
         self.assertIn(fetch, block)
-        full = "cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features full"
+        full = "cargo +nightly-2026-03-03 test --locked -p mech-syntax --lib --tests --no-default-features --features full"
         base = "cargo +nightly-2026-03-03 test --locked -p mech-syntax --no-default-features --features base"
         for command in (full, base):
             self.assertIn(command, block)
             self.assertLess(block.index(fetch), block.index(command))
-        self.assertEqual(block.count("-p mech-syntax --tests"), 1)
+        self.assertEqual(block.count("-p mech-syntax --lib --tests"), 1)
         self.assertIn("--test canonical_document_feature_gates", block)
-        self.assertIn("--test canonical_base_contracts", block)
+        self.assertIn("for suite in canonical_document_root canonical_base_contracts", block)
         self.assertNotIn("--test document_streaming_complexity", block)
         self.assertNotIn("--test document_streaming_equivalence", block)
         self.assertNotIn("continue-on-error", block)
@@ -1359,13 +1446,16 @@ class FullWorkflowContractTests(unittest.TestCase):
         grammar = block.split("- name: Run syntax grammar suites", 1)[1].split("- name:", 1)[0]
         self.assertNotRegex(grammar, r"--test\s+grammar_conformance\b")
         for target in (
-            "canonical_port_registry", "canonical_rule_registry",
+            "canonical_rule_registry",
             "canonical_recursive_core_inventory", "canonical_recursive_core_schema",
-            "canonical_grammar", "canonical_mechdown_closed_rules",
-            "canonical_executable_conformance", "canonical_executable_recovery",
+            "canonical_grammar",
         ):
             self.assertIn(f"--test {target}", grammar)
             self.assertTrue((ROOT / f"src/syntax/tests/{target}.rs").is_file())
+        for target in ("canonical_mechdown_closed_rules", "canonical_executable_conformance", "canonical_executable_recovery"):
+            self.assertIn(target, grammar)
+            self.assertTrue((ROOT / f"src/syntax/tests/canonical_rules/{target}.rs").is_file())
+        self.assertIn('--lib "document::parser::canonical::tests::$suite"', grammar)
         for selected in re.findall(r'--features\s+(?:"([^"]*)"|\'(.*?)\'|(\S+))', grammar):
             features = next(value for value in selected if value)
             self.assertNotIn("mechdown", features.replace(",", " ").split())

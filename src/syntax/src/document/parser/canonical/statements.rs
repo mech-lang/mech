@@ -306,6 +306,7 @@ impl Continuation {
         Progress::Complete(self.result)
     }
 }
+#[cfg(test)]
 fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {
@@ -318,10 +319,12 @@ fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     }
 }
 /// Parse the transparent comment-sigil owner with its exact boolean contract.
+#[cfg(test)]
 pub(crate) fn parse_comment_sigil(parser: &mut Parser<'_>) -> bool {
     parse_rule(parser, rules::COMMENT_SIGIL) == Attempt::Matched
 }
 /// Comment bodies share the retained rich paragraph-element grammar.
+#[cfg(test)]
 pub(crate) fn parse_comment(parser: &mut Parser<'_>) -> Attempt {
     parse_rule(parser, rules::COMMENT)
 }

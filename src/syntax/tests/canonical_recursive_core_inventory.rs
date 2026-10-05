@@ -642,11 +642,6 @@ fn recursive_core_has_exact_parser_typed_views_and_executable_registry() {
         "the retired recursive lowerer must not be recreated"
     );
 
-    let generated_ports =
-        fs::read_to_string(root.join("src/syntax/src/document/parser/canonical_ports.rs"))
-            .expect("read canonical_ports.rs");
-    assert!(generated_ports.contains("Executable"));
-
     let component = component_report();
     let ports = ports();
     assert_eq!(component.len(), EXPECTED_EXECUTABLE_RULES);

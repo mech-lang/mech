@@ -8,18 +8,16 @@ use mech_core::{
     ModuleManifestExportKind, ParsedProgram,
 };
 use mech_engine::{CanonicalSourceFrontend, encode_program_artifact_bytecode_v1};
-use mech_syntax::document::parser::{canonical::parse_canonical_executable_rule_for_test, rules};
+
+use mech_native_live_host_fixture::{
+    TEST_LIVE_BASE_URI, TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_OUTPUT_BASE_URI,
+    TEST_LIVE_OUTPUT_CONTEXT, TEST_LIVE_PATH, TEST_LIVE_PROVIDER, TEST_LIVE_RECORD_PATH,
+    TEST_LIVE_TUPLE_PATH, TestLiveHostFactory, empty_settings,
+};
+use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder};
 use mech_syntax::document::{
     AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode,
     TextSnapshot,
-};
-use mech_native_live_host_fixture::{
-    TEST_LIVE_BASE_URI, TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER,
-    TEST_LIVE_OUTPUT_BASE_URI, TEST_LIVE_OUTPUT_CONTEXT, TEST_LIVE_RECORD_PATH,
-    TEST_LIVE_TUPLE_PATH, TestLiveHostFactory, empty_settings,
-};
-use mech_runtime::{
-    ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder,
 };
 
 fn main() {
@@ -72,16 +70,15 @@ fn compile_structural_match(source: &str) -> Vec<u8> {
         node.children().find_map(find)
     }
 
-    let parsed = parse_canonical_executable_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x535452554354), Revision(1), source).unwrap(),
-        rules::EXPRESSION,
         ParseConfig::default(),
-    )
-    .expect("structural-match expression must parse");
+    );
     assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
-    assert_eq!(parsed.consumed.end.0 as usize, source.len());
+    let syntax = find(parsed.syntax()).expect("expression syntax");
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
     let artifact = CanonicalSourceFrontend
-        .compile_expression(&find(parsed.syntax()).expect("expression syntax"))
+        .compile_expression(&syntax)
         .expect("structural-match semantics")
         .compile_artifact()
         .expect("structural-match artifact");

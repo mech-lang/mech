@@ -7,6 +7,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rust_source import rust_code
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ENGINE_LIB = Path("src/engine/src/lib.rs")
@@ -62,10 +65,7 @@ QUALIFIED_NAMESPACE = re.compile(r"\b(?P<owner>mech_engine|mech_core)\s*::\s*")
 RUST_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 PRECEDING_PATH_MEMBER = re.compile(r"(?P<member>[A-Za-z_][A-Za-z0-9_]*)\s*::\s*$")
 USE_GROUP_BRACE = re.compile(r"[{}]")
-RAW_LITERAL = re.compile(r'(?:br|rb|cr|r)(?P<hashes>#{0,255})"')
-CHAR_LITERAL = re.compile(
-    r"(?:b)?'(?:\\(?:[nrt0\\'\"]|x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]{1,6}\})|[^\\'\r\n])'"
-)
+
 
 def rust_sources(root: Path) -> list[Path]:
     paths: set[Path] = set()
@@ -80,57 +80,9 @@ def line_number(source: str, offset: int) -> int:
     return source.count("\n", 0, offset) + 1
 
 
-def rust_code(source: str) -> str:
-    """Mask comments/literals, as in the other architecture gates, retaining offsets."""
-    masked = list(source)
-
-    def blank(start: int, end: int) -> None:
-        for index in range(start, end):
-            if masked[index] not in "\r\n":
-                masked[index] = " "
-
-    index = 0
-    while index < len(source):
-        if source.startswith("//", index):
-            end = source.find("\n", index + 2)
-            end = len(source) if end < 0 else end
-        elif source.startswith("/*", index):
-            depth = 1
-            end = index + 2
-            while end < len(source) and depth:
-                if source.startswith("/*", end):
-                    depth += 1
-                    end += 2
-                elif source.startswith("*/", end):
-                    depth -= 1
-                    end += 2
-                else:
-                    end += 1
-        elif character := CHAR_LITERAL.match(source, index):
-            end = character.end()
-        elif raw := RAW_LITERAL.match(source, index):
-            terminator = '"' + raw.group("hashes")
-            close = source.find(terminator, raw.end())
-            end = len(source) if close < 0 else close + len(terminator)
-        elif source[index] == '"' or source.startswith(('b"', 'c"'), index):
-            end = index + (1 if source[index] == '"' else 2)
-            escaped = False
-            while end < len(source):
-                character = source[end]
-                end += 1
-                if escaped:
-                    escaped = False
-                elif character == "\\":
-                    escaped = True
-                elif character == '"':
-                    break
-        else:
-            index += 1
-            continue
-        blank(index, end)
-        index = end
-    # A raw identifier is the same namespace, not an exemption from retirement.
-    return re.sub(r"\br#(?=[A-Za-z_][A-Za-z0-9_]*)", "  ", "".join(masked))
+def normalize_raw_identifiers(source: str) -> str:
+    """A raw identifier names the same namespace; keep its source offsets."""
+    return re.sub(r"\br#(?=[A-Za-z_][A-Za-z0-9_]*)", "  ", source)
 
 
 def retired_root_members(source: str, start: int, owner: str) -> list[tuple[int, str]]:
@@ -186,7 +138,9 @@ def qualified_use_groups(source: str) -> list[tuple[int, int]]:
 def check_retired_namespaces(root: Path) -> list[str]:
     failures: list[str] = []
     for relative in rust_sources(root):
-        source = rust_code((root / relative).read_text(encoding="utf-8"))
+        source = normalize_raw_identifiers(
+            rust_code((root / relative).read_text(encoding="utf-8"))
+        )
         local_groups = qualified_use_groups(source)
         found: set[tuple[int, str]] = set()
         for qualified in QUALIFIED_NAMESPACE.finditer(source):

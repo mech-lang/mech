@@ -20,8 +20,7 @@ use super::{
 
 /// Parse one rule from the generated document closure as a deterministic
 /// source prefix.
-#[doc(hidden)]
-pub fn parse_canonical_document_rule_for_test(
+pub(super) fn parse_canonical_document_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
@@ -93,7 +92,7 @@ pub(crate) const STRUCTURE_RULES: &[RuleId; 10] = &[
 
 /// The exact direct-rule outcome, including local committed recovery.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum CanonicalRuleOutcome {
+pub(super) enum CanonicalRuleOutcome {
     NoMatch,
     Matched,
     Committed,
@@ -111,7 +110,7 @@ impl From<Attempt> for CanonicalRuleOutcome {
 
 /// A narrow prefix snapshot used to exercise canonical source productions.
 #[derive(Clone, Debug)]
-pub struct CanonicalSourceRuleSnapshot {
+pub(super) struct CanonicalSourceRuleSnapshot {
     pub source: TextSnapshot,
     pub rule: RuleId,
     pub root: Arc<GreenNode>,
@@ -242,8 +241,7 @@ pub(crate) fn parse_source_rule_prefix(
 /// This hidden test surface deliberately exposes only the selected closed
 /// island. It is not a production parser root and does not dispatch any
 /// enclosing literal, kind, variable, expression, or document production.
-#[doc(hidden)]
-pub fn parse_canonical_literal_path_kind_rule_for_test(
+pub(super) fn parse_canonical_literal_path_kind_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
@@ -290,8 +288,7 @@ pub fn parse_canonical_literal_path_kind_rule_for_test(
 /// Parse one exact expression grammar operator production as a deterministic source
 /// prefix. This hidden surface deliberately exposes only the closed operator
 /// layer; it does not introduce a production parser root.
-#[doc(hidden)]
-pub fn parse_canonical_expression_rule_for_test(
+pub(super) fn parse_canonical_expression_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
@@ -307,8 +304,7 @@ pub fn parse_canonical_expression_rule_for_test(
 /// Parse one exact module-import production as a deterministic
 /// source prefix. This hidden surface exposes only the closed module-import
 /// layer and deliberately does not introduce an import parser root.
-#[doc(hidden)]
-pub fn parse_canonical_module_import_rule_for_test(
+pub(super) fn parse_canonical_module_import_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
@@ -324,8 +320,7 @@ pub fn parse_canonical_module_import_rule_for_test(
 /// Parse one exact declaration or source-import production as a
 /// deterministic source prefix. This hidden surface stays within the closed
 /// island and does not introduce a statement or document parser root.
-#[doc(hidden)]
-pub fn parse_canonical_declaration_rule_for_test(
+pub(super) fn parse_canonical_declaration_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
@@ -342,8 +337,7 @@ pub fn parse_canonical_declaration_rule_for_test(
 /// Parse one exact executable primitive as a deterministic source
 /// prefix. This hidden surface deliberately does not introduce a subscript,
 /// pattern, statement, expression, state-machine, or document root.
-#[doc(hidden)]
-pub fn parse_canonical_primitive_rule_for_test(
+pub(super) fn parse_canonical_primitive_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
@@ -361,8 +355,7 @@ pub fn parse_canonical_primitive_rule_for_test(
 /// Parse one exact structure-shell rule as a deterministic source
 /// prefix. This hidden surface deliberately does not introduce a matrix,
 /// table, map, set, structure, expression, or document root.
-#[doc(hidden)]
-pub fn parse_canonical_structure_rule_for_test(
+pub(super) fn parse_canonical_structure_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
@@ -377,8 +370,7 @@ pub fn parse_canonical_structure_rule_for_test(
 
 /// Parse one canonical recursive-core rule as a deterministic source
 /// prefix for focused recursive grammar tests.
-#[doc(hidden)]
-pub fn parse_canonical_executable_rule_for_test(
+pub(super) fn parse_canonical_executable_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,

@@ -28,6 +28,7 @@ pub(crate) fn supports(rule: RuleId) -> bool {
 }
 
 /// Dispatch one exact declaration production.
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::EXPORT_DECLARATION => parse_export_declaration(parser),
@@ -44,6 +45,7 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
 
 mod continuation;
 pub(crate) use continuation::{Continuation, Progress};
+#[cfg(test)]
 fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {
@@ -55,27 +57,35 @@ fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
         }
     }
 }
+#[cfg(test)]
 pub(crate) fn parse_export_declaration(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::EXPORT_DECLARATION)
 }
+#[cfg(test)]
 pub(crate) fn parse_context_base_context(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_BASE_CONTEXT)
 }
+#[cfg(test)]
 pub(crate) fn parse_context_base_resource_uri(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_BASE_RESOURCE_URI)
 }
+#[cfg(test)]
 pub(crate) fn parse_context_capability_declaration(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_CAPABILITY_DECLARATION)
 }
+#[cfg(test)]
 pub(crate) fn parse_context_capability_path_token(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_CAPABILITY_PATH_TOKEN)
 }
+#[cfg(test)]
 pub(crate) fn parse_context_capability_path(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_CAPABILITY_PATH)
 }
+#[cfg(test)]
 pub(crate) fn parse_context_capability_scope(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_CAPABILITY_SCOPE)
 }
+#[cfg(test)]
 pub(crate) fn parse_context_declaration(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_DECLARATION)
 }

@@ -1,7 +1,7 @@
 {
   "source_revision": "1d9252606b92a6d11508576bbfd0ff47db2e1794",
   "source_tree": "532fa7e52b9c42ff5e2231cb326c924d9880a8bb",
-  "status": "Sealed S8C candidate; not merged. This receipt records the baseline, not qualification of the cleanup tree.",
+  "status": "Historical qualification baseline, incorporated into consolidated pull request #888 with an identical source tree. This receipt does not qualify the cleanup tree.",
   "source_record": "https://github.com/mech-lang/mech/pull/830",
   "historical_records": "https://github.com/mech-lang/mech/tree/1d9252606b92a6d11508576bbfd0ff47db2e1794/docs/design/grammar-audit",
   "toolchain": "nightly-2026-03-03 (rustc 1.96.0-nightly ec818fda3; cargo 1.96.0-nightly f298b8c82)",
@@ -36,7 +36,7 @@
   "limitations": [
     "CI WebGPU uses the configured software adapter. Earlier real-device evidence keeps its original revision attribution in source history.",
     "Existing explicitly ignored tests are not coverage credit. The full suite passing does not remove declared feature/profile limitations.",
-    "S8C and this cleanup are not merged. Future integration qualification must use the actual landing tree."
+    "Consolidated pull request #888 and this cleanup have not landed on integration/v0.4. Future integration qualification must use the actual landing tree."
   ],
   "baseline_measurement": {
     "run_started_at": "2026-10-05T11:28:34Z",
@@ -96,5 +96,11 @@
     "archive_sha256": "20a9cb0d0211ca86d752fc91c85bb1689c025ddbddf3912afb6131cd693e7ef2",
     "package_manifests_sha256": "fb63c05bba6924cdf48cbd536077dfd2a8d60de506cf7081178f9c20fe03dff9",
     "note": "Raw Actions logs, job results, artifact metadata, PR seal text, and package manifests were downloaded together as the cleanup review attachment; they are not a new tracked archive or recurring checker."
+  },
+  "consolidation": {
+    "source_record": "https://github.com/mech-lang/mech/pull/888",
+    "source_revision": "c465a2fc9b2c4ecc6254da0b52344ac0a538fa03",
+    "source_tree": "532fa7e52b9c42ff5e2231cb326c924d9880a8bb",
+    "integration_status": "Open against integration/v0.4 when recorded; cleanup landing requires qualification of the accepted integration tree."
   }
 }

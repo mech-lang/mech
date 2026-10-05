@@ -159,6 +159,7 @@ impl Continuation {
         Progress::Complete(self.result)
     }
 }
+#[cfg(test)]
 fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {
@@ -171,12 +172,15 @@ fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn parse_kind_any(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::KIND_ANY)
 }
+#[cfg(test)]
 pub(crate) fn parse_kind_empty(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::KIND_EMPTY)
 }
+#[cfg(test)]
 pub(crate) fn parse_kind_atom(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::KIND_ATOM)
 }

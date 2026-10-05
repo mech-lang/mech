@@ -4,8 +4,10 @@
 
 use crate::document::RuleId;
 
+#[cfg(test)]
 use super::super::Parser;
 use super::super::rule::rules;
+#[cfg(test)]
 use super::combinator::Attempt;
 
 /// The executable primitives pattern primitives.
@@ -17,6 +19,7 @@ pub(crate) fn supports(rule: RuleId) -> bool {
 }
 
 /// Dispatch one exact executable primitives pattern primitive.
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::WILDCARD => parse_wildcard(parser),
@@ -25,9 +28,11 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
     })
 }
 
+#[cfg(test)]
 pub(crate) fn parse_wildcard(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::WILDCARD)
 }
+#[cfg(test)]
 pub(crate) fn parse_spread_operator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::SPREAD_OPERATOR)
 }

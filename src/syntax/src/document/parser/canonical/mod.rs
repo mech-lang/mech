@@ -13,6 +13,7 @@ pub(crate) mod mechdown;
 pub(crate) mod operators;
 pub(crate) mod paths;
 pub(crate) mod pattern_primitives;
+#[cfg(test)]
 mod ports;
 mod primitives;
 pub(crate) mod prose;
@@ -24,17 +25,21 @@ pub(crate) mod strings;
 pub(crate) mod structure_shell;
 pub(crate) mod subscript_primitives;
 pub mod terminal_spec;
+#[cfg(test)]
 mod test_support;
 
-pub use mechdown::{CanonicalMechdownRuleSnapshot, parse_canonical_mechdown_rule_for_test};
-pub use ports::{
+#[cfg(test)]
+use mechdown::{CanonicalMechdownRuleSnapshot, parse_canonical_mechdown_rule_for_test};
+#[cfg(test)]
+use ports::{
     CanonicalRuleSnapshot, canonical_base_rule_supported, parse_canonical_base_rule_for_test,
     parse_canonical_tag_for_test,
 };
 pub use terminal_spec::{
     FIXED_TERMINAL_COUNT, FIXED_TERMINALS, FixedTerminalSpec, TerminalSpacing, fixed_terminal_spec,
 };
-pub use test_support::{
+#[cfg(test)]
+use test_support::{
     CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_declaration_rule_for_test,
     parse_canonical_document_rule_for_test, parse_canonical_executable_rule_for_test,
     parse_canonical_expression_rule_for_test, parse_canonical_literal_path_kind_rule_for_test,
@@ -44,3 +49,7 @@ pub use test_support::{
 
 #[cfg(test)]
 mod continuation_test_support;
+
+#[cfg(all(test, any(feature = "std", not(feature = "no_std"))))]
+#[path = "../../../../tests/canonical_rules/mod.rs"]
+mod tests;

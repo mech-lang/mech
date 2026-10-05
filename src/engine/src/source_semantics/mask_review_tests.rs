@@ -1,25 +1,29 @@
 use super::*;
-use mech_syntax::document::parser::{canonical::parse_canonical_executable_rule_for_test, rules};
-use mech_syntax::document::{ParseConfig, RuleId, TextSnapshot};
 
-fn parse<T: AstNode>(source: &str, rule: RuleId) -> T {
+use mech_syntax::document::{ParseConfig, TextSnapshot};
+
+fn parse<T: AstNode>(source: &str) -> T {
     fn find<T: AstNode>(node: SyntaxNode) -> Option<T> {
         T::cast(node.clone()).or_else(|| node.children().find_map(find::<T>))
     }
-    let parsed = parse_canonical_executable_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x54b), Revision(1), source).unwrap(),
-        rule,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(parsed.is_strictly_clean(), "{source}");
-    assert_eq!(parsed.consumed.end.0 as usize, source.len(), "{source}");
-    find(parsed.syntax()).unwrap()
+    assert_eq!(
+        parsed.syntax().range().end.0 as usize,
+        source.len(),
+        "{source}"
+    );
+    let syntax = find::<T>(parsed.syntax()).unwrap();
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    syntax
 }
 
 fn selected(definition: &str, expression: &str) -> CanonicalSourceProgram {
-    let definition: VariableDefineSyntax = parse(definition, rules::VARIABLE_DEFINE);
-    let expression: ExpressionSyntax = parse(expression, rules::EXPRESSION);
+    let definition: VariableDefineSyntax = parse(definition);
+    let expression: ExpressionSyntax = parse(expression);
     let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(expression.syntax()));
     builder
         .declare_definition_input_annotations(&definition, &BTreeSet::new())

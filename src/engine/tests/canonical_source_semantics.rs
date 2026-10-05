@@ -23,8 +23,6 @@ use mech_engine::{
     CANONICAL_SEMANTIC_RULES, CanonicalSemanticDisposition, CanonicalSourceFrontend, SourceValue,
     canonical_semantic_disposition,
 };
-use mech_syntax::document::parser::canonical::parse_canonical_executable_rule_for_test;
-use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ExpressionSyntax, ParseConfig, Revision, SyntaxKind,
     SyntaxNode, TextSize, TextSnapshot, VariableDefineSyntax, parse_canonical_document,
@@ -35,42 +33,41 @@ fn repository_root() -> PathBuf {
 }
 
 fn expression(source: &str) -> ExpressionSyntax {
-    let parsed = parse_canonical_executable_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x540), Revision(4), source).unwrap(),
-        rules::EXPRESSION,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(parsed.is_strictly_clean(), "{source:?}");
-    find(parsed.syntax(), SyntaxKind::Expression)
+    let syntax = find(parsed.syntax(), SyntaxKind::Expression)
         .and_then(ExpressionSyntax::cast)
-        .expect("canonical Expression")
+        .expect("canonical Expression");
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    syntax
 }
 
 fn recovered_expression(source: &str) -> ExpressionSyntax {
-    let parsed = parse_canonical_executable_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x540), Revision(4), source).unwrap(),
-        rules::EXPRESSION,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(!parsed.is_strictly_clean(), "{source:?}");
-    find(parsed.syntax(), SyntaxKind::Expression)
+    let syntax = find(parsed.syntax(), SyntaxKind::Expression)
         .and_then(ExpressionSyntax::cast)
-        .expect("recovered Expression")
+        .expect("recovered Expression");
+    syntax
 }
 
 fn definition(source: &str) -> VariableDefineSyntax {
-    let parsed = parse_canonical_executable_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x540), Revision(4), source).unwrap(),
-        rules::VARIABLE_DEFINE,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(parsed.is_strictly_clean(), "{source:?}");
-    find(parsed.syntax(), SyntaxKind::VariableDefine)
+    let syntax = find(parsed.syntax(), SyntaxKind::VariableDefine)
         .and_then(VariableDefineSyntax::cast)
-        .expect("canonical VariableDefine")
+        .expect("canonical VariableDefine");
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    syntax
 }
 
 fn find(node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -6656,7 +6653,7 @@ fn reviewed_exact_source_authorities_cover_matches_kinds_logic_and_matrices() {
     );
 
     let negated = CanonicalSourceFrontend
-        .compile_expression(&expression("¬[true false]"))
+        .compile_definition(&definition("negated := ¬[true false]"))
         .unwrap();
     assert!(matches!(
         negated

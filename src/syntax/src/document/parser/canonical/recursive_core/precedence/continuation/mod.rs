@@ -307,6 +307,7 @@ impl Continuation {
             work: 0,
         }
     }
+    #[cfg(test)]
     pub(in super::super) fn drive(&mut self, parser: &mut Parser<'_>) -> Attempt {
         loop {
             let mut allowance = u64::MAX;

@@ -32,6 +32,7 @@ pub(crate) fn supports(rule: RuleId) -> bool {
 }
 
 /// Dispatch one exact structure-shell production.
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::MATRIX_START => parse_matrix_start(parser),
@@ -50,6 +51,7 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
 
 mod continuation;
 pub(crate) use continuation::{Continuation, Progress};
+#[cfg(test)]
 fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {
@@ -61,33 +63,43 @@ fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
         }
     }
 }
+#[cfg(test)]
 pub(crate) fn parse_matrix_start(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MATRIX_START)
 }
+#[cfg(test)]
 pub(crate) fn parse_matrix_end(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MATRIX_END)
 }
+#[cfg(test)]
 pub(crate) fn parse_table_start(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::TABLE_START)
 }
+#[cfg(test)]
 pub(crate) fn parse_table_end(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::TABLE_END)
 }
+#[cfg(test)]
 pub(crate) fn parse_table_separator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::TABLE_SEPARATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_table_horz(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::TABLE_HORZ)
 }
+#[cfg(test)]
 pub(crate) fn parse_table_top(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::TABLE_TOP)
 }
+#[cfg(test)]
 pub(crate) fn parse_row_separator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::ROW_SEPARATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_empty_map(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::EMPTY_MAP)
 }
+#[cfg(test)]
 pub(crate) fn parse_empty_set(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::EMPTY_SET)
 }

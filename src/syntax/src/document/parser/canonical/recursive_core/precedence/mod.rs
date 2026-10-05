@@ -55,54 +55,67 @@ impl FormulaSeed {
     }
 }
 
+#[cfg(test)]
 pub(super) fn parse_l1(parser: &mut Parser<'_>) -> Attempt {
     continuation::Continuation::new(rules::L1).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_l2(parser: &mut Parser<'_>) -> Attempt {
     continuation::Continuation::new(rules::L2).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_l3(parser: &mut Parser<'_>) -> Attempt {
     continuation::Continuation::new(rules::L3).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_l4(parser: &mut Parser<'_>) -> Attempt {
     continuation::Continuation::new(rules::L4).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_l5(parser: &mut Parser<'_>) -> Attempt {
     continuation::Continuation::new(rules::L5).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_l6(parser: &mut Parser<'_>) -> Attempt {
     continuation::Continuation::new(rules::L6).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_l7(parser: &mut Parser<'_>) -> Attempt {
     continuation::Continuation::new(rules::L7).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_factor(parser: &mut Parser<'_>) -> Attempt {
     Continuation::new(rules::FACTOR).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_parenthetical_term(parser: &mut Parser<'_>) -> Attempt {
     Continuation::new(rules::PARENTHETICAL_TERM).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_negate_factor(parser: &mut Parser<'_>) -> Attempt {
     Continuation::new(rules::NEGATE_FACTOR).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_not_factor(parser: &mut Parser<'_>) -> Attempt {
     Continuation::new(rules::NOT_FACTOR).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_range_expression(parser: &mut Parser<'_>) -> Attempt {
     Continuation::new(rules::RANGE_EXPRESSION).drive(parser)
 }
 
+#[cfg(test)]
 pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
     Continuation::new(rules::MATCH_ARM).drive(parser)
 }

@@ -5730,24 +5730,21 @@ mod tests {
         source: &str,
         budget: Option<mech_core::ManagedMemoryBudget>,
     ) -> ReactiveInstance {
-        use mech_syntax::document::parser::{
-            canonical::parse_canonical_executable_rule_for_test, rules,
-        };
         use mech_syntax::document::{
             AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
         };
         fn expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
             ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(expression))
         }
-        let parsed = parse_canonical_executable_rule_for_test(
+        let parsed = mech_syntax::document::parse_canonical_document(
             TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
-            rules::EXPRESSION,
             ParseConfig::default(),
-        )
-        .unwrap();
+        );
         assert!(parsed.is_strictly_clean());
+        let syntax = expression(parsed.syntax()).unwrap();
+        assert_eq!(syntax.syntax().range(), parsed.source.full_range());
         let artifact = crate::CanonicalSourceFrontend
-            .compile_expression(&expression(parsed.syntax()).unwrap())
+            .compile_expression(&syntax)
             .unwrap()
             .compile_artifact()
             .unwrap();

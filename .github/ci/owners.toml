@@ -17,35 +17,35 @@ standard = true
 cross_cutting = true
 
 [owners.mech-syntax]
+families = ["language", "artifact", "browser"]
 exclude_paths = ["*.md", "LICENSE"]
-full = true
 paths = ["src/syntax/**", "docs/design/specification.mec", "docs/design/grammar-audit/*.tsv", "docs/design/grammar-audit/*.json", "docs/design/grammar-audit/*.mec"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-syntax", "--lib", "--test", "canonical_document_root", "--test", "document_streaming_complexity", "--test", "document_streaming_boundaries", "--test", "document_streaming_storage", "--test", "document_streaming_lifecycle", "--test", "document_streaming_recovery", "--test", "document_streaming_resources", "--test", "document_streaming_publication", "--no-default-features", "--features", "full", "--", "--skip", "large_"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-syntax", "--lib", "--test", "document_streaming_complexity", "--test", "document_streaming_boundaries", "--test", "document_streaming_storage", "--test", "document_streaming_lifecycle", "--test", "document_streaming_recovery", "--test", "document_streaming_resources", "--test", "document_streaming_publication", "--no-default-features", "--features", "full", "--", "--skip", "large_"]
 standard = true
 cross_cutting = true
 
 [owners.mech-engine]
+families = ["architecture", "language", "memory", "runtime", "numeric", "artifact", "linkage", "native", "browser"]
 exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
-full = true
 paths = ["src/engine/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-engine", "--lib", "--test", "memory_runtime", "--test", "canonical_source_semantics", "--no-default-features", "--features", "full_compiler"]
 standard = true
 cross_cutting = true
 
 [owners.mech-compute]
+families = ["memory", "numeric", "runtime", "artifact", "browser"]
 exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
-full = true
 paths = ["src/compute/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-compute"]
 standard = true
 cross_cutting = true
 
 [owners.mech-gpu]
+families = ["memory", "numeric", "runtime", "artifact", "linkage", "browser"]
 exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
-full = true
 paths = ["hosts/gpu/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-gpu", "--test", "memory_plan", "--test", "memory_runtime"]
 standard = true
@@ -53,25 +53,25 @@ cross_cutting = true
 browser = true
 
 [owners.mech-runtime]
-exclude_paths = ["*.md", "LICENSE"]
+families = ["memory", "runtime", "artifact", "linkage", "native", "browser"]
+exclude_paths = ["*.md", "LICENSE", "src/runtime/tests/**"]
 browser_applications = true
-full = true
 paths = ["src/runtime/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-runtime", "--lib", "--test", "source_acceptance", "--no-default-features", "--features", "full_compiler,full_source,resident-routing-source,resident_ekf_benchmarks"]
 standard = true
 cross_cutting = true
 
 [owners.mech-build]
+families = ["artifact", "linkage", "native", "cli"]
 exclude_paths = ["*.md", "LICENSE"]
-full = true
 paths = ["src/build/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-build", "--lib", "--no-default-features", "--features", "standard-hosts"]
 standard = true
 cross_cutting = true
 
 [owners.mech-stdlib]
+families = ["numeric", "artifact", "linkage"]
 exclude_paths = ["*.md", "LICENSE"]
-full = true
 paths = ["src/stdlib/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "profile_contracts", "--test", "managed_functions", "--no-default-features", "--features", "standard_compiler"]
 standard = true
@@ -79,9 +79,9 @@ cross_cutting = true
 
 # Machine implementations share the maintained standard-library behavior suite.
 [owners.machine-functions]
+families = ["numeric", "artifact", "linkage"]
 browser_applications = true
 exclude_paths = ["*.md", "LICENSE"]
-full = true
 paths = ["machines/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "managed_functions", "--no-default-features", "--features", "standard_compiler"]
 standard = false
@@ -120,6 +120,7 @@ cross_cutting = false
 browser = true
 
 [owners.mech-scene]
+families = ["runtime", "browser"]
 exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 paths = ["hosts/scene/**"]
@@ -137,6 +138,7 @@ cross_cutting = false
 browser = true
 
 [owners.mech-wasm]
+families = ["browser", "artifact"]
 exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 paths = ["src/wasm/**"]
@@ -153,10 +155,8 @@ standard = false
 cross_cutting = false
 
 [owners.root-cli]
+families = ["cli"]
 exclude_paths = ["*.md", "LICENSE"]
-full = true
-browser = true
-browser_applications = true
 paths = ["src/cli/**", "src/bin/**", "src/lib.rs", "src/repl/**", "src/serve.rs", "src/test.rs"]
 command = []
 standard = true
@@ -173,9 +173,10 @@ cross_cutting = true
 browser = true
 
 [owners.root-tests]
-full = true
-exclude_paths = ["*.md", "LICENSE"]
+families = ["cli", "runtime", "artifact"]
 paths = ["tests/**", "examples/**"]
+# Explicit fixture owners below carry their complete execution responsibility.
+exclude_paths = ["*.md", "LICENSE", "tests/fixtures/native-*/**", "examples/n-body/**", "examples/ekf/**", "tests/browser/**"]
 command = []
 standard = true
 cross_cutting = false
@@ -215,8 +216,65 @@ command = []
 standard = false
 cross_cutting = true
 
+# Runtime test edits run the runtime contracts without declaring every owner changed.
+[owners.runtime-tests]
+paths = ["src/runtime/tests/**"]
+exclude_paths = ["*.md", "LICENSE"]
+families = ["runtime"]
+command = []
+standard = false
+cross_cutting = false
+
+[owners.runtime-publication-tests]
+paths = ["src/runtime/tests/resident_external_contract.rs", "src/runtime/tests/resident_external_sealed_api.rs", "src/runtime/tests/ui/resident_external_sealed/**", "tests/fixtures/resident-external/**"]
+families = ["architecture", "runtime"]
+command = []
+standard = false
+cross_cutting = false
+
+[owners.native-products]
+paths = ["src/cli/commands/build.rs", "src/cli/app/**", "src/cli/runtime_plan.rs", "src/cli/host_factories.rs", "tests/mech_build.rs", "tests/catalog_closure.rs", "tests/fixtures/native-*/**", "machines/*/src/catalog.rs", "machines/*/build.rs"]
+exclude_paths = ["*.md", "LICENSE"]
+families = ["native", "linkage", "artifact"]
+command = []
+standard = false
+cross_cutting = false
+
+[owners.cli-authority]
+paths = ["src/cli/canonical_source.rs", "src/cli/module_execution.rs", "src/cli/host_grants.rs", "src/cli/capabilities.rs", "src/cli/resources.rs", "src/cli/run/**", "src/cli/runtime_plan.rs", "src/cli/host_factories.rs", "src/cli/host_configuration.rs", "src/cli/compute.rs", "src/cli/config.rs", "src/cli/run_options.rs", "src/cli/app/**", "src/cli/mod.rs", "src/cli/commands/mod.rs", "src/cli/commands/run.rs", "src/cli/commands/repl/mod.rs", "src/cli/commands/repl/session.rs", "src/cli/commands/repl/events.rs", "src/repl/**", "src/test.rs"]
+families = ["artifact", "runtime", "memory", "linkage", "native", "browser"]
+command = []
+standard = false
+cross_cutting = false
+browser = true
+browser_applications = true
+
+[owners.browser-products]
+paths = ["src/serve.rs", "src/canonical_presentation.rs", "src/cli/commands/serve.rs", "src/cli/commands/format/**", "src/cli/commands/bundle_web.rs", "src/cli/bundle_web.rs", "src/cli/serve_options.rs", "tests/mech_serve.rs", "tests/mech_format_shims.rs", "tests/browser/**", "include/**"]
+exclude_paths = ["*.md", "LICENSE"]
+families = ["cli", "browser"]
+command = []
+standard = false
+cross_cutting = false
+browser = true
+browser_applications = true
+
+[owners.shared-features]
+paths = ["src/*/Cargo.toml", "machines/*/Cargo.toml", "hosts/*/Cargo.toml", "src/lib.rs"]
+full = true
+command = []
+standard = false
+cross_cutting = true
+
+[owners.numeric-tests]
+paths = ["tests/lazy_stdlib.rs"]
+families = ["numeric", "artifact", "linkage"]
+command = []
+standard = false
+cross_cutting = false
+
 [owners.docs]
-paths = ["*.md", "LICENSE"]
+paths = ["*.md", "LICENSE", "docs/**/*.mec"]
 command = []
 standard = false
 cross_cutting = false

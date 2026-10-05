@@ -10,8 +10,8 @@ Current responsibilities
 -------------------------------------------------------------------------------
 
 - ports.tsv maps specification grammar names to stable RuleIds, syntax node
-  policies, semantic dispositions, and parser reachability. The rule and port
-  registries are generated from this input.
+  policies, semantic dispositions, and parser reachability. The stable rule-ID
+  registry is generated from this input; audit metadata stays in this table.
 - canonical-dependencies.tsv and grammar-component-boundaries.tsv describe the specification
   dependency graph. recursive-core.tsv identifies the recursive component.
 - recursive-core-syntax-schema.tsv defines typed syntax structure and accessor contracts.

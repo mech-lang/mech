@@ -3,8 +3,10 @@
 
 use crate::document::RuleId;
 
+#[cfg(test)]
 use super::super::Parser;
 use super::super::rule::rules;
+#[cfg(test)]
 use super::combinator::Attempt;
 
 /// The executable primitives direct statement-boundary and control operator rules.
@@ -26,6 +28,7 @@ pub(crate) fn supports(rule: RuleId) -> bool {
 }
 
 /// Dispatch one exact executable primitives control operator.
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::STATEMENT_SEPARATOR => parse_statement_separator(parser),
@@ -41,30 +44,39 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
     })
 }
 
+#[cfg(test)]
 pub(crate) fn parse_statement_separator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::STATEMENT_SEPARATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_op_assign_operator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::OP_ASSIGN_OPERATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_add_assign_operator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::ADD_ASSIGN_OPERATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_sub_assign_operator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::SUB_ASSIGN_OPERATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_mul_assign_operator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::MUL_ASSIGN_OPERATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_div_assign_operator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::DIV_ASSIGN_OPERATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_exp_assign_operator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::EXP_ASSIGN_OPERATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_send_operator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::SEND_OPERATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_guard_operator(parser: &mut Parser<'_>) -> Attempt {
     super::primitives::parse_rule(parser, rules::GUARD_OPERATOR)
 }

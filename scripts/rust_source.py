@@ -2,14 +2,18 @@
 
 import re
 
-RAW_LITERAL = re.compile(r'(?:br|rb|r)(?P<hashes>#{0,255})"')
+RAW_LITERAL = re.compile(r'(?:br|rb|cr|r)(?P<hashes>#{0,255})"')
 CHAR_LITERAL = re.compile(
     r"(?:b)?'(?:\\(?:x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]+\}|[^\r\n])|[^\\'\r\n])'"
 )
 
 
 def rust_code(source: str) -> str:
-    """Blank comments and literals while preserving useful token boundaries."""
+    """Blank Rust comments and literals, preserving character offsets and CR/LF.
+
+    Identifiers (including raw identifiers), lifetimes, and code punctuation stay
+    intact. Callers own any identifier normalization or include-file traversal.
+    """
     output = list(source)
     size = len(source)
 
@@ -53,7 +57,7 @@ def rust_code(source: str) -> str:
             blank(index, character.end())
             index = character.end()
             continue
-        prefix = 1 if source.startswith(('b"', "b'"), index) else 0
+        prefix = 1 if source.startswith(('b"', 'c"'), index) else 0
         quote = index + prefix
         if quote < size and source[quote] == '"':
             end, escaped = quote + 1, False

@@ -2,9 +2,19 @@ name: CI
 
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      expected_revision:
+        description: Exact 40-character workflow revision to execute
+        required: true
+        type: string
+      representative_paths:
+        description: JSON array of simulated changed paths; jobs execute the real workflow revision
+        required: true
+        type: string
 
 concurrency:
-  group: ci-pr-${{ github.event.pull_request.number }}
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 # This verifier belongs to the workflow revision, not the repository revision
@@ -51,15 +61,18 @@ jobs:
       browser_applications_required: ${{ steps.classify.outputs.browser_applications_required }}
       cross_cutting_standard_suite_required: ${{ steps.classify.outputs.cross_cutting_standard_suite_required }}
       full_validation_required: ${{ steps.classify.outputs.full_validation_required }}
+      contract_families: ${{ steps.classify.outputs.contract_families }}
+      dependent_contracts_required: ${{ steps.classify.outputs.dependent_contracts_required }}
+      native_validation_required: ${{ steps.classify.outputs.native_validation_required }}
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -67,18 +80,31 @@ jobs:
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Select the smallest safe validation set
         id: classify
+        shell: bash
         env:
           PR_LABELS: ${{ toJSON(github.event.pull_request.labels) }}
-        run: >-
-          python3 scripts/ci-impact.py
-          --base "${{ github.event.pull_request.base.sha }}"
-          --head "${{ github.sha }}"
-          --labels "$PR_LABELS"
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_REVISION: ${{ inputs.expected_revision }}
+          REPRESENTATIVE_PATHS: ${{ inputs.representative_paths }}
+        run: |
+          set -euo pipefail
+          if test "$GITHUB_EVENT_NAME" = pull_request
+          then
+            python3 scripts/ci-impact.py --base "$PR_BASE" --head "$GITHUB_SHA" \
+              --labels "$PR_LABELS" | tee /tmp/ci-impact.json
+          elif test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          then
+            python3 scripts/ci-impact.py --representative-paths "$REPRESENTATIVE_PATHS" \
+              --expected-revision "$EXPECTED_REVISION" | tee /tmp/ci-impact.json
+          else
+            exit 1
+          fi
+          cat /tmp/ci-impact.json >> "$GITHUB_STEP_SUMMARY"
 
   early-native-plan:
     name: Early native plan
     needs: impact
-    if: needs.impact.outputs.full_validation_required == 'true'
+    if: needs.impact.outputs.native_validation_required == 'true'
     uses: ./.github/workflows/ci-native-plan.yml
     with:
       validation_ref: ${{ github.sha }}
@@ -98,9 +124,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -157,9 +183,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -208,9 +234,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -271,9 +297,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -314,9 +340,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -373,9 +399,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -409,9 +435,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -478,9 +504,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -562,9 +588,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -596,9 +622,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -659,9 +685,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -710,9 +736,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -782,9 +808,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -845,9 +871,9 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-      - name: Record integration checkout identity
+      - name: Record selected checkout identity
         env:
-          VALIDATION_KIND: integration-merge
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
           REQUESTED_REF: ${{ github.sha }}
           CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
@@ -932,7 +958,7 @@ jobs:
           fi
 
   full-validation:
-    name: Requested full validation
+    name: Selected dependent contracts
     needs:
       - impact
       - static-contracts
@@ -943,7 +969,7 @@ jobs:
     if: >-
       ${{
         !cancelled() &&
-        needs.impact.outputs.full_validation_required == 'true' &&
+        needs.impact.outputs.dependent_contracts_required == 'true' &&
         (needs.static-contracts.result == 'success' ||
           (needs.impact.outputs.docs_only == 'true' && needs.static-contracts.result == 'skipped')) &&
         (needs.standard-linux.result == 'success' ||
@@ -956,6 +982,7 @@ jobs:
     uses: ./.github/workflows/ci-full.yml
     with:
       release_channel: stable
+      contract_families: ${{ needs.impact.outputs.contract_families }}
       validation_ref: ${{ github.sha }}
       native_plan_in_caller: true
       rich_browser_smoke_in_caller: ${{ needs.impact.outputs.browser_canary_required == 'true' }}
@@ -979,12 +1006,14 @@ jobs:
       - name: Require exactly the selected validation set
         env:
           DOCS_ONLY: ${{ needs.impact.outputs.docs_only }}
-          FULL_REQUIRED: ${{ needs.impact.outputs.full_validation_required }}
+          CONTRACTS_REQUIRED: ${{ needs.impact.outputs.dependent_contracts_required }}
+          NATIVE_REQUIRED: ${{ needs.impact.outputs.native_validation_required }}
           IMPACT_RESULT: ${{ needs.impact.result }}
           SOURCE_REQUIRED: ${{ needs.impact.outputs.standard_canaries_required }}
           SOURCE_RESULT: ${{ needs.full-source-profile.result }}
           STATIC_RESULT: ${{ needs.static-contracts.result }}
           LINUX_RESULT: ${{ needs.standard-linux.result }}
+          OWNERS_REQUIRED: ${{ needs.impact.outputs.owner_shards != '[]' }}
           OWNER_RESULT: ${{ needs.changed-owner-tests.result }}
           WINDOWS_REQUIRED: ${{ needs.impact.outputs.windows_canary_required }}
           WINDOWS_RESULT: ${{ needs.standard-windows.result }}
@@ -1009,19 +1038,25 @@ jobs:
           else
             test "$STATIC_RESULT" = success
             test "$LINUX_RESULT" = success
-            test "$OWNER_RESULT" = success -o "$OWNER_RESULT" = skipped
-            test "$BROWSER_RESULT" = success -o "$BROWSER_RESULT" = skipped
+            test "$BROWSER_RESULT" = success
           fi
+          case "$OWNERS_REQUIRED" in
+            true) test "$OWNER_RESULT" = success ;;
+            false) test "$OWNER_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
           case "$WINDOWS_REQUIRED" in
             true) test "$WINDOWS_RESULT" = success ;;
             false) test "$WINDOWS_RESULT" = skipped ;;
             *) exit 1 ;;
           esac
-          if test "$FULL_REQUIRED" = true
-          then
-            test "$FULL_RESULT" = success
-            test "$NATIVE_PLAN_RESULT" = success
-          else
-            test "$FULL_RESULT" = skipped
-            test "$NATIVE_PLAN_RESULT" = skipped
-          fi
+          case "$CONTRACTS_REQUIRED" in
+            true) test "$FULL_RESULT" = success ;;
+            false) test "$FULL_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
+          case "$NATIVE_REQUIRED" in
+            true) test "$NATIVE_PLAN_RESULT" = success ;;
+            false) test "$NATIVE_PLAN_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
