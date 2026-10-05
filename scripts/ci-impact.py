@@ -69,7 +69,7 @@ def classify(
             cross_cutting = True
             continue
         matched_names.update(owner["name"] for owner in matches)
-        if not any(owner.get("docs", False) for owner in matches):
+        if not all(owner.get("docs", False) for owner in matches):
             docs_only = False
         cross_cutting = cross_cutting or any(owner["cross_cutting"] for owner in matches)
         browser = browser or any(owner.get("browser", False) for owner in matches)

@@ -1,6 +1,7 @@
 version = 1
 
 [owners.mech-core]
+exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = ["src/core/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-core", "--lib", "--test", "type_memory_contract", "--test", "storage_capability", "--test", "operation_memory_requirement", "--test", "type_memory_boundary", "--test", "r6_memory_runtime", "--test", "r6_memory_safety", "--all-features"]
@@ -8,6 +9,7 @@ standard = true
 cross_cutting = true
 
 [owners.mech-bytecode]
+exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = ["src/bytecode/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-bytecode", "--all-features"]
@@ -15,13 +17,15 @@ standard = true
 cross_cutting = true
 
 [owners.mech-syntax]
+exclude_paths = ["*.md", "LICENSE"]
 full = true
-paths = ["src/syntax/**"]
+paths = ["src/syntax/**", "docs/design/specification.mec", "docs/design/grammar-audit/*.tsv", "docs/design/grammar-audit/*.json", "docs/design/grammar-audit/*.mec"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-syntax", "--lib", "--test", "canonical_document_root", "--test", "document_streaming_complexity", "--test", "document_streaming_boundaries", "--test", "document_streaming_storage", "--test", "document_streaming_lifecycle", "--test", "document_streaming_recovery", "--test", "document_streaming_resources", "--test", "document_streaming_publication", "--no-default-features", "--features", "full", "--", "--skip", "large_"]
 standard = true
 cross_cutting = true
 
 [owners.mech-engine]
+exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 full = true
 paths = ["src/engine/**"]
@@ -30,6 +34,7 @@ standard = true
 cross_cutting = true
 
 [owners.mech-compute]
+exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 full = true
 paths = ["src/compute/**"]
@@ -38,6 +43,7 @@ standard = true
 cross_cutting = true
 
 [owners.mech-gpu]
+exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 full = true
 paths = ["hosts/gpu/**"]
@@ -47,6 +53,7 @@ cross_cutting = true
 browser = true
 
 [owners.mech-runtime]
+exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 full = true
 paths = ["src/runtime/**"]
@@ -55,6 +62,7 @@ standard = true
 cross_cutting = true
 
 [owners.mech-build]
+exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = ["src/build/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-build", "--lib", "--no-default-features", "--features", "standard-hosts"]
@@ -62,6 +70,7 @@ standard = true
 cross_cutting = true
 
 [owners.mech-stdlib]
+exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = ["src/stdlib/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "profile_contracts", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler"]
@@ -70,6 +79,8 @@ cross_cutting = true
 
 # Machine implementations share the maintained standard-library behavior suite.
 [owners.machine-functions]
+exclude_paths = ["*.md", "LICENSE"]
+full = true
 paths = ["machines/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-stdlib", "--test", "r6_managed_functions", "--no-default-features", "--features", "standard_compiler"]
 standard = false
@@ -77,12 +88,14 @@ cross_cutting = false
 browser = true
 
 [owners.mech-terminal]
+exclude_paths = ["*.md", "LICENSE"]
 paths = ["hosts/terminal/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-terminal", "--all-features"]
 standard = true
 cross_cutting = false
 
 [owners.mech-console]
+exclude_paths = ["*.md", "LICENSE"]
 paths = ["hosts/console/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-console", "--all-features"]
 standard = true
@@ -90,6 +103,7 @@ cross_cutting = false
 browser = true
 
 [owners.mech-time]
+exclude_paths = ["*.md", "LICENSE"]
 paths = ["hosts/time/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-time", "--all-features"]
 standard = true
@@ -97,6 +111,7 @@ cross_cutting = false
 browser = true
 
 [owners.mech-timer]
+exclude_paths = ["*.md", "LICENSE"]
 paths = ["hosts/timer/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-timer", "--all-features"]
 standard = true
@@ -104,6 +119,7 @@ cross_cutting = false
 browser = true
 
 [owners.mech-scene]
+exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 paths = ["hosts/scene/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-scene", "--all-features"]
@@ -112,6 +128,7 @@ cross_cutting = false
 browser = true
 
 [owners.mech-browser]
+exclude_paths = ["*.md", "LICENSE"]
 paths = ["hosts/browser/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-browser", "--all-features"]
 standard = true
@@ -119,6 +136,7 @@ cross_cutting = false
 browser = true
 
 [owners.mech-wasm]
+exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 paths = ["src/wasm/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-wasm", "--no-default-features", "--features", "browser_project"]
@@ -127,18 +145,24 @@ cross_cutting = false
 browser = true
 
 [owners.mech-robot-arm]
+exclude_paths = ["*.md", "LICENSE"]
 paths = ["hosts/robot-arm/**"]
 command = ["cargo", "test", "--locked", "--offline", "-p", "mech-robot-arm", "--all-features"]
 standard = false
 cross_cutting = false
 
 [owners.root-cli]
+exclude_paths = ["*.md", "LICENSE"]
+full = true
+browser = true
+browser_applications = true
 paths = ["src/cli/**", "src/bin/**", "src/lib.rs", "src/repl/**", "src/serve.rs", "src/test.rs"]
 command = []
 standard = true
 cross_cutting = false
 
 [owners.distribution]
+exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 full = true
 paths = ["Cargo.toml", "Cargo.lock", "build.rs", "tests/architecture/distributions/**"]
@@ -148,12 +172,15 @@ cross_cutting = true
 browser = true
 
 [owners.root-tests]
+full = true
+exclude_paths = ["*.md", "LICENSE"]
 paths = ["tests/**", "examples/**"]
 command = []
 standard = true
 cross_cutting = false
 
 [owners.nbody-browser-canary]
+exclude_paths = ["*.md", "LICENSE"]
 paths = ["examples/n-body/**", "scripts/check-nbody-physics-reference.py", "scripts/smoke-served-resident-nbody-browser.sh"]
 command = []
 standard = false
@@ -161,6 +188,7 @@ cross_cutting = false
 browser = true
 
 [owners.ekf-browser-canary]
+exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 paths = ["examples/ekf/**", "scripts/check-ekf-browser-results.py", "scripts/smoke-served-resident-ekf-browser.sh"]
 command = []
@@ -169,6 +197,7 @@ cross_cutting = false
 browser = true
 
 [owners.architecture-contracts]
+exclude_paths = ["*.md", "LICENSE"]
 browser_applications = true
 full = true
 paths = ["scripts/run-owner-tests.py", ".github/workflows/ci.yml", ".github/workflows/ci-full.yml", ".github/workflows/ci-native-plan.yml", ".github/ci/owners.toml", "scripts/ci-impact.py", "tests/ci/test_ci_impact.py", "scripts/check-*-contract.py", "scripts/generate-*-contract.py", "scripts/check-production-resident-routing.py", "scripts/check-bytecode-v1-format.py", "scripts/check-native-host-catalog.py", "scripts/check-r2-type-memory-boundary.py", "scripts/check-r3-type-system.py", "scripts/check-r4-type-cutover.py", "scripts/check-r5-memory-planner.py", "scripts/check-r6-memory-runtime.py", "scripts/run-python-unittest-shards.py", "scripts/rust_source.py", "scripts/tests/test_rust_source.py", "scripts/tests/test_check_*_contract.py", "scripts/tests/test_generate_*_contract.py", "scripts/tests/test_check_r2_type_memory_boundary.py", "scripts/tests/test_check_r3_type_system.py", "scripts/tests/test_check_r4_type_cutover.py", "scripts/tests/test_check_r5_memory_planner.py", "scripts/tests/test_check_r6_memory_runtime.py", "scripts/tests/test_run_python_unittest_shards.py", "tests/architecture/**"]
@@ -178,6 +207,7 @@ cross_cutting = true
 browser = true
 
 [owners.ci-tools]
+exclude_paths = ["*.md", "LICENSE"]
 full = true
 paths = [".github/**", "scripts/**"]
 command = []
@@ -185,7 +215,7 @@ standard = false
 cross_cutting = true
 
 [owners.docs]
-paths = ["docs/**", "*.md", "LICENSE"]
+paths = ["*.md", "LICENSE"]
 command = []
 standard = false
 cross_cutting = false

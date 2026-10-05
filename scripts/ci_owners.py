@@ -67,4 +67,5 @@ def matching_owners(
         owner
         for owner in owners.values()
         if any(path_matches(pattern, changed_path) for pattern in owner["paths"])
+        and not any(path_matches(pattern, changed_path) for pattern in owner.get("exclude_paths", []))
     ]

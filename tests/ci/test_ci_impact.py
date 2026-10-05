@@ -107,7 +107,7 @@ class ImpactClassifierTests(unittest.TestCase):
     def test_full_label_requests_full_validation_for_ordinary_changes(self):
         ordinary = self.classify(["machines/math/src/add.rs"])
         requested = self.classify(["machines/math/src/add.rs"], ["ci:full"])
-        self.assertFalse(ordinary["full_validation_required"])
+        self.assertTrue(ordinary["full_validation_required"])
         self.assertTrue(requested["full_validation_required"])
 
     def test_machine_changes_share_one_behavior_owner(self):
@@ -148,7 +148,6 @@ class ImpactClassifierTests(unittest.TestCase):
             "README.md",
             "docs/design/type-memory-boundary.md",
             "docs/design/type-system-v1.md",
-            "docs/design/ROADMAP.mec",
             "docs/design/v0.4-endgame.md",
         ):
             with self.subTest(path=path):
@@ -192,7 +191,7 @@ class ImpactClassifierTests(unittest.TestCase):
         self.assertTrue(self.classify(["unknown/product.rs"])["full_validation_required"])
 
     def test_narrow_changes_do_not_run_native_or_windows_qualification(self):
-        for path in ("machines/math/src/add.rs", "hosts/terminal/src/lib.rs"):
+        for path in ("hosts/terminal/src/lib.rs",):
             with self.subTest(path=path):
                 result = self.classify([path])
                 self.assertFalse(result["full_validation_required"])
@@ -215,6 +214,63 @@ class ImpactClassifierTests(unittest.TestCase):
                        "canonical_document_root"):
             self.assertIn(target, command)
         self.assertEqual(command[-3:], ["--", "--skip", "large_"])
+
+    def test_authoritative_syntax_inputs_are_never_prose_only(self):
+        for path in (
+            "docs/design/specification.mec",
+            "docs/design/grammar-audit/ports.tsv",
+            "docs/design/grammar-audit/canonical-dependencies.tsv",
+            "docs/design/grammar-audit/phase-2i-recursive-core.tsv",
+            "docs/design/grammar-audit/phase-2i-certification.tsv",
+            "docs/design/grammar-audit/canonical-syntax-schema.json",
+        ):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertIn("mech-syntax", result["matched_owners"])
+                self.assertFalse(result["docs_only"])
+                self.assertTrue(result["static_contracts_required"])
+                self.assertTrue(result["full_validation_required"])
+                self.assertIn("mech-syntax", result["changed_owners"])
+        self.assertTrue(self.classify(["docs/design/grammar-audit/new-input.data"])["full_validation_required"])
+        self.assertTrue(self.classify(["docs/design/grammar-audit/README.md"])["docs_only"])
+
+    def test_documentation_owner_cannot_mask_an_explicit_product_owner(self):
+        owners = {
+            "docs": {"name": "docs", "paths": ["docs/**"], "command": [],
+                     "standard": False, "cross_cutting": False, "docs": True},
+            "spec": {"name": "spec", "paths": ["docs/schema.md"], "command": ["check"],
+                     "standard": True, "cross_cutting": True, "full": True},
+        }
+        result = CI_IMPACT.classify(["docs/schema.md"], [], owners)
+        self.assertFalse(result["docs_only"])
+        self.assertTrue(result["full_validation_required"])
+        self.assertEqual(result["changed_owners"], ["spec"])
+
+    def test_machine_native_declarations_and_features_require_full_validation(self):
+        for path in ("machines/math/Cargo.toml", "machines/math/src/catalog.rs",
+                     "machines/math/src/ops/add.rs", "machines/math/build.rs"):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertFalse(result["docs_only"])
+                self.assertTrue(result["full_validation_required"])
+        self.assertTrue(self.classify(["machines/math/README.md"])["docs_only"])
+
+    def test_cli_public_paths_require_product_and_native_contracts(self):
+        for path in ("src/serve.rs", "src/cli/commands/build.rs",
+                     "src/cli/commands/format/mod.rs", "src/cli/bundle_web.rs",
+                     "src/cli/commands/run.rs", "src/cli/commands/repl/mod.rs"):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertTrue(result["full_validation_required"])
+                self.assertTrue(result["browser_canary_required"])
+                self.assertTrue(result["windows_canary_required"])
+
+    def test_root_product_and_native_fixture_changes_run_their_contracts(self):
+        for path in ("tests/mech_serve.rs", "tests/mech_build.rs",
+                     "tests/fixtures/native-linkage/src/main.rs",
+                     "tests/fixtures/native-live-host/Cargo.toml"):
+            with self.subTest(path=path):
+                self.assertTrue(self.classify([path])["full_validation_required"])
 
 
 if __name__ == "__main__":
