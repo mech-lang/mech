@@ -28,8 +28,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, Program};
-use std::sync::Arc;
+use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::capability::CapabilityRequest;
 
@@ -37,7 +36,6 @@ use crate::capability::CapabilityRequest;
 // Submodules
 // -----------------------------------------------------------------------------
 
-pub mod ast;
 #[cfg(feature = "source")]
 mod canonical_handoff;
 #[cfg(feature = "source")]
@@ -50,7 +48,6 @@ pub mod index;
 pub mod memory;
 pub mod source;
 
-pub use ast::*;
 #[cfg(feature = "source")]
 pub use canonical_handoff::*;
 pub use file::*;
@@ -235,19 +232,23 @@ pub enum SourceContextCapabilityScope {
 pub struct ResolvedSource {
     pub name: String,
     pub canonical_uri: String,
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub nominal_origin: Option<mech_core::CanonicalNominalPath>,
+    /// Resolver-owned package identity for collision checks; never part of a nominal key.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub nominal_package_id: Option<String>,
     pub source: MechSourceCode,
     /// Resolver-owned canonical revision. This is the source/syntax authority
     /// prepared for product compilation, indexing, rendering, and diagnostics.
     #[cfg(feature = "source")]
     #[cfg_attr(feature = "serde", serde(skip))]
     pub source_document: Option<SourceDocument>,
-    /// Canonical syntax tree parsed while resolving textual Mech source.
-    ///
-    /// Source text remains authoritative for identity and host presentation;
-    /// downstream indexing, compilation, and rendering share this tree instead
-    /// of reparsing the same document at every boundary.
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub syntax_tree: Option<Arc<Program>>,
     pub kind: SourceKind,
     pub imports: Vec<SourceImportDeclaration>,
     pub exports: Vec<SourceExportDeclaration>,
@@ -267,10 +268,11 @@ impl ResolvedSource {
         Self {
             name: name.into(),
             canonical_uri: canonical_uri.into(),
+            nominal_origin: None,
+            nominal_package_id: None,
             source,
             #[cfg(feature = "source")]
             source_document: None,
-            syntax_tree: None,
             kind: SourceKind::Unknown("".to_string()),
             imports: Vec::new(),
             exports: Vec::new(),
@@ -282,8 +284,22 @@ impl ResolvedSource {
         }
     }
 
-    pub fn with_syntax_tree(mut self, syntax_tree: Program) -> Self {
-        self.syntax_tree = Some(Arc::new(syntax_tree));
+    pub fn with_nominal_origin(mut self, origin: mech_core::CanonicalNominalPath) -> Self {
+        #[cfg(feature = "source")]
+        if let Some(document) = self.source_document.take() {
+            self.source_document = Some(document.with_nominal_origin(origin.clone()));
+        }
+        self.nominal_origin = Some(origin);
+        self
+    }
+
+    pub fn with_nominal_package_id(mut self, package_id: impl Into<String>) -> Self {
+        let package_id = package_id.into();
+        #[cfg(feature = "source")]
+        if let Some(document) = self.source_document.take() {
+            self.source_document = Some(document.with_nominal_package_id(package_id.clone()));
+        }
+        self.nominal_package_id = Some(package_id);
         self
     }
 
@@ -292,6 +308,37 @@ impl ResolvedSource {
     /// authorities with different bytes.
     #[cfg(feature = "source")]
     pub fn with_source_document(mut self, document: SourceDocument) -> MResult<Self> {
+        let document = match (self.nominal_origin.as_ref(), document.nominal_origin()) {
+            (Some(resolved), Some(retained)) if resolved != retained => {
+                return invalid_resolved_source(
+                    "nominal_origin",
+                    "must agree with the retained document origin",
+                );
+            }
+            (Some(origin), _) => document.with_nominal_origin(origin.clone()),
+            (None, Some(origin)) => {
+                self.nominal_origin = Some(origin.clone());
+                document
+            }
+            (None, None) => document,
+        };
+        let document = match (
+            self.nominal_package_id.as_deref(),
+            document.nominal_package_id(),
+        ) {
+            (Some(resolved), Some(retained)) if resolved != retained => {
+                return invalid_resolved_source(
+                    "nominal_package_id",
+                    "must agree with the retained document package identity",
+                );
+            }
+            (Some(package_id), _) => document.with_nominal_package_id(package_id),
+            (None, Some(package_id)) => {
+                self.nominal_package_id = Some(package_id.to_owned());
+                document
+            }
+            (None, None) => document,
+        };
         self.validate_document_owner(&document)?;
         match &self.source {
             MechSourceCode::String(source)
@@ -345,8 +392,13 @@ impl ResolvedSource {
                     None,
                 )
             })?
-            .index()
-            .map_err(|error| MechError::new(error, None))
+            .index_with_diagnostics()
+            .map_err(|mut error| {
+                if let Some(details) = error.message.as_mut() {
+                    *details = format!("{}: {details}", self.canonical_uri);
+                }
+                error
+            })
     }
 
     /// Populate the resolver handoff solely from the retained canonical
@@ -366,8 +418,16 @@ impl ResolvedSource {
         self.address_references = root.all_address_references();
         self.scopes = root.module_scopes();
         self.imports = imports;
-        self.syntax_tree = None;
         Ok(self)
+    }
+
+    /// Admit one exact canonical revision and publish only the resolver facts
+    /// owned by its root module scope. Mika-local scopes remain independently
+    /// owned by the retained document and never leak into module resolution.
+    #[cfg(feature = "source")]
+    pub fn with_indexed_source_document(self, document: SourceDocument) -> MResult<Self> {
+        self.with_source_document(document)?
+            .admit_canonical_document()
     }
 
     /// Parse and retain this record's exact textual source under its canonical
@@ -399,23 +459,14 @@ impl ResolvedSource {
     /// Replace the authoritative source and invalidate every projection that
     /// was derived from its previous contents.
     ///
-    /// Resolvers may cache a parsed tree alongside textual source. Replacing
-    /// the source invalidates that cache and every declaration index.
+    /// Replacing the source invalidates its retained document and every
+    /// declaration projection.
     pub fn replace_source(&mut self, source: MechSourceCode) {
         #[cfg(feature = "source")]
         {
             self.source_document = None;
         }
-        self.syntax_tree = None;
         self.source = source;
-        self.clear_source_projections();
-    }
-
-    /// Replace the typed compiler projection while retaining the source used
-    /// for module identity and presentation.
-    #[cfg(feature = "compute")]
-    pub(crate) fn replace_syntax_tree(&mut self, syntax_tree: Program) {
-        self.syntax_tree = Some(Arc::new(syntax_tree));
         self.clear_source_projections();
     }
 

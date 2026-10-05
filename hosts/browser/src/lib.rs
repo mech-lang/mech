@@ -20,3 +20,8 @@ pub use self::delegation::*;
 
 pub mod module;
 pub use self::module::*;
+
+#[cfg(feature = "pointer")]
+pub mod pointer;
+#[cfg(feature = "pointer")]
+pub use pointer::*;

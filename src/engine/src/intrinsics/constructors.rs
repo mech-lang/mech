@@ -83,12 +83,13 @@ impl CanonicalFunctionSpecializer for SetDefine {
             vec![inputs.len() as u64].into_boxed_slice(),
             &inputs,
         )?;
-        let draft = crate::structures::canonical_set_from_inputs(invocation.inputs().to_vec())?
-            .snapshot()?
-            .canonical_data_draft()
-            .map_err(|error| {
-                MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
-            })?;
+        let draft =
+            crate::intrinsics::aggregate::canonical_set_from_inputs(invocation.inputs().to_vec())?
+                .snapshot()?
+                .canonical_data_draft()
+                .map_err(|error| {
+                    MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
+                })?;
         let output = ValueCell::from_resolved_descriptor_data(&descriptor, draft)?;
         let runtime_invocation = FunctionInvocation::nullary(output);
         let implementation = ValueSet::new_invocation(runtime_invocation.clone())?;

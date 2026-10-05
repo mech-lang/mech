@@ -2,6 +2,18 @@
   "deprecated_apis": [],
   "lint_exceptions": [
     {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Remove when the owner-process wrapper support is split into per-target modules with no unused helpers.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Native owner process containment tests",
+      "path": "src/build/tests/isolated_process.rs",
+      "production_or_test": "test",
+      "reason": "shared owner-process support exposes helpers selected by the native integration targets"
+    },
+    {
       "directive": "expect",
       "expires_release": "1.0.0",
       "expiry_condition": "Remove only in a versioned ABI migration after downstream V1 source-compatibility tests are retired.",
@@ -182,16 +194,16 @@
       "reason": "retained as a frozen bytecode factory outside the standard linked runtime catalog"
     },
     {
-      "directive": "allow",
+      "directive": "expect",
       "expires_release": "0.5.0",
-      "expiry_condition": "Remove when structure dispatch no longer supports profiles with all structure variants disabled.",
+      "expiry_condition": "Remove when callers migrate from the unit-style frontend value to an explicit constructor.",
       "introduced_release": "0.4.0",
-      "lint": "unreachable_patterns",
+      "lint": "non_upper_case_globals",
       "occurrences": 1,
-      "owner": "Canonical structure dispatch",
-      "path": "src/engine/src/structures.rs",
+      "owner": "Canonical source frontend provenance",
+      "path": "src/engine/src/source_semantics/frontend.rs",
       "production_or_test": "production",
-      "reason": "the fallback is reachable only in narrow structure feature profiles"
+      "reason": "preserve unit-style frontend construction while adding explicit nominal provenance"
     },
     {
       "directive": "allow",
@@ -204,18 +216,6 @@
       "path": "src/engine/src/intrinsics/assign/mod.rs",
       "production_or_test": "production",
       "reason": "reduced host profiles can enable assignment without any typed matrix backing"
-    },
-    {
-      "directive": "allow",
-      "expires_release": "0.5.0",
-      "expiry_condition": "Remove when statement variants can no longer be unified independently across runtime dependencies.",
-      "introduced_release": "0.4.0",
-      "lint": "unreachable_patterns",
-      "occurrences": 1,
-      "owner": "Runtime config profile",
-      "path": "src/runtime/src/config/profile/compile.rs",
-      "production_or_test": "production",
-      "reason": "dependency feature unification can expose statement variants disabled in this runtime profile"
     },
     {
       "directive": "allow",
@@ -276,6 +276,18 @@
       "path": "src/runtime/src/store.rs",
       "production_or_test": "test",
       "reason": "used by source-enabled transaction regression profiles"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Remove when each canonical source helper is colocated with its only selecting integration test.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Standard-library canonical source tests",
+      "path": "src/stdlib/tests/support/mod.rs",
+      "production_or_test": "test",
+      "reason": "shared canonical source helpers are selected by focused integration tests"
     },
     {
       "directive": "allow",

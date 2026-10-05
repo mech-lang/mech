@@ -433,6 +433,26 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "manufactures a synthetic TurnMemoryPlan")
 
+    def test_35b_resident_synthetic_program_plan_fails(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/resident/budget.rs",
+            "let _scope = ControlWorkScopeGuard::enter();",
+            "let _scope = ControlWorkScopeGuard::enter();\n        let _ = ProgramMemoryPlan { values: Box::new([]) };",
+        )
+        self.assert_failure(root, "control admission manufactures a synthetic memory plan")
+
+    def test_35c_detached_turn_plan_must_remain_test_only(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/resident/budget.rs",
+            "#[cfg(test)]\nfn detached_turn_plan",
+            "fn detached_turn_plan",
+        )
+        self.assert_failure(root, "detached turn-plan helper is available in production")
+
     def test_36_call_and_value_transaction_stage_duplication_fails(self):
         root = self.fixture()
         self.replace(
@@ -467,7 +487,7 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/resident/numeric.rs",
+            "src/engine/src/resident/numeric/mod.rs",
             "return bound(\n            transpose_dense,",
             "admit_dense_transpose_layout(request.output.kind, request.output.shape)?;\n        return bound(\n            transpose_dense,",
         )

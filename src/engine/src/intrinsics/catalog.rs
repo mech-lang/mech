@@ -13,7 +13,7 @@ use crate::intrinsics::constructors::ValueVerticalConcatenation;
 #[cfg(all(feature = "semantic-compiler", feature = "variable_define"))]
 use crate::intrinsics::define::VarDefine;
 #[cfg(all(feature = "semantic-compiler", feature = "convert"))]
-use crate::literals::ConvertKind;
+use crate::intrinsics::kind_conversion::ConvertKind;
 #[cfg(any(
     feature = "semantic-compiler",
     feature = "set",
@@ -134,7 +134,7 @@ where
             &crate::intrinsics::assign::PURE_STATE_REGISTER_CONTRACT
         }
         #[cfg(feature = "convert")]
-        "convert/kind" => &crate::literals::PURE_TYPE_CONVERSION_CONTRACT,
+        "convert/kind" => &crate::intrinsics::kind_conversion::PURE_TYPE_CONVERSION_CONTRACT,
         #[cfg(feature = "variable_define")]
         "var/define" => &crate::intrinsics::define::PURE_VARIABLE_DEFINITION_CONTRACT,
         _ => {
@@ -450,7 +450,9 @@ pub fn install_runtime(
     #[cfg(feature = "convert")]
     super::convert::scalar::install_runtime(builder)?;
     #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
-    crate::literals::register_runtime_kind_conversion(builder)?;
+    crate::intrinsics::kind_conversion::register_runtime_kind_conversion(builder)?;
+    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+    crate::intrinsics::kind_conversion::register_runtime_reified_kind_conversion(builder)?;
     #[cfg(feature = "variable_define")]
     super::define::install_runtime(builder)?;
 

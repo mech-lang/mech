@@ -1,16 +1,11 @@
-use mech_core::NoMechExecutionServices;
-use mech_engine::Interpreter;
+use mech_core::{NoMechExecutionServices, Plan, ReactiveTurnState};
 
 struct ForgedParticipant;
 
 fn main() {
-  let mut interpreter = Interpreter::new(1, 100);
-  let mut services = NoMechExecutionServices;
-  let mut forged = ForgedParticipant;
-  drop(interpreter.step_reactive_turn_participating(
-    0,
-    1,
-    &mut forged,
-    &mut services,
-  ));
+    let plan = Plan::new();
+    let mut state = ReactiveTurnState::default();
+    let mut services = NoMechExecutionServices;
+    let mut forged = ForgedParticipant;
+    drop(plan.advance_reactive_turn_participating(&mut state, &[], &mut forged, &mut services));
 }

@@ -47,10 +47,16 @@ fn standard_browser_runtime_provider_profile() -> MResult<BrowserRuntimeProvider
         mech_scene::scene_settings_from_config(settings).map(|_| ())
     })?;
     #[cfg(feature = "compute_backends_native")]
-    profile.register(
-        mech_gpu::compute_host_manifest(),
-        mech_gpu::validate_compute_host_settings,
-    )?;
+    {
+        profile.register(
+            mech_gpu::compute_host_manifest(),
+            mech_gpu::validate_compute_host_settings,
+        )?;
+        profile.register(
+            mech_browser::pointer_host_manifest(),
+            mech_browser::validate_pointer_host_settings,
+        )?;
+    }
     Ok(profile)
 }
 

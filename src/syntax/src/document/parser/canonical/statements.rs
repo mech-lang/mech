@@ -5,7 +5,7 @@ use super::super::{Parser, checkpoint::ParserCheckpoint, marker::Marker};
 use super::base;
 use super::combinator::Attempt;
 use crate::document::{RuleId, SyntaxKind, TextSize};
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 pub(crate) fn supports(rule: RuleId) -> bool {
     matches!(rule, rules::COMMENT | rules::COMMENT_SIGIL)
@@ -23,10 +23,12 @@ enum Frame {
     LeadingResult(Marker),
     AfterSigil(Marker),
     Body(Marker),
-    BodyResult(Marker, TextSize),
+    BodyResult(Marker, ParserCheckpoint),
+    LiteralBodyResult(Marker, Marker, Marker, TextSize),
     SigilProbe(bool),
     SigilToken(RuleId, bool),
     Base(base::continuation::Continuation),
+    Paragraph(Box<super::document::continuation::Continuation<'static>>),
     Probe(LiteralScan<'static>),
 }
 pub(crate) struct Continuation {
@@ -83,7 +85,10 @@ impl Continuation {
                 return Progress::NeedsProcessing;
             }
             let frame = self.frames.pop().expect("comment phase");
-            if !matches!(frame, Frame::Base(_) | Frame::Probe(_)) {
+            if !matches!(
+                frame,
+                Frame::Base(_) | Frame::Probe(_) | Frame::Paragraph(_)
+            ) {
                 *allowance -= 1;
                 self.work += 1;
             }
@@ -138,15 +143,47 @@ impl Continuation {
                         }
                         self.finish_comment(parser, marker);
                     } else {
-                        self.push(Frame::BodyResult(marker, parser.offset()));
-                        self.base(rules::ANY_TOKEN);
+                        self.push(Frame::BodyResult(marker, parser.checkpoint()));
+                        let rule = super::document_grammar::DOCUMENT_RULES
+                            .iter()
+                            .find(|rule| rule.rule == rules::PARAGRAPH_ELEMENT)
+                            .expect("canonical paragraph element");
+                        self.push(Frame::Paragraph(Box::new(
+                            super::document::continuation::Continuation::for_rule(rule),
+                        )));
                     }
                 }
                 Frame::BodyResult(marker, before) => {
-                    if !self.matched || parser.offset() == before || parser.is_halted() {
+                    if parser.is_halted() {
                         self.finish_comment(parser, marker);
+                    } else if !self.matched
+                        || parser.offset() == before.cursor.offset
+                        || parser.state.diagnostics.len() != before.diagnostics
+                    {
+                        // Rich markup is speculative inside a physical comment.
+                        // An incomplete opener remains inert text, not a source
+                        // expression or a diagnostic. Rewind does not refund work.
+                        parser.rewind(before);
+                        let element = parser.start();
+                        let text = parser.start();
+                        self.push(Frame::LiteralBodyResult(
+                            marker,
+                            element,
+                            text,
+                            parser.offset(),
+                        ));
+                        self.base(rules::ANY_TOKEN);
                     } else {
                         self.push(Frame::Body(marker));
+                    }
+                }
+                Frame::LiteralBodyResult(marker, element, text, before) => {
+                    text.complete(parser, SyntaxKind::ParagraphText);
+                    element.complete(parser, SyntaxKind::ParagraphElement);
+                    if self.matched && parser.offset() > before && !parser.is_halted() {
+                        self.push(Frame::Body(marker));
+                    } else {
+                        self.finish_comment(parser, marker);
                     }
                 }
                 Frame::SigilProbe(slash) => {
@@ -169,6 +206,54 @@ impl Continuation {
                     } else {
                         self.push(Frame::SigilToken(rule, true));
                         self.base(rule);
+                    }
+                }
+                Frame::Paragraph(mut continuation) => {
+                    use super::document::continuation::Progress as ParagraphProgress;
+                    // The retained line index gives a bounded physical frontier
+                    // without rescanning an increasingly long comment. A closer
+                    // on a later line cannot turn comment prose into Mech code.
+                    let lines = parser.source().line_index();
+                    let line = lines.line_of(parser.offset());
+                    let line_end = lines.line_start(line + 1).map(|next| {
+                        let mut end = TextSize(next.0 - 1);
+                        if parser.source().byte_at(end) == Some(b'\n')
+                            && end.0 > 0
+                            && parser.source().byte_at(TextSize(end.0 - 1)) == Some(b'\r')
+                        {
+                            end.0 -= 1;
+                        }
+                        end
+                    });
+                    let sealed =
+                        final_input || line_end.is_some_and(|end| end <= parser.cursor().end());
+                    let end = line_end
+                        .map_or(parser.cursor().end(), |end| end.min(parser.cursor().end()));
+                    let outer = parser.enter_cursor_scope(end);
+                    parser.state.cursor_frontier = !sealed;
+                    parser.state.context_frontier = !sealed;
+                    let recovery = parser.replace_consuming_recovery(false);
+                    let before = *allowance;
+                    let progress = continuation.advance(parser, sealed, allowance);
+                    self.work += before - *allowance;
+                    parser.replace_consuming_recovery(recovery);
+                    parser.leave_cursor_scope(outer);
+                    match progress {
+                        ParagraphProgress::Complete(result) => {
+                            self.matched = result != Attempt::NoMatch;
+                        }
+                        ParagraphProgress::NeedsProcessing => {
+                            self.push(Frame::Paragraph(continuation));
+                            return Progress::NeedsProcessing;
+                        }
+                        ParagraphProgress::NeedInput => {
+                            self.push(Frame::Paragraph(continuation));
+                            return Progress::NeedInput;
+                        }
+                        ParagraphProgress::Limited => {
+                            self.push(Frame::Paragraph(continuation));
+                            return Progress::Limited;
+                        }
                     }
                 }
                 Frame::Base(mut continuation) => {
@@ -236,7 +321,7 @@ fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
 pub(crate) fn parse_comment_sigil(parser: &mut Parser<'_>) -> bool {
     parse_rule(parser, rules::COMMENT_SIGIL) == Attempt::Matched
 }
-/// Keep comment content as raw any-token children under its canonical owner.
+/// Comment bodies share the retained rich paragraph-element grammar.
 pub(crate) fn parse_comment(parser: &mut Parser<'_>) -> Attempt {
     parse_rule(parser, rules::COMMENT)
 }
@@ -267,6 +352,14 @@ mod tests {
             "\u{a0}--text\n",
             " //raw\\text\u{0}x",
             "--🇦🇧🇨\n",
+            "-- **bold** [link](https://mech-lang.org) {ans}\nnext",
+            "// __under__ `code` {{1 + 2}} {ans + 1}\r\nnext",
+            "-- use { here\nnext := 42",
+            "-- unmatched `code\r\nnext := 42",
+            "-- TODO [\rnext := 42",
+            "// {1 +\n42}\n",
+            "-- [label](unfinished",
+            "-- **unfinished 👩\u{200d}💻",
         ];
         for rule in [rules::COMMENT, rules::COMMENT_SIGIL] {
             for text in cases {
@@ -294,6 +387,56 @@ mod tests {
                     let accepted = &text[..observed.stats.source_bytes as usize];
                     let (baseline, _) = run(rule, accepted, &[accepted], fuel, false);
                     assert_eq!(observed, baseline);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn rich_comment_body_uses_paragraph_nodes_and_stops_at_newline() {
+        let source = "-- **bold** [link](https://mech-lang.org) `code` {ans}\nnext";
+        let (parsed, _) = run(rules::COMMENT, source, &[source], u64::MAX, false);
+        assert_eq!(parsed.result, Attempt::Matched);
+        assert_eq!(parsed.end.to_usize(), source.find('\n').unwrap());
+        for kind in ["Strong", "Hyperlink", "InlineCode", "EvalInlineMechCode"] {
+            assert!(
+                parsed.events.contains(kind),
+                "missing {kind}: {}",
+                parsed.events
+            );
+        }
+    }
+
+    #[test]
+    fn incomplete_rich_comment_openers_are_inert_until_the_physical_newline() {
+        for sigil in ["--", "//"] {
+            for body in [
+                "use { here",
+                "unmatched `code",
+                "TODO [",
+                "{1 +",
+                "[label](",
+                "**bold",
+                "__under",
+                "~~strike",
+            ] {
+                for newline in ["\n", "\r\n", "\r", ""] {
+                    let comment = alloc::format!("{sigil} {body}");
+                    let source = alloc::format!("{comment}{newline}next := 42}}\n");
+                    let source = if newline.is_empty() {
+                        comment.as_str()
+                    } else {
+                        source.as_str()
+                    };
+                    let (parsed, _) = run(rules::COMMENT, source, &[source], u64::MAX, false);
+                    assert_eq!(parsed.result, Attempt::Matched, "{source:?}");
+                    assert_eq!(parsed.end.to_usize(), comment.len(), "{source:?}");
+                    assert_eq!(parsed.stats.diagnostics_emitted, 0, "{}", parsed.events);
+                    assert!(
+                        !parsed.events.contains("EvalInlineMechCode"),
+                        "{}",
+                        parsed.events
+                    );
                 }
             }
         }

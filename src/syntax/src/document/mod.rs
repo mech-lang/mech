@@ -16,12 +16,12 @@ pub mod ids;
 pub mod incremental;
 pub mod index;
 pub mod line_index;
-pub mod lower;
 pub mod parser;
 pub mod pointer;
 pub mod red;
 mod retained_sequence;
 pub mod source;
+mod submission;
 pub mod syntax_kind;
 
 use alloc::sync::Arc;
@@ -39,16 +39,15 @@ pub use ids::*;
 pub use incremental::*;
 pub use index::*;
 pub use line_index::*;
-pub use lower::*;
 pub use parser::stream::*;
 pub use parser::{
-    FenceDelimiter, FragmentKind, FragmentSnapshot, ParseConfig, ParseContext, ParseLimits,
-    ParseMode, ParseRequestError, ParseRoot, ParserImplementation, parse_canonical_document,
-    parse_canonical_grammar, parse_document, parse_fragment, parse_syntax,
+    GrammarFragmentContext, GrammarFragmentKind, GrammarFragmentSnapshot, ParseConfig, ParseLimits,
+    parse_canonical_document, parse_canonical_grammar, parse_canonical_grammar_fragment,
 };
 pub use pointer::*;
 pub use red::*;
 pub use source::*;
+pub use submission::*;
 pub use syntax_kind::*;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -2,9 +2,10 @@
 //! slots as expression compilation. Each mutable binding retains one writer.
 
 use mech_syntax::document::{
-    CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation, CodeFenceScope,
-    EvalInlineMechCodeSyntax, ExportDeclarationSyntax, InvariantDefineSyntax, OpAssignSyntax,
-    SliceRefSyntax, VariableAssignSyntax,
+    ActivationScopeSyntax, CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation,
+    CodeFenceScope, EvalInlineMechCodeSyntax, ExportDeclarationSyntax, InvariantDefineSyntax,
+    OpAssignSyntax, SliceRefSyntax, TupleDestructureSyntax, VariableAssignSyntax,
+    VariableDefineSyntax,
 };
 
 use super::*;
@@ -12,18 +13,31 @@ use super::*;
 #[path = "document_assignment.rs"]
 mod document_assignment;
 
+#[path = "document_fsms.rs"]
+pub(super) mod document_fsms;
 #[path = "document_functions.rs"]
 mod document_functions;
 #[path = "document_imports.rs"]
 mod document_imports;
+#[path = "document_types.rs"]
+mod document_types;
 
 enum DocumentUnit {
+    // Source imports, context binding and authority belong to the canonical
+    // resolver. Retain their participation without emitting engine operations.
+    ResolverDeclaration,
     Import(mech_syntax::document::ModuleImportSyntax),
+    Kind(mech_syntax::document::KindDefineSyntax),
+    Enum(mech_syntax::document::EnumDefineSyntax),
+    FsmSpecification(mech_syntax::document::FsmSpecificationSyntax),
+    FsmImplementation(mech_syntax::document::FsmImplementationSyntax),
+    Activation(ActivationScopeSyntax),
     Function(SyntaxNode),
     Statement(SyntaxNode),
     ResourceSend(mech_syntax::document::ContextSendSyntax),
     Invariant(InvariantDefineSyntax),
     Inline(EvalInlineMechCodeSyntax),
+    Comment(EvalInlineMechCodeSyntax),
     Fence(CodeBlockSyntax, CodeFencePresentation, Vec<DocumentUnit>),
 }
 
@@ -37,6 +51,7 @@ struct DeferredInline {
     inline: EvalInlineMechCodeSyntax,
     captured: BTreeMap<String, PendingValue>,
     waiting: BTreeSet<String>,
+    comment: bool,
 }
 
 pub(super) fn root_statement_nodes(
@@ -63,9 +78,29 @@ pub(super) fn root_state_mutation_names(
     for node in root_statement_nodes(document)? {
         let target = VariableAssignSyntax::cast(node.clone())
             .and_then(|assignment| assignment.target())
-            .or_else(|| OpAssignSyntax::cast(node).and_then(|assignment| assignment.target()));
+            .or_else(|| {
+                OpAssignSyntax::cast(node.clone()).and_then(|assignment| assignment.target())
+            });
         if let Some(stem) = target.and_then(|target| target.stem()) {
             names.insert(node_text(stem.syntax())?);
+            continue;
+        }
+        if let Some(definition) = VariableDefineSyntax::cast(node.clone()) {
+            if definition.mutability_marker().is_some() {
+                let variable = definition
+                    .variable()
+                    .ok_or_else(|| missing_kind_child(definition.syntax(), "a defined variable"))?;
+                let stem = variable
+                    .stem()
+                    .ok_or_else(|| missing_kind_child(variable.syntax(), "a variable stem"))?;
+                names.insert(node_text(stem.syntax())?);
+            }
+            continue;
+        }
+        if let Some(destructure) = TupleDestructureSyntax::cast(node) {
+            for name in destructure.names() {
+                names.insert(node_text(name.syntax())?);
+            }
         }
     }
     Ok(names)
@@ -73,9 +108,12 @@ pub(super) fn root_state_mutation_names(
 
 pub(super) fn compile_document(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
+        &BTreeMap::new(),
         None,
         BTreeMap::new(),
         false,
@@ -86,12 +124,22 @@ pub(super) fn compile_document(
     )
 }
 
+pub(super) fn compile_document_with_nominal_origin(
+    document: &DocumentSyntax,
+    origin: &CanonicalNominalPath,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    compile_document(document, Some(origin))
+}
+
 pub(super) fn compile_document_with_catalog(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
+        &BTreeMap::new(),
         Some(catalog),
         BTreeMap::new(),
         false,
@@ -104,10 +152,13 @@ pub(super) fn compile_document_with_catalog(
 
 pub(super) fn compile_interactive_document_with_catalog(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
+        &BTreeMap::new(),
         Some(catalog),
         BTreeMap::new(),
         true,
@@ -120,11 +171,14 @@ pub(super) fn compile_interactive_document_with_catalog(
 
 pub(super) fn compile_document_with_catalog_and_input_schemas(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
+        &BTreeMap::new(),
         Some(catalog),
         input_schemas,
         false,
@@ -137,6 +191,7 @@ pub(super) fn compile_document_with_catalog_and_input_schemas(
 
 pub(super) fn compile_document_with_catalog_and_resources(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
@@ -144,6 +199,8 @@ pub(super) fn compile_document_with_catalog_and_resources(
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
+        &BTreeMap::new(),
         Some(catalog),
         input_schemas,
         interactive,
@@ -154,26 +211,65 @@ pub(super) fn compile_document_with_catalog_and_resources(
     )
 }
 
-pub(super) fn compile_mixed_document_with_catalog_and_resources(
+/// Retained coordinator units awaiting schemas from the compiled compute interface.
+/// The units and source anchors belong to the same snapshot as the compute program.
+/// Completing this plan does not parse, repartition, or execute the source again.
+pub struct CanonicalCoordinatorPlan {
+    owner: DocumentScopeId,
+    anchor: SourceSemanticAnchor,
+    nominal_origin: Option<CanonicalNominalPath>,
+    imported_enum_qualifiers: BTreeMap<NominalKey, String>,
+    units: Vec<DocumentUnit>,
+    exports: Vec<ExportDeclarationSyntax>,
+    catalog: Arc<mech_core::FunctionCatalog>,
+    input_schemas: BTreeMap<String, SchemaBody>,
+    resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    resolved_source_modules: BTreeSet<String>,
+}
+
+impl CanonicalCoordinatorPlan {
+    /// Complete coordinator lowering after the caller plans interface-dependent reads.
+    pub fn compile(
+        mut self,
+        additional_input_schemas: BTreeMap<String, SchemaBody>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.input_schemas.extend(additional_input_schemas);
+        compile_collected_document(
+            self.owner,
+            self.anchor,
+            self.nominal_origin.as_ref(),
+            &self.imported_enum_qualifiers,
+            self.units,
+            self.exports,
+            Some(self.catalog),
+            self.input_schemas,
+            true,
+            self.resource_writes,
+            &BTreeSet::new(),
+            &BTreeSet::new(),
+            &self.resolved_source_modules,
+            None,
+        )
+    }
+}
+
+pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     external_inputs: &BTreeSet<String>,
     retained_outputs: &BTreeSet<String>,
     resolved_source_modules: &BTreeSet<String>,
-) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let sections = document
         .body()
         .map(|body| body.sections())
         .unwrap_or_default();
-    let mut regions = Vec::new();
-    for (index, section) in sections.iter().enumerate() {
-        if let Some((name, placement)) = mixed_section_identity(section)? {
-            regions.push((index, name, placement));
-        }
-    }
+    let mut regions = document_compute_regions(document)?;
     if regions.len() != 1 {
         return Err(SourceSemanticError {
             code: "source-semantics/mixed-region-count",
@@ -204,38 +300,50 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
             )?;
         }
     }
-    let root_imports = coordinator_units
-        .iter()
-        .filter_map(|unit| match unit {
-            DocumentUnit::Import(import) => Some(import.clone()),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-    let coordinator = compile_collected_document(
-        document.scope_id(),
-        anchor,
-        coordinator_units,
-        coordinator_exports,
-        Some(Arc::clone(&catalog)),
-        input_schemas.clone(),
-        true,
-        resource_writes.clone(),
-        &BTreeSet::new(),
-        &BTreeSet::new(),
-        resolved_source_modules,
-    )?;
-
+    // Each mixed projection compiles its own source environment. Imports and
+    // document-level type declarations must be present in every projection,
+    // even when their source section is outside the compute region.
+    fn collect_shared_units(units: &[DocumentUnit], shared: &mut Vec<DocumentUnit>) {
+        for unit in units {
+            match unit {
+                DocumentUnit::Import(import) => shared.push(DocumentUnit::Import(import.clone())),
+                DocumentUnit::Kind(kind) => shared.push(DocumentUnit::Kind(kind.clone())),
+                DocumentUnit::Enum(enumeration) => {
+                    shared.push(DocumentUnit::Enum(enumeration.clone()));
+                }
+                DocumentUnit::Fence(_, _, nested) => collect_shared_units(nested, shared),
+                _ => {}
+            }
+        }
+    }
+    let mut compute_units = Vec::new();
+    collect_shared_units(&coordinator_units, &mut compute_units);
+    let mut initializer_units = Vec::new();
+    collect_shared_units(&coordinator_units, &mut initializer_units);
     let region = &sections[region_index];
-    let mut compute_units = root_imports
-        .iter()
-        .cloned()
-        .map(DocumentUnit::Import)
-        .collect();
+    let mut region_units = Vec::new();
     let mut compute_exports = Vec::new();
-    collect_document_units(region.syntax(), &mut compute_units, &mut compute_exports)?;
+    collect_document_units(region.syntax(), &mut region_units, &mut compute_exports)?;
+    collect_shared_units(&region_units, &mut coordinator_units);
+    let coordinator = CanonicalCoordinatorPlan {
+        owner: document.scope_id(),
+        anchor,
+        nominal_origin: nominal_origin.cloned(),
+        imported_enum_qualifiers: imported_enum_qualifiers.clone(),
+        units: coordinator_units,
+        exports: coordinator_exports,
+        catalog: Arc::clone(&catalog),
+        input_schemas: input_schemas.clone(),
+        resource_writes,
+        resolved_source_modules: resolved_source_modules.clone(),
+    };
+
+    compute_units.extend(region_units);
     let compute = compile_collected_document(
         document.scope_id(),
         anchor,
+        nominal_origin,
+        imported_enum_qualifiers,
         compute_units,
         compute_exports,
         Some(Arc::clone(&catalog)),
@@ -245,10 +353,10 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         external_inputs,
         retained_outputs,
         resolved_source_modules,
+        None,
     )?
     .with_compute_region(region_name.clone(), placement)?;
 
-    let mut initializer_units = root_imports.into_iter().map(DocumentUnit::Import).collect();
     let mut initializer_exports = Vec::new();
     collect_document_units(
         region.syntax(),
@@ -258,6 +366,8 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
     let compute_initializers = compile_collected_document(
         document.scope_id(),
         anchor,
+        nominal_origin,
+        imported_enum_qualifiers,
         initializer_units,
         initializer_exports,
         Some(catalog),
@@ -267,10 +377,11 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         &BTreeSet::new(),
         external_inputs,
         resolved_source_modules,
+        None,
     )?
     .retain_static_outputs(external_inputs)?;
 
-    Ok(CanonicalMixedSourcePrograms {
+    Ok(CanonicalMixedSourcePreparation {
         region_name,
         placement,
         coordinator,
@@ -281,6 +392,8 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
 
 pub(super) fn compile_document_with_options(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
     input_schemas: BTreeMap<String, SchemaBody>,
     interactive: bool,
@@ -289,6 +402,34 @@ pub(super) fn compile_document_with_options(
     published_bindings: &BTreeSet<String>,
     resolved_source_modules: &BTreeSet<String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    compile_document_with_capture_options(
+        document,
+        nominal_origin,
+        imported_enum_qualifiers,
+        catalog,
+        input_schemas,
+        interactive,
+        resource_writes,
+        external_definitions,
+        published_bindings,
+        resolved_source_modules,
+        None,
+    )
+}
+
+pub(super) fn compile_document_with_capture_options(
+    document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
+    catalog: Option<Arc<mech_core::FunctionCatalog>>,
+    input_schemas: BTreeMap<String, SchemaBody>,
+    interactive: bool,
+    resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    external_definitions: &BTreeSet<String>,
+    published_bindings: &BTreeSet<String>,
+    resolved_source_modules: &BTreeSet<String>,
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let mut units = Vec::new();
     let mut exports = Vec::new();
@@ -296,6 +437,8 @@ pub(super) fn compile_document_with_options(
     compile_collected_document(
         document.scope_id(),
         anchor,
+        nominal_origin,
+        imported_enum_qualifiers,
         units,
         exports,
         catalog,
@@ -305,20 +448,23 @@ pub(super) fn compile_document_with_options(
         external_definitions,
         published_bindings,
         resolved_source_modules,
+        retained_result_boundary,
     )
 }
 
 pub(super) fn compile_named_document_scope(
     document: &DocumentSyntax,
     name: &str,
+    nominal_origin: Option<&CanonicalNominalPath>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    compile_named_scope(document.syntax(), document.scope_id(), name)
+    compile_named_scope(document.syntax(), document.scope_id(), name, nominal_origin)
 }
 
 fn compile_named_scope(
     root: &SyntaxNode,
     owner: DocumentScopeId,
     name: &str,
+    nominal_origin: Option<&CanonicalNominalPath>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(root);
     let mut units = Vec::new();
@@ -351,9 +497,12 @@ fn compile_named_scope(
         let children: Vec<_> = node.children().collect();
         pending.extend(children.into_iter().rev());
     }
+    reject_isolated_nominal_declarations(&units)?;
     compile_collected_document(
         owner,
         anchor,
+        nominal_origin,
+        &BTreeMap::new(),
         units,
         exports,
         None,
@@ -363,26 +512,31 @@ fn compile_named_scope(
         &BTreeSet::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
+        None,
     )
 }
 
 pub(super) fn compile_mika_section(
     section: &mech_syntax::document::MikaSectionSyntax,
     name: Option<&str>,
+    nominal_origin: Option<&CanonicalNominalPath>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(section.syntax());
     let body = section
         .body()
         .ok_or_else(|| internal(anchor, "Mika section has no retained body".to_owned()))?;
     if let Some(name) = name {
-        return compile_named_scope(body.syntax(), section.scope_id(), name);
+        return compile_named_scope(body.syntax(), section.scope_id(), name, nominal_origin);
     }
     let mut units = Vec::new();
     let mut exports = Vec::new();
     collect_document_units(body.syntax(), &mut units, &mut exports)?;
+    reject_isolated_nominal_declarations(&units)?;
     compile_collected_document(
         section.scope_id(),
         anchor,
+        nominal_origin,
+        &BTreeMap::new(),
         units,
         exports,
         None,
@@ -392,12 +546,28 @@ pub(super) fn compile_mika_section(
         &BTreeSet::new(),
         &BTreeSet::new(),
         &BTreeSet::new(),
+        None,
     )
+}
+
+fn reject_isolated_nominal_declarations(units: &[DocumentUnit]) -> Result<(), SourceSemanticError> {
+    if let Some((_, syntax)) = document_types::enum_declarations(units)?.into_iter().next() {
+        return Err(SourceSemanticError {
+            code: "source-semantics/isolated-nominal-origin-required",
+            message:
+                "isolated document scopes need a durable scope namespace before declaring enums"
+                    .to_owned(),
+            anchor: SourceSemanticAnchor::for_node(&syntax),
+        });
+    }
+    Ok(())
 }
 
 fn compile_collected_document(
     owner: DocumentScopeId,
     anchor: SourceSemanticAnchor,
+    nominal_origin: Option<&CanonicalNominalPath>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     units: Vec<DocumentUnit>,
     exports: Vec<ExportDeclarationSyntax>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
@@ -407,26 +577,50 @@ fn compile_collected_document(
     external_definitions: &BTreeSet<String>,
     published_bindings: &BTreeSet<String>,
     resolved_source_modules: &BTreeSet<String>,
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = match catalog {
         Some(catalog) if !input_schemas.is_empty() => {
-            SemanticBuilder::with_function_catalog_and_input_schemas(anchor, catalog, input_schemas)
+            SemanticBuilder::with_function_catalog_and_input_schemas(
+                anchor,
+                catalog,
+                input_schemas,
+            )?
         }
-        Some(catalog) => SemanticBuilder::with_function_catalog(anchor, catalog),
+        Some(catalog) => SemanticBuilder::with_function_catalog(anchor, catalog)?,
         None => SemanticBuilder::new(anchor),
     };
+    builder.retained_result_boundary = retained_result_boundary;
     builder.resource_writes = resource_writes;
+    builder.imported_enum_qualifiers = imported_enum_qualifiers.clone();
     builder.external_definitions = external_definitions.clone();
     builder.resolved_source_modules = resolved_source_modules.clone();
+    builder.register_document_types(&units, nominal_origin)?;
+    builder.register_document_fsms(
+        &units,
+        nominal_origin.map_or(&[], CanonicalNominalPath::segments),
+    )?;
     builder.register_document_functions(&units)?;
     builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
-    if interactive {
-        bindings.insert("ans".to_owned());
-    }
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
     let mut presentation = Vec::new();
+    let mut pending = units.iter().collect::<Vec<_>>();
+    let mut declaration_preparation = false;
+    while let Some(unit) = pending.pop() {
+        match unit {
+            DocumentUnit::ResolverDeclaration
+            | DocumentUnit::Import(_)
+            | DocumentUnit::Kind(_)
+            | DocumentUnit::Enum(_)
+            | DocumentUnit::FsmSpecification(_)
+            | DocumentUnit::FsmImplementation(_)
+            | DocumentUnit::Function(_) => declaration_preparation = true,
+            DocumentUnit::Fence(_, _, nested) => pending.extend(nested),
+            _ => {}
+        }
+    }
     let last = compile_document_units(
         &mut builder,
         units,
@@ -435,6 +629,31 @@ fn compile_collected_document(
         interactive,
     )?;
     let Some(last) = last else {
+        if interactive
+            && declaration_preparation
+            && exports.is_empty()
+            && published_bindings.is_empty()
+            && retained_result_boundary.is_none()
+            && builder.retained_result.is_none()
+            && presentation.is_empty()
+        {
+            // Run the same final schema/value checks without inventing a
+            // result or a turn for a participating declaration. Existing
+            // registration rules (including nominal and paired-FSM rules)
+            // remain authoritative; this is not partial declaration admission.
+            let mut program = builder.finish()?;
+            let graph = program.program();
+            if graph.requirements.is_empty()
+                && graph.inputs.is_empty()
+                && graph.states.is_empty()
+                && graph.nodes.is_empty()
+                && graph.outputs.is_empty()
+                && graph.constraints.is_empty()
+            {
+                program.document_owner = Some(owner);
+                return Ok(program);
+            }
+        }
         return Err(SourceSemanticError {
             code: "source-semantics/empty-document",
             message: "canonical document contains no executable source unit".to_owned(),
@@ -443,12 +662,21 @@ fn compile_collected_document(
     };
     // Constraint query outputs are separate from the implicit document result.
     let constraint_outputs = std::mem::take(&mut builder.outputs);
+    if let Some((value, syntax)) = builder.retained_result.take() {
+        builder.publish("document:captured-result", None, value, &syntax);
+    } else if retained_result_boundary.is_some() {
+        return Err(internal(
+            anchor,
+            "retained document boundary has no result".to_owned(),
+        ));
+    }
+    let result_output = builder.outputs.len() as u32;
     builder.publish("result", None, last.value, &last.syntax);
     if interactive {
         builder.outputs.extend(constraint_outputs);
     }
     let mut output_bindings = vec![SourceDocumentOutput {
-        output: 0,
+        output: result_output,
         kind: SourceDocumentOutputKind::Program,
         visible: last.program_visible,
     }];
@@ -483,14 +711,15 @@ fn compile_collected_document(
         document_exports.push(SourceDocumentExport { output, name });
     }
     for output_name in published_bindings {
-        if builder
-            .outputs
-            .iter()
-            .any(|output| output.name == *output_name)
+        let decoded = crate::decode_interactive_symbol_output_name(output_name);
+        if decoded.is_none()
+            && builder
+                .outputs
+                .iter()
+                .any(|output| output.name == *output_name)
         {
             continue;
         }
-        let decoded = crate::decode_interactive_symbol_output_name(output_name);
         let name = decoded.as_ref().unwrap_or(output_name);
         let value = if let Some(binding) = builder.bindings.get(name).copied() {
             builder.read_document_binding(binding, &last.syntax)?
@@ -506,6 +735,15 @@ fn compile_collected_document(
             });
             builder.input_by_name.insert(name.clone(), ordinal);
             PendingValue::Input(ordinal)
+        } else if decoded.is_some()
+            && name == "result"
+            && builder.outputs.iter().any(|output| output.name == *name)
+        {
+            // Encoded publication requests prefer a lexical binding so a
+            // binding named `result` cannot be confused with the document's
+            // aggregate result. When no such binding exists, however, the
+            // ordinary result is the compute region's canonical publication.
+            continue;
         } else {
             return Err(SourceSemanticError {
                 code: "source-semantics/unknown-published-binding",
@@ -513,7 +751,11 @@ fn compile_collected_document(
                 anchor,
             });
         };
-        builder.publish(output_name, None, value, &last.syntax);
+        if decoded.is_some() {
+            builder.publish_interactive_binding(name, value, &last.syntax);
+        } else {
+            builder.publish(output_name, None, value, &last.syntax);
+        }
     }
     presentation.sort_by_key(|(_, _, owner)| owner.range().start);
     for (kind, value, owner) in presentation {
@@ -545,12 +787,7 @@ fn compile_collected_document(
                 PendingBinding::MutableState(state) => PendingValue::State(state),
                 PendingBinding::Value(_) => builder.read_document_binding(binding, &last.syntax)?,
             };
-            builder.publish(
-                &crate::encode_interactive_symbol_output_name(&name),
-                Some(name),
-                value,
-                &last.syntax,
-            );
+            builder.publish_interactive_binding(&name, value, &last.syntax);
         }
     }
     builder.order_document_state_writers();
@@ -561,19 +798,36 @@ fn compile_collected_document(
     Ok(program)
 }
 
+pub(super) fn document_compute_regions(
+    document: &DocumentSyntax,
+) -> Result<Vec<(usize, String, mech_core::ComputePlacement)>, SourceSemanticError> {
+    let mut regions = Vec::new();
+    for (index, section) in document
+        .body()
+        .map(|body| body.sections())
+        .unwrap_or_default()
+        .iter()
+        .enumerate()
+    {
+        if let Some((name, placement)) = mixed_section_identity(section)? {
+            regions.push((index, name, placement));
+        }
+    }
+    Ok(regions)
+}
+
 fn mixed_section_identity(
     section: &mech_syntax::document::SectionSyntax,
 ) -> Result<Option<(String, mech_core::ComputePlacement)>, SourceSemanticError> {
     let Some(subtitle) = section.subtitle() else {
         return Ok(None);
     };
-    let text = subtitle.syntax().text().map_err(|_| {
+    let heading = subtitle.title_text().map_err(|_| {
         internal(
             SourceSemanticAnchor::for_node(subtitle.syntax()),
             "compute section subtitle is outside retained source".to_owned(),
         )
     })?;
-    let heading = text.lines().next().unwrap_or_default().trim();
     let mut name_parts = Vec::new();
     let mut selected = None;
     for part in heading.split_whitespace() {
@@ -631,6 +885,21 @@ fn mixed_section_identity(
     Ok(Some((name, placement)))
 }
 
+pub(super) fn has_mixed_document_region(
+    document: &DocumentSyntax,
+) -> Result<bool, SourceSemanticError> {
+    for section in document
+        .body()
+        .map(|body| body.sections())
+        .unwrap_or_default()
+    {
+        if mixed_section_identity(&section)?.is_some() {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
 fn collect_document_units(
     node: &SyntaxNode,
     output: &mut Vec<DocumentUnit>,
@@ -652,6 +921,17 @@ fn collect_document_units(
     }
     if let Some(invariant) = InvariantDefineSyntax::cast(node.clone()) {
         output.push(DocumentUnit::Invariant(invariant));
+        return Ok(());
+    }
+    if node.kind() == SyntaxKind::Comment {
+        let mut rich = Vec::new();
+        for child in node.children() {
+            collect_document_units(&child, &mut rich, exports)?;
+        }
+        output.extend(rich.into_iter().map(|unit| match unit {
+            DocumentUnit::Inline(inline) => DocumentUnit::Comment(inline),
+            other => other,
+        }));
         return Ok(());
     }
     if let Some(expression) = EvalInlineMechCodeSyntax::cast(node.clone()) {
@@ -696,26 +976,43 @@ fn collect_document_units(
         output.push(DocumentUnit::Import(import));
         return Ok(());
     }
+    if let Some(kind) = mech_syntax::document::KindDefineSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::Kind(kind));
+        return Ok(());
+    }
+    if let Some(enumeration) = mech_syntax::document::EnumDefineSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::Enum(enumeration));
+        return Ok(());
+    }
+    if let Some(specification) = mech_syntax::document::FsmSpecificationSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::FsmSpecification(specification));
+        return Ok(());
+    }
+    if let Some(implementation) = mech_syntax::document::FsmImplementationSyntax::cast(node.clone())
+    {
+        output.push(DocumentUnit::FsmImplementation(implementation));
+        return Ok(());
+    }
+    if let Some(activation) = ActivationScopeSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::Activation(activation));
+        return Ok(());
+    }
     // Resolver-owned declarations participate through the canonical source
     // index and runtime handoff; they do not emit engine operations themselves.
     if matches!(
         node.kind(),
         SyntaxKind::ContextDeclaration | SyntaxKind::ImportDeclaration
     ) {
+        output.push(DocumentUnit::ResolverDeclaration);
         return Ok(());
     }
     if matches!(
         node.kind(),
-        SyntaxKind::ActivationScope
-            | SyntaxKind::EnumDefine
-            | SyntaxKind::Fsm
+        SyntaxKind::Fsm
             | SyntaxKind::FsmDeclare
-            | SyntaxKind::FsmImplementation
             // An expression owns a pipe's semantics. A bare pipe in a document
             // must not be traversed as unrelated child expressions.
             | SyntaxKind::FsmPipe
-            | SyntaxKind::FsmSpecification
-            | SyntaxKind::KindDefine
     ) {
         return Err(SourceSemanticError {
             code: "source-semantics/unsupported-document-unit",
@@ -732,6 +1029,15 @@ fn collect_document_units(
     Ok(())
 }
 
+pub(super) fn declared_enum_names(
+    document: &DocumentSyntax,
+) -> Result<Vec<String>, SourceSemanticError> {
+    let mut units = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
+    document_types::enum_declarations(&units)
+        .map(|declarations| declarations.into_iter().map(|(name, _)| name).collect())
+}
+
 fn declare_document_inputs(
     builder: &mut SemanticBuilder,
     units: &[DocumentUnit],
@@ -739,7 +1045,18 @@ fn declare_document_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
+            DocumentUnit::ResolverDeclaration
+            | DocumentUnit::Kind(_)
+            | DocumentUnit::Enum(_)
+            | DocumentUnit::FsmSpecification(_)
+            | DocumentUnit::Function(_)
+            | DocumentUnit::Import(_) => {}
+            DocumentUnit::FsmImplementation(implementation) => {
+                builder.declare_document_fsm_input_annotations(implementation, bindings)?
+            }
+            DocumentUnit::Activation(activation) => {
+                builder.declare_input_annotations(activation.syntax(), bindings)?
+            }
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
@@ -751,7 +1068,7 @@ fn declare_document_inputs(
             DocumentUnit::Invariant(invariant) => {
                 builder.declare_input_annotations(invariant.syntax(), bindings)?
             }
-            DocumentUnit::Inline(_) => {}
+            DocumentUnit::Inline(_) | DocumentUnit::Comment(_) => {}
             DocumentUnit::Fence(_, _, units) => declare_document_inputs(builder, units, bindings)?,
         }
     }
@@ -765,10 +1082,18 @@ fn declare_document_inline_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Statement(_) | DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
+            DocumentUnit::ResolverDeclaration
+            | DocumentUnit::Kind(_)
+            | DocumentUnit::Enum(_)
+            | DocumentUnit::FsmSpecification(_)
+            | DocumentUnit::FsmImplementation(_)
+            | DocumentUnit::Activation(_)
+            | DocumentUnit::Statement(_)
+            | DocumentUnit::Function(_)
+            | DocumentUnit::Import(_) => {}
             DocumentUnit::ResourceSend(_) => {}
             DocumentUnit::Invariant(_) => {}
-            DocumentUnit::Inline(inline) => {
+            DocumentUnit::Inline(inline) | DocumentUnit::Comment(inline) => {
                 builder.declare_input_annotations(inline.syntax(), bindings)?
             }
             DocumentUnit::Fence(_, _, units) => {
@@ -796,6 +1121,7 @@ fn compile_document_units(
         interactive,
     )?;
     refresh_deferred_inline(builder, &mut deferred_inline, presentation, &mut last)?;
+    retain_document_boundary_result(builder, last.as_ref());
     if let Some(deferred) = deferred_inline.first() {
         return Err(internal(
             SourceSemanticAnchor::for_node(deferred.inline.syntax()),
@@ -816,7 +1142,25 @@ fn compile_document_units_inner(
     let mut last = None;
     for unit in units {
         match unit {
-            DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
+            DocumentUnit::ResolverDeclaration
+            | DocumentUnit::Kind(_)
+            | DocumentUnit::Enum(_)
+            | DocumentUnit::FsmSpecification(_)
+            | DocumentUnit::FsmImplementation(_)
+            | DocumentUnit::Function(_)
+            | DocumentUnit::Import(_) => {}
+            DocumentUnit::Activation(activation) => {
+                let value = builder.document_activation(&activation)?;
+                value.resolved()?;
+                if last.is_none() {
+                    last = Some(CompiledDocumentValue {
+                        value,
+                        syntax: activation.syntax().clone(),
+                        program_visible: false,
+                    });
+                }
+                refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
+            }
             DocumentUnit::Statement(unit) => {
                 let result = match unit.kind() {
                     SyntaxKind::VariableDefine => {
@@ -888,8 +1232,18 @@ fn compile_document_units_inner(
                 builder.constraints.push(PendingConstraint { name, value });
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
+            DocumentUnit::Comment(inline) => {
+                if let Some(deferred) = defer_inline(builder, &inline, local_bindings, true)? {
+                    deferred_inline.push(deferred);
+                } else {
+                    let compiled = compile_inline(builder, inline, presentation)?;
+                    if last.is_none() {
+                        last = Some(compiled);
+                    }
+                }
+            }
             DocumentUnit::Inline(inline) => {
-                if let Some(deferred) = defer_inline(builder, &inline, local_bindings)? {
+                if let Some(deferred) = defer_inline(builder, &inline, local_bindings, false)? {
                     deferred_inline.push(deferred);
                 } else {
                     retain_later_document_value(
@@ -930,10 +1284,11 @@ fn compile_document_units_inner(
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
         }
+        retain_document_boundary_result(builder, last.as_ref());
         // `ans` is a source-level alias of the preceding interactive value,
         // not a live input or additional recurrence cell. Selection literals
         // use this same sequential rule as ordinary submitted expressions.
-        if interactive && let Some(value) = &last {
+        if let Some(value) = &last {
             builder
                 .bindings
                 .insert("ans".to_owned(), PendingBinding::Value(value.value));
@@ -946,8 +1301,16 @@ fn defer_inline(
     builder: &mut SemanticBuilder,
     inline: &EvalInlineMechCodeSyntax,
     local_bindings: &BTreeSet<String>,
+    comment: bool,
 ) -> Result<Option<DeferredInline>, SourceSemanticError> {
     let references = inline_local_references(builder, inline, local_bindings)?;
+    if references.contains("ans") && !builder.bindings.contains_key("ans") {
+        return Err(SourceSemanticError {
+            code: "source-semantics/missing-preceding-answer",
+            message: "ans requires a preceding interactive value".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(inline.syntax()),
+        });
+    }
     let waiting = references
         .iter()
         .filter(|name| !builder.bindings.contains_key(*name))
@@ -971,6 +1334,7 @@ fn defer_inline(
         inline: inline.clone(),
         captured,
         waiting,
+        comment,
     }))
 }
 
@@ -1005,10 +1369,11 @@ fn refresh_deferred_inline(
             .position(|deferred| deferred.waiting.is_empty());
         let Some(ready) = ready else { break };
         let deferred = deferred.remove(ready);
-        retain_later_document_value(
-            last,
-            compile_deferred_inline(builder, deferred, presentation)?,
-        );
+        let comment = deferred.comment;
+        let compiled = compile_deferred_inline(builder, deferred, presentation)?;
+        if !comment {
+            retain_later_document_value(last, compiled);
+        }
     }
     Ok(())
 }
@@ -1039,6 +1404,23 @@ fn compile_deferred_inline(
         builder.bindings.insert(name, binding);
     }
     compiled
+}
+
+fn retain_document_boundary_result(
+    builder: &mut SemanticBuilder,
+    value: Option<&CompiledDocumentValue>,
+) {
+    let (Some(boundary), Some(value)) = (builder.retained_result_boundary, value) else {
+        return;
+    };
+    if value.syntax.range().end <= boundary
+        && builder
+            .retained_result
+            .as_ref()
+            .is_none_or(|(_, syntax)| syntax.range().start <= value.syntax.range().start)
+    {
+        builder.retained_result = Some((value.value, value.syntax.clone()));
+    }
 }
 
 fn retain_later_document_value(
@@ -1087,7 +1469,7 @@ fn inline_local_references(
         if let Some(variable) = VariableSyntax::cast(node.clone()) {
             let stem = builder.required(variable.stem(), variable.syntax(), "a variable stem")?;
             let name = node_text(stem.syntax())?;
-            if local_bindings.contains(&name) {
+            if name == "ans" || local_bindings.contains(&name) {
                 references.insert(name);
             }
             continue;
@@ -1095,7 +1477,7 @@ fn inline_local_references(
         if let Some(slice) = SliceSyntax::cast(node.clone()) {
             let stem = builder.required(slice.stem(), slice.syntax(), "a slice stem")?;
             let name = node_text(stem.syntax())?;
-            if local_bindings.contains(&name) {
+            if name == "ans" || local_bindings.contains(&name) {
                 references.insert(name);
             }
             if let Some(subscripts) = slice.subscripts() {
@@ -1109,6 +1491,374 @@ fn inline_local_references(
 }
 
 impl SemanticBuilder {
+    fn activation_item_value(
+        &self,
+        mut item: SyntaxNode,
+    ) -> Result<SyntaxNode, SourceSemanticError> {
+        while item.kind() == SyntaxKind::Statement {
+            item = self.required(
+                item.children().next(),
+                &item,
+                "an activation statement body",
+            )?;
+        }
+        Ok(item)
+    }
+
+    pub(super) fn pack_activation_values(
+        &mut self,
+        values: Vec<PendingValue>,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        if values.is_empty() {
+            return Ok(self.constant_exact(
+                SchemaBody::Tuple(Box::new([])),
+                ValueDataDraft::Tuple(Box::new([])),
+            ));
+        }
+        let mut parameters = Vec::new();
+        let items = values
+            .iter()
+            .map(|value| {
+                embed_schema_draft(
+                    &self.schema_draft_of(*value)?,
+                    &mut parameters,
+                    SourceSemanticAnchor::for_node(syntax),
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(self.emit_with_schema_draft(
+            "core/composite-pack",
+            values,
+            SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Tuple(items.into_boxed_slice()),
+            },
+            syntax,
+            "activation-registers",
+            None,
+        ))
+    }
+
+    fn activation_assignment_state(
+        &self,
+        syntax: &SyntaxNode,
+        trigger_name: &str,
+    ) -> Result<Option<u32>, SourceSemanticError> {
+        let target = match syntax.kind() {
+            SyntaxKind::VariableAssign => VariableAssignSyntax::cast(syntax.clone())
+                .and_then(|assignment| assignment.target()),
+            SyntaxKind::OpAssign => {
+                OpAssignSyntax::cast(syntax.clone()).and_then(|assignment| assignment.target())
+            }
+            _ => return Ok(None),
+        }
+        .ok_or_else(|| missing_kind_child(syntax, "an assignment target"))?;
+        let stem = self.required(target.stem(), target.syntax(), "an assignment target stem")?;
+        let name = node_text(stem.syntax())?;
+        if name == trigger_name {
+            return Err(SourceSemanticError {
+                code: "source-semantics/activation-trigger-write",
+                message: "an activation scope cannot write its own trigger".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+        self.assignment_state(&target).map(Some)
+    }
+
+    fn claim_activation_states(
+        &mut self,
+        states: &[u32],
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        for state in states {
+            if self.ordinary_written_states.contains(state) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/activation-state-writer-conflict",
+                    message:
+                        "mutable state cannot have both ordinary and activation-scoped assignments"
+                            .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            if !self.activation_owned_states.insert(*state) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/multiple-activation-state-owners",
+                    message: "mutable state can be assigned by only one activation scope"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn document_activation(
+        &mut self,
+        activation: &ActivationScopeSyntax,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let trigger_syntax = self.required(
+            activation.trigger(),
+            activation.syntax(),
+            "a stable trigger",
+        )?;
+        let trigger_variable =
+            standalone_pattern_variable(&trigger_syntax).ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/invalid-activation-trigger",
+                message: "an activation trigger must be a stable variable reference".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(trigger_syntax.syntax()),
+            })?;
+        let trigger_stem = self.required(
+            trigger_variable.stem(),
+            trigger_variable.syntax(),
+            "a stable trigger name",
+        )?;
+        let VariableStemSyntax::Identifier(trigger_identifier) = trigger_stem else {
+            return Err(SourceSemanticError {
+                code: "source-semantics/invalid-activation-trigger",
+                message: "an activation trigger must be a local variable reference".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(trigger_variable.syntax()),
+            });
+        };
+        let trigger_name = node_text(trigger_identifier.syntax())?;
+        let trigger = self.expression(&trigger_syntax)?.0;
+        trigger.resolved()?;
+
+        let activation_arms = activation.arms();
+        if !activation_arms.is_empty() {
+            let mut states = Vec::new();
+            let mut source_arms = Vec::new();
+            for arm in activation_arms {
+                let items = if let Some(body) = arm.body() {
+                    body.items()
+                        .into_iter()
+                        .filter_map(|item| item.value())
+                        .map(|item| self.activation_item_value(item))
+                        .collect::<Result<Vec<_>, _>>()?
+                } else {
+                    vec![
+                        self.required(arm.value(), arm.syntax(), "an activation arm result")?
+                            .syntax()
+                            .clone(),
+                    ]
+                };
+                for item in &items {
+                    match item.kind() {
+                        SyntaxKind::VariableAssign | SyntaxKind::OpAssign => {
+                            let state = self
+                                .activation_assignment_state(item, &trigger_name)?
+                                .expect("assignment has one state target");
+                            if !states.contains(&state) {
+                                states.push(state);
+                            }
+                        }
+                        SyntaxKind::VariableDefine => {
+                            let definition = VariableDefineSyntax::cast(item.clone()).unwrap();
+                            if definition.mutability_marker().is_some() {
+                                return Err(SourceSemanticError {
+                                    code: "source-semantics/activation-mutable-definition",
+                                    message: "an activation arm cannot declare mutable state"
+                                        .to_owned(),
+                                    anchor: SourceSemanticAnchor::for_node(item),
+                                });
+                            }
+                        }
+                        SyntaxKind::Expression | SyntaxKind::TupleDestructure => {}
+                        _ => {
+                            return Err(SourceSemanticError {
+                                code: "source-semantics/activation-definition-unsupported",
+                                message:
+                                    "activation arms admit local values and register assignments"
+                                        .to_owned(),
+                                anchor: SourceSemanticAnchor::for_node(item),
+                            });
+                        }
+                    }
+                }
+                source_arms.push((
+                    self.required(arm.pattern(), arm.syntax(), "an activation pattern")?,
+                    arm.guard(),
+                    items,
+                    arm.syntax().clone(),
+                ));
+            }
+            self.claim_activation_states(&states, activation.syntax())?;
+            let source_arms = source_arms
+                .into_iter()
+                .map(|(pattern, guard, items, syntax)| SourceMatchArm {
+                    pattern: Some(pattern),
+                    guard,
+                    body: SourceMatchBody::Activation {
+                        items,
+                        states: states.clone(),
+                        syntax: syntax.clone(),
+                    },
+                    syntax,
+                })
+                .collect::<Vec<_>>();
+            self.activation_assignment_depth += 1;
+            let value = self.lower_match_expression(
+                trigger,
+                &source_arms,
+                activation.syntax(),
+                false,
+                None,
+                true,
+            );
+            self.activation_assignment_depth -= 1;
+            let value = value?;
+            for (ordinal, state) in states.iter().copied().enumerate() {
+                let selector = self.constant_exact(
+                    SchemaBody::Index,
+                    ValueDataDraft::Index((ordinal + 1) as u64),
+                );
+                let selected =
+                    self.select_values(value, vec![Some(selector)], activation.syntax())?;
+                let writer = self.states[state as usize].producer_node as usize;
+                self.nodes[writer].inputs[0] = selected;
+            }
+            return Ok(value);
+        }
+        let items = activation
+            .body()
+            .map(|body| {
+                body.items()
+                    .into_iter()
+                    .filter_map(|item| item.value())
+                    .map(|item| self.activation_item_value(item))
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .transpose()?
+            .unwrap_or_default();
+        let mut states = Vec::new();
+        for item in &items {
+            match item.kind() {
+                SyntaxKind::VariableAssign | SyntaxKind::OpAssign => {
+                    let state = self
+                        .activation_assignment_state(item, &trigger_name)?
+                        .expect("assignment has one state target");
+                    if !states.contains(&state) {
+                        states.push(state);
+                    }
+                }
+                SyntaxKind::VariableDefine => {
+                    let definition = VariableDefineSyntax::cast(item.clone()).unwrap();
+                    if definition.mutability_marker().is_some() {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/activation-mutable-definition",
+                            message: "an activation body cannot declare mutable state".to_owned(),
+                            anchor: SourceSemanticAnchor::for_node(item),
+                        });
+                    }
+                }
+                SyntaxKind::Expression | SyntaxKind::TupleDestructure => {}
+                _ => {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/activation-definition-unsupported",
+                        message: "activation bodies admit local values and register assignments"
+                            .to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(item),
+                    });
+                }
+            }
+        }
+
+        self.claim_activation_states(&states, activation.syntax())?;
+
+        if self.control_depth == 0 {
+            self.next_control_block = 0;
+        }
+        let saved_bindings = self.bindings.clone();
+        let saved_definitions = self.scope_definitions.clone();
+        let saved_writer_inputs = states
+            .iter()
+            .map(|state| {
+                let writer = self.states[*state as usize].producer_node as usize;
+                (*state, self.nodes[writer].inputs[0])
+            })
+            .collect::<Vec<_>>();
+        let pattern = crate::MatchPattern::Wildcard;
+        let mut inputs = vec![trigger];
+        let mut captures = Vec::new();
+        self.activation_assignment_depth += 1;
+        let result = self.control_block_with(
+            activation.syntax(),
+            &pattern,
+            &BTreeMap::new(),
+            trigger,
+            &mut inputs,
+            &mut captures,
+            |builder| {
+                for item in &items {
+                    match item.kind() {
+                        SyntaxKind::VariableDefine => {
+                            builder
+                                .definition(&VariableDefineSyntax::cast(item.clone()).unwrap())?;
+                        }
+                        SyntaxKind::TupleDestructure => {
+                            builder.document_tuple_destructure(item)?;
+                        }
+                        SyntaxKind::VariableAssign | SyntaxKind::OpAssign => {
+                            builder.document_assignment(item)?;
+                        }
+                        SyntaxKind::Expression => {
+                            builder.expression(&ExpressionSyntax::cast(item.clone()).unwrap())?;
+                        }
+                        _ => unreachable!("activation body was preflighted"),
+                    }
+                }
+                let values = states
+                    .iter()
+                    .map(|state| builder.current_state_value(*state))
+                    .collect();
+                builder.pack_activation_values(values, activation.syntax())
+            },
+        );
+        self.activation_assignment_depth -= 1;
+        self.bindings = saved_bindings;
+        self.scope_definitions = saved_definitions;
+        for (state, value) in saved_writer_inputs {
+            let writer = self.states[state as usize].producer_node as usize;
+            self.nodes[writer].inputs[0] = value;
+        }
+        let (block, schema) = result?;
+        let index = self.nodes.len() as u32;
+        self.nodes.push(PendingNode {
+            body: PendingNodeBody::Activation(PendingMatch {
+                partial: false,
+                captures,
+                arms: vec![PendingMatchArm {
+                    pattern,
+                    guard: None,
+                    body: block,
+                }],
+            }),
+            inferable_projection: false,
+            inputs,
+            schema,
+            exposes_output: true,
+            state: None,
+            semantic: SourceSemanticNode {
+                operation: "activation".to_owned(),
+                role: "activation",
+                detail: Some(trigger_name),
+                anchor: SourceSemanticAnchor::for_node(activation.syntax()),
+            },
+        });
+        let activation_value = PendingValue::Node(index);
+        for (ordinal, state) in states.iter().copied().enumerate() {
+            let selector = self.constant_exact(
+                SchemaBody::Index,
+                ValueDataDraft::Index((ordinal + 1) as u64),
+            );
+            let selected =
+                self.select_values(activation_value, vec![Some(selector)], activation.syntax())?;
+            let writer = self.states[state as usize].producer_node as usize;
+            self.nodes[writer].inputs[0] = selected;
+        }
+        Ok(activation_value)
+    }
+
     /// A state reference in a statement reads the latest candidate produced by
     /// preceding statements. The writer's original self input denotes the
     /// committed value from the previous turn.
@@ -1183,7 +1933,7 @@ impl SemanticBuilder {
         }
     }
 
-    fn current_state_value(&self, state: u32) -> PendingValue {
+    pub(super) fn current_state_value(&self, state: u32) -> PendingValue {
         let writer = self.states[state as usize].producer_node as usize;
         self.nodes[writer].inputs[0]
     }
@@ -1248,8 +1998,25 @@ impl SemanticBuilder {
             return Ok((value, syntax.clone()));
         }
         let state = self.assignment_state(&target)?;
+        if self.activation_assignment_depth == 0 {
+            if self.activation_owned_states.contains(&state) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/activation-state-writer-conflict",
+                    message:
+                        "mutable state cannot have both ordinary and activation-scoped assignments"
+                            .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            self.ordinary_written_states.insert(state);
+        }
         let expected = self.schema_draft_of(PendingValue::State(state))?;
-        let mut value = self.expression(&expression)?.0;
+        let mut value = if operation.is_none() && target.subscripts().is_none() {
+            self.expression_with_expected(&expression, Some(ExpectedSchema::Value(&expected)))?
+                .0
+        } else {
+            self.expression(&expression)?.0
+        };
         if let Some(subscripts) = target.subscripts() {
             value = self.document_selected_update(
                 self.current_state_value(state),
@@ -1324,7 +2091,7 @@ fn fence_presentation(
 }
 
 impl SemanticBuilder {
-    fn document_tuple_destructure(
+    pub(super) fn document_tuple_destructure(
         &mut self,
         syntax: &SyntaxNode,
     ) -> Result<(PendingValue, SyntaxNode), SourceSemanticError> {
@@ -1389,9 +2156,48 @@ impl SemanticBuilder {
     }
 }
 
+#[derive(Clone, Default)]
+struct OrderedDocumentScope {
+    input_by_name: BTreeMap<String, u32>,
+    input_declarations: BTreeMap<String, SchemaDraft>,
+    declared_kinds: BTreeMap<String, SchemaDraft>,
+    declared_variants: BTreeMap<String, Vec<DeclaredEnumVariant>>,
+    bindings: BTreeMap<String, PendingBinding>,
+    scope_definitions: BTreeSet<String>,
+    external_definitions: BTreeSet<String>,
+    local_fsms: BTreeMap<String, document_fsms::DeclaredFsm>,
+}
+
+impl OrderedDocumentScope {
+    fn capture(builder: &SemanticBuilder) -> Self {
+        Self {
+            input_by_name: builder.input_by_name.clone(),
+            input_declarations: builder.input_declarations.clone(),
+            declared_kinds: builder.declared_kinds.clone(),
+            declared_variants: builder.declared_variants.clone(),
+            bindings: builder.bindings.clone(),
+            scope_definitions: builder.scope_definitions.clone(),
+            external_definitions: builder.external_definitions.clone(),
+            local_fsms: builder.local_fsms.clone(),
+        }
+    }
+
+    fn activate(&self, builder: &mut SemanticBuilder) {
+        builder.input_by_name = self.input_by_name.clone();
+        builder.input_declarations = self.input_declarations.clone();
+        builder.declared_kinds = self.declared_kinds.clone();
+        builder.declared_variants = self.declared_variants.clone();
+        builder.bindings = self.bindings.clone();
+        builder.scope_definitions = self.scope_definitions.clone();
+        builder.external_definitions = self.external_definitions.clone();
+        builder.local_fsms = self.local_fsms.clone();
+    }
+}
+
 pub(super) fn compile_ordered_documents(
     documents: &[CanonicalOrderedDocument],
     catalog: Arc<mech_core::FunctionCatalog>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let first = documents.first().ok_or_else(|| {
         internal(
@@ -1404,19 +2210,55 @@ pub(super) fn compile_ordered_documents(
         )
     })?;
     let anchor = SourceSemanticAnchor::for_node(first.document.syntax());
-    let mut builder = SemanticBuilder::with_function_catalog(anchor, catalog);
+    let mut builder = SemanticBuilder::with_function_catalog(anchor, catalog)?;
+    builder.imported_enum_qualifiers = imported_enum_qualifiers.clone();
     let mut exports_by_root = BTreeMap::<usize, BTreeMap<String, PendingBinding>>::new();
     let mut constants = BTreeMap::new();
     let mut results = BTreeMap::new();
+    let mut seen_identities = BTreeSet::new();
     let mut presentation = Vec::new();
+    let mut ordered_root_scope = OrderedDocumentScope::default();
+    let mut nominal_owners =
+        BTreeMap::<Vec<String>, (Option<String>, mech_syntax::document::DocumentId)>::new();
     for root in documents {
         let anchor = SourceSemanticAnchor::for_node(root.document.syntax());
-        if results.contains_key(&root.identity) {
+        if !seen_identities.insert(root.identity) {
             return Err(internal(
                 anchor,
                 "ordered root identity is repeated".to_owned(),
             ));
         }
+        // The IR arena is shared so dependency exports can remain live, but
+        // every retained document owns an independent lexical/module scope.
+        // Keeping the previous root's names here makes an ordinary definition
+        // such as `value := ...` collide with the same local spelling in a
+        // transitive dependency.
+        builder.anchor = anchor;
+        if root.publish_result {
+            ordered_root_scope.activate(&mut builder);
+        } else {
+            OrderedDocumentScope::default().activate(&mut builder);
+        }
+        builder.active_functions.clear();
+        builder.active_recursive_outputs.clear();
+        builder.retained_result_boundary = None;
+        builder.retained_result = None;
+        // Each retained root owns its callable imports and local definitions.
+        // Shared graph values do not grant another root's function visibility.
+        builder.function_environment = Some(
+            crate::FunctionEnvironment::from_catalog_defaults(
+                builder
+                    .function_catalog
+                    .as_ref()
+                    .expect("ordered roots have a catalog"),
+            )
+            .map_err(|error| internal(anchor, error.display_message()))?,
+        );
+        builder.function_imports.clear();
+        builder.local_functions.clear();
+        builder.local_fsms.clear();
+        builder.declared_kinds.clear();
+        builder.declared_variants.clear();
         builder.resource_writes = root.resource_writes.clone();
         builder.resolved_source_modules = root.resolved_modules.clone();
         builder.input_schema_overrides = root
@@ -1471,19 +2313,69 @@ pub(super) fn compile_ordered_documents(
         let mut units = Vec::new();
         let mut exports = Vec::new();
         collect_document_units(root.document.syntax(), &mut units, &mut exports)?;
+        if let Some(origin) = root.nominal_origin.as_ref() {
+            for (name, syntax) in document_types::enum_declarations(&units)? {
+                let path = origin
+                    .segments()
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once(name.clone()))
+                    .collect::<Vec<_>>();
+                let defining_document = anchor.document;
+                if let Some(previous) = nominal_owners.get(&path) {
+                    if previous.0 != root.nominal_package_id || previous.1 != defining_document {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/ambiguous-nominal-declaration-v1",
+                            message: format!(
+                                "AmbiguousNominalDeclarationV1: {} has distinct defining sources",
+                                path.join("/")
+                            ),
+                            anchor: SourceSemanticAnchor::for_node(&syntax),
+                        });
+                    }
+                } else {
+                    nominal_owners.insert(
+                        path.clone(),
+                        (root.nominal_package_id.clone(), defining_document),
+                    );
+                }
+                let key = NominalKey::from_path(
+                    NominalKind::Enum,
+                    &CanonicalNominalPath::new(path).map_err(|error| {
+                        internal(anchor, format!("invalid enum declaration path: {error:?}"))
+                    })?,
+                );
+                builder.imported_enum_qualifiers.insert(key, name);
+            }
+        }
+        builder.register_document_types(&units, root.nominal_origin.as_ref())?;
+        let fallback_fsm_namespace;
+        let fsm_namespace = if let Some(origin) = root.nominal_origin.as_ref() {
+            origin.segments()
+        } else {
+            fallback_fsm_namespace = vec![format!("ordered-root-{}", root.identity)];
+            &fallback_fsm_namespace
+        };
+        builder.register_document_fsms(&units, fsm_namespace)?;
         builder.register_document_functions(&units)?;
         builder.register_document_imports(&units, &root.resolved_modules)?;
         let mut bindings = builder.bindings.keys().cloned().collect();
         declare_document_inputs(&mut builder, &units, &mut bindings)?;
         declare_document_inline_inputs(&mut builder, &units, &bindings)?;
-        let last =
-            compile_document_units(&mut builder, units, &bindings, &mut presentation, false)?
-                .ok_or_else(|| {
-                    internal(
-                        anchor,
-                        "ordered root has no executable source unit".to_owned(),
-                    )
-                })?;
+        let mut root_presentation = Vec::new();
+        let last = compile_document_units(
+            &mut builder,
+            units,
+            &bindings,
+            &mut root_presentation,
+            false,
+        )?
+        .ok_or_else(|| {
+            internal(
+                anchor,
+                "ordered root has no executable source unit".to_owned(),
+            )
+        })?;
         // Keep the source binding's name where the last expression names it;
         // otherwise each root has its own unambiguous result identity.
         let text = node_text(&last.syntax)?;
@@ -1499,7 +2391,10 @@ pub(super) fn compile_ordered_documents(
         } else {
             format!("root:{}:result", root.identity)
         };
-        results.insert(root.identity, (name, last));
+        if root.publish_result {
+            results.insert(root.identity, (name, last));
+            presentation.push((root.identity, root_presentation));
+        }
         let mut root_exports = BTreeMap::new();
         for export in exports {
             let name = builder.required(export.name(), export.syntax(), "an exported name")?;
@@ -1525,6 +2420,9 @@ pub(super) fn compile_ordered_documents(
                 builder.inputs[input as usize].name = format!("root:{}/{name}", root.identity);
             }
         }
+        if root.publish_result {
+            ordered_root_scope = OrderedDocumentScope::capture(&builder);
+        }
     }
     // Constraints remain constraints; requested roots and visible document
     // slots alone become ordinary outputs.
@@ -1538,24 +2436,27 @@ pub(super) fn compile_ordered_documents(
         });
         builder.publish(&name, None, last.value, &last.syntax);
     }
-    for (kind, value, owner) in presentation {
-        let role = match kind {
-            SourceDocumentOutputKind::Inline => "inline",
-            SourceDocumentOutputKind::Fence => "fence",
-            SourceDocumentOutputKind::Program => unreachable!(),
-        };
-        let anchor = SourceSemanticAnchor::for_node(&owner);
-        let name = format!(
-            "document:{}:{role}:{}",
-            anchor.document.0,
-            owner.range().start.0
-        );
-        output_bindings.push(SourceDocumentOutput {
-            output: builder.outputs.len() as u32,
-            kind,
-            visible: true,
-        });
-        builder.publish(&name, None, value, &owner);
+    presentation.sort_by_key(|(identity, _)| *identity);
+    for (_, root_presentation) in presentation {
+        for (kind, value, owner) in root_presentation {
+            let role = match kind {
+                SourceDocumentOutputKind::Inline => "inline",
+                SourceDocumentOutputKind::Fence => "fence",
+                SourceDocumentOutputKind::Program => unreachable!(),
+            };
+            let anchor = SourceSemanticAnchor::for_node(&owner);
+            let name = format!(
+                "document:{}:{role}:{}",
+                anchor.document.0,
+                owner.range().start.0
+            );
+            output_bindings.push(SourceDocumentOutput {
+                output: builder.outputs.len() as u32,
+                kind,
+                visible: true,
+            });
+            builder.publish(&name, None, value, &owner);
+        }
     }
     builder.order_document_state_writers();
     let mut program = builder.finish()?;

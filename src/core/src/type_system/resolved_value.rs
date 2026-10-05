@@ -425,6 +425,7 @@ fn schema_body_from_resolved(
     declarations: &[DimensionParameterDeclaration],
 ) -> Result<SchemaBody, TypeResolutionError> {
     Ok(match kind {
+        KindExpr::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
         KindExpr::Wildcard => SchemaBody::Dynamic,
         KindExpr::Named(id) => BuiltinScalarKind::from_kind_id(*id)
             .map(BuiltinScalarKind::schema_body)
@@ -512,6 +513,11 @@ fn resolved_schema_body(
             .ok_or_else(|| invalid_rule(format!("named kind {id:?} has no canonical schema"))),
         (KindExpr::Id, _) => Ok(SchemaBody::Id),
         (KindExpr::Index, _) => Ok(SchemaBody::Index),
+        (KindExpr::IntegerInterval(expected), SchemaBody::IntegerInterval(actual))
+            if expected == actual =>
+        {
+            Ok(template.clone())
+        }
         (KindExpr::Atom(expected), SchemaBody::Atom(actual)) if expected == actual => {
             Ok(template.clone())
         }

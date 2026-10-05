@@ -1,3 +1,6 @@
+#[path = "constant_binding.rs"]
+mod constant_binding;
+
 #[path = "comprehension.rs"]
 mod comprehension;
 use comprehension::{PendingComprehension, resolve_comprehension};
@@ -12,19 +15,19 @@ mod document_lowering;
 mod output_projection;
 
 use mech_core::snapshot::{
-    Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft, ReifiedKind, ReifiedTypeDraft,
-    SnapshotValidationContext,
+    Complex32Bits, Complex64Bits, EnumDraft, F32Bits, F64Bits, OptionDraft, ReifiedKind,
+    ReifiedTypeDraft, SnapshotValidationContext,
 };
 use mech_core::{
     BuiltinKindPredicate, BuiltinScalarKind, CanonicalNominalPath, CardinalitySpec,
     ComputePlacement, ConstantId, ConstantStore, ConstantStoreBuilder, DimensionEnvironmentBuilder,
     DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
-    DimensionParameterOrigin, FloatWidth, InputKindScheme, IntegerWidth, KindExpr, KindField,
-    KindId, NamedKindPathResolver, NodeId, NominalKey, NominalKind, OperationContractDeclaration,
-    ResolvedOutputSchemaRule, ResolvedType, SchemaBody, SchemaDraft, SchemaField, SchemaId,
-    SchemaTable, SchemaTableBuilder, SourceInputKind, TypeConstraintOrigin, TypeOverloadCandidate,
-    Value, ValueDataDraft, ValueDraft, execute_conversion_draft, plan_explicit_cast,
-    plan_numeric_promotion,
+    DimensionParameterOrigin, FloatWidth, InputKindScheme, IntegerInterval, IntegerWidth, KindExpr,
+    KindField, KindId, NamedKindPathResolver, NodeId, NominalKey, NominalKind,
+    OperationContractDeclaration, ResolvedOutputSchemaRule, ResolvedType, Schema, SchemaBody,
+    SchemaDraft, SchemaField, SchemaId, SchemaTable, SchemaTableBuilder, SourceInputKind,
+    TypeConstraintOrigin, TypeOverloadCandidate, Value, ValueDataDraft, ValueDraft,
+    execute_conversion_draft, plan_explicit_cast, plan_numeric_promotion,
 };
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, CanonicalOperator, ComprehensionQualifierValueSyntax,
@@ -39,6 +42,9 @@ use mech_syntax::document::{
     VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
 };
 
+use crate::structural_coverage::{
+    StructuralCoveragePattern, StructuralCoverageSpace, StructuralPatternCoverage,
+};
 use crate::{
     ArtifactBuildContext, ArtifactBuildError, ComputeRegionDeclaration, OperationReference,
     ProgramArtifact, SourceInput, SourceNode, SourceNodeOutput, SourceOutput, SourceProgram,
@@ -103,7 +109,13 @@ pub struct CanonicalSourceProgram {
 /// to exported graph bindings, so their live dependencies remain in the artifact.
 pub struct CanonicalOrderedDocument {
     pub document: DocumentSyntax,
+    pub nominal_origin: Option<CanonicalNominalPath>,
+    pub nominal_package_id: Option<String>,
     pub identity: usize,
+    /// Whether this document was named by the caller and therefore owns a
+    /// published root result. Linked dependencies retain their live graph and
+    /// exports without becoming additional program outputs.
+    pub publish_result: bool,
     pub input_schemas: BTreeMap<String, SchemaBody>,
     pub resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     pub imports: BTreeMap<String, CanonicalOrderedImport>,
@@ -133,7 +145,11 @@ impl CanonicalSourceFrontend {
         for root in documents {
             reject_recovered_syntax(&root.document)?;
         }
-        document_lowering::compile_ordered_documents(documents, catalog)
+        document_lowering::compile_ordered_documents(
+            documents,
+            catalog,
+            &self.imported_enum_qualifiers,
+        )
     }
 }
 
@@ -144,6 +160,18 @@ pub struct CanonicalMixedSourcePrograms {
     pub region_name: String,
     pub placement: ComputePlacement,
     pub coordinator: CanonicalSourceProgram,
+    pub compute: CanonicalSourceProgram,
+    pub compute_initializers: CanonicalSourceProgram,
+}
+
+pub use document_lowering::CanonicalCoordinatorPlan;
+
+/// Compute programs plus retained coordinator lowering, ready for interface planning.
+/// The runtime compiles the compute artifacts before completing `coordinator`.
+pub struct CanonicalMixedSourcePreparation {
+    pub region_name: String,
+    pub placement: ComputePlacement,
+    pub coordinator: CanonicalCoordinatorPlan,
     pub compute: CanonicalSourceProgram,
     pub compute_initializers: CanonicalSourceProgram,
 }
@@ -208,7 +236,7 @@ impl CanonicalSourceProgram {
     }
 
     /// Choose the public identity of the implicit result when adapting a frozen program contract.
-    #[cfg(feature = "resident-artifact")]
+    #[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
     pub(crate) fn with_primary_output_name(mut self, name: &str) -> Self {
         self.program.outputs[0].name = name.to_owned();
         self
@@ -281,279 +309,6 @@ impl CanonicalSourceProgram {
         &self.document_exports
     }
 
-    /// Replace selected canonical inputs with immutable values completed by
-    /// already-resolved source dependencies.
-    ///
-    /// The values are rebound to this program's schema table and interned in
-    /// its existing constant store. Every remaining input is renumbered in one
-    /// pass, so the resulting artifact has no hidden initializer side table or
-    /// runtime dependency on a compiler-owned cell.
-    pub fn bind_input_constants(
-        mut self,
-        bindings: &[(u32, Value)],
-    ) -> Result<Self, SourceSemanticError> {
-        if bindings.is_empty() {
-            return Ok(self);
-        }
-        let anchor = |input: usize| {
-            self.source_map
-                .inputs
-                .get(input)
-                .copied()
-                .unwrap_or(SourceSemanticAnchor {
-                    document: DocumentId(0),
-                    revision: Revision(0),
-                    range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
-                })
-        };
-        let mut selected_values = BTreeMap::new();
-        for (input, value) in bindings {
-            let input = *input as usize;
-            let Some(declaration) = self.program.inputs.get(input) else {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/input-binding-out-of-range",
-                    message: format!("canonical input binding {input} is out of range"),
-                    anchor: anchor(input),
-                });
-            };
-            if selected_values.contains_key(&input) {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/duplicate-input-binding",
-                    message: format!(
-                        "canonical input {:?} was bound more than once",
-                        declaration.name
-                    ),
-                    anchor: anchor(input),
-                });
-            }
-            selected_values.insert(input, value.clone());
-        }
-        for value in selected_values.values() {
-            let schemas = value.schemas().ok_or_else(|| SourceSemanticError {
-                code: "source-semantics/import-value-schema-mismatch",
-                message: "resolved canonical import value has no detached schema owner".to_owned(),
-                anchor: anchor(0),
-            })?;
-            self.schemas = self
-                .schemas
-                .extend_preserving_ids(&schemas)
-                .map_err(|error| SourceSemanticError {
-                    code: "source-semantics/import-value-schema-mismatch",
-                    message: format!(
-                        "unable to retain a resolved canonical import schema: {error:?}"
-                    ),
-                    anchor: anchor(0),
-                })?;
-        }
-        let selected = selected_values
-            .into_iter()
-            .map(|(input, value)| {
-                let declaration = &self.program.inputs[input];
-                let target = self
-                    .schemas
-                    .get(declaration.schema)
-                    .expect("canonical input schema is validated");
-                let rebound = if matches!(target.body(), SchemaBody::Dynamic) {
-                    let concrete_schema = self
-                        .schemas
-                        .find_by_key(value.schema_key())
-                        .ok_or_else(|| SourceSemanticError {
-                            code: "source-semantics/import-value-schema-mismatch",
-                            message: format!(
-                                "resolved value schema {:?} is absent from the canonical program",
-                                value.schema_key()
-                            ),
-                            anchor: anchor(input),
-                        })?;
-                    let concrete = value
-                        .rebind(concrete_schema, value.shape(), &self.schemas)
-                        .map_err(|error| SourceSemanticError {
-                            code: "source-semantics/import-value-schema-mismatch",
-                            message: format!(
-                                "resolved value for canonical input {:?} has an incompatible schema: {error:?}",
-                                declaration.name
-                            ),
-                            anchor: anchor(input),
-                        })?;
-                    ValueDraft {
-                        schema: declaration.schema,
-                        shape_values: Box::new([]),
-                        data: ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
-                            schema: concrete_schema,
-                            shape_values: concrete
-                                .shape()
-                                .parameter_values()
-                                .to_vec()
-                                .into_boxed_slice(),
-                            data: concrete.canonical_data_draft().map_err(|error| {
-                                SourceSemanticError {
-                                    code: "source-semantics/import-value-schema-mismatch",
-                                    message: format!(
-                                        "unable to retain canonical import data: {error:?}"
-                                    ),
-                                    anchor: anchor(input),
-                                }
-                            })?,
-                        }))),
-                    }
-                    .finalize(&SnapshotValidationContext::new(&self.schemas))
-                    .map_err(|error| SourceSemanticError {
-                        code: "source-semantics/import-value-schema-mismatch",
-                        message: format!(
-                            "unable to materialize dynamic canonical import value: {error:?}"
-                        ),
-                        anchor: anchor(input),
-                    })?
-                } else {
-                    // A closed planning schema owns no dimension parameters,
-                    // even when the supplied snapshot uses a parameterized
-                    // representation of the same concrete shape.
-                    let shape = if target.dimension_parameters().is_empty() {
-                        target.instantiate_shape(Box::new([])).map_err(|error| {
-                            SourceSemanticError {
-                                code: "source-semantics/import-value-schema-mismatch",
-                                message: format!("unable to instantiate input shape: {error:?}"),
-                                anchor: anchor(input),
-                            }
-                        })?
-                    } else {
-                        let source_schemas = value.schemas().expect("bound values retain their schemas");
-                        let source_schema = source_schemas.get(value.schema()).expect("bound value schema is retained");
-                        let error = |message| SourceSemanticError {
-                            code: "source-semantics/import-value-schema-mismatch",
-                            message,
-                            anchor: anchor(input),
-                        };
-                        let closed = source_schema.closed_body(value.shape())
-                            .map_err(|failure| error(format!("invalid bound value shape: {failure:?}")))?;
-                        mech_core::shape_for_schema_components(
-                            target, &[(target.body(), closed)], None,
-                        ).map_err(|failure| error(format!("incompatible bound input shape: {failure}")))?
-                    };
-                    value
-                        .rebind(declaration.schema, &shape, &self.schemas)
-                        .map_err(|error| SourceSemanticError {
-                            code: "source-semantics/import-value-schema-mismatch",
-                            message: format!(
-                                "resolved value for canonical input {:?} has an incompatible schema: {error:?}",
-                                declaration.name
-                            ),
-                            anchor: anchor(input),
-                        })?
-                };
-                Ok((input, rebound))
-            })
-            .collect::<Result<BTreeMap<_, _>, SourceSemanticError>>()?;
-
-        let mut constants = ConstantStoreBuilder::new(&self.schemas);
-        let old_handles = (0..self.constants.len())
-            .map(|ordinal| {
-                let id = ConstantId::new(ordinal as u32);
-                constants.insert(
-                    self.constants
-                        .get(id)
-                        .expect("constant ordinal is bounded by the store length")
-                        .clone(),
-                )
-            })
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|error| SourceSemanticError {
-                code: "source-semantics/import-constant-invalid",
-                message: format!("unable to retain canonical constants: {error:?}"),
-                anchor: anchor(0),
-            })?;
-        let bound_handles = selected
-            .iter()
-            .map(|(input, value)| {
-                constants
-                    .insert(value.clone())
-                    .map(|handle| (*input, handle))
-            })
-            .collect::<Result<BTreeMap<_, _>, _>>()
-            .map_err(|error| SourceSemanticError {
-                code: "source-semantics/import-constant-invalid",
-                message: format!("unable to retain canonical import value: {error:?}"),
-                anchor: anchor(0),
-            })?;
-        let build = constants.finish().map_err(|error| SourceSemanticError {
-            code: "source-semantics/import-constant-invalid",
-            message: format!("unable to finalize canonical import values: {error:?}"),
-            anchor: anchor(0),
-        })?;
-        let old_constants = old_handles
-            .into_iter()
-            .map(|handle| build.resolve(handle))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|error| SourceSemanticError {
-                code: "source-semantics/import-constant-invalid",
-                message: format!("unable to remap canonical constants: {error:?}"),
-                anchor: anchor(0),
-            })?;
-        let bound_constants = bound_handles
-            .into_iter()
-            .map(|(input, handle)| build.resolve(handle).map(|constant| (input, constant)))
-            .collect::<Result<BTreeMap<_, _>, _>>()
-            .map_err(|error| SourceSemanticError {
-                code: "source-semantics/import-constant-invalid",
-                message: format!("unable to remap canonical import values: {error:?}"),
-                anchor: anchor(0),
-            })?;
-
-        let remap = |value: &mut SourceValue| match value {
-            SourceValue::Constant(old) => {
-                *old = old_constants[old.get() as usize];
-            }
-            SourceValue::Input(old) => {
-                let input = *old as usize;
-                if let Some(constant) = bound_constants.get(&input) {
-                    *value = SourceValue::Constant(*constant);
-                } else {
-                    let removed = bound_constants.range(..input).count() as u32;
-                    *old -= removed;
-                }
-            }
-            SourceValue::State(_) | SourceValue::NodeOutput { .. } => {}
-        };
-        for state in &mut self.program.states {
-            if let Some(initializer) = &mut state.initializer {
-                remap(initializer);
-            }
-        }
-        for node in &mut self.program.nodes {
-            for input in &mut node.inputs {
-                remap(input);
-            }
-        }
-        for output in &mut self.program.outputs {
-            remap(&mut output.source);
-        }
-        for constraint in &mut self.program.constraints {
-            for input in &mut constraint.inputs {
-                remap(input);
-            }
-        }
-        self.program.inputs = self
-            .program
-            .inputs
-            .into_vec()
-            .into_iter()
-            .enumerate()
-            .filter_map(|(input, declaration)| {
-                (!bound_constants.contains_key(&input)).then_some(declaration)
-            })
-            .collect();
-        self.source_map.inputs = self
-            .source_map
-            .inputs
-            .into_vec()
-            .into_iter()
-            .enumerate()
-            .filter_map(|(input, source)| (!bound_constants.contains_key(&input)).then_some(source))
-            .collect();
-        self.constants = build.store;
-        Ok(self)
-    }
-
     pub fn compile_artifact(&self) -> Result<ProgramArtifact, ArtifactBuildError> {
         let contracts = self
             .contracts
@@ -567,9 +322,9 @@ impl CanonicalSourceProgram {
                         node: NodeId(index as u32),
                         operation: operation.clone(),
                     }),
-                crate::SourceNodeBody::Match(_) | crate::SourceNodeBody::Comprehension(_) => {
-                    Ok(None)
-                }
+                crate::SourceNodeBody::Match(_)
+                | crate::SourceNodeBody::Activation(_)
+                | crate::SourceNodeBody::Comprehension(_) => Ok(None),
                 crate::SourceNodeBody::Fsm(_) => Ok(None),
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -630,6 +385,7 @@ impl CanonicalSourceProgram {
                     })
                 }
                 crate::SourceNodeBody::Match(_)
+                | crate::SourceNodeBody::Activation(_)
                 | crate::SourceNodeBody::Comprehension(_)
                 | crate::SourceNodeBody::Fsm(_) => Ok(None),
             })
@@ -860,9 +616,34 @@ impl std::error::Error for SourceSemanticError {}
 
 /// Engine entry point for canonical typed source.
 #[derive(Clone, Debug, Default)]
-pub struct CanonicalSourceFrontend;
+pub struct CanonicalSourceFrontend {
+    nominal_origin: Option<CanonicalNominalPath>,
+    imported_enum_qualifiers: BTreeMap<NominalKey, String>,
+}
+
+#[expect(
+    non_upper_case_globals,
+    reason = "preserve unit-style frontend construction while adding explicit nominal provenance"
+)]
+pub const CanonicalSourceFrontend: CanonicalSourceFrontend = CanonicalSourceFrontend {
+    nominal_origin: None,
+    imported_enum_qualifiers: BTreeMap::new(),
+};
 
 impl CanonicalSourceFrontend {
+    pub fn with_nominal_origin(&self, origin: CanonicalNominalPath) -> Self {
+        Self {
+            nominal_origin: Some(origin),
+            imported_enum_qualifiers: self.imported_enum_qualifiers.clone(),
+        }
+    }
+
+    pub fn with_imported_enum_qualifiers(&self, qualifiers: BTreeMap<NominalKey, String>) -> Self {
+        Self {
+            nominal_origin: self.nominal_origin.clone(),
+            imported_enum_qualifiers: qualifiers,
+        }
+    }
     pub fn compile_expression(
         &self,
         expression: &ExpressionSyntax,
@@ -896,7 +677,19 @@ impl CanonicalSourceFrontend {
         document: &DocumentSyntax,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_document(document)
+        document_lowering::compile_document(document, self.nominal_origin.as_ref())
+    }
+
+    /// Compile nominal declarations using the defining package and module
+    /// namespace. The first origin segment is the manifest package name; any
+    /// remaining segments are the canonical defining module path.
+    pub fn compile_document_with_nominal_origin(
+        &self,
+        document: &DocumentSyntax,
+        origin: &CanonicalNominalPath,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_document_with_nominal_origin(document, origin)
     }
 
     /// Executable root statements selected by the document compiler.
@@ -907,6 +700,15 @@ impl CanonicalSourceFrontend {
     ) -> Result<Vec<SyntaxNode>, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::root_statement_nodes(document)
+    }
+
+    /// Names of executable enum declarations in this retained document.
+    pub fn declared_enum_names(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<Vec<String>, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::declared_enum_names(document)
     }
 
     /// Return the names assigned by the root execution scope.
@@ -927,7 +729,11 @@ impl CanonicalSourceFrontend {
         catalog: Arc<mech_core::FunctionCatalog>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_document_with_catalog(document, catalog)
+        document_lowering::compile_document_with_catalog(
+            document,
+            self.nominal_origin.as_ref(),
+            catalog,
+        )
     }
 
     pub fn compile_interactive_document_with_catalog(
@@ -936,7 +742,11 @@ impl CanonicalSourceFrontend {
         catalog: Arc<mech_core::FunctionCatalog>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_interactive_document_with_catalog(document, catalog)
+        document_lowering::compile_interactive_document_with_catalog(
+            document,
+            self.nominal_origin.as_ref(),
+            catalog,
+        )
     }
 
     /// Compile with detached planning-value schemas supplied by the product
@@ -951,6 +761,7 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_catalog_and_input_schemas(
             document,
+            self.nominal_origin.as_ref(),
             catalog,
             input_schemas,
         )
@@ -1006,6 +817,7 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         let mut program = document_lowering::compile_document_with_catalog_and_resources(
             document,
+            self.nominal_origin.as_ref(),
             catalog,
             input_schemas,
             resource_writes,
@@ -1073,6 +885,34 @@ impl CanonicalSourceFrontend {
         )
     }
 
+    /// Retain the original document result while compiling appended console
+    /// source through the same semantic graph. The boundary belongs to an
+    /// unchanged source prefix; it does not introduce executable syntax.
+    pub fn compile_interactive_document_with_retained_result(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resolved_source_modules: &BTreeSet<String>,
+        boundary: mech_syntax::document::TextSize,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_document_with_capture_options(
+            document,
+            self.nominal_origin.as_ref(),
+            &self.imported_enum_qualifiers,
+            Some(catalog),
+            input_schemas,
+            true,
+            resource_writes,
+            &BTreeSet::new(),
+            &BTreeSet::new(),
+            resolved_source_modules,
+            Some(boundary),
+        )
+    }
+
     fn compile_document_with_planning_projection(
         &self,
         document: &DocumentSyntax,
@@ -1087,6 +927,8 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_options(
             document,
+            self.nominal_origin.as_ref(),
+            &self.imported_enum_qualifiers,
             Some(catalog),
             input_schemas,
             interactive,
@@ -1098,6 +940,32 @@ impl CanonicalSourceFrontend {
                 .collect(),
             resolved_source_modules,
         )
+    }
+
+    /// Whether a retained document declares at least one executable compute
+    /// section. This performs the same structured heading validation used by
+    /// mixed compilation without compiling either program partition.
+    pub fn has_mixed_document_region(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<bool, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::has_mixed_document_region(document)
+    }
+
+    /// Read placement declarations through the same semantic authority that
+    /// partitions mixed documents. Hosts use this to choose the compilation route.
+    pub fn document_compute_regions(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<Vec<(String, mech_core::ComputePlacement)>, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::document_compute_regions(document).map(|regions| {
+            regions
+                .into_iter()
+                .map(|(_, name, placement)| (name, placement))
+                .collect()
+        })
     }
 
     /// Partition one retained mixed document into coordinator, compute, and
@@ -1134,14 +1002,54 @@ impl CanonicalSourceFrontend {
         retained_outputs: &BTreeSet<String>,
         resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
-        reject_recovered_syntax(document)?;
-        document_lowering::compile_mixed_document_with_catalog_and_resources(
+        let prepared = self.prepare_mixed_document_with_planning_contract(
             document,
             catalog,
             input_schemas,
             resource_writes,
             external_inputs,
             retained_outputs,
+            resolved_source_modules,
+        )?;
+        Ok(CanonicalMixedSourcePrograms {
+            region_name: prepared.region_name,
+            placement: prepared.placement,
+            coordinator: prepared.coordinator.compile(BTreeMap::new())?,
+            compute: prepared.compute,
+            compute_initializers: prepared.compute_initializers,
+        })
+    }
+
+    /// Compile the compute partitions and retain coordinator units until the
+    /// caller can provide schemas for sampled outputs and compute telemetry.
+    pub fn prepare_mixed_document_with_planning_contract(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        // A document's ordinary program result is always named `result`.
+        // Compute capabilities, however, name lexical bindings, which may also
+        // be called `result`. Publish the encoded binding identities so output
+        // projection cannot accidentally select the aggregate program result.
+        let retained_output_bindings = retained_outputs
+            .iter()
+            .map(|name| crate::encode_interactive_symbol_output_name(name))
+            .collect();
+        document_lowering::prepare_mixed_document_with_catalog_and_resources(
+            document,
+            self.nominal_origin.as_ref(),
+            &self.imported_enum_qualifiers,
+            catalog,
+            input_schemas,
+            resource_writes,
+            external_inputs,
+            &retained_output_bindings,
             resolved_source_modules,
         )
     }
@@ -1155,7 +1063,11 @@ impl CanonicalSourceFrontend {
         name: &str,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_named_document_scope(document, name)
+        document_lowering::compile_named_document_scope(
+            document,
+            name,
+            self.nominal_origin.as_ref(),
+        )
     }
     /// Compile one retained Mika-local body without importing its parent's or
     /// nested Mika children's bindings. The artifact owns this section's state.
@@ -1164,7 +1076,7 @@ impl CanonicalSourceFrontend {
         section: &mech_syntax::document::MikaSectionSyntax,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(section)?;
-        document_lowering::compile_mika_section(section, None)
+        document_lowering::compile_mika_section(section, None, self.nominal_origin.as_ref())
     }
 
     /// Compile repeated named fences within one Mika-local owner.
@@ -1174,7 +1086,7 @@ impl CanonicalSourceFrontend {
         name: &str,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(section)?;
-        document_lowering::compile_mika_section(section, Some(name))
+        document_lowering::compile_mika_section(section, Some(name), self.nominal_origin.as_ref())
     }
 }
 
@@ -1192,10 +1104,6 @@ fn collect_pattern_bindings(
             {
                 output.push(PatternBinding {
                     name: node_text(identifier.syntax())?,
-                    schema: variable
-                        .annotation()
-                        .map(|annotation| annotation_schema_draft(&annotation))
-                        .transpose()?,
                 });
             }
             Vec::new()
@@ -1312,6 +1220,69 @@ struct SourceSchemas {
     dynamic_payload_ids: BTreeMap<usize, SchemaId>,
 }
 
+fn retain_schema_tree(
+    anchor: SourceSemanticAnchor,
+    builder: &mut SchemaTableBuilder,
+    draft: &SchemaDraft,
+) -> Result<mech_core::SchemaHandle, SourceSemanticError> {
+    let schema = draft
+        .clone()
+        .finalize()
+        .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
+    retain_finalized_schema_tree(anchor, builder, schema)
+}
+
+fn retain_finalized_schema_tree(
+    anchor: SourceSemanticAnchor,
+    builder: &mut SchemaTableBuilder,
+    schema: Schema,
+) -> Result<mech_core::SchemaHandle, SourceSemanticError> {
+    let handle = builder
+        .insert(schema.clone())
+        .map_err(|error| internal(anchor, format!("unable to retain source schema: {error:?}")))?;
+    let mut retain = |body: &SchemaBody| {
+        let component = schema.canonical_component_schema(body).map_err(|error| {
+            internal(
+                anchor,
+                format!("unable to derive retained component schema: {error:?}"),
+            )
+        })?;
+        retain_finalized_schema_tree(anchor, builder, component).map(drop)
+    };
+    match schema.body() {
+        SchemaBody::Enum { variants, .. } => {
+            for payload in variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+            {
+                retain(payload)?;
+            }
+        }
+        SchemaBody::Option(element)
+        | SchemaBody::Matrix { element, .. }
+        | SchemaBody::Set { element, .. } => retain(element)?,
+        SchemaBody::Tuple(elements) => {
+            for element in elements {
+                retain(element)?;
+            }
+        }
+        SchemaBody::Record(fields)
+        | SchemaBody::Table {
+            columns: fields, ..
+        } => {
+            for field in fields {
+                retain(&field.schema)?;
+            }
+        }
+        SchemaBody::Map { key, value, .. } => {
+            retain(key)?;
+            retain(value)?;
+        }
+        _ => {}
+    }
+    Ok(handle)
+}
+
 impl SourceSchemas {
     fn build(
         anchor: SourceSemanticAnchor,
@@ -1320,15 +1291,7 @@ impl SourceSchemas {
         constants: &[PendingConstant],
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = SchemaTableBuilder::new();
-        let mut insert = |draft: &SchemaDraft| {
-            let schema = draft
-                .clone()
-                .finalize()
-                .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
-            builder.insert(schema).map_err(|error| {
-                internal(anchor, format!("unable to retain source schema: {error:?}"))
-            })
-        };
+        let mut insert = |draft: &SchemaDraft| retain_schema_tree(anchor, &mut builder, draft);
         let input_handles = inputs
             .iter()
             .map(|value| insert(&value.schema))
@@ -1340,33 +1303,30 @@ impl SourceSchemas {
         for node in nodes {
             if let PendingNodeBody::Comprehension(control) = &node.body {
                 let mut failure = None;
-                for step in &control.steps {
-                    match step {
-                        crate::ComprehensionStep::Generator { pattern, .. } => {
-                            pattern.bindings(&mut |_, schema| {
-                                if let Err(error) = insert(schema) {
-                                    failure = Some(error);
-                                }
-                            })
-                        }
-                        crate::ComprehensionStep::Operation(operation) => {
-                            insert(&operation.schema)?;
-                        }
-                        crate::ComprehensionStep::Filter(_) => {}
+                control.visit_schemas(&mut |schema| {
+                    if failure.is_none()
+                        && let Err(error) = insert(schema)
+                    {
+                        failure = Some(error);
                     }
-                }
+                });
                 if let Some(error) = failure {
                     return Err(error);
                 }
             }
-            if let PendingNodeBody::Match(control) = &node.body {
-                for block in control.blocks() {
-                    for (_, schema) in &block.parameters {
-                        insert(schema)?;
+            if let PendingNodeBody::Match(control) | PendingNodeBody::Activation(control) =
+                &node.body
+            {
+                let mut failure = None;
+                control.visit_schemas(&mut |schema| {
+                    if failure.is_none()
+                        && let Err(error) = insert(schema)
+                    {
+                        failure = Some(error);
                     }
-                    for operation in &block.operations {
-                        insert(&operation.schema)?;
-                    }
+                });
+                if let Some(error) = failure {
+                    return Err(error);
                 }
             }
         }
@@ -1942,10 +1902,37 @@ fn remap_schema_body(
 fn schema_draft_from_resolved(
     resolved: &ResolvedType,
     anchor: SourceSemanticAnchor,
+    known: &[SchemaDraft],
 ) -> Result<SchemaDraft, SourceSemanticError> {
+    fn enum_body(body: &SchemaBody, key: NominalKey) -> Option<SchemaBody> {
+        match body {
+            SchemaBody::Enum { key: candidate, .. } if *candidate == key => Some(body.clone()),
+            SchemaBody::Enum { variants, .. } => variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+                .find_map(|payload| enum_body(payload, key)),
+            SchemaBody::Option(element)
+            | SchemaBody::Matrix { element, .. }
+            | SchemaBody::Set { element, .. } => enum_body(element, key),
+            SchemaBody::Tuple(items) => items.iter().find_map(|item| enum_body(item, key)),
+            SchemaBody::Record(fields) => fields
+                .iter()
+                .find_map(|field| enum_body(&field.schema, key)),
+            SchemaBody::Table { columns, .. } => columns
+                .iter()
+                .find_map(|field| enum_body(&field.schema, key)),
+            SchemaBody::Map {
+                key: map_key,
+                value,
+                ..
+            } => enum_body(map_key, key).or_else(|| enum_body(value, key)),
+            _ => None,
+        }
+    }
     fn body(
         kind: &KindExpr,
         anchor: SourceSemanticAnchor,
+        known: &[SchemaDraft],
     ) -> Result<SchemaBody, SourceSemanticError> {
         Ok(match kind {
             KindExpr::Wildcard => SchemaBody::Dynamic,
@@ -1959,19 +1946,40 @@ fn schema_draft_from_resolved(
                 })?,
             KindExpr::Id => SchemaBody::Id,
             KindExpr::Index => SchemaBody::Index,
+            KindExpr::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
             KindExpr::Atom(key) => SchemaBody::Atom(*key),
+            KindExpr::Enum(key) => {
+                let mut witnesses = known
+                    .iter()
+                    .filter_map(|draft| enum_body(&draft.body, *key));
+                let first = witnesses.next().ok_or_else(|| {
+                    internal(
+                        anchor,
+                        "resolved enum kind has no source schema witness".to_owned(),
+                    )
+                })?;
+                if witnesses.any(|witness| witness != first) {
+                    return Err(internal(
+                        anchor,
+                        "resolved enum kind has conflicting source schema witnesses".to_owned(),
+                    ));
+                }
+                first
+            }
             KindExpr::Matrix {
                 element,
                 dimensions,
             } => SchemaBody::Matrix {
-                element: Box::new(body(element, anchor)?),
+                element: Box::new(body(element, anchor, known)?),
                 dimensions: dimensions.clone(),
             },
-            KindExpr::Option(payload) => SchemaBody::Option(Box::new(body(payload, anchor)?)),
+            KindExpr::Option(payload) => {
+                SchemaBody::Option(Box::new(body(payload, anchor, known)?))
+            }
             KindExpr::Tuple(items) => SchemaBody::Tuple(
                 items
                     .iter()
-                    .map(|item| body(item, anchor))
+                    .map(|item| body(item, anchor, known))
                     .collect::<Result<Vec<_>, _>>()?
                     .into_boxed_slice(),
             ),
@@ -1981,7 +1989,7 @@ fn schema_draft_from_resolved(
                     .map(|field| {
                         Ok(SchemaField {
                             name: field.name.clone(),
-                            schema: body(&field.kind, anchor)?,
+                            schema: body(&field.kind, anchor, known)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -1993,7 +2001,7 @@ fn schema_draft_from_resolved(
                     .map(|field| {
                         Ok(SchemaField {
                             name: field.name.clone(),
-                            schema: body(&field.kind, anchor)?,
+                            schema: body(&field.kind, anchor, known)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -2004,7 +2012,7 @@ fn schema_draft_from_resolved(
                 element,
                 cardinality,
             } => SchemaBody::Set {
-                element: Box::new(body(element, anchor)?),
+                element: Box::new(body(element, anchor, known)?),
                 cardinality: CardinalitySpec::Exact(cardinality.clone()),
             },
             KindExpr::Map {
@@ -2012,16 +2020,12 @@ fn schema_draft_from_resolved(
                 value,
                 cardinality,
             } => SchemaBody::Map {
-                key: Box::new(body(key, anchor)?),
-                value: Box::new(body(value, anchor)?),
+                key: Box::new(body(key, anchor, known)?),
+                value: Box::new(body(value, anchor, known)?),
                 cardinality: CardinalitySpec::Exact(cardinality.clone()),
             },
             KindExpr::TypeOf(_) => SchemaBody::ReifiedType,
-            KindExpr::Enum(_)
-            | KindExpr::Never
-            | KindExpr::Hole
-            | KindExpr::Parameter(_)
-            | KindExpr::Reference(_) => {
+            KindExpr::Never | KindExpr::Hole | KindExpr::Parameter(_) | KindExpr::Reference(_) => {
                 return Err(internal(
                     anchor,
                     format!("resolved output kind cannot become a source schema: {kind:?}"),
@@ -2032,7 +2036,7 @@ fn schema_draft_from_resolved(
 
     Ok(SchemaDraft {
         dimension_parameters: resolved.dimension_parameters().to_vec().into_boxed_slice(),
-        body: body(resolved.kind(), anchor)?,
+        body: body(resolved.kind(), anchor, known)?,
     })
 }
 
@@ -2043,7 +2047,9 @@ fn materialize_source_output_draft(
     anchor: SourceSemanticAnchor,
 ) -> Result<SchemaDraft, SourceSemanticError> {
     match rule {
-        ResolvedOutputSchemaRule::FromResolvedType => schema_draft_from_resolved(resolved, anchor),
+        ResolvedOutputSchemaRule::FromResolvedType => {
+            schema_draft_from_resolved(resolved, anchor, inputs)
+        }
         ResolvedOutputSchemaRule::FromInput(index) => {
             let input = inputs.get(*index).ok_or_else(|| {
                 internal(
@@ -2051,7 +2057,7 @@ fn materialize_source_output_draft(
                     format!("output schema input {index} is unavailable"),
                 )
             })?;
-            let draft = schema_draft_from_resolved(resolved, anchor)?;
+            let draft = schema_draft_from_resolved(resolved, anchor, inputs)?;
             let (
                 SchemaBody::Set {
                     element,
@@ -2274,6 +2280,7 @@ enum PendingValue {
     UnresolvedEmpty(SourceSemanticAnchor),
     Constant(usize),
     Input(u32),
+    LexicalInput(u32),
     State(u32),
     Node(u32),
 }
@@ -2305,6 +2312,7 @@ struct PendingConstant {
     schema: SchemaDraft,
     data: ValueDataDraft,
     dynamic_payload: Option<(SchemaDraft, ValueDataDraft)>,
+    embedded_constant: Option<(usize, bool)>,
 }
 
 #[derive(Clone)]
@@ -2321,42 +2329,426 @@ enum PendingNodeBody {
         requirement: Option<mech_core::ApplicationRequirement>,
     },
     Match(PendingMatch),
+    Activation(PendingMatch),
     Comprehension(PendingComprehension),
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
+    RecursiveCall(u8),
+
+    Suspend,
+    Publish,
 }
 
 struct PendingMatch {
-    captures: Vec<(u16, SchemaDraft)>,
+    partial: bool,
+    captures: Vec<(u16, SchemaDraft, bool)>,
     arms: Vec<PendingMatchArm>,
 }
 
 impl PendingMatch {
-    fn blocks(&self) -> Vec<&PendingControlBlock> {
-        fn append<'a>(control: &'a PendingMatch, output: &mut Vec<&'a PendingControlBlock>) {
-            for block in control
-                .arms
-                .iter()
-                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-            {
-                output.push(block);
+    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        for arm in &self.arms {
+            if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
+                pattern.bindings(&mut |_, schema| visit(schema));
+            }
+            for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
+                for (_, schema) in &block.parameters {
+                    visit(schema);
+                }
                 for operation in &block.operations {
-                    if let PendingControlOperationBody::Match(nested) = &operation.body {
-                        append(nested, output);
+                    visit(&operation.schema);
+                    match &operation.body {
+                        PendingControlOperationBody::Match(nested) => nested.visit_schemas(visit),
+                        PendingControlOperationBody::Comprehension(nested) => {
+                            nested.visit_schemas(visit)
+                        }
+                        PendingControlOperationBody::Operation { .. }
+                        | PendingControlOperationBody::Recur(_)
+                        | PendingControlOperationBody::Suspend
+                        | PendingControlOperationBody::Publish => {}
                     }
                 }
             }
         }
-        let mut output = Vec::new();
-        append(self, &mut output);
-        output
     }
 }
 
 struct PendingMatchArm {
-    pattern: crate::MatchPattern<usize>,
+    pattern: crate::MatchPattern<usize, SchemaDraft>,
     guard: Option<PendingControlBlock>,
     body: PendingControlBlock,
+}
+
+#[derive(Clone)]
+struct SourceMatchArm {
+    pattern: Option<PatternSyntax>,
+    guard: Option<ExpressionSyntax>,
+    body: SourceMatchBody,
+    syntax: SyntaxNode,
+}
+
+fn structural_component_schema_draft(
+    parent: &SchemaDraft,
+    body: &SchemaBody,
+) -> Option<SchemaDraft> {
+    let component = SchemaDraft {
+        body: body.clone(),
+        dimension_parameters: parent.dimension_parameters.clone(),
+    }
+    .finalize()
+    .ok()?;
+    Some(SchemaDraft {
+        body: component.body().clone(),
+        dimension_parameters: component
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(id, parameter)| {
+                Some(DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(u32::try_from(id).ok()?),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: parameter.lifetime(),
+                    lower_bound: parameter.lower_bound().clone(),
+                    upper_bound: parameter.upper_bound().cloned(),
+                })
+            })
+            .collect::<Option<Vec<_>>>()?
+            .into_boxed_slice(),
+    })
+}
+
+fn structural_array_rest_schema(
+    element: &SchemaDraft,
+    exact_extent: Option<usize>,
+) -> Option<SchemaDraft> {
+    let mut parameters = element.dimension_parameters.to_vec();
+    let extent = match exact_extent {
+        Some(extent) => DimensionExpr::Constant(u64::try_from(extent).ok()?),
+        None => {
+            let extent = DimensionParameterId::new(u32::try_from(parameters.len()).ok()?);
+            parameters.push(DimensionParameterDeclaration {
+                id: extent,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            });
+            DimensionExpr::Parameter(extent)
+        }
+    };
+    Some(SchemaDraft {
+        dimension_parameters: parameters.into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(element.body.clone()),
+            dimensions: vec![DimensionExpr::Constant(1), extent].into_boxed_slice(),
+        },
+    })
+}
+
+fn fixed_matrix_element_count(schema: &SchemaDraft) -> Option<usize> {
+    let schema = schema.clone().finalize().ok()?;
+    let shape = schema.instantiate_shape(Box::new([])).ok()?;
+    let SchemaBody::Matrix { dimensions, .. } = schema.body() else {
+        return None;
+    };
+    dimensions
+        .iter()
+        .try_fold(1_u64, |count, dimension| {
+            count.checked_mul(shape.resolve_dimension(dimension).ok()?)
+        })
+        .and_then(|count| usize::try_from(count).ok())
+}
+
+fn structurally_irrefutable<V>(
+    pattern: &crate::CollectionPattern<SchemaDraft, V>,
+    expected: &SchemaDraft,
+) -> bool {
+    match pattern {
+        crate::CollectionPattern::Wildcard => true,
+        crate::CollectionPattern::Bind { schema, .. } => schema == expected,
+        crate::CollectionPattern::Tuple(items) => {
+            let SchemaBody::Tuple(fields) = &expected.body else {
+                return false;
+            };
+            fields.len() == items.len()
+                && items.iter().zip(fields).all(|(item, field)| {
+                    structural_component_schema_draft(expected, field)
+                        .is_some_and(|expected| structurally_irrefutable(item, &expected))
+                })
+        }
+        crate::CollectionPattern::Array {
+            prefix,
+            rest: Some(rest),
+            suffix,
+        } => {
+            let SchemaBody::Matrix { element, .. } = &expected.body else {
+                return false;
+            };
+            let Some(fixed) = prefix.len().checked_add(suffix.len()) else {
+                return false;
+            };
+            let residual =
+                fixed_matrix_element_count(expected).and_then(|count| count.checked_sub(fixed));
+            let length_is_irrefutable = fixed == 0 || residual.is_some();
+            length_is_irrefutable
+                && structural_component_schema_draft(expected, element).is_some_and(|element| {
+                    prefix
+                        .iter()
+                        .chain(suffix)
+                        .all(|item| structurally_irrefutable(item, &element))
+                        && (structural_array_rest_schema(&element, residual)
+                            .is_some_and(|expected| structurally_irrefutable(rest, &expected))
+                            || matches!(
+                                rest.as_ref(),
+                                crate::CollectionPattern::Bind { schema, .. }
+                                    if structural_array_rest_schema(&element, None).as_ref()
+                                        == Some(schema)
+                            ))
+                })
+        }
+        crate::CollectionPattern::Array {
+            prefix,
+            rest: None,
+            suffix,
+        } => {
+            let SchemaBody::Matrix { element, .. } = &expected.body else {
+                return false;
+            };
+            prefix
+                .len()
+                .checked_add(suffix.len())
+                .is_some_and(|count| fixed_matrix_element_count(expected) == Some(count))
+                && structural_component_schema_draft(expected, element).is_some_and(|expected| {
+                    prefix
+                        .iter()
+                        .chain(suffix)
+                        .all(|item| structurally_irrefutable(item, &expected))
+                })
+        }
+        crate::CollectionPattern::Enum { ordinal, payload } => {
+            let SchemaBody::Enum { variants, .. } = &expected.body else {
+                return false;
+            };
+            if variants.len() != 1 {
+                return false;
+            }
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return false;
+            };
+            match (&variant.payload, payload) {
+                (None, None) => true,
+                (Some(payload_schema), Some(pattern)) => {
+                    structural_component_schema_draft(expected, payload_schema)
+                        .is_some_and(|expected| structurally_irrefutable(pattern, &expected))
+                }
+                _ => false,
+            }
+        }
+        crate::CollectionPattern::Equal(_) => false,
+    }
+}
+fn structural_coverage_space(expected: &SchemaDraft) -> StructuralCoverageSpace {
+    match &expected.body {
+        SchemaBody::Bool => StructuralCoverageSpace::Bool,
+        SchemaBody::Enum { variants, .. } => StructuralCoverageSpace::Enum(
+            variants
+                .iter()
+                .map(|variant| {
+                    variant.payload.as_ref().map(|payload| {
+                        structural_component_schema_draft(expected, payload)
+                            .map_or(StructuralCoverageSpace::Opaque, |payload| {
+                                structural_coverage_space(&payload)
+                            })
+                    })
+                })
+                .collect(),
+        ),
+        SchemaBody::Tuple(fields) => StructuralCoverageSpace::Tuple(
+            fields
+                .iter()
+                .map(|field| {
+                    structural_component_schema_draft(expected, field)
+                        .map_or(StructuralCoverageSpace::Opaque, |field| {
+                            structural_coverage_space(&field)
+                        })
+                })
+                .collect(),
+        ),
+        SchemaBody::Matrix { element, .. } => fixed_matrix_element_count(expected)
+            .and_then(|count| {
+                structural_component_schema_draft(expected, element).map(|element| {
+                    StructuralCoverageSpace::Repeated {
+                        element: Box::new(structural_coverage_space(&element)),
+                        count,
+                    }
+                })
+            })
+            .unwrap_or(StructuralCoverageSpace::Opaque),
+        _ => StructuralCoverageSpace::Opaque,
+    }
+}
+
+fn structural_coverage_pattern<V>(
+    pattern: &crate::CollectionPattern<SchemaDraft, V>,
+    expected: &SchemaDraft,
+    literal_bool: &impl Fn(&V) -> Option<bool>,
+) -> StructuralCoveragePattern {
+    if structurally_irrefutable(pattern, expected) {
+        return StructuralCoveragePattern::Wildcard;
+    }
+    match (pattern, &expected.body) {
+        (crate::CollectionPattern::Equal(value), SchemaBody::Bool) => literal_bool(value).map_or(
+            StructuralCoveragePattern::Never,
+            StructuralCoveragePattern::Bool,
+        ),
+        (crate::CollectionPattern::Tuple(items), SchemaBody::Tuple(fields))
+            if items.len() == fields.len() =>
+        {
+            let Some(items) = items
+                .iter()
+                .zip(fields)
+                .map(|(item, field)| {
+                    let expected = structural_component_schema_draft(expected, field)?;
+                    Some(structural_coverage_pattern(item, &expected, literal_bool))
+                })
+                .collect::<Option<Vec<_>>>()
+            else {
+                return StructuralCoveragePattern::Never;
+            };
+            StructuralCoveragePattern::Tuple(items.into_boxed_slice())
+        }
+        (
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            },
+            SchemaBody::Matrix { element, .. },
+        ) => {
+            let Some(count) = fixed_matrix_element_count(expected) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let Some(fixed) = prefix.len().checked_add(suffix.len()) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let Some(residual) = count.checked_sub(fixed) else {
+                return StructuralCoveragePattern::Never;
+            };
+            if rest.is_none() && residual != 0 {
+                return StructuralCoveragePattern::Never;
+            }
+            let Some(element) = structural_component_schema_draft(expected, element) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let mut normalized_prefix = Vec::with_capacity(prefix.len());
+            normalized_prefix.extend(
+                prefix
+                    .iter()
+                    .map(|item| structural_coverage_pattern(item, &element, literal_bool)),
+            );
+            let mut normalized_suffix = suffix
+                .iter()
+                .map(|item| structural_coverage_pattern(item, &element, literal_bool))
+                .collect::<Vec<_>>();
+            let mut wildcard_count = 0;
+            if let Some(rest) = rest {
+                let Some(exact_rest) = structural_array_rest_schema(&element, Some(residual))
+                else {
+                    return StructuralCoveragePattern::Never;
+                };
+                let rest = if matches!(
+                    rest.as_ref(),
+                    crate::CollectionPattern::Bind { schema, .. }
+                        if structural_array_rest_schema(&element, None).as_ref() == Some(schema)
+                ) {
+                    StructuralCoveragePattern::Wildcard
+                } else {
+                    structural_coverage_pattern(rest, &exact_rest, literal_bool)
+                };
+                match rest {
+                    StructuralCoveragePattern::Wildcard => wildcard_count = residual,
+                    StructuralCoveragePattern::Sequence {
+                        prefix,
+                        wildcard_count: rest_wildcard_count,
+                        suffix,
+                    } if prefix
+                        .len()
+                        .checked_add(rest_wildcard_count)
+                        .and_then(|length| length.checked_add(suffix.len()))
+                        == Some(residual) =>
+                    {
+                        normalized_prefix.extend(prefix);
+                        wildcard_count = rest_wildcard_count;
+                        let mut combined_suffix = suffix.into_vec();
+                        combined_suffix.append(&mut normalized_suffix);
+                        normalized_suffix = combined_suffix;
+                    }
+                    _ => return StructuralCoveragePattern::Never,
+                }
+            }
+            StructuralCoveragePattern::Sequence {
+                prefix: normalized_prefix.into_boxed_slice(),
+                wildcard_count,
+                suffix: normalized_suffix.into_boxed_slice(),
+            }
+        }
+        (
+            crate::CollectionPattern::Enum { ordinal, payload },
+            SchemaBody::Enum { variants, .. },
+        ) => {
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let payload = match (&variant.payload, payload.as_deref()) {
+                (None, None) => None,
+                (Some(payload_schema), Some(pattern)) => {
+                    let Some(expected) =
+                        structural_component_schema_draft(expected, payload_schema)
+                    else {
+                        return StructuralCoveragePattern::Never;
+                    };
+                    Some(Box::new(structural_coverage_pattern(
+                        pattern,
+                        &expected,
+                        literal_bool,
+                    )))
+                }
+                _ => return StructuralCoveragePattern::Never,
+            };
+            StructuralCoveragePattern::Enum {
+                ordinal: *ordinal,
+                payload,
+            }
+        }
+        _ => StructuralCoveragePattern::Never,
+    }
+}
+
+fn cover_structural_pattern<V>(
+    coverage: &mut StructuralPatternCoverage,
+    pattern: &crate::CollectionPattern<SchemaDraft, V>,
+    expected: &SchemaDraft,
+    literal_bool: &impl Fn(&V) -> Option<bool>,
+) {
+    coverage.cover(structural_coverage_pattern(pattern, expected, literal_bool));
+}
+#[derive(Clone)]
+enum SourceMatchBody {
+    Expression(ExpressionSyntax),
+    Activation {
+        items: Vec<SyntaxNode>,
+        states: Vec<u32>,
+        syntax: SyntaxNode,
+    },
+}
+
+impl SourceMatchBody {
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            Self::Expression(expression) => expression.syntax(),
+            Self::Activation { syntax, .. } => syntax,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -2378,6 +2770,11 @@ enum PendingControlOperationBody {
         contract: OperationContractDeclaration,
     },
     Match(PendingMatch),
+    Comprehension(PendingComprehension),
+    Recur(u8),
+
+    Suspend,
+    Publish,
 }
 
 struct PendingControlBlock {
@@ -2417,7 +2814,6 @@ struct PendingConstraint {
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct PatternBinding {
     name: String,
-    schema: Option<SchemaDraft>,
 }
 
 struct BuiltinKindPaths(BTreeMap<KindId, CanonicalNominalPath>);
@@ -2444,16 +2840,29 @@ impl NamedKindPathResolver for BuiltinKindPaths {
     }
 }
 
+#[derive(Clone)]
+struct DeclaredEnumVariant {
+    schema: SchemaDraft,
+    ordinal: u32,
+    payload: Option<SchemaBody>,
+}
+
 struct SemanticBuilder {
     function_catalog: Option<Arc<mech_core::FunctionCatalog>>,
+    function_environment: Option<crate::FunctionEnvironment>,
     input_schema_overrides: BTreeMap<String, SchemaDraft>,
     control_depth: usize,
+    match_depth: usize,
+    comprehension_depth: usize,
     next_control_block: u32,
     anchor: SourceSemanticAnchor,
     constants: Vec<PendingConstant>,
     inputs: Vec<PendingInput>,
     input_by_name: BTreeMap<String, u32>,
     input_declarations: BTreeMap<String, SchemaDraft>,
+    declared_kinds: BTreeMap<String, SchemaDraft>,
+    declared_variants: BTreeMap<String, Vec<DeclaredEnumVariant>>,
+    imported_enum_qualifiers: BTreeMap<NominalKey, String>,
     nodes: Vec<PendingNode>,
     states: Vec<PendingState>,
     outputs: Vec<PendingOutput>,
@@ -2462,25 +2871,190 @@ struct SemanticBuilder {
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
-    function_imports: BTreeMap<String, String>,
+    local_fsms: BTreeMap<String, document_lowering::document_fsms::DeclaredFsm>,
+    function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
+    active_fsms: Vec<String>,
+    active_recursive_outputs: Vec<(String, SchemaDraft, usize)>,
+    activation_owned_states: BTreeSet<u32>,
+    ordinary_written_states: BTreeSet<u32>,
+    activation_assignment_depth: usize,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
+    retained_result: Option<(PendingValue, SyntaxNode)>,
 }
 
 impl SemanticBuilder {
+    fn annotation_schema_draft(
+        &self,
+        annotation: &KindAnnotationSyntax,
+    ) -> Result<SchemaDraft, SourceSemanticError> {
+        annotation_schema_draft_with_declarations(
+            annotation,
+            &self.declared_kinds,
+            &BTreeSet::new(),
+        )
+    }
+
+    fn scalar_annotation_schema(
+        &self,
+        annotation: &KindAnnotationSyntax,
+    ) -> Result<BuiltinSchema, SourceSemanticError> {
+        let draft = self.annotation_schema_draft(annotation)?;
+        builtin_schema_for_annotation_body(&draft.body).ok_or_else(|| SourceSemanticError {
+            code: "source-semantics/unsupported-kind-annotation",
+            message: "this value position requires a builtin scalar kind annotation".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(annotation.syntax()),
+        })
+    }
+
+    fn declared_enum_variant(
+        &self,
+        name: &str,
+        expected: Option<&SchemaDraft>,
+        syntax: &SyntaxNode,
+    ) -> Result<Option<DeclaredEnumVariant>, SourceSemanticError> {
+        let expected_enum = expected.and_then(|expected| match &expected.body {
+            SchemaBody::Enum { .. } => Some(expected.clone()),
+            SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Enum { .. }) => {
+                Some(SchemaDraft {
+                    body: payload.as_ref().clone(),
+                    dimension_parameters: expected.dimension_parameters.clone(),
+                })
+            }
+            _ => None,
+        });
+        let qualified_enum = name.contains('/');
+        if qualified_enum && expected_enum.is_none() {
+            // A qualified atom is an enum selector only when its surrounding
+            // value position establishes an enum schema, or its qualifier
+            // names a declared enum. Other full paths remain nominal data,
+            // even when the first segment names a declared non-enum kind.
+            let is_declared_enum = name
+                .rsplit_once('/')
+                .and_then(|(qualifier, _)| self.declared_kinds.get(qualifier))
+                .is_some_and(|schema| matches!(schema.body, SchemaBody::Enum { .. }));
+            if !is_declared_enum {
+                return Ok(None);
+            }
+        }
+        let (name, qualified) = match name.rsplit_once('/') {
+            Some((qualifier, variant)) => match self.declared_kinds.get(qualifier) {
+                Some(schema) if matches!(schema.body, SchemaBody::Enum { .. }) => {
+                    (variant, Some(schema))
+                }
+                Some(_) => {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/unknown-enum-variant",
+                        message: format!("{qualifier} is not an enum kind"),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    });
+                }
+                // Imports retain the exact enum key. The compiler also
+                // supplies its defining qualifier, so a typo cannot silently
+                // select a same-named variant from that schema.
+                None if expected_enum.as_ref().is_some_and(|schema| {
+                    matches!(&schema.body, SchemaBody::Enum { key, .. }
+                            if self.imported_enum_qualifiers.get(key).map(String::as_str)
+                                == Some(qualifier))
+                }) =>
+                {
+                    (variant, None)
+                }
+                None if expected_enum.is_some() => {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/unknown-enum-variant",
+                        message: format!("unknown enum qualifier {qualifier}"),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    });
+                }
+                // Outside an enum context, an undeclared qualifier belongs
+                // to the nominal atom path handled by the caller.
+                None => return Ok(None),
+            },
+            None => (name, None),
+        };
+        if let (Some(expected), Some(qualified)) = (expected_enum.as_ref(), qualified)
+            && expected != qualified
+        {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unknown-enum-variant",
+                message: format!("variant {name} does not belong to the expected enum"),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+        let expected = qualified.or(expected_enum.as_ref());
+        // An imported value retains its exact enum schema, even though the
+        // defining root's declaration table is not visible in this root.
+        if let Some(schema) = expected
+            && let SchemaBody::Enum { variants, .. } = &schema.body
+        {
+            return variants
+                .iter()
+                .enumerate()
+                .find(|(_, variant)| variant.name == name)
+                .map(|(ordinal, variant)| {
+                    Some(DeclaredEnumVariant {
+                        schema: schema.clone(),
+                        ordinal: ordinal as u32,
+                        payload: variant.payload.clone(),
+                    })
+                })
+                .ok_or_else(|| SourceSemanticError {
+                    code: "source-semantics/unknown-enum-variant",
+                    message: format!("variant {name} does not belong to the expected enum"),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+        }
+        let Some(variants) = self.declared_variants.get(name) else {
+            if qualified_enum {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unknown-enum-variant",
+                    message: format!("variant {name} does not belong to the expected enum"),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            return Ok(None);
+        };
+        let selected = variants
+            .iter()
+            .filter(|variant| expected.is_none_or(|expected| expected == &variant.schema))
+            .cloned()
+            .collect::<Vec<_>>();
+        match selected.as_slice() {
+            [] => Err(SourceSemanticError {
+                code: "source-semantics/unknown-enum-variant",
+                message: format!("variant {name} does not belong to the expected enum"),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            }),
+            [variant] => Ok(Some(variant.clone())),
+            _ => Err(SourceSemanticError {
+                code: "source-semantics/ambiguous-enum-variant",
+                message: format!("variant {name} requires an enum kind annotation"),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            }),
+        }
+    }
+
     fn new(anchor: SourceSemanticAnchor) -> Self {
         Self {
             function_catalog: None,
+            function_environment: None,
             input_schema_overrides: BTreeMap::new(),
             control_depth: 0,
+            match_depth: 0,
+            comprehension_depth: 0,
             next_control_block: 0,
             anchor,
             constants: Vec::new(),
             inputs: Vec::new(),
             input_by_name: BTreeMap::new(),
             input_declarations: BTreeMap::new(),
+            declared_kinds: BTreeMap::new(),
+            declared_variants: BTreeMap::new(),
+            imported_enum_qualifiers: BTreeMap::new(),
             nodes: Vec::new(),
             states: Vec::new(),
             outputs: Vec::new(),
@@ -2489,29 +3063,41 @@ impl SemanticBuilder {
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
-            function_imports: BTreeMap::new(),
+            local_fsms: BTreeMap::new(),
+            function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),
             active_functions: Vec::new(),
+            active_fsms: Vec::new(),
+            active_recursive_outputs: Vec::new(),
+            activation_owned_states: BTreeSet::new(),
+            ordinary_written_states: BTreeSet::new(),
+            activation_assignment_depth: 0,
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
+            retained_result_boundary: None,
+            retained_result: None,
         }
     }
 
     fn with_function_catalog(
         anchor: SourceSemanticAnchor,
         function_catalog: Arc<mech_core::FunctionCatalog>,
-    ) -> Self {
+    ) -> Result<Self, SourceSemanticError> {
         let mut builder = Self::new(anchor);
+        builder.function_environment = Some(
+            crate::FunctionEnvironment::from_catalog_defaults(&function_catalog)
+                .map_err(|error| internal(anchor, error.display_message()))?,
+        );
         builder.function_catalog = Some(function_catalog);
-        builder
+        Ok(builder)
     }
 
     fn with_function_catalog_and_input_schemas(
         anchor: SourceSemanticAnchor,
         function_catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
-    ) -> Self {
-        let mut builder = Self::with_function_catalog(anchor, function_catalog);
+    ) -> Result<Self, SourceSemanticError> {
+        let mut builder = Self::with_function_catalog(anchor, function_catalog)?;
         builder.input_schema_overrides = input_schemas
             .into_iter()
             .map(|(name, body)| {
@@ -2524,7 +3110,39 @@ impl SemanticBuilder {
                 )
             })
             .collect();
-        builder
+        Ok(builder)
+    }
+
+    fn named_call_declaration(
+        &self,
+        name: &str,
+        syntax: &SyntaxNode,
+    ) -> Result<(String, mech_core::FunctionTypeDeclaration), SourceSemanticError> {
+        let missing = || SourceSemanticError {
+            code: "source-semantics/unknown-function",
+            message: format!("function {name} is not visible with declared source semantics"),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        };
+        if let Some(catalog) = self.function_catalog.as_ref() {
+            let Some(crate::FunctionBinding::CatalogOperation(operation)) = self
+                .function_environment
+                .as_ref()
+                .and_then(|environment| environment.resolve_name(name))
+            else {
+                return Err(missing());
+            };
+            let entry = catalog.specializer(operation).ok_or_else(missing)?;
+            let canonical_name = entry.operation.canonical_name.to_string();
+            let declaration = catalog
+                .source_type_declaration(&canonical_name)
+                .ok_or_else(missing)?
+                .clone();
+            return Ok((canonical_name, declaration));
+        }
+        // Catalog-free semantic probes resolve canonical type declarations only.
+        // Configured production calls above never fall back to that inventory.
+        let declaration = self.source_type_declaration(name).map_err(|_| missing())?;
+        Ok((name.to_owned(), declaration))
     }
 
     fn source_type_declaration(
@@ -2578,7 +3196,7 @@ impl SemanticBuilder {
             if !bindings.contains(&name)
                 && let Some(annotation) = variable.annotation()
             {
-                let mut schema = annotation_schema_draft(&annotation)?;
+                let mut schema = self.annotation_schema_draft(&annotation)?;
                 if let Some(existing) = self.input_declarations.get(&name) {
                     if !is_dynamic_schema_draft(existing)
                         && !is_dynamic_schema_draft(&schema)
@@ -2717,7 +3335,7 @@ impl SemanticBuilder {
             SyntaxKind::Expression | SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
                 self.declare_input_annotations(unit, bindings)?;
             }
-            _ => unreachable!("document unit collector is closed"),
+            _ => self.declare_input_annotations(unit, bindings)?,
         }
         Ok(())
     }
@@ -3217,7 +3835,7 @@ impl SemanticBuilder {
                 self.expression_body_with_expected(&expression, expected)?
             }
             FactorValueSyntax::Negate(value) => {
-                if let Some(literal) = self.negated_number_literal(&value)? {
+                if let Some(literal) = self.negated_number_literal(&value, expected)? {
                     literal
                 } else {
                     let operand =
@@ -3299,7 +3917,9 @@ impl SemanticBuilder {
                 )
             }
             FactorValueSyntax::Structure(value) => self.structure(&value, expected)?,
-            FactorValueSyntax::Literal(value) => self.literal(&value)?,
+            FactorValueSyntax::Literal(value) => {
+                self.literal(&value, expected.map(ExpectedSchema::schema))?
+            }
             FactorValueSyntax::Call(value) => {
                 let function =
                     self.required(value.function(), value.syntax(), "a function name")?;
@@ -3322,22 +3942,7 @@ impl SemanticBuilder {
                 let declaration = if self.local_functions.contains_key(&function_name) {
                     None
                 } else {
-                    let function_name = self
-                        .function_imports
-                        .get(&function_name)
-                        .cloned()
-                        .unwrap_or_else(|| function_name.clone());
-                    let declaration =
-                        self.source_type_declaration(&function_name).map_err(|_| {
-                            SourceSemanticError {
-                                code: "source-semantics/unknown-function",
-                                message: format!(
-                                    "function {function_name} has no declared source semantics"
-                                ),
-                                anchor: SourceSemanticAnchor::for_node(function.syntax()),
-                            }
-                        })?;
-                    Some((function_name, declaration))
+                    Some(self.named_call_declaration(&function_name, function.syntax())?)
                 };
                 let arguments = self.required(
                     value.arguments(),
@@ -3505,9 +4110,22 @@ impl SemanticBuilder {
     fn resolve_declared_call(
         &mut self,
         name: &str,
+        inputs: Vec<PendingValue>,
+        syntax: &SyntaxNode,
+        declaration: mech_core::FunctionTypeDeclaration,
+    ) -> Result<(Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
+        self.resolve_declared_call_with_destination(name, inputs, syntax, declaration, None)
+    }
+
+    // Addressed arithmetic resolves the selected destination's type without
+    // emitting a gather or converting a value that the RMW kernel reads itself.
+    fn resolve_declared_call_with_destination(
+        &mut self,
+        name: &str,
         mut inputs: Vec<PendingValue>,
         syntax: &SyntaxNode,
         mut declaration: mech_core::FunctionTypeDeclaration,
+        destination: Option<SchemaDraft>,
     ) -> Result<(Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
         // Both operator and call syntax enter this inference boundary. These
         // peer operations infer an undeclared input from the other operand;
@@ -3555,19 +4173,24 @@ impl SemanticBuilder {
                     )?;
                 }
                 (false, true) => {
-                    inputs[1] = self.conform_dynamic_to_schema(
-                        inputs[1],
-                        &self.schema_draft_of(inputs[0])?,
-                        syntax,
-                    )?;
+                    let expected = match &destination {
+                        Some(selected) => selected.clone(),
+                        None => self.schema_draft_of(inputs[0])?,
+                    };
+                    inputs[1] = self.conform_dynamic_to_schema(inputs[1], &expected, syntax)?;
                 }
                 _ => {}
             }
         }
         let input_types = inputs
             .iter()
-            .map(|input| {
-                let schema = self.schema_draft_of(*input)?;
+            .enumerate()
+            .map(|(index, input)| {
+                let schema = if index == 0 && destination.is_some() {
+                    destination.clone().unwrap()
+                } else {
+                    self.schema_draft_of(*input)?
+                };
                 if matches!(schema.body, SchemaBody::Dynamic) {
                     return Err(SourceSemanticError {
                         code: "source-semantics/unresolved-call-kind",
@@ -3641,12 +4264,13 @@ impl SemanticBuilder {
             message: error.to_string(),
             anchor: SourceSemanticAnchor::for_node(syntax),
         })?;
-        for ((input, actual), conversion) in inputs
+        for (index, ((input, actual), conversion)) in inputs
             .iter_mut()
             .zip(&input_types)
             .zip(resolved.conversions.iter())
+            .enumerate()
         {
-            if actual == &conversion.target {
+            if (index == 0 && destination.is_some()) || actual == &conversion.target {
                 continue;
             }
             *input =
@@ -3690,10 +4314,13 @@ impl SemanticBuilder {
                 format!("maintained function {name} selected conflicting output-schema rules"),
             ));
         }
-        let input_schemas = inputs
+        let mut input_schemas = inputs
             .iter()
             .map(|input| self.schema_draft_of(*input))
             .collect::<Result<Vec<_>, _>>()?;
+        if let Some(destination) = destination {
+            input_schemas[0] = destination;
+        }
         Ok((
             inputs,
             materialize_source_output_draft(
@@ -3858,7 +4485,7 @@ impl SemanticBuilder {
         };
         let annotation = variable
             .annotation()
-            .map(|annotation| annotation_schema_draft(&annotation))
+            .map(|annotation| self.annotation_schema_draft(&annotation))
             .transpose()?;
         if let Some(value) = self.bindings.get(&name).copied() {
             let value = self.read_document_binding(value, variable.syntax())?;
@@ -3952,7 +4579,17 @@ impl SemanticBuilder {
             "a defined variable",
         )?;
         let stem = self.required(variable.stem(), variable.syntax(), "a variable stem")?;
-        let name = node_text(stem.syntax())?;
+        let name = match stem {
+            VariableStemSyntax::Identifier(identifier) => node_text(identifier.syntax())?,
+            VariableStemSyntax::Context(path) => {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/invalid-definition-target",
+                    message: "a variable definition cannot target a context-addressed resource"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(path.syntax()),
+                });
+            }
+        };
         if self.scope_definitions.contains(&name) {
             return Err(SourceSemanticError {
                 code: "source-semantics/variable-already-defined",
@@ -3967,7 +4604,7 @@ impl SemanticBuilder {
         )?;
         let expected = variable
             .annotation()
-            .map(|annotation| annotation_schema_draft(&annotation))
+            .map(|annotation| self.annotation_schema_draft(&annotation))
             .transpose()?;
         let initializer_nodes = self.nodes.len();
         let initializer_states = self.states.len();
@@ -4061,7 +4698,11 @@ impl SemanticBuilder {
         Ok((bound, definition.syntax().clone()))
     }
 
-    fn literal(&mut self, literal: &LiteralSyntax) -> Result<PendingValue, SourceSemanticError> {
+    fn literal(
+        &mut self,
+        literal: &LiteralSyntax,
+        contextual: Option<&SchemaDraft>,
+    ) -> Result<PendingValue, SourceSemanticError> {
         // Source empty has no runtime schema. An explicit optional annotation
         // may resolve it here; otherwise its source anchor travels in compiler IR.
         if let Some(LiteralValueSyntax::Empty(value)) = literal.value() {
@@ -4069,7 +4710,7 @@ impl SemanticBuilder {
                 PendingValue::UnresolvedEmpty(SourceSemanticAnchor::for_node(value.syntax()));
             return match literal.annotation() {
                 Some(annotation) => {
-                    let expected = annotation_schema_draft(&annotation)?;
+                    let expected = self.annotation_schema_draft(&annotation)?;
                     if !matches!(expected.body, SchemaBody::Option(_)) {
                         return Err(SourceSemanticError {
                             code: "source-semantics/incompatible-literal-kind",
@@ -4091,6 +4732,41 @@ impl SemanticBuilder {
         }
         if let Some(LiteralValueSyntax::Atom(value)) = literal.value() {
             let source = node_text(value.syntax())?;
+            let annotation = literal
+                .annotation()
+                .map(|annotation| self.annotation_schema_draft(&annotation))
+                .transpose()?;
+            let variant_name = source.trim_start_matches(':');
+            if let Some(variant) = self.declared_enum_variant(
+                variant_name,
+                annotation.as_ref().or(contextual),
+                value.syntax(),
+            )? {
+                if variant.payload.is_some() {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/missing-enum-payload",
+                        message: format!("enum variant {variant_name} requires a payload"),
+                        anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                    });
+                }
+                let enumeration = self.constant_draft(
+                    variant.schema,
+                    ValueDataDraft::Enum(EnumDraft {
+                        ordinal: variant.ordinal,
+                        payload: None,
+                    }),
+                );
+                return match annotation.as_ref().or(contextual) {
+                    Some(expected) => self.conform_schema_draft(
+                        enumeration,
+                        expected,
+                        value.syntax(),
+                        "source-semantics/incompatible-literal-kind",
+                        "enum variant does not satisfy its contextual kind",
+                    ),
+                    None => Ok(enumeration),
+                };
+            }
             let path = CanonicalNominalPath::new(
                 source
                     .trim_start_matches(':')
@@ -4107,10 +4783,10 @@ impl SemanticBuilder {
             })?;
             let key = NominalKey::from_path(NominalKind::Atom, &path);
             let atom = self.constant_exact(SchemaBody::Atom(key), ValueDataDraft::Atom);
-            return match literal.annotation() {
+            return match annotation {
                 Some(annotation) => self.conform_schema_draft(
                     atom,
-                    &annotation_schema_draft(&annotation)?,
+                    &annotation,
                     value.syntax(),
                     "source-semantics/incompatible-literal-kind",
                     "atom literal does not satisfy its exact kind annotation",
@@ -4118,9 +4794,32 @@ impl SemanticBuilder {
                 None => Ok(atom),
             };
         }
+        if let (Some(annotation), Some(LiteralValueSyntax::Number(number))) =
+            (literal.annotation(), literal.value())
+        {
+            let expected = self.annotation_schema_draft(&annotation)?;
+            if let Some(value) = self.constrained_integer_literal(
+                expected,
+                &number,
+                canonical_number_source(&number)?,
+            )? {
+                return Ok(value);
+            }
+        }
+        if literal.annotation().is_none()
+            && let (Some(contextual), Some(LiteralValueSyntax::Number(number))) =
+                (contextual, literal.value())
+            && let Some(value) = self.constrained_integer_literal(
+                contextual.clone(),
+                &number,
+                canonical_number_source(&number)?,
+            )?
+        {
+            return Ok(value);
+        }
         let annotation = literal
             .annotation()
-            .map(|annotation| annotation_schema(&annotation))
+            .map(|annotation| self.scalar_annotation_schema(&annotation))
             .transpose()?;
         if literal.true_token().is_some() {
             return self.literal_constant(
@@ -4215,9 +4914,70 @@ impl SemanticBuilder {
         })
     }
 
+    fn constrained_integer_literal(
+        &mut self,
+        expected: SchemaDraft,
+        number: &mech_syntax::document::NumberSyntax,
+        source: String,
+    ) -> Result<Option<PendingValue>, SourceSemanticError> {
+        let interval = match &expected.body {
+            SchemaBody::IntegerInterval(interval) => Some(*interval),
+            SchemaBody::Option(payload) => match payload.as_ref() {
+                SchemaBody::IntegerInterval(interval) => Some(*interval),
+                _ => None,
+            },
+            _ => None,
+        };
+        let Some(interval) = interval else {
+            return Ok(None);
+        };
+        let builtin = builtin_schema_for_body(&interval.base_body())
+            .expect("integer interval has a builtin base");
+        let suffix = selected_integer_suffix(number)?;
+        let (decoded, data) = decode_number(
+            &source,
+            if suffix.is_some() {
+                None
+            } else {
+                Some(builtin)
+            },
+            suffix,
+        )
+        .ok_or_else(|| SourceSemanticError {
+            code: "source-semantics/invalid-interval-literal",
+            message: "integer literal cannot be represented by the interval's base kind".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(number.syntax()),
+        })?;
+        if decoded != builtin {
+            return Err(SourceSemanticError {
+                code: "source-semantics/incompatible-literal-kind",
+                message: "explicit integer suffix does not match the interval's base kind"
+                    .to_owned(),
+                anchor: SourceSemanticAnchor::for_node(number.syntax()),
+            });
+        }
+        if !integer_interval_contains_draft(interval, &data) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/integer-interval-violation",
+                message: "integer literal is outside its annotated interval".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(number.syntax()),
+            });
+        }
+        let data = if matches!(expected.body, SchemaBody::Option(_)) {
+            ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(data)),
+            })
+        } else {
+            data
+        };
+        Ok(Some(self.constant_draft(expected, data)))
+    }
+
     fn negated_number_literal(
         &mut self,
         negate: &mech_syntax::document::NegateFactorSyntax,
+        expected: Option<ExpectedSchema<'_>>,
     ) -> Result<Option<PendingValue>, SourceSemanticError> {
         fn find<N: AstNode>(node: &SyntaxNode, range: TextRange) -> Option<N> {
             if node.range() == range {
@@ -4243,9 +5003,23 @@ impl SemanticBuilder {
         let Some(LiteralValueSyntax::Number(number)) = literal.value() else {
             return Ok(None);
         };
+        if let Some(annotation) = literal.annotation() {
+            let expected = self.annotation_schema_draft(&annotation)?;
+            let source = format!("-{}", canonical_number_source(&number)?);
+            if let Some(value) = self.constrained_integer_literal(expected, &number, source)? {
+                return Ok(Some(value));
+            }
+        } else if let Some(expected) = expected {
+            let source = format!("-{}", canonical_number_source(&number)?);
+            if let Some(value) =
+                self.constrained_integer_literal(expected.schema().clone(), &number, source)?
+            {
+                return Ok(Some(value));
+            }
+        }
         let annotation = literal
             .annotation()
-            .map(|annotation| annotation_schema(&annotation))
+            .map(|annotation| self.scalar_annotation_schema(&annotation))
             .transpose()?;
         let suffix = selected_integer_suffix(&number)?;
         for schema in [annotation, suffix].into_iter().flatten() {
@@ -4314,7 +5088,7 @@ impl SemanticBuilder {
         kind: &KindAnnotationSyntax,
         annotation: Option<BuiltinSchema>,
     ) -> Result<PendingValue, SourceSemanticError> {
-        let (kind_expr, dimensions) = annotation_kind_expr(kind)?;
+        let (kind_expr, dimensions) = annotation_kind_expr(kind, &self.declared_kinds)?;
         let paths = BuiltinKindPaths::build(SourceSemanticAnchor::for_node(kind.syntax()))?;
         let reified =
             ReifiedKind::from_closed_kind(&kind_expr, &dimensions, &paths).map_err(|error| {
@@ -4553,6 +5327,8 @@ impl SemanticBuilder {
                         return false;
                     };
                     self.constants[index].schema == element_schema
+                        && self.constants[index].dynamic_payload.is_none()
+                        && self.constants[index].embedded_constant.is_none()
                 })
             {
                 let row_count = values.len() as u64;
@@ -4823,7 +5599,7 @@ impl SemanticBuilder {
                             self.required(field.name(), field.syntax(), "a table field name")?;
                         let schema = field
                             .annotation()
-                            .map(|annotation| annotation_schema_draft(&annotation))
+                            .map(|annotation| self.annotation_schema_draft(&annotation))
                             .transpose()?;
                         Ok((node_text(name.syntax())?, schema))
                     })
@@ -4846,7 +5622,7 @@ impl SemanticBuilder {
                         )?;
                         Ok((
                             node_text(name.syntax())?,
-                            Some(annotation_schema_draft(&annotation)?),
+                            Some(self.annotation_schema_draft(&annotation)?),
                         ))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
@@ -4868,7 +5644,7 @@ impl SemanticBuilder {
                         )?;
                         Ok((
                             node_text(name.syntax())?,
-                            Some(annotation_schema_draft(&annotation)?),
+                            Some(self.annotation_schema_draft(&annotation)?),
                         ))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
@@ -5100,7 +5876,7 @@ impl SemanticBuilder {
             let name = node_text(name.syntax())?;
             let context = binding
                 .annotation()
-                .map(|annotation| annotation_schema_draft(&annotation))
+                .map(|annotation| self.annotation_schema_draft(&annotation))
                 .transpose()?
                 .or_else(|| {
                     expected.and_then(|schema| match &schema.body {
@@ -5293,6 +6069,56 @@ impl SemanticBuilder {
     ) -> Result<PendingValue, SourceSemanticError> {
         let name = self.required(tuple.name(), tuple.syntax(), "a tuple-structure name")?;
         let value = self.required(tuple.value(), tuple.syntax(), "a tuple-structure value")?;
+        let variant_name = node_text(name.syntax())?;
+        if let Some(variant) =
+            self.declared_enum_variant(&variant_name, expected, tuple.syntax())?
+        {
+            let payload = variant.payload.clone().ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/unexpected-enum-payload",
+                message: format!("enum variant {variant_name} does not accept a payload"),
+                anchor: SourceSemanticAnchor::for_node(tuple.syntax()),
+            })?;
+            let payload_schema = SchemaDraft {
+                body: payload,
+                dimension_parameters: Box::new([]),
+            };
+            let dynamic_payload = matches!(payload_schema.body, SchemaBody::Dynamic);
+            let value = self.contextual_expression(
+                &value,
+                Some(&payload_schema),
+                "source-semantics/incompatible-enum-payload",
+                "enum payload does not satisfy its declared kind",
+            )?;
+            if let PendingValue::Constant(index) = value {
+                let embedded = self.constants.len();
+                self.constants.push(PendingConstant {
+                    schema: variant.schema,
+                    data: ValueDataDraft::Enum(EnumDraft {
+                        ordinal: variant.ordinal,
+                        payload: None,
+                    }),
+                    dynamic_payload: None,
+                    embedded_constant: Some((
+                        index,
+                        dynamic_payload
+                            && !matches!(self.constants[index].schema.body, SchemaBody::Dynamic),
+                    )),
+                });
+                return Ok(PendingValue::Constant(embedded));
+            }
+            let ordinal = self.constant(
+                BuiltinSchema::Index,
+                ValueDataDraft::Index(u64::from(variant.ordinal) + 1),
+            );
+            return Ok(self.emit_with_schema_draft(
+                "core/enum-pack",
+                vec![ordinal, value],
+                variant.schema,
+                tuple.syntax(),
+                "enum-constructor",
+                Some(variant_name),
+            ));
+        }
         let context = expected.and_then(|schema| match &schema.body {
             SchemaBody::Tuple(items) if items.len() == 2 => {
                 Some(schema_component(schema, &items[1]))
@@ -5515,6 +6341,23 @@ impl SemanticBuilder {
         selectors: Vec<Option<PendingValue>>,
         syntax: &SyntaxNode,
     ) -> Result<PendingSelection, SourceSemanticError> {
+        let (operation, selected, schema) =
+            self.prepare_selection_schema(self.schema_draft_of(source)?, selectors, syntax)?;
+        let mut inputs = vec![source];
+        inputs.extend(selected);
+        Ok(PendingSelection {
+            operation,
+            inputs,
+            schema,
+        })
+    }
+
+    fn prepare_selection_schema(
+        &mut self,
+        source: SchemaDraft,
+        selectors: Vec<Option<PendingValue>>,
+        syntax: &SyntaxNode,
+    ) -> Result<(Option<&'static str>, Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
         if selectors.is_empty() || selectors.len() > 2 {
             return Err(SourceSemanticError {
                 code: "source-semantics/invalid-selection-arity",
@@ -5523,29 +6366,21 @@ impl SemanticBuilder {
             });
         }
         if selectors.len() == 2 && selectors.iter().all(Option::is_none) {
-            return Ok(PendingSelection {
-                operation: None,
-                inputs: vec![source],
-                schema: self.schema_draft_of(source)?,
-            });
+            return Ok((None, Vec::new(), source));
         }
         let mut parameters = Vec::new();
         let body = embed_schema_draft(
-            &self.schema_draft_of(source)?,
+            &source,
             &mut parameters,
             SourceSemanticAnchor::for_node(syntax),
         )?;
         if matches!(body, SchemaBody::String) && matches!(selectors.as_slice(), [None]) {
-            return Ok(PendingSelection {
-                operation: None,
-                inputs: vec![source],
-                schema: self.schema_draft_of(source)?,
-            });
+            return Ok((None, Vec::new(), source));
         }
-        let mut inputs = vec![source];
+        let mut inputs = Vec::new();
         let mut counts = Vec::new();
         let mut scalar = Vec::new();
-        for selector in &selectors {
+        for (selector_ordinal, selector) in selectors.iter().enumerate() {
             match selector {
                 None => {
                     counts.push(None);
@@ -5593,13 +6428,27 @@ impl SemanticBuilder {
                     // A logical selector's extent bounds its population; it does
                     // not determine how many source elements are selected.
                     let count = if logical {
+                        // Valid matrix masks must match the selected source
+                        // axis (or its linear cardinality). Bound population
+                        // by that geometry, not an otherwise unobserved mask
+                        // extent parameter from a lexical control result.
+                        let upper_bound = match &body {
+                            SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2 => {
+                                if selectors.len() == 1 {
+                                    DimensionExpr::Multiply(dimensions.clone())
+                                } else {
+                                    dimensions[selector_ordinal].clone()
+                                }
+                            }
+                            _ => count,
+                        };
                         let id = DimensionParameterId::new(parameters.len() as u32);
                         parameters.push(DimensionParameterDeclaration {
                             id,
                             origin: DimensionParameterOrigin::Inferred,
                             lifetime: DimensionLifetime::Turn,
                             lower_bound: DimensionExpr::Constant(0),
-                            upper_bound: Some(count),
+                            upper_bound: Some(upper_bound),
                         });
                         DimensionExpr::Parameter(id)
                     } else {
@@ -5670,14 +6519,14 @@ impl SemanticBuilder {
                 });
             }
         };
-        Ok(PendingSelection {
-            operation: Some(name),
+        Ok((
+            Some(name),
             inputs,
-            schema: SchemaDraft {
+            SchemaDraft {
                 body: output,
                 dimension_parameters: parameters.into_boxed_slice(),
             },
-        })
+        ))
     }
 
     fn constant_selection_ordinal(&self, value: PendingValue) -> Option<u64> {
@@ -5688,6 +6537,11 @@ impl SemanticBuilder {
         let PendingValue::Constant(index) = value else {
             return None;
         };
+        if self.constants[index].dynamic_payload.is_some()
+            || self.constants[index].embedded_constant.is_some()
+        {
+            return None;
+        }
         let mut schemas = SchemaTableBuilder::new();
         let pending = schemas
             .insert(self.schema_draft_of(value).ok()?.finalize().ok()?)
@@ -5755,6 +6609,9 @@ impl SemanticBuilder {
     }
 
     fn fsm_pipe(&mut self, pipe: &FsmPipeSyntax) -> Result<PendingValue, SourceSemanticError> {
+        if let Some(value) = self.inline_document_fsm(pipe)? {
+            return Ok(value);
+        }
         let instance = self.required(pipe.instance(), pipe.syntax(), "an FSM instance")?;
         let name = self.required(instance.name(), instance.syntax(), "an FSM name")?;
         let mut inputs = Vec::new();
@@ -5992,7 +6849,9 @@ impl SemanticBuilder {
     fn schema_draft(&self, value: PendingValue) -> Result<&SchemaDraft, SourceSemanticError> {
         Ok(match value.resolved()? {
             PendingValue::Constant(index) => &self.constants[index].schema,
-            PendingValue::Input(index) => &self.inputs[index as usize].schema,
+            PendingValue::Input(index) | PendingValue::LexicalInput(index) => {
+                &self.inputs[index as usize].schema
+            }
             PendingValue::State(index) => {
                 &self.nodes[self.states[index as usize].producer_node as usize].schema
             }
@@ -6064,7 +6923,10 @@ impl SemanticBuilder {
         if self.schema_of(value)? == Some(target) {
             return Ok(value);
         }
-        if let PendingValue::Constant(index) = value {
+        if let PendingValue::Constant(index) = value
+            && self.constants[index].dynamic_payload.is_none()
+            && self.constants[index].embedded_constant.is_none()
+        {
             let data = execute_conversion_draft(self.constants[index].data.clone(), &plan.step)
                 .map_err(|error| SourceSemanticError {
                     code: "source-semantics/constant-conversion-failed",
@@ -6096,8 +6958,13 @@ impl SemanticBuilder {
         if let Some(target_schema) = builtin_kind_from_resolved(target).and_then(builtin_schema) {
             return self.apply_conversion(value, target_schema, plan, syntax);
         }
-        let target = schema_draft_from_resolved(target, SourceSemanticAnchor::for_node(syntax))?;
-        if self.schema_draft_of(value)? == target {
+        let source = self.schema_draft_of(value)?;
+        let target = schema_draft_from_resolved(
+            target,
+            SourceSemanticAnchor::for_node(syntax),
+            &[source.clone()],
+        )?;
+        if source == target {
             return Ok(value);
         }
         Ok(self.emit_with_schema_draft(
@@ -6163,6 +7030,27 @@ impl SemanticBuilder {
         {
             return Ok(value);
         }
+        if let SchemaBody::IntegerInterval(interval) = &expected.body {
+            if actual.body == interval.base_body() {
+                if let PendingValue::Constant(index) = value {
+                    let data = self.constants[index].data.clone();
+                    if integer_interval_contains_draft(*interval, &data) {
+                        return Ok(self.constant_draft(expected.clone(), data));
+                    }
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/integer-interval-violation",
+                        message: "integer constant is outside its annotated interval".to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    });
+                }
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-live-interval-conversion",
+                    message: "a live integer value cannot be implicitly narrowed into an interval"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+        }
         if let SchemaBody::Option(payload) = &expected.body {
             if !matches!(actual.body, SchemaBody::Option(_)) {
                 let payload_schema = SchemaDraft {
@@ -6172,23 +7060,20 @@ impl SemanticBuilder {
                 let value =
                     self.conform_schema_draft(value, &payload_schema, syntax, code, message)?;
                 if let PendingValue::Constant(index) = value {
-                    let data = self.constants[index].data.clone();
                     let actual_payload = self.constants[index].schema.clone();
-                    if matches!(payload.as_ref(), SchemaBody::Dynamic)
-                        && !matches!(actual_payload.body, SchemaBody::Dynamic)
-                    {
-                        return Ok(self.constant_dynamic_option(actual_payload, data));
-                    }
-                    let index = self.constants.len();
+                    let wrap_dynamic = matches!(payload.as_ref(), SchemaBody::Dynamic)
+                        && !matches!(actual_payload.body, SchemaBody::Dynamic);
+                    let embedded = self.constants.len();
                     self.constants.push(PendingConstant {
                         schema: expected.clone(),
                         data: ValueDataDraft::Option(OptionDraft {
                             present: true,
-                            value: Some(Box::new(data)),
+                            value: None,
                         }),
                         dynamic_payload: None,
+                        embedded_constant: Some((index, wrap_dynamic)),
                     });
-                    return Ok(PendingValue::Constant(index));
+                    return Ok(PendingValue::Constant(embedded));
                 }
                 return Ok(self.emit_with_schema_draft(
                     "option/some",
@@ -6218,12 +7103,10 @@ impl SemanticBuilder {
                 message: message.to_owned(),
                 anchor: SourceSemanticAnchor::for_node(syntax),
             })?;
+        // Once a cast plan exists, preserve a concrete conversion failure.
+        // Collapsing an out-of-range constant back into the generic annotation
+        // mismatch hides the checked-cast contract and its positioned cause.
         self.apply_resolved_conversion(value, &expected_type, &plan, syntax)
-            .map_err(|_| SourceSemanticError {
-                code,
-                message: message.to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            })
     }
 
     #[cfg(test)]
@@ -6249,6 +7132,7 @@ impl SemanticBuilder {
             schema,
             data,
             dynamic_payload: None,
+            embedded_constant: None,
         });
         PendingValue::Constant(index)
     }
@@ -6259,6 +7143,7 @@ impl SemanticBuilder {
             schema: builtin_schema_draft(schema),
             data,
             dynamic_payload: None,
+            embedded_constant: None,
         });
         PendingValue::Constant(index)
     }
@@ -6272,6 +7157,7 @@ impl SemanticBuilder {
             },
             data,
             dynamic_payload: None,
+            embedded_constant: None,
         });
         PendingValue::Constant(index)
     }
@@ -6289,6 +7175,7 @@ impl SemanticBuilder {
                 value: None,
             }),
             dynamic_payload: Some((payload_schema, payload)),
+            embedded_constant: None,
         });
         PendingValue::Constant(index)
     }
@@ -6436,6 +7323,31 @@ impl SemanticBuilder {
         });
     }
 
+    fn publish_interactive_binding(
+        &mut self,
+        lexical_name: &str,
+        source: PendingValue,
+        syntax: &SyntaxNode,
+    ) {
+        if let Some(output) = self
+            .outputs
+            .iter_mut()
+            .find(|output| output.interactive_symbol.as_deref() == Some(lexical_name))
+        {
+            output.source = source;
+            output.anchor = SourceSemanticAnchor::for_node(syntax);
+            return;
+        }
+        let base = crate::encode_interactive_symbol_output_name(lexical_name);
+        let mut name = base.clone();
+        let mut suffix = 2u32;
+        while self.outputs.iter().any(|output| output.name == name) {
+            name = format!("{base}-{suffix}");
+            suffix += 1;
+        }
+        self.publish(&name, Some(lexical_name.to_owned()), source, syntax);
+    }
+
     fn finish(self) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         // Only resolved values cross the immutable program boundary, including
         // unused bindings and non-output dependencies retained by the builder.
@@ -6466,21 +7378,107 @@ impl SemanticBuilder {
             .collect::<Vec<_>>();
         let mut constants = ConstantStoreBuilder::new(&schemas.table);
         let mut handles = Vec::with_capacity(self.constants.len());
+        let mut materialized = Vec::<ValueDataDraft>::with_capacity(self.constants.len());
         for (index, constant) in self.constants.into_iter().enumerate() {
             let schema = constant_schema_ids[index];
-            let data = match constant.dynamic_payload {
-                Some((_, payload)) => ValueDataDraft::Option(OptionDraft {
-                    present: true,
-                    value: Some(Box::new(ValueDataDraft::Dynamic(Some(Box::new(
-                        ValueDraft {
-                            schema: schemas.dynamic_payload_id(index),
-                            shape_values: Box::new([]),
-                            data: payload,
-                        },
-                    ))))),
-                }),
+            let mut data = match constant.dynamic_payload {
+                Some((_, payload)) => {
+                    let payload_schema = schemas.dynamic_payload_id(index);
+                    let retained = schemas
+                        .table
+                        .get(payload_schema)
+                        .expect("dynamic payload schema is retained");
+                    let shape_values = if retained.dimension_parameters().is_empty() {
+                        Box::new([]) as Box<[u64]>
+                    } else {
+                        mech_core::shape_for_value_data(retained, &payload, &[], None)
+                            .map_err(|failure| SourceSemanticError {
+                                code: "source-semantics/unresolved-constant-shape",
+                                message: format!(
+                                    "unable to resolve dynamic payload shape: {failure}"
+                                ),
+                                anchor: self.anchor,
+                            })?
+                            .parameter_values()
+                            .to_vec()
+                            .into_boxed_slice()
+                    };
+                    let wrapped = ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+                        schema: payload_schema,
+                        shape_values,
+                        data: payload,
+                    })));
+                    match constant.data {
+                        ValueDataDraft::Option(mut option) => {
+                            option.value = Some(Box::new(wrapped));
+                            ValueDataDraft::Option(option)
+                        }
+                        ValueDataDraft::Enum(mut enumeration) => {
+                            enumeration.payload = Some(Box::new(wrapped));
+                            ValueDataDraft::Enum(enumeration)
+                        }
+                        _ => {
+                            return Err(internal(
+                                self.anchor,
+                                "dynamic payload has no enclosing value".to_owned(),
+                            ));
+                        }
+                    }
+                }
                 None => constant.data,
             };
+            if let Some((source, wrap_dynamic)) = constant.embedded_constant {
+                let source_data = materialized.get(source).ok_or_else(|| {
+                    internal(
+                        self.anchor,
+                        "embedded constant must precede its wrapper".to_owned(),
+                    )
+                })?;
+                let payload = if wrap_dynamic {
+                    let payload_schema = constant_schema_ids[source];
+                    let retained = schemas.table.get(payload_schema).ok_or_else(|| {
+                        internal(
+                            self.anchor,
+                            "embedded constant schema is unavailable".to_owned(),
+                        )
+                    })?;
+                    let shape_values = if retained.dimension_parameters().is_empty() {
+                        Box::new([]) as Box<[u64]>
+                    } else {
+                        mech_core::shape_for_value_data(retained, source_data, &[], None)
+                            .map_err(|failure| SourceSemanticError {
+                                code: "source-semantics/unresolved-constant-shape",
+                                message: format!(
+                                    "unable to resolve embedded payload shape: {failure}"
+                                ),
+                                anchor: self.anchor,
+                            })?
+                            .parameter_values()
+                            .to_vec()
+                            .into_boxed_slice()
+                    };
+                    ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+                        schema: payload_schema,
+                        shape_values,
+                        data: source_data.clone(),
+                    })))
+                } else {
+                    source_data.clone()
+                };
+                match &mut data {
+                    ValueDataDraft::Option(option) => option.value = Some(Box::new(payload)),
+                    ValueDataDraft::Enum(enumeration) => {
+                        enumeration.payload = Some(Box::new(payload));
+                    }
+                    _ => {
+                        return Err(internal(
+                            self.anchor,
+                            "embedded constant has no enclosing value".to_owned(),
+                        ));
+                    }
+                }
+            }
+            materialized.push(data.clone());
             let constant_schema = schemas
                 .table
                 .get(schema)
@@ -6597,12 +7595,23 @@ impl SemanticBuilder {
                         contracts.push(None);
                         crate::SourceNodeBody::Fsm(control.clone())
                     }
-                    PendingNodeBody::CollectionBinding => {
+                    PendingNodeBody::CollectionBinding
+                    | PendingNodeBody::RecursiveCall(_)
+                    | PendingNodeBody::Suspend
+                    | PendingNodeBody::Publish => {
                         unreachable!("lexical bindings cannot escape collection lowering")
                     }
                     PendingNodeBody::Match(control) => {
                         contracts.push(None);
                         crate::SourceNodeBody::Match(resolve_pending_match(
+                            control,
+                            &schemas.table,
+                            &constant_ids,
+                        ))
+                    }
+                    PendingNodeBody::Activation(control) => {
+                        contracts.push(None);
+                        crate::SourceNodeBody::Activation(resolve_pending_match(
                             control,
                             &schemas.table,
                             &constant_ids,
@@ -6721,7 +7730,9 @@ fn pending_schema(
     match value {
         PendingValue::UnresolvedEmpty(_) => unreachable!("unresolved source cannot cross finish"),
         PendingValue::Constant(index) => constants[index],
-        PendingValue::Input(index) => schemas.input_id(index as usize),
+        PendingValue::Input(index) | PendingValue::LexicalInput(index) => {
+            schemas.input_id(index as usize)
+        }
         PendingValue::State(index) => {
             let node = nodes
                 .iter()
@@ -6737,7 +7748,7 @@ fn resolve_value(value: PendingValue, constants: &[mech_core::ConstantId]) -> So
     match value {
         PendingValue::UnresolvedEmpty(_) => unreachable!("unresolved source cannot cross finish"),
         PendingValue::Constant(index) => SourceValue::Constant(constants[index]),
-        PendingValue::Input(index) => SourceValue::Input(index),
+        PendingValue::Input(index) | PendingValue::LexicalInput(index) => SourceValue::Input(index),
         PendingValue::State(index) => SourceValue::State(index),
         PendingValue::Node(node) => SourceValue::NodeOutput {
             node,
@@ -6804,30 +7815,33 @@ fn operator_name(operator: CanonicalOperator) -> (&'static str, Option<BuiltinSc
 
 fn annotation_kind_expr(
     annotation: &KindAnnotationSyntax,
+    declarations: &BTreeMap<String, SchemaDraft>,
 ) -> Result<(KindExpr, Box<[DimensionParameterDeclaration]>), SourceSemanticError> {
     let mut dimensions = DimensionEnvironmentBuilder::new();
-    let kind = annotation_kind_expr_with(annotation, &mut dimensions)?;
+    let kind = annotation_kind_expr_with(annotation, &mut dimensions, declarations)?;
     Ok((kind, dimensions.into_declarations()))
 }
 
 fn annotation_kind_expr_with(
     annotation: &KindAnnotationSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
 ) -> Result<KindExpr, SourceSemanticError> {
     let kind = annotation
         .kind()
         .ok_or_else(|| missing_kind_child(annotation.syntax(), "kind annotation"))?;
-    kind_with_option_expr(&kind, dimensions)
+    kind_with_option_expr(&kind, dimensions, declarations)
 }
 
 fn kind_with_option_expr(
     kind: &mech_syntax::document::KindWithOptionSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
 ) -> Result<KindExpr, SourceSemanticError> {
     let inner = kind
         .kind()
         .ok_or_else(|| missing_kind_child(kind.syntax(), "optional kind"))?;
-    let inner = kind_expr(&inner, dimensions)?;
+    let inner = kind_expr(&inner, dimensions, declarations)?;
     Ok(if kind.question_mark().is_some() {
         KindExpr::Option(Box::new(inner))
     } else {
@@ -6838,6 +7852,7 @@ fn kind_with_option_expr(
 fn kind_expr(
     kind: &KindSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
 ) -> Result<KindExpr, SourceSemanticError> {
     let value = kind
         .value()
@@ -6851,6 +7866,7 @@ fn kind_expr(
                 .kind()
                 .ok_or_else(|| missing_kind_child(nested.syntax(), "nested kind"))?,
             dimensions,
+            declarations,
         )?)),
         KindValueSyntax::Atom(atom) => {
             let name = atom
@@ -6869,26 +7885,41 @@ fn kind_expr(
             KindExpr::Atom(NominalKey::from_path(NominalKind::Atom, &path))
         }
         KindValueSyntax::Scalar(scalar) => {
-            if scalar.constraint().is_some() {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unsupported-kind-constraint",
-                    message: "reified scalar range constraints are not representable".to_owned(),
-                    anchor,
-                });
-            }
             let name = scalar
                 .name()
                 .ok_or_else(|| missing_kind_child(scalar.syntax(), "scalar kind name"))?;
-            match node_text(name.syntax())?.as_str() {
+            let name = node_text(name.syntax())?;
+            if let Some(range) = scalar.constraint() {
+                return Ok(KindExpr::IntegerInterval(integer_interval(&name, &range)?));
+            }
+            match name.as_str() {
                 "id" => KindExpr::Id,
                 "ix" | "index" => KindExpr::Index,
-                name => builtin_kind_named(name)
-                    .map(BuiltinScalarKind::kind_expr)
-                    .ok_or_else(|| SourceSemanticError {
-                        code: "source-semantics/unsupported-kind-value",
-                        message: format!("unknown scalar kind {name:?}"),
-                        anchor,
-                    })?,
+                name => {
+                    if let Some(schema) = declarations.get(name) {
+                        let resolved = ResolvedType::from_schema_body(
+                            &schema.body,
+                            &schema.dimension_parameters,
+                        )
+                        .map_err(|error| internal(anchor, error.to_string()))?;
+                        if !resolved.dimension_parameters().is_empty() {
+                            return Err(SourceSemanticError {
+                                code: "source-semantics/unsupported-kind-value",
+                                message: format!("declared kind {name:?} is not closed"),
+                                anchor,
+                            });
+                        }
+                        resolved.kind().clone()
+                    } else {
+                        builtin_kind_named(name)
+                            .map(BuiltinScalarKind::kind_expr)
+                            .ok_or_else(|| SourceSemanticError {
+                                code: "source-semantics/unsupported-kind-value",
+                                message: format!("unknown scalar kind {name:?}"),
+                                anchor,
+                            })?
+                    }
+                }
             }
         }
         KindValueSyntax::Map(map) => KindExpr::Map {
@@ -6896,11 +7927,13 @@ fn kind_expr(
                 &map.key()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map key kind"))?,
                 dimensions,
+                declarations,
             )?),
             value: Box::new(kind_expr(
                 &map.value()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map value kind"))?,
                 dimensions,
+                declarations,
             )?),
             cardinality: inferred_kind_dimension(dimensions, anchor)?,
         },
@@ -6909,11 +7942,12 @@ fn kind_expr(
                 &set.element()
                     .ok_or_else(|| missing_kind_child(set.syntax(), "set element kind"))?,
                 dimensions,
+                declarations,
             )?),
             cardinality: set
                 .literal_constraint()
                 .as_ref()
-                .map(kind_dimension)
+                .map(|literal| kind_dimension(literal, declarations, &BTreeSet::new()))
                 .transpose()?
                 .map_or_else(
                     || inferred_kind_dimension(dimensions, anchor),
@@ -6924,20 +7958,17 @@ fn kind_expr(
             let element = matrix
                 .element()
                 .ok_or_else(|| missing_kind_child(matrix.syntax(), "matrix element kind"))?;
-            let extents = matrix
+            let mut extents = matrix
                 .dimensions()
                 .iter()
-                .map(kind_dimension)
+                .map(|literal| kind_dimension(literal, declarations, &BTreeSet::new()))
                 .collect::<Result<Vec<_>, _>>()?;
             if extents.is_empty() {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unsupported-kind-value",
-                    message: "reified matrix kinds require explicit dimensions".to_owned(),
-                    anchor,
-                });
+                extents.push(inferred_kind_dimension(dimensions, anchor)?);
+                extents.push(inferred_kind_dimension(dimensions, anchor)?);
             }
             KindExpr::Matrix {
-                element: Box::new(kind_with_option_expr(&element, dimensions)?),
+                element: Box::new(kind_with_option_expr(&element, dimensions, declarations)?),
                 dimensions: extents.into_boxed_slice(),
             }
         }
@@ -6945,7 +7976,7 @@ fn kind_expr(
             tuple
                 .items()
                 .iter()
-                .map(|kind| kind_expr(kind, dimensions))
+                .map(|kind| kind_expr(kind, dimensions, declarations))
                 .collect::<Result<Vec<_>, _>>()?
                 .into_boxed_slice(),
         ),
@@ -6962,7 +7993,7 @@ fn kind_expr(
                     .map(|(name, kind)| {
                         Ok(KindField {
                             name: node_text(name.syntax())?,
-                            kind: annotation_kind_expr_with(kind, dimensions)?,
+                            kind: annotation_kind_expr_with(kind, dimensions, declarations)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -6982,7 +8013,7 @@ fn kind_expr(
                     .map(|(name, kind)| {
                         Ok(KindField {
                             name: node_text(name.syntax())?,
-                            kind: annotation_kind_expr_with(kind, dimensions)?,
+                            kind: annotation_kind_expr_with(kind, dimensions, declarations)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -6990,7 +8021,7 @@ fn kind_expr(
                 rows: table
                     .constraint()
                     .as_ref()
-                    .map(kind_dimension)
+                    .map(|literal| kind_dimension(literal, declarations, &BTreeSet::new()))
                     .transpose()?
                     .map_or_else(
                         || inferred_kind_dimension(dimensions, anchor),
@@ -7016,10 +8047,12 @@ fn inferred_kind_dimension(
         .map_err(|error| internal(anchor, format!("unable to declare kind extent: {error:?}")))
 }
 
-fn annotation_schema(
+fn annotation_schema_with_declarations(
     annotation: &KindAnnotationSyntax,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
 ) -> Result<BuiltinSchema, SourceSemanticError> {
-    let draft = annotation_schema_draft(annotation)?;
+    let draft = annotation_schema_draft_with_declarations(annotation, declarations, pending)?;
     builtin_schema_for_annotation_body(&draft.body).ok_or_else(|| SourceSemanticError {
         code: "source-semantics/unsupported-kind-annotation",
         message: "this value position requires a builtin scalar kind annotation".to_owned(),
@@ -7035,11 +8068,128 @@ fn builtin_schema_for_annotation_body(body: &SchemaBody) -> Option<BuiltinSchema
     }
 }
 
-fn annotation_schema_draft(
+fn integer_interval(
+    name: &str,
+    range: &RangeExpressionSyntax,
+) -> Result<IntegerInterval, SourceSemanticError> {
+    let anchor = SourceSemanticAnchor::for_node(range.syntax());
+    let error = |code, message: &str| SourceSemanticError {
+        code,
+        message: message.to_owned(),
+        anchor,
+    };
+    let base = builtin_kind_named(name).map(BuiltinScalarKind::schema_body);
+    let (signed, width) = match base {
+        Some(SchemaBody::UnsignedInteger(width)) => (false, width),
+        Some(SchemaBody::SignedInteger(width)) => (true, width),
+        _ => {
+            return Err(error(
+                "source-semantics/unsupported-interval-domain",
+                "fixed integer intervals require a signed or unsigned integer scalar kind",
+            ));
+        }
+    };
+    let bounds = range.bounds();
+    let operators = range.operators();
+    if bounds.len() != 2 || operators.len() != 1 {
+        return Err(error(
+            "source-semantics/unsupported-interval-step",
+            "fixed integer intervals require two endpoints and no step operand",
+        ));
+    }
+    let operator = node_text(operators[0].syntax())?;
+    let upper_inclusive = match operator.trim() {
+        ".." => false,
+        "..=" => true,
+        _ => {
+            return Err(error(
+                "source-semantics/unsupported-interval-operator",
+                "fixed integer intervals require .. or ..=",
+            ));
+        }
+    };
+    let parse = |bound: &FormulaSyntax| -> Result<String, SourceSemanticError> {
+        let text = node_text(bound.syntax())?;
+        let text = text.trim().replace('_', "");
+        let digits = text.strip_prefix('-').unwrap_or(&text);
+        if digits.is_empty() || !digits.bytes().all(|digit| digit.is_ascii_digit()) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unsupported-interval-endpoint",
+                message: "interval endpoints must be closed decimal integer literals".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(bound.syntax()),
+            });
+        }
+        Ok(text)
+    };
+    let lower = parse(&bounds[0])?;
+    let upper = parse(&bounds[1])?;
+    let interval = if signed {
+        IntegerInterval::Signed {
+            width,
+            lower: lower.parse().map_err(|_| {
+                error(
+                    "source-semantics/invalid-interval-bound",
+                    "lower endpoint is outside the supported signed integer domain",
+                )
+            })?,
+            upper: upper.parse().map_err(|_| {
+                error(
+                    "source-semantics/invalid-interval-bound",
+                    "upper endpoint is outside the supported signed integer domain",
+                )
+            })?,
+            upper_inclusive,
+        }
+    } else {
+        IntegerInterval::Unsigned {
+            width,
+            lower: lower.parse().map_err(|_| {
+                error(
+                    "source-semantics/invalid-interval-bound",
+                    "lower endpoint is outside the supported unsigned integer domain",
+                )
+            })?,
+            upper: upper.parse().map_err(|_| {
+                error(
+                    "source-semantics/invalid-interval-bound",
+                    "upper endpoint is outside the supported unsigned integer domain",
+                )
+            })?,
+            upper_inclusive,
+        }
+    };
+    if !interval.is_valid() {
+        return Err(error(
+            "source-semantics/invalid-interval-bound",
+            "integer interval is empty, descending, or outside its declared width",
+        ));
+    }
+    Ok(interval)
+}
+
+fn integer_interval_contains_draft(interval: IntegerInterval, data: &ValueDataDraft) -> bool {
+    match data {
+        ValueDataDraft::U8(v) => interval.contains_unsigned(u128::from(*v)),
+        ValueDataDraft::U16(v) => interval.contains_unsigned(u128::from(*v)),
+        ValueDataDraft::U32(v) => interval.contains_unsigned(u128::from(*v)),
+        ValueDataDraft::U64(v) => interval.contains_unsigned(u128::from(*v)),
+        ValueDataDraft::U128(v) => interval.contains_unsigned(*v),
+        ValueDataDraft::I8(v) => interval.contains_signed(i128::from(*v)),
+        ValueDataDraft::I16(v) => interval.contains_signed(i128::from(*v)),
+        ValueDataDraft::I32(v) => interval.contains_signed(i128::from(*v)),
+        ValueDataDraft::I64(v) => interval.contains_signed(i128::from(*v)),
+        ValueDataDraft::I128(v) => interval.contains_signed(*v),
+        _ => false,
+    }
+}
+
+fn annotation_schema_draft_with_declarations(
     annotation: &KindAnnotationSyntax,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
 ) -> Result<SchemaDraft, SourceSemanticError> {
     let mut dimensions = DimensionEnvironmentBuilder::new();
-    let body = annotation_schema_body(annotation, &mut dimensions)?;
+    let body = annotation_schema_body(annotation, &mut dimensions, declarations, pending)?;
     Ok(SchemaDraft {
         body,
         dimension_parameters: dimensions.into_declarations(),
@@ -7049,6 +8199,8 @@ fn annotation_schema_draft(
 fn annotation_schema_body(
     annotation: &KindAnnotationSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
 ) -> Result<SchemaBody, SourceSemanticError> {
     let kind = annotation
         .kind()
@@ -7056,7 +8208,7 @@ fn annotation_schema_body(
     let inner = kind
         .kind()
         .ok_or_else(|| missing_kind_child(kind.syntax(), "optional kind"))?;
-    let mut body = kind_schema_body(&inner, dimensions)?;
+    let mut body = kind_schema_body(&inner, dimensions, declarations, pending)?;
     if kind.question_mark().is_some() {
         body = SchemaBody::Option(Box::new(body));
     }
@@ -7066,6 +8218,8 @@ fn annotation_schema_body(
 fn kind_schema_body(
     kind: &KindSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
 ) -> Result<SchemaBody, SourceSemanticError> {
     let value = kind
         .value()
@@ -7098,28 +8252,45 @@ fn kind_schema_body(
             SchemaBody::Atom(NominalKey::from_path(NominalKind::Atom, &path))
         }
         KindValueSyntax::Scalar(scalar) => {
-            if scalar.constraint().is_some() {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unsupported-kind-constraint",
-                    message: "scalar range constraints require a first-class constrained schema"
-                        .to_owned(),
-                    anchor,
-                });
-            }
             let name = scalar
                 .name()
                 .ok_or_else(|| missing_kind_child(scalar.syntax(), "scalar kind name"))?;
             let name = node_text(name.syntax())?;
-            match name.as_str() {
-                "ix" | "index" => SchemaBody::Index,
-                "id" => SchemaBody::Id,
-                _ => builtin_kind_named(&name)
-                    .map(BuiltinScalarKind::schema_body)
-                    .ok_or_else(|| SourceSemanticError {
-                        code: "source-semantics/unsupported-kind-annotation",
-                        message: format!("unknown builtin scalar kind {name:?}"),
-                        anchor,
-                    })?,
+            if let Some(range) = scalar.constraint() {
+                SchemaBody::IntegerInterval(integer_interval(&name, &range)?)
+            } else {
+                match name.as_str() {
+                    "ix" | "index" => SchemaBody::Index,
+                    "id" => SchemaBody::Id,
+                    _ => match builtin_kind_named(&name) {
+                        Some(kind) => kind.schema_body(),
+                        None => {
+                            if let Some(declaration) = declarations.get(&name) {
+                                mech_core::rebase_schema_draft_dimensions(declaration, dimensions)
+                                    .map_err(|error| {
+                                        internal(
+                                            anchor,
+                                            format!(
+                                                "unable to instantiate declared kind {name:?}: {error:?}"
+                                            ),
+                                        )
+                                    })?
+                            } else if pending.contains(&name) {
+                                return Err(SourceSemanticError {
+                                    code: "source-semantics/pending-kind-declaration",
+                                    message: format!("declared kind {name:?} is not resolved yet"),
+                                    anchor,
+                                });
+                            } else {
+                                return Err(SourceSemanticError {
+                                    code: "source-semantics/unsupported-kind-annotation",
+                                    message: format!("unknown scalar or declared kind {name:?}"),
+                                    anchor,
+                                });
+                            }
+                        }
+                    },
+                }
             }
         }
         KindValueSyntax::Map(map) => SchemaBody::Map {
@@ -7127,11 +8298,15 @@ fn kind_schema_body(
                 &map.key()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map key kind"))?,
                 dimensions,
+                declarations,
+                pending,
             )?),
             value: Box::new(kind_schema_body(
                 &map.value()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map value kind"))?,
                 dimensions,
+                declarations,
+                pending,
             )?),
             cardinality: CardinalitySpec::Dynamic { upper_bound: None },
         },
@@ -7140,8 +8315,10 @@ fn kind_schema_body(
                 &set.element()
                     .ok_or_else(|| missing_kind_child(set.syntax(), "set element kind"))?,
                 dimensions,
+                declarations,
+                pending,
             )?),
-            cardinality: kind_extent(set.literal_constraint().as_ref())?,
+            cardinality: kind_extent(set.literal_constraint().as_ref(), declarations, pending)?,
         },
         KindValueSyntax::Matrix(matrix) => {
             let element = matrix
@@ -7150,7 +8327,7 @@ fn kind_schema_body(
             let element_kind = element
                 .kind()
                 .ok_or_else(|| missing_kind_child(element.syntax(), "matrix element kind"))?;
-            let mut element = kind_schema_body(&element_kind, dimensions)?;
+            let mut element = kind_schema_body(&element_kind, dimensions, declarations, pending)?;
             if matrix
                 .element()
                 .is_some_and(|element| element.question_mark().is_some())
@@ -7160,7 +8337,7 @@ fn kind_schema_body(
             let mut extents = matrix
                 .dimensions()
                 .iter()
-                .map(kind_dimension)
+                .map(|literal| kind_dimension(literal, declarations, pending))
                 .collect::<Result<Vec<_>, _>>()?;
             if extents.is_empty() {
                 // Mech matrix values have row and column extents. An omitted
@@ -7188,7 +8365,7 @@ fn kind_schema_body(
             tuple
                 .items()
                 .iter()
-                .map(|kind| kind_schema_body(kind, dimensions))
+                .map(|kind| kind_schema_body(kind, dimensions, declarations, pending))
                 .collect::<Result<Vec<_>, _>>()?
                 .into_boxed_slice(),
         ),
@@ -7205,7 +8382,12 @@ fn kind_schema_body(
                     .map(|(name, kind)| {
                         Ok(SchemaField {
                             name: node_text(name.syntax())?,
-                            schema: annotation_schema_body(kind, dimensions)?,
+                            schema: annotation_schema_body(
+                                kind,
+                                dimensions,
+                                declarations,
+                                pending,
+                            )?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -7225,25 +8407,44 @@ fn kind_schema_body(
                     .map(|(name, kind)| {
                         Ok(SchemaField {
                             name: node_text(name.syntax())?,
-                            schema: annotation_schema_body(kind, dimensions)?,
+                            schema: annotation_schema_body(
+                                kind,
+                                dimensions,
+                                declarations,
+                                pending,
+                            )?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
                     .into_boxed_slice(),
-                rows: kind_extent(table.constraint().as_ref())?,
+                rows: kind_extent(table.constraint().as_ref(), declarations, pending)?,
             }
         }
     })
 }
 
-fn kind_extent(literal: Option<&LiteralSyntax>) -> Result<CardinalitySpec, SourceSemanticError> {
+fn kind_extent(
+    literal: Option<&LiteralSyntax>,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
+) -> Result<CardinalitySpec, SourceSemanticError> {
     literal.map_or(
         Ok(CardinalitySpec::Dynamic { upper_bound: None }),
-        |literal| Ok(CardinalitySpec::Exact(kind_dimension(literal)?)),
+        |literal| {
+            Ok(CardinalitySpec::Exact(kind_dimension(
+                literal,
+                declarations,
+                pending,
+            )?))
+        },
     )
 }
 
-fn kind_dimension(literal: &LiteralSyntax) -> Result<DimensionExpr, SourceSemanticError> {
+fn kind_dimension(
+    literal: &LiteralSyntax,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
+) -> Result<DimensionExpr, SourceSemanticError> {
     let Some(LiteralValueSyntax::Number(number)) = literal.value() else {
         return Err(SourceSemanticError {
             code: "source-semantics/unsupported-kind-dimension",
@@ -7253,7 +8454,7 @@ fn kind_dimension(literal: &LiteralSyntax) -> Result<DimensionExpr, SourceSemant
     };
     let annotation = literal
         .annotation()
-        .map(|annotation| annotation_schema(&annotation))
+        .map(|annotation| annotation_schema_with_declarations(&annotation, declarations, pending))
         .transpose()?;
     let suffix = selected_integer_suffix(&number)?;
     if let Some(kind) = annotation.or(suffix)
@@ -7374,6 +8575,7 @@ fn specialize_annotation_dimensions(
     {
         actual.body = SchemaBody::Option(Box::new(actual.body));
     }
+    let known = [actual.clone(), expected.clone()];
     let actual = ResolvedType::from_schema_body(&actual.body, &actual.dimension_parameters)
         .map_err(|failure| error(failure.to_string()))?;
     let expected = ResolvedType::from_schema_body(&expected.body, &expected.dimension_parameters)
@@ -7392,7 +8594,7 @@ fn specialize_annotation_dimensions(
     ))
     .solve_scheme(&scheme, &[actual], None)
     .map_err(|failure| error(failure.to_string()))?;
-    schema_draft_from_resolved(&resolved.outputs[0], anchor)
+    schema_draft_from_resolved(&resolved.outputs[0], anchor, &known)
 }
 
 fn schema_annotation_accepts(actual: &SchemaBody, expected: &SchemaBody) -> bool {
@@ -7839,6 +9041,128 @@ mod tests {
     use super::*;
 
     #[test]
+    fn mixed_control_schema_walk_visits_each_nested_declaration_once() {
+        let schema = |body| SchemaDraft {
+            body,
+            dimension_parameters: Box::new([]),
+        };
+        let nested = PendingMatch {
+            partial: false,
+            captures: Vec::new(),
+            arms: vec![PendingMatchArm {
+                pattern: crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
+                    local: 0,
+                    schema: schema(SchemaBody::Bool),
+                }),
+                guard: None,
+                body: PendingControlBlock {
+                    id: crate::ControlBlockId(2),
+                    parameters: vec![(
+                        crate::ControlParameterSource::PatternBinding(0),
+                        schema(SchemaBody::Index),
+                    )],
+                    operations: Vec::new(),
+                    yield_value: PendingControlValue::Parameter(0),
+                },
+            }],
+        };
+        let comprehension = PendingComprehension {
+            id: crate::ControlBlockId(1),
+            kind: crate::ComprehensionKind::Matrix,
+            steps: vec![comprehension::PendingComprehensionStep::Operation(
+                comprehension::PendingComprehensionOperation {
+                    local: 0,
+                    body: PendingControlOperationBody::Match(nested),
+                    inputs: Box::new([]),
+                    schema: schema(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                },
+            )]
+            .into_boxed_slice(),
+            yield_value: comprehension::PendingCollectionValue::Local(0),
+        };
+        let root = PendingMatch {
+            partial: false,
+            captures: Vec::new(),
+            arms: vec![PendingMatchArm {
+                pattern: crate::MatchPattern::Wildcard,
+                guard: None,
+                body: PendingControlBlock {
+                    id: crate::ControlBlockId(0),
+                    parameters: Vec::new(),
+                    operations: vec![PendingControlOperation {
+                        body: PendingControlOperationBody::Comprehension(comprehension),
+                        inputs: Vec::new(),
+                        schema: schema(SchemaBody::String),
+                    }],
+                    yield_value: PendingControlValue::Local(0),
+                },
+            }],
+        };
+        let mut visited = Vec::new();
+        root.visit_schemas(&mut |schema| visited.push(schema.body.clone()));
+        assert_eq!(visited.len(), 4);
+        for body in [
+            SchemaBody::Bool,
+            SchemaBody::Index,
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            SchemaBody::String,
+        ] {
+            assert_eq!(
+                visited.iter().filter(|visited| **visited == body).count(),
+                1
+            );
+        }
+    }
+
+    #[test]
+    fn retained_components_follow_the_finalized_parent_parameter_order() {
+        let anchor = SourceSemanticAnchor {
+            document: DocumentId(0x549),
+            revision: Revision(1),
+            range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
+        };
+        let first = DimensionParameterId::new(0);
+        let second = DimensionParameterId::new(1);
+        let parameter = |id| DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        let matrix = |rows, columns| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: vec![
+                DimensionExpr::Parameter(rows),
+                DimensionExpr::Parameter(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let draft = SchemaDraft {
+            dimension_parameters: vec![parameter(first), parameter(second)].into_boxed_slice(),
+            body: SchemaBody::Tuple(
+                vec![matrix(second, first), matrix(first, second)].into_boxed_slice(),
+            ),
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let handle = retain_schema_tree(anchor, &mut builder, &draft).unwrap();
+        let build = builder.finish().unwrap();
+        let root = build.table.get(build.resolve(handle).unwrap()).unwrap();
+        let SchemaBody::Tuple(children) = root.body() else {
+            panic!("root schema remains a tuple")
+        };
+        assert_eq!(children.len(), 2);
+        assert_ne!(children[0], children[1]);
+        for child in children {
+            let expected = root.canonical_component_schema(child).unwrap();
+            assert!(
+                build.table.find_by_key(expected.key()).is_some(),
+                "every child retained by the source frontend uses its finalized parent numbering",
+            );
+        }
+    }
+
+    #[test]
     fn unresolved_source_never_allocates_placeholder_nodes_or_constants() {
         fn find_expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
             ExpressionSyntax::cast(node.clone())
@@ -7937,11 +9261,258 @@ mod review_tests;
 mod mask_review_tests;
 
 impl SemanticBuilder {
+    fn retain_activation_pattern_nodes(
+        &mut self,
+        start: usize,
+        constraint_start: usize,
+        inputs: &mut [PendingValue],
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        let generated = self.nodes.split_off(start);
+        let mut remap = BTreeMap::new();
+        let mut next = start as u32;
+        for (offset, node) in generated.iter().enumerate() {
+            if !matches!(node.body, PendingNodeBody::CollectionBinding) {
+                remap.insert(start as u32 + offset as u32, next);
+                next += 1;
+            }
+        }
+        let remap_value = |value: &mut PendingValue| -> Result<(), SourceSemanticError> {
+            let PendingValue::Node(index) = value else {
+                return Ok(());
+            };
+            if (*index as usize) < start {
+                return Ok(());
+            }
+            *index = *remap.get(index).ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/activation-computed-pattern-binding",
+                message:
+                    "a computed activation pattern cannot depend on a binding from the same pattern"
+                        .to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            })?;
+            Ok(())
+        };
+        for mut node in generated {
+            if matches!(node.body, PendingNodeBody::CollectionBinding) {
+                continue;
+            }
+            for input in &mut node.inputs {
+                remap_value(input)?;
+            }
+            self.nodes.push(node);
+        }
+        for input in inputs {
+            remap_value(input)?;
+        }
+        for constraint in &mut self.constraints[constraint_start..] {
+            remap_value(&mut constraint.value)?;
+        }
+        Ok(())
+    }
+
+    fn resolve_structural_match_pattern(
+        &self,
+        pattern: &comprehension::SourcePattern,
+        binding_start: usize,
+        activation: bool,
+        inputs: &mut Vec<PendingValue>,
+        captures: &mut Vec<(u16, SchemaDraft, bool)>,
+    ) -> Result<
+        crate::CollectionPattern<SchemaDraft, crate::MatchPatternValue<usize>>,
+        SourceSemanticError,
+    > {
+        let invalid = || SourceSemanticError {
+            code: "source-semantics/unsupported-match",
+            message: "structural match patterns require constants and lexical bindings".to_owned(),
+            anchor: self.anchor,
+        };
+        Ok(match pattern {
+            crate::CollectionPattern::Wildcard => crate::CollectionPattern::Wildcard,
+            crate::CollectionPattern::Bind { local, schema } => crate::CollectionPattern::Bind {
+                local: *local,
+                schema: self.schema_draft_of(*schema)?,
+            },
+            crate::CollectionPattern::Equal(value) => {
+                let value = match value {
+                    PendingValue::Constant(index) => crate::MatchPatternValue::Literal(*index),
+                    PendingValue::Node(index)
+                        if (*index as usize) >= binding_start
+                            && matches!(
+                                self.nodes[*index as usize].body,
+                                PendingNodeBody::CollectionBinding
+                            ) =>
+                    {
+                        crate::MatchPatternValue::Binding(*index - binding_start as u32)
+                    }
+                    value if activation => {
+                        let schema = self.schema_draft_of(*value)?;
+                        let input = match inputs.iter().position(|existing| existing == value) {
+                            Some(input) => input,
+                            None => {
+                                inputs.push(*value);
+                                inputs.len() - 1
+                            }
+                        };
+                        let input = u16::try_from(input).map_err(|_| invalid())?;
+                        if !captures.iter().any(|(existing, _, _)| *existing == input) {
+                            captures.push((
+                                input,
+                                schema,
+                                !matches!(value, PendingValue::Input(_)),
+                            ));
+                        }
+                        crate::MatchPatternValue::Input(input)
+                    }
+                    _ => return Err(invalid()),
+                };
+                crate::CollectionPattern::Equal(value)
+            }
+            crate::CollectionPattern::Enum { ordinal, payload } => crate::CollectionPattern::Enum {
+                ordinal: *ordinal,
+                payload: payload
+                    .as_deref()
+                    .map(|payload| {
+                        self.resolve_structural_match_pattern(
+                            payload,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                        .map(Box::new)
+                    })
+                    .transpose()?,
+            },
+            crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
+                items
+                    .iter()
+                    .map(|item| {
+                        self.resolve_structural_match_pattern(
+                            item,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                    })
+                    .collect::<Result<_, _>>()?,
+            ),
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => crate::CollectionPattern::Array {
+                prefix: prefix
+                    .iter()
+                    .map(|item| {
+                        self.resolve_structural_match_pattern(
+                            item,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                    })
+                    .collect::<Result<_, _>>()?,
+                rest: rest
+                    .as_deref()
+                    .map(|item| {
+                        self.resolve_structural_match_pattern(
+                            item,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                        .map(Box::new)
+                    })
+                    .transpose()?,
+                suffix: suffix
+                    .iter()
+                    .map(|item| {
+                        self.resolve_structural_match_pattern(
+                            item,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                    })
+                    .collect::<Result<_, _>>()?,
+            },
+        })
+    }
+
     fn match_expression(
         &mut self,
         scrutinee: PendingValue,
         arms: &[mech_syntax::document::MatchArmSyntax],
         syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let arms = arms
+            .iter()
+            .map(|arm| {
+                Ok(SourceMatchArm {
+                    pattern: Some(self.required(arm.pattern(), arm.syntax(), "match pattern")?),
+                    guard: arm.guard(),
+                    body: SourceMatchBody::Expression(self.required(
+                        arm.value(),
+                        arm.syntax(),
+                        "match result",
+                    )?),
+                    syntax: arm.syntax().clone(),
+                })
+            })
+            .collect::<Result<Vec<_>, SourceSemanticError>>()?;
+        self.lower_match_expression(scrutinee, &arms, syntax, false, None, false)
+    }
+
+    fn lower_match_expression(
+        &mut self,
+        scrutinee: PendingValue,
+        arms: &[SourceMatchArm],
+        syntax: &SyntaxNode,
+        partial: bool,
+        expected_result: Option<&SchemaDraft>,
+        activation: bool,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        self.match_depth += 1;
+        let result = if self.control_depth != 0 {
+            self.lower_match_expression_inner(
+                scrutinee,
+                arms,
+                syntax,
+                partial,
+                expected_result,
+                activation,
+            )
+        } else {
+            let saved_next_control_block = self.next_control_block;
+            self.next_control_block = 0;
+            let result = self.lower_match_expression_inner(
+                scrutinee,
+                arms,
+                syntax,
+                partial,
+                expected_result,
+                activation,
+            );
+            self.next_control_block = saved_next_control_block;
+            result
+        };
+        self.match_depth -= 1;
+        result
+    }
+
+    fn lower_match_expression_inner(
+        &mut self,
+        scrutinee: PendingValue,
+        arms: &[SourceMatchArm],
+        syntax: &SyntaxNode,
+        partial: bool,
+        expected_result: Option<&SchemaDraft>,
+        activation: bool,
     ) -> Result<PendingValue, SourceSemanticError> {
         let error = |message: &str, syntax: &SyntaxNode| SourceSemanticError {
             code: "source-semantics/unsupported-match",
@@ -7952,105 +9523,199 @@ impl SemanticBuilder {
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
-        let mut coverage = [false; 2];
+        let mut coverage =
+            StructuralPatternCoverage::new(structural_coverage_space(&scrutinee_schema));
         let mut result_schema = None;
-        if self.control_depth == 0 {
-            self.next_control_block = 0;
-        }
         for arm in arms {
-            let pattern = self.required(arm.pattern(), arm.syntax(), "match pattern")?;
-            let value = self.required(pattern.value(), pattern.syntax(), "pattern value")?;
-            let mut binding = None;
-            let pattern = match value {
-                PatternValueSyntax::Wildcard(_) => crate::MatchPattern::Wildcard,
-                PatternValueSyntax::Expression(expression) => {
-                    if let Some(variable) = standalone_pattern_variable(&expression) {
-                        let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
-                        else {
-                            return Err(error(
-                                "match binding requires a lexical identifier",
-                                variable.syntax(),
-                            ));
-                        };
-                        if let Some(annotation) = variable.annotation() {
-                            let mut schema = annotation_schema_draft(&annotation)?;
-                            if !schema.dimension_parameters.is_empty() {
-                                schema = specialize_annotation_dimensions(
-                                    &scrutinee_schema,
-                                    &schema,
-                                    variable.syntax(),
-                                )?;
-                            }
-                            if schema != scrutinee_schema {
-                                return Err(error(
-                                    "match binding requires the scrutinee schema",
-                                    variable.syntax(),
-                                ));
-                            }
-                        }
-                        binding = Some(node_text(identifier.syntax())?);
-                        crate::MatchPattern::Bind
-                    } else {
-                        let start = self.nodes.len();
-                        let literal = self.expression(&expression)?.0;
-                        let PendingValue::Constant(index) = literal else {
-                            return Err(error(
-                                "only scalar literal, wildcard and bind patterns are lowered",
-                                expression.syntax(),
-                            ));
-                        };
-                        if self.constants[index].schema != scrutinee_schema {
-                            return Err(error(
-                                "match literal pattern must have the scrutinee schema",
-                                expression.syntax(),
-                            ));
-                        }
-                        if self.nodes.len() != start {
-                            return Err(error(
-                                "match literal pattern cannot execute operations",
-                                expression.syntax(),
-                            ));
-                        }
-                        crate::MatchPattern::Literal(index)
-                    }
-                }
-                _ => {
-                    return Err(error(
-                        "only scalar literal, wildcard and bind patterns are lowered",
-                        pattern.syntax(),
-                    ));
-                }
-            };
-            if matches!(pattern, crate::MatchPattern::Literal(_))
-                && !scrutinee_schema
-                    .clone()
-                    .finalize()
-                    .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
-            {
-                return Err(error(
-                    "non-wildcard patterns require a concrete scalar scrutinee",
-                    syntax,
-                ));
-            }
-            if pattern == crate::MatchPattern::Bind
-                && !scrutinee_schema
-                    .clone()
-                    .finalize()
-                    .is_ok_and(|schema| crate::is_control_value_schema(&schema))
-            {
-                return Err(error(
-                    "match bindings require a closed value schema",
-                    syntax,
-                ));
+            if activation && coverage.is_complete() {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unreachable-activation-arm",
+                    message: "an unguarded irrefutable activation arm must be last".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(&arm.syntax),
+                });
             }
             let saved = self.bindings.clone();
-            if let Some(name) = binding {
-                self.bindings.insert(name, PendingBinding::Value(scrutinee));
-            }
-            let lowered_arm = (|| {
-                let guard = if let Some(guard) = arm.guard() {
-                    let (block, schema) =
-                        self.control_block(&guard, pattern, scrutinee, &mut inputs, &mut captures)?;
+            let saved_definitions = self.scope_definitions.clone();
+            let binding_start = self.nodes.len();
+            let constraint_start = self.constraints.len();
+            let lowered_arm = (|| -> Result<PendingMatchArm, SourceSemanticError> {
+                let mut pattern_bindings = BTreeMap::new();
+                let pattern = match arm.pattern.as_ref() {
+                    None => crate::MatchPattern::Wildcard,
+                    Some(pattern_syntax) => match self.required(
+                        pattern_syntax.value(),
+                        pattern_syntax.syntax(),
+                        "pattern value",
+                    )? {
+                        PatternValueSyntax::Wildcard(_) => crate::MatchPattern::Wildcard,
+                        PatternValueSyntax::Expression(expression) => {
+                            if let Some(variable) = standalone_pattern_variable(&expression) {
+                                let Some(VariableStemSyntax::Identifier(identifier)) =
+                                    variable.stem()
+                                else {
+                                    return Err(error(
+                                        "match binding requires a lexical identifier",
+                                        variable.syntax(),
+                                    ));
+                                };
+                                if let Some(annotation) = variable.annotation() {
+                                    let mut schema = self.annotation_schema_draft(&annotation)?;
+                                    if !schema.dimension_parameters.is_empty() {
+                                        schema = specialize_annotation_dimensions(
+                                            &scrutinee_schema,
+                                            &schema,
+                                            variable.syntax(),
+                                        )?;
+                                    }
+                                    if schema != scrutinee_schema {
+                                        return Err(error(
+                                            "match binding requires the scrutinee schema",
+                                            variable.syntax(),
+                                        ));
+                                    }
+                                }
+                                // Give a lexical binding its own call-local region. Besides
+                                // making ordinary matches explicit, this lets a recursive
+                                // invocation bind the new scrutinee without aliasing the
+                                // caller's frame.
+                                let node = self.nodes.len() as u32;
+                                let value = PendingValue::Node(node);
+                                self.nodes.push(PendingNode {
+                                    body: PendingNodeBody::CollectionBinding,
+                                    inferable_projection: variable.annotation().is_none(),
+                                    inputs: Vec::new(),
+                                    schema: scrutinee_schema.clone(),
+                                    exposes_output: true,
+                                    state: None,
+                                    semantic: SourceSemanticNode {
+                                        operation: String::new(),
+                                        role: "match-binding",
+                                        detail: None,
+                                        anchor: SourceSemanticAnchor::for_node(variable.syntax()),
+                                    },
+                                });
+                                self.bindings.insert(
+                                    node_text(identifier.syntax())?,
+                                    PendingBinding::Value(value),
+                                );
+                                pattern_bindings.insert(node, 0);
+                                crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
+                                    local: 0,
+                                    schema: scrutinee_schema.clone(),
+                                })
+                            } else {
+                                let start = self.nodes.len();
+                                let literal = self
+                                    .expression_with_expected(
+                                        &expression,
+                                        Some(ExpectedSchema::Value(&scrutinee_schema)),
+                                    )?
+                                    .0;
+                                let PendingValue::Constant(index) = literal else {
+                                    return Err(error(
+                                        "match literal patterns must be constant",
+                                        expression.syntax(),
+                                    ));
+                                };
+                                if self.constants[index].schema != scrutinee_schema {
+                                    return Err(error(
+                                        "match literal pattern must have the scrutinee schema",
+                                        expression.syntax(),
+                                    ));
+                                }
+                                if self.nodes.len() != start {
+                                    return Err(error(
+                                        "match literal pattern cannot execute operations",
+                                        expression.syntax(),
+                                    ));
+                                }
+                                match &self.constants[index].data {
+                                    ValueDataDraft::Enum(EnumDraft {
+                                        ordinal,
+                                        payload: None,
+                                    }) if matches!(
+                                        scrutinee_schema.body,
+                                        SchemaBody::Enum { .. }
+                                    ) =>
+                                    {
+                                        crate::MatchPattern::Structural(
+                                            crate::CollectionPattern::Enum {
+                                                ordinal: *ordinal,
+                                                payload: None,
+                                            },
+                                        )
+                                    }
+                                    _ => crate::MatchPattern::Literal(index),
+                                }
+                            }
+                        }
+                        _ => {
+                            let mut names = BTreeMap::new();
+                            let source = self.collection_pattern(
+                                &pattern_syntax,
+                                &scrutinee_schema,
+                                binding_start,
+                                &mut names,
+                            )?;
+                            if !activation
+                                && self.nodes[binding_start..].iter().any(|node| {
+                                    !matches!(node.body, PendingNodeBody::CollectionBinding)
+                                })
+                            {
+                                return Err(error(
+                                    "computed structural patterns belong to the computed-pattern owner",
+                                    pattern_syntax.syntax(),
+                                ));
+                            }
+                            source.bindings(&mut |local, schema| {
+                                let PendingValue::Node(index) = schema else {
+                                    unreachable!("source pattern binding is a lexical node")
+                                };
+                                pattern_bindings.insert(*index, local);
+                            });
+                            crate::MatchPattern::Structural(self.resolve_structural_match_pattern(
+                                &source,
+                                binding_start,
+                                activation,
+                                &mut inputs,
+                                &mut captures,
+                            )?)
+                        }
+                    },
+                };
+                if matches!(pattern, crate::MatchPattern::Literal(_))
+                    && !scrutinee_schema
+                        .clone()
+                        .finalize()
+                        .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
+                {
+                    return Err(error(
+                        "literal patterns require a concrete scalar scrutinee",
+                        syntax,
+                    ));
+                }
+                if (matches!(pattern, crate::MatchPattern::Bind)
+                    || matches!(pattern, crate::MatchPattern::Structural(_)))
+                    && !scrutinee_schema
+                        .clone()
+                        .finalize()
+                        .is_ok_and(|schema| crate::is_control_value_schema(&schema))
+                {
+                    return Err(error(
+                        "match bindings require a closed value schema",
+                        syntax,
+                    ));
+                }
+                let guard = if let Some(guard) = arm.guard.clone() {
+                    let (block, schema) = self.control_block(
+                        &guard,
+                        &pattern,
+                        &pattern_bindings,
+                        scrutinee,
+                        &mut inputs,
+                        &mut captures,
+                        None,
+                    )?;
                     if schema.body != SchemaBody::Bool {
                         return Err(SourceSemanticError {
                             code: "source-semantics/non-boolean-operator-kind",
@@ -8062,9 +9727,71 @@ impl SemanticBuilder {
                 } else {
                     None
                 };
-                let result = self.required(arm.value(), arm.syntax(), "match result")?;
-                let (body, schema) =
-                    self.control_block(&result, pattern, scrutinee, &mut inputs, &mut captures)?;
+                let (body, schema) = match &arm.body {
+                    SourceMatchBody::Expression(result) => self.control_block(
+                        result,
+                        &pattern,
+                        &pattern_bindings,
+                        scrutinee,
+                        &mut inputs,
+                        &mut captures,
+                        expected_result,
+                    )?,
+                    SourceMatchBody::Activation {
+                        items,
+                        states,
+                        syntax,
+                    } => {
+                        let saved_writer_inputs = states
+                            .iter()
+                            .map(|state| {
+                                let writer = self.states[*state as usize].producer_node as usize;
+                                (*state, self.nodes[writer].inputs[0])
+                            })
+                            .collect::<Vec<_>>();
+                        let result = self.control_block_with(
+                            syntax,
+                            &pattern,
+                            &pattern_bindings,
+                            scrutinee,
+                            &mut inputs,
+                            &mut captures,
+                            |builder| {
+                                for item in items {
+                                    match item.kind() {
+                                        SyntaxKind::VariableDefine => {
+                                            builder.definition(
+                                                &VariableDefineSyntax::cast(item.clone()).unwrap(),
+                                            )?;
+                                        }
+                                        SyntaxKind::TupleDestructure => {
+                                            builder.document_tuple_destructure(item)?;
+                                        }
+                                        SyntaxKind::VariableAssign | SyntaxKind::OpAssign => {
+                                            builder.document_assignment(item)?;
+                                        }
+                                        SyntaxKind::Expression => {
+                                            builder.expression(
+                                                &ExpressionSyntax::cast(item.clone()).unwrap(),
+                                            )?;
+                                        }
+                                        _ => unreachable!("activation body was preflighted"),
+                                    }
+                                }
+                                let values = states
+                                    .iter()
+                                    .map(|state| builder.current_state_value(*state))
+                                    .collect();
+                                builder.pack_activation_values(values, syntax)
+                            },
+                        );
+                        for (state, value) in saved_writer_inputs {
+                            let writer = self.states[state as usize].producer_node as usize;
+                            self.nodes[writer].inputs[0] = value;
+                        }
+                        result?
+                    }
+                };
                 if result_schema
                     .as_ref()
                     .is_some_and(|expected| expected != &schema)
@@ -8072,7 +9799,7 @@ impl SemanticBuilder {
                     return Err(SourceSemanticError {
                         code: "source-semantics/incompatible-match-result-kind",
                         message: "match arms require one exact result schema".to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(arm.syntax()),
+                        anchor: SourceSemanticAnchor::for_node(&arm.syntax),
                     });
                 }
                 result_schema.get_or_insert(schema);
@@ -8083,35 +9810,80 @@ impl SemanticBuilder {
                 })
             })();
             self.bindings = saved;
-            let lowered_arm = lowered_arm?;
+            self.scope_definitions = saved_definitions;
+            let lowered_arm = match lowered_arm {
+                Ok(lowered_arm) => {
+                    if activation {
+                        self.retain_activation_pattern_nodes(
+                            binding_start,
+                            constraint_start,
+                            &mut inputs,
+                            &arm.syntax,
+                        )?;
+                    } else {
+                        self.nodes.truncate(binding_start);
+                    }
+                    lowered_arm
+                }
+                Err(error) => {
+                    self.nodes.truncate(binding_start);
+                    self.constraints.truncate(constraint_start);
+                    return Err(error);
+                }
+            };
             if lowered_arm.guard.is_none() {
-                match pattern {
+                match &lowered_arm.pattern {
                     crate::MatchPattern::Literal(index) => {
-                        if let ValueDataDraft::Bool(value) = self.constants[index].data {
-                            coverage[value as usize] = true;
+                        if let ValueDataDraft::Bool(value) = self.constants[*index].data {
+                            coverage.cover_bool(value);
                         }
                     }
                     crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => {
-                        coverage = [true; 2]
+                        coverage.cover_all();
+                    }
+                    crate::MatchPattern::Structural(pattern) => {
+                        cover_structural_pattern(
+                            &mut coverage,
+                            pattern,
+                            &scrutinee_schema,
+                            &|value| match value {
+                                crate::MatchPatternValue::Literal(index) => {
+                                    match self.constants[*index].data {
+                                        ValueDataDraft::Bool(value) => Some(value),
+                                        _ => None,
+                                    }
+                                }
+                                crate::MatchPatternValue::Binding(_)
+                                | crate::MatchPatternValue::Input(_) => None,
+                            },
+                        );
                     }
                 }
             }
             lowered.push(lowered_arm);
         }
-        if coverage != [true; 2] {
+        if !partial && !coverage.is_complete() {
             return Err(SourceSemanticError {
                 code: "source-semantics/non-exhaustive-match",
-                message: "match needs an unguarded wildcard/binding or both Boolean literal cases"
-                    .to_owned(),
+                message: "match needs an unguarded wildcard/binding or complete finite structural coverage".to_owned(),
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         }
         let index = self.nodes.len() as u32;
         self.nodes.push(PendingNode {
-            body: PendingNodeBody::Match(PendingMatch {
-                captures,
-                arms: lowered,
-            }),
+            body: if activation {
+                PendingNodeBody::Activation(PendingMatch {
+                    partial,
+                    captures,
+                    arms: lowered,
+                })
+            } else {
+                PendingNodeBody::Match(PendingMatch {
+                    partial,
+                    captures,
+                    arms: lowered,
+                })
+            },
             inferable_projection: false,
             inputs,
             schema: result_schema.expect("exhaustive match has arms"),
@@ -8130,16 +9902,51 @@ impl SemanticBuilder {
     fn control_block(
         &mut self,
         expression: &ExpressionSyntax,
-        pattern: crate::MatchPattern<usize>,
+        pattern: &crate::MatchPattern<usize, SchemaDraft>,
+        pattern_bindings: &BTreeMap<u32, u32>,
         scrutinee: PendingValue,
         inputs: &mut Vec<PendingValue>,
-        captures: &mut Vec<(u16, SchemaDraft)>,
+        captures: &mut Vec<(u16, SchemaDraft, bool)>,
+        expected: Option<&SchemaDraft>,
+    ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
+        self.control_block_with(
+            expression.syntax(),
+            pattern,
+            pattern_bindings,
+            scrutinee,
+            inputs,
+            captures,
+            |builder| {
+                let (value, _) = builder.expression(expression)?;
+                expected.map_or(Ok(value), |expected| {
+                    builder.conform_schema_draft(
+                        value,
+                        expected,
+                        expression.syntax(),
+                        "source-semantics/incompatible-function-output",
+                        "function arm does not satisfy its declared output kind",
+                    )
+                })
+            },
+        )
+    }
+
+    fn control_block_with(
+        &mut self,
+        syntax: &SyntaxNode,
+        pattern: &crate::MatchPattern<usize, SchemaDraft>,
+        pattern_bindings: &BTreeMap<u32, u32>,
+        scrutinee: PendingValue,
+        inputs: &mut Vec<PendingValue>,
+        captures: &mut Vec<(u16, SchemaDraft, bool)>,
+        build: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
-            message: "match blocks require pure maintained operations and closed value schemas"
-                .to_owned(),
-            anchor: SourceSemanticAnchor::for_node(expression.syntax()),
+            message:
+                "match blocks require pure maintained operations and closed final value schemas"
+                    .to_owned(),
+            anchor: SourceSemanticAnchor::for_node(syntax),
         };
         let id = self.next_control_block;
         self.next_control_block = id
@@ -8148,9 +9955,8 @@ impl SemanticBuilder {
             .ok_or_else(unsupported)?;
         let start = self.nodes.len();
         self.control_depth += 1;
-        let result = self
-            .expression(expression)
-            .and_then(|(value, _)| self.schema_draft_of(value).map(|schema| (value, schema)));
+        let result =
+            build(self).and_then(|value| self.schema_draft_of(value).map(|schema| (value, schema)));
         self.control_depth -= 1;
         let nodes = self.nodes.split_off(start);
         let (value, schema) = result?;
@@ -8159,6 +9965,12 @@ impl SemanticBuilder {
                 .clone()
                 .finalize()
                 .is_ok_and(|schema| crate::is_control_value_schema(&schema))
+        };
+        let intermediate_value = |schema: &SchemaDraft| {
+            schema
+                .clone()
+                .finalize()
+                .is_ok_and(|schema| !matches!(schema.body(), SchemaBody::Dynamic))
         };
         if !closed_value(&schema) {
             return Err(unsupported());
@@ -8181,35 +9993,51 @@ impl SemanticBuilder {
                             return Ok(PendingControlValue::Parameter(index as u16));
                         }
                         let schema = self.schema_draft_of(value)?;
-                        if !closed_value(&schema) {
+                        let pattern_binding = if let PendingValue::Node(index) = value {
+                            pattern_bindings.get(&index).copied()
+                        } else {
+                            None
+                        };
+                        // Pattern bindings have already been checked against their
+                        // projected schema. Array-rest bindings deliberately carry
+                        // a per-turn dimension, so they are not ordinary closed
+                        // captures and must retain that live schema into the block.
+                        if pattern_binding.is_none() && !closed_value(&schema) {
                             return Err(unsupported());
                         }
-                        let source = if pattern == crate::MatchPattern::Bind && value == scrutinee {
-                            crate::ControlParameterSource::Scrutinee
-                        } else {
-                            let input = match inputs.iter().position(|existing| *existing == value)
-                            {
-                                Some(index) => index,
-                                None => {
-                                    inputs.push(value);
-                                    inputs.len() - 1
-                                }
+                        let source =
+                            if matches!(pattern, crate::MatchPattern::Bind) && value == scrutinee {
+                                crate::ControlParameterSource::Scrutinee
+                            } else if let Some(local) = pattern_binding {
+                                crate::ControlParameterSource::PatternBinding(local)
+                            } else {
+                                let input =
+                                    match inputs.iter().position(|existing| *existing == value) {
+                                        Some(index) => index,
+                                        None => {
+                                            inputs.push(value);
+                                            inputs.len() - 1
+                                        }
+                                    };
+                                let input = u16::try_from(input).map_err(|_| unsupported())?;
+                                let capture = match captures
+                                    .iter()
+                                    .position(|(existing, _, _)| *existing == input)
+                                {
+                                    Some(index) => index,
+                                    None => {
+                                        captures.push((
+                                            input,
+                                            schema.clone(),
+                                            !matches!(value, PendingValue::Input(_)),
+                                        ));
+                                        captures.len() - 1
+                                    }
+                                };
+                                crate::ControlParameterSource::Capture(
+                                    u16::try_from(capture).map_err(|_| unsupported())?,
+                                )
                             };
-                            let input = u16::try_from(input).map_err(|_| unsupported())?;
-                            let capture = match captures
-                                .iter()
-                                .position(|(existing, _)| *existing == input)
-                            {
-                                Some(index) => index,
-                                None => {
-                                    captures.push((input, schema.clone()));
-                                    captures.len() - 1
-                                }
-                            };
-                            crate::ControlParameterSource::Capture(
-                                u16::try_from(capture).map_err(|_| unsupported())?,
-                            )
-                        };
                         let ordinal = u16::try_from(parameters.len()).map_err(|_| unsupported())?;
                         parameter_values.push(value);
                         parameters.push((source, schema));
@@ -8219,7 +10047,13 @@ impl SemanticBuilder {
             };
         let mut operations = Vec::new();
         for node in nodes {
-            if node.state.is_some() || !closed_value(&node.schema) {
+            // Intermediate results may carry per-turn dimensions through
+            // pure operations. Only the selected block's final yield must be
+            // a closed match value.
+            if node.state.is_some()
+                || (!intermediate_value(&node.schema)
+                    && !matches!(&node.body, PendingNodeBody::Comprehension(_)))
+            {
                 return Err(unsupported());
             }
             let body = match node.body {
@@ -8234,6 +10068,15 @@ impl SemanticBuilder {
                     }
                 }
                 PendingNodeBody::Match(control) => PendingControlOperationBody::Match(control),
+                PendingNodeBody::Comprehension(control) => {
+                    PendingControlOperationBody::Comprehension(control)
+                }
+                PendingNodeBody::RecursiveCall(ancestor) => {
+                    PendingControlOperationBody::Recur(ancestor)
+                }
+
+                PendingNodeBody::Suspend => PendingControlOperationBody::Suspend,
+                PendingNodeBody::Publish => PendingControlOperationBody::Publish,
                 _ => return Err(unsupported()),
             };
             operations.push(PendingControlOperation {
@@ -8316,6 +10159,20 @@ fn resolve_pending_match(
                                 nested, schemas, constants,
                             ))
                         }
+                        PendingControlOperationBody::Comprehension(nested) => {
+                            crate::ControlOperationBody::Comprehension(resolve_comprehension(
+                                nested, schemas, constants,
+                            ))
+                        }
+                        PendingControlOperationBody::Recur(ancestor) => {
+                            crate::ControlOperationBody::Recur(*ancestor)
+                        }
+                        PendingControlOperationBody::Suspend => {
+                            crate::ControlOperationBody::Suspend
+                        }
+                        PendingControlOperationBody::Publish => {
+                            crate::ControlOperationBody::Publish
+                        }
                     },
                     inputs: operation.inputs.iter().copied().map(value).collect(),
                     schema: schema(&operation.schema),
@@ -8326,24 +10183,39 @@ fn resolve_pending_match(
     };
     crate::MatchDeclaration {
         scrutinee: 0,
+        partial: control.partial,
         captures: control
             .captures
             .iter()
-            .map(|(input, draft)| crate::ControlCapture {
+            .map(|(input, draft, freeze_on_suspend)| crate::ControlCapture {
                 input: *input,
                 schema: schema(draft),
+                freeze_on_suspend: *freeze_on_suspend,
             })
             .collect(),
         arms: control
             .arms
             .iter()
             .map(|arm| crate::ControlMatchArm {
-                pattern: match arm.pattern {
+                pattern: match &arm.pattern {
                     crate::MatchPattern::Literal(index) => {
-                        crate::MatchPattern::Literal(constants[index])
+                        crate::MatchPattern::Literal(constants[*index])
                     }
                     crate::MatchPattern::Wildcard => crate::MatchPattern::Wildcard,
                     crate::MatchPattern::Bind => crate::MatchPattern::Bind,
+                    crate::MatchPattern::Structural(pattern) => crate::MatchPattern::Structural(
+                        pattern.map(&|draft| schema(draft), &|value| match value {
+                            crate::MatchPatternValue::Literal(index) => {
+                                crate::MatchPatternValue::Literal(constants[*index])
+                            }
+                            crate::MatchPatternValue::Binding(local) => {
+                                crate::MatchPatternValue::Binding(*local)
+                            }
+                            crate::MatchPatternValue::Input(input) => {
+                                crate::MatchPatternValue::Input(*input)
+                            }
+                        }),
+                    ),
                 },
                 guard: arm.guard.as_ref().map(block),
                 body: block(&arm.body),

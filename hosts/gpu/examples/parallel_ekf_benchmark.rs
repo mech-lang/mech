@@ -1,19 +1,22 @@
-use std::{collections::BTreeMap, env, time::Instant};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    env,
+    sync::Arc,
+    time::Instant,
+};
 
-use mech_core::{Body, MechCode, Program, Section, SectionElement};
-use mech_engine::ProgramArtifact;
+use mech_core::ValueCell;
+use mech_engine::{CanonicalSourceFrontend, ProgramArtifact, ProgramArtifactCompilationProduct};
 use mech_gpu::ComputeLowerer;
-use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
+use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue, SourceDocument};
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
-const COMPUTE_INPUT_NAMES: [&str; 7] = [
+const COMPUTE_INPUT_NAMES: [&str; 5] = [
     "dt",
     "linear-velocity",
     "angular-velocity",
     "bearing",
     "measurement-noise",
-    "finite-limit",
-    "covariance-symmetry-tolerance",
 ];
 
 fn main() {
@@ -192,12 +195,12 @@ fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
         .unwrap_or(default)
 }
 
-fn source_tree(instances: usize) -> Program {
+fn source_tree(instances: usize) -> SourceDocument {
     let source = SOURCE.replacen("100000f32", &format!("{instances}f32"), 1);
-    mech_syntax::parse(&source).expect("EKF array source must parse")
+    retained_document(&source)
 }
 
-fn evaluate_driver(tree: &Program) -> BTreeMap<String, Vec<f32>> {
+fn evaluate_driver(tree: &SourceDocument) -> BTreeMap<String, Vec<f32>> {
     const INPUTS: [&str; 7] = [
         "lane-dt",
         "lane-linear-velocity",
@@ -211,7 +214,7 @@ fn evaluate_driver(tree: &Program) -> BTreeMap<String, Vec<f32>> {
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .expect("source compiler must build")
-        .evaluate_static_tree_symbols(&projected_tree(tree, false), &INPUTS)
+        .evaluate_static_document_symbols(&projected_tree(tree, false), &INPUTS)
         .expect("Mech EKF array inputs must evaluate")
         .into_iter()
         .map(|(name, value)| {
@@ -225,7 +228,7 @@ fn evaluate_driver(tree: &Program) -> BTreeMap<String, Vec<f32>> {
         .collect()
 }
 
-fn compile_artifact(tree: &Program, driver: &BTreeMap<String, Vec<f32>>) -> ProgramArtifact {
+fn compile_artifact(tree: &SourceDocument, driver: &BTreeMap<String, Vec<f32>>) -> ProgramArtifact {
     let scalar_inputs = driver
         .iter()
         .map(|(name, values)| {
@@ -235,17 +238,12 @@ fn compile_artifact(tree: &Program, driver: &BTreeMap<String, Vec<f32>>) -> Prog
             )
         })
         .collect();
-    RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_native_plan_catalog())
-        .build_compiler()
-        .expect("source compiler must build")
-        .compile_tree_artifact_with_inputs(
-            &projected_tree(tree, true),
-            &scalar_inputs,
-            &COMPUTE_INPUT_NAMES.into_iter().map(str::to_owned).collect(),
-        )
-        .expect("EKF source must compile to a typed artifact")
-        .into_artifact()
+    compile_compute_document(
+        &projected_tree(tree, true),
+        &scalar_inputs,
+        &COMPUTE_INPUT_NAMES.into_iter().map(str::to_owned).collect(),
+    )
+    .into_artifact()
 }
 
 fn source_inputs(
@@ -256,7 +254,9 @@ fn source_inputs(
         .inputs()
         .iter()
         .filter_map(|input| {
-            let driver_name = match input.name.as_str() {
+            let source_name = mech_engine::decode_source_input_name(&input.name)
+                .unwrap_or_else(|| input.name.clone());
+            let driver_name = match source_name.as_str() {
                 "dt" => "lane-dt",
                 "linear-velocity" => "lane-linear-velocity",
                 "angular-velocity" => "lane-angular-velocity",
@@ -266,49 +266,86 @@ fn source_inputs(
             };
             driver
                 .get(driver_name)
-                .map(|values| (input.name.clone(), values.clone()))
+                .map(|values| (source_name, values.clone()))
         })
         .collect()
 }
 
-fn projected_tree(tree: &Program, compute: bool) -> Program {
-    let imports = tree
-        .body
-        .sections
-        .iter()
-        .flat_map(|section| &section.elements)
-        .filter_map(|element| {
-            let SectionElement::MechCode(code) = element else {
-                return None;
-            };
-            let imports = code
-                .iter()
-                .filter(|(code, _)| matches!(code, MechCode::Import(_)))
-                .cloned()
-                .collect::<Vec<_>>();
-            (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
-        })
-        .collect::<Vec<_>>();
-    let selected = tree
-        .body
-        .sections
-        .iter()
-        .find(|section| (!section.annotations.is_empty()) == compute)
-        .unwrap_or_else(|| panic!("EKF source must contain the selected section"))
-        .clone();
-    Program {
-        title: tree.title.clone(),
-        body: Body {
-            sections: vec![
-                Section {
-                    subtitle: None,
-                    annotations: Vec::new(),
-                    elements: imports,
-                },
-                selected,
-            ],
-        },
+fn retained_document(source: &str) -> SourceDocument {
+    let document = SourceDocument::parse_resolved(
+        "test://parallel-ekf",
+        mech_syntax::document::Revision(0),
+        Arc::<str>::from(source),
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .expect("EKF array source must parse");
+    assert!(
+        document.is_strictly_clean(),
+        "EKF retained source diagnostics: {:?}",
+        document.snapshot().diagnostics
+    );
+    document
+}
+
+fn projected_tree(document: &SourceDocument, compute: bool) -> SourceDocument {
+    // These fixtures have one ordinary driver section and one compute section.
+    // Project their retained source, never a mutable legacy AST compilation route.
+    // Retained Mechdown requires an unannotated underlined heading to be numbered.
+    let source = document.source().to_contiguous_string();
+    let (driver, kernel) = source
+        .split_once("EKF step @compute\n")
+        .expect("EKF source must contain driver and compute sections");
+    if compute {
+        let (imports, _) = driver.split_once("1. EKF array inputs\n").unwrap();
+        retained_document(&format!("{imports}EKF step @compute\n{kernel}"))
+    } else {
+        retained_document(driver)
     }
+}
+
+fn compile_compute_document(
+    document: &SourceDocument,
+    planning_inputs: &BTreeMap<String, RuntimeHostInputValue>,
+    external_inputs: &BTreeSet<String>,
+) -> ProgramArtifactCompilationProduct {
+    let values = planning_inputs
+        .iter()
+        .map(|(name, value)| (name.clone(), value.clone().into_value().unwrap()))
+        .collect::<BTreeMap<_, _>>();
+    let schemas = values
+        .iter()
+        .map(|(name, value)| {
+            (
+                name.clone(),
+                ValueCell::from_snapshot(value.clone())
+                    .unwrap()
+                    .closed_schema_body()
+                    .unwrap(),
+            )
+        })
+        .collect();
+    let prepared = CanonicalSourceFrontend
+        .prepare_mixed_document_with_planning_contract(
+            &document.document(),
+            mech_stdlib::source_native_plan_catalog(),
+            schemas,
+            BTreeMap::new(),
+            external_inputs,
+            &BTreeSet::new(),
+            &BTreeSet::new(),
+        )
+        .expect("ordinary high-level compute source must prepare");
+    let constants = prepared
+        .compute
+        .program()
+        .inputs
+        .iter()
+        .enumerate()
+        .filter(|(_, input)| !external_inputs.contains(&input.name))
+        .map(|(ordinal, input)| (ordinal as u32, values[&input.name].clone()))
+        .collect::<Vec<_>>();
+    let program = prepared.compute.bind_input_constants(&constants).unwrap();
+    ProgramArtifactCompilationProduct::from_artifact(program.compile_artifact().unwrap())
 }
 
 fn maximum_error(
@@ -340,4 +377,34 @@ fn millis(duration: std::time::Duration) -> f64 {
 
 fn throughput(instances: usize, duration: std::time::Duration) -> f64 {
     instances as f64 / duration.as_secs_f64() / 1_000_000.0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn broadcast_inputs_use_source_names_from_the_artifact() {
+        let tree = source_tree(3);
+        let driver = evaluate_driver(&tree);
+        let artifact = compile_artifact(&tree, &driver);
+        assert_eq!(artifact.inputs().len(), COMPUTE_INPUT_NAMES.len());
+        assert!(
+            artifact
+                .inputs()
+                .iter()
+                .all(|input| input.name.starts_with("mech-source-input-"))
+        );
+        let expected = COMPUTE_INPUT_NAMES
+            .into_iter()
+            .map(|name| (name.to_owned(), driver[&format!("lane-{name}")].clone()))
+            .collect::<BTreeMap<_, _>>();
+        let inputs = source_inputs(&driver, &artifact);
+        assert_eq!(inputs, expected);
+        let program = ComputeLowerer
+            .compile_broadcast(&artifact, &inputs)
+            .unwrap();
+        assert_eq!(program.instances(), 3);
+        assert_eq!(program.integrity_constraints().count(), 3);
+    }
 }

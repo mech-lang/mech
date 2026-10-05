@@ -2,6 +2,27 @@
 
 use crate::{MResult, MechError, MechErrorKind, Value, ValueCell};
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub enum ComputePlacement {
+    /// Compile the region as a numeric unit and let the executor select a backend.
+    Compute,
+    /// Require execution on the CPU.
+    Cpu,
+    /// Require execution on a GPU provider.
+    Gpu,
+}
+
+impl ComputePlacement {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Compute => "compute",
+            Self::Cpu => "cpu",
+            Self::Gpu => "gpu",
+        }
+    }
+}
+
 #[cfg(feature = "no_std")]
 use alloc::{borrow::ToOwned, boxed::Box, format, string::String, vec::Vec};
 #[cfg(not(feature = "no_std"))]

@@ -8,7 +8,7 @@ use mech_core::{
     AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
     ConstantId, ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction,
     InputId, IntegrityConstraintId, MechError, NodeId, OperationContractDeclaration,
-    OperationContractError, OperationContractId, OperationContractTable,
+    OperationContractError, OperationContractHandle, OperationContractId, OperationContractTable,
     OperationContractTableBuilder, OutputId, PortDirection, ProgramRevision, ResolvedInputPort,
     ResolvedOperationContract, ResolvedOutputPort, ResolvedRangeMode, ResolvedReductionMode,
     ResolvedSelectionMode, SchemaId, SchemaTable, SemanticModelError, ShapeInstance,
@@ -16,6 +16,133 @@ use mech_core::{
 };
 
 use super::CompilerIrError;
+
+fn append_match_contract_handles(
+    control: &super::MatchDeclaration<OperationContractDeclaration>,
+    constants: &ConstantStore,
+    builder: &mut OperationContractTableBuilder,
+    node: NodeId,
+    handles: &mut Vec<OperationContractHandle>,
+) -> Result<(), ArtifactBuildError> {
+    let invalid = || ArtifactBuildError::InvalidControl {
+        node,
+        reason: "invalid compiler block reference",
+    };
+    for block in control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+    {
+        for operation in &block.operations {
+            let inputs = operation
+                .inputs
+                .iter()
+                .map(|value| {
+                    match *value {
+                        super::ControlValue::Constant(id) => {
+                            constants.get(id).map(|value| value.schema())
+                        }
+                        super::ControlValue::Parameter {
+                            block: owner,
+                            ordinal,
+                        } if owner == block.id => block
+                            .parameters
+                            .get(ordinal as usize)
+                            .map(|parameter| parameter.schema),
+                        super::ControlValue::Local {
+                            block: owner,
+                            node: local,
+                        } if owner == block.id && local < operation.node => block
+                            .operations
+                            .get(local as usize)
+                            .map(|operation| operation.schema),
+                        _ => None,
+                    }
+                    .ok_or_else(invalid)
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            match &operation.body {
+                super::ControlOperationBody::Operation { contract, .. } => {
+                    handles.push(builder.insert(resolve_declared_contract(
+                        contract,
+                        inputs,
+                        vec![operation.schema],
+                    )?)?);
+                }
+                super::ControlOperationBody::Match(nested) => {
+                    append_match_contract_handles(nested, constants, builder, node, handles)?;
+                }
+                super::ControlOperationBody::Comprehension(nested) => {
+                    append_comprehension_contract_handles(
+                        nested, &inputs, constants, builder, node, handles,
+                    )?;
+                }
+                super::ControlOperationBody::Recur(_)
+                | super::ControlOperationBody::Suspend
+                | super::ControlOperationBody::Publish => {}
+            }
+        }
+    }
+    Ok(())
+}
+
+fn append_comprehension_contract_handles(
+    control: &super::ComprehensionDeclaration<OperationContractDeclaration>,
+    inputs: &[SchemaId],
+    constants: &ConstantStore,
+    builder: &mut OperationContractTableBuilder,
+    node: NodeId,
+    handles: &mut Vec<OperationContractHandle>,
+) -> Result<(), ArtifactBuildError> {
+    let invalid = |reason| ArtifactBuildError::InvalidControl { node, reason };
+    let mut locals = Vec::new();
+    for step in &control.steps {
+        match step {
+            super::ComprehensionStep::Generator { pattern, .. } => {
+                super::comprehension::pattern_counts(pattern)
+                    .ok_or_else(|| invalid("collection pattern admission limit"))?;
+                super::comprehension::pattern_locals(pattern, &mut locals)
+                    .ok_or_else(|| invalid("invalid collection local identity"))?;
+            }
+            super::ComprehensionStep::Filter(_) => {}
+            super::ComprehensionStep::Operation(operation) => {
+                if operation.local as usize != locals.len() {
+                    return Err(invalid("invalid collection local identity"));
+                }
+                let schemas = operation
+                    .inputs
+                    .iter()
+                    .map(|value| {
+                        super::comprehension::value_schema(*value, constants, inputs, &locals)
+                            .ok_or_else(|| invalid("invalid collection operand"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                match &operation.body {
+                    super::ControlOperationBody::Operation { contract, .. } => {
+                        handles.push(builder.insert(resolve_declared_contract(
+                            contract,
+                            schemas,
+                            vec![operation.schema],
+                        )?)?);
+                    }
+                    super::ControlOperationBody::Match(nested) => {
+                        append_match_contract_handles(nested, constants, builder, node, handles)?;
+                    }
+                    super::ControlOperationBody::Comprehension(nested) => {
+                        append_comprehension_contract_handles(
+                            nested, &schemas, constants, builder, node, handles,
+                        )?;
+                    }
+                    super::ControlOperationBody::Recur(_)
+                    | super::ControlOperationBody::Suspend
+                    | super::ControlOperationBody::Publish => {}
+                }
+                locals.push(operation.schema);
+            }
+        }
+    }
+    Ok(())
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComputeRegionDeclaration {
@@ -243,6 +370,9 @@ impl BindingDeclaration {
 pub enum ExecutableNodeBody {
     Operation(OperationNodeBody),
     Match(super::MatchDeclaration),
+    /// Trigger-owned lexical control. Its first input is the sole reactive
+    /// trigger; remaining inputs are sampled captures.
+    Activation(super::MatchDeclaration),
     Comprehension(super::ComprehensionDeclaration),
     Fsm(super::FsmDeclaration),
 }
@@ -289,9 +419,67 @@ impl NodeDeclaration {
                 requirement: operation.requirement,
             }),
             ExecutableNodeBody::Match(_)
+            | ExecutableNodeBody::Activation(_)
             | ExecutableNodeBody::Comprehension(_)
             | ExecutableNodeBody::Fsm(_) => None,
         }
+    }
+}
+
+fn control_body_operation_references(
+    body: &super::ControlOperationBody,
+    references: &mut Vec<OperationReference>,
+) {
+    match body {
+        super::ControlOperationBody::Operation { operation, .. } => {
+            references.push(operation.clone());
+        }
+        super::ControlOperationBody::Match(control) => {
+            match_operation_references(control, references);
+        }
+        super::ControlOperationBody::Comprehension(control) => {
+            comprehension_operation_references(control, references);
+        }
+        super::ControlOperationBody::Recur(_)
+        | super::ControlOperationBody::Suspend
+        | super::ControlOperationBody::Publish => {}
+    }
+}
+
+fn match_operation_references(
+    control: &super::MatchDeclaration,
+    references: &mut Vec<OperationReference>,
+) {
+    for block in control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+    {
+        for operation in &block.operations {
+            control_body_operation_references(&operation.body, references);
+        }
+    }
+}
+
+fn comprehension_operation_references(
+    control: &super::ComprehensionDeclaration,
+    references: &mut Vec<OperationReference>,
+) {
+    for operation in control.operations() {
+        control_body_operation_references(&operation.body, references);
+    }
+}
+
+fn node_operation_references(body: &ExecutableNodeBody, references: &mut Vec<OperationReference>) {
+    match body {
+        ExecutableNodeBody::Operation(operation) => references.push(operation.operation.clone()),
+        ExecutableNodeBody::Comprehension(control) => {
+            comprehension_operation_references(control, references);
+        }
+        ExecutableNodeBody::Match(control) | ExecutableNodeBody::Activation(control) => {
+            match_operation_references(control, references);
+        }
+        ExecutableNodeBody::Fsm(_) => {}
     }
 }
 
@@ -406,6 +594,42 @@ impl ProgramArtifact {
 
     pub const fn constraints(&self) -> &[IntegrityConstraintDeclaration] {
         &self.constraints
+    }
+
+    /// Returns the complete canonical operation closure carried by ordinary,
+    /// nested-control, and integrity nodes in deterministic order.
+    pub fn operation_references(&self) -> Vec<OperationReference> {
+        let mut references = Vec::new();
+        for node in &self.nodes {
+            node_operation_references(&node.body, &mut references);
+        }
+        references.extend(
+            self.constraints
+                .iter()
+                .map(|constraint| constraint.operation.clone()),
+        );
+        references.sort();
+        references.dedup();
+        references
+    }
+
+    /// Returns operations bound through resident kernel factories, including
+    /// nested control bodies. External resource nodes use providers instead,
+    /// and integrity constraints are evaluated directly by the resident plan.
+    pub fn kernel_operation_references(&self) -> Vec<OperationReference> {
+        let mut references = Vec::new();
+        for node in &self.nodes {
+            if node
+                .as_operation()
+                .is_some_and(|operation| operation.requirement.is_some())
+            {
+                continue;
+            }
+            node_operation_references(&node.body, &mut references);
+        }
+        references.sort();
+        references.dedup();
+        references
     }
 
     pub const fn compute_regions(&self) -> &[ComputeRegionDeclaration] {
@@ -532,46 +756,52 @@ impl ProgramArtifactDraft {
                         reason: "control has no ordinary root contract",
                     });
                 }
-                let handles = control.map_contracts(|block, operation, declaration| {
-                    let inputs = operation
-                        .inputs
-                        .iter()
-                        .map(|value| {
-                            match *value {
-                                super::ControlValue::Constant(id) => {
-                                    self.constants.get(id).map(|value| value.schema())
-                                }
-                                super::ControlValue::Parameter {
-                                    block: owner,
-                                    ordinal,
-                                } if owner == block.id => block
-                                    .parameters
-                                    .get(ordinal as usize)
-                                    .map(|parameter| parameter.schema),
-                                super::ControlValue::Local {
-                                    block: owner,
-                                    node: local,
-                                } if owner == block.id && local < operation.node => block
-                                    .operations
-                                    .get(local as usize)
-                                    .map(|operation| operation.schema),
-                                _ => None,
-                            }
-                            .ok_or(
-                                ArtifactBuildError::InvalidControl {
-                                    node: node.node,
-                                    reason: "invalid compiler block reference",
-                                },
-                            )
-                        })
-                        .collect::<Result<Vec<_>, _>>()?;
-                    Ok::<_, ArtifactBuildError>(builder.insert(resolve_declared_contract(
-                        declaration,
-                        inputs,
-                        vec![operation.schema],
-                    )?)?)
+                let mut handles = Vec::new();
+                append_match_contract_handles(
+                    control,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
+                let mut handles = handles.into_iter();
+                let handles = control.map_contracts(|_, _, _| {
+                    Ok::<_, ArtifactBuildError>(handles.next().expect("control contract count"))
                 })?;
                 control_handles.insert(node.node, handles);
+                node_handles.push(None);
+                continue;
+            }
+            if let super::SourceNodeBody::Activation(control) =
+                &graph.nodes[node.node.get() as usize].body
+            {
+                let invalid = |reason| ArtifactBuildError::InvalidControl {
+                    node: node.node,
+                    reason,
+                };
+                if declaration.is_some() {
+                    return Err(invalid("activation has no ordinary root contract"));
+                }
+                if !matches!(&node.body, ExecutableNodeBody::Activation(_)) {
+                    return Err(invalid("compiler activation body mismatch"));
+                }
+                let mut handles = Vec::new();
+                append_match_contract_handles(
+                    control,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
+                let mut handles = handles.into_iter();
+                control_handles.insert(
+                    node.node,
+                    control.map_contracts(|_, _, _| {
+                        Ok::<_, ArtifactBuildError>(
+                            handles.next().expect("activation contract count"),
+                        )
+                    })?,
+                );
                 node_handles.push(None);
                 continue;
             }
@@ -592,47 +822,19 @@ impl ProgramArtifactDraft {
                         _ => Err(invalid("invalid collection input binding")),
                     })
                     .collect::<Result<Vec<_>, _>>()?;
-                let mut locals = Vec::new();
                 let mut handles = Vec::new();
-                for step in &control.steps {
-                    match step {
-                        super::ComprehensionStep::Generator { pattern, .. } => {
-                            super::comprehension::pattern_counts(pattern)
-                                .ok_or_else(|| invalid("collection pattern admission limit"))?;
-                            super::comprehension::pattern_locals(pattern, &mut locals)
-                                .ok_or_else(|| invalid("invalid collection local identity"))?;
-                        }
-                        super::ComprehensionStep::Operation(operation) => {
-                            if operation.local as usize != locals.len() {
-                                return Err(invalid("invalid collection local identity"));
-                            }
-                            let schemas = operation
-                                .inputs
-                                .iter()
-                                .map(|value| {
-                                    super::comprehension::value_schema(
-                                        *value,
-                                        &self.constants,
-                                        &inputs,
-                                        &locals,
-                                    )
-                                    .ok_or_else(|| invalid("invalid collection operand"))
-                                })
-                                .collect::<Result<Vec<_>, _>>()?;
-                            handles.push(builder.insert(resolve_declared_contract(
-                                &operation.contract,
-                                schemas,
-                                vec![operation.schema],
-                            )?)?);
-                            locals.push(operation.schema);
-                        }
-                        super::ComprehensionStep::Filter(_) => {}
-                    }
-                }
+                append_comprehension_contract_handles(
+                    control,
+                    &inputs,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
                 let mut handles = handles.into_iter();
                 comprehension_handles.insert(
                     node.node,
-                    control.map_contracts(|_| {
+                    control.map_contracts(|_, _| {
                         Ok::<_, ArtifactBuildError>(
                             handles.next().expect("collection contract count"),
                         )
@@ -733,12 +935,20 @@ impl ProgramArtifactDraft {
                             Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
                         })?;
                 }
+                (ExecutableNodeBody::Activation(control), None) => {
+                    *control = control_handles
+                        .remove(&node.node)
+                        .expect("compiler activation handles")
+                        .map_contracts(|_, _, contract| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
+                        })?;
+                }
                 (ExecutableNodeBody::Comprehension(control), None) => {
                     *control = comprehension_handles
                         .remove(&node.node)
                         .expect("compiler collection handles")
-                        .map_contracts(|operation| {
-                            Ok::<_, ArtifactBuildError>(build.resolve(operation.contract)?)
+                        .map_contracts(|_, contract| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
                         })?;
                 }
                 (ExecutableNodeBody::Fsm(_), None) => {}

@@ -39,6 +39,204 @@ fn finalize(body: SchemaBody, data: ValueDataDraft) -> Value {
     .unwrap()
 }
 
+fn unsigned_interval_payload(width: IntegerWidth, value: u128) -> ValueDataDraft {
+    match width {
+        IntegerWidth::W8 => ValueDataDraft::U8(value.try_into().unwrap()),
+        IntegerWidth::W16 => ValueDataDraft::U16(value.try_into().unwrap()),
+        IntegerWidth::W32 => ValueDataDraft::U32(value.try_into().unwrap()),
+        IntegerWidth::W64 => ValueDataDraft::U64(value.try_into().unwrap()),
+        IntegerWidth::W128 => ValueDataDraft::U128(value),
+    }
+}
+
+fn signed_interval_payload(width: IntegerWidth, value: i128) -> ValueDataDraft {
+    match width {
+        IntegerWidth::W8 => ValueDataDraft::I8(value.try_into().unwrap()),
+        IntegerWidth::W16 => ValueDataDraft::I16(value.try_into().unwrap()),
+        IntegerWidth::W32 => ValueDataDraft::I32(value.try_into().unwrap()),
+        IntegerWidth::W64 => ValueDataDraft::I64(value.try_into().unwrap()),
+        IntegerWidth::W128 => ValueDataDraft::I128(value),
+    }
+}
+
+fn assert_interval_membership(
+    interval: IntegerInterval,
+    members: &[ValueDataDraft],
+    nonmembers: &[ValueDataDraft],
+) {
+    let body = SchemaBody::IntegerInterval(interval);
+    let mut builder = SchemaTableBuilder::new();
+    let insert = |builder: &mut SchemaTableBuilder, body| {
+        builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap()
+    };
+    let constrained = insert(&mut builder, body.clone());
+    let base = insert(&mut builder, interval.base_body());
+    let build = builder.finish().unwrap();
+    let constrained = build.resolve(constrained).unwrap();
+    let base = build.resolve(base).unwrap();
+    let schemas = build.into_parts().0;
+    let context = SnapshotValidationContext::new(&schemas);
+    let finalize = |schema, data: &ValueDataDraft| {
+        ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: data.clone(),
+        }
+        .finalize(&context)
+    };
+    for data in members {
+        let accepted = finalize(constrained, data).unwrap();
+        assert_eq!(accepted.schema(), constrained);
+        assert!(accepted.shape().parameter_values().is_empty());
+        assert_eq!(schemas.get(constrained).unwrap().body(), &body);
+        assert_eq!(
+            canonical_snapshot_data_draft(&body, accepted.data()).unwrap(),
+            *data
+        );
+        let base_value = finalize(base, data).unwrap();
+        let narrowed = base_value
+            .rebind(constrained, base_value.shape(), &schemas)
+            .unwrap();
+        assert!(accepted.snapshot_eq(&schemas, &narrowed, &schemas).unwrap());
+    }
+    for data in nonmembers {
+        assert!(matches!(
+            finalize(constrained, data),
+            Err(SnapshotValueError::IntegerIntervalViolationV1 { .. })
+        ));
+        let base_value = finalize(base, data).unwrap();
+        assert!(matches!(
+            base_value.rebind(constrained, base_value.shape(), &schemas),
+            Err(SnapshotValueError::IntegerIntervalViolationV1 { .. })
+        ));
+    }
+}
+
+#[test]
+fn integer_interval_membership_is_exact_at_all_integer_width_extremes() {
+    for width in [
+        IntegerWidth::W8,
+        IntegerWidth::W16,
+        IntegerWidth::W32,
+        IntegerWidth::W64,
+        IntegerWidth::W128,
+    ] {
+        let unsigned_max = if width == IntegerWidth::W128 {
+            u128::MAX
+        } else {
+            (1_u128 << (width as u16)) - 1
+        };
+        let unsigned = |value| unsigned_interval_payload(width, value);
+        assert_interval_membership(
+            IntegerInterval::Unsigned {
+                width,
+                lower: unsigned_max,
+                upper: unsigned_max,
+                upper_inclusive: true,
+            },
+            &[unsigned(unsigned_max)],
+            &[unsigned(unsigned_max - 1)],
+        );
+        assert_interval_membership(
+            IntegerInterval::Unsigned {
+                width,
+                lower: unsigned_max - 1,
+                upper: unsigned_max,
+                upper_inclusive: false,
+            },
+            &[unsigned(unsigned_max - 1)],
+            &[unsigned(unsigned_max)],
+        );
+        let (signed_min, signed_max) = if width == IntegerWidth::W128 {
+            (i128::MIN, i128::MAX)
+        } else {
+            let half = 1_i128 << ((width as u16) - 1);
+            (-half, half - 1)
+        };
+        let signed = |value| signed_interval_payload(width, value);
+        for (endpoint, excluded_neighbor) in
+            [(signed_min, signed_min + 1), (signed_max, signed_max - 1)]
+        {
+            assert_interval_membership(
+                IntegerInterval::Signed {
+                    width,
+                    lower: endpoint,
+                    upper: endpoint,
+                    upper_inclusive: true,
+                },
+                &[signed(endpoint)],
+                &[signed(excluded_neighbor)],
+            );
+        }
+        assert_interval_membership(
+            IntegerInterval::Signed {
+                width,
+                lower: signed_max - 1,
+                upper: signed_max,
+                upper_inclusive: false,
+            },
+            &[signed(signed_max - 1)],
+            &[signed(signed_max)],
+        );
+        assert_interval_membership(
+            IntegerInterval::Signed {
+                width,
+                lower: signed_min,
+                upper: -1,
+                upper_inclusive: true,
+            },
+            &[signed(signed_min), signed(-1)],
+            &[signed(0)],
+        );
+    }
+}
+
+#[test]
+fn integer_interval_membership_preserves_large_exact_payloads_and_adjacent_bounds() {
+    for (width, member) in [
+        (IntegerWidth::W64, (1_u128 << 53) + 1),
+        (IntegerWidth::W128, (1_u128 << 100) + 1),
+    ] {
+        assert_interval_membership(
+            IntegerInterval::Unsigned {
+                width,
+                lower: member,
+                upper: member + 1,
+                upper_inclusive: false,
+            },
+            &[unsigned_interval_payload(width, member)],
+            &[
+                unsigned_interval_payload(width, member - 1),
+                unsigned_interval_payload(width, member + 1),
+            ],
+        );
+        for member in [member as i128, -(member as i128)] {
+            assert_interval_membership(
+                IntegerInterval::Signed {
+                    width,
+                    lower: member,
+                    upper: member + 1,
+                    upper_inclusive: false,
+                },
+                &[signed_interval_payload(width, member)],
+                &[
+                    signed_interval_payload(width, member - 1),
+                    signed_interval_payload(width, member + 1),
+                ],
+            );
+        }
+    }
+}
+
 fn finalize_reified_kind(
     kind: KindExpr,
     context: &SnapshotValidationContext<'_>,

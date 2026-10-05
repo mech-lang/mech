@@ -2,25 +2,11 @@ use alloc::string::String;
 
 use crate::document::{
     Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticPhase, DiagnosticTags, ExpectedSyntax,
-    FoundSyntax, NodeFlags, ParserContextId, RecoveryAction, RuleId, Severity, SyntaxKind,
-    TextRange, TokenFlags,
+    FoundSyntax, NodeFlags, RecoveryAction, RuleId, Severity, SyntaxKind, TextRange, TokenFlags,
 };
 
 use super::terminal::{is_newline_start, token_kind_for_char};
 use super::{CompletedMarker, Parser};
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ParseFailure {
-    pub context: ParserContextId,
-    pub range: TextRange,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Attempt<T> {
-    NoMatch,
-    Match(T),
-    CommittedFailure(ParseFailure),
-}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RecoveryClass {
@@ -31,23 +17,6 @@ pub enum RecoveryClass {
 
 mod skip;
 pub(crate) use skip::{SkipContinuation, SkipProgress};
-
-pub(crate) fn skip_error(
-    parser: &mut Parser<'_>,
-    class: RecoveryClass,
-    code: &str,
-    message: &str,
-) -> Option<CompletedMarker> {
-    let mut continuation = SkipContinuation::new(class, code, message);
-    loop {
-        let mut allowance = u64::MAX;
-        match continuation.advance(parser, true, &mut allowance) {
-            SkipProgress::Complete(result) => return result,
-            SkipProgress::NeedsProcessing => {}
-            _ => unreachable!("final recovery input"),
-        }
-    }
-}
 
 /// Preserve unexpected bytes until a sibling or ancestor production can
 /// restart. Boundary characters remain unconsumed for the owning production.
@@ -154,42 +123,8 @@ pub(crate) fn insert_missing(
     }
 }
 
-pub(crate) fn abandon_error(
-    parser: &mut Parser<'_>,
-    class: RecoveryClass,
-    target: RuleId,
-    code: &str,
-    message: &str,
-) -> ParseFailure {
-    let start = parser.offset();
-    let _ = skip_error(parser, class, code, message);
-    let range = TextRange::new(start, parser.offset());
-    let at = parser.offset();
-    if let Some(diagnostic) = parser.last_diagnostic_mut() {
-        diagnostic.recovery = Some(RecoveryAction::Abandon { rule: target, at });
-    }
-    ParseFailure {
-        context: parser
-            .current_context()
-            .expect("abandon recovery requires a parser context"),
-        range,
-    }
-}
-
 mod nesting;
 pub(crate) use nesting::{NestingContinuation, NestingProgress};
-pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
-    let mut child = NestingContinuation::new();
-    loop {
-        let mut allowance = u64::MAX;
-        match child.advance(parser, true, &mut allowance) {
-            NestingProgress::Complete => return,
-            NestingProgress::NeedsProcessing => {}
-            _ => unreachable!("sealed nesting recovery"),
-        }
-    }
-}
-
 fn charge_recovery_bytes(parser: &mut Parser<'_>, bytes: u32) {
     parser.stats_mut().recovery_bytes = parser
         .stats()

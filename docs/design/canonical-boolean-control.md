@@ -12,7 +12,8 @@ The engine artifact owns control blocks, captures, scoped parameters, local
 ordinary operations, nested match declarations and yields. Source text and diagnostic strings are not
 execution operands. The artifact uses one tagged node body for ordinary
 operations, scalar matches, or lexical comprehensions. The bytecode-v1 graph payload now uses
-revision 6 after S5 added typed FSM bodies; revision 5 remains the closed nested-match grammar.
+revision 13 after activation scopes gained typed trigger ownership and sampled
+pattern inputs; revision 12 remains the declared-FSM suspension and staged-publication grammar.
 All durable fixtures are regenerated with the current producer.
 
 Resident match literal comparisons admit Bool, Index and F64 scalar layouts.
@@ -45,7 +46,7 @@ joins. Matrix iteration follows canonical row-major order; set construction uses
 the core key relation for deduplication and float normalization. No diagnostic
 qualifier strings or ordinary-operation placeholders participate in execution.
 
-Resident comprehension execution currently supports Bool, Index, and F64
+At S4, resident comprehension execution supported Bool, Index, and F64
 bindings and yields, scalar patterns, and qualified ordinary kernels. Every
 inner call retains its ordinary contract and physical call-memory identity.
 The owning control accumulates work across calls, so repeated individually
@@ -54,9 +55,11 @@ allocation. Failed turns preserve published values and can recover on a smaller
 subsequent input. Pattern depth and generator nesting are bounded in artifacts;
 bytecode population limits apply before graph allocation.
 
-This remains an S4 increment. Comprehension composite bindings and yields,
-computed pattern evaluation blocks, control nested in or containing
-comprehensions, and FSM lowering still require implementation. Matches can nest
-in match bodies and guards, with at most eight declarations on a path.
+The later S8 control revisions extend this S4 foundation with composite
+comprehension bindings and yields, recursive match/comprehension control, and
+ordered computed-pattern evaluation on the canonical control graph. Matches can
+nest in match bodies and guards, and either control form can contain the other,
+with at most eight mixed control declarations on a path. FSM lowering still
+requires implementation.
 Unsupported cases remain explicit errors and do not count as executable
 completion evidence.

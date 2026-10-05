@@ -29,10 +29,61 @@ impl SemanticBuilder {
     ) -> Result<(), SourceSemanticError> {
         let syntax = import.syntax();
         let body = self.required(import.body(), syntax, "a module import body")?;
+        #[cfg(feature = "dynamic-modules")]
+        {
+            // Resolve ABI imports at the shared canonical import boundary,
+            // before namespace/glob exports are enumerated. Source modules and
+            // context imports retain their resolver-owned authority.
+            let context_import = matches!(&body,
+                CanonicalModuleImportBodySyntax::AliasedItem(body)
+                    if body.alias().is_some_and(|alias| alias.context().is_some()));
+            if !context_import {
+                let module = match &body {
+                    CanonicalModuleImportBodySyntax::Module(body) => body.module(),
+                    CanonicalModuleImportBodySyntax::AliasedItem(body) => body.module(),
+                    CanonicalModuleImportBodySyntax::Suffix(body) => body.module(),
+                };
+                let module = node_text(self.required(module, syntax, "a module name")?.syntax())?;
+                if !resolved_source_modules.contains(&module)
+                    && let Some(catalog) = self.function_catalog.as_ref()
+                    && !catalog.has_module(&module)
+                {
+                    let mut builder = mech_core::FunctionCatalogBuilder::from_catalog(catalog);
+                    crate::install_dynamic_source_module(&mut builder, &module).map_err(
+                        |error| SourceSemanticError {
+                            code: "source-semantics/unknown-function-import",
+                            message: error.display_message(),
+                            anchor: SourceSemanticAnchor::for_node(syntax),
+                        },
+                    )?;
+                    self.function_catalog = Some(Arc::new(builder.build().map_err(|error| {
+                        internal(
+                            SourceSemanticAnchor::for_node(syntax),
+                            error.display_message(),
+                        )
+                    })?));
+                }
+            }
+        }
         let (module, items) = match body {
             CanonicalModuleImportBodySyntax::Module(body) => {
                 let module = self.required(body.module(), syntax, "a module name")?;
-                (node_text(module.syntax())?, Vec::new())
+                let module = node_text(module.syntax())?;
+                let items =
+                    self.function_catalog
+                        .as_ref()
+                        .map(|catalog| {
+                            catalog
+                                .module_exports(&module)
+                                .filter_map(|export| {
+                                    export.item.as_ref().map(|item| {
+                                        (item.clone(), Some(format!("{module}/{item}")))
+                                    })
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                (module, items)
             }
             CanonicalModuleImportBodySyntax::AliasedItem(body) => {
                 let alias = self.required(body.alias(), syntax, "a module item alias")?;
@@ -94,7 +145,13 @@ impl SemanticBuilder {
         // Source-module value exports are bound by the resolver. Only catalog
         // modules contribute function names at this boundary.
         if !catalog.has_module(&module) {
-            return Ok(());
+            return Err(SourceSemanticError {
+                code: "source-semantics/unknown-function-import",
+                message: format!(
+                    "module {module} is not available in the configured catalog or resolved source modules"
+                ),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
         }
         for (item, alias) in items {
             let export =
@@ -105,11 +162,14 @@ impl SemanticBuilder {
                         message: format!("module {module} has no function {item}"),
                         anchor: SourceSemanticAnchor::for_node(syntax),
                     })?;
-            let name = alias.unwrap_or(item);
-            if self
-                .function_imports
-                .get(&name)
-                .is_some_and(|prior| prior != &export.canonical_name)
+            let name = alias.unwrap_or_else(|| item.rsplit('/').next().unwrap_or(&item).to_owned());
+            let environment = self
+                .function_environment
+                .as_mut()
+                .expect("a configured catalog has a function environment");
+            if (self.function_imports.contains(&name)
+                && environment.resolve_name(&name)
+                    != Some(crate::FunctionBinding::CatalogOperation(export.operation)))
                 || self.local_functions.contains_key(&name)
             {
                 return Err(SourceSemanticError {
@@ -118,8 +178,14 @@ impl SemanticBuilder {
                     anchor: SourceSemanticAnchor::for_node(syntax),
                 });
             }
-            self.function_imports
-                .insert(name, export.canonical_name.clone());
+            environment
+                .bind_catalog_export(export, &name)
+                .map_err(|error| SourceSemanticError {
+                    code: "source-semantics/invalid-function-import",
+                    message: error.display_message(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                })?;
+            self.function_imports.insert(name);
         }
         Ok(())
     }

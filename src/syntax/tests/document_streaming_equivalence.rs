@@ -21,14 +21,100 @@ fn same(left: &GreenNode, right: &GreenNode) {
         }
     }
 }
-fn drain(stream: &mut DocumentStream, mut progress: StreamProgress) {
+fn drain(stream: &mut DocumentStream, progress: StreamProgress) {
+    drain_with_allowance(stream, progress, 13);
+}
+fn drain_with_allowance(stream: &mut DocumentStream, mut progress: StreamProgress, allowance: u64) {
     let mut polls = 0;
     while progress == StreamProgress::NeedsProcessing {
-        progress = stream.advance(13).progress;
+        progress = stream.advance(allowance).progress;
         polls += 1;
         assert!(polls < 2_000_000);
     }
     assert_ne!(progress, StreamProgress::Limited);
+}
+#[test]
+fn range_and_numbered_prose_ownership_survives_every_input_cut() {
+    fn count(node: SyntaxNode, kind: SyntaxKind) -> usize {
+        usize::from(node.kind() == kind)
+            + node
+                .children()
+                .map(|child| count(child, kind))
+                .sum::<usize>()
+    }
+
+    for (text, ranges, items) in [
+        ("1..10\n", 1, 0),
+        ("1..=10\n", 1, 0),
+        ("1..2..9\n", 1, 0),
+        ("1..2..=9\n", 1, 0),
+        ("-3..=3\n", 1, 0),
+        ("1.5..=3.5\r\n", 1, 0),
+        ("1.first\n2.second\n", 0, 2),
+        ("1. first\n", 0, 1),
+        ("1. .prose\n", 0, 1),
+    ] {
+        let expected = parse_canonical_document(
+            TextSnapshot::new(DocumentId(827), Revision(0), text).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(
+            expected.is_strictly_clean(),
+            "{text:?}: {:?}",
+            expected.diagnostics
+        );
+        assert_eq!(
+            count(expected.syntax(), SyntaxKind::RangeExpression),
+            ranges,
+            "{text:?}"
+        );
+        assert_eq!(
+            count(expected.syntax(), SyntaxKind::OrderedListItem),
+            items,
+            "{text:?}"
+        );
+        for allowance in [1, 13] {
+            for at in text
+                .char_indices()
+                .map(|(at, _)| at)
+                .chain(core::iter::once(text.len()))
+            {
+                let mut stream = DocumentStream::new(DocumentId(827), ParseConfig::default());
+                for chunk in [&text[..at], &text[at..]] {
+                    let update = stream.append(chunk, allowance).unwrap();
+                    drain_with_allowance(&mut stream, update.progress, allowance);
+                }
+                let progress = stream.finish(allowance).progress;
+                drain_with_allowance(&mut stream, progress, allowance);
+                let actual = stream.materialize().unwrap();
+                same(&actual.root, &expected.root);
+                validate_lossless(&actual.root, &actual.source).unwrap();
+                assert_eq!(
+                    reconstruct_source(&actual.root, &actual.source).unwrap(),
+                    text
+                );
+                assert_eq!(
+                    count(actual.syntax(), SyntaxKind::RangeExpression),
+                    ranges,
+                    "{text:?} cut {at}, allowance {allowance}"
+                );
+                assert_eq!(
+                    count(actual.syntax(), SyntaxKind::OrderedListItem),
+                    items,
+                    "{text:?} cut {at}, allowance {allowance}"
+                );
+                assert_eq!(
+                    normalize_diagnostics(&actual.diagnostics, actual.revision, &actual.nodes),
+                    normalize_diagnostics(
+                        &expected.diagnostics,
+                        expected.revision,
+                        &expected.nodes
+                    ),
+                    "{text:?} cut {at}, allowance {allowance}"
+                );
+            }
+        }
+    }
 }
 #[test]
 fn finalized_streams_match_one_shot_at_every_scalar_cut() {

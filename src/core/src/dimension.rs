@@ -340,10 +340,14 @@ fn visit_parameter(
         _ => {}
     }
     state[ordinal] = 1;
-    occurrence.push(ordinal);
     for dependency in &dependencies[ordinal] {
         visit_parameter(dependency.get() as usize, dependencies, state, occurrence)?;
     }
+    // Independent inferred parameters keep first-occurrence order, but a
+    // bound's dependencies must precede the parameter consuming them. The
+    // explicit prefix below still preserves declaration order and rejects
+    // authored forward references.
+    occurrence.push(ordinal);
     state[ordinal] = 2;
     Ok(())
 }

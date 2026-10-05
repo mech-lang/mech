@@ -1,6 +1,9 @@
 #![cfg(feature = "full-hosts")]
+#![cfg_attr(windows, feature(windows_process_extensions_main_thread_handle))]
 
 pub mod support;
+
+use std::collections::BTreeSet;
 
 use mech_build::PlannedApplicationRequirement;
 use support::*;
@@ -9,15 +12,28 @@ use support::*;
 fn every_generated_application_fixture_builds_and_executes() {
     let temporary = tempfile::tempdir().unwrap();
     let selected = std::env::var("MECH_NATIVE_GENERATED_CASE").ok();
+    let requested = selected.as_deref().map(|selected| {
+        let requested = selected
+            .split(',')
+            .map(str::trim)
+            .filter(|case| !case.is_empty())
+            .map(str::to_owned)
+            .collect::<BTreeSet<_>>();
+        assert!(
+            !requested.is_empty(),
+            "MECH_NATIVE_GENERATED_CASE must name at least one generated case"
+        );
+        requested
+    });
+    let mut matched = BTreeSet::new();
     for generated in generated_cases() {
-        if selected.as_deref().is_some_and(|selected| {
-            !selected
-                .split(',')
-                .map(str::trim)
-                .any(|selected| selected == generated.case)
-        }) {
+        if requested
+            .as_ref()
+            .is_some_and(|requested| !requested.contains(generated.case))
+        {
             continue;
         }
+        matched.insert(generated.case.to_owned());
         let fixture = temporary.path().join(format!("{}.mecb", generated.case));
         std::fs::write(&fixture, generated.bytecode).unwrap();
         let result = run_owner(
@@ -60,5 +76,11 @@ fn every_generated_application_fixture_builds_and_executes() {
                 grant.host_instance == host_instance && grant.host_context == host_context
             }));
         }
+    }
+    if let Some(requested) = requested {
+        assert_eq!(
+            matched, requested,
+            "MECH_NATIVE_GENERATED_CASE included an unknown or retired generated case"
+        );
     }
 }

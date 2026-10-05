@@ -197,6 +197,23 @@ impl ConstantStore {
     pub fn entry(&self, id: ConstantId) -> Option<&ConstantEntry> {
         self.entries.get(id.get() as usize)
     }
+
+    /// Largest canonical `Index` payload in this store's finalized values.
+    /// Native planning uses the authoritative artifact schemas and constants,
+    /// including packed sequences and nested aggregates, without converting
+    /// payloads through the build machine's pointer width.
+    pub fn maximum_index_constant(
+        &self,
+        schemas: &SchemaTable,
+    ) -> Result<Option<u64>, SnapshotValueError> {
+        let mut maximum = None;
+        for entry in &self.entries {
+            if let Some(value) = entry.value.maximum_index_constant(schemas)? {
+                maximum = Some(maximum.map_or(value, |current: u64| current.max(value)));
+            }
+        }
+        Ok(maximum)
+    }
 }
 
 impl ConstantEntry {

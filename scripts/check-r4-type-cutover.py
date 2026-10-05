@@ -93,6 +93,37 @@ def production_rust_files(root: Path):
             yield relative, path.read_text(encoding="utf-8")
 
 
+def rust_function_body(source: str, name: str) -> str:
+    signature = re.search(rf"\bfn\s+{re.escape(name)}\s*\(", source)
+    if signature is None:
+        return ""
+    opening = source.find("{", signature.end())
+    if opening < 0:
+        return ""
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(opening, len(source)):
+        char = source[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return source[opening + 1:index]
+    return ""
+
+
 def failures(root: Path) -> list[str]:
     root = root.resolve()
     found: list[str] = []
@@ -208,8 +239,9 @@ def failures(root: Path) -> list[str]:
             )
 
     compiler_planning = sources.get("src/engine/src/program/compiler_planning.rs", "")
-    if "begin_plan_node_with_type_binding" not in compiler_planning:
-        found.append("compiler planning does not require a BoundCall for executable nodes")
+    # This private module now owns configuration and immutable compilation
+    # products, not executable nodes. Keep the historical sidecar restoration
+    # guard, and enforce executable authority at the actual resident binder.
     if "step.semantic_operation_name()" in compiler_planning or (
         "step.semantic_operation_contract()" in compiler_planning
     ):
@@ -230,8 +262,46 @@ def failures(root: Path) -> list[str]:
         found.append("instance certification trusts an implementation semantic contract")
 
     resident = sources.get("src/engine/src/resident/general/mod.rs", "")
-    if "BoundCall::artifact_operation" not in resident:
+    binder = rust_function_body(resident, "bind_resident_operation")
+    compact_binder = re.sub(r"\s+", "", binder)
+    if "BoundCall::artifact_operation(" not in compact_binder:
         found.append("resident activation does not bind the actual artifact operation")
+    if (
+        "ResolvedOperationDescriptor::from_resolved_contract(" not in compact_binder
+        or "artifact.contracts().get(contract_id)" not in compact_binder
+        or not re.search(r"ResolvedValueDescriptor::from_schema\(schema,layout\.shape_instance\.clone\(\),?\)", compact_binder)
+        or not re.search(r"ResolvedValueDescriptor::from_schema\(schema,output_layout\.shape_instance\.clone\(\),?\)", compact_binder)
+    ):
+        found.append("resident binding does not derive semantic descriptors from the actual artifact contract and layouts")
+    if "resident_call_memory_plan(&resident_context.bound_call," not in compact_binder:
+        found.append("resident call-memory planning does not consume the selected BoundCall")
+    if ".with_bound_call(resident_context.bound_call)" not in compact_binder:
+        found.append("resident executable kernel does not retain its selected BoundCall")
+    for independent in (
+        "implementation().semantic_operation_name()",
+        "implementation().semantic_operation_contract()",
+        "step.semantic_operation_name()",
+        "step.semantic_operation_contract()",
+    ):
+        if independent in resident:
+            found.append("resident binding supplies semantic sidecars independently of BoundCall")
+    if not re.search(
+        r"\bstruct\s+ActivatedKernelNode\s*\{[^}]*\bkernel\s*:\s*BoundResidentKernel\b",
+        resident,
+        re.DOTALL,
+    ):
+        found.append("resident executable node does not retain the bound kernel")
+    resident_kernel = sources.get("src/core/src/function/resident.rs", "")
+    if (
+        not re.search(
+            r"\bstruct\s+BoundResidentKernel\s*\{[^}]*\bbound_call\s*:\s*Option<BoundCall>",
+            resident_kernel,
+            re.DOTALL,
+        )
+        or "self.bound_call = Some(bound_call)" not in rust_function_body(resident_kernel, "with_bound_call")
+        or "self.bound_call.as_ref()" not in rust_function_body(resident_kernel, "bound_call")
+    ):
+        found.append("BoundResidentKernel does not retain and expose the selected semantic BoundCall")
 
     native = sources.get("src/build/src/analysis/bytecode.rs", "")
     if "validate_bound_call_for_target(binding, ExecutionTarget::Native)" not in native:

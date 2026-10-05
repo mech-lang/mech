@@ -13,22 +13,21 @@ use std::time::{Duration, Instant};
 use colored::{ColoredString, Colorize};
 use ignore::WalkBuilder;
 use mech_browser::BrowserRuntimeInjectionConfig;
-use mech_core::{
-    GenericError, MResult, MechError, MechErrorKind, MechSourceCode, compress_and_encode,
-};
+use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode};
 use mech_runtime::{
     DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
     FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeConfig, RuntimeEvent,
     RuntimeWorkspaceFolder, RuntimeWorkspaceSnapshot, RuntimeWorkspaceTarget,
-    RuntimeWorkspaceWatchEvent, SERVE_HOST_SUBJECT, ServerWorkspaceSession, SourceKind,
-    SourceResolutionEntry, check_fs_capability, validate_source_resolution_entries,
+    RuntimeWorkspaceWatchEvent, SERVE_HOST_SUBJECT, ServerWorkspaceSession, SourceDocument,
+    SourceKind, SourceResolutionEntry, check_fs_capability, validate_source_resolution_entries,
 };
-use mech_syntax::{
-    formatter::{Formatter, HtmlShimExtraSlots, HtmlStyleSheets, validate_shipped_shim_render},
-    parser,
-};
+use mech_syntax::document::{ParseConfig, Revision};
 use warp::Filter;
 
+use crate::canonical_presentation::{
+    HtmlShimExtraSlots, HtmlStyleSheets, render_canonical_html, render_canonical_static_html,
+    validate_shipped_shim_render,
+};
 use crate::{
     HostAuthorityInjection, inject_browser_host_config_script,
     inject_host_authority_injection_script,
@@ -74,6 +73,7 @@ struct ServerSourceRegistry {
     source_paths: HashMap<String, PathBuf>,
     source_roots: Vec<String>,
     source_resolutions: Vec<SourceResolutionEntry>,
+    source_provenance: BTreeMap<String, serde_json::Value>,
     workspace_keys: HashSet<String>,
     static_asset_paths: HashMap<String, PathBuf>,
     user_assets: HashSet<String>,
@@ -86,6 +86,9 @@ struct ServerSourceRegistry {
     document_presentation: mech_runtime::ServePresentation,
     capability_kernel: Option<mech_runtime::SharedCapabilityKernel>,
     capability_subject: Option<String>,
+    compiler_hosts: Vec<mech_runtime::HostInstanceConfig>,
+    compiler_config: RuntimeConfig,
+    compiler_roots: Option<BTreeSet<PathBuf>>,
 }
 
 impl ServerSourceRegistry {
@@ -390,7 +393,193 @@ impl ServerSourceRegistry {
         self.index_source = None;
         self.source_roots.clear();
         self.source_resolutions.clear();
+        self.source_provenance.clear();
+        let root_uris = match &self.compiler_roots {
+            Some(paths) => paths
+                .iter()
+                .map(|path| {
+                    snapshot
+                        .sources
+                        .values()
+                        .find(|source| {
+                            source.path.as_ref().is_some_and(|source_path| {
+                                // File URIs use ordinary Windows paths while
+                                // configured roots use canonical verbatim paths.
+                                // Compare their filesystem identity as well.
+                                source_path == path
+                                    || source_path
+                                        .canonicalize()
+                                        .is_ok_and(|canonical| &canonical == path)
+                            })
+                        })
+                        .map(|source| source.canonical_uri.clone())
+                        .ok_or_else(|| {
+                            Error::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "configured run root is outside the served source snapshot: {}",
+                                    path.display()
+                                ),
+                            )
+                            .into()
+                        })
+                })
+                .collect::<MResult<BTreeSet<_>>>()?,
+            None => {
+                let targeted = snapshot
+                    .targets
+                    .values()
+                    .map(|target| target.canonical_uri.clone())
+                    .collect::<BTreeSet<_>>();
+                if targeted.is_empty() {
+                    snapshot
+                        .sources
+                        .values()
+                        .filter(|source| {
+                            source.path.as_deref().is_some_and(|path| {
+                                is_renderable_mech_text_source(path)
+                                    && source.source_document.as_ref().is_some_and(|document| {
+                                        document.is_strictly_clean()
+                                            && mech_runtime::canonical_document_has_root_program(
+                                                &document.document(),
+                                            )
+                                    })
+                            })
+                        })
+                        .map(|source| source.canonical_uri.clone())
+                        .collect()
+                } else {
+                    targeted
+                }
+            }
+        };
+        let root_uris = root_uris
+            .into_iter()
+            .filter(|uri| {
+                snapshot.sources.values().any(|source| {
+                    source.canonical_uri == *uri
+                        && source
+                            .path
+                            .as_deref()
+                            .is_some_and(is_renderable_mech_text_source)
+                        && source.source_document.as_ref().is_some_and(|document| {
+                            document.is_strictly_clean()
+                                && mech_runtime::canonical_document_has_root_program(
+                                    &document.document(),
+                                )
+                        })
+                })
+            })
+            .collect::<BTreeSet<_>>();
         let mut module_specifiers = BTreeMap::new();
+        // The workspace snapshot is the source authority, including expanded
+        // includes and resolver-specific import edges. A browser transport owns
+        // stable bundle URIs; do not reread files to reconstruct its graph.
+        let mut resolver = mech_runtime::InMemorySourceResolver::new();
+        let mut documents = HashMap::new();
+        let mut transport_uris = BTreeMap::new();
+        let mut compiler_sources = BTreeSet::new();
+        for source in snapshot.sources.values() {
+            let Some(path) = source.path.as_ref() else {
+                continue;
+            };
+            if !is_renderable_mech_text_source(path) {
+                continue;
+            }
+            let path = path.canonicalize()?;
+            self.check(FS_READ, &path)?;
+            let relative = path
+                .strip_prefix(&root)
+                .map_err(|error| Error::new(ErrorKind::InvalidInput, error.to_string()))?;
+            let Some(specifier) = url_key(relative) else {
+                continue;
+            };
+            let Some(MechSourceCode::String(text)) = source.source.as_ref() else {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!(
+                        "workspace source {} has no resolver-authoritative text",
+                        source.canonical_uri
+                    ),
+                )
+                .into());
+            };
+            let uri = format!("bundle:///{specifier}");
+            let revision = source
+                .source_document
+                .as_ref()
+                .map(|document| document.source().revision())
+                .unwrap_or(Revision(0));
+            let mut document = SourceDocument::parse_resolved(
+                &uri,
+                revision,
+                Arc::<str>::from(text.as_str()),
+                ParseConfig::default(),
+            )
+            .map_err(|error| {
+                MechError::new(
+                    GenericError {
+                        msg: format!("invalid retained browser source: {error:?}"),
+                    },
+                    None,
+                )
+            })?;
+            if let Some(retained) = source.source_document.as_ref() {
+                if let Some(origin) = retained.nominal_origin() {
+                    document = document.with_nominal_origin(origin.clone());
+                }
+                if let Some(package_id) = retained.nominal_package_id() {
+                    document = document.with_nominal_package_id(
+                        crate::nominal_provenance::transport_package_id(package_id),
+                    );
+                }
+            }
+            if document.index().is_ok() {
+                resolver.insert_source(
+                    &uri,
+                    mech_runtime::ResolvedSource::new(
+                        &uri,
+                        &uri,
+                        MechSourceCode::String(text.clone()),
+                    )
+                    .with_kind(SourceKind::from_path(&path))
+                    .with_source_document(document.clone())?
+                    .admit_canonical_document()?,
+                )?;
+                compiler_sources.insert(uri.clone());
+            }
+            if let Some(version) = source.module_version {
+                transport_uris.insert(version, uri.clone());
+            }
+            documents.insert(source.canonical_uri.clone(), (uri, document));
+        }
+        for edge in &snapshot.import_edges {
+            let (Some(referrer), Some(target)) = (
+                transport_uris.get(&edge.importer),
+                transport_uris.get(&edge.dependency),
+            ) else {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "served dependency is outside the retained source manifest",
+                )
+                .into());
+            };
+            if compiler_sources.contains(referrer) && compiler_sources.contains(target) {
+                resolver.insert_resolution(referrer, &edge.specifier, target)?;
+            }
+        }
+        let mut compiler = if shim.contains("{{DOCUMENT_SCRIPT}}") && !root_uris.is_empty() {
+            Some(
+                crate::configured_browser_compiler_builder(
+                    &self.compiler_hosts,
+                    self.compiler_config.clone(),
+                )?
+                .source_resolver(resolver)
+                .build_compiler()?,
+            )
+        } else {
+            None
+        };
 
         for source in snapshot.sources.values() {
             let Some(path) = source.path.as_ref() else {
@@ -410,6 +599,20 @@ impl ServerSourceRegistry {
                 continue;
             };
             let key = percent_encode_url_path(&logical_specifier);
+            if let Some(document) = source.source_document.as_ref()
+                && let Some(origin) = document.nominal_origin()
+            {
+                let package_id = document
+                    .nominal_package_id()
+                    .map(crate::nominal_provenance::transport_package_id);
+                self.source_provenance.insert(
+                    logical_specifier.clone(),
+                    serde_json::json!({
+                        "nominalOrigin": origin,
+                        "nominalPackageId": package_id,
+                    }),
+                );
+            }
             self.check(FS_READ, &path)?;
             let source_text =
                 match source.source.as_ref() {
@@ -447,90 +650,123 @@ impl ServerSourceRegistry {
                     backing_paths: vec![path.clone()],
                 },
             );
-            let fallback_tree = source
-                .syntax_tree
-                .is_none()
-                .then(|| parser::parse(&source_text));
-            let tree = match (source.syntax_tree.as_deref(), fallback_tree.as_ref()) {
-                (Some(tree), _) => Ok(tree),
-                (None, Some(tree)) => tree.as_ref(),
-                (None, None) => unreachable!("missing parsed-tree fallback"),
-            };
-            match tree {
-                Ok(tree) => {
-                    let mut extra_slots = HtmlShimExtraSlots::default();
-                    extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
-                    extra_slots.insert(
-                        "PRESENTATION",
-                        self.document_presentation.as_str().to_string(),
-                    );
-                    if shim.contains("{{DOCUMENT_SCRIPT}}") {
-                        let document_controller = self.document_controller.as_deref().ok_or_else(|| {
-              MechError::new(
-                GenericError {
-                  msg: "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable".to_string(),
-                },
-                None,
-              )
-              .with_compiler_loc()
+            let (uri, document) = documents.get(&source.canonical_uri).ok_or_else(|| {
+                Error::new(
+                    ErrorKind::InvalidData,
+                    "retained browser document is absent",
+                )
             })?;
-                        extra_slots.insert("DOCUMENT_SCRIPT", document_controller);
-                        extra_slots.insert("WASM_MODULE_URL", "/_mech/pkg/mech_wasm.js");
-                        // Served documents load their complete source map from the
-                        // project manifest. Static formatter output supplies this slot
-                        // with an embedded source bundle instead.
-                        extra_slots.insert("DOCUMENT_SOURCES", "");
-                    }
-                    let mut formatter = Formatter::new();
-                    let render = formatter.format_html_with_style_sheets_and_slots(
-                        &tree,
+            let document_error = document.index().err();
+            let mut extra_slots = HtmlShimExtraSlots::default();
+            // Custom inline bootstraps own their CODE payload. Preserve the
+            // retained-source transport used by the public fromEncoded API.
+            // The shipped controller obtains retained source from /code and
+            // compiles it against the browser's configured target catalog.
+            if document_error.is_none()
+                && !shim.contains("{{DOCUMENT_SCRIPT}}")
+                && shim.contains("{{CODE}}")
+            {
+                let output_ids =
+                    mech_runtime::canonical_document_presentation_output_ids(&document.document())
+                        .map_err(|error| Error::new(ErrorKind::InvalidData, error.to_string()))?;
+                let encoded = mech_runtime::BrowserDocumentPayload::new(&key, source_text)?
+                    .with_presentation_output_ids(output_ids)
+                    .encode()?;
+                extra_slots.insert("CODE", encoded);
+            }
+            extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
+            extra_slots.insert(
+                "PRESENTATION",
+                self.document_presentation.as_str().to_string(),
+            );
+            let is_root = document_error.is_none() && root_uris.contains(&source.canonical_uri);
+            if shim.contains("{{DOCUMENT_SCRIPT}}") {
+                if is_root {
+                    let document_controller = self.document_controller.as_deref().ok_or_else(|| {
+      MechError::new(
+        GenericError {
+          msg: "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable".to_string(),
+        },
+        None,
+      )
+      .with_compiler_loc()
+    })?;
+                    extra_slots.insert("DOCUMENT_SCRIPT", document_controller);
+                    extra_slots.insert("WASM_MODULE_URL", "/_mech/pkg/mech_wasm.js");
+                } else {
+                    extra_slots.insert("DOCUMENT_SCRIPT", "");
+                    extra_slots.insert("WASM_MODULE_URL", "");
+                }
+                // Served documents load their complete source map from the
+                // project manifest. Static formatter output supplies this slot
+                // with an embedded source bundle instead.
+                extra_slots.insert("DOCUMENT_SOURCES", "");
+            }
+            let html = if let Some(error) = document_error {
+                format!(
+                    "<html><body><pre>{}</pre></body></html>",
+                    escape_html(&format!("{error:#?}"))
+                )
+            } else {
+                let render = if is_root
+                    && (shim.contains("{{DOCUMENT_SCRIPT}}") || shim.contains("{{CODE}}"))
+                {
+                    render_canonical_html(
+                        &document.document(),
                         stylesheets.clone(),
                         shim.to_string(),
                         &extra_slots,
-                    );
-                    if let Some(shim_name) = self.shipped_document_shim.as_deref() {
-                        validate_shipped_shim_render(shim_name, &render)?;
-                    }
-                    let html = render.html;
-                    let mut backing_paths = vec![path.clone()];
-                    backing_paths.extend_from_slice(generated_html_backing_paths);
-                    self.html_sources.insert(
-                        key.clone(),
-                        ServerAsset {
-                            bytes: html.into_bytes(),
-                            content_type: "text/html",
-                            content_encoding: None,
-                            backing_paths: dedupe_paths(backing_paths),
-                        },
-                    );
-                    #[cfg(feature = "serde")]
-                    self.code_sources.insert(
-                        key.clone(),
-                        ServerAsset {
-                            bytes: compress_and_encode(&tree)
-                                .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?
-                                .into_bytes(),
-                            content_type: "text/plain",
-                            content_encoding: None,
-                            backing_paths: vec![path.clone()],
-                        },
-                    );
+                    )?
+                } else {
+                    render_canonical_static_html(
+                        &document.document(),
+                        stylesheets.clone(),
+                        shim.to_string(),
+                        &extra_slots,
+                    )?
+                };
+                if let Some(shim_name) = self.shipped_document_shim.as_deref() {
+                    validate_shipped_shim_render(shim_name, &render)?;
                 }
-                Err(error) => {
-                    let html = format!(
-                        "<html><body><pre>{}</pre></body></html>",
-                        escape_html(&format!("{:#?}", error))
-                    );
-                    self.html_sources.insert(
-                        key.clone(),
-                        ServerAsset {
-                            bytes: html.into_bytes(),
-                            content_type: "text/html",
-                            content_encoding: None,
-                            backing_paths: vec![path.clone()],
-                        },
-                    );
-                }
+                render.html
+            };
+            let mut backing_paths = vec![path.clone()];
+            backing_paths.extend_from_slice(generated_html_backing_paths);
+            self.html_sources.insert(
+                key.clone(),
+                ServerAsset {
+                    bytes: html.into_bytes(),
+                    content_type: "text/html",
+                    content_encoding: None,
+                    backing_paths: dedupe_paths(backing_paths),
+                },
+            );
+            if is_root && shim.contains("{{DOCUMENT_SCRIPT}}") {
+                let code = crate::browser_planning::compile_browser_document_payload(
+                    compiler
+                        .as_mut()
+                        .expect("live served roots construct a browser compiler"),
+                    uri,
+                    &logical_specifier,
+                    &document,
+                )?
+                .encode()?;
+                // A dependency change invalidates this response as well as
+                // the source manifest; the loader checks the same hashes.
+                let backing_paths = snapshot
+                    .sources
+                    .values()
+                    .filter_map(|source| source.path.clone())
+                    .collect();
+                self.code_sources.insert(
+                    key.clone(),
+                    ServerAsset {
+                        bytes: code.into_bytes(),
+                        content_type: "text/plain",
+                        content_encoding: None,
+                        backing_paths,
+                    },
+                );
             }
             self.source_paths.insert(key.clone(), path.clone());
             self.source_specifiers
@@ -572,9 +808,15 @@ impl ServerSourceRegistry {
             &source_resolutions,
         )?;
         let mut source_roots = snapshot
-            .targets
+            .sources
             .values()
-            .filter_map(|target| module_specifiers.get(&target.module_version).cloned())
+            .filter(|source| root_uris.contains(&source.canonical_uri))
+            .filter_map(|source| {
+                source
+                    .module_version
+                    .as_ref()
+                    .and_then(|version| module_specifiers.get(version).cloned())
+            })
             .collect::<Vec<_>>();
         source_roots.sort();
         source_roots.dedup();
@@ -606,6 +848,7 @@ impl ServerSourceRegistry {
           "roots": self.source_roots,
           "sources": source_entries,
           "resolutions": self.source_resolutions,
+          "provenance": self.source_provenance,
         }))
         .map_err(|error| {
             Error::new(
@@ -803,7 +1046,7 @@ impl MechServer {
         )
     }
 
-    pub fn new_with_runtime_config_and_host_config(
+    pub(crate) fn new_with_runtime_config_and_host_config(
         name: String,
         full_address: String,
         stylesheets: impl Into<HtmlStyleSheets>,
@@ -856,11 +1099,18 @@ impl MechServer {
             html_shim,
             project_html,
             project_js,
-            host_config,
+            host_config: host_config.clone(),
             host_config_injection,
             serve_configured_shim_at_root,
             full_address,
-            registry: Arc::new(RwLock::new(ServerSourceRegistry::default())),
+            registry: Arc::new(RwLock::new(ServerSourceRegistry {
+                compiler_hosts: host_config
+                    .as_ref()
+                    .map(|config| config.hosts.clone())
+                    .unwrap_or_default(),
+                compiler_config: runtime_config.clone(),
+                ..ServerSourceRegistry::default()
+            })),
             events: Arc::new(RwLock::new(Vec::new())),
             workspace_session: None,
             workspace_changed: Arc::new(tokio::sync::Notify::new()),
@@ -908,6 +1158,18 @@ impl MechServer {
     }
 
     /// Selects the initial presentation of generated source documents.
+    /// Select the already configured run roots independently of renderable
+    /// workspace files. Dependencies and prose remain available as source/HTML.
+    pub(crate) fn set_compilation_roots(&mut self, roots: Vec<PathBuf>) -> MResult<()> {
+        self.registry.write().unwrap().compiler_roots = Some(
+            roots
+                .into_iter()
+                .map(|path| path.canonicalize())
+                .collect::<std::io::Result<_>>()?,
+        );
+        Ok(())
+    }
+
     pub fn set_document_presentation(&mut self, presentation: mech_runtime::ServePresentation) {
         self.registry
             .write()
@@ -2041,7 +2303,6 @@ impl MechErrorKind for Utf8ConversionError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{Program, decode_and_decompress};
     use mech_runtime::MECH_TOOL_SUBJECT;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -2185,6 +2446,11 @@ mod tests {
         .unwrap();
         std::fs::write(root.join("index.html"), "<!doctype html>\n").unwrap();
         std::fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = \"serve-manifest\"\nversion = \"0.1.0\"\n",
+        )
+        .unwrap();
+        std::fs::write(
             root.join("mech.mcfg"),
             r#"config := {
   hosts: []
@@ -2298,6 +2564,22 @@ mod tests {
         assert_eq!(manifest_asset.backing_paths.len(), 3);
         assert_eq!(manifest["roots"], serde_json::json!(["app/clock.mec"]));
         assert_eq!(manifest["resolutions"], serde_json::json!([]));
+        let provenance = &manifest["provenance"]["app/clock.mec"];
+        assert_eq!(
+            provenance["nominalOrigin"]["segments"],
+            serde_json::json!(["serve-manifest", "app", "clock"]),
+        );
+        assert!(
+            provenance["nominalPackageId"]
+                .as_str()
+                .unwrap()
+                .starts_with("sha256:")
+        );
+        assert!(
+            !String::from_utf8(manifest_asset.bytes)
+                .unwrap()
+                .contains("path+file:")
+        );
 
         drop(registry);
         drop(guard);
@@ -2307,7 +2589,8 @@ mod tests {
     #[test]
     fn default_shim_owns_standalone_document_execution() {
         let root = temp_root("default-document-shim");
-        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        let source = "answer := 42\r\nanswer\r\n";
+        std::fs::write(root.join("main.mec"), source).unwrap();
         let snapshot = snapshot(&root, "main.mec");
         let mut registry = ServerSourceRegistry::default();
         registry.set_document_controller(
@@ -2337,6 +2620,230 @@ mod tests {
             registry.get_route("/code/main.mec").unwrap().content_type,
             "text/plain",
         );
+        let encoded =
+            String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), source);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn explicit_declaration_only_source_is_rendered_without_bundle_compilation() {
+        let root = temp_root("explicit-rootless-document");
+        let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n";
+        std::fs::write(root.join("prose.mec"), source).unwrap();
+        let retained = snapshot(&root, "prose.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                "<html><body>{{CONTENT}}</body></html>",
+                &[],
+            )
+            .unwrap();
+
+        assert!(registry.get_route("/prose.mec").is_some());
+        assert!(registry.get_route("/source/prose.mec").is_some());
+        assert!(registry.get_route("/code/prose.mec").is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn mixed_compute_shim_serves_source_without_compiling_a_document_bundle() {
+        let root = temp_root("mixed-compute-custom-shim");
+        let source = include_str!("../examples/gpu-particles/particles.mec");
+        let path = root.join("particles.mec");
+        std::fs::write(&path, source).unwrap();
+        let retained = snapshot(&root, "particles.mec");
+        let mut registry = ServerSourceRegistry {
+            compiler_hosts: vec![
+                mech_runtime::HostInstanceConfig {
+                    name: "pointer".into(),
+                    provider: "pointer".into(),
+                    settings: mech_runtime::ConfigValue::Map(Default::default()),
+                },
+                mech_runtime::HostInstanceConfig {
+                    name: "particles".into(),
+                    provider: "compute".into(),
+                    settings: mech_runtime::ConfigValue::Map(Default::default()),
+                },
+            ],
+            compiler_roots: Some(BTreeSet::from([path.canonicalize().unwrap()])),
+            ..ServerSourceRegistry::default()
+        };
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                "<html><body>{{CONTENT}}</body></html>",
+                &[],
+            )
+            .unwrap();
+
+        assert!(registry.get_route("/particles.mec").is_some());
+        assert!(registry.get_route("/source/particles.mec").is_some());
+        assert!(registry.get_route("/code/particles.mec").is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn controller_free_shim_does_not_construct_browser_compiler() {
+        let root = temp_root("controller-free-unknown-provider");
+        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        let retained = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry {
+            compiler_hosts: vec![mech_runtime::HostInstanceConfig {
+                name: "arm".into(),
+                provider: "robot-arm".into(),
+                settings: mech_runtime::ConfigValue::Map(Default::default()),
+            }],
+            ..ServerSourceRegistry::default()
+        };
+
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                "<html><body>{{CONTENT}}</body></html>",
+                &[],
+            )
+            .unwrap();
+
+        assert!(registry.get_route("/main.mec").is_some());
+        assert!(registry.get_route("/source/main.mec").is_some());
+        assert!(registry.get_route("/code/main.mec").is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn default_document_shim_keeps_bundle_for_compute_configuration() {
+        assert_default_document_shim_compute_configuration("answer := 40 + 2\nanswer\n", false);
+        assert_default_document_shim_compute_configuration(
+            "@compute := compute://compute/kernel{:write(turn), :read(sample/result)}\n\
+@compute/turn <- 1\n\
+answer := @compute/sample/result\n\
+answer\n\n\
+calculation @compute\n\
+-------------------\n\
+~result := 0f32\n\
+result += 1f32\n\
+result\n",
+            true,
+        );
+    }
+
+    fn assert_default_document_shim_compute_configuration(source: &str, requires_compute: bool) {
+        let root = temp_root("mixed-compute-default-document-shim");
+        let path = root.join("main.mec");
+        std::fs::write(&path, source).unwrap();
+        let retained = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry {
+            compiler_hosts: vec![mech_runtime::HostInstanceConfig {
+                name: "compute".into(),
+                provider: "compute".into(),
+                settings: mech_runtime::ConfigValue::Map(BTreeMap::from([(
+                    "region".into(),
+                    mech_runtime::ConfigValue::String("calculation".into()),
+                )])),
+            }],
+            compiler_roots: Some(BTreeSet::from([path.canonicalize().unwrap()])),
+            ..ServerSourceRegistry::default()
+        };
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        let result = registry.sync_workspace_snapshot(
+            &root,
+            &retained,
+            "",
+            include_str!("../include/index.html"),
+            &[],
+        );
+        if requires_compute && !cfg!(feature = "compute_backends_native") {
+            // A configured compute host must not suppress ordinary bundles.
+            // Mixed source must refuse at the explicit capability boundary,
+            // before attempting to install a compute resource provider.
+            let error = result.unwrap_err();
+            let capability = error
+                .kind_downcast_ref::<mech_core::GenericError>()
+                .expect("mixed source must reach the compute capability refusal");
+            assert_eq!(
+                capability.msg,
+                "browser compute compilation requires compute_backends_native"
+            );
+            assert!(registry.get_route("/code/main.mec").is_none());
+
+            // Removing the mixed region must recover on the same registry;
+            // its configured compute host alone does not require that backend.
+            let ordinary = "answer := 43\nanswer\n";
+            std::fs::write(&path, ordinary).unwrap();
+            registry
+                .sync_workspace_snapshot(
+                    &root,
+                    &snapshot(&root, "main.mec"),
+                    "",
+                    include_str!("../include/index.html"),
+                    &[],
+                )
+                .unwrap();
+            let code = registry.get_route("/code/main.mec").unwrap();
+            let payload = mech_runtime::BrowserDocumentPayload::decode(
+                std::str::from_utf8(&code.bytes).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(payload.root_specifier(), "main.mec");
+            assert_eq!(payload.source(), ordinary);
+        } else {
+            result.unwrap();
+            let code = registry.get_route("/code/main.mec").unwrap();
+            let payload = mech_runtime::BrowserDocumentPayload::decode(
+                std::str::from_utf8(&code.bytes).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(payload.root_specifier(), "main.mec");
+            assert_eq!(payload.source(), source);
+            let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+            assert!(html.contains("fetch(`/code/${sourceUrlKey}`)"), "{html}");
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn served_document_payload_keeps_the_unencoded_manifest_specifier() {
+        let root = temp_root("encoded-document-specifier");
+        let source = "answer := 42\nanswer\n";
+        std::fs::write(root.join("my report.mec"), source).unwrap();
+        let snapshot = snapshot(&root, "my report.mec");
+        let mut registry = document_registry();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+
+        let encoded = String::from_utf8(
+            registry
+                .get_route("/code/my%20report.mec")
+                .expect("the URL-encoded transport route exists")
+                .bytes,
+        )
+        .unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "my report.mec");
+        assert_eq!(
+            registry.source_specifiers["my%20report.mec"],
+            "my report.mec"
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -2364,6 +2871,222 @@ mod tests {
         let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
         assert!(html.contains("data-mech-presentation=\"output\""));
         assert!(!html.contains("{{PRESENTATION}}"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn configured_root_matches_equivalent_snapshot_paths_and_rejects_unserved_files() {
+        let root = temp_root("configured-root-ü-#-%-spaces");
+        std::fs::create_dir(root.join("nested")).unwrap();
+        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        let canonical = root.join("main.mec").canonicalize().unwrap();
+        let mut retained = snapshot(&root, "main.mec");
+        let source = retained.sources.values_mut().next().unwrap();
+        let equivalent = std::env::temp_dir()
+            .join(root.file_name().unwrap())
+            .join("nested")
+            .join("..")
+            .join("main.mec");
+        assert_ne!(equivalent, canonical);
+        assert_eq!(equivalent.canonicalize().unwrap(), canonical);
+        source.path = Some(equivalent);
+        // Normalizing path identity must preserve the retained source revision.
+        std::fs::write(root.join("main.mec"), "answer := 99\nanswer\n").unwrap();
+        let mut registry = ServerSourceRegistry {
+            compiler_roots: Some(BTreeSet::from([canonical])),
+            ..ServerSourceRegistry::default()
+        };
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+        assert_eq!(registry.source_roots, ["main.mec"]);
+        let encoded =
+            String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), "answer := 42\nanswer\n");
+        assert_eq!(
+            registry.get_route("/source/main.mec").unwrap().bytes,
+            b"answer := 42\nanswer\n",
+        );
+
+        let unserved = root.join("other.mec");
+        std::fs::write(&unserved, "answer := 9\n").unwrap();
+        registry.compiler_roots = Some(BTreeSet::from([unserved.canonicalize().unwrap()]));
+        let error = registry
+            .sync_workspace_snapshot(&root, &retained, "", "", &[])
+            .unwrap_err();
+        assert!(
+            error
+                .kind_message()
+                .contains("outside the served source snapshot")
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn configured_served_root_uses_snapshot_dependencies_and_planning_hosts() {
+        let root = temp_root("configured-canonical-graph");
+        std::fs::write(root.join("main.mec"),
+            "+> ./dep.mec\n@clock := timer://clock/tick{:read(tick)}\nanswer := dep/value + @clock/tick\n").unwrap();
+        std::fs::write(root.join("dep.mec"), "value := 41.0\n<+ value\n").unwrap();
+        std::fs::write(
+            root.join("notes.mec"),
+            "Notes\n=====\n\nThis document is rendered without execution.\n",
+        )
+        .unwrap();
+        let retained = snapshot_for_sources(&root, &["main.mec", "notes.mec"]);
+        let mut registry = ServerSourceRegistry {
+            compiler_roots: Some(BTreeSet::from([root
+                .join("main.mec")
+                .canonicalize()
+                .unwrap()])),
+            compiler_hosts: vec![mech_runtime::HostInstanceConfig {
+                name: "clock".into(),
+                provider: "timer".into(),
+                settings: mech_runtime::ConfigValue::Map(Default::default()),
+            }],
+            ..ServerSourceRegistry::default()
+        };
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+        let encoded =
+            String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(
+            registry.get_route("/source/dep.mec").unwrap().bytes,
+            b"value := 41.0\n<+ value\n",
+        );
+        assert!(payload.source().contains("timer://clock/tick"));
+        assert!(
+            registry
+                .source_resolutions
+                .iter()
+                .any(|entry| entry.referrer == "main.mec"
+                    && entry.specifier == "./dep.mec"
+                    && entry.target == "dep.mec")
+        );
+        assert!(registry.get_route("/source/dep.mec").is_some());
+        assert!(
+            registry.get_route("/notes.mec").is_some(),
+            "{:?}",
+            retained.diagnostics
+        );
+        for path in ["/dep.mec", "/notes.mec"] {
+            let html = String::from_utf8(registry.get_route(path).unwrap().bytes).unwrap();
+            assert!(
+                html.contains("data-mech-document-status=\"ready\""),
+                "{path}: {html}"
+            );
+            assert!(
+                !html.contains("data-mech-document-controller"),
+                "{path}: {html}"
+            );
+            assert!(!html.contains("data-mech-output-address"), "{path}: {html}");
+        }
+        assert!(registry.get_route("/code/notes.mec").is_none());
+        assert_eq!(registry.source_roots, ["main.mec"]);
+        assert!(
+            registry.get_route("/code/dep.mec").is_none(),
+            "dependencies are rendered, not implicit run roots"
+        );
+
+        // Serving a retained revision must not read ahead to unrelated disk edits.
+        std::fs::write(root.join("dep.mec"), "value := 43.0\n<+ value\n").unwrap();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+        assert_eq!(
+            registry.get_route("/code/main.mec").unwrap().bytes,
+            encoded.as_bytes()
+        );
+        let updated = snapshot(&root, "main.mec");
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &updated,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+        let current = registry.get_route("/source/dep.mec").unwrap();
+        let text = std::str::from_utf8(&current.bytes).unwrap();
+        assert_eq!(text, "value := 43.0\n<+ value\n");
+        let changed =
+            String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
+        let changed = mech_runtime::BrowserDocumentPayload::decode(&changed).unwrap();
+        // A dependency edit updates its source route; the unchanged root is
+        // still transported exactly, not replaced with a native artifact.
+        assert_eq!(changed, payload);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn invalid_non_root_source_does_not_abort_valid_server_roots() {
+        let root = temp_root("invalid-non-root-source");
+        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        std::fs::write(root.join("broken.mec"), "broken := (\n").unwrap();
+        let mut retained = snapshot(&root, "main.mec");
+        retain_test_source(&mut retained, &root, "broken.mec");
+        let mut registry = ServerSourceRegistry {
+            compiler_roots: Some(BTreeSet::from([root
+                .join("main.mec")
+                .canonicalize()
+                .unwrap()])),
+            ..ServerSourceRegistry::default()
+        };
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+
+        assert!(registry.get_route("/code/main.mec").is_some());
+        assert!(registry.get_route("/source/broken.mec").is_some());
+        assert!(registry.get_route("/code/broken.mec").is_none());
+        let broken = String::from_utf8(registry.get_route("/broken.mec").unwrap().bytes).unwrap();
+        assert!(
+            broken.contains("cannot index an invalid retained source document"),
+            "{broken}"
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -2532,6 +3255,147 @@ mod tests {
     }
 
     #[test]
+    fn custom_inline_shim_code_retains_exact_served_source() {
+        let root = temp_root("custom-inline-retained-source");
+        let source = "  answer := 42\n";
+        std::fs::write(root.join("main.mec"), source).unwrap();
+        let snapshot = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                "<script data-code>{{CODE}}</script>",
+                &[],
+            )
+            .unwrap();
+
+        let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        let encoded = html
+            .strip_prefix("<script data-code>")
+            .and_then(|html| html.strip_suffix("</script>"))
+            .expect("custom shim should contain only its encoded document payload");
+        let payload = mech_runtime::BrowserDocumentPayload::decode(encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), source);
+        let retained = mech_runtime::SourceDocument::parse_resolved(
+            payload.root_specifier(),
+            mech_syntax::document::Revision(0),
+            payload.source(),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        retained.index().unwrap();
+        assert_eq!(
+            payload.presentation_output_ids(),
+            mech_runtime::canonical_document_presentation_output_ids(&retained.document()).unwrap()
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn custom_inline_shim_keeps_output_mounts_for_its_encoded_source() {
+        let root = temp_root("custom-inline-output-mounts");
+        let source = "```mech\nanswer := 42\nanswer\n```\n";
+        std::fs::write(root.join("main.mec"), source).unwrap();
+        let snapshot = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                include_str!("../tests/fixtures/serve/inline-shim.html"),
+                &[],
+            )
+            .unwrap();
+        let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        let encoded = html
+            .split_once("const code = `")
+            .and_then(|(_, suffix)| suffix.split_once("`;"))
+            .map(|(encoded, _)| encoded)
+            .unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(encoded).unwrap();
+        assert_eq!(payload.source(), source);
+        assert!(!payload.presentation_output_ids().is_empty());
+        assert!(html.contains("class='mech-block-output'"), "{html}");
+        for output_id in payload.presentation_output_ids() {
+            assert!(html.contains(&format!("id='{output_id}:0'")), "{html}");
+        }
+        assert!(html.contains("data-mech-document-status=\"loading\""));
+        assert!(html.contains("data-mech-inline-shim=\"true\""));
+        assert!(!html.contains("data-mech-document-controller"));
+        assert!(registry.get_route("/code/main.mec").is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn custom_inline_shim_renders_invalid_documents_without_aborting_workspace_sync() {
+        let root = temp_root("custom-inline-invalid-source");
+        std::fs::write(root.join("main.mec"), "answer := 42\n").unwrap();
+        let broken_source = "```mech\nbroken := (\n";
+        std::fs::write(root.join("broken.mec"), broken_source).unwrap();
+        // Invalid run targets are absent from compiled workspace snapshots.
+        // A served source inventory still retains their diagnostic revision.
+        let mut snapshot = snapshot(&root, "main.mec");
+        let path = root.join("broken.mec").canonicalize().unwrap();
+        let uri = format!("file://{}", path.to_string_lossy());
+        let broken = mech_runtime::SourceDocument::parse_resolved(
+            &uri,
+            mech_syntax::document::Revision(0),
+            broken_source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(broken.index().is_err());
+        assert!(
+            mech_runtime::canonical_document_presentation_output_ids(&broken.document()).is_err()
+        );
+        snapshot.sources.insert(
+            uri.clone(),
+            mech_runtime::RuntimeWorkspaceSourceSnapshot {
+                canonical_uri: uri,
+                path: Some(path),
+                source: Some(MechSourceCode::String(broken_source.to_owned())),
+                source_document: Some(broken),
+                module_version: None,
+                content_hash: mech_core::hash_str(broken_source),
+                modified_time: None,
+            },
+        );
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                "<script data-code>{{CODE}}</script>",
+                &[],
+            )
+            .unwrap();
+        let valid = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        let encoded = valid
+            .strip_prefix("<script data-code>")
+            .unwrap()
+            .strip_suffix("</script>")
+            .unwrap();
+        assert_eq!(
+            mech_runtime::BrowserDocumentPayload::decode(encoded)
+                .unwrap()
+                .source(),
+            "answer := 42\n"
+        );
+        let broken = String::from_utf8(registry.get_route("/broken.mec").unwrap().bytes).unwrap();
+        assert!(
+            broken.contains("cannot index an invalid retained source document"),
+            "{broken}"
+        );
+        assert!(registry.get_route("/source/broken.mec").is_some());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn custom_inline_and_external_shims_remain_authoritative() {
         let root = temp_root("custom-document-shims");
         std::fs::write(root.join("main.mec"), "  answer := 42\n").unwrap();
@@ -2628,13 +3492,7 @@ mod tests {
                 .content_type,
             "text/x-mech",
         );
-        assert_eq!(
-            registry
-                .get_route("/code/lib/support.mec")
-                .unwrap()
-                .content_type,
-            "text/plain"
-        );
+        assert!(registry.get_route("/code/lib/support.mec").is_none());
         assert_eq!(
             registry.get_route("/mech.mcfg").unwrap().content_type,
             "text/x-mech"
@@ -2698,6 +3556,11 @@ mod tests {
 
         let guard = CurrentDirGuard::enter(&root);
         let mut server = initialized_server();
+        server.html_shim = include_str!("../include/index.html").to_string();
+        server.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
         let plan = plan_cli_serve_inputs(&["main.mec".to_string()], Some(&root)).unwrap();
         server
             .load_serve_plan(plan, Some(configured_project_overlay(&root)))
@@ -2760,11 +3623,54 @@ mod tests {
     }
 
     fn synced_registry(root: &Path, file: &str) -> ServerSourceRegistry {
-        let mut registry = ServerSourceRegistry::default();
+        let mut registry = document_registry();
         registry
-            .sync_workspace_snapshot(root, &snapshot(root, file), "", "", &[])
+            .sync_workspace_snapshot(
+                root,
+                &snapshot(root, file),
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
             .unwrap();
         registry
+    }
+
+    fn document_registry() -> ServerSourceRegistry {
+        let mut registry = ServerSourceRegistry::default();
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        registry
+    }
+
+    // A failed run target is absent from the compiled workspace snapshot.
+    // Serve fixtures must also retain its source and diagnostic revision.
+    fn retain_test_source(snapshot: &mut RuntimeWorkspaceSnapshot, root: &Path, file: &str) {
+        let path = root.join(file).canonicalize().unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        let uri = format!("file://{}", path.to_string_lossy());
+        let document = SourceDocument::parse_resolved(
+            &uri,
+            Revision(0),
+            text.as_str(),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(document.index().is_err());
+        snapshot.sources.insert(
+            uri.clone(),
+            mech_runtime::RuntimeWorkspaceSourceSnapshot {
+                canonical_uri: uri,
+                path: Some(path),
+                source: Some(MechSourceCode::String(text.clone())),
+                source_document: Some(document),
+                module_version: None,
+                content_hash: mech_core::hash_str(&text),
+                modified_time: None,
+            },
+        );
     }
 
     fn test_server() -> MechServer {
@@ -3057,7 +3963,7 @@ mod tests {
     }
 
     #[test]
-    fn registry_distinguishes_source_text_and_encoded_compiled_code_routes() {
+    fn registry_distinguishes_source_text_and_encoded_document_routes() {
         let root = temp_root("html-code-routes");
         let source_text = "x := 1\n";
         std::fs::write(root.join("main.mec"), source_text).unwrap();
@@ -3074,8 +3980,17 @@ mod tests {
         let encoded = String::from_utf8(code.bytes).unwrap();
         assert_ne!(encoded, source_text);
         assert!(!encoded.contains("x := 1"));
-        let decoded: Program = decode_and_decompress(&encoded).unwrap();
-        assert_eq!(decoded, parser::parse(source_text).unwrap());
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        let mut runtime = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        let durability = runtime.config().resident_durability;
+        let loaded = runtime
+            .load_source_program(payload.source(), durability)
+            .unwrap();
+        assert_eq!(loaded.initial_value.format_canonical_inline(), "1");
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -3496,6 +4411,11 @@ mod tests {
         std::fs::write(root.join("main.mec"), raw_source).unwrap();
         let guard = CurrentDirGuard::enter(&root);
         let mut server = initialized_server();
+        server.html_shim = include_str!("../include/index.html").to_string();
+        server.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
         server
             .load_workspace(&vec!["main.mec".to_string()])
             .unwrap();
@@ -4156,13 +5076,13 @@ mod tests {
         let root = temp_root("code-root-alias");
         std::fs::write(root.join("a.mec"), "a := 1\n").unwrap();
         std::fs::write(root.join("b.mec"), "b := 2\n").unwrap();
-        let mut registry = ServerSourceRegistry::default();
+        let mut registry = document_registry();
         registry
             .sync_workspace_snapshot(
                 &root,
                 &snapshot_for_sources(&root, &["a.mec", "b.mec"]),
                 "",
-                "",
+                include_str!("../include/index.html"),
                 &[],
             )
             .unwrap();
@@ -4312,7 +5232,6 @@ mod tests {
                     path: Some(root.join("missing.mec")),
                     source: None,
                     source_document: None,
-                    syntax_tree: None,
                     module_version: None,
                     content_hash: 0,
                     modified_time: None,

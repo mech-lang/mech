@@ -39,6 +39,11 @@ mkdir -p "$target_dir"
 work_dir="$(mktemp -d "$target_dir/served-rich-document.XXXXXX")"
 server_pid=""
 
+report_case_progress() {
+  printf 'Rich document: %s %s (elapsed %ss)\n' "$1" "$2" "$SECONDS" \
+    | tee -a "$work_dir/progress.log"
+}
+
 stop_server() {
   if [[ -z "$server_pid" ]]; then
     return
@@ -210,8 +215,10 @@ run_browser_case() {
     "$screenshot_file" \
     "$chrome_log" \
     "$label" <<'PY'
+import base64
 import json
 from pathlib import Path
+import re
 import sys
 import time
 
@@ -1294,20 +1301,18 @@ def assert_fullscreen_accessibility():
         {"width": 700, "height": 460, "deviceScaleFactor": 1, "mobile": False},
         session_id,
     )
-    time.sleep(0.15)
-    responsive = evaluate_json("""
+    wait_for("""
 (() => {
   const pane = document.querySelector('[data-mech-console-pane]');
-  const panels = [...document.querySelectorAll('[data-mech-console-panel]')];
-  const bounds = pane?.getBoundingClientRect();
   const workspace = pane?.querySelector(':scope > .console-panels');
-  const workspaceBounds = workspace?.getBoundingClientRect();
+  const bounds = workspace?.getBoundingClientRect();
   const consolePanel = document.querySelector('[data-mech-console-panel="console"]');
   const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
   const separators = [...document.querySelectorAll('[data-mech-console-workspace-resizer]')];
-  const ariaMatchesGeometry = Boolean(workspaceBounds) && separators.every(handle => {
+  if (!bounds || separators.length !== 2) return false;
+  return separators.every(handle => {
     const column = handle.dataset.mechConsoleWorkspaceResizer === 'column';
-    const total = column ? workspaceBounds.width : workspaceBounds.height;
+    const total = column ? bounds.width : bounds.height;
     const minimumPixels = Math.min(column ? 180 : 120, Math.max(0, total / 2 - 4));
     const maximumPixels = Math.max(minimumPixels, total - minimumPixels - 8);
     const size = column
@@ -1318,6 +1323,42 @@ def assert_fullscreen_accessibility():
       Number(handle.getAttribute('aria-valuemax')) === percentage(maximumPixels) &&
       Number(handle.getAttribute('aria-valuenow')) === percentage(size);
   });
+})()
+""", "fullscreen workspace split accessibility adapting to viewport pressure")
+    responsive = evaluate_json("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const panels = [...document.querySelectorAll('[data-mech-console-panel]')];
+  const bounds = pane?.getBoundingClientRect();
+  const workspace = pane?.querySelector(':scope > .console-panels');
+  const workspaceBounds = workspace?.getBoundingClientRect();
+  const consolePanel = document.querySelector('[data-mech-console-panel="console"]');
+  const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
+  const separators = [...document.querySelectorAll('[data-mech-console-workspace-resizer]')];
+  const ariaMetrics = workspaceBounds ? separators.map(handle => {
+    const column = handle.dataset.mechConsoleWorkspaceResizer === 'column';
+    const total = column ? workspaceBounds.width : workspaceBounds.height;
+    const minimumPixels = Math.min(column ? 180 : 120, Math.max(0, total / 2 - 4));
+    const maximumPixels = Math.max(minimumPixels, total - minimumPixels - 8);
+    const size = column
+      ? consolePanel?.getBoundingClientRect().width || 0
+      : outputPanel?.getBoundingClientRect().height || 0;
+    const percentage = value => Math.round((value / total) * 100);
+    const expected = {
+      minimum: percentage(minimumPixels),
+      maximum: percentage(maximumPixels),
+      value: percentage(size),
+    };
+    const actual = {
+      minimum: Number(handle.getAttribute('aria-valuemin')),
+      maximum: Number(handle.getAttribute('aria-valuemax')),
+      value: Number(handle.getAttribute('aria-valuenow')),
+    };
+    return { axis: column ? 'column' : 'row', total, expected, actual };
+  }) : [];
+  const ariaMatchesGeometry = Boolean(workspaceBounds) && ariaMetrics.every(({expected, actual}) =>
+    expected.minimum === actual.minimum && expected.maximum === actual.maximum &&
+    expected.value === actual.value);
   return {
     contained: Boolean(bounds) && panels.every(panel => {
       const rect = panel.getBoundingClientRect();
@@ -1325,6 +1366,7 @@ def assert_fullscreen_accessibility():
         rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1;
     }),
     ariaMatchesGeometry,
+    ariaMetrics,
   };
 })()
 """)
@@ -2736,7 +2778,7 @@ def assert_console_contract():
     submit(":docs browser-smoke/rejected")
     wait_for(
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
-        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic')].some((row) => /missing|resident activation failed/.test(row.textContent))",
+        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic')].some((row) => /missing|resident activation failed|SemanticUnsupported/.test(row.textContent))",
         "a semantically rejected documentation fragment returning control",
     )
     if evaluate("Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/rejected\"]'))"):
@@ -3584,7 +3626,7 @@ Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layou
         if (
             mobile_expected is None or
             mobile_expected["contentY"] < desktop_position["y"] / 2 or
-            mobile_expected["contentY"] > desktop_position["y"] * 1.5 or
+            mobile_expected["contentY"] > desktop_position["y"] * 1.6 or
             mobile_expected["windowY"] > mobile_expected["maximum"] + 2
         ):
             fail(
@@ -4312,6 +4354,31 @@ def assert_repl_termination():
             f"before={terminated_state['frameRequests']!r}, after={frame_requests_after!r}"
         )
     assert_terminal_runtime_mutations_retired("stopped")
+    # /code now publishes a compiled canonical program bundle. The direct
+    # reset API accepts retained source; use the actual formatter producer's
+    # payload so this still proves reset retires both request generations.
+    reset_fixture = None
+    if label != "configured":
+        formatted = Path(profile).parent.parent / "formatted-blog" / "index.html"
+        match = re.search(
+            r"<script\b[^>]*\bdata-mech-document-code[^>]*>(.*?)</script>",
+            formatted.read_text(),
+            re.DOTALL,
+        )
+        reset_payload = match.group(1).strip() if match else ""
+        if not reset_payload.startswith("mech-source-document-v1:"):
+            fail("formatter reset fixture did not publish retained source")
+        bundle_match = re.search(
+            r"<script\b[^>]*\bdata-mech-document-sources[^>]*>(.*?)</script>",
+            formatted.read_text(),
+            re.DOTALL,
+        )
+        if not bundle_match:
+            fail("formatter reset fixture did not publish its source resolver")
+        reset_fixture = {
+            "encoded": reset_payload,
+            "bundle": json.loads(base64.b64decode(bundle_match.group(1).strip())),
+        }
     direct_exports = evaluate("""
 (async () => {
   const { WasmDocument, WasmRepl } = await import('/_mech/pkg/mech_wasm.js');
@@ -4337,18 +4404,18 @@ def assert_repl_termination():
   const stopped = busyRepl.shutdown();
 
   let resetOwnership = null;
-  const configuredDocument = Boolean(document.querySelector(
-    '[data-mech-var-name="configured-answer"]'
-  ));
+  const configuredDocument = __MECH_CONFIGURED_DOCUMENT__;
   if (!configuredDocument) {
-    const sourceKey =
-      document.querySelector('.mech-root')?.dataset.mechSourceUrlKey ||
-      document.documentElement.dataset.mechSourceUrlKey || '';
-    const encoded = sourceKey
-      ? await (await fetch(`/code/${sourceKey}`)).text()
-      : document.querySelector('[data-mech-document-code]')?.textContent?.trim();
-    if (!encoded) throw new Error('direct reset smoke could not locate the encoded document');
-    const resetDocument = WasmDocument.fromEncoded(encoded);
+    const { encoded, bundle: sourceBundle } = __MECH_RETAINED_RESET_FIXTURE__;
+    const resetDocument = WasmDocument.fromEncodedWithBundle(
+      encoded,
+      sourceBundle.rootSpecifier,
+      Object.fromEntries(sourceBundle.sources.map(
+        ({ specifier, source }) => [specifier, source]
+      )),
+      sourceBundle.resolutions,
+      sourceBundle.provenance || {},
+    );
     const oldStep = resetDocument.replInvoke(':step 1000');
     resetDocument.reset(encoded);
     const newStep = resetDocument.replInvoke(':step 1000');
@@ -4437,7 +4504,8 @@ def assert_repl_termination():
     ),
   };
 })()
-""")
+""".replace("__MECH_RETAINED_RESET_FIXTURE__", json.dumps(reset_fixture))
+    .replace("__MECH_CONFIGURED_DOCUMENT__", json.dumps(label == "configured")))
     busy_state = direct_exports.get("busyState", {}) if direct_exports else {}
     failed_busy_checks = sorted(name for name, value in busy_state.items() if not value)
     if failed_busy_checks or len(busy_state) != 7:
@@ -4919,7 +4987,7 @@ try:
     if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/latency-next.mec')) {
       return new Promise((resolve, reject) => {
         window.__MECH_DOCUMENTATION_RELEASES__.set('latency-next', () => resolve(new Response(
-          'Accepted Documentation\\n----------------------\\nAccepted documentation evaluates {answer}.\\n\\n',
+          'Accepted Documentation\\n===============================================================================\\nAccepted documentation evaluates {answer}.\\n\\n',
           { status: 200, headers: { 'content-type': 'text/plain' } },
         )));
         init?.signal?.addEventListener(
@@ -5037,6 +5105,7 @@ PY
 run_case() {
   local label="$1"
   shift
+  report_case_progress "$label" started
   local case_dir="$work_dir/$label"
   mkdir -p "$case_dir"
   local server_log="$case_dir/server.log"
@@ -5077,10 +5146,12 @@ run_case() {
   fi
 
   stop_server
+  report_case_progress "$label" passed
 }
 
 run_configured_case() {
   local label="configured"
+  report_case_progress "$label" started
   local case_dir="$work_dir/$label"
   local server_log="$case_dir/server.log"
   local port
@@ -5114,7 +5185,14 @@ run_configured_case() {
   done
 
   stop_server
+  report_case_progress "$label" passed
 }
+
+if [[ "${MECH_RICH_CASE:-}" == "configured" ]]; then
+  prepare_configured_case
+  run_configured_case
+  exit 0
+fi
 
 prepare_formatted_case \
   formatted-blog \

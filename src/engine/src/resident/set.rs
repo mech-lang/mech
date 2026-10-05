@@ -21,6 +21,11 @@ use std::sync::Arc;
 
 const MAX_POWERSET_INPUT_CARDINALITY: usize = 16;
 
+#[cfg(test)]
+thread_local! {
+    static EXPANSION_SOURCE_DRAFTS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 fn visit_canonical_subset_indices(
     element_count: usize,
     mut visit: impl FnMut(&[usize]) -> Result<(), ResidentKernelError>,
@@ -653,13 +658,21 @@ fn value_retained_cost(
     kernel: &BoundResidentKernel,
     value: &Value,
 ) -> Result<(u64, u64), ResidentKernelError> {
-    let footprint = super::budget::measure_canonical_value_footprint(
+    value_retained_cost_for_schemas(
         meter,
-        value,
         kernel
             .snapshot_schemas()
             .ok_or(ResidentKernelError::InvalidInput)?,
-    )?;
+        value,
+    )
+}
+
+fn value_retained_cost_for_schemas(
+    meter: &mut ResidentBudgetMeter,
+    schemas: &mech_core::SchemaTable,
+    value: &Value,
+) -> Result<(u64, u64), ResidentKernelError> {
+    let footprint = super::budget::measure_canonical_value_footprint(meter, value, schemas)?;
     Ok((footprint.retained_bytes, footprint.node_count))
 }
 
@@ -988,18 +1001,27 @@ fn finalize_snapshot_with_work_budget(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
+    finalize_set_data(schemas, metadata.schema, data, canonicalization_work_limit)
+}
+
+fn finalize_set_data(
+    schemas: &mech_core::SchemaTable,
+    output_schema: SchemaId,
+    data: ValueDataDraft,
+    canonicalization_work_limit: Option<u64>,
+) -> Result<Value, ResidentKernelError> {
     let budget = canonicalization_work_limit.map(SnapshotCanonicalizationBudget::new);
     let mut context = SnapshotValidationContext::new(schemas);
     if let Some(budget) = budget.as_ref() {
         context = context.with_canonicalization_budget(budget);
     }
     let schema = schemas
-        .get(metadata.schema)
+        .get(output_schema)
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let shape = mech_core::shape_for_value_data(schema, &data, &[], None)
         .map_err(|_| ResidentKernelError::InvalidOutput)?;
     ValueDraft {
-        schema: metadata.schema,
+        schema: output_schema,
         shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
         data,
     }
@@ -1036,7 +1058,7 @@ fn write_changed_snapshot(
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let changed = match target.as_ref() {
         Some(current) => !current
-            .language_eq(schemas, &next, schemas)
+            .snapshot_eq(schemas, &next, schemas)
             .map_err(|_| ResidentKernelError::InvalidOutput)?,
         None => true,
     };
@@ -1147,7 +1169,7 @@ fn bounded_key_draft_finalization_work(
     schema: &SchemaBody,
     data: &ValueData,
 ) -> Result<u64, ResidentKernelError> {
-    let remaining = meter.estimate().remaining_incremental_work()?;
+    let remaining = meter.remaining_incremental_work()?;
     let budget = SnapshotCanonicalizationBudget::new(remaining);
     let work = mech_core::snapshot::canonical_key_draft_finalization_work_with_budget(
         schema, data, &budget,
@@ -1393,15 +1415,12 @@ fn set_symmetric_difference(
     write_full_snapshot(output, next)
 }
 
-fn set_cartesian_product(
-    kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    let (left, right) = snapshot_set_inputs(inputs)?;
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidInput)?;
+fn prepare_cartesian_product(
+    schemas: &mech_core::SchemaTable,
+    left: &Value,
+    right: &Value,
+    mut footprint_meter: ResidentBudgetMeter,
+) -> Result<PreparedKernel<u64>, ResidentKernelError> {
     let left_element_schema = match schemas
         .get(left.schema())
         .ok_or(ResidentKernelError::InvalidInput)?
@@ -1421,11 +1440,10 @@ fn set_cartesian_product(
     let (ValueData::Set(left_set), ValueData::Set(right_set)) = (left.data(), right.data()) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let mut footprint_meter = ResidentBudgetMeter::default();
     let (left_retained_bytes, left_retained_nodes) =
-        value_retained_cost(&mut footprint_meter, kernel, left)?;
+        value_retained_cost_for_schemas(&mut footprint_meter, schemas, left)?;
     let (right_retained_bytes, right_retained_nodes) =
-        value_retained_cost(&mut footprint_meter, kernel, right)?;
+        value_retained_cost_for_schemas(&mut footprint_meter, schemas, right)?;
     let left_count = set_cardinality(left)?;
     let right_count = set_cardinality(right)?;
     let output_len = checked_product(&[left_count, right_count])?;
@@ -1483,11 +1501,20 @@ fn set_cartesian_product(
         ])?,
         ..KernelCostEstimate::default()
     };
-    let canonicalization_work_limit = PreparedKernel::new(finalization_work, cost)
-        .admit()?
-        .into_plan();
+    Ok(PreparedKernel::new(finalization_work, cost))
+}
+
+fn materialize_cartesian_product(
+    left: &Value,
+    right: &Value,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    #[cfg(test)]
+    EXPANSION_SOURCE_DRAFTS.with(|count| {
+        count.set(count.get() + set_cardinality(left).unwrap() + set_cardinality(right).unwrap())
+    });
     let left = set_element_drafts(left)?;
     let right = set_element_drafts(right)?;
+    let output_len = checked_product(&[left.len(), right.len()])?;
     let mut elements = Vec::with_capacity(output_len);
     for left in left {
         for right in &right {
@@ -1496,29 +1523,35 @@ fn set_cartesian_product(
             ));
         }
     }
-    let next = finalize_snapshot_with_work_budget(
-        kernel,
-        ValueDataDraft::Set(elements.into_boxed_slice()),
-        Some(canonicalization_work_limit),
-    )?;
-    write_full_snapshot(output, next)
+    Ok(ValueDataDraft::Set(elements.into_boxed_slice()))
 }
 
-fn set_powerset(
+fn set_cartesian_product(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
+    let (left, right) = snapshot_set_inputs(inputs)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let work = prepare_cartesian_product(schemas, left, right, ResidentBudgetMeter::default())?
+        .admit()?
+        .into_plan();
+    let data = materialize_cartesian_product(left, right)?;
+    let next = finalize_snapshot_with_work_budget(kernel, data, Some(work))?;
+    write_full_snapshot(output, next)
+}
+
+fn prepare_powerset(
+    schemas: &mech_core::SchemaTable,
+    input: &Value,
+    mut footprint_meter: ResidentBudgetMeter,
+) -> Result<PreparedKernel<(u64, usize)>, ResidentKernelError> {
     let element_count = set_cardinality(input)?;
     if element_count > MAX_POWERSET_INPUT_CARDINALITY {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidInput)?;
     let subset_count = 1usize
         .checked_shl(element_count as u32)
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -1534,7 +1567,6 @@ fn set_powerset(
     }
     // Bound the complete borrowed tree incrementally before any second
     // traversal derives per-key comparison weights.
-    let mut footprint_meter = ResidentBudgetMeter::default();
     let footprint =
         super::budget::measure_canonical_value_footprint(&mut footprint_meter, input, schemas)?;
     let input_schema = schemas
@@ -1669,12 +1701,18 @@ fn set_powerset(
             .ok_or(ResidentKernelError::InvalidShape)?,
         ..KernelCostEstimate::default()
     };
-    let canonicalization_work_limit = PreparedKernel::new(finalization_work, cost)
-        .admit()?
-        .into_plan();
+    Ok(PreparedKernel::new((finalization_work, subset_count), cost))
+}
+
+fn materialize_powerset(
+    input: &Value,
+    subset_count: usize,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    #[cfg(test)]
+    EXPANSION_SOURCE_DRAFTS.with(|count| count.set(count.get() + set_cardinality(input).unwrap()));
     let elements = set_element_drafts(input)?;
     let mut subsets = Vec::with_capacity(subset_count);
-    visit_canonical_subset_indices(element_count, |indices| {
+    visit_canonical_subset_indices(elements.len(), |indices| {
         let members = indices
             .iter()
             .map(|&index| elements[index].clone())
@@ -1683,12 +1721,48 @@ fn set_powerset(
         Ok(())
     })?;
     drop(elements);
-    let next = finalize_snapshot_with_work_budget(
-        kernel,
-        ValueDataDraft::Set(subsets.into_boxed_slice()),
-        Some(canonicalization_work_limit),
-    )?;
+    Ok(ValueDataDraft::Set(subsets.into_boxed_slice()))
+}
+
+fn set_powerset(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let (work, subset_count) = prepare_powerset(schemas, input, ResidentBudgetMeter::default())?
+        .admit()?
+        .into_plan();
+    let data = materialize_powerset(input, subset_count)?;
+    let next = finalize_snapshot_with_work_budget(kernel, data, Some(work))?;
     write_full_snapshot(output, next)
+}
+
+/// Uses the resident preparation and canonical materialization owners, but
+/// admits construction under the caller's separate analysis allowance.
+pub(crate) fn fold_closed_expansion(
+    schemas: &mech_core::SchemaTable,
+    input: &Value,
+    right: Option<&Value>,
+    output_schema: SchemaId,
+    meter: ResidentBudgetMeter,
+    admit: impl FnOnce(KernelCostEstimate) -> Result<(), ResidentKernelError>,
+) -> Result<Value, ResidentKernelError> {
+    let (work, data) = if let Some(right) = right {
+        let work =
+            prepare_cartesian_product(schemas, input, right, meter)?.prepare_for_analysis(admit)?;
+        (work, materialize_cartesian_product(input, right)?)
+    } else {
+        let (work, subset_count) =
+            prepare_powerset(schemas, input, meter)?.prepare_for_analysis(admit)?;
+        (work, materialize_powerset(input, subset_count)?)
+    };
+    finalize_set_data(schemas, output_schema, data, Some(work))
 }
 
 fn set_relation(
@@ -2140,6 +2214,83 @@ mod tests {
     }
 
     #[test]
+    fn closed_set_expansion_refuses_before_source_drafts_and_accepts_retry() {
+        let dynamic = CardinalitySpec::Dynamic { upper_bound: None };
+        let input_body = SchemaBody::Set {
+            element: Box::new(SchemaBody::String),
+            cardinality: dynamic.clone(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let input = builder.insert(schema(input_body.clone())).unwrap();
+        let powerset = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(input_body),
+                cardinality: dynamic.clone(),
+            }))
+            .unwrap();
+        let product = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(SchemaBody::Tuple(
+                    vec![SchemaBody::String, SchemaBody::String].into_boxed_slice(),
+                )),
+                cardinality: dynamic,
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let input = build.resolve(input).unwrap();
+        let powerset = build.resolve(powerset).unwrap();
+        let product = build.resolve(product).unwrap();
+        let (schemas, _) = build.into_parts();
+        let input = ValueDraft {
+            schema: input,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Set(
+                vec![
+                    ValueDataDraft::String("one".into()),
+                    ValueDataDraft::String("a longer two".into()),
+                ]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        for (output, right) in [(powerset, None), (product, Some(&input))] {
+            EXPANSION_SOURCE_DRAFTS.with(|count| count.set(0));
+            let refused = fold_closed_expansion(
+                &schemas,
+                &input,
+                right,
+                output,
+                ResidentBudgetMeter::for_closed_analysis(0, 0),
+                |_| panic!("exhausted preflight"),
+            );
+            assert!(refused.is_err());
+            assert_eq!(EXPANSION_SOURCE_DRAFTS.with(|count| count.get()), 0);
+            let meter = || {
+                ResidentBudgetMeter::for_closed_analysis(
+                    super::super::budget::MAX_RESIDENT_COMPUTE_WORK,
+                    super::super::budget::MAX_RESIDENT_COMPARISON_WORK,
+                )
+            };
+            let refused = fold_closed_expansion(&schemas, &input, right, output, meter(), |_| {
+                Err(ResidentKernelError::InvalidShape)
+            });
+            assert!(refused.is_err());
+            assert_eq!(EXPANSION_SOURCE_DRAFTS.with(|count| count.get()), 0);
+            let accepted =
+                fold_closed_expansion(&schemas, &input, right, output, meter(), |cost| {
+                    cost.check_analysis_limits()
+                })
+                .unwrap();
+            assert_eq!(set_cardinality(&accepted).unwrap(), 4);
+            assert_eq!(
+                EXPANSION_SOURCE_DRAFTS.with(|count| count.get()),
+                if right.is_some() { 4 } else { 2 }
+            );
+        }
+    }
+
+    #[test]
     fn nested_set_finalization_is_reserved_for_merge_and_powerset() {
         let dynamic = CardinalitySpec::Dynamic { upper_bound: None };
         let inner = SchemaBody::Set {
@@ -2287,6 +2438,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {

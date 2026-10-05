@@ -39,6 +39,7 @@ const state = {
   pendingPagePosition: null,
   pagePositionRestore: null,
   consoleSizeObserver: null,
+  consoleWorkspaceObserver: null,
   errorBadgeObserver: null,
   tocUpdateFrame: null,
   tocEventCleanup: null,
@@ -56,6 +57,8 @@ const state = {
   computeAdapter: undefined,
   scenePointerSession: null,
   scenePointerTimestamp: null,
+  pointerHostPressed: false,
+  pointerHostTimestamp: null,
   runtimeGeneration: 0,
   runtimeLifecycle: "new",
   // Component controls remain available for stopped/failed programs so users
@@ -271,7 +274,9 @@ function savePagePosition(position = currentPagePosition()) {
 }
 
 function schedulePagePositionSave() {
-  if (state.pagePositionRestore) {
+  // Startup layout changes and browser navigation can scroll before WASM is
+  // ready. Preserve the saved coordinate until restoration owns that mapping.
+  if (state.pagePositionRestore || ["new", "starting"].includes(state.runtimeLifecycle)) {
     return;
   }
   state.pendingPagePosition = currentPagePosition();
@@ -804,6 +809,8 @@ function stopRuntime(nextLifecycle = "stopped") {
   state.outputFullscreenController = null;
   if (ownsNativeFullscreen) exitRetiredNativeFullscreen();
   state.scenePointerSession = null;
+  state.pointerHostPressed = false;
+  state.pointerHostTimestamp = null;
   state.consolePointerSession?.cancel();
   state.consolePointerSession = null;
   if (state.pagePositionSaveTimer !== null) {
@@ -814,6 +821,8 @@ function stopRuntime(nextLifecycle = "stopped") {
   finishPagePositionRestore();
   state.consoleSizeObserver?.disconnect();
   state.consoleSizeObserver = null;
+  state.consoleWorkspaceObserver?.disconnect();
+  state.consoleWorkspaceObserver = null;
   state.errorBadgeObserver?.disconnect();
   state.errorBadgeObserver = null;
   state.replHostOffsetObserver?.disconnect();
@@ -1041,6 +1050,7 @@ async function loadDocumentSourceMap() {
     rootSpecifier: root.specifier,
     sources: Object.fromEntries(sourceEntries),
     resolutions,
+    provenance: manifest.provenance || {},
   };
 }
 
@@ -1125,6 +1135,7 @@ function loadEmbeddedDocumentSourceBundle() {
     rootSpecifier: bundle.rootSpecifier,
     sources,
     resolutions,
+    provenance: bundle.provenance || {},
   };
 }
 
@@ -1967,18 +1978,19 @@ function setReflectiveValueAvailability(element, available, interactive = true) 
 }
 
 function bindOutputClick(element, address) {
+  setReflectiveValueAvailability(element, true);
   if (element.dataset.mechReplBound === "true") {
     return;
   }
   element.dataset.mechReplBound = "true";
-  element.classList.add("mech-clickable");
-  element.tabIndex = 0;
-  element.setAttribute("role", "button");
   const fallbackIdentity = reflectiveElementIdentity(element, "output");
   const select = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    if (!reflectiveSelectionAllowed()) {
+    if (
+      element.dataset.mechValueAvailable === "false" ||
+      !reflectiveSelectionAllowed()
+    ) {
       return;
     }
     try {
@@ -2003,6 +2015,13 @@ function bindOutputClick(element, address) {
       select(event);
     }
   });
+}
+
+function clearUnavailableOutput(output) {
+  // Keep the presentation address and node for an occurrence that may return.
+  delete output.dataset.mechSource;
+  output.replaceChildren();
+  setReflectiveValueAvailability(output, false, false);
 }
 
 function renderInlineValue(output, address, rendered) {
@@ -2067,6 +2086,8 @@ function renderValues() {
         output.dataset.mechSource = "";
         output.innerHTML = rendered.blockHtml;
         bindOutputClick(output, address);
+      } else {
+        clearUnavailableOutput(output);
       }
     } catch (error) {
       appendError(error);
@@ -2078,6 +2099,8 @@ function renderValues() {
       const rendered = state.document.renderedOutput(address.outputId);
       if (rendered !== null) {
         renderInlineValue(output, address, rendered);
+      } else {
+        clearUnavailableOutput(output);
       }
     } catch (error) {
       appendError(error);
@@ -2160,6 +2183,17 @@ globalThis.MechDocumentController = Object.freeze({
       "replReplaceSource",
     );
     const response = controller.replReplaceSource(String(source));
+    consumeReplResponse(response);
+    renderValues();
+    return controller.replSource();
+  },
+  applyEdit(start, end, inserted) {
+    const controller = activeDocumentController("apply an edit", "replApplyEdit");
+    if (!Number.isInteger(start) || !Number.isInteger(end) ||
+        start < 0 || end < start || end > 0xffffffff) {
+      throw documentControllerError("MECH_DOCUMENT_INVALID_EDIT", "invalid UTF-16 edit range");
+    }
+    const response = controller.replApplyEdit(start, end, String(inserted));
     consumeReplResponse(response);
     renderValues();
     return controller.replSource();
@@ -3391,6 +3425,12 @@ function initializeWorkspaceResizers() {
   const refresh = () => refreshWorkspaceResizers(pane);
   addRuntimeEventListener(window, "resize", refresh);
   addRuntimeEventListener(window.visualViewport, "resize", refresh);
+  const panels = pane.querySelector(":scope > .console-panels");
+  if (typeof ResizeObserver === "function" && panels) {
+    state.consoleWorkspaceObserver?.disconnect();
+    state.consoleWorkspaceObserver = new ResizeObserver(refresh);
+    state.consoleWorkspaceObserver.observe(panels);
+  }
 }
 
 function setFullscreenState(pane, toggle, active, mode = null) {
@@ -4118,6 +4158,46 @@ function initializeScenePointerInput() {
   });
 }
 
+function initializePointerHostInput() {
+  if (state.root?.dataset.mechPointerHostBound === "true") return;
+  state.root.dataset.mechPointerHostBound = "true";
+  const submit = event => {
+    if (state.runtimeLifecycle !== "ready" ||
+        !servedPointerHostConfig() || typeof state.document?.pointerInput !== "function" ||
+        typeof state.document?.hasPointerInput !== "function" || !state.document.hasPointerInput()) {
+      state.pointerHostTimestamp = null;
+      state.pointerHostPressed = false;
+      return;
+    }
+    const bounds = state.root.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0) return;
+    const x = Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width) * 2 - 1));
+    const y = Math.max(-1, Math.min(1, 1 - ((event.clientY - bounds.top) / bounds.height) * 2));
+    const previous = state.pointerHostTimestamp;
+    const deltaSeconds = previous === null
+      ? 0
+      : Math.max(0, Math.min(1, (event.timeStamp - previous) / 1000));
+    state.pointerHostTimestamp = event.timeStamp;
+    state.document.pointerInput(x, y, state.pointerHostPressed, deltaSeconds);
+  };
+  addRuntimeMutationEventListener(state.root, "pointerdown", event => {
+    if (event.button !== 0) return;
+    state.pointerHostPressed = true;
+    submit(event);
+  });
+  addRuntimeMutationEventListener(state.root, "pointermove", submit);
+  addRuntimeMutationEventListener(window, "pointerup", event => {
+    if (!state.pointerHostPressed) return;
+    state.pointerHostPressed = false;
+    submit(event);
+  });
+  addRuntimeMutationEventListener(window, "pointercancel", event => {
+    if (!state.pointerHostPressed) return;
+    state.pointerHostPressed = false;
+    submit(event);
+  });
+}
+
 function initializeLayout() {
   addRuntimeMutationEventListener(window, "mech:output", event => {
     if (event instanceof CustomEvent && event.detail) {
@@ -4164,6 +4244,7 @@ function initializeLayout() {
   initializeFullscreen();
   initializeOutputFullscreen();
   initializeScenePointerInput();
+  initializePointerHostInput();
   initializeBreadcrumb();
   addRuntimeEventListener(window, "mech:document-layout-refresh", initializeToc);
   initializeToc();
@@ -4175,6 +4256,12 @@ function servedComputeHostConfig() {
   const authority = window.__MECH_HOST_CONFIG;
   const hosts = authority?.hosts || authority?.payload?.hosts || [];
   return hosts.find(host => host?.provider === "compute") || null;
+}
+
+function servedPointerHostConfig() {
+  const authority = window.__MECH_HOST_CONFIG;
+  const hosts = authority?.hosts || authority?.payload?.hosts || [];
+  return hosts.find(host => host?.provider === "pointer") || null;
 }
 
 function documentComputeIdentity(controller, bridge = null) {
@@ -4545,7 +4632,8 @@ function frame() {
     }
     if (state.computeBridge?.failure) {
       const failure = state.computeBridge.failure;
-      const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
+      const requestedBackend = controller.computeManifest()?.requestedBackend ||
+        servedComputeHostConfig()?.settings?.backend || "auto";
       if (
         failure.mechDeviceLost &&
         requestedBackend === "auto" &&
@@ -4614,6 +4702,7 @@ function constructDocumentController(WasmDocument, documentSources) {
           documentSources.config,
           documentSources.sources,
           documentSources.resolutions,
+          documentSources.provenance || {},
         )
       : WasmDocument.fromServedEncoded(
           state.initialEncoded,
@@ -4645,6 +4734,7 @@ function constructDocumentController(WasmDocument, documentSources) {
           documentSources.rootSpecifier,
           documentSources.sources,
           documentSources.resolutions,
+          documentSources.provenance || {},
         )
       : WasmDocument.fromEncodedWithSources(
           state.initialEncoded,
@@ -4667,7 +4757,10 @@ async function createDocumentComputeBridgeWithFallback(
     if (!isCurrent()) throw error;
     document.documentElement.dataset.mechComputeBridgeCreateError =
       error instanceof Error ? error.message : String(error);
-    const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
+    document.documentElement.dataset.mechGpuBridgeError =
+      document.documentElement.dataset.mechComputeBridgeCreateError;
+    const requestedBackend = controller.computeManifest()?.requestedBackend ||
+      servedComputeHostConfig()?.settings?.backend || "auto";
     if (
       requestedBackend !== "auto" || controller.computeBackend() !== "wgpu" ||
       (previous && !previous.lifecycle.canAutoFallback())
@@ -4683,14 +4776,20 @@ async function createDocumentComputeBridgeWithFallback(
       );
     }
     setComputeBridgeLifecycle("falling-back");
-    controller.fallbackComputeToCpu();
-    acceptGeneration();
-    if (!isCurrent()) throw error;
-    const bridge = await DocumentComputeBridge.create(controller, null, isCurrent);
-    if (bridge?.backend === "wgpu") {
-      throw error;
+    try {
+      controller.fallbackComputeToCpu();
+      acceptGeneration();
+      if (!isCurrent()) throw error;
+      const bridge = await DocumentComputeBridge.create(controller, null, isCurrent);
+      if (bridge?.backend === "wgpu") throw error;
+      return bridge;
+    } catch (fallbackError) {
+      if (fallbackError === error) throw error;
+      throw new Error(
+        `${error instanceof Error ? error.message : String(error)}; CPU fallback also failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
+        { cause: error },
+      );
     }
-    return bridge;
   }
 }
 

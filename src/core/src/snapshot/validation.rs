@@ -38,6 +38,7 @@ type SnapshotBudgetRegistry = std::sync::Mutex<Option<Box<SnapshotBudgetRegistra
 
 pub struct SnapshotValidationContext<'a> {
     schemas: &'a SchemaTable,
+    schema_index: Option<&'a [(SchemaKey, SchemaId)]>,
     named_kinds: Option<&'a dyn NamedKindPathResolver>,
     canonicalization_budget: Option<&'a SnapshotCanonicalizationBudget>,
     construction_authority: Option<&'a dyn SnapshotConstructionAuthority>,
@@ -98,6 +99,7 @@ impl<'a> SnapshotValidationContext<'a> {
     pub const fn new(schemas: &'a SchemaTable) -> Self {
         Self {
             schemas,
+            schema_index: None,
             named_kinds: None,
             canonicalization_budget: None,
             construction_authority: None,
@@ -120,6 +122,7 @@ impl<'a> SnapshotValidationContext<'a> {
     ) -> Self {
         Self {
             schemas,
+            schema_index: None,
             named_kinds: Some(named_kinds),
             canonicalization_budget: None,
             construction_authority: None,
@@ -133,6 +136,29 @@ impl<'a> SnapshotValidationContext<'a> {
     ) -> Self {
         self.canonicalization_budget = Some(budget);
         self
+    }
+
+    /// Uses a caller-retained, key-sorted schema index for recursive Dynamic
+    /// rebinding. The destination table remains the semantic authority; index
+    /// entries are checked against it before use.
+    #[doc(hidden)]
+    pub const fn with_schema_index(mut self, index: &'a [(SchemaKey, SchemaId)]) -> Self {
+        self.schema_index = Some(index);
+        self
+    }
+
+    fn schema_for_key(&self, key: SchemaKey) -> Option<SchemaId> {
+        let schema = match self.schema_index {
+            Some(index) => index
+                .binary_search_by_key(&key, |(candidate, _)| *candidate)
+                .ok()
+                .map(|position| index[position].1),
+            None => self.schemas.find_by_key(key),
+        }?;
+        self.schemas
+            .entry(schema)
+            .filter(|entry| entry.key() == key)
+            .map(|_| schema)
     }
 
     pub(crate) const fn with_construction_authority(
@@ -234,16 +260,27 @@ impl<'a> SnapshotValidationContext<'a> {
         if let Some(schemas) = self.shared_schemas.get() {
             return Ok(schemas.clone());
         }
-        let bytes = self.schemas.clone_allocation_bound_bytes().ok_or(
-            crate::MemoryRuntimeError::InvalidLayout {
-                object: self
-                    .construction_authority
-                    .and_then(SnapshotConstructionAuthority::allocation_object),
-                size: u64::MAX,
-                alignment: u32::try_from(core::mem::align_of::<SchemaTable>()).unwrap_or(u32::MAX),
-                reason: "snapshot schema context clone layout overflows",
-            },
-        )?;
+        let invalid_layout = || crate::MemoryRuntimeError::InvalidLayout {
+            object: self
+                .construction_authority
+                .and_then(SnapshotConstructionAuthority::allocation_object),
+            size: u64::MAX,
+            alignment: u32::try_from(core::mem::align_of::<SchemaTable>()).unwrap_or(u32::MAX),
+            reason: "snapshot schema context clone layout overflows",
+        };
+        let schema_size =
+            u64::try_from(core::mem::size_of::<SchemaTable>()).map_err(|_| invalid_layout())?;
+        let owner_overhead = Value::shared_owner_allocation_bytes(
+            core::mem::size_of::<SchemaTable>(),
+            core::mem::align_of::<SchemaTable>(),
+        )
+        .checked_sub(schema_size)
+        .ok_or_else(invalid_layout)?;
+        let bytes = self
+            .schemas
+            .clone_allocation_bound_bytes()
+            .and_then(|bytes| bytes.checked_add(owner_overhead))
+            .ok_or_else(invalid_layout)?;
         let alignment = u32::try_from(core::mem::align_of::<SchemaTable>()).unwrap_or(u32::MAX);
         if let Some(authority) = self.construction_authority {
             authority.admit_snapshot_allocation(bytes, alignment)?;
@@ -546,7 +583,8 @@ impl Value {
     /// Concrete shared-owner allocations retained by one finalized root.
     /// Shape elements and cloned schema contents are supplied separately by
     /// the checked footprint; only their owner headers appear here.
-    pub(crate) const fn canonical_owner_allocation_bytes() -> u64 {
+    #[doc(hidden)]
+    pub const fn canonical_owner_allocation_bytes() -> u64 {
         Self::shared_owner_allocation_bytes(
             core::mem::size_of::<FrozenSnapshotStorage>(),
             core::mem::align_of::<FrozenSnapshotStorage>(),
@@ -762,6 +800,22 @@ impl Value {
         shape: &ShapeInstance,
         schemas: &SchemaTable,
     ) -> Result<Self, SnapshotValueError> {
+        self.rebind_with_context(schema, shape, &SnapshotValidationContext::new(schemas))
+    }
+
+    /// Revalidates this immutable payload against an equivalent schema while
+    /// preserving the destination context's shared arena and canonicalization
+    /// authority. Resident projections use this path so nested Dynamic values
+    /// neither clone the schema table nor normalize ordered containers outside
+    /// the caller's admitted work budget.
+    #[doc(hidden)]
+    pub fn rebind_with_context(
+        &self,
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        context: &SnapshotValidationContext<'_>,
+    ) -> Result<Self, SnapshotValueError> {
+        let schemas = context.schemas();
         let source_schemas =
             self.schemas
                 .as_deref()
@@ -809,15 +863,68 @@ impl Value {
                     shape: self.shape.clone(),
                     root: self.root.clone(),
                     resident_token: self.resident_token,
-                    schemas: Some(Arc::new(schemas.clone())),
+                    schemas: Some(context.try_clone_schemas()?),
                 });
             }
         }
+        self.rebound_draft_after_validation(schema, shape, source_schema, target_schema, context)?
+            .finalize(context)
+    }
+
+    fn rebound_draft_with_context(
+        &self,
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        context: &SnapshotValidationContext<'_>,
+    ) -> Result<ValueDraft, SnapshotValueError> {
+        let source_schemas =
+            self.schemas
+                .as_deref()
+                .ok_or(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: self.schema,
+                })?;
+        let source_schema = self.validate_against(source_schemas)?;
+        let target_schema = context
+            .schemas()
+            .entry(schema)
+            .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?
+            .schema();
+        let exact_definition = self.schema_key == target_schema.key()
+            && source_schema.canonical_bytes() == target_schema.canonical_bytes();
+        let equivalent_at_shape =
+            crate::cell_binding::close_schema_body(source_schema.body(), &self.shape)
+                .and_then(|source| {
+                    crate::cell_binding::close_schema_body(target_schema.body(), shape)
+                        .map(|target| source == target)
+                })
+                .unwrap_or(false);
+        let target_accepts_source_extent = dynamic_extent_rebind_compatible(
+            source_schema.body(),
+            &self.shape,
+            target_schema.body(),
+            shape,
+        );
+        if !exact_definition && !equivalent_at_shape && !target_accepts_source_extent {
+            return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
+                key: self.schema_key,
+            });
+        }
+        self.rebound_draft_after_validation(schema, shape, source_schema, target_schema, context)
+    }
+
+    fn rebound_draft_after_validation(
+        &self,
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        source_schema: &Schema,
+        target_schema: &Schema,
+        context: &SnapshotValidationContext<'_>,
+    ) -> Result<ValueDraft, SnapshotValueError> {
         let data = canonical_data_to_rebound_draft(
             source_schema.body(),
             &self.root.data.data,
             &SnapshotPath::root(),
-            schemas,
+            context,
         )?;
         let data = adapt_dynamic_bytecode_placeholders(
             source_schema.body(),
@@ -825,12 +932,11 @@ impl Value {
             data,
             &SnapshotPath::root(),
         )?;
-        ValueDraft {
+        Ok(ValueDraft {
             schema,
             shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
             data,
-        }
-        .finalize(&SnapshotValidationContext::new(schemas))
+        })
     }
 
     /// Returns schema-directed draft data suitable for embedding this value in
@@ -1246,6 +1352,7 @@ fn schema_body_contains_dynamic(schema: &SchemaBody) -> bool {
             schema_body_contains_dynamic(key) || schema_body_contains_dynamic(value)
         }
         SchemaBody::Bool
+        | SchemaBody::IntegerInterval(_)
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
         | SchemaBody::FloatingPoint(_)
@@ -1281,6 +1388,8 @@ fn closed_schema_rebind_compatible(source: &SchemaBody, target: &SchemaBody) -> 
     let dynamic_target =
         |target: &crate::CardinalitySpec| matches!(target, crate::CardinalitySpec::Dynamic { .. });
     match (source, target) {
+        (source, SchemaBody::IntegerInterval(interval)) => source == &interval.base_body(),
+        (SchemaBody::IntegerInterval(interval), target) => &interval.base_body() == target,
         (SchemaBody::ReifiedType, SchemaBody::Dynamic) => true,
         (SchemaBody::Option(source), SchemaBody::Option(target)) => {
             closed_schema_rebind_compatible(source, target)
@@ -1373,6 +1482,16 @@ fn adapt_dynamic_bytecode_placeholders(
     }
     let actual = draft.kind();
     match (source, target, draft) {
+        (source, SchemaBody::IntegerInterval(interval), draft)
+            if source == &interval.base_body() =>
+        {
+            Ok(draft)
+        }
+        (SchemaBody::IntegerInterval(interval), target, draft)
+            if &interval.base_body() == target =>
+        {
+            Ok(draft)
+        }
         (SchemaBody::ReifiedType, SchemaBody::Dynamic, ValueDataDraft::Type(_)) => {
             Ok(ValueDataDraft::Dynamic(None))
         }
@@ -1618,32 +1737,56 @@ pub fn canonical_snapshot_data_draft_in(
     data: &ValueData,
     schemas: &SchemaTable,
 ) -> Result<ValueDataDraft, SnapshotValueError> {
-    canonical_data_to_rebound_draft(schema, data, &SnapshotPath::root(), schemas)
+    canonical_data_to_rebound_draft(
+        schema,
+        data,
+        &SnapshotPath::root(),
+        &SnapshotValidationContext::new(schemas),
+    )
+}
+
+/// Projects validated snapshot data using the caller's shared schema arena
+/// and canonicalization budget.
+#[doc(hidden)]
+pub fn canonical_snapshot_data_draft_with_context(
+    schema: &SchemaBody,
+    data: &ValueData,
+    context: &SnapshotValidationContext<'_>,
+) -> Result<ValueDataDraft, SnapshotValueError> {
+    canonical_data_to_rebound_draft(schema, data, &SnapshotPath::root(), context)
 }
 
 fn canonical_data_to_rebound_draft(
     schema: &SchemaBody,
     data: &ValueData,
     path: &SnapshotPath,
-    target_schemas: &SchemaTable,
+    target_context: &SnapshotValidationContext<'_>,
 ) -> Result<ValueDataDraft, SnapshotValueError> {
-    canonical_data_to_draft_with_target(schema, data, path, Some(target_schemas))
+    canonical_data_to_draft_with_target(schema, data, path, Some(target_context))
 }
 
 fn canonical_data_to_draft_with_target(
     schema: &SchemaBody,
     data: &ValueData,
     path: &SnapshotPath,
-    target_schemas: Option<&SchemaTable>,
+    target_context: Option<&SnapshotValidationContext<'_>>,
 ) -> Result<ValueDataDraft, SnapshotValueError> {
     let draft = match (schema, data) {
+        (SchemaBody::IntegerInterval(interval), data) => {
+            return canonical_data_to_draft_with_target(
+                &interval.base_body(),
+                data,
+                path,
+                target_context,
+            );
+        }
         (SchemaBody::Dynamic, ValueData::Dynamic(value)) => {
             let value = value
                 .value()
                 .map(|value| -> Result<Box<ValueDraft>, SnapshotValueError> {
-                    let rebound;
-                    let value = if let Some(target_schemas) = target_schemas {
-                        let schema = target_schemas.find_by_key(value.schema_key()).ok_or(
+                    if let Some(target_context) = target_context {
+                        let target_schemas = target_context.schemas();
+                        let schema = target_context.schema_for_key(value.schema_key()).ok_or(
                             SnapshotValueError::SnapshotSchemaTableMismatch {
                                 schema: value.schema(),
                                 expected: value.schema_key(),
@@ -1652,27 +1795,33 @@ fn canonical_data_to_draft_with_target(
                                     .map(|entry| entry.key()),
                             },
                         )?;
-                        rebound = value.rebind(schema, value.shape(), target_schemas)?;
-                        &rebound
+                        return Ok(Box::new(value.rebound_draft_with_context(
+                            schema,
+                            value.shape(),
+                            target_context,
+                        )?));
                     } else {
-                        value
-                    };
-                    Ok(Box::new(ValueDraft {
-                        schema: value.schema(),
-                        shape_values: value.shape().parameter_values().to_vec().into_boxed_slice(),
-                        data: canonical_data_to_draft_with_target(
-                            value
-                                .validate_against(value.schemas.as_deref().ok_or(
-                                    SnapshotValueError::UnknownSnapshotSchema {
-                                        schema: value.schema(),
-                                    },
-                                )?)?
-                                .body(),
-                            value.data(),
-                            path,
-                            target_schemas,
-                        )?,
-                    }))
+                        let schemas = value.schemas.as_deref().ok_or(
+                            SnapshotValueError::UnknownSnapshotSchema {
+                                schema: value.schema(),
+                            },
+                        )?;
+                        let body = value.validate_against(schemas)?.body();
+                        return Ok(Box::new(ValueDraft {
+                            schema: value.schema(),
+                            shape_values: value
+                                .shape()
+                                .parameter_values()
+                                .to_vec()
+                                .into_boxed_slice(),
+                            data: canonical_data_to_draft_with_target(
+                                body,
+                                value.data(),
+                                path,
+                                None,
+                            )?,
+                        }));
+                    }
                 })
                 .transpose()?;
             ValueDataDraft::Dynamic(value)
@@ -1744,7 +1893,7 @@ fn canonical_data_to_draft_with_target(
                         schema,
                         payload,
                         &path.child(SnapshotPathSegment::EnumPayload(value.ordinal())),
-                        target_schemas,
+                        target_context,
                     )?))
                 }
                 (None, None) => None,
@@ -1765,7 +1914,7 @@ fn canonical_data_to_draft_with_target(
                         element,
                         value,
                         &path.child(SnapshotPathSegment::OptionValue),
-                        target_schemas,
+                        target_context,
                     )
                     .map(Box::new)
                 })
@@ -1786,7 +1935,7 @@ fn canonical_data_to_draft_with_target(
                         schema,
                         value,
                         &path.child(SnapshotPathSegment::TupleElement(index as u32)),
-                        target_schemas,
+                        target_context,
                     )
                 })
                 .collect::<Result<Vec<_>, _>>()?;
@@ -1805,7 +1954,7 @@ fn canonical_data_to_draft_with_target(
                             &field.schema,
                             value,
                             &path.child(SnapshotPathSegment::RecordField(index as u32)),
-                            target_schemas,
+                            target_context,
                         )?,
                     })
                 })
@@ -1826,7 +1975,7 @@ fn canonical_data_to_draft_with_target(
                         element,
                         value,
                         &path.child(SnapshotPathSegment::MatrixElement(index as u64)),
-                        target_schemas,
+                        target_context,
                     )
                 })
                 .collect::<Result<Vec<_>, _>>()?;
@@ -1850,7 +1999,7 @@ fn canonical_data_to_draft_with_target(
                                 &path
                                     .child(SnapshotPathSegment::TableColumn(column_index as u32))
                                     .child(SnapshotPathSegment::TableRow(row_index as u64)),
-                                target_schemas,
+                                target_context,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -1872,7 +2021,7 @@ fn canonical_data_to_draft_with_target(
                         element,
                         value.data(),
                         &path.child(SnapshotPathSegment::SetElement(index as u64)),
-                        target_schemas,
+                        target_context,
                     )
                 })
                 .collect::<Result<Vec<_>, _>>()?;
@@ -1890,13 +2039,13 @@ fn canonical_data_to_draft_with_target(
                                 key,
                                 entry.key().data(),
                                 &path.child(SnapshotPathSegment::MapKey(index as u64)),
-                                target_schemas,
+                                target_context,
                             )?,
                             canonical_data_to_draft_with_target(
                                 value,
                                 entry.value(),
                                 &path.child(SnapshotPathSegment::MapValue(index as u64)),
-                                target_schemas,
+                                target_context,
                             )?,
                         ]
                         .into_boxed_slice(),
@@ -2209,13 +2358,20 @@ fn finalized_value_with_construction(
     })
 }
 
-fn dynamic_canonical(value: Option<&Value>, schema: Option<&SchemaBody>) -> Box<[u8]> {
+fn dynamic_canonical(
+    value: Option<&Value>,
+    schema: Option<&SchemaBody>,
+    encoded_payload_len: Option<usize>,
+) -> Box<[u8]> {
     let Some(value) = value else {
         return Vec::from([0]).into_boxed_slice();
     };
     let schema = schema.expect("materialized dynamic values carry their concrete schema");
     let shape = value.shape().canonical_bytes();
-    let payload = super::encoding::canonical_material(schema, value.data());
+    let payload = match encoded_payload_len {
+        Some(length) => super::encoding::canonical_material_with_len(schema, value.data(), length),
+        None => super::encoding::canonical_material(schema, value.data()),
+    };
     let mut bytes = Vec::with_capacity(
         1 + value.schema_key().as_bytes().len() + 8 + shape.len() + 8 + payload.len(),
     );
@@ -2228,12 +2384,28 @@ fn dynamic_canonical(value: Option<&Value>, schema: Option<&SchemaBody>) -> Box<
     bytes.into_boxed_slice()
 }
 
+/// Allocation bound for the canonical envelope retained by a present
+/// Dynamic value. The nested payload bytes are encoded once; the fixed part
+/// is the presence tag, schema key, two length prefixes, and shape header.
+#[doc(hidden)]
+pub fn dynamic_canonical_allocation_bound_bytes(
+    encoded_payload_bytes: u64,
+    shape_parameter_count: usize,
+) -> Option<u64> {
+    const FIXED_BYTES: u64 = 1 + core::mem::size_of::<SchemaKey>() as u64 + 8 + 5 + 8;
+    encoded_payload_bytes.checked_add(FIXED_BYTES)?.checked_add(
+        u64::try_from(shape_parameter_count)
+            .ok()?
+            .checked_mul(core::mem::size_of::<u64>() as u64)?,
+    )
+}
+
 fn dynamic_canonical_with_construction(
     value: Option<&Value>,
     schema: Option<&SchemaBody>,
     context: &SnapshotValidationContext<'_>,
 ) -> Result<Box<[u8]>, SnapshotValueError> {
-    let bytes = match value {
+    let (bytes, temporary_shape_bytes, temporary_payload_bytes) = match value {
         Some(value) => {
             let footprint = value.retained_footprint(context.schemas()).map_err(|_| {
                 crate::MemoryRuntimeError::InvalidLayout {
@@ -2245,14 +2417,36 @@ fn dynamic_canonical_with_construction(
                     reason: "dynamic canonical material footprint is invalid",
                 }
             })?;
-            footprint
-                .encoded_bytes
-                .checked_mul(2)
-                .and_then(|bytes| {
-                    bytes.checked_add(5_u64.checked_add(
-                        (value.shape().parameter_values().len() as u64).checked_mul(8)?,
-                    )?)
-                })
+            // tag + schema key + shape/payload length prefixes + the shape
+            // encoding header are retained even for a zero-byte Atom payload.
+            // Keep this prospective bound aligned with `dynamic_canonical`.
+            let temporary_shape_bytes = 5_u64
+                .checked_add(
+                    u64::try_from(value.shape().parameter_values().len())
+                        .ok()
+                        .and_then(|count| count.checked_mul(core::mem::size_of::<u64>() as u64))
+                        .ok_or(crate::MemoryRuntimeError::InvalidLayout {
+                            object: context
+                                .construction_authority
+                                .and_then(SnapshotConstructionAuthority::allocation_object),
+                            size: u64::MAX,
+                            alignment: 1,
+                            reason: "dynamic shape canonical bound overflows",
+                        })?,
+                )
+                .ok_or(crate::MemoryRuntimeError::InvalidLayout {
+                    object: context
+                        .construction_authority
+                        .and_then(SnapshotConstructionAuthority::allocation_object),
+                    size: u64::MAX,
+                    alignment: 1,
+                    reason: "dynamic shape canonical bound overflows",
+                })?;
+            (
+                dynamic_canonical_allocation_bound_bytes(
+                    footprint.encoded_bytes,
+                    value.shape().parameter_values().len(),
+                )
                 .ok_or(crate::MemoryRuntimeError::InvalidLayout {
                     object: context
                         .construction_authority
@@ -2260,14 +2454,37 @@ fn dynamic_canonical_with_construction(
                     size: u64::MAX,
                     alignment: 1,
                     reason: "dynamic canonical material bound overflows",
-                })?
+                })?,
+                temporary_shape_bytes,
+                footprint.encoded_bytes,
+            )
         }
-        None => 1,
+        None => (1, 0, 0),
     };
     if let Some(authority) = context.construction_authority {
+        if temporary_shape_bytes != 0 {
+            authority.admit_snapshot_allocation(temporary_shape_bytes, 1)?;
+        }
+        // `canonical_material` is built before the retained Dynamic envelope
+        // and remains live while that envelope is allocated and populated.
+        // Admit both overlapping allocations rather than only the retained
+        // envelope.
+        if temporary_payload_bytes != 0 {
+            authority.admit_snapshot_allocation(temporary_payload_bytes, 1)?;
+        }
         authority.admit_snapshot_allocation(bytes, 1)?;
     }
-    Ok(dynamic_canonical(value, schema))
+    let encoded_payload_len = usize::try_from(temporary_payload_bytes).map_err(|_| {
+        crate::MemoryRuntimeError::InvalidLayout {
+            object: context
+                .construction_authority
+                .and_then(SnapshotConstructionAuthority::allocation_object),
+            size: temporary_payload_bytes,
+            alignment: 1,
+            reason: "dynamic canonical payload exceeds addressable length",
+        }
+    })?;
+    Ok(dynamic_canonical(value, schema, Some(encoded_payload_len)))
 }
 
 /// Wraps canonical resident data in a self-describing dynamic snapshot cell.
@@ -2288,11 +2505,58 @@ pub fn wrap_resident_dynamic_data(
         "resident dynamic values retain their authoritative schema arena"
     );
     let value = finalized_value(schema, schema_key, shape, data, Some(schemas));
-    let canonical = dynamic_canonical(Some(&value), Some(body));
+    let canonical = dynamic_canonical(Some(&value), Some(body), None);
     ValueData::Dynamic(DynamicValue {
         value: Some(Box::new(value)),
         canonical,
     })
+}
+
+/// Wraps an already canonical detached value in a Dynamic snapshot while
+/// retaining the concrete value's authoritative schema arena. The caller has
+/// admitted the wrapper and canonical-material allocations before binding.
+#[doc(hidden)]
+pub fn wrap_resident_dynamic_value(
+    schema: SchemaId,
+    shape_values: Box<[u64]>,
+    schemas: Arc<SchemaTable>,
+    value: Option<Value>,
+) -> Result<Value, SnapshotValueError> {
+    let entry = schemas
+        .entry(schema)
+        .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
+    if !matches!(entry.schema().body(), SchemaBody::Dynamic) {
+        return Err(SnapshotValueError::SnapshotDataSchemaMismatch {
+            path: SnapshotPath::root(),
+            expected: schema_kind(entry.schema().body()),
+            actual: super::ValueDataKind::Dynamic,
+        });
+    }
+    let concrete = value
+        .as_ref()
+        .map(|value| {
+            let owner = value
+                .schemas()
+                .ok_or(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: value.schema(),
+                })?;
+            value
+                .validate_against(&owner)
+                .map(|schema| schema.body().clone())
+        })
+        .transpose()?;
+    let canonical = dynamic_canonical(value.as_ref(), concrete.as_ref(), None);
+    let shape = entry.schema().instantiate_shape(shape_values)?;
+    Ok(finalized_value(
+        schema,
+        entry.key(),
+        shape,
+        ValueData::Dynamic(DynamicValue {
+            value: value.map(Box::new),
+            canonical,
+        }),
+        Some(schemas),
+    ))
 }
 
 /// Builds a table from certified canonical cells. Callers admit the complete
@@ -2506,15 +2770,51 @@ impl CompositeSnapshotConstructor {
         children: &[SchemaId],
         schemas: &SchemaTable,
     ) -> Option<super::CompositeBindingCost> {
+        Self::binding_cost_for_inputs(
+            schema,
+            children.len(),
+            |index| Some(children[index]),
+            schemas,
+        )
+    }
+
+    /// Borrowed, allocation-free preflight for the same shape/binding metadata.
+    /// Callers need not collect child identities before admitting their storage.
+    pub fn binding_cost_for_inputs(
+        schema: SchemaId,
+        child_count: usize,
+        child_schema: impl Fn(usize) -> Option<SchemaId>,
+        schemas: &SchemaTable,
+    ) -> Option<super::CompositeBindingCost> {
         let output = schemas.get(schema)?;
-        let layout = composite_schema_components(output.body(), children.len())?;
-        let components = layout
-            .children
-            .into_iter()
-            .zip(children)
-            .map(|(expected, child)| Some((expected, schemas.get(*child)?)))
-            .collect::<Option<Vec<_>>>()?;
-        super::composite_cost::binding_cost(output, &components)
+        match output.body() {
+            SchemaBody::Tuple(items) if items.len() == child_count => {}
+            SchemaBody::Record(fields) if fields.len() == child_count => {}
+            SchemaBody::Map { .. } if child_count % 2 == 0 => {}
+            SchemaBody::Table { columns, .. }
+                if (columns.is_empty() && child_count == 0)
+                    || (!columns.is_empty() && child_count % columns.len() == 0) => {}
+            _ => return None,
+        }
+        let components = (0..child_count).map(|index| {
+            let expected = match output.body() {
+                SchemaBody::Tuple(items) => &items[index],
+                SchemaBody::Record(fields) => &fields[index].schema,
+                SchemaBody::Map { key, value, .. } => {
+                    if index % 2 == 0 {
+                        key.as_ref()
+                    } else {
+                        value.as_ref()
+                    }
+                }
+                SchemaBody::Table { columns, .. } => {
+                    &columns[index / (child_count / columns.len())].schema
+                }
+                _ => return None,
+            };
+            Some((expected, schemas.get(child_schema(index)?)?))
+        });
+        super::composite_cost::binding_cost(output, components)
     }
     /// Derives the aggregate's shape from the canonical child schemas in
     /// constructor order. Each child shape belongs to its own parameter arena.
@@ -3109,6 +3409,27 @@ pub(super) fn finalize_data(
     context: &SnapshotValidationContext<'_>,
     path: &SnapshotPath,
 ) -> Result<ValueData, SnapshotValueError> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        let value = finalize_data(&interval.base_body(), draft, shape, context, path)?;
+        let contained = match &value {
+            ValueData::U8(v) => interval.contains_unsigned(u128::from(*v)),
+            ValueData::U16(v) => interval.contains_unsigned(u128::from(*v)),
+            ValueData::U32(v) => interval.contains_unsigned(u128::from(*v)),
+            ValueData::U64(v) => interval.contains_unsigned(u128::from(*v)),
+            ValueData::U128(v) => interval.contains_unsigned(*v),
+            ValueData::I8(v) => interval.contains_signed(i128::from(*v)),
+            ValueData::I16(v) => interval.contains_signed(i128::from(*v)),
+            ValueData::I32(v) => interval.contains_signed(i128::from(*v)),
+            ValueData::I64(v) => interval.contains_signed(i128::from(*v)),
+            ValueData::I128(v) => interval.contains_signed(*v),
+            _ => false,
+        };
+        return if contained {
+            Ok(value)
+        } else {
+            Err(SnapshotValueError::IntegerIntervalViolationV1 { path: path.clone() })
+        };
+    }
     let actual_kind = draft.kind();
     macro_rules! exact {
         ($schema:pat, $draft:pat => $value:expr) => {
@@ -3430,7 +3751,8 @@ pub(super) fn finalize_data(
 fn scalar_sequence_schema(schema: &SchemaBody) -> bool {
     matches!(
         schema,
-        SchemaBody::UnsignedInteger(_)
+        SchemaBody::IntegerInterval(_)
+            | SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
             | SchemaBody::FloatingPoint(_)
             | SchemaBody::Complex(_)
@@ -3456,6 +3778,29 @@ fn finalize_scalar_sequence(
     element: ScalarSequenceElement,
     context: &SnapshotValidationContext<'_>,
 ) -> Result<SequenceStorage, SnapshotValueError> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        for (index, draft) in values.iter().enumerate() {
+            let contained = match draft {
+                ValueDataDraft::U8(value) => interval.contains_unsigned(u128::from(*value)),
+                ValueDataDraft::U16(value) => interval.contains_unsigned(u128::from(*value)),
+                ValueDataDraft::U32(value) => interval.contains_unsigned(u128::from(*value)),
+                ValueDataDraft::U64(value) => interval.contains_unsigned(u128::from(*value)),
+                ValueDataDraft::U128(value) => interval.contains_unsigned(*value),
+                ValueDataDraft::I8(value) => interval.contains_signed(i128::from(*value)),
+                ValueDataDraft::I16(value) => interval.contains_signed(i128::from(*value)),
+                ValueDataDraft::I32(value) => interval.contains_signed(i128::from(*value)),
+                ValueDataDraft::I64(value) => interval.contains_signed(i128::from(*value)),
+                ValueDataDraft::I128(value) => interval.contains_signed(*value),
+                _ => false,
+            };
+            if !contained {
+                return Err(SnapshotValueError::IntegerIntervalViolationV1 {
+                    path: element.path(path, index),
+                });
+            }
+        }
+        return finalize_scalar_sequence(&interval.base_body(), values, path, element, context);
+    }
     macro_rules! pack {
         ($draft:ident, $storage:ident) => {{
             let mut packed = context.try_vec_with_capacity(values.len())?;
@@ -3753,6 +4098,12 @@ fn data_mismatch_kind(
 
 pub(super) const fn schema_kind(schema: &SchemaBody) -> SchemaDataKind {
     match schema {
+        SchemaBody::IntegerInterval(crate::IntegerInterval::Unsigned { .. }) => {
+            SchemaDataKind::UnsignedInteger
+        }
+        SchemaBody::IntegerInterval(crate::IntegerInterval::Signed { .. }) => {
+            SchemaDataKind::SignedInteger
+        }
         SchemaBody::Dynamic => SchemaDataKind::Dynamic,
         SchemaBody::Bool => SchemaDataKind::Bool,
         SchemaBody::UnsignedInteger(_) => SchemaDataKind::UnsignedInteger,
@@ -3787,6 +4138,116 @@ mod tests {
         DimensionParameterOrigin, NominalKey, SchemaDraft, SchemaField, SchemaTableBuilder,
     };
     use core::cell::{Cell, RefCell};
+
+    #[test]
+    fn integer_interval_finalization_and_rebind_check_every_boundary() {
+        let interval = crate::IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let base = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let constrained = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::IntegerInterval(interval),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let base = build.resolve(base).unwrap();
+        let constrained = build.resolve(constrained).unwrap();
+        let schemas = build.table;
+        let context = SnapshotValidationContext::new(&schemas);
+        let draft = |schema, value| ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::U8(value),
+        };
+        for value in [1, 9] {
+            let accepted = draft(constrained, value).finalize(&context).unwrap();
+            assert_eq!(accepted.schema(), constrained);
+            let base_value = draft(base, value).finalize(&context).unwrap();
+            assert_eq!(
+                base_value
+                    .rebind(constrained, base_value.shape(), &schemas)
+                    .unwrap()
+                    .schema(),
+                constrained
+            );
+        }
+        for value in [0, 10] {
+            assert!(matches!(
+                draft(constrained, value).finalize(&context),
+                Err(SnapshotValueError::IntegerIntervalViolationV1 { .. })
+            ));
+            let base_value = draft(base, value).finalize(&context).unwrap();
+            assert!(matches!(
+                base_value.rebind(constrained, base_value.shape(), &schemas),
+                Err(SnapshotValueError::IntegerIntervalViolationV1 { .. })
+            ));
+        }
+        let mut builder = SchemaTableBuilder::new();
+        let matrix = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::IntegerInterval(interval)),
+                        dimensions: vec![DimensionExpr::Constant(2)].into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let matrix_schemas = build.table;
+        let matrix_draft = |second| ValueDraft {
+            schema: matrix,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(second)].into_boxed_slice(),
+            ),
+        };
+        let accepted = matrix_draft(9)
+            .finalize(&SnapshotValidationContext::new(&matrix_schemas))
+            .unwrap();
+        let ValueData::Matrix(accepted) = accepted.data() else {
+            panic!("interval matrix did not finalize as a matrix")
+        };
+        assert!(matches!(
+            accepted.elements(),
+            SequenceView::U8(values) if values == [1, 9]
+        ));
+        assert_eq!(
+            crate::snapshot::canonical_data_draft_finalization_work(
+                &SchemaBody::IntegerInterval(interval),
+                &ValueData::U8(1),
+            )
+            .unwrap(),
+            0
+        );
+        assert!(matches!(
+            matrix_draft(10).finalize(&SnapshotValidationContext::new(&matrix_schemas)),
+            Err(SnapshotValueError::IntegerIntervalViolationV1 { .. })
+        ));
+    }
 
     #[test]
     fn canonical_table_builder_zero_columns_cannot_claim_nonzero_rows() {
@@ -3973,6 +4434,47 @@ mod tests {
         fn allocation_object(&self) -> Option<crate::MemoryObjectId> {
             Some(crate::MemoryObjectId::new(0))
         }
+    }
+
+    #[test]
+    fn dynamic_canonical_construction_admits_payload_and_envelope_overlap() {
+        let mut builder = SchemaTableBuilder::new();
+        let string = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::String,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let string = build.resolve(string).unwrap();
+        let schemas = build.table;
+        let value = ValueDraft {
+            schema: string,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::String("temporary canonical payload".repeat(8)),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let footprint = value.retained_footprint(&schemas).unwrap();
+        let envelope =
+            dynamic_canonical_allocation_bound_bytes(footprint.encoded_bytes, 0).unwrap();
+        let authority = RecordingConstructionAuthority::default();
+
+        dynamic_canonical_with_construction(
+            Some(&value),
+            Some(&SchemaBody::String),
+            &SnapshotValidationContext::new(&schemas).with_construction_authority(&authority),
+        )
+        .unwrap();
+
+        assert_eq!(
+            authority.allocations.borrow().as_slice(),
+            [(5, 1), (footprint.encoded_bytes, 1), (envelope, 1)]
+        );
     }
 
     #[test]
@@ -4316,7 +4818,12 @@ mod tests {
             .collect::<Vec<_>>();
         assert!(Arc::ptr_eq(&owners[0], &owners[1]));
         let schema_clone = (
-            schemas.clone_allocation_bound_bytes().unwrap(),
+            schemas.clone_allocation_bound_bytes().unwrap()
+                + Value::shared_owner_allocation_bytes(
+                    core::mem::size_of::<SchemaTable>(),
+                    core::mem::align_of::<SchemaTable>(),
+                )
+                - core::mem::size_of::<SchemaTable>() as u64,
             core::mem::align_of::<SchemaTable>() as u32,
         );
         assert_eq!(
@@ -4711,6 +5218,192 @@ mod tests {
                 .map(|value| value.to_f64())
                 .collect::<Vec<_>>(),
             [3.0, 4.0]
+        );
+    }
+
+    #[test]
+    fn shared_rebind_reuses_the_target_arena_and_enforces_canonical_work() {
+        let schema = SchemaDraft {
+            body: SchemaBody::Tuple(
+                vec![
+                    SchemaBody::Set {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        cardinality: crate::CardinalitySpec::Dynamic { upper_bound: None },
+                    },
+                    SchemaBody::Dynamic,
+                ]
+                .into_boxed_slice(),
+            ),
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+
+        let mut source_builder = SchemaTableBuilder::new();
+        let source = source_builder.insert(schema.clone()).unwrap();
+        let source_build = source_builder.finish().unwrap();
+        let source = source_build.resolve(source).unwrap();
+        let source_schemas = Arc::new(source_build.table);
+        let value = ValueDraft {
+            schema: source,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::Set(
+                        [2.0, 1.0]
+                            .into_iter()
+                            .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                            .collect(),
+                    ),
+                    ValueDataDraft::Dynamic(None),
+                ]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(
+            &source_schemas,
+        ))
+        .unwrap();
+
+        let mut target_builder = SchemaTableBuilder::new();
+        target_builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let target = target_builder.insert(schema).unwrap();
+        let target_build = target_builder.finish().unwrap();
+        let target = target_build.resolve(target).unwrap();
+        let target_schemas = Arc::new(target_build.table);
+        let shape = target_schemas
+            .get(target)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+
+        let exhausted = SnapshotCanonicalizationBudget::new(0);
+        assert!(
+            value
+                .rebind_with_context(
+                    target,
+                    &shape,
+                    &SnapshotValidationContext::with_shared_schemas(&target_schemas)
+                        .with_canonicalization_budget(&exhausted),
+                )
+                .is_err(),
+            "ordered-container work in a Dynamic-bearing rebind is never unmetered",
+        );
+
+        let admitted = SnapshotCanonicalizationBudget::new(64);
+        let rebound = value
+            .rebind_with_context(
+                target,
+                &shape,
+                &SnapshotValidationContext::with_shared_schemas(&target_schemas)
+                    .with_canonicalization_budget(&admitted),
+            )
+            .unwrap();
+        assert!(admitted.consumed() > 0);
+        assert!(Arc::ptr_eq(
+            &rebound.schemas().expect("rebound value retains its arena"),
+            &target_schemas,
+        ));
+    }
+
+    #[test]
+    fn dynamic_projection_rebinds_directly_to_a_draft() {
+        let string_schema = SchemaDraft {
+            body: SchemaBody::String,
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        let dynamic_schema = SchemaDraft {
+            body: SchemaBody::Dynamic,
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        let mut source_builder = SchemaTableBuilder::new();
+        let source_string = source_builder.insert(string_schema.clone()).unwrap();
+        let source_dynamic = source_builder.insert(dynamic_schema.clone()).unwrap();
+        let source_build = source_builder.finish().unwrap();
+        let source_string = source_build.resolve(source_string).unwrap();
+        let source_dynamic = source_build.resolve(source_dynamic).unwrap();
+        let source_schemas = Arc::new(source_build.table);
+        let source = ValueDraft {
+            schema: source_dynamic,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+                schema: source_string,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::String("direct draft".repeat(32)),
+            }))),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(
+            &source_schemas,
+        ))
+        .unwrap();
+
+        let mut target_builder = SchemaTableBuilder::new();
+        target_builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let target_string = target_builder.insert(string_schema).unwrap();
+        target_builder.insert(dynamic_schema).unwrap();
+        let target_build = target_builder.finish().unwrap();
+        let target_string = target_build.resolve(target_string).unwrap();
+        let target_schemas = Arc::new(target_build.table);
+        let mut schema_index = target_schemas
+            .entries()
+            .enumerate()
+            .map(|(raw, entry)| (entry.key(), SchemaId::new(raw as u32)))
+            .collect::<Vec<_>>();
+        schema_index.sort_unstable_by_key(|(key, _)| *key);
+        let authority = RecordingConstructionAuthority::default();
+        let draft = canonical_snapshot_data_draft_with_context(
+            &SchemaBody::Dynamic,
+            source.data(),
+            &SnapshotValidationContext::with_shared_schemas(&target_schemas)
+                .with_schema_index(&schema_index)
+                .with_construction_authority(&authority),
+        )
+        .unwrap();
+
+        assert!(
+            authority.allocations.borrow().is_empty(),
+            "draft projection must not build an intermediate immutable Value",
+        );
+        assert!(matches!(
+            draft,
+            ValueDataDraft::Dynamic(Some(value)) if value.schema == target_string
+        ));
+
+        let wrong_index = [(
+            target_schemas.entry(target_string).unwrap().key(),
+            SchemaId::new(0),
+        )];
+        assert!(
+            canonical_snapshot_data_draft_with_context(
+                &SchemaBody::Dynamic,
+                source.data(),
+                &SnapshotValidationContext::with_shared_schemas(&target_schemas)
+                    .with_schema_index(&wrong_index),
+            )
+            .is_err(),
+            "the index cannot override the destination schema authority",
         );
     }
 }

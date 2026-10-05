@@ -87,13 +87,6 @@ impl<'a> MissingContinuation<'a> {
                     LexicalMode::CanonicalSourceFragment => {
                         self.phase = Phase::Source(SourceContinuation::new(parser.offset()))
                     }
-                    LexicalMode::PrototypeDocument => {
-                        if !final_input && parser.offset() >= parser.cursor().context_end() {
-                            self.phase = Phase::Classify;
-                            return MissingProgress::NeedInput;
-                        }
-                        self.phase = Phase::Publish(parser.found_syntax());
-                    }
                     LexicalMode::CanonicalGrammar => {
                         self.phase = Phase::Filtered(FilteredContinuation::new(parser.offset()));
                     }

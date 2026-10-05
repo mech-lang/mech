@@ -346,25 +346,25 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         )
         self.assert_failure(root, "outputs can escape the invocation memory session")
 
-    def test_28_interpreter_program_session_cannot_be_removed(self):
+    def test_28_managed_program_session_cannot_be_removed(self):
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/interpreter/mod.rs",
-            "memory_domain: MemoryDomain,",
-            "removed_memory_domain: MemoryDomain,",
+            "src/engine/src/memory_runtime/realize.rs",
+            "domain: MemoryDomain,",
+            "removed_domain: MemoryDomain,",
         )
         self.assert_failure(root, "does not own one ordinary program memory session")
 
-    def test_29_source_literals_cannot_create_per_value_sessions(self):
+    def test_29_source_constants_cannot_create_per_value_sessions(self):
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/literals.rs",
-            ".import_owned_in(p.memory_domain())",
-            ".import_owned_in(&MemoryDomain::new().unwrap())",
+            "src/engine/src/resident/general/mod.rs",
+            "ResidentStorageClass::Constant,\n        &managed_memory,",
+            "ResidentStorageClass::Constant,\n        &ManagedProgramMemory::realize(&plan.memory_plan).unwrap(),",
         )
-        self.assert_failure(root, "literals do not enter the interpreter memory session")
+        self.assert_failure(root, "source constants and state do not share the retained program memory session")
 
     def test_30_concatenation_marker_cannot_own_physical_backing(self):
         root = self.fixture()
@@ -552,6 +552,26 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
             "src/core/src/snapshot/validation.rs",
             "return Ok(self.clone());",
             "return Ok(rebuild_without_owner());",
+        )
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_49b_snapshot_rebind_must_keep_the_admitted_shared_schema_owner(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/snapshot/validation.rs",
+            "schemas: Some(context.try_clone_schemas()?),",
+            "schemas: Some(Arc::new(context.schemas().clone())),",
+        )
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
+    def test_49c_snapshot_rebind_must_not_clone_the_local_schema_alias(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/snapshot/validation.rs",
+            "schemas: Some(context.try_clone_schemas()?),",
+            "schemas: Some(Arc::new(schemas.clone())),",
         )
         self.assert_failure(root, "do not preserve shared frozen ownership")
 
@@ -851,7 +871,7 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         root = self.fixture()
         self.append(
             root,
-            "src/engine/src/structures.rs",
+            "src/engine/src/intrinsics/kind_conversion.rs",
             """
 impl MechFunctionImpl for Bypass {
     fn solve_managed(&self, _frame: &mut KernelMemoryFrame<'_>, _services: &mut dyn MechExecutionServices) -> MResult<ReactiveSolveStatus> {
@@ -887,7 +907,7 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/literals.rs",
+            "src/engine/src/intrinsics/kind_conversion.rs",
             "construction.try_rebuild_data_draft(output, converted)",
             "execute_conversion_plan(source, target, plan)?.snapshot()",
         )
@@ -897,17 +917,20 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/function/module.rs",
+            CHECKER.DYNAMIC_RESIDENT_OWNER,
             "let changed = match state.kernel {",
             "let next = vec![0.0; candidate.len()];\n    let changed = match state.kernel {",
         )
-        self.assert_failure(root, "module allocates private output-sized scratch")
+        self.assertEqual(
+            CHECKER.failures(root),
+            ["dynamic Resident module allocates private output-sized scratch"],
+        )
 
     def test_84_conversion_footprint_must_include_target_payload(self):
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/literals.rs",
+            "src/engine/src/intrinsics/kind_conversion.rs",
             "conversion_string_payload_bound(&plan.step)",
             "None",
         )
@@ -947,11 +970,31 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/literals.rs",
+            "src/engine/src/intrinsics/kind_conversion.rs",
             "frame.execute_fixed_conversion_plan(source, output, plan)",
             "frame.stage_output_value(output, output.snapshot()?)",
         )
         self.assert_failure(root, "conversion escapes its frame-owned construction authority")
+
+    def test_resident_composite_materialization_requires_prior_admission(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/resident/composite.rs",
+            ".admit()?\n    .into_plan();\n    let constructor = current_constructor(plan, inputs)?;",
+            ".into_plan();\n    let constructor = current_constructor(plan, inputs)?;",
+        )
+        self.assert_failure(root, "Resident aggregate construction bypasses admitted immutable inputs")
+
+    def test_resident_composite_cannot_prepare_constructor_before_admission(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/resident/composite.rs",
+            "let admitted_children = super::budget::PreparedKernel::new(",
+            "let _early = current_constructor(plan, inputs)?;\n    let admitted_children = super::budget::PreparedKernel::new(",
+        )
+        self.assert_failure(root, "Resident aggregate construction bypasses admitted immutable inputs")
 
     def test_89_late_publication_failure_must_collect_abandoned_realization(self):
         root = self.fixture()

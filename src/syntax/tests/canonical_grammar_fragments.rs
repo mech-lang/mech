@@ -1,7 +1,8 @@
 use mech_syntax::document::{
-    DocumentId, FragmentKind, IdGenerator, ParseConfig, ParseContext, Revision, SyntaxKind,
-    SyntaxNode, TextRange, TextSize, TextSnapshot, compact_debug_tree, parse_canonical_grammar,
-    parse_fragment, reconstruct_source_range, validate_lossless_range,
+    DocumentId, GrammarFragmentContext, GrammarFragmentKind, IdGenerator, ParseConfig, Revision,
+    SyntaxKind, SyntaxNode, TextRange, TextSize, TextSnapshot, compact_debug_tree,
+    parse_canonical_grammar, parse_canonical_grammar_fragment, reconstruct_source_range,
+    validate_lossless_range,
 };
 
 fn nodes_of_kind(root: &SyntaxNode, kind: SyntaxKind) -> Vec<SyntaxNode> {
@@ -36,14 +37,19 @@ fn parse_whole(text: &str) -> mech_syntax::document::SyntaxSnapshot {
     )
 }
 
-fn assert_fragment(kind: FragmentKind, fragment: &str, whole_source: &str, occurrence: usize) {
+fn assert_fragment(
+    kind: GrammarFragmentKind,
+    fragment: &str,
+    whole_source: &str,
+    occurrence: usize,
+) {
     let (source, range) = global_source(fragment);
     let mut ids = IdGenerator::new();
-    let parsed = parse_fragment(
+    let parsed = parse_canonical_grammar_fragment(
         &source,
         range,
         kind,
-        ParseContext::for_kind(kind),
+        GrammarFragmentContext::default(),
         ParseConfig::default(),
         &mut ids,
     );
@@ -96,32 +102,37 @@ fn assert_fragment(kind: FragmentKind, fragment: &str, whole_source: &str, occur
 #[test]
 fn all_six_grammar_fragment_roots_use_global_bounded_ranges() {
     assert_fragment(
-        FragmentKind::Grammar,
+        GrammarFragmentKind::Grammar,
         "one:=\"a\";two:=one;",
         "one:=\"a\";two:=one;",
         0,
     );
     assert_fragment(
-        FragmentKind::GrammarRule,
+        GrammarFragmentKind::GrammarRule,
         "target:=\"a\";",
         "target:=\"a\";next:=\"b\";",
         0,
     );
     assert_fragment(
-        FragmentKind::GrammarExpression,
+        GrammarFragmentKind::GrammarExpression,
         "\"a\"|other",
         "target:=\"a\"|other;",
         0,
     );
     assert_fragment(
-        FragmentKind::GrammarTerm,
+        GrammarFragmentKind::GrammarTerm,
         "\"a\",other",
         "target:=\"a\",other;",
         0,
     );
-    assert_fragment(FragmentKind::GrammarFactor, "?other", "target:=?other;", 0);
     assert_fragment(
-        FragmentKind::GrammarTerminalToken,
+        GrammarFragmentKind::GrammarFactor,
+        "?other",
+        "target:=?other;",
+        0,
+    );
+    assert_fragment(
+        GrammarFragmentKind::GrammarTerminalToken,
         "\"ab\"",
         "target:=\"ab\";",
         0,
@@ -129,22 +140,55 @@ fn all_six_grammar_fragment_roots_use_global_bounded_ranges() {
 }
 
 #[test]
-fn grammar_fragment_context_mode_is_required() {
-    let (source, range) = global_source("\"a\"|other");
+fn grammar_fragment_context_retains_enclosing_depth() {
+    let (source, range) = global_source("(other)");
     let mut ids = IdGenerator::new();
-    let parsed = parse_fragment(
+    let parsed = parse_canonical_grammar_fragment(
         &source,
         range,
-        FragmentKind::GrammarExpression,
-        ParseContext {
-            mode: mech_syntax::document::ParseMode::Mech,
-            ..ParseContext::for_kind(FragmentKind::GrammarExpression)
+        GrammarFragmentKind::GrammarFactor,
+        GrammarFragmentContext { delimiter_depth: 1 },
+        ParseConfig {
+            limits: mech_syntax::document::ParseLimits {
+                max_nesting: 1,
+                ..Default::default()
+            },
         },
-        ParseConfig::default(),
         &mut ids,
     );
-    assert!(!parsed.matched);
+    assert_eq!(parsed.context.delimiter_depth, 1);
     assert!(!parsed.consumed_complete);
+    assert_eq!(
+        parsed.consumed,
+        TextRange::new(range.start, range.start + TextSize(1))
+    );
+    assert_eq!(
+        parsed
+            .diagnostics
+            .iter()
+            .map(|diagnostic| diagnostic.code.as_str())
+            .collect::<Vec<_>>(),
+        [
+            "syntax/missing-grammar-factor",
+            "syntax/unclosed-grammar-group"
+        ]
+    );
+    let mut ids = IdGenerator::new();
+    let allowed = parse_canonical_grammar_fragment(
+        &source,
+        range,
+        GrammarFragmentKind::GrammarFactor,
+        GrammarFragmentContext::default(),
+        ParseConfig {
+            limits: mech_syntax::document::ParseLimits {
+                max_nesting: 1,
+                ..Default::default()
+            },
+        },
+        &mut ids,
+    );
+    assert!(allowed.consumed_complete);
+    assert!(allowed.diagnostics.is_empty());
 }
 
 #[test]
@@ -155,11 +199,11 @@ fn grammar_rule_fragment_uses_right_context_without_consuming_it() {
     let source = TextSnapshot::new(DocumentId(81), Revision(12), text).unwrap();
     let range = TextRange::new(TextSize(start as u32), TextSize(end as u32));
     let mut ids = IdGenerator::new();
-    let parsed = parse_fragment(
+    let parsed = parse_canonical_grammar_fragment(
         &source,
         range,
-        FragmentKind::GrammarRule,
-        ParseContext::for_kind(FragmentKind::GrammarRule),
+        GrammarFragmentKind::GrammarRule,
+        GrammarFragmentContext::default(),
         ParseConfig::default(),
         &mut ids,
     );
@@ -185,11 +229,11 @@ fn grammar_fragment_diagnostic_can_inspect_bounded_right_context() {
     let source = TextSnapshot::new(DocumentId(81), Revision(12), text).unwrap();
     let range = TextRange::new(TextSize(start as u32), TextSize(end as u32));
     let mut ids = IdGenerator::new();
-    let parsed = parse_fragment(
+    let parsed = parse_canonical_grammar_fragment(
         &source,
         range,
-        FragmentKind::GrammarRule,
-        ParseContext::for_kind(FragmentKind::GrammarRule),
+        GrammarFragmentKind::GrammarRule,
+        GrammarFragmentContext::default(),
         ParseConfig::default(),
         &mut ids,
     );

@@ -44,6 +44,7 @@ fn resident_element_kind(element: &SchemaBody) -> Option<ResidentValueKind> {
         | SchemaBody::ReifiedType
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
+        | SchemaBody::IntegerInterval(_)
         | SchemaBody::FloatingPoint(FloatWidth::W32)
         | SchemaBody::Complex(_)
         | SchemaBody::Rational64
@@ -230,6 +231,86 @@ fn admit_literal_stage(
     .map(super::budget::AdmittedKernel::into_plan)
 }
 
+/// Shared borrowed snapshot-literal preflight. Callers must admit the complete
+/// estimate before creating payload drafts; first publication has no prior value.
+pub(crate) fn prepare_snapshot_literal<'a>(
+    schemas: &mech_core::SchemaTable,
+    count: usize,
+    mut input: impl FnMut(usize) -> Result<&'a mech_core::Value, ResidentKernelError>,
+    previous: Option<&mech_core::Value>,
+    mut footprint_meter: super::budget::ResidentBudgetMeter,
+) -> Result<super::budget::PreparedKernel<(usize, u64)>, ResidentKernelError> {
+    let mut retained_bytes = 0usize;
+    let mut input_nodes = 0u64;
+    let mut finalization_work = 0u64;
+    for source in 0..count {
+        let value = input(source)?;
+        let footprint =
+            super::budget::measure_canonical_value_footprint(&mut footprint_meter, value, schemas)?;
+        retained_bytes = retained_bytes
+            .checked_add(checked_cost_usize(footprint.retained_bytes)?)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        input_nodes = input_nodes
+            .checked_add(footprint.node_count)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let schema = value
+            .validate_against(schemas)
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
+        finalization_work = finalization_work
+            .checked_add(super::budget::preflight_canonical_data_finalization(
+                &mut footprint_meter,
+                schema.body(),
+                value.data(),
+            )?)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+    }
+    if let Some(previous) = previous {
+        super::budget::measure_canonical_value_footprint(&mut footprint_meter, previous, schemas)?;
+    }
+    let container_bytes = count
+        .checked_mul(core::mem::size_of::<ValueDataDraft>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_bytes = retained_bytes
+        .checked_add(container_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let count_u64 = super::budget::checked_u64(count)?;
+    let child_data_nodes = input_nodes
+        .checked_sub(count_u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let draft_nodes = child_data_nodes
+        .checked_add(1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let final_nodes = draft_nodes
+        .checked_add(1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let measured = footprint_meter.estimate();
+    let cost = super::budget::resident_cost! {
+        comparison_work: measured.comparison_work(),
+        compute_work: measured.compute_work()
+            .checked_add(count_u64.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        output_elements: count,
+        output_bytes,
+        temporary_bytes: retained_bytes
+            .checked_mul(2)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        cloned_bytes: retained_bytes
+            .checked_mul(2)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        container_bytes,
+        retained_nodes: super::budget::checked_cost_sum(&[
+            measured.retained_nodes(),
+            draft_nodes,
+            final_nodes,
+        ])?,
+        ..super::budget::KernelCostEstimate::default()
+    };
+    Ok(super::budget::PreparedKernel::new(
+        (count, finalization_work),
+        cost,
+    ))
+}
+
 fn matrix_literal(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -356,85 +437,18 @@ fn matrix_literal(
             let metadata = kernel
                 .snapshot_output()
                 .ok_or(ResidentKernelError::InvalidOutput)?;
-            let mut retained_bytes = 0usize;
-            let mut input_nodes = 0u64;
-            let mut finalization_work = 0u64;
-            let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
-            for source in 0..count {
-                let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
-                    return Err(ResidentKernelError::InvalidInput);
-                };
-                let footprint = super::budget::measure_canonical_value_footprint(
-                    &mut footprint_meter,
-                    value,
-                    schemas,
-                )?;
-                retained_bytes = retained_bytes
-                    .checked_add(checked_cost_usize(footprint.retained_bytes)?)
-                    .ok_or(ResidentKernelError::InvalidShape)?;
-                input_nodes = input_nodes
-                    .checked_add(footprint.node_count)
-                    .ok_or(ResidentKernelError::InvalidShape)?;
-                let schema = value
-                    .validate_against(schemas)
-                    .map_err(|_| ResidentKernelError::InvalidInput)?;
-                finalization_work = finalization_work
-                    .checked_add(super::budget::preflight_canonical_data_finalization(
-                        &mut footprint_meter,
-                        schema.body(),
-                        value.data(),
-                    )?)
-                    .ok_or(ResidentKernelError::InvalidShape)?;
-            }
-            if let Some(previous) = target.as_ref() {
-                super::budget::measure_canonical_value_footprint(
-                    &mut footprint_meter,
-                    previous,
-                    schemas,
-                )?;
-            }
-            let container_bytes = count
-                .checked_mul(core::mem::size_of::<ValueDataDraft>())
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            let output_bytes = retained_bytes
-                .checked_add(container_bytes)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            let count_u64 = super::budget::checked_u64(count)?;
-            let child_data_nodes = input_nodes
-                .checked_sub(count_u64)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            let draft_nodes = child_data_nodes
-                .checked_add(1)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            let final_nodes = draft_nodes
-                .checked_add(1)
-                .ok_or(ResidentKernelError::InvalidShape)?;
-            let measured = footprint_meter.estimate();
-            let cost = super::budget::resident_cost! {
-                comparison_work: measured.comparison_work(),
-                compute_work: measured.compute_work()
-                    .checked_add(count_u64.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?)
-                    .ok_or(ResidentKernelError::InvalidShape)?,
-                output_elements: count,
-                output_bytes,
-                temporary_bytes: retained_bytes
-                    .checked_mul(2)
-                    .ok_or(ResidentKernelError::InvalidShape)?,
-                cloned_bytes: retained_bytes
-                    .checked_mul(2)
-                    .ok_or(ResidentKernelError::InvalidShape)?,
-                container_bytes,
-                retained_nodes: super::budget::checked_cost_sum(&[
-                    measured.retained_nodes(),
-                    draft_nodes,
-                    final_nodes,
-                ])?,
-                ..super::budget::KernelCostEstimate::default()
-            };
-            let (count, canonicalization_work_limit) =
-                super::budget::PreparedKernel::new((count, finalization_work), cost)
-                    .admit()?
-                    .into_plan();
+            let (count, canonicalization_work_limit) = prepare_snapshot_literal(
+                schemas,
+                count,
+                |source| match inputs.get(source) {
+                    Some(ResidentValueRef::Snapshot([Some(value)])) => Ok(value),
+                    _ => Err(ResidentKernelError::InvalidInput),
+                },
+                target.as_ref(),
+                super::budget::ResidentBudgetMeter::default(),
+            )?
+            .admit()?
+            .into_plan();
             let mut elements = Vec::with_capacity(count);
             for source in 0..count {
                 let Some(ResidentValueRef::Snapshot([Some(value)])) = inputs.get(source) else {
@@ -547,6 +561,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         }
     }

@@ -110,6 +110,7 @@ full-hosts = [
       ]
 compute_backends_native = [
       "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native", "mech-gpu/jit",
+      "mech-browser/pointer",
       "mech-runtime/compute",
       "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
       "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
@@ -125,7 +126,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
 cli_core = []
 cli-product = ["cli_core", "build", "formatter", "serve", "bundle_web", "run"]
 cli = ["cli-product"]
-formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
+formatter_core = ["serde", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
 build = [
       "cli_core", "compiler",
       "dep:mech-build",
@@ -148,9 +149,10 @@ project = ["mech-runtime", "mech-runtime/source"]
 cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
 bundle_web_core = [
-      "project", "web_host", "formatter_core", "serde",
+      "project", "web_host", "formatter_core", "serde", "dep:sha2", "dep:tempfile",
+      "dep:mech-build", "mech-build/process-supervision",
       "mech-engine/compiler", "mech-syntax/program", "mech-stdlib/standard_compiler",
-      "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source", "mech-runtime/pretty_print",
       ]
 bundle_web = ["cli_core", "bundle_web_core"]
 # `mech serve` owns the same retained source-to-resident compilation boundary as
@@ -158,12 +160,12 @@ bundle_web = ["cli_core", "bundle_web_core"]
 # standard source catalog on this product feature so reduced browser/Windows
 # builds cannot inherit them accidentally from a distribution default.
 serve = [
-      "cli_core", "project", "web_host", "formatter_core",
+      "cli_core", "project", "web_host", "formatter_core", "dep:sha2",
       "mech-engine/runtime", "mech-engine/source", "mech-engine/compiler",
       "mech-syntax/program",
       "mech-stdlib/standard_compiler",
       "mech-stdlib/math_add_assign", "mech-stdlib/math_sub_assign",
-      "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      "mech-runtime/compiler", "mech-runtime/resident-routing-source", "mech-runtime/pretty_print",
       "mech-runtime/watcher", "ignore",
       ]
 host_delegation = ["serde", "mech-runtime", "mech-runtime/host_delegation", "mech-browser", "mech-browser/delegation"]
@@ -172,7 +174,7 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # authority, but it does not compile or execute them. Keep that runtime-kernel
 # closure explicit without pulling in the semantic compiler.
 formatter = [
-      "cli_core", "formatter_core",
+      "cli_core", "formatter_core", "dep:sha2",
       "mech-runtime", "mech-runtime/source", "mech-runtime/pretty_print", "mech-runtime/serde",
       ]
 async = []
@@ -426,6 +428,7 @@ mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false
 windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
 
 [dependencies]
+tempfile = { version = "3.26.0", optional = true }
 mech-core        = { version = "0.3.5", path = "src/core", default-features = false }
 mech-syntax      = { version = "0.3.5", path = "src/syntax", default-features = false }
 mech-engine = { version = "0.3.5", path = "src/engine", default-features = false }
@@ -441,6 +444,7 @@ mech-scene = { version = "0.3.5", path = "hosts/scene", default-features = false
 mech-robot-arm = { version = "0.3.5", path = "hosts/robot-arm", default-features = false, optional = true }
 mech-compute = { version = "0.3.5", path = "src/compute", optional = true }
 mech-gpu = { version = "0.3.5", path = "hosts/gpu", default-features = false, optional = true }
+sha2 = { version = "0.10", optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"

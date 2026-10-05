@@ -1,6 +1,6 @@
 use mech_syntax::document::{
     DiagnosticAnchor, DocumentId, NodeFlags, ParseConfig, ParseLimits, Revision, SyntaxKind,
-    SyntaxNode, TextSize, TextSnapshot, TokenFlags, parse_document, reconstruct_source,
+    SyntaxNode, TextSize, TextSnapshot, TokenFlags, parse_canonical_document, reconstruct_source,
     validate_lossless,
 };
 use proptest::prelude::*;
@@ -11,10 +11,38 @@ fn unicode_string(max_chars: usize) -> impl Strategy<Value = String> {
 }
 
 fn parse_with_limits(text: &str, limits: ParseLimits) -> mech_syntax::document::SyntaxSnapshot {
-    parse_document(
+    parse_canonical_document(
         TextSnapshot::new(DocumentId(100), Revision(0), text).unwrap(),
         ParseConfig { limits },
     )
+}
+
+fn count_kind(node: &SyntaxNode, kind: SyntaxKind) -> usize {
+    usize::from(node.kind() == kind)
+        + node
+            .children()
+            .map(|child| count_kind(&child, kind))
+            .sum::<usize>()
+}
+
+// A canonical expression can continue across physical lines. Arbitrary mutations
+// therefore cannot promise a later heading merely because a newline follows them.
+// Comment owners, unlike expressions or unterminated string/delimiter owners, are
+// physically line bounded. Prefix each original line without removing mutation
+// bytes or normalizing CR, LF, or CRLF so this property has an independent boundary.
+fn comment_owned_mutation(prefix: &str) -> String {
+    let mut owned = String::from("-- ");
+    let mut characters = prefix.chars().peekable();
+    while let Some(character) = characters.next() {
+        owned.push(character);
+        if character == '\r' && characters.peek() == Some(&'\n') {
+            owned.push(characters.next().unwrap());
+        }
+        if matches!(character, '\r' | '\n') {
+            owned.push_str("-- ");
+        }
+    }
+    owned
 }
 
 fn assert_node_invariants(node: &SyntaxNode, source_len: TextSize) {
@@ -69,7 +97,7 @@ fn assert_snapshot_invariants(
         if let Some(rule) = diagnostic.rule {
             assert!(
                 mech_syntax::document::parser::canonical_rule_name(rule).is_some(),
-                "parser diagnostic used a RuleId outside the Phase 0 inventory"
+                "parser diagnostic used a RuleId outside the canonical rule registry"
             );
         }
         if let Some(mech_syntax::document::RecoveryAction::Abandon { rule, .. }) =
@@ -77,7 +105,7 @@ fn assert_snapshot_invariants(
         {
             assert!(
                 mech_syntax::document::parser::canonical_rule_name(*rule).is_some(),
-                "abandon recovery used a RuleId outside the Phase 0 inventory"
+                "abandon recovery used a RuleId outside the canonical rule registry"
             );
         }
         let range = diagnostic
@@ -132,22 +160,60 @@ proptest! {
   }
 
   #[test]
-  fn later_canonical_heading_survives_earlier_mutation(prefix in unicode_string(96)) {
+  fn later_heading_survives_comment_owned_utf8_mutation(prefix in unicode_string(96)) {
+    let owned = comment_owned_mutation(&prefix);
     let text = format!(
-      "x := {prefix}\n1. Stable Heading\n----------------\nlater paragraph\n"
+      "x :=;\n{owned}\n1. Stable Heading\n----------------\nlater paragraph\n"
     );
     let limits = ParseLimits::default();
     let snapshot = parse_with_limits(&text, limits);
     assert_snapshot_invariants(&text, &snapshot, limits);
-    let headings = snapshot
-      .syntax()
-      .children()
-      .flat_map(|node| node.children().collect::<Vec<_>>())
-      .flat_map(|node| node.children().collect::<Vec<_>>())
-      .filter(|node| node.kind() == SyntaxKind::UlSubtitle)
-      .count();
-    prop_assert_eq!(headings, 1);
+    prop_assert!(snapshot.diagnostics.iter().any(|diagnostic|
+      diagnostic.code.as_str() == "syntax/missing-variable-definition-value"
+    ));
+    prop_assert_eq!(count_kind(&snapshot.syntax(), SyntaxKind::UlSubtitle), 1);
   }
+}
+
+#[test]
+fn canonical_newline_continuation_seed_has_an_owned_restart_control() {
+    let limits = ParseLimits::default();
+    let raw = "x := ¡_\n1. Stable Heading\n----------------\nlater paragraph\n";
+    let raw_snapshot = parse_with_limits(raw, limits);
+    assert_snapshot_invariants(raw, &raw_snapshot, limits);
+    assert_eq!(
+        count_kind(&raw_snapshot.syntax(), SyntaxKind::UlSubtitle),
+        0
+    );
+    let error = raw_snapshot
+        .syntax()
+        .children()
+        .find(|node| node.kind() == SyntaxKind::Error)
+        .expect("canonical continuation leaves the unaccepted document tail owned by Error");
+    assert_eq!(
+        error.text().unwrap(),
+        ":= ¡_\n1. Stable Heading\n----------------\nlater paragraph\n"
+    );
+
+    for prefix in ["¡_", "\"( [ { ```", "one\rtwo\nthree\r\nfour"] {
+        let protected = format!(
+            "x :=;\n{}\n1. Stable Heading\n----------------\nlater paragraph\n",
+            comment_owned_mutation(prefix)
+        );
+        let protected_snapshot = parse_with_limits(&protected, limits);
+        assert_snapshot_invariants(&protected, &protected_snapshot, limits);
+        assert_eq!(
+            count_kind(&protected_snapshot.syntax(), SyntaxKind::UlSubtitle),
+            1
+        );
+        assert!(protected_snapshot.diagnostics.iter().any(
+            |diagnostic| diagnostic.code.as_str() == "syntax/missing-variable-definition-value"
+        ));
+    }
+    assert_eq!(
+        comment_owned_mutation("one\rtwo\nthree\r\nfour"),
+        "-- one\r-- two\n-- three\r\n-- four"
+    );
 }
 
 #[test]

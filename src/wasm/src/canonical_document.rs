@@ -100,9 +100,12 @@ fn browser_source_error(message: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "mika")]
     use mech_engine::CanonicalSourceFrontend;
+    #[cfg(feature = "mika")]
     use mech_runtime::{CanonicalRenderScope, RuntimeValueSnapshot};
 
+    #[cfg(feature = "mika")]
     fn results(
         owner: mech_syntax::document::DocumentScopeId,
         scope: CanonicalRenderScope,
@@ -203,10 +206,21 @@ mod tests {
                 results(child.scope_id(), CanonicalRenderScope::Root, &child_root),
             ])
             .unwrap();
-        assert!(!rendered.contains(">1\n<"), "{rendered}");
-        assert!(rendered.contains(">2\n<"), "{rendered}");
-        assert!(rendered.contains(">3\n<"), "{rendered}");
-        assert!(rendered.contains(">4\n<"), "{rendered}");
+        let source_blocks = rendered
+            .split("<pre><code>")
+            .skip(1)
+            .map(|block| {
+                let (code, _) = block.split_once("</code></pre>").unwrap();
+                code.split('<')
+                    .map(|part| part.split_once('>').map_or(part, |(_, text)| text))
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(source_blocks, ["2\n", "3\n", "4\n"], "{rendered}");
+        assert_eq!(
+            rendered.matches("<figcaption class='mech-output'>").count(),
+            2
+        );
 
         let newer = document.replace_source("answer := 5\n").unwrap();
         assert!(

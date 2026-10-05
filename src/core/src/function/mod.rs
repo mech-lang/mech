@@ -15,7 +15,6 @@ pub use signature::*;
 pub use specialization::*;
 pub use state::*;
 
-use crate::nodes::*;
 use crate::types::*;
 use crate::*;
 
@@ -27,8 +26,6 @@ use alloc::{
 };
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 use hashbrown::HashSet as HashBrownSet;
-#[cfg(feature = "functions")]
-use indexmap::map::IndexMap;
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 type HashSet<T> = HashBrownSet<T, core::hash::BuildHasherDefault<fxhash::FxHasher>>;
 use core::fmt;
@@ -39,147 +36,10 @@ use std::rc::Rc;
 #[cfg(feature = "pretty_print")]
 use tabled::{
     builder::Builder,
-    settings::{Alignment, Panel, Style},
+    settings::{Panel, Style},
 };
 
 // Functions ------------------------------------------------------------------
-
-/// Program-local user-function definitions keyed by their stable name hash.
-///
-/// The backing map is intentionally opaque so callers cannot accidentally
-/// replace a different name that happens to share the same stable ID.
-#[derive(Clone, Default)]
-pub struct UserFunctionTable {
-    definitions: HashMap<u64, FunctionDefinition>,
-}
-
-impl UserFunctionTable {
-    /// Resolves one exact source-visible name.
-    pub fn resolve_name(&self, name: &str) -> Option<&FunctionDefinition> {
-        let id = hash_str(name);
-        self.definitions
-            .get(&id)
-            .filter(|definition| definition.name == name)
-    }
-
-    /// Inserts a definition, replacing an existing definition only when both
-    /// definitions have the exact same name.
-    pub fn insert_or_replace(
-        &mut self,
-        definition: FunctionDefinition,
-    ) -> MResult<Option<FunctionDefinition>> {
-        validate_user_function_definition(&definition)?;
-
-        if let Some(existing) = self.definitions.get(&definition.id)
-            && existing.name != definition.name
-        {
-            return Err(MechError::new(
-                UserFunctionIdCollision {
-                    id: definition.id,
-                    existing_name: existing.name.clone(),
-                    incoming_name: definition.name,
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-
-        Ok(self.definitions.insert(definition.id, definition))
-    }
-
-    pub fn definitions(&self) -> impl ExactSizeIterator<Item = &FunctionDefinition> + '_ {
-        self.definitions.values()
-    }
-
-    pub fn len(&self) -> usize {
-        self.definitions.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.definitions.is_empty()
-    }
-
-    pub fn clear(&mut self) {
-        self.definitions.clear();
-    }
-}
-
-fn validate_user_function_definition(definition: &FunctionDefinition) -> MResult<()> {
-    if definition.name.is_empty() {
-        return Err(invalid_user_function_definition(
-            definition,
-            "name must not be empty",
-        ));
-    }
-
-    let expected = hash_str(&definition.name);
-    if expected != definition.id {
-        return Err(invalid_user_function_definition(
-            definition,
-            format!(
-                "name hashes to 0x{expected:016x}, not 0x{:016x}",
-                definition.id,
-            ),
-        ));
-    }
-
-    Ok(())
-}
-
-fn invalid_user_function_definition(
-    definition: &FunctionDefinition,
-    reason: impl Into<String>,
-) -> MechError {
-    MechError::new(
-        UserFunctionInvalidDefinition {
-            id: definition.id,
-            name: definition.name.clone(),
-            reason: reason.into(),
-        },
-        None,
-    )
-    .with_compiler_loc()
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UserFunctionInvalidDefinition {
-    pub id: u64,
-    pub name: String,
-    pub reason: String,
-}
-
-impl MechErrorKind for UserFunctionInvalidDefinition {
-    fn name(&self) -> &str {
-        "UserFunctionInvalidDefinition"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "invalid user function {:?} at ID 0x{:016x}: {}",
-            self.name, self.id, self.reason,
-        )
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UserFunctionIdCollision {
-    pub id: u64,
-    pub existing_name: String,
-    pub incoming_name: String,
-}
-
-impl MechErrorKind for UserFunctionIdCollision {
-    fn name(&self) -> &str {
-        "UserFunctionIdCollision"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "user function names {:?} and {:?} collide at ID 0x{:016x}",
-            self.existing_name, self.incoming_name, self.id,
-        )
-    }
-}
 
 pub trait MechFunctionFactory {
     const SIGNATURE: RuntimeFunctionSignature;
@@ -1868,102 +1728,6 @@ impl MechErrorKind for TransactionStateBorrowConflictError {
             self.function, self.component,
         )
     }
-}
-
-#[derive(Clone)]
-pub struct FunctionDefinition {
-    pub code: FunctionDefine,
-    pub id: u64,
-    pub name: String,
-    pub input: IndexMap<u64, KindAnnotation>,
-    pub output: IndexMap<u64, KindAnnotation>,
-    pub symbols: SymbolTableRef,
-    pub out: ValueCell,
-    pub plan: Plan,
-}
-
-impl fmt::Debug for FunctionDefinition {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        #[cfg(feature = "pretty_print")]
-        return fmt::Display::fmt(&self.pretty_print(), f);
-        #[cfg(not(feature = "pretty_print"))]
-        write!(
-            f,
-            "FunctionDefinition {{ id: {}, name: {}, input: {:?}, output: {:?}, symbols: {:?} }}",
-            self.id,
-            self.name,
-            self.input,
-            self.output,
-            self.symbols.borrow()
-        )
-    }
-}
-
-#[cfg(feature = "pretty_print")]
-impl PrettyPrint for FunctionDefinition {
-    fn pretty_print(&self) -> String {
-        let input_str = format!("{:#?}", self.input);
-        let output_str = format!("{:#?}", self.output);
-        let symbols_str = format!("{:#?}", self.symbols);
-        let mut plan_str = "".to_string();
-        for step in self.plan.borrow().iter() {
-            plan_str = format!("{}  - {}\n", plan_str, step.to_string());
-        }
-        let data = vec![
-            "📥 Input",
-            &input_str,
-            "📤 Output",
-            &output_str,
-            "🔣 Symbols",
-            &symbols_str,
-            "📋 Plan",
-            &plan_str,
-        ];
-        let mut table = tabled::Table::new(data);
-        table
-            .with(Style::modern_rounded())
-            .with(Panel::header(format!(
-                "📈 UserFxn::{}\n({})",
-                self.name,
-                humanize(&self.id)
-            )))
-            .with(Alignment::left());
-        format!("{table}")
-    }
-}
-
-impl FunctionDefinition {
-    pub fn new(id: u64, name: String, code: FunctionDefine) -> Self {
-        Self {
-            id,
-            name,
-            code,
-            input: IndexMap::new(),
-            output: IndexMap::new(),
-            out: ValueCell::unit(),
-            symbols: Ref::new(SymbolTable::new()),
-            plan: Plan::new(),
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn solve_result(&self) -> MResult<ValueCell> {
-        let plan_brrw = self.plan.borrow();
-        for step in plan_brrw.iter() {
-            step.solve_result()?;
-        }
-        Ok(self.out.clone())
-    }
-
-    pub fn out(&self) -> ValueCell {
-        self.out.clone()
-    }
-}
-
-// User Function --------------------------------------------------------------
-
-pub struct UserFunction {
-    pub fxn: FunctionDefinition,
 }
 
 // Reactive Plan

@@ -82,8 +82,12 @@ def classify(
         docs_only = False
         cross_cutting = True
     if review_only:
-        runnable = {name for name in matched_names if owners[name]["command"] and not owners[name].get("docs", False)}
-        runnable.add("s8-review-regressions")
+        # A registered slice owns an explicit executable review contract. The
+        # ordinary path owners are accumulated and qualified on the landing
+        # candidate; running their complete suites here duplicates work and can
+        # make a slice red for accepted downstream prerequisites outside its
+        # review boundary.
+        runnable = {"s8-review-regressions"}
     elif docs_only:
         runnable: set[str] = set()
     elif cross_cutting:

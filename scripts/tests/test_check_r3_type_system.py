@@ -280,9 +280,9 @@ class R3TypeSystemCheckerTests(unittest.TestCase):
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/expressions/formulas.rs",
-            "        let invocation = crate::SpecializationInvocation::from_cells(",
-            "        lhs.representation();\n        let invocation = crate::SpecializationInvocation::from_cells(",
+            "src/engine/src/source_semantics/frontend.rs",
+            "        let (mut name, _) = operator_name(operator);",
+            "        lhs.representation();\n        let (mut name, _) = operator_name(operator);",
         )
         self.assert_failure(root, "formula + inspects runtime representation")
 
@@ -310,9 +310,9 @@ class R3TypeSystemCheckerTests(unittest.TestCase):
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/expressions/errors.rs",
-            "pub(super) found: ResolvedType,",
-            "pub(super) found: FunctionValueRepresentation,",
+            "src/engine/src/intrinsics/aggregate.rs",
+            "found: ResolvedType,",
+            "found: FunctionValueRepresentation,",
         )
         self.assert_failure(root, "expression diagnostics expose physical binding types")
 
@@ -320,11 +320,31 @@ class R3TypeSystemCheckerTests(unittest.TestCase):
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/expressions/errors.rs",
+            "src/engine/src/intrinsics/aggregate.rs",
             "self.found.semantic_name()",
             "format!(\"{:?}\", self.found)",
         )
         self.assert_failure(root, "does not format a semantic type name")
+
+    def test_source_match_guard_semantic_schema_regression_fails(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/source_semantics/frontend.rs",
+            "if schema.body != SchemaBody::Bool {",
+            "if schema.body != SchemaBody::F64 {",
+        )
+        self.assert_failure(root, "match guard does not require the semantic Boolean schema")
+
+    def test_source_match_exact_result_schema_regression_fails(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/source_semantics/frontend.rs",
+            ".is_some_and(|expected| expected != &schema)",
+            ".is_some_and(|_| false)",
+        )
+        self.assert_failure(root, "match arms do not require one exact semantic result schema")
 
     def test_30_full_ci_resident_conversion_regression_fails(self):
         root = self.fixture()

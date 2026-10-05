@@ -544,3 +544,50 @@ fn finalized_streams_mika_indexes_share_retained_owners_and_keep_local_resolutio
         .unwrap();
     assert_eq!(resolved.canonical_uri, "memory:app/child.mec");
 }
+
+#[test]
+fn canonical_context_resources_and_configured_wildcards_preserve_declared_interfaces() {
+    use std::collections::BTreeSet;
+    let index = index(
+        "@compute := compute://particles/kernel{:write(input/x), :write(input/y), :write(turn), :read(*)}\n@derived := @compute{:write(input/x)}\nquoted := \"@ghost/NAME\"\n<+ quoted\n",
+    );
+    assert_eq!(index.contexts.len(), 2);
+    assert_eq!(
+        index.contexts[0].declaration.base,
+        SourceContextBase::ResourceUri("compute://particles/kernel".into())
+    );
+    assert_eq!(
+        index.contexts[1].declaration.base,
+        SourceContextBase::Context("compute".into())
+    );
+    assert!(
+        index.address_references.is_empty(),
+        "quoted addresses and context bases are not reads"
+    );
+    assert_eq!(index.exports[0].declaration.name, "quoted");
+    assert_eq!(
+        index.contexts[0].declaration.capabilities[3].scope,
+        SourceContextCapabilityScope::Wildcard
+    );
+    for (grant, expected) in [
+        ("*", vec!["input/x", "input/y", "turn"]),
+        ("input/*", vec!["input/x", "input/y"]),
+    ] {
+        let authorized = index.contexts[0]
+            .declaration
+            .capabilities
+            .iter()
+            .filter(|capability| capability.operation == "write")
+            .filter_map(|capability| match &capability.scope {
+                SourceContextCapabilityScope::Path(path)
+                    if mech_runtime::run_resource_grant_path_allows(grant, path).unwrap() =>
+                {
+                    Some(path.as_str())
+                }
+                _ => None,
+            })
+            .collect::<BTreeSet<_>>();
+        assert_eq!(authorized, expected.into_iter().collect());
+        assert!(!authorized.contains("input/undeclared"));
+    }
+}

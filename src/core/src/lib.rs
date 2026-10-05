@@ -27,7 +27,7 @@ use std::fmt::{self, Debug, Display};
 #[cfg(feature = "no_std")]
 use alloc::vec::Vec;
 
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 use fxhash::FxHasher;
 #[cfg(all(feature = "no_std", not(feature = "std")))]
 type HashMap<K, V> = HashBrownMap<K, V, core::hash::BuildHasherDefault<FxHasher>>;
@@ -39,9 +39,11 @@ use std::io::{Cursor, Read, Write};
 use alloc::string::{String, ToString};
 
 #[cfg(feature = "no_std")]
-use core::hash::{Hash, Hasher};
+use core::hash::Hash;
+#[cfg(any(feature = "atom", feature = "complex", feature = "matrix"))]
+use core::hash::Hasher;
 #[cfg(not(feature = "no_std"))]
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 
 #[cfg(feature = "no_std")]
 use alloc::boxed::Box;
@@ -111,8 +113,11 @@ use num_rational::Rational64;
 ))]
 use tabled::{builder::Builder, settings::Style};
 
+pub mod browser_document;
 pub mod cell_binding;
 pub mod element;
+#[cfg(feature = "serde")]
+pub mod encoded_payload;
 pub mod error;
 pub mod execution;
 #[cfg(feature = "functions")]
@@ -124,7 +129,6 @@ pub mod memory_plan;
 pub mod memory_runtime;
 #[cfg(feature = "mika")]
 pub mod mika;
-pub mod nodes;
 pub mod program;
 #[cfg(feature = "range")]
 pub mod range;
@@ -137,13 +141,17 @@ pub mod resident_execution;
 pub(crate) mod runtime_storage;
 pub mod selector;
 pub mod snapshot;
+pub mod source_diagnostic;
 pub mod state_journal;
 pub mod stdlib;
 pub mod structures;
 pub mod types;
 
+pub use self::browser_document::root_document_program_output_id;
 pub use self::cell_binding::*;
 pub use self::element::*;
+#[cfg(feature = "serde")]
+pub use self::encoded_payload::*;
 pub use self::error::*;
 pub use self::execution::*;
 #[cfg(feature = "functions")]
@@ -155,7 +163,6 @@ pub use self::memory_plan::*;
 pub use self::memory_runtime::*;
 #[cfg(feature = "mika")]
 pub use self::mika::*;
-pub use self::nodes::*;
 pub use self::program::*;
 #[cfg(feature = "range")]
 pub use self::range::*;
@@ -170,6 +177,7 @@ pub use self::snapshot::{
     ConstantHandle, ConstantStore, ConstantStoreBuilder, SetValueRelation, SnapshotValueError,
     Value, ValueData, ValueDataDraft, ValueDraft,
 };
+pub use self::source_diagnostic::*;
 pub use self::state_journal::*;
 #[cfg(feature = "matrix")]
 pub use self::structures::matrix;
@@ -311,75 +319,6 @@ mod source_code_tests {
             hash_bytes(b"mech"),
             seahash::hash(b"mech") & 0x00FFFFFFFFFFFFFF
         );
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg(feature = "pretty_print")]
-pub struct IndexedString {
-    pub data: Vec<char>,
-    pub index_map: Vec<Vec<usize>>,
-    pub rows: usize,
-    pub cols: usize,
-}
-
-#[cfg(feature = "pretty_print")]
-impl IndexedString {
-    fn new(input: &str) -> Self {
-        let mut data = Vec::new();
-        let mut index_map = Vec::new();
-        let mut current_row = 0;
-        index_map.push(Vec::new());
-        for c in input.chars() {
-            data.push(c);
-            if c == '\n' {
-                index_map.push(Vec::new());
-                current_row += 1;
-            } else {
-                index_map[current_row].push(data.len() - 1);
-            }
-        }
-        let rows = index_map.len();
-        let cols = if rows > 0 { index_map[0].len() } else { 0 };
-        IndexedString {
-            data,
-            index_map,
-            rows,
-            cols,
-        }
-    }
-
-    fn to_string(&self) -> String {
-        self.data.iter().collect()
-    }
-
-    fn get(&self, row: usize, col: usize) -> Option<char> {
-        if row < self.rows {
-            let rowz = &self.index_map[row];
-            if col < rowz.len() {
-                let index = self.index_map[row][col];
-                Some(self.data[index])
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
-
-    fn set(&mut self, row: usize, col: usize, new_char: char) -> Result<(), String> {
-        if row < self.rows {
-            let row_indices = &mut self.index_map[row];
-            if col < row_indices.len() {
-                let index = row_indices[col];
-                self.data[index] = new_char;
-                Ok(())
-            } else {
-                Err("Column index out of bounds".to_string())
-            }
-        } else {
-            Err("Row index out of bounds".to_string())
-        }
     }
 }
 

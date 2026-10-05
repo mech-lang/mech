@@ -3064,7 +3064,7 @@ pattern-tuple := left-parenthesis, whitespace0,
 
 comment-sigil := "--"
                | "//" ;
-comment := *space-tab, comment-sigil, *(¬new-line, any-token) ;
+comment := *space-tab, comment-sigil, *(¬new-line, paragraph-element) ;
 op-assign-operator := add-assign-operator
                     | sub-assign-operator
                     | mul-assign-operator
@@ -3447,7 +3447,7 @@ subtitle := ¬(error-sigil | info-sigil), space-tab0,
             right-parenthesis, space-tab0, paragraph-newline,
             space-tab0, whitespace0 ;
 
-ordered-list-item := number, period, paragraph-newline ;
+ordered-list-item := number, period, ¬period, paragraph-newline ;
 checked-item := dash, left-bracket, ("x" | "✓" | "✗"),
                 right-bracket, paragraph-newline, paragraph-newline ;
 unchecked-item := dash, left-bracket, whitespace0, right-bracket,

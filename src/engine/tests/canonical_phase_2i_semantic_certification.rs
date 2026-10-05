@@ -255,7 +255,7 @@ fn semantic_completion_record_keeps_artifact_evidence_from_opening_s6() {
         rows.iter()
             .filter(|fields| fields[5] == "true" && fields[2] != "behavior-demonstrated")
             .count(),
-        4
+        1
     );
     assert!(!contains_named_test(
         "// #[test] fn stale() {}\nconst TEXT: &str = \"#[test] fn stale() {}\";",
@@ -410,6 +410,11 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
                 // The complete typed control body is sealed by the artifact
                 // bytecode below, including captures, guards, operations and yields.
                 hash.field("Match");
+            }
+            mech_engine::SourceNodeBody::Activation(_) => {
+                // The complete typed activation body is sealed by the artifact
+                // bytecode below, including patterns, captures and register writes.
+                hash.field("Activation");
             }
             mech_engine::SourceNodeBody::Fsm(_) => {
                 // Machine identity, named arguments, stage kinds, and complete

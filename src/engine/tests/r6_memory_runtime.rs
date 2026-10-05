@@ -267,45 +267,6 @@ fn realization_preserves_per_call_work_and_output_budget_scopes() {
         .unwrap();
 }
 
-#[test]
-fn ordinary_source_literals_enter_one_interpreter_memory_session() {
-    use mech_core::{FunctionCatalogBuilder, NoMechExecutionServices};
-    use mech_engine::{CompilerPlanningConfig, CompilerPlanningProgram};
-    use std::sync::Arc;
-
-    let mut catalog = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_runtime(&mut catalog).unwrap();
-    mech_engine::install_intrinsic_compiler_runtime(&mut catalog).unwrap();
-    mech_engine::install_intrinsic_source(&mut catalog).unwrap();
-    let mut program = CompilerPlanningProgram::with_function_catalog(
-        CompilerPlanningConfig::default(),
-        Arc::new(catalog.build().unwrap()),
-    );
-    let tree = mech_syntax::parser::parse(
-        "number := 1.0\ntext := \"managed\"\nmatrix := [1.0 2.0; 3.0 4.0]\nnumber",
-    )
-    .unwrap();
-    let mut services = NoMechExecutionServices;
-    program
-        .plan_tree_with_services(&tree, &mut services)
-        .unwrap();
-
-    let values = program
-        .compiler_root_symbol_cells(&["number", "text", "matrix"])
-        .unwrap();
-    let owner = values[0].1.memory_domain().unwrap().id();
-    assert!(
-        values
-            .iter()
-            .all(|(_, value)| value.memory_domain().unwrap().id() == owner),
-        "source cells escaped the interpreter session: {:?}",
-        values
-            .iter()
-            .map(|(name, value)| (name, value.memory_domain().unwrap().id()))
-            .collect::<Vec<_>>()
-    );
-}
-
 mod managed_index_conversion {
     use mech_core::*;
 
@@ -431,6 +392,397 @@ mod managed_index_conversion {
     selector_family!(i128_ports_are_managed, i128, 1, 2);
     selector_family!(f32_fractional_ports_are_managed, f32, 1.9, 2.5);
     selector_family!(f64_fractional_ports_are_managed, f64, 1.9, 2.5);
+
+    fn assert_interval_source(
+        source: &ValueCell,
+        body: &SchemaBody,
+        descriptor: &ResolvedValueDescriptor,
+        identity: CanonicalCellId,
+        version: PublishedValueVersion,
+        data: ValueDataDraft,
+    ) {
+        let value = source.snapshot().unwrap();
+        assert_eq!(&source.closed_schema_body().unwrap(), body);
+        assert_eq!(&source.resolved_descriptor().unwrap(), descriptor);
+        assert_eq!(value.shape(), descriptor.shape());
+        assert_eq!(value.canonical_data_draft().unwrap(), data);
+        assert_eq!(source.reactive_cell_id(), identity);
+        assert_eq!(source.published_version(), version);
+    }
+
+    fn assert_index_output(
+        output: &ValueCell,
+        descriptor: &ResolvedValueDescriptor,
+        identity: CanonicalCellId,
+        expected: &[u64],
+    ) {
+        assert_eq!(&output.resolved_descriptor().unwrap(), descriptor);
+        assert_eq!(output.snapshot().unwrap().shape(), descriptor.shape());
+        assert_eq!(output.reactive_cell_id(), identity);
+        assert_eq!(indices(output).as_slice(), expected);
+    }
+
+    fn interval_selectors_are_managed(
+        element: SchemaBody,
+        payload: fn(i128) -> ValueDataDraft,
+        invalid_ordinals: &[i128],
+    ) {
+        let session = MemoryDomain::new().unwrap();
+        let source = ValueCell::from_schema_data(element.clone(), payload(1))
+            .unwrap()
+            .import_owned_in(&session)
+            .unwrap();
+        let source_alias = source.clone();
+        let source_descriptor = source.resolved_descriptor().unwrap();
+        let source_identity = source.reactive_cell_id();
+        let output = ValueCell::from_exact_in(&session, 1_usize).unwrap();
+        let output_alias = output.clone();
+        let output_descriptor = output.resolved_descriptor().unwrap();
+        let output_identity = output.reactive_cell_id();
+        let function = bind(source.clone(), output.clone());
+        let version = source.published_version();
+        function.instance().solve_result().unwrap();
+        assert_interval_source(
+            &source_alias,
+            &element,
+            &source_descriptor,
+            source_identity,
+            version,
+            payload(1),
+        );
+        assert_index_output(&output_alias, &output_descriptor, output_identity, &[1]);
+
+        let replace_scalar = |ordinal| {
+            // A checked value with the same interval schema is supplied, not
+            // an implicitly narrowed primitive snapshot.
+            let candidate = ValueCell::from_schema_data(element.clone(), payload(ordinal))
+                .unwrap()
+                .snapshot()
+                .unwrap();
+            source.replace(&candidate).unwrap();
+        };
+        replace_scalar(2);
+        let version = source.published_version();
+        function.instance().solve_result().unwrap();
+        assert_interval_source(
+            &source_alias,
+            &element,
+            &source_descriptor,
+            source_identity,
+            version,
+            payload(2),
+        );
+        let mut expected = 2;
+        assert_index_output(
+            &output_alias,
+            &output_descriptor,
+            output_identity,
+            &[expected],
+        );
+        for (attempt, &ordinal) in invalid_ordinals.iter().enumerate() {
+            replace_scalar(ordinal);
+            let input_version = source.published_version();
+            let output_version = output.published_version();
+            assert_eq!(
+                function.instance().solve_result().unwrap_err().kind_name(),
+                "CannotConvertToType"
+            );
+            assert_interval_source(
+                &source_alias,
+                &element,
+                &source_descriptor,
+                source_identity,
+                input_version,
+                payload(ordinal),
+            );
+            assert_index_output(
+                &output_alias,
+                &output_descriptor,
+                output_identity,
+                &[expected],
+            );
+            assert_eq!(output.published_version(), output_version);
+
+            expected = 3 + attempt as u64;
+            replace_scalar(i128::from(expected));
+            let input_version = source.published_version();
+            function.instance().solve_result().unwrap();
+            assert_interval_source(
+                &source_alias,
+                &element,
+                &source_descriptor,
+                source_identity,
+                input_version,
+                payload(i128::from(expected)),
+            );
+            assert_index_output(
+                &output_alias,
+                &output_descriptor,
+                output_identity,
+                &[expected],
+            );
+            assert!(output.published_version() > output_version);
+        }
+
+        let body = SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)]
+                .into_boxed_slice(),
+        };
+        let matrix =
+            |values: &[i128]| ValueDataDraft::Matrix(values.iter().copied().map(payload).collect());
+        let source = ValueCell::from_schema_data(body.clone(), matrix(&[1, 6, 2, 5, 3, 4]))
+            .unwrap()
+            .import_owned_in(&session)
+            .unwrap();
+        let source_alias = source.clone();
+        let source_descriptor = source.resolved_descriptor().unwrap();
+        let source_identity = source.reactive_cell_id();
+        let output =
+            ValueCell::from_exact_in(&session, nalgebra::DMatrix::from_element(6, 1, 1_usize))
+                .unwrap();
+        let output_alias = output.clone();
+        let output_descriptor = output.resolved_descriptor().unwrap();
+        let output_identity = output.reactive_cell_id();
+        assert_eq!(
+            source_descriptor.current_extents().unwrap().as_ref(),
+            &[2, 3]
+        );
+        assert_eq!(
+            output_descriptor.current_extents().unwrap().as_ref(),
+            &[6, 1]
+        );
+        let function = bind(source.clone(), output.clone());
+        let version = source.published_version();
+        function.instance().solve_result().unwrap();
+        assert_interval_source(
+            &source_alias,
+            &body,
+            &source_descriptor,
+            source_identity,
+            version,
+            matrix(&[1, 6, 2, 5, 3, 4]),
+        );
+        assert_index_output(
+            &output_alias,
+            &output_descriptor,
+            output_identity,
+            &[1, 6, 2, 5, 3, 4],
+        );
+
+        let replace_matrix = |values: &[i128]| {
+            let candidate = ValueCell::from_schema_data(body.clone(), matrix(values))
+                .unwrap()
+                .snapshot()
+                .unwrap();
+            source.replace(&candidate).unwrap();
+        };
+        let mut expected = [2, 7, 2, 6, 4, 5];
+        replace_matrix(&expected);
+        let version = source.published_version();
+        function.instance().solve_result().unwrap();
+        assert_interval_source(
+            &source_alias,
+            &body,
+            &source_descriptor,
+            source_identity,
+            version,
+            matrix(&expected),
+        );
+        assert_index_output(
+            &output_alias,
+            &output_descriptor,
+            output_identity,
+            &expected.map(|value| value as u64),
+        );
+        for (attempt, &ordinal) in invalid_ordinals.iter().enumerate() {
+            // The last member satisfies interval membership, but not the
+            // portable positive-selector contract. A valid prefix must not
+            // leak into the previously published Index output.
+            let invalid = [8, 4, 8, 3, 7, ordinal];
+            replace_matrix(&invalid);
+            let input_version = source.published_version();
+            let output_version = output.published_version();
+            assert_eq!(
+                function.instance().solve_result().unwrap_err().kind_name(),
+                "CannotConvertToType"
+            );
+            assert_interval_source(
+                &source_alias,
+                &body,
+                &source_descriptor,
+                source_identity,
+                input_version,
+                matrix(&invalid),
+            );
+            assert_index_output(
+                &output_alias,
+                &output_descriptor,
+                output_identity,
+                &expected.map(|value| value as u64),
+            );
+            assert_eq!(output.published_version(), output_version);
+
+            expected = [3 + attempt as i128, 8, 3 + attempt as i128, 7, 5, 6];
+            replace_matrix(&expected);
+            let input_version = source.published_version();
+            function.instance().solve_result().unwrap();
+            assert_interval_source(
+                &source_alias,
+                &body,
+                &source_descriptor,
+                source_identity,
+                input_version,
+                matrix(&expected),
+            );
+            assert_index_output(
+                &output_alias,
+                &output_descriptor,
+                output_identity,
+                &expected.map(|value| value as u64),
+            );
+            assert!(output.published_version() > output_version);
+        }
+    }
+
+    fn interval_matrix_binds_without_prior_scalar_conversion(
+        element: SchemaBody,
+        payload: fn(i128) -> ValueDataDraft,
+    ) {
+        let session = MemoryDomain::new().unwrap();
+        let body = SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)]
+                .into_boxed_slice(),
+        };
+        let data = ValueDataDraft::Matrix([1, 6, 2, 5, 3, 4].into_iter().map(payload).collect());
+        let source = ValueCell::from_schema_data(body.clone(), data.clone())
+            .unwrap()
+            .import_owned_in(&session)
+            .unwrap();
+        let descriptor = source.resolved_descriptor().unwrap();
+        let identity = source.reactive_cell_id();
+        let version = source.published_version();
+        let output =
+            ValueCell::from_exact_in(&session, nalgebra::DMatrix::from_element(6, 1, 1_usize))
+                .unwrap();
+        let output_descriptor = output.resolved_descriptor().unwrap();
+        let output_identity = output.reactive_cell_id();
+        let function = bind(source.clone(), output.clone());
+        function.instance().solve_result().unwrap();
+        assert_interval_source(&source, &body, &descriptor, identity, version, data);
+        assert_index_output(
+            &output,
+            &output_descriptor,
+            output_identity,
+            &[1, 6, 2, 5, 3, 4],
+        );
+    }
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn u8_interval_matrix_binds_without_prior_scalar_conversion() {
+        interval_matrix_binds_without_prior_scalar_conversion(
+            SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+                width: IntegerWidth::W8,
+                lower: 0,
+                upper: 9,
+                upper_inclusive: true,
+            }),
+            |value| ValueDataDraft::U8(value.try_into().unwrap()),
+        );
+    }
+
+    #[cfg(feature = "i64")]
+    #[test]
+    fn i64_interval_matrix_binds_without_prior_scalar_conversion() {
+        interval_matrix_binds_without_prior_scalar_conversion(
+            SchemaBody::IntegerInterval(IntegerInterval::Signed {
+                width: IntegerWidth::W64,
+                lower: -1,
+                upper: 9,
+                upper_inclusive: true,
+            }),
+            |value| ValueDataDraft::I64(value.try_into().unwrap()),
+        );
+    }
+
+    macro_rules! unsigned_interval_family {
+        ($name:ident, $feature:literal, $variant:ident, $width:ident, $upper:expr, [$($invalid:expr),+]) => {
+            #[cfg(feature = $feature)]
+            #[test]
+            fn $name() {
+                interval_selectors_are_managed(
+                    SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+                        width: IntegerWidth::$width,
+                        lower: 0,
+                        upper: $upper,
+                        upper_inclusive: true,
+                    }),
+                    |value| ValueDataDraft::$variant(value.try_into().unwrap()),
+                    &[$($invalid),+],
+                );
+            }
+        };
+    }
+
+    macro_rules! signed_interval_family {
+        ($name:ident, $feature:literal, $variant:ident, $width:ident, $upper:expr, [$($invalid:expr),+]) => {
+            #[cfg(feature = $feature)]
+            #[test]
+            fn $name() {
+                interval_selectors_are_managed(
+                    SchemaBody::IntegerInterval(IntegerInterval::Signed {
+                        width: IntegerWidth::$width,
+                        lower: -1,
+                        upper: $upper,
+                        upper_inclusive: true,
+                    }),
+                    |value| ValueDataDraft::$variant(value.try_into().unwrap()),
+                    &[$($invalid),+],
+                );
+            }
+        };
+    }
+
+    unsigned_interval_family!(u8_interval_ports_are_managed, "u8", U8, W8, 9, [0]);
+    unsigned_interval_family!(u16_interval_ports_are_managed, "u16", U16, W16, 9, [0]);
+    unsigned_interval_family!(u32_interval_ports_are_managed, "u32", U32, W32, 9, [0]);
+    unsigned_interval_family!(
+        u64_interval_ports_are_managed,
+        "u64",
+        U64,
+        W64,
+        u128::from(PORTABLE_SELECTOR_INDEX_MAX) + 1,
+        [0, i128::from(PORTABLE_SELECTOR_INDEX_MAX) + 1]
+    );
+    unsigned_interval_family!(
+        u128_interval_ports_are_managed,
+        "u128",
+        U128,
+        W128,
+        u128::from(PORTABLE_SELECTOR_INDEX_MAX) + 1,
+        [0, i128::from(PORTABLE_SELECTOR_INDEX_MAX) + 1]
+    );
+    signed_interval_family!(i8_interval_ports_are_managed, "i8", I8, W8, 9, [0, -1]);
+    signed_interval_family!(i16_interval_ports_are_managed, "i16", I16, W16, 9, [0, -1]);
+    signed_interval_family!(i32_interval_ports_are_managed, "i32", I32, W32, 9, [0, -1]);
+    signed_interval_family!(
+        i64_interval_ports_are_managed,
+        "i64",
+        I64,
+        W64,
+        i128::from(PORTABLE_SELECTOR_INDEX_MAX) + 1,
+        [0, -1, i128::from(PORTABLE_SELECTOR_INDEX_MAX) + 1]
+    );
+    signed_interval_family!(
+        i128_interval_ports_are_managed,
+        "i128",
+        I128,
+        W128,
+        i128::from(PORTABLE_SELECTOR_INDEX_MAX) + 1,
+        [0, -1, i128::from(PORTABLE_SELECTOR_INDEX_MAX) + 1]
+    );
 }
 
 #[cfg(feature = "resident-artifact")]

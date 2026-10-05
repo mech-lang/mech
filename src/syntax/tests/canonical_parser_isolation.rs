@@ -1693,74 +1693,122 @@ fn phase_2d_sources_do_not_reference_unported_expression_parent_rules() {
     }
 }
 
+fn retired_prototype_surfaces(source: &str) -> Vec<&'static str> {
+    let tokens = rust_tokens(source);
+    let mut found = Vec::new();
+    for retired in [
+        "ParserImplementation",
+        "ParseRoot",
+        "ParseRequestError",
+        "PrototypeDocument",
+        "parse_document",
+        "parse_document_with_ids",
+        "parse_syntax",
+        "parse_fragment",
+        "FragmentKind",
+        "FragmentSnapshot",
+        "ParseContext",
+        "ParseMode",
+        "FenceDelimiter",
+        "ParseFailure",
+        "push_prototype",
+    ] {
+        if tokens.iter().any(|token| token == retired) {
+            found.push(retired);
+        }
+    }
+    for retired in ["document", "mech", "mechdown", "fragment"] {
+        if contains_token_sequence(source, &["pub", "mod", retired]) {
+            found.push(retired);
+        }
+    }
+    found
+}
+
 #[test]
-fn parser_surface_adds_only_the_s7_canonical_document_pair() {
+fn parser_surface_exposes_only_canonical_document_and_grammar_entries() {
     use mech_syntax::document::{
-        DocumentId, ParseConfig, ParseRequestError, ParseRoot, ParserImplementation, Revision,
-        TextSnapshot, parse_syntax,
+        DocumentId, ParseConfig, Revision, SyntaxKind, TextSnapshot, parse_canonical_document,
+        parse_canonical_grammar,
     };
 
     let source = || TextSnapshot::new(DocumentId(205), Revision(0), "").unwrap();
-    assert!(
-        parse_syntax(
-            source(),
-            ParseRoot::Document,
-            ParserImplementation::Prototype,
-            ParseConfig::default(),
-        )
-        .is_ok()
+    assert_eq!(
+        parse_canonical_document(source(), ParseConfig::default())
+            .root
+            .kind,
+        SyntaxKind::Document,
     );
-    assert!(
-        parse_syntax(
-            source(),
-            ParseRoot::Grammar,
-            ParserImplementation::Canonical,
-            ParseConfig::default(),
-        )
-        .is_ok()
+    assert_eq!(
+        parse_canonical_grammar(source(), ParseConfig::default())
+            .root
+            .kind,
+        SyntaxKind::GrammarDocument,
     );
-    assert!(
-        parse_syntax(
-            source(),
-            ParseRoot::Document,
-            ParserImplementation::Canonical,
-            ParseConfig::default(),
-        )
-        .is_ok()
-    );
-    assert!(matches!(
-        parse_syntax(
-            source(),
-            ParseRoot::Grammar,
-            ParserImplementation::Prototype,
-            ParseConfig::default(),
-        ),
-        Err(ParseRequestError::Unsupported {
-            implementation: ParserImplementation::Prototype,
-            root: ParseRoot::Grammar,
-        })
-    ));
 
-    let parser_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/document/parser/mod.rs");
-    let parser = fs::read_to_string(&parser_path)
-        .unwrap_or_else(|error| panic!("failed to read {}: {error}", parser_path.display()));
-    let variants = parser
-        .split("pub enum ParseRoot")
-        .nth(1)
-        .and_then(|tail| tail.split('}').next())
-        .map(|body| {
-            rust_tokens(body)
-                .into_iter()
-                .filter(|token| {
-                    token
-                        .chars()
-                        .next()
-                        .is_some_and(|character| character.is_ascii_alphabetic())
-                })
-                .collect::<Vec<_>>()
-        })
-        .expect("ParseRoot declaration");
-    assert_eq!(variants, vec!["Document", "Grammar"]);
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    for relative in [
+        "src/parser.rs",
+        "src/parser/mod.rs",
+        "src/document/parser/document.rs",
+        "src/document/parser/mech.rs",
+        "src/document/parser/mechdown.rs",
+        "src/document/parser/fragment.rs",
+    ] {
+        assert!(
+            !manifest.join(relative).exists(),
+            "retired prototype path {relative}"
+        );
+    }
+    for relative in [
+        "src/document/mod.rs",
+        "src/document/parser/mod.rs",
+        "src/document/parser/rule.rs",
+        "src/document/parser/recovery/mod.rs",
+    ] {
+        let parser = fs::read_to_string(manifest.join(relative)).unwrap();
+        assert!(
+            retired_prototype_surfaces(&parser).is_empty(),
+            "{relative} retains {:?}",
+            retired_prototype_surfaces(&parser)
+        );
+    }
+    let exports = fs::read_to_string(manifest.join("src/lib.rs")).unwrap();
+    assert!(
+        !contains_token_sequence(&exports, &["pub", "mod", "parser"]),
+        "retired crate-level Nom parser module export"
+    );
+    assert!(
+        !contains_token_sequence(&exports, &["pub", "use", "parser"]),
+        "retired crate-level Nom parser reexport"
+    );
+}
+
+#[test]
+fn prototype_absence_gate_rejects_restored_cfg_disabled_exports() {
+    for restored in [
+        "#[cfg(any())] pub mod mech;",
+        "#[cfg(any())] pub mod mechdown;",
+        "#[cfg(any())] pub mod fragment;",
+        "#[cfg(any())] pub fn parse_document() {}",
+        "#[cfg(any())] pub fn parse_syntax() {}",
+        "#[cfg(any())] pub fn parse_fragment() {}",
+        "#[cfg(any())] pub enum ParserImplementation { Prototype, Canonical }",
+        "#[cfg(any())] pub use retired::{FragmentKind, ParseContext};",
+        "#[cfg(any())] pub struct ParseFailure;",
+        "#[cfg(any())] pub fn push_prototype() {}",
+    ] {
+        assert!(
+            !retired_prototype_surfaces(restored).is_empty(),
+            "{restored}"
+        );
+    }
+    assert!(
+        retired_prototype_surfaces(
+            "pub fn parse_canonical_grammar_fragment() {} pub enum GrammarFragmentKind { Grammar }"
+        )
+        .is_empty()
+    );
 }
 
 #[test]

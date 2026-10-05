@@ -284,6 +284,15 @@ pub(crate) fn intrinsic_kind_satisfies_predicate(
         KindExpr::Named(id) => {
             BuiltinScalarKind::from_kind_id(*id).is_some_and(|kind| kind.satisfies(predicate))
         }
+        KindExpr::IntegerInterval(interval) => {
+            interval.is_valid()
+                && matches!(
+                    predicate,
+                    BuiltinKindPredicate::Ordered
+                        | BuiltinKindPredicate::Equatable
+                        | BuiltinKindPredicate::Keyable
+                )
+        }
         KindExpr::Index => matches!(
             predicate,
             BuiltinKindPredicate::Ordered

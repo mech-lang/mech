@@ -1,7 +1,4 @@
-use mech_core::{
-    BytecodeInstruction, MResult, ParsedProgram, RuntimeFunctionId, SchemaBody, hash_str,
-    snapshot::SequenceView,
-};
+use mech_core::{MResult, RuntimeFunctionId, SchemaBody, hash_str, snapshot::SequenceView};
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
 
 #[test]
@@ -18,22 +15,24 @@ fn dynamic_matrix_addition_bytecode_reconstructs_from_full_runtime() -> MResult<
         .compile_source(source)?
         .into_parts()
         .1;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-    let operation_ids = parsed
-        .instructions
+    let artifact = super::decoded_source_artifact(&bytecode)?;
+    let operations = artifact
+        .nodes()
         .iter()
-        .filter_map(|instruction| match instruction {
-            BytecodeInstruction::RuntimeBinary { function, .. } => Some(*function),
-            _ => None,
-        })
+        .filter_map(|node| node.as_operation())
+        .map(|node| node.operation.canonical_name())
         .collect::<Vec<_>>();
-    assert_eq!(operation_ids.last(), Some(&factory_id));
+    assert_eq!(operations.last().map(String::as_str), Some("math/add"));
     assert_eq!(
-        operation_ids
+        operations
             .iter()
-            .filter(|operation_id| **operation_id == factory_id)
+            .filter(|operation| *operation == "math/add")
             .count(),
         1,
+    );
+    assert_eq!(
+        super::result_source(&artifact),
+        super::operation_output(&artifact, "math/add", 2)
     );
 
     let catalog = mech::stdlib::source_catalog();

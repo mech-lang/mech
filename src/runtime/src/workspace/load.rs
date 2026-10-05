@@ -174,7 +174,6 @@ fn collect_loaded_modules(
                 version.source.clone(),
                 #[cfg(feature = "source")]
                 version.source_document.clone(),
-                version.syntax_tree.clone(),
             ),
         );
 
@@ -209,7 +208,6 @@ fn source_snapshot(
     module_version: ModuleVersionId,
     source: Option<MechSourceCode>,
     #[cfg(feature = "source")] source_document: Option<crate::SourceDocument>,
-    syntax_tree: Option<std::sync::Arc<mech_core::Program>>,
 ) -> RuntimeWorkspaceSourceSnapshot {
     let path = file_uri_path(&canonical_uri);
     let content_hash = path
@@ -228,7 +226,6 @@ fn source_snapshot(
         source,
         #[cfg(feature = "source")]
         source_document,
-        syntax_tree,
         module_version: Some(module_version),
         content_hash,
         modified_time,

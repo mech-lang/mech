@@ -2,8 +2,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use mech_syntax::document::{
-    DiagnosticAnchor, DocumentId, ParseConfig, ParseLimits, Revision, TextSize, TextSnapshot,
-    compact_debug_tree, parse_document, reconstruct_source, validate_lossless,
+    DiagnosticAnchor, DocumentId, ParseConfig, ParseLimits, RecoveryAction, Revision, TextSize,
+    TextSnapshot, compact_debug_tree, parse_canonical_document, reconstruct_source,
+    validate_lossless,
 };
 use serde_json::{Value, json};
 
@@ -22,7 +23,7 @@ fn fixture_files(directory: &str) -> Vec<PathBuf> {
 }
 
 fn parse(text: &str) -> mech_syntax::document::SyntaxSnapshot {
-    parse_document(
+    parse_canonical_document(
         TextSnapshot::new(DocumentId(200), Revision(0), text).unwrap(),
         ParseConfig {
             limits: ParseLimits {
@@ -153,30 +154,24 @@ fn structured_diagnostic_fixture_is_stable() {
         .and_then(|found| found.kind)
         .map(|kind| format!("{kind:?}"))
         .unwrap_or_else(|| String::from("None"));
-    let recovery = diagnostic
-        .recovery
-        .as_ref()
-        .map(|recovery| format!("{recovery:?}"))
-        .unwrap_or_else(|| String::from("None"));
+    let recovery = match diagnostic.recovery.as_ref() {
+        Some(RecoveryAction::Insert { .. }) => "Insert",
+        Some(RecoveryAction::Skip { .. }) => "Skip",
+        Some(RecoveryAction::Abandon { .. }) => "Abandon",
+        Some(RecoveryAction::ResourceLimit { .. }) => "ResourceLimit",
+        None => "None",
+    };
     let actual = json!({
       "code": diagnostic.code.as_str(),
-      "rule": diagnostic.rule.map(|rule| rule.0),
-      "context": if diagnostic.context
-        == Some(mech_syntax::document::parser::parser_context_id(
-          "prototype-expression"
-        ))
-      {
-        "prototype-expression"
-      } else {
-        "other"
-      },
+      "rule": diagnostic.rule.and_then(mech_syntax::document::parser::canonical_rule_name),
+      "context": diagnostic.context.map(|context| context.0),
       "range": {
         "start": range.start.0,
         "end": range.end.0,
       },
-      "expected": "prototype-expression",
+      "expected": diagnostic.expected,
       "found": found,
-      "recovery": if recovery.starts_with("Insert") { "Insert" } else { "Other" },
+      "recovery": recovery,
     });
     assert_eq!(actual, expected);
 }

@@ -3,8 +3,6 @@
 
 use mech_core::{ConstantId, OperationContractId, SchemaId};
 
-use super::OperationReference;
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ComprehensionValue {
     Constant(ConstantId),
@@ -23,6 +21,11 @@ pub enum CollectionPattern<S = SchemaId, V = ComprehensionValue> {
     },
     /// A repeated binding is equality, including across generators (a join).
     Equal(V),
+    /// A nominal enum variant, with an optional recursively matched payload.
+    Enum {
+        ordinal: u32,
+        payload: Option<Box<CollectionPattern<S, V>>>,
+    },
     Tuple(Box<[CollectionPattern<S, V>]>),
     Array {
         prefix: Box<[CollectionPattern<S, V>]>,
@@ -35,8 +38,7 @@ pub enum CollectionPattern<S = SchemaId, V = ComprehensionValue> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComprehensionOperation<C = OperationContractId, S = SchemaId, V = ComprehensionValue> {
     pub local: u32,
-    pub operation: OperationReference,
-    pub contract: C,
+    pub body: super::ControlOperationBody<C>,
     pub inputs: Box<[V]>,
     pub schema: S,
 }
@@ -54,6 +56,8 @@ pub enum ComprehensionStep<C = OperationContractId, S = SchemaId, V = Comprehens
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ComprehensionKind {
     Matrix,
+    /// Elementwise construction that retains the sole generator matrix shape.
+    MatrixPreserveShape,
     Set,
 }
 
@@ -63,6 +67,7 @@ pub enum ComprehensionKind {
 /// collection construction; the output schema validates its yielded elements.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComprehensionDeclaration<C = OperationContractId, S = SchemaId, V = ComprehensionValue> {
+    pub id: super::ControlBlockId,
     pub kind: ComprehensionKind,
     pub steps: Box<[ComprehensionStep<C, S, V>]>,
     pub yield_value: V,
@@ -78,9 +83,17 @@ impl<C> ComprehensionDeclaration<C> {
 
     pub(super) fn map_contracts<D, E>(
         &self,
-        mut map: impl FnMut(&ComprehensionOperation<C>) -> Result<D, E>,
+        mut map: impl FnMut(&super::OperationReference, &C) -> Result<D, E>,
+    ) -> Result<ComprehensionDeclaration<D>, E> {
+        self.map_contracts_inner(&mut map)
+    }
+
+    pub(super) fn map_contracts_inner<D, E>(
+        &self,
+        map: &mut dyn FnMut(&super::OperationReference, &C) -> Result<D, E>,
     ) -> Result<ComprehensionDeclaration<D>, E> {
         Ok(ComprehensionDeclaration {
+            id: self.id,
             kind: self.kind,
             steps: self
                 .steps
@@ -97,8 +110,38 @@ impl<C> ComprehensionDeclaration<C> {
                         ComprehensionStep::Operation(operation) => {
                             ComprehensionStep::Operation(ComprehensionOperation {
                                 local: operation.local,
-                                operation: operation.operation.clone(),
-                                contract: map(operation)?,
+                                body: match &operation.body {
+                                    super::ControlOperationBody::Operation {
+                                        operation: reference,
+                                        contract,
+                                    } => super::ControlOperationBody::Operation {
+                                        operation: reference.clone(),
+                                        contract: map(reference, contract)?,
+                                    },
+                                    super::ControlOperationBody::Match(nested) => {
+                                        super::ControlOperationBody::Match(
+                                            nested.map_contracts_inner(
+                                                &mut |_, _, reference, contract| {
+                                                    map(reference, contract)
+                                                },
+                                            )?,
+                                        )
+                                    }
+                                    super::ControlOperationBody::Comprehension(nested) => {
+                                        super::ControlOperationBody::Comprehension(
+                                            nested.map_contracts_inner(map)?,
+                                        )
+                                    }
+                                    super::ControlOperationBody::Recur(ancestor) => {
+                                        super::ControlOperationBody::Recur(*ancestor)
+                                    }
+                                    super::ControlOperationBody::Suspend => {
+                                        super::ControlOperationBody::Suspend
+                                    }
+                                    super::ControlOperationBody::Publish => {
+                                        super::ControlOperationBody::Publish
+                                    }
+                                },
                                 inputs: operation.inputs.clone(),
                                 schema: operation.schema,
                             })
@@ -116,15 +159,47 @@ impl<C> ComprehensionDeclaration<C> {
 pub const MAX_COLLECTION_PATTERN_DEPTH: usize = 32;
 pub const MAX_COLLECTION_GENERATORS: usize = 64;
 
-pub(super) fn pattern_counts(pattern: &CollectionPattern) -> Option<usize> {
-    let mut pending = vec![(pattern, 1usize)];
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct PatternMetrics {
+    pub nodes: usize,
+    pub bindings: usize,
+    pub equalities: usize,
+    /// Bindings/equalities whose candidate is the complete native dense lane
+    /// or an array rest. Only these candidates require canonical snapshot
+    /// finalization; scalar prefix/suffix leaves use direct resident lanes.
+    pub dense_finalizations: usize,
+    pub depth: usize,
+}
+
+pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option<PatternMetrics> {
+    let mut pending = vec![(pattern, 1usize, true)];
     let mut count = 0usize;
-    while let Some((pattern, depth)) = pending.pop() {
+    let mut bindings = 0usize;
+    let mut equalities = 0usize;
+    let mut dense_finalizations = 0usize;
+    let mut max_depth = 0usize;
+    while let Some((pattern, depth, dense_candidate)) = pending.pop() {
         count = count.checked_add(1)?;
         if depth > MAX_COLLECTION_PATTERN_DEPTH || count > super::MAX_CONTROL_OPERANDS {
             return None;
         }
+        max_depth = max_depth.max(depth);
+        if matches!(pattern, CollectionPattern::Bind { .. }) {
+            bindings = bindings.checked_add(1)?;
+        }
+        if matches!(pattern, CollectionPattern::Equal(_)) {
+            equalities = equalities.checked_add(1)?;
+        }
+        if dense_candidate
+            && matches!(
+                pattern,
+                CollectionPattern::Bind { .. } | CollectionPattern::Equal(_)
+            )
+        {
+            dense_finalizations = dense_finalizations.checked_add(1)?;
+        }
         let children = match pattern {
+            CollectionPattern::Enum { payload, .. } => usize::from(payload.is_some()),
             CollectionPattern::Tuple(items) => items.len(),
             CollectionPattern::Array {
                 prefix,
@@ -140,8 +215,11 @@ pub(super) fn pattern_counts(pattern: &CollectionPattern) -> Option<usize> {
             return None;
         }
         match pattern {
+            CollectionPattern::Enum { payload, .. } => {
+                pending.extend(payload.iter().map(|item| (item.as_ref(), depth + 1, false)));
+            }
             CollectionPattern::Tuple(items) => {
-                pending.extend(items.iter().map(|item| (item, depth + 1)));
+                pending.extend(items.iter().map(|item| (item, depth + 1, false)));
             }
             CollectionPattern::Array {
                 prefix,
@@ -152,9 +230,9 @@ pub(super) fn pattern_counts(pattern: &CollectionPattern) -> Option<usize> {
                     prefix
                         .iter()
                         .chain(suffix.iter())
-                        .map(|item| (item, depth + 1)),
+                        .map(|item| (item, depth + 1, false)),
                 );
-                pending.extend(rest.iter().map(|item| (item.as_ref(), depth + 1)));
+                pending.extend(rest.iter().map(|item| (item.as_ref(), depth + 1, true)));
             }
             _ => {}
         }
@@ -162,7 +240,17 @@ pub(super) fn pattern_counts(pattern: &CollectionPattern) -> Option<usize> {
             return None;
         }
     }
-    Some(count)
+    Some(PatternMetrics {
+        nodes: count,
+        bindings,
+        equalities,
+        dense_finalizations,
+        depth: max_depth,
+    })
+}
+
+pub(crate) fn pattern_counts<S, V>(pattern: &CollectionPattern<S, V>) -> Option<usize> {
+    pattern_metrics(pattern).map(|metrics| metrics.nodes)
 }
 
 pub(super) fn value_schema(
@@ -188,6 +276,11 @@ pub(super) fn pattern_locals(
                 return None;
             }
             locals.push(*schema);
+        }
+        CollectionPattern::Enum { payload, .. } => {
+            if let Some(payload) = payload {
+                pattern_locals(payload, locals)?;
+            }
         }
         CollectionPattern::Tuple(items) => {
             for item in items {
@@ -219,11 +312,29 @@ pub(super) fn validate_comprehension(
     inputs: &[SchemaId],
     output: SchemaId,
 ) -> Result<(), super::ArtifactBuildError> {
+    validate_comprehension_inner(draft, node, declaration, inputs, output, &mut 0, false)
+}
+
+pub(super) fn validate_comprehension_inner(
+    draft: &super::ProgramArtifactDraft,
+    node: mech_core::NodeId,
+    declaration: &ComprehensionDeclaration,
+    inputs: &[SchemaId],
+    output: SchemaId,
+    next_block: &mut u32,
+    enclosing_guard: bool,
+) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
         ResolvedOperationContract, SchemaBody,
     };
     let invalid = |reason| super::ArtifactBuildError::InvalidControl { node, reason };
+    if declaration.id.0 != *next_block {
+        return Err(invalid("noncanonical block identity"));
+    }
+    *next_block = next_block
+        .checked_add(1)
+        .ok_or_else(|| invalid("block count overflow"))?;
     let mut locals = Vec::new();
     if declaration
         .steps
@@ -234,6 +345,45 @@ pub(super) fn validate_comprehension(
     {
         return Err(invalid("collection generator nesting limit"));
     }
+    let preserved_matrix_source = if declaration.kind == ComprehensionKind::MatrixPreserveShape {
+        if declaration
+            .steps
+            .iter()
+            .filter(|step| matches!(step, ComprehensionStep::Generator { .. }))
+            .count()
+            != 1
+            || declaration
+                .steps
+                .iter()
+                .any(|step| matches!(step, ComprehensionStep::Filter(_)))
+        {
+            return Err(invalid(
+                "shape-preserving matrix collection requires one unfiltered generator",
+            ));
+        }
+        let Some(ComprehensionStep::Generator { source, pattern }) = declaration.steps.first()
+        else {
+            return Err(invalid(
+                "shape-preserving matrix collection must begin with its generator",
+            ));
+        };
+        if !super::control::structurally_irrefutable_shape(pattern) {
+            return Err(invalid(
+                "shape-preserving matrix collection requires an irrefutable generator",
+            ));
+        }
+        let source = value_schema(*source, &draft.constants, inputs, &[])
+            .and_then(|id| draft.schemas.get(id))
+            .ok_or_else(|| invalid("unknown shape-preserving matrix source"))?;
+        if !matches!(source.body(), SchemaBody::Matrix { .. }) {
+            return Err(invalid(
+                "shape-preserving matrix collection source is not a matrix",
+            ));
+        }
+        Some(source)
+    } else {
+        None
+    };
     for step in &declaration.steps {
         match step {
             ComprehensionStep::Generator { source, pattern } => {
@@ -268,41 +418,91 @@ pub(super) fn validate_comprehension(
                 {
                     return Err(invalid("noncanonical collection local identity or schema"));
                 }
-                super::validation::validate_operation(&operation.operation)?;
-                let Some(ResolvedOperationContract::Declared(contract)) =
-                    draft.contracts.get(operation.contract)
-                else {
-                    return Err(invalid(
-                        "collection operation requires an ordinary contract",
-                    ));
-                };
-                if contract.interaction != ExternalInteraction::Pure
-                    || contract.inputs.len() != operation.inputs.len()
-                    || contract.outputs.len() != 1
-                {
-                    return Err(invalid(
-                        "collection operations must be pure single-result calls",
-                    ));
-                }
-                for (value, port) in operation.inputs.iter().zip(contract.inputs.iter()) {
-                    if value_schema(*value, &draft.constants, inputs, &locals) != Some(port.schema)
-                        || port.access != AccessMode::Read
-                        || port.delivery != DeliveryMode::Signal
-                    {
-                        return Err(invalid("invalid collection operation input"));
+                let operation_inputs = operation
+                    .inputs
+                    .iter()
+                    .map(|value| {
+                        value_schema(*value, &draft.constants, inputs, &locals)
+                            .ok_or_else(|| invalid("invalid collection operation input"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                match &operation.body {
+                    super::ControlOperationBody::Operation {
+                        operation: reference,
+                        contract: contract_id,
+                    } => {
+                        super::validation::validate_operation(reference)?;
+                        let Some(ResolvedOperationContract::Declared(contract)) =
+                            draft.contracts.get(*contract_id)
+                        else {
+                            return Err(invalid(
+                                "collection operation requires an ordinary contract",
+                            ));
+                        };
+                        if contract.interaction != ExternalInteraction::Pure
+                            || contract.inputs.len() != operation.inputs.len()
+                            || contract.outputs.len() != 1
+                        {
+                            return Err(invalid(
+                                "collection operations must be pure single-result calls",
+                            ));
+                        }
+                        for (schema, port) in operation_inputs.iter().zip(contract.inputs.iter()) {
+                            if *schema != port.schema
+                                || port.access != AccessMode::Read
+                                || port.delivery != DeliveryMode::Signal
+                            {
+                                return Err(invalid("invalid collection operation input"));
+                            }
+                        }
+                        let port = &contract.outputs[0];
+                        if port.schema != operation.schema
+                            || port.alias != AliasPolicy::NoAlias
+                            || port.delivery != DeliveryMode::Signal
+                            || port.access != AccessMode::Write
+                            || !matches!(
+                                port.construction,
+                                OutputConstruction::FullWrite { .. }
+                                    | OutputConstruction::Build { .. }
+                            )
+                        {
+                            return Err(invalid("invalid collection operation output"));
+                        }
                     }
-                }
-                let port = &contract.outputs[0];
-                if port.schema != operation.schema
-                    || port.alias != AliasPolicy::NoAlias
-                    || port.delivery != DeliveryMode::Signal
-                    || port.access != AccessMode::Write
-                    || !matches!(
-                        port.construction,
-                        OutputConstruction::FullWrite { .. } | OutputConstruction::Build { .. }
-                    )
-                {
-                    return Err(invalid("invalid collection operation output"));
+                    super::ControlOperationBody::Match(nested) => {
+                        super::control::validate_match_inner(
+                            draft,
+                            node,
+                            nested,
+                            &operation_inputs,
+                            operation.schema,
+                            None,
+                            false,
+                            next_block,
+                            &[],
+                            true,
+                            enclosing_guard,
+                            true,
+                        )?;
+                    }
+                    super::ControlOperationBody::Comprehension(nested) => {
+                        validate_comprehension_inner(
+                            draft,
+                            node,
+                            nested,
+                            &operation_inputs,
+                            operation.schema,
+                            next_block,
+                            enclosing_guard,
+                        )?;
+                    }
+                    super::ControlOperationBody::Recur(_)
+                    | super::ControlOperationBody::Suspend
+                    | super::ControlOperationBody::Publish => {
+                        return Err(invalid(
+                            "recursive or suspended control cannot escape its enclosing match",
+                        ));
+                    }
                 }
                 locals.push(operation.schema);
             }
@@ -315,12 +515,54 @@ pub(super) fn validate_comprehension(
         .schemas
         .get(output)
         .ok_or_else(|| invalid("unknown collection output"))?;
+    if let Some(source) = preserved_matrix_source {
+        let (
+            SchemaBody::Matrix {
+                dimensions: source_dimensions,
+                ..
+            },
+            SchemaBody::Matrix {
+                element,
+                dimensions: output_dimensions,
+            },
+        ) = (source.body(), output.body())
+        else {
+            return Err(invalid(
+                "shape-preserving matrix collection requires a matrix result",
+            ));
+        };
+        if source_dimensions != output_dimensions
+            || source.dimension_parameters() != output.dimension_parameters()
+            || !yielded.dimension_parameters().is_empty()
+        {
+            return Err(invalid(
+                "shape-preserving matrix collection output does not track its source shape",
+            ));
+        }
+        let element = mech_core::SchemaDraft {
+            body: element.as_ref().clone(),
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .map_err(|_| invalid("invalid shape-preserving matrix element schema"))?;
+        if element.key() != yielded.key() {
+            return Err(invalid(
+                "shape-preserving matrix collection yield does not match its element schema",
+            ));
+        }
+        return Ok(());
+    }
     let element = match output.body() {
         SchemaBody::Matrix {
             element,
             dimensions,
         } if dimensions.len() == 2
             && dimensions[0] == mech_core::DimensionExpr::Constant(1)
+            && dimensions[1]
+                == mech_core::DimensionExpr::Parameter(mech_core::DimensionParameterId::new(
+                    u32::try_from(yielded.dimension_parameters().len())
+                        .map_err(|_| invalid("collection element dimension overflow"))?,
+                ))
             && declaration.kind == ComprehensionKind::Matrix =>
         {
             element
@@ -329,7 +571,34 @@ pub(super) fn validate_comprehension(
         SchemaBody::Dynamic if matches!(yielded.body(), SchemaBody::Dynamic) => return Ok(()),
         _ => return Err(invalid("collection result requires a matrix or set schema")),
     };
-    if yielded.body() != element.as_ref() || !yielded.dimension_parameters().is_empty() {
+    let element_parameter_count = yielded.dimension_parameters().len();
+    if declaration.kind == ComprehensionKind::Set && element_parameter_count != 0 {
+        return Err(invalid("set collection elements require a closed shape"));
+    }
+    if output.dimension_parameters().len()
+        != element_parameter_count + usize::from(declaration.kind == ComprehensionKind::Matrix)
+    {
+        return Err(invalid(
+            "collection yield does not match its element schema",
+        ));
+    }
+    let element_schema = mech_core::SchemaDraft {
+        dimension_parameters: output.dimension_parameters()[..element_parameter_count]
+            .iter()
+            .enumerate()
+            .map(|(id, parameter)| mech_core::DimensionParameterDeclaration {
+                id: mech_core::DimensionParameterId::new(id as u32),
+                origin: mech_core::DimensionParameterOrigin::Explicit,
+                lifetime: parameter.lifetime(),
+                lower_bound: parameter.lower_bound().clone(),
+                upper_bound: parameter.upper_bound().cloned(),
+            })
+            .collect(),
+        body: element.as_ref().clone(),
+    }
+    .finalize()
+    .map_err(|_| invalid("invalid collection element schema"))?;
+    if element_schema.key() != yielded.key() {
         return Err(invalid(
             "collection yield does not match its element schema",
         ));
@@ -360,6 +629,64 @@ fn component_schema(
     .ok()
 }
 
+pub(super) fn array_rest_schema(
+    parent: &mech_core::Schema,
+    element: &mech_core::SchemaBody,
+    exact_extent: Option<usize>,
+) -> Option<mech_core::Schema> {
+    let mut parameters = parent
+        .dimension_parameters()
+        .iter()
+        .enumerate()
+        .map(|(id, parameter)| {
+            Some(mech_core::DimensionParameterDeclaration {
+                id: mech_core::DimensionParameterId::new(u32::try_from(id).ok()?),
+                origin: mech_core::DimensionParameterOrigin::Explicit,
+                lifetime: parameter.lifetime(),
+                lower_bound: parameter.lower_bound().clone(),
+                upper_bound: parameter.upper_bound().cloned(),
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let extent = match exact_extent {
+        Some(extent) => mech_core::DimensionExpr::Constant(u64::try_from(extent).ok()?),
+        None => {
+            let extent =
+                mech_core::DimensionParameterId::new(u32::try_from(parameters.len()).ok()?);
+            parameters.push(mech_core::DimensionParameterDeclaration {
+                id: extent,
+                origin: mech_core::DimensionParameterOrigin::Inferred,
+                lifetime: mech_core::DimensionLifetime::Turn,
+                lower_bound: mech_core::DimensionExpr::Constant(0),
+                upper_bound: None,
+            });
+            mech_core::DimensionExpr::Parameter(extent)
+        }
+    };
+    mech_core::SchemaDraft {
+        body: mech_core::SchemaBody::Matrix {
+            element: Box::new(element.clone()),
+            dimensions: vec![mech_core::DimensionExpr::Constant(1), extent].into_boxed_slice(),
+        },
+        dimension_parameters: parameters.into_boxed_slice(),
+    }
+    .finalize()
+    .ok()
+}
+
+pub(super) fn fixed_matrix_element_count(schema: &mech_core::Schema) -> Option<usize> {
+    let shape = schema.instantiate_shape(Box::new([])).ok()?;
+    let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
+        return None;
+    };
+    dimensions
+        .iter()
+        .try_fold(1_u64, |count, dimension| {
+            count.checked_mul(shape.resolve_dimension(dimension).ok()?)
+        })
+        .and_then(|count| usize::try_from(count).ok())
+}
+
 fn validate_pattern(
     draft: &super::ProgramArtifactDraft,
     pattern: &CollectionPattern,
@@ -384,6 +711,30 @@ fn validate_pattern(
             let schema = value_schema(*value, &draft.constants, inputs, locals)?;
             if !compatible(draft.schemas.get(schema)?) {
                 return None;
+            }
+        }
+        CollectionPattern::Enum { ordinal, payload } => {
+            let enum_expected = match expected.body() {
+                SchemaBody::Enum { .. } => expected.clone(),
+                SchemaBody::Option(body) if matches!(body.as_ref(), SchemaBody::Enum { .. }) => {
+                    component_schema(expected, body)?
+                }
+                _ => return None,
+            };
+            let SchemaBody::Enum { variants, .. } = enum_expected.body() else {
+                return None;
+            };
+            let payload_schema = variants.get(*ordinal as usize)?.payload.as_ref();
+            match (payload_schema, payload) {
+                (Some(schema), Some(pattern)) => validate_pattern(
+                    draft,
+                    pattern,
+                    &component_schema(&enum_expected, schema)?,
+                    inputs,
+                    locals,
+                )?,
+                (None, None) => {}
+                _ => return None,
             }
         }
         CollectionPattern::Tuple(items) => {
@@ -428,7 +779,7 @@ fn validate_pattern(
                 validate_pattern(
                     draft,
                     rest,
-                    &component_schema(expected, &SchemaBody::Dynamic)?,
+                    &array_rest_schema(expected, element, None)?,
                     inputs,
                     locals,
                 )?;
@@ -448,7 +799,7 @@ fn validate_pattern(
 }
 
 impl<S, V> CollectionPattern<S, V> {
-    #[cfg(feature = "source")]
+    #[cfg(any(feature = "source", feature = "resident-artifact"))]
     pub(crate) fn map<T, W>(
         &self,
         schema: &impl Fn(&S) -> T,
@@ -461,6 +812,12 @@ impl<S, V> CollectionPattern<S, V> {
                 schema: schema(s),
             },
             Self::Equal(v) => CollectionPattern::Equal(value(v)),
+            Self::Enum { ordinal, payload } => CollectionPattern::Enum {
+                ordinal: *ordinal,
+                payload: payload
+                    .as_ref()
+                    .map(|payload| Box::new(payload.map(schema, value))),
+            },
             Self::Tuple(items) => {
                 CollectionPattern::Tuple(items.iter().map(|item| item.map(schema, value)).collect())
             }
@@ -476,9 +833,15 @@ impl<S, V> CollectionPattern<S, V> {
         }
     }
 
+    #[cfg(any(feature = "source", feature = "resident-artifact"))]
     pub(crate) fn bindings(&self, visit: &mut impl FnMut(u32, &S)) {
         match self {
             Self::Bind { local, schema } => visit(*local, schema),
+            Self::Enum { payload, .. } => {
+                if let Some(payload) = payload {
+                    payload.bindings(visit);
+                }
+            }
             Self::Tuple(items) => {
                 for item in items {
                     item.bindings(visit);
@@ -511,6 +874,159 @@ mod schema_tests {
         NodeId, OperationContractTableBuilder, SchemaBody, SchemaDraft, SchemaTableBuilder,
         ValueDataDraft, ValueDraft,
     };
+
+    #[test]
+    fn nominal_enum_patterns_reject_dynamic_expected_schemas() {
+        let mut builder = SchemaTableBuilder::new();
+        let dynamic = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Dynamic,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let dynamic = built.resolve(dynamic).unwrap();
+        let schemas = built.into_parts().0;
+        let constants = ConstantStoreBuilder::new(&schemas).finish().unwrap();
+        let draft = crate::ProgramArtifactDraft {
+            schemas,
+            constants: constants.into_parts().0,
+            contracts: OperationContractTableBuilder::new()
+                .finish()
+                .unwrap()
+                .into_parts()
+                .0,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        };
+        let expected = draft.schemas.get(dynamic).unwrap();
+        let mut locals = Vec::new();
+        assert!(
+            validate_pattern(
+                &draft,
+                &CollectionPattern::Enum {
+                    ordinal: 0,
+                    payload: Some(Box::new(CollectionPattern::Wildcard)),
+                },
+                expected,
+                &[],
+                &mut locals,
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn parameterized_set_yields_fail_artifact_validation() {
+        let parameter = DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(8)),
+        };
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            dimensions: vec![
+                DimensionExpr::Constant(1),
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+            ]
+            .into_boxed_slice(),
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let yielded = builder
+            .insert(
+                SchemaDraft {
+                    body: matrix.clone(),
+                    dimension_parameters: vec![parameter.clone()].into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let output = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Set {
+                        element: Box::new(matrix),
+                        cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                    },
+                    dimension_parameters: vec![parameter].into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let yielded = built.resolve(yielded).unwrap();
+        let output = built.resolve(output).unwrap();
+        let schemas = built.into_parts().0;
+        let constants = ConstantStoreBuilder::new(&schemas).finish().unwrap();
+        let draft = crate::ProgramArtifactDraft {
+            schemas,
+            constants: constants.into_parts().0,
+            contracts: OperationContractTableBuilder::new()
+                .finish()
+                .unwrap()
+                .into_parts()
+                .0,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        };
+        let control = ComprehensionDeclaration {
+            id: crate::ControlBlockId(0),
+            kind: ComprehensionKind::Set,
+            steps: Box::new([]),
+            yield_value: ComprehensionValue::Input(0),
+        };
+
+        assert!(matches!(
+            validate_comprehension(&draft, NodeId::new(0), &control, &[yielded], output),
+            Err(crate::ArtifactBuildError::InvalidControl {
+                reason: "set collection elements require a closed shape",
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn dense_finalization_metrics_count_only_whole_or_rest_candidates() {
+        let pattern = CollectionPattern::Array {
+            prefix: vec![CollectionPattern::Bind {
+                local: 0,
+                schema: SchemaId::new(0),
+            }]
+            .into_boxed_slice(),
+            rest: Some(Box::new(CollectionPattern::Bind {
+                local: 1,
+                schema: SchemaId::new(1),
+            })),
+            suffix: vec![CollectionPattern::Equal(ComprehensionValue::Constant(
+                mech_core::ConstantId::new(0),
+            ))]
+            .into_boxed_slice(),
+        };
+        let metrics = pattern_metrics(&pattern).unwrap();
+        assert_eq!(metrics.bindings, 2);
+        assert_eq!(metrics.equalities, 1);
+        assert_eq!(metrics.dense_finalizations, 1);
+    }
 
     #[test]
     fn lexical_collection_pattern_schemas_preserve_component_bounds_and_lifetimes() {
@@ -625,6 +1141,7 @@ mod schema_tests {
         };
         for local_schema in [correct, wrong_bound, wrong_lifetime] {
             let control = ComprehensionDeclaration {
+                id: crate::ControlBlockId(0),
                 kind: ComprehensionKind::Set,
                 steps: vec![ComprehensionStep::Generator {
                     source: ComprehensionValue::Input(0),

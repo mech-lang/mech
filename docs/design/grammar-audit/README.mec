@@ -21,9 +21,9 @@ FSM artifacts own machine identity, argument roles, ordered stage kinds, and
 typed stage values; they do not reconstruct behavior from source-map strings.
 Borrowed tuple, array, and tagged-pattern projection executes with primitive
 bindings, and matches support compound results and nested bodies and guards.
-Composite comprehension bindings/yields, computed pattern blocks, composition
-with nested comprehensions, the FSM resident continuation owner, and other S4
-limits remain unfinished. The exact S6 registry candidate is staged here;
+Composite comprehension bindings/yields, recursive comprehension control, and
+ordered computed-pattern evaluation now execute through the canonical artifact.
+The FSM resident continuation owner and other S4 limits remain unfinished. The exact S6 registry candidate is staged here;
 activation and qualification remain gated on S4 completion.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones. This
@@ -168,10 +168,9 @@ methods are evidence only and are not selected parser inventory.
 
 The artifacts have distinct responsibilities:
 
-- `productions.tsv` maps every selected Rust function to a stable ID, grammar
-  name, role, output type, callers, callees, selection behavior, termination,
-  whitespace behavior, stable canonical specification reference, and
-  conformance cases.
+- `ports.tsv` is the canonical 539-rule inventory and records each grammar
+  name's syntax, semantic, activation, node-policy, phase, and audit status.
+  The deterministic RuleId registry is generated from these grammar names.
 - `docs/design/specification.mec` is the sole normative grammar source. The
   mechanically extracted `current-grammar.mec` candidate was reviewed,
   incorporated into the specification, and removed so it cannot compete with
@@ -182,7 +181,12 @@ The artifacts have distinct responsibilities:
   source path as an atomic-cutover removal target and assigns its final
   canonical consumer boundary. Its source scanner binds each call to the exact
   enclosing function and rejects imports, globs, renames, and function-value
-  aliases that could bypass the census.
+  aliases that could bypass the census. This historical census stays frozen:
+  open route rows in `s8-removal-manifest.tsv` name the current exact caller
+  when a retained check moves. Such rows remain inventoried, with the original
+  call count enforced, until canonical routing removes the parser call. New
+  legacy AST helpers also require explicit removal owners and linked consumer
+  dependencies; moving code does not complete its retirement.
 - `source-parser-consumer-fixtures.tsv` freezes specification-derived document
   expectations shared by those consumer contracts without executing the old
   parser as an oracle.
@@ -336,17 +340,14 @@ reparsing, and fenced-Mech reparsing. It is not hidden in the grammar for
 
 Any parser change must update the audit in the same change:
 
-1. Run the inventory coverage test against all selected modules. Account for
-   every added, removed, renamed, public, private, and macro-generated
-   top-level function.
-2. Add or update the `productions.tsv` row. Stable IDs are never reused.
-   Preserve the grammar name when the language concept is unchanged.
-3. Classify the function and record its feature gate, root status, output
-   type, implementation path, parent and child rules, exact whitespace
-   parsers, completion/termination contract, and specification evidence.
-4. Record real choice behavior: `ordered-first-success`,
-   `alt-best-longest-success`, `manual-fallback`, `peek-gated`,
-   `prefix-committed`, `caller-controlled`, or `none`.
+1. Run the canonical inventory and dependency coverage tests.
+2. Add or update the `ports.tsv` row and preserve the grammar name when the
+   language concept is unchanged. The generated RuleId is the deterministic
+   stable hash of that name.
+3. Record the rule's family, syntax, semantic, activation, node-policy, phase,
+   and audit disposition in `ports.tsv`.
+4. Regenerate the checked-in RuleId registry and update the canonical grammar
+   dependency report when the normative graph changes.
 5. Update the canonical grammar in `docs/design/specification.mec` from
    implementation structure. Put parser mechanics in labeled prose rather
    than inventing syntax or adding competing inline EBNF to Rust sources.

@@ -1,8 +1,8 @@
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 
-use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId};
+use mech_core::{CanonicalNominalPath, FunctionCatalogBuilder, ReactiveInstanceId};
 use mech_engine::resident::{ActivationFacts, activate};
-use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram};
+use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_runtime::{
     CanonicalDocumentRenderer, CanonicalRenderScope, CanonicalScopeResults, RuntimeValueSnapshot,
 };
@@ -169,6 +169,34 @@ fn retained_document_renders_root_named_and_mika_results_in_place() {
 }
 
 #[test]
+fn isolated_document_scopes_reject_nominal_declarations_without_scope_provenance() {
+    let named =
+        document("```mech:worker\n<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n```\n");
+    let frontend = CanonicalSourceFrontend.with_nominal_origin(
+        CanonicalNominalPath::new(vec!["sample-package".to_owned(), "document".to_owned()])
+            .unwrap(),
+    );
+    let error = frontend
+        .compile_named_document_scope(&named, "worker")
+        .err()
+        .expect("a named scope needs its own durable nominal namespace");
+    assert_eq!(
+        error.code,
+        "source-semantics/isolated-nominal-origin-required"
+    );
+
+    let mika = document("~∘~⸢<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n⸥\n");
+    let error = frontend
+        .compile_mika_section(&mika.mika_scopes()[0].section)
+        .err()
+        .expect("a Mika scope needs its own durable nominal namespace");
+    assert_eq!(
+        error.code,
+        "source-semantics/isolated-nominal-origin-required"
+    );
+}
+
+#[test]
 fn renderer_rejects_results_from_another_document_owner() {
     let first = document("answer := 1\nanswer\n");
     let second = {
@@ -269,7 +297,7 @@ fn renderer_preserves_title_subtitle_and_plain_document_structure() {
     assert!(html.contains("Grammar Conformance"));
     assert!(!html.contains("==================="), "{html}");
     assert!(
-        html.contains("<h2 class='mech-subtitle' id='section-1'>Overview</h2>"),
+        html.contains("<h2 class='mech-subtitle' id='1'>Overview</h2>"),
         "{html}"
     );
     assert!(html.contains("<p>Body A &amp; B.</p>"));
@@ -298,6 +326,24 @@ fn visible_executable_fences_require_their_owner_result() {
         "visible executable fence has no completed scope result"
     );
     assert!(error.range.is_some());
+}
+
+#[test]
+fn declaration_only_fences_do_not_require_completed_text_results() {
+    let document = document("```mech\n<count> := <u64>\n```\nanswer := 42u64\nanswer\n");
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let results = [execute(
+        document.scope_id(),
+        CanonicalRenderScope::Root,
+        &program,
+        0x923,
+    )];
+
+    let text = CanonicalDocumentRenderer
+        .render_text(&document, &results)
+        .unwrap();
+    assert!(text.contains("<count> := <u64>"), "{text}");
+    assert!(text.contains("=> 42"), "{text}");
 }
 
 #[test]
@@ -353,7 +399,10 @@ fn hidden_and_output_suppressed_fences_do_not_leak_the_program_result() {
     ] {
         let document = document(source);
         let source_html = CanonicalDocumentRenderer.format_html(&document).unwrap();
-        assert!(source_html.contains("<code>42\n</code>"), "{source_html}");
+        assert!(
+            source_html.contains("<code><span class='mech-number'>42</span>\n</code>"),
+            "{source_html}"
+        );
         assert_eq!(
             source_html.contains("class='mech-code-block hidden'"),
             !source_is_visible
@@ -397,7 +446,8 @@ fn renderer_rejects_active_script_hyperlinks() {
 
 #[test]
 fn retained_images_render_with_safe_escaped_attributes_and_captions() {
-    let document = document("![A ' & B](image'file.png?x=1&y=2)\n");
+    let document =
+        document("![A ' & B](image'file.png?x=1&y=2)\n![x'onerror='alert(1)](missing.png)\n");
     let html = CanonicalDocumentRenderer
         .render_html(&document, &[])
         .unwrap();
@@ -411,6 +461,8 @@ fn retained_images_render_with_safe_escaped_attributes_and_captions() {
         html.contains("<figcaption class='mech-figure-caption'>A ' &amp; B</figcaption>"),
         "{html}"
     );
+    assert!(html.contains("alt='x&#39;onerror=&#39;alert(1)'"), "{html}");
+    assert!(!html.contains("alt='x'onerror='"), "{html}");
 }
 
 #[test]
@@ -485,6 +537,38 @@ fn title_front_matter_is_semantic_and_uses_completed_inline_results() {
 }
 
 #[test]
+fn shim_reference_numbers_start_at_the_final_front_matter_value() {
+    let document = document(
+        "Report\n======\nauthor: Hidden[^hidden] [hidden]\nauthor: Visible[^visible] [visible]\n======\n\n[^hidden]: Hidden note.\n\n[^visible]: Visible note.\n\n[hidden]: Hidden citation.\n\n[visible]: Visible citation.\n",
+    );
+    for slots in [
+        CanonicalDocumentRenderer
+            .format_browser_html_slots(&document)
+            .unwrap(),
+        CanonicalDocumentRenderer
+            .format_static_html_slots(&document)
+            .unwrap(),
+    ] {
+        let author = &slots["AUTHOR"];
+        assert!(!author.contains("Hidden"), "{author}");
+        assert!(
+            author.contains("href='#footnote-visible'>1</a>"),
+            "{author}"
+        );
+        assert!(
+            author.contains("href='#reference-visible'>1</a>"),
+            "{author}"
+        );
+        assert!(
+            slots["FOOTNOTES"]
+                .contains("id='footnote-visible'><span class='mech-footnote-id'>1:</span>"),
+            "{:?}",
+            slots["FOOTNOTES"]
+        );
+    }
+}
+
+#[test]
 fn raw_hyperlinks_and_inline_code_use_semantic_html() {
     let document = document("Visit http://example.com/path or `x < y & z`.\n");
     let html = CanonicalDocumentRenderer
@@ -518,8 +602,8 @@ fn retained_inline_markup_uses_semantic_elements_without_delimiters() {
         "<span class='mech-inline-equation'>x+1</span>",
         "<span class='mech-reference'>[<a class='mech-reference-link' href='#reference-ref'>1</a>]</span>",
         "<a class='mech-footnote-reference' href='#footnote-note'>1</a>",
-        "<a class='mech-section-reference-link' href='#section-1.2'>§1.2</a>",
-        "<h3 class='mech-subtitle' id='section-1.2'>Details</h3>",
+        "<a class='mech-section-reference-link' href='#1.2'>§1.2</a>",
+        "<h3 class='mech-subtitle' id='1.2'>Details</h3>",
     ] {
         assert!(html.contains(expected), "missing {expected:?}: {html}");
     }
@@ -784,8 +868,8 @@ fn shared_mixed_document_fixture_is_rendered_without_dropping_nodes() {
         "<strong class='mech-strong'>strong</strong>",
         "<a class='mech-hyperlink' href='https://example.com'>a link</a>",
         "<code class='mech-inline'>x + 1</code>",
-        "x := 1",
-        "y := x + 1",
+        "<span class='mech-var-name' data-mech-var-name='x'>x</span> := <span class='mech-number'>1</span>",
+        "<span class='mech-var-name' data-mech-var-name='y'>y</span> := <span class='mech-var-name' data-mech-var-name='x'>x</span> + <span class='mech-number'>1</span>",
         "Parsed as an information block.",
     ] {
         assert!(html.contains(expected), "missing {expected:?}: {html}");
@@ -816,4 +900,1079 @@ fn source_body_preserves_front_matter_without_duplicate_framing() {
     assert!(!html.contains("<h1"), "{html}");
     assert!(!html.contains("<article"), "{html}");
     assert!(html.contains("answer"), "{html}");
+}
+
+#[test]
+fn live_body_keeps_inline_and_fence_output_addresses() {
+    let document = document("Result {1 + 2}.\n\n```mech\n40 + 2\n```\n");
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let addresses = program
+        .document_outputs()
+        .iter()
+        .filter(|output| {
+            output.visible && output.kind != mech_engine::SourceDocumentOutputKind::Program
+        })
+        .map(|output| {
+            (
+                program.source_map().outputs[output.output as usize].range,
+                u64::from(output.output),
+            )
+        })
+        .collect::<Vec<_>>();
+    let html = CanonicalDocumentRenderer
+        .format_html_body_live(&document, &addresses)
+        .unwrap();
+    assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+    assert!(html.contains("class='mech-block-output'"), "{html}");
+    for (_, output_id) in addresses {
+        assert!(html.contains(&format!("id='{output_id}:0'")), "{html}");
+    }
+}
+
+#[test]
+fn browser_source_mounts_match_compiled_canonical_output_anchors() {
+    let document =
+        document("~answer := 41\n\nThe answer is {answer + 1}.\n\n~~~mech\nanswer + 2\n~~~\n");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document)
+        .unwrap();
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let expected_presentation_ids = program
+        .document_outputs()
+        .iter()
+        .filter(|binding| binding.visible && binding.kind != SourceDocumentOutputKind::Program)
+        .map(|binding| {
+            let range = program.source_map().outputs[binding.output as usize].range;
+            mech_runtime::canonical_document_output_id(binding.kind, range)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        mech_runtime::canonical_document_presentation_output_ids(&document).unwrap(),
+        expected_presentation_ids,
+    );
+    for binding in program
+        .document_outputs()
+        .iter()
+        .filter(|binding| binding.visible)
+    {
+        let range = program.source_map().outputs[binding.output as usize].range;
+        let id = mech_runtime::canonical_document_output_id(binding.kind, range);
+        assert!(
+            html.contains(&format!("data-mech-output-address='{id}:0'")),
+            "{binding:?}: {html}"
+        );
+    }
+    assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+    assert!(html.contains("class='mech-block-output'"), "{html}");
+    assert!(
+        CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .is_err()
+    );
+}
+
+#[test]
+fn browser_source_mounts_tuple_destructure_root_results() {
+    let document = document("(x, y) := (1, 2)\n");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document)
+        .unwrap();
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let output = program
+        .document_outputs()
+        .iter()
+        .find(|output| output.kind == SourceDocumentOutputKind::Program && output.visible)
+        .expect("tuple destructuring publishes the root result");
+    let range = program.source_map().outputs[output.output as usize].range;
+    let id = mech_runtime::canonical_document_output_id(output.kind, range);
+    assert!(
+        html.contains(&format!("data-mech-output-address='{id}:0'")),
+        "{html}"
+    );
+}
+
+#[test]
+fn browser_source_omits_mounts_for_named_and_mika_scopes() {
+    let document =
+        document("Root {1}.\n\n~~~mech:worker\n2\n~~~\n\n~∘~⸢Child {3}.\n\n~~~mech\n4\n~~~\n⸥\n");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document)
+        .unwrap();
+    assert_eq!(
+        html.matches("class='mech-inline-mech-code'").count(),
+        1,
+        "{html}"
+    );
+    assert!(!html.contains("class='mech-block-output'"), "{html}");
+}
+
+#[test]
+fn browser_source_omits_mounts_for_declaration_only_root_fences() {
+    let document = document(
+        "~~~mech\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n~~~\n\n~~~mech\n40 + 2\n~~~\n",
+    );
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document)
+        .unwrap();
+    assert_eq!(
+        html.matches("class='mech-block-output'").count(),
+        1,
+        "{html}"
+    );
+    assert_eq!(
+        mech_runtime::canonical_document_presentation_output_ids(&document)
+            .unwrap()
+            .len(),
+        1,
+    );
+}
+
+#[test]
+fn browser_source_omits_program_mounts_for_effect_only_roots() {
+    for source in [
+        "@view := scene://view/root{:write(replace)}\n@view/replace <- 42\n",
+        "~> @trigger/EVENT { value := @env/HOME }\n",
+        "@out/line <- 1\nf() => <f64>\n  | * => 2.\n",
+    ] {
+        let html = CanonicalDocumentRenderer
+            .format_browser_html(&document(source))
+            .unwrap();
+        assert!(!html.contains("class='mech-program-output'"), "{html}");
+    }
+}
+
+#[test]
+fn browser_source_preserves_program_mount_before_trailing_effects() {
+    for source in [
+        "answer := 42\n@out/line <- answer\n",
+        "answer := 42\n~> answer {}\n",
+    ] {
+        let document = document(source);
+        let html = CanonicalDocumentRenderer
+            .format_browser_html(&document)
+            .unwrap();
+        assert!(
+            html.contains("class='mech-block-output mech-program-output'"),
+            "{html}"
+        );
+    }
+
+    let activation = document("answer := 42\n~> answer {}\n");
+    let program = CanonicalSourceFrontend
+        .compile_document(&activation)
+        .unwrap();
+    assert!(
+        program
+            .document_outputs()
+            .iter()
+            .any(|output| output.kind == SourceDocumentOutputKind::Program && output.visible)
+    );
+}
+
+#[test]
+fn canonical_pretty_text_spaces_formula_operators() {
+    let source = "answer:=40+2\n~count:=0\ncount +=1\nresult:=make(1 ,2)\n";
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document(source))
+        .unwrap();
+    assert_eq!(
+        formatted,
+        "answer := 40 + 2\n~count := 0\ncount += 1\nresult := make(1, 2)\n"
+    );
+}
+
+#[test]
+fn canonical_pretty_text_spaces_context_send_operators() {
+    for (source, expected) in [
+        ("@out/line<-answer\n", "@out/line <- answer\n"),
+        ("@out/line  <-\tanswer\r\n", "@out/line <- answer\r\n"),
+        (
+            "@out/line<-\"literal<-arrow\"\n",
+            "@out/line <- \"literal<-arrow\"\n",
+        ),
+        (
+            "```mech:worker\n@out/line<-40+2\n```\n",
+            "```mech:worker\n@out/line <- 40 + 2\n```\n",
+        ),
+        ("@out/line<f64><-answer\n", "@out/line<f64> <- answer\n"),
+        (
+            "Send {{@out/line<-answer}}.\n",
+            "Send {{@out/line <- answer}}.\n",
+        ),
+    ] {
+        let formatted = CanonicalDocumentRenderer
+            .format_pretty_text(&document(source))
+            .unwrap();
+        assert_eq!(formatted, expected, "{source:?}");
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&streamed_document(source))
+                .unwrap(),
+            formatted,
+            "streamed {source:?}"
+        );
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&document(&formatted))
+                .unwrap(),
+            formatted,
+            "{source:?}"
+        );
+    }
+}
+
+#[test]
+fn canonical_pretty_text_keeps_range_operators_attached_to_bounds() {
+    for (source, expected) in [
+        ("values:=1..3\n", "values := 1..3\n"),
+        ("values:=1..=3\r\n", "values := 1..=3\r\n"),
+        ("selected:=values[1..=3]\n", "selected := values[1..=3]\n"),
+        ("values:=(1+2)..(3+4)\n", "values := (1 + 2)..(3 + 4)\n"),
+        (
+            "```mech:worker\nvalues:=1..3\nother:=1..=3\n```\n",
+            "```mech:worker\nvalues := 1..3\nother := 1..=3\n```\n",
+        ),
+        (
+            "Ranges {1..3} and {{1..=3}}.\n",
+            "Ranges {1..3} and {{1..=3}}.\n",
+        ),
+    ] {
+        let formatted = CanonicalDocumentRenderer
+            .format_pretty_text(&document(source))
+            .unwrap();
+        assert_eq!(formatted, expected, "{source:?}");
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&streamed_document(source))
+                .unwrap(),
+            formatted,
+            "streamed {source:?}"
+        );
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&document(&formatted))
+                .unwrap(),
+            formatted,
+            "{source:?}"
+        );
+    }
+}
+
+#[test]
+fn canonical_pretty_text_spaces_record_and_map_separators() {
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document(
+            "record:={ a:1,b:2 }\nmap:={ 1:2,3:4 }\nvector:=[ 1 2 ]\n",
+        ))
+        .unwrap();
+    assert_eq!(
+        formatted,
+        "record := {a: 1, b: 2}\nmap := {1: 2, 3: 4}\nvector := [1 2]\n"
+    );
+}
+
+#[test]
+fn canonical_pretty_text_preserves_prefix_not_and_normalizes_tuple_destructuring() {
+    let source = "answer:=!true\nother:=¬false\nnested:=!!true\n(x,y):=pair\n";
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document(source))
+        .unwrap();
+    assert_eq!(
+        formatted,
+        "answer := !true\nother := ¬false\nnested := !!true\n(x, y) := pair\n"
+    );
+    let reparsed = document(&formatted);
+    assert_eq!(
+        CanonicalDocumentRenderer
+            .format_pretty_text(&reparsed)
+            .unwrap(),
+        formatted
+    );
+}
+
+#[test]
+fn canonical_pretty_text_formats_inline_code_without_changing_prose() {
+    let source = "Result  {40+2}, literal {{x:=1}} and `40+2`.\n";
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document(source))
+        .unwrap();
+    assert_eq!(
+        formatted,
+        "Result  {40 + 2}, literal {{x := 1}} and `40+2`.\n"
+    );
+    let reparsed = document(&formatted);
+    assert_eq!(
+        CanonicalDocumentRenderer
+            .format_pretty_text(&reparsed)
+            .unwrap(),
+        formatted
+    );
+}
+
+#[test]
+fn inert_diagram_fences_render_as_mermaid_containers() {
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document("```diagram\ngraph LR\n  A --> B\n```\n"))
+        .unwrap();
+    assert!(
+        html.contains("class='mech-diagram mermaid' data-mech-diagram"),
+        "{html}"
+    );
+    assert!(html.contains("graph LR"), "{html}");
+    assert!(!html.contains("data-language='diagram'"), "{html}");
+}
+
+#[test]
+fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
+    let document = document(include_str!("../../../tests/fixtures/shims/all-slots.mec"));
+    let slots = CanonicalDocumentRenderer
+        .format_browser_html_slots(&document)
+        .unwrap();
+    for (name, expected) in [
+        ("AUTHOR", "Ada Lovelace"),
+        ("DATE", "July 30, 2026"),
+        ("KICKER", "Announcement"),
+        ("SECTION", "Compatibility"),
+        ("SUMMARY", "Every supported shim slot must render."),
+        ("HERO", "hero.svg"),
+        ("NEXT", "next.html"),
+        ("PREVIOUS", "previous.html"),
+        ("ABSTRACT", "deliberately separate"),
+        ("INTRO", "unsectioned introduction"),
+        ("TOC", "href='#1'"),
+        ("TOC", "href='#1.1'"),
+        ("SECTION1", "own distinct content"),
+        ("SECTION2", "must not appear"),
+        ("FOOTNOTES", "Fixture footnote body"),
+        ("CITED", "Mech Programming Language"),
+    ] {
+        assert!(
+            slots.get(name).is_some_and(|html| html.contains(expected)),
+            "{name}: {slots:#?}"
+        );
+    }
+    assert!(slots["TOC"].contains("class='toc mech-toc'"));
+    assert!(slots["TOC"].contains("</a><ul class='toc-sub'><li><a href='#1.1'"));
+    assert!(slots["SECTION1"].contains("class='mechdown-section mechdown-titled-section'"));
+    assert!(slots["FOOTNOTES"].contains("class='mech-footnotes'"));
+    assert!(slots["FOOTNOTES"].contains("class='mech-backmatter-heading'>Footnotes</h3>"));
+    assert!(slots["CONTENT"].contains("id='1'"));
+    assert!(slots["CONTENT"].contains("id='1.1'"));
+    assert_eq!(
+        slots["CONTENT"]
+            .matches("class='mechdown-section mechdown-titled-section'")
+            .count(),
+        2
+    );
+    assert!(!slots["SECTION1"].contains("must not appear"));
+    assert!(!slots["CONTENT"].contains("unsectioned introduction"));
+    assert!(!slots["INTRO"].contains("deliberately separate"));
+    assert_eq!(slots["CONTENT"], slots["CONTENTS"]);
+    assert!(slots["INTRO"].contains("{{TITLE}}"));
+    assert!(slots["INTRO"].contains("mech-inline-mech-code"));
+    assert!(slots["INTRO"].contains("data-mech-source"));
+    assert!(slots["INTRO"].contains("class='mech-number'>41</span>"));
+}
+
+#[test]
+fn served_particle_document_formats_its_annotated_compute_heading() {
+    let source = include_str!("../../../examples/gpu-particles/particles.mec");
+    let document = document(source);
+    let slots = CanonicalDocumentRenderer
+        .format_browser_html_slots(&document)
+        .unwrap();
+    assert!(slots["TOC"].contains("particle-field"));
+    assert!(slots["CONTENT"].contains("particle-field"));
+    assert!(!slots["TOC"].contains("@compute"), "{}", slots["TOC"]);
+    assert!(
+        slots["CONTENT"].contains("data-mech-annotations='@compute'"),
+        "{}",
+        slots["CONTENT"]
+    );
+    assert!(
+        slots["CONTENT"].contains("class='mech-section-annotations'>@compute</span>"),
+        "{}",
+        slots["CONTENT"]
+    );
+}
+
+#[test]
+fn browser_titles_preserve_lf_and_crlf_source() {
+    for ending in ["\n", "\r\n"] {
+        let source = [
+            "Browser Title",
+            "=============",
+            "section: Examples",
+            "=============",
+            "answer := 42",
+            "The answer is {answer}.",
+            "",
+        ]
+        .join(ending);
+        let document = document(&source);
+        let html = CanonicalDocumentRenderer
+            .format_browser_html(&document)
+            .unwrap();
+        assert!(html.contains("<h1 class='mech-document-title'>Browser Title</h1>"));
+        assert!(html.contains("Examples"));
+        assert!(html.contains("mech-inline-mech-code"));
+    }
+    let source = include_str!("../../../examples/working/fizzbuzz.mec");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document(source))
+        .unwrap();
+    assert!(html.contains("<h1 class='mech-document-title'>Fizz Buzz</h1>"));
+    assert!(html.contains("mech-block-output"));
+}
+
+#[test]
+fn rich_comments_render_markup_and_line_local_ans_in_each_scope() {
+    let body = "answer := 40 + 2 -- **Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}.\nanswer + 2 // __Next__: {ans}, {ans + 10}.\n";
+    for (source, named) in [
+        (body.to_owned(), false),
+        (format!("~~~mech\n{body}~~~\n"), false),
+        (format!("root := 0\n~~~mech:example\n{body}~~~\n"), true),
+    ] {
+        for document in [document(&source), streamed_document(&source)] {
+            let frontend = CanonicalSourceFrontend;
+            let root = frontend.compile_document(&document).unwrap();
+            let mut results = vec![execute(
+                document.scope_id(),
+                CanonicalRenderScope::Root,
+                &root,
+                91,
+            )];
+            if named {
+                let program = frontend
+                    .compile_named_document_scope(&document, "example")
+                    .unwrap();
+                results.push(execute(
+                    document.scope_id(),
+                    CanonicalRenderScope::Named("example".into()),
+                    &program,
+                    92,
+                ));
+            }
+            let renderer = CanonicalDocumentRenderer;
+            let html = renderer.render_html(&document, &results).unwrap();
+            assert!(
+                html.contains("<strong class='mech-strong'>Result</strong>"),
+                "{html}"
+            );
+            assert!(html.contains("href='https://mech-lang.org'"), "{html}");
+            assert!(
+                html.contains("<u class='mech-underline'>Next</u>"),
+                "{html}"
+            );
+            for value in [42, 43, 44, 54] {
+                assert!(
+                    html.contains(&format!(">{value}</span>")),
+                    "missing {value}: {html}"
+                );
+            }
+            assert!(
+                html.contains("<code class='mech-inline-code'>literal</code>"),
+                "{html}"
+            );
+            assert!(
+                html.contains("<code class='mech-inline'>answer + 99</code>"),
+                "{html}"
+            );
+            assert!(
+                !html.contains(">141</span>"),
+                "double braces must not execute: {html}"
+            );
+            assert!(html.contains("class='mech-number'>40</span>"), "{html}");
+            assert!(html.contains("class='mech-number'>2</span>"), "{html}");
+            let text = renderer.render_text(&document, &results).unwrap();
+            assert!(text.contains(": 42, 43."), "{text}");
+            assert!(text.contains(": 44, 54."), "{text}");
+            let browser = renderer.format_browser_html(&document).unwrap();
+            assert_eq!(
+                browser.matches("class='mech-inline-mech-code'").count(),
+                if named { 0 } else { 4 },
+                "{browser}"
+            );
+            assert!(
+                browser.contains("<strong class='mech-strong'>Result</strong>"),
+                "{browser}"
+            );
+        }
+    }
+
+    // REPL source highlighting remains a nonexecuting display of the exact
+    // comment body, while ordinary code retains its syntax highlighting.
+    let repl = CanonicalDocumentRenderer
+        .render_repl_source_html(&document(body))
+        .unwrap()
+        .unwrap();
+    assert!(
+        repl.contains(
+            "**Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}."
+        ),
+        "{repl}"
+    );
+    assert!(repl.contains("__Next__: {ans}, {ans + 10}."), "{repl}");
+    assert!(repl.contains("class='mech-number'>40</span>"), "{repl}");
+    assert!(repl.contains("data-mech-var-name='answer'"), "{repl}");
+    assert!(!repl.contains("mech-inline-mech-code"), "{repl}");
+    assert!(!repl.contains("mech-strong"), "{repl}");
+    assert!(!repl.contains("data-mech-var-name='ans'"), "{repl}");
+    assert!(!repl.contains("class='mech-number'>99</span>"), "{repl}");
+}
+
+#[test]
+fn inline_ans_in_comments_tracks_live_state_through_source_and_bytecode() {
+    let document = document("~counter := 0\ncounter += 1 -- **Counter** {ans}\ncounter\n");
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let artifact = program.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(93, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for value in [1, 2, 3] {
+            instance.turn(&[]).unwrap();
+            let values = (0..artifact.outputs().len())
+                .map(|output| {
+                    RuntimeValueSnapshot::from_value(instance.copied_output(output).unwrap())
+                        .unwrap()
+                })
+                .collect::<Vec<_>>();
+            let results = [CanonicalScopeResults::from_values(
+                document.scope_id(),
+                CanonicalRenderScope::Root,
+                &program,
+                &values,
+            )
+            .unwrap()];
+            let html = CanonicalDocumentRenderer
+                .render_html(&document, &results)
+                .unwrap();
+            assert!(html.contains(&format!("<strong class='mech-strong'>Counter</strong> <span class='mech-value'>{value}</span>")), "{html}");
+            assert!(!html.contains("mech-inline-mech-code"), "{html}");
+            assert!(html.contains(&format!("<output class='mech-program-output'><span class='mech-value'>{value}</span></output>")), "{html}");
+        }
+    }
+}
+
+fn assert_pretty_roundtrip(cases: &[(&str, &str)]) {
+    for &(source, expected) in cases {
+        let formatted = CanonicalDocumentRenderer
+            .format_pretty_text(&document(source))
+            .unwrap();
+        assert_eq!(formatted, expected, "{source:?}");
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&streamed_document(source))
+                .unwrap(),
+            formatted,
+            "streamed {source:?}"
+        );
+        assert_eq!(
+            CanonicalDocumentRenderer
+                .format_pretty_text(&document(&formatted))
+                .unwrap(),
+            formatted,
+            "idempotence {source:?}"
+        );
+    }
+}
+
+#[test]
+fn canonical_pretty_text_normalizes_context_capability_groups() {
+    assert_pretty_roundtrip(&[
+        (
+            "@io:=cli://stdout{:read(*),:write(line)}\n",
+            "@io := cli://stdout { :read(*), :write(line) }\n",
+        ),
+        (
+            "@io := @main {  :read(users/*) ,  :write(*) , }\n",
+            "@io := @main { :read(users/*), :write(*), }\n",
+        ),
+        ("@io:=@main\n", "@io := @main\n"),
+        (
+            "```mech:worker\r\n@io:=@main{\r\n  :read(*),\r\n  :write(line)\r\n}\r\n```\r\n",
+            "```mech:worker\r\n@io := @main {\r\n  :read(*),\r\n  :write(line)\r\n}\r\n```\r\n",
+        ),
+        (
+            "Declaration {{@io:=@main{:read(*),:write(line)}}}.\n",
+            "Declaration {{@io := @main { :read(*), :write(line) }}}.\n",
+        ),
+    ]);
+}
+
+#[test]
+fn canonical_pretty_text_normalizes_named_call_bindings() {
+    assert_pretty_roundtrip(&[
+        ("result:=make(x:1,y:2)\n", "result := make(x: 1, y: 2)\n"),
+        (
+            "result:=make(x : other(y:2),note:\"x:1,y:2\",items:{a:1,b:2})\n",
+            "result := make(x: other(y: 2), note: \"x:1,y:2\", items: {a: 1, b: 2})\n",
+        ),
+        (
+            "Calls {make(x:1,y:2)} and {{make(x:1,y:2)}}.\r\n",
+            "Calls {make(x: 1, y: 2)} and {{make(x: 1, y: 2)}}.\r\n",
+        ),
+    ]);
+}
+
+#[test]
+fn canonical_pretty_text_normalizes_document_option_maps() {
+    assert_pretty_roundtrip(&[
+        (
+            "~~~mech{output:false,color:red}\nx:=1\n~~~\n",
+            "~~~mech{output: false, color: red}\nx := 1\n~~~\n",
+        ),
+        (
+            "```text{color:\"red,blue:green\"}\nx:=1\n```\n",
+            "```text{color: \"red,blue:green\"}\nx:=1\n```\n",
+        ),
+        (
+            "![Caption  untouched](robot.png){width:wide,color:red}\n",
+            "![Caption  untouched](robot.png){width: wide, color: red}\n",
+        ),
+        (
+            "![Caption {1+2}](robot.png){color:red,width:wide}\n",
+            "![Caption {1 + 2}](robot.png){color: red, width: wide}\n",
+        ),
+        (
+            "| ![one](one.png){width:wide,color:red} | ![two](two.png){width:wide} |\r\n",
+            "| ![one](one.png){width: wide, color: red} | ![two](two.png){width: wide} |\r\n",
+        ),
+    ]);
+}
+
+#[test]
+fn browser_heading_annotations_require_complete_compact_identifiers() {
+    for (title, annotation) in [
+        ("Meet @ home today", None),
+        ("Meet @home today", None),
+        ("Meet @", None),
+        ("Meet @123", None),
+        ("Meet @home!", None),
+        ("Meet @ home today @compute", Some("@compute")),
+        ("Meet\t@compute", Some("@compute")),
+        ("Meet @compute", Some("@compute")),
+        ("Meet @gpu @cpu", Some("@gpu @cpu")),
+        ("Meet @💡", Some("@💡")),
+    ] {
+        for ending in ["\n", "\r\n"] {
+            let source = format!("1. {title}{ending}----------------{ending}");
+            for doc in [document(&source), streamed_document(&source)] {
+                let slots = CanonicalDocumentRenderer
+                    .format_browser_html_slots(&doc)
+                    .unwrap();
+                let label = annotation.map_or(title, |suffix| {
+                    title.strip_suffix(suffix).unwrap().trim_end()
+                });
+                assert!(
+                    slots["TOC"].contains(&format!(">{label}</a>")),
+                    "{title:?}: {}",
+                    slots["TOC"]
+                );
+                if let Some(annotation) = annotation {
+                    assert!(
+                        slots["CONTENT"].contains(&format!("data-mech-annotations='{annotation}'")),
+                        "{title:?}: {}",
+                        slots["CONTENT"]
+                    );
+                } else {
+                    assert!(
+                        !slots["CONTENT"].contains("data-mech-annotations"),
+                        "{title:?}: {}",
+                        slots["CONTENT"]
+                    );
+                    assert!(
+                        slots["CONTENT"].contains(&format!(">{label}</h2>")),
+                        "{title:?}: {}",
+                        slots["CONTENT"]
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn figure_summary_copies_do_not_duplicate_live_output_mounts() {
+    let doc = document("| ![one {1}](one.png) | ![two {2}](two.png) |\n");
+    let renderer = CanonicalDocumentRenderer;
+    let program = CanonicalSourceFrontend.compile_document(&doc).unwrap();
+    let ranges = program
+        .document_outputs()
+        .iter()
+        .filter(|binding| binding.kind == SourceDocumentOutputKind::Inline)
+        .map(|binding| program.source_map().outputs[binding.output as usize].range)
+        .collect::<Vec<_>>();
+    assert_eq!(ranges.len(), 2);
+    let addresses = ranges
+        .iter()
+        .enumerate()
+        .map(|(index, range)| (*range, 100 + index as u64))
+        .collect::<Vec<_>>();
+    for html in [
+        renderer.format_browser_html(&doc).unwrap(),
+        renderer.format_html_body_live(&doc, &addresses).unwrap(),
+        renderer.format_browser_html_slots(&doc).unwrap()["INTRO"].clone(),
+    ] {
+        let (panels, summary) = html
+            .split_once("<figcaption class='mech-figure-table-caption'>")
+            .unwrap();
+        assert_eq!(panels.matches("id='").count(), 2, "{html}");
+        assert!(!summary.contains("id='"), "{html}");
+        assert!(!summary.contains("data-mech-output-address"), "{html}");
+        assert!(!summary.contains("data-mech-source"), "{html}");
+        assert!(
+            summary.contains("two <code class='mech-inline'>{2}</code>"),
+            "{html}"
+        );
+    }
+    let results = [execute(
+        doc.scope_id(),
+        CanonicalRenderScope::Root,
+        &program,
+        910,
+    )];
+    let html = renderer.render_html(&doc, &results).unwrap();
+    let (_, summary) = html
+        .split_once("<figcaption class='mech-figure-table-caption'>")
+        .unwrap();
+    assert!(
+        summary.contains(">1</span>") && summary.contains(">2</span>"),
+        "{html}"
+    );
+}
+
+#[test]
+fn table_of_contents_copies_do_not_duplicate_live_heading_mounts() {
+    let doc = document("1. Count {1}\n-------------\n");
+    let slots = CanonicalDocumentRenderer
+        .format_browser_html_slots(&doc)
+        .unwrap();
+    assert!(!slots["TOC"].contains("id='"), "{}", slots["TOC"]);
+    assert!(
+        !slots["TOC"].contains("data-mech-output-address"),
+        "{}",
+        slots["TOC"]
+    );
+    assert!(
+        slots["TOC"].contains("<code class='mech-inline'>{1}</code>"),
+        "{}",
+        slots["TOC"]
+    );
+    assert_eq!(
+        slots["CONTENT"].matches("data-mech-output-address").count(),
+        1,
+        "{}",
+        slots["CONTENT"]
+    );
+}
+
+#[test]
+fn canonical_pretty_text_normalizes_tuple_value_and_tagged_pattern_separators() {
+    assert_pretty_roundtrip(&[
+        ("pair:=(1,2)\n", "pair := (1, 2)\n"),
+        ("pair:=:some((1,2))\n", "pair := :some((1, 2))\n"),
+        (
+            "answer:=pair?\n| `some(x,y)=>x.\n",
+            "answer := pair?\n| `some(x, y) => x.\n",
+        ),
+        (
+            "answer:=pair?\n| :some(x,y)=>x.\n",
+            "answer := pair?\n| :some(x, y) => x.\n",
+        ),
+    ]);
+}
+
+#[test]
+fn canonical_pretty_text_normalizes_function_signature_separators() {
+    assert_pretty_roundtrip(&[
+        (
+            "add(x<u64>,y<u64>) = out<u64> := out := x + y.\n",
+            "add(x<u64>, y<u64>) = out<u64> := out := x + y.\n",
+        ),
+        (
+            "add(x<u64>,  y<u64>) = out<u64> := out := x + y.\r\n",
+            "add(x<u64>, y<u64>) = out<u64> := out := x + y.\r\n",
+        ),
+        (
+            "split(x<u64>,y<u64>) = (a<u64>,b<u64>) := a := x; b := y.\n",
+            "split(x<u64>, y<u64>) = (a<u64>, b<u64>) := a := x; b := y.\n",
+        ),
+        (
+            "split(x<u64>) = (a<u64>,  b<u64>) := a := x; b := x.\r\n",
+            "split(x<u64>) = (a<u64>, b<u64>) := a := x; b := x.\r\n",
+        ),
+        (
+            "choose(x<u64>,y<u64>) => <u64>\n| 0 => y\n| x => x.\n",
+            "choose(x<u64>, y<u64>) => <u64>\n| 0 => y\n| x => x.\n",
+        ),
+        (
+            "label(x<u64>,y<u64>) = out<string> := out := \"x,y\".\n-- keep x,y\n",
+            "label(x<u64>, y<u64>) = out<string> := out := \"x,y\".\n-- keep x,y\n",
+        ),
+        (
+            "~~~mech:worker\nsplit(x<u64>,y<u64>) = (a<u64>,b<u64>) := a := x; b := y.\n~~~\n",
+            "~~~mech:worker\nsplit(x<u64>, y<u64>) = (a<u64>, b<u64>) := a := x; b := y.\n~~~\n",
+        ),
+    ]);
+}
+
+#[test]
+fn canonical_pretty_text_normalizes_grouped_import_separators() {
+    assert_pretty_roundtrip(&[
+        ("+> math/{sin,cos}\n", "+> math/{sin, cos}\n"),
+        ("+> math/{ sin , cos }\r\n", "+> math/{sin, cos}\r\n"),
+        (
+            "+> math/{sin,cos} -- keep a,b\ntext := \"sin,cos\"\n",
+            "+> math/{sin, cos} -- keep a,b\ntext := \"sin,cos\"\n",
+        ),
+        (
+            "Report\n======\n+> math/{sin,cos}\nauthor: Keep a,b\n======\n",
+            "Report\n======\n+> math/{sin, cos}\nauthor: Keep a,b\n======\n",
+        ),
+        (
+            "+> math/{trig/sin,trig/cos}\n",
+            "+> math/{trig/sin, trig/cos}\n",
+        ),
+        (
+            "~~~mech:worker\n+> math/{sin,cos}\n~~~\n",
+            "~~~mech:worker\n+> math/{sin, cos}\n~~~\n",
+        ),
+    ]);
+}
+
+#[test]
+fn repeated_section_numbers_have_distinct_heading_and_toc_anchors() {
+    let source = "1. First\n---------\nFirst body.\n\n1. Second\n----------\nSecond body.\n\n(1.1) Child A\nChild body.\n\n(1.1) Child B\nOther child body.\n";
+    for ending in ["\n", "\r\n"] {
+        let source = source.replace('\n', ending);
+        for doc in [document(&source), streamed_document(&source)] {
+            let renderer = CanonicalDocumentRenderer;
+            for slots in [
+                renderer.format_browser_html_slots(&doc).unwrap(),
+                renderer.format_static_html_slots(&doc).unwrap(),
+            ] {
+                let links = slots["TOC"]
+                    .split("href='#")
+                    .skip(1)
+                    .map(|link| link.split_once('\'').unwrap().0)
+                    .collect::<Vec<_>>();
+                assert_eq!(links.len(), 4, "{}", slots["TOC"]);
+                assert_eq!(
+                    links
+                        .iter()
+                        .copied()
+                        .collect::<std::collections::HashSet<_>>()
+                        .len(),
+                    4,
+                    "{}",
+                    slots["TOC"]
+                );
+                assert_eq!(links[0], "1");
+                assert_eq!(links[2], "1.1");
+                for html in [
+                    slots["CONTENT"].clone(),
+                    renderer.format_html(&doc).unwrap(),
+                    renderer.format_browser_html(&doc).unwrap(),
+                    renderer.format_html_body_live(&doc, &[]).unwrap(),
+                ] {
+                    for anchor in &links {
+                        assert_eq!(html.matches(&format!("id='{anchor}'")).count(), 1, "{html}");
+                    }
+                    for heading in ["First", "Second", "Child A", "Child B"] {
+                        assert!(html.contains(heading), "{html}");
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn context_source_roles_and_long_capability_rows_survive_canonical_rendering() {
+    let source = "@filters:=compute://filters/kernel{:read(sample/result.0),:read(sample/result.2),:read(turns),:write(input/control),:write(input/camera),:write(input/measurement),:write(turn)}\n";
+    let expected = "@filters := compute://filters/kernel {\n  :read(sample/result.0),\n  :read(sample/result.2),\n  :read(turns),\n  :write(input/control),\n  :write(input/camera),\n  :write(input/measurement),\n  :write(turn)\n}\n";
+    assert_pretty_roundtrip(&[(source, expected)]);
+    let doc = document(&format!("{expected}0\n"));
+    let renderer = CanonicalDocumentRenderer;
+    for html in [
+        renderer.format_html(&doc).unwrap(),
+        renderer.render_repl_source_html(&doc).unwrap().unwrap(),
+    ] {
+        for role in [
+            "mech-context-name",
+            "mech-context-provider",
+            "mech-context-scheme-op",
+            "mech-context-path",
+            "mech-context-capability",
+            "mech-atom-sigil",
+            "mech-atom-name",
+        ] {
+            assert!(html.contains(role), "missing {role}: {html}");
+        }
+        assert!(html.contains(">filters/kernel</span>"), "{html}");
+        assert_eq!(
+            html.matches("mech-context-capability-row").count(),
+            7,
+            "{html}"
+        );
+    }
+    assert_pretty_roundtrip(&[
+        (
+            "name:=@browser/body/content/input/_value\n",
+            "name := @browser/body/content/input/_value\n",
+        ),
+        (
+            "@browser/body/content/output/_value=\"hello\"\n",
+            "@browser/body/content/output/_value = \"hello\"\n",
+        ),
+    ]);
+    let html = renderer
+        .render_repl_source_html(&document("name := @out/line\n"))
+        .unwrap()
+        .unwrap();
+    assert!(
+        html.contains("class='mech-context-reference'>@out/line</span>"),
+        "{html}"
+    );
+}
+
+#[test]
+fn canonical_presentation_repeated_inline_and_fence_addresses_resolve_distinct_values() {
+    let source = "~x := 1\n\nFirst {x}.\n\n~~~mech\nx += 1\nx\n~~~\n\nSecond {x}.\n\n~~~mech\nx += 1\nx\n~~~\n";
+    let doc = document(source);
+    let program = CanonicalSourceFrontend.compile_document(&doc).unwrap();
+    let result = execute(doc.scope_id(), CanonicalRenderScope::Root, &program, 913);
+    let outputs = mech_runtime::canonical_document_presentation_outputs(&doc).unwrap();
+    assert_eq!(outputs.len(), 4);
+    let ids = outputs
+        .iter()
+        .map(|output| output.output_id)
+        .collect::<std::collections::HashSet<_>>();
+    assert_eq!(ids.len(), outputs.len());
+    let html = CanonicalDocumentRenderer.format_browser_html(&doc).unwrap();
+    for output in &outputs {
+        assert_eq!(
+            html.matches(&format!("id='{}:0'", output.output_id))
+                .count(),
+            1,
+            "{html}"
+        );
+    }
+    let text = CanonicalDocumentRenderer
+        .render_text(&doc, &[result])
+        .unwrap();
+    assert!(text.contains("First 1."), "{text}");
+    assert!(text.contains("Second 2."), "{text}");
+    assert_eq!(text.matches("=> 2").count(), 1, "{text}");
+    assert_eq!(text.matches("=> 3").count(), 1, "{text}");
+    assert_eq!(
+        mech_core::root_document_program_output_id(),
+        mech_runtime::canonical_document_output_id(
+            SourceDocumentOutputKind::Program,
+            doc.syntax().range()
+        )
+    );
+}
+
+#[test]
+fn pretty_format_preserves_independently_expected_executable_results() {
+    for source in [
+        "pair:=(2,3)\n(left,right):=pair\nleft * 10 + right\n",
+        "record:={left:2,right:3}\nrecord.left * 10 + record.right\n",
+        "answer:=math/sub(left:30,right:7)\nanswer\n",
+    ] {
+        let before = document(source);
+        let formatted = CanonicalDocumentRenderer
+            .format_pretty_text(&before)
+            .unwrap();
+        let after = document(&formatted);
+        for (instance, doc) in [(914, before), (915, after)] {
+            let program = CanonicalSourceFrontend.compile_document(&doc).unwrap();
+            let result = execute(
+                doc.scope_id(),
+                CanonicalRenderScope::Root,
+                &program,
+                instance,
+            );
+            let text = CanonicalDocumentRenderer
+                .render_text(&doc, &[result])
+                .unwrap();
+            assert!(text.ends_with("=> 23\n"), "{formatted}: {text}");
+        }
+    }
+}
+
+#[test]
+fn canonical_source_styles_preserve_atom_matrix_and_table_roles() {
+    let renderer = CanonicalDocumentRenderer;
+    let variables = renderer
+        .format_html(&document("café := 1\ncafé\n"))
+        .unwrap();
+    assert_eq!(
+        variables.matches("class='mech-var-name'").count(),
+        2,
+        "{variables}"
+    );
+    assert_eq!(
+        variables.matches("data-mech-var-name='café'").count(),
+        2,
+        "{variables}"
+    );
+    assert!(
+        renderer
+            .render_repl_source_html(&document("café := 1\ncafé\n"))
+            .unwrap()
+            .unwrap()
+            .contains("data-mech-var-name='café'")
+    );
+    for (source, roles) in [
+        (
+            "status := :ready\n",
+            &["mech-atom", "mech-atom-sigil", "mech-atom-name"][..],
+        ),
+        (
+            "values<[u8]:4,4> := [1 2;3 4]\n",
+            &["mech-matrix-size-colon", "mech-matrix-size-separator"][..],
+        ),
+        (
+            "scene := |id<string> x<f64>|\n         | \"robot\" 1 |\n",
+            &["mech-statement-table-define", "mech-variable-define-table"][..],
+        ),
+    ] {
+        let doc = document(source);
+        assert_eq!(renderer.format_pretty_text(&doc).unwrap(), source);
+        let html = renderer.format_html(&doc).unwrap();
+        for role in roles {
+            assert!(html.contains(role), "missing {role}: {html}");
+        }
+    }
+}
+
+#[test]
+fn canonical_pretty_frontmatter_preserves_hero_and_compute_metadata() {
+    for source in [
+        "Gallery\n=======\nhero: | ![First](first.svg) | ![Second](second.svg) |\n=======\n",
+        "particle update @gpu @required(:finite)\n--------------------------------------\nx := 1\n",
+    ] {
+        assert_pretty_roundtrip(&[(source, source)]);
+    }
+    let doc = document("Gallery\n=======\nhero: | ![Result {40 + 2}](first.svg) |\n=======\n");
+    let slots = CanonicalDocumentRenderer
+        .format_browser_html_slots(&doc)
+        .unwrap();
+    assert_eq!(slots["HERO"].matches("data-mech-output-address").count(), 1);
+    assert!(slots["HERO"].contains("mech-subfigure-caption"));
 }

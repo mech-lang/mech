@@ -77,6 +77,10 @@ impl CanonicalArtifactWriter {
             self.u32(parameter.schema.get());
             match parameter.source {
                 super::ControlParameterSource::Scrutinee => self.u8(0),
+                super::ControlParameterSource::PatternBinding(local) => {
+                    self.u8(2);
+                    self.u32(local);
+                }
                 super::ControlParameterSource::Capture(index) => {
                     self.u8(1);
                     self.u16(index);
@@ -86,20 +90,7 @@ impl CanonicalArtifactWriter {
         self.u64(block.operations.len() as u64);
         for operation in &block.operations {
             self.u32(operation.node);
-            match &operation.body {
-                super::ControlOperationBody::Operation {
-                    operation,
-                    contract,
-                } => {
-                    self.u8(0);
-                    self.operation(operation);
-                    self.u32(contract.get());
-                }
-                super::ControlOperationBody::Match(control) => {
-                    self.u8(1);
-                    self.match_declaration(control);
-                }
-            }
+            self.control_operation_body(&operation.body);
             self.u32(operation.schema.get());
             self.u64(operation.inputs.len() as u64);
             for input in &operation.inputs {
@@ -109,22 +100,56 @@ impl CanonicalArtifactWriter {
         self.control_value(block.yield_value);
     }
 
+    fn control_operation_body(&mut self, body: &super::ControlOperationBody) {
+        match body {
+            super::ControlOperationBody::Operation {
+                operation,
+                contract,
+            } => {
+                self.u8(0);
+                self.operation(operation);
+                self.u32(contract.get());
+            }
+            super::ControlOperationBody::Match(control) => {
+                self.u8(1);
+                self.match_declaration(control);
+            }
+            super::ControlOperationBody::Comprehension(control) => {
+                self.u8(2);
+                self.comprehension(control);
+            }
+            super::ControlOperationBody::Recur(ancestor) => {
+                self.u8(3);
+                self.u8(*ancestor);
+            }
+
+            super::ControlOperationBody::Suspend => self.u8(4),
+            super::ControlOperationBody::Publish => self.u8(5),
+        }
+    }
+
     fn match_declaration(&mut self, control: &super::MatchDeclaration) {
         self.u16(control.scrutinee);
+        self.u8(u8::from(control.partial));
         self.u64(control.captures.len() as u64);
         for capture in &control.captures {
             self.u16(capture.input);
             self.u32(capture.schema.get());
+            self.u8(u8::from(capture.freeze_on_suspend));
         }
         self.u64(control.arms.len() as u64);
         for arm in &control.arms {
-            match arm.pattern {
+            match &arm.pattern {
                 super::MatchPattern::Literal(constant) => {
                     self.u8(0);
                     self.u32(constant.get());
                 }
                 super::MatchPattern::Wildcard => self.u8(1),
                 super::MatchPattern::Bind => self.u8(2),
+                super::MatchPattern::Structural(pattern) => {
+                    self.u8(3);
+                    self.match_structural_pattern(pattern);
+                }
             };
             match &arm.guard {
                 None => self.u8(0),
@@ -134,6 +159,75 @@ impl CanonicalArtifactWriter {
                 }
             }
             self.control_block(&arm.body);
+        }
+    }
+
+    fn match_structural_pattern(
+        &mut self,
+        pattern: &super::CollectionPattern<mech_core::SchemaId, super::MatchPatternValue>,
+    ) {
+        match pattern {
+            super::CollectionPattern::Wildcard => self.u8(0),
+            super::CollectionPattern::Bind { local, schema } => {
+                self.u8(1);
+                self.u32(*local);
+                self.u32(schema.get());
+            }
+            super::CollectionPattern::Equal(super::MatchPatternValue::Literal(constant)) => {
+                self.u8(2);
+                self.u8(0);
+                self.u32(constant.get());
+            }
+            super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local)) => {
+                self.u8(2);
+                self.u8(1);
+                self.u32(*local);
+            }
+            super::CollectionPattern::Equal(super::MatchPatternValue::Input(input)) => {
+                self.u8(2);
+                self.u8(2);
+                self.u16(*input);
+            }
+            super::CollectionPattern::Enum { ordinal, payload } => {
+                self.u8(5);
+                self.u32(*ordinal);
+                match payload {
+                    None => self.u8(0),
+                    Some(payload) => {
+                        self.u8(1);
+                        self.match_structural_pattern(payload);
+                    }
+                }
+            }
+            super::CollectionPattern::Tuple(items) => {
+                self.u8(3);
+                self.u64(items.len() as u64);
+                for item in items {
+                    self.match_structural_pattern(item);
+                }
+            }
+            super::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                self.u8(4);
+                self.u64(prefix.len() as u64);
+                for item in prefix {
+                    self.match_structural_pattern(item);
+                }
+                match rest {
+                    None => self.u8(0),
+                    Some(rest) => {
+                        self.u8(1);
+                        self.match_structural_pattern(rest);
+                    }
+                }
+                self.u64(suffix.len() as u64);
+                for item in suffix {
+                    self.match_structural_pattern(item);
+                }
+            }
         }
     }
 
@@ -165,6 +259,17 @@ impl CanonicalArtifactWriter {
             super::CollectionPattern::Equal(value) => {
                 self.u8(2);
                 self.comprehension_value(*value);
+            }
+            super::CollectionPattern::Enum { ordinal, payload } => {
+                self.u8(5);
+                self.u32(*ordinal);
+                match payload {
+                    None => self.u8(0),
+                    Some(payload) => {
+                        self.u8(1);
+                        self.collection_pattern(payload);
+                    }
+                }
             }
             super::CollectionPattern::Tuple(items) => {
                 self.u8(3);
@@ -199,9 +304,11 @@ impl CanonicalArtifactWriter {
     }
 
     fn comprehension(&mut self, control: &super::ComprehensionDeclaration) {
+        self.u32(control.id.0);
         self.u8(match control.kind {
             super::ComprehensionKind::Matrix => 0,
             super::ComprehensionKind::Set => 1,
+            super::ComprehensionKind::MatrixPreserveShape => 2,
         });
         self.u64(control.steps.len() as u64);
         for step in &control.steps {
@@ -218,8 +325,7 @@ impl CanonicalArtifactWriter {
                 super::ComprehensionStep::Operation(operation) => {
                     self.u8(2);
                     self.u32(operation.local);
-                    self.operation(&operation.operation);
-                    self.u32(operation.contract.get());
+                    self.control_operation_body(&operation.body);
                     self.u32(operation.schema.get());
                     self.u64(operation.inputs.len() as u64);
                     for value in &operation.inputs {
@@ -399,6 +505,10 @@ pub(super) fn program_revision(
             }
             super::ExecutableNodeBody::Match(control) => {
                 writer.u8(1);
+                writer.match_declaration(control);
+            }
+            super::ExecutableNodeBody::Activation(control) => {
+                writer.u8(4);
                 writer.match_declaration(control);
             }
             super::ExecutableNodeBody::Fsm(control) => {

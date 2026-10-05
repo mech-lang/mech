@@ -1,8 +1,11 @@
 use std::sync::{Arc, Mutex};
 
-use mech_core::snapshot::{SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint};
+use mech_core::snapshot::{
+    SequenceView, SnapshotCanonicalizationBudget, SnapshotValueError, ValueFootprint,
+};
 use mech_core::{
-    ResidentKernelError, ResourceDemand, SchemaBody, SchemaId, SchemaTable, Value, ValueData,
+    ResidentKernelError, ResidentValueKind, ResourceDemand, SchemaBody, SchemaId, SchemaTable,
+    Value, ValueData,
 };
 
 use crate::memory_planner::{
@@ -12,6 +15,180 @@ use crate::memory_planner::{
 
 #[path = "payload_budget.rs"]
 pub(crate) mod payload;
+
+#[derive(Default)]
+struct DisplayByteCounter(usize);
+
+impl core::fmt::Write for DisplayByteCounter {
+    fn write_str(&mut self, value: &str) -> core::fmt::Result {
+        self.0 = self.0.checked_add(value.len()).ok_or(core::fmt::Error)?;
+        Ok(())
+    }
+}
+
+fn displayed_bytes(value: impl core::fmt::Display) -> Result<usize, ResidentKernelError> {
+    use core::fmt::Write;
+
+    let mut counter = DisplayByteCounter::default();
+    write!(&mut counter, "{value}").map_err(|_| ResidentKernelError::InvalidShape)?;
+    Ok(counter.0)
+}
+
+fn projected_string_value_bytes(value: &ValueData) -> Result<usize, ResidentKernelError> {
+    match value {
+        ValueData::U8(value) => displayed_bytes(value),
+        ValueData::U16(value) => displayed_bytes(value),
+        ValueData::U32(value) => displayed_bytes(value),
+        ValueData::U64(value) => displayed_bytes(value),
+        ValueData::U128(value) => displayed_bytes(value),
+        ValueData::I8(value) => displayed_bytes(value),
+        ValueData::I16(value) => displayed_bytes(value),
+        ValueData::I32(value) => displayed_bytes(value),
+        ValueData::I64(value) => displayed_bytes(value),
+        ValueData::I128(value) => displayed_bytes(value),
+        ValueData::F32(value) => displayed_bytes(value.to_f32()),
+        ValueData::F64(value) => displayed_bytes(value.to_f64()),
+        ValueData::Complex32(value) => displayed_bytes(value.real().to_f32())?
+            .checked_add(displayed_bytes(value.imaginary().to_f32())?)
+            .and_then(|bytes| bytes.checked_add(2))
+            .ok_or(ResidentKernelError::InvalidShape),
+        ValueData::Complex64(value) => displayed_bytes(value.real().to_f64())?
+            .checked_add(displayed_bytes(value.imaginary().to_f64())?)
+            .and_then(|bytes| bytes.checked_add(2))
+            .ok_or(ResidentKernelError::InvalidShape),
+        ValueData::Rational64(value) => displayed_bytes(value.numerator())?
+            .checked_add(displayed_bytes(value.denominator())?)
+            .and_then(|bytes| bytes.checked_add(1))
+            .ok_or(ResidentKernelError::InvalidShape),
+        ValueData::Bool(value) => Ok(if *value { 4 } else { 5 }),
+        ValueData::String(value) => Ok(value.len()),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn projected_display_sequence<T: core::fmt::Display>(
+    values: &[T],
+) -> Result<usize, ResidentKernelError> {
+    values.iter().try_fold(0usize, |bytes, value| {
+        bytes
+            .checked_add(displayed_bytes(value)?)
+            .ok_or(ResidentKernelError::InvalidShape)
+    })
+}
+
+pub(super) fn projected_snapshot_string_payload(
+    value: &Value,
+) -> Result<usize, ResidentKernelError> {
+    match value.data() {
+        ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::U8(values) => projected_display_sequence(values),
+            SequenceView::U16(values) => projected_display_sequence(values),
+            SequenceView::U32(values) => projected_display_sequence(values),
+            SequenceView::U64(values) => projected_display_sequence(values),
+            SequenceView::U128(values) => projected_display_sequence(values),
+            SequenceView::I8(values) => projected_display_sequence(values),
+            SequenceView::I16(values) => projected_display_sequence(values),
+            SequenceView::I32(values) => projected_display_sequence(values),
+            SequenceView::I64(values) => projected_display_sequence(values),
+            SequenceView::I128(values) => projected_display_sequence(values),
+            SequenceView::F32(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(displayed_bytes(value.to_f32())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::F64(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(displayed_bytes(value.to_f64())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Complex32(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(projected_string_value_bytes(&ValueData::Complex32(*value))?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Complex64(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(projected_string_value_bytes(&ValueData::Complex64(*value))?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Rational64(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(projected_string_value_bytes(&ValueData::Rational64(
+                        value.clone(),
+                    ))?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Bool(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(if *value { 4 } else { 5 })
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::String(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(value.len())
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Values(values) => values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(projected_string_value_bytes(value)?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            SequenceView::Id(_) | SequenceView::Index(_) | SequenceView::Unit(_) => {
+                Err(ResidentKernelError::InvalidInput)
+            }
+        },
+        value => projected_string_value_bytes(value),
+    }
+}
+
+pub(super) fn projected_dense_string_payload(
+    value: &Value,
+    kind: ResidentValueKind,
+) -> Result<usize, ResidentKernelError> {
+    match (kind, value.data()) {
+        (ResidentValueKind::Bool, ValueData::Bool(value)) => Ok(if *value { 4 } else { 5 }),
+        (ResidentValueKind::Bool, ValueData::Matrix(matrix)) => {
+            let SequenceView::Bool(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(if *value { 4 } else { 5 })
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+        }
+        (ResidentValueKind::Index, ValueData::Index(value)) => displayed_bytes(value),
+        (ResidentValueKind::Index, ValueData::Matrix(matrix)) => {
+            let SequenceView::Index(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            projected_display_sequence(values)
+        }
+        (ResidentValueKind::F64, ValueData::F64(value)) => displayed_bytes(value.to_f64()),
+        (ResidentValueKind::F64, ValueData::Matrix(matrix)) => {
+            let SequenceView::F64(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(displayed_bytes(value.to_f64())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+        }
+        (ResidentValueKind::String, ValueData::String(value)) => Ok(value.len()),
+        (ResidentValueKind::String, ValueData::Matrix(matrix)) => {
+            let SequenceView::String(values) = matrix.elements() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(value.len())
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
 
 thread_local! {
     static ACTIVE_TURN_PLAN: Mutex<Option<Arc<TurnMemoryPlan>>> = const { Mutex::new(None) };
@@ -35,6 +212,59 @@ struct ControlWorkScope {
 thread_local! {
     static CONTROL_WORK: std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWork>>>> = const { std::cell::RefCell::new(None) };
     static CONTROL_WORK_SCOPE: std::cell::RefCell<Option<ControlWorkScope>> = const { std::cell::RefCell::new(None) };
+    static PLANNING_STEPS: std::cell::RefCell<Option<PlanningSteps>> = const { std::cell::RefCell::new(None) };
+}
+
+struct PlanningSteps {
+    limit: usize,
+    remaining: usize,
+    exhausted: bool,
+}
+
+/// Bounds synchronous compiler evaluation across activation and initial-turn
+/// execution. Nested control operations share the caller's step authority.
+#[doc(hidden)]
+pub fn with_planning_step_limit<T>(limit: usize, execute: impl FnOnce() -> T) -> Result<T, usize> {
+    struct Guard(Option<PlanningSteps>);
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            PLANNING_STEPS.with(|active| *active.borrow_mut() = self.0.take());
+        }
+    }
+    let _guard = Guard(PLANNING_STEPS.with(|active| {
+        active.replace(Some(PlanningSteps {
+            limit,
+            remaining: limit,
+            exhausted: false,
+        }))
+    }));
+    let result = execute();
+    PLANNING_STEPS.with(|active| {
+        let active = active.borrow();
+        let steps = active.as_ref().expect("planning step scope is installed");
+        if steps.exhausted {
+            Err(steps.limit)
+        } else {
+            Ok(result)
+        }
+    })
+}
+
+pub(crate) fn charge_planning_step() -> Result<(), super::general::ResidentExecutionError> {
+    PLANNING_STEPS.with(|active| {
+        let mut active = active.borrow_mut();
+        let Some(steps) = active.as_mut() else {
+            return Ok(());
+        };
+        if steps.remaining == 0 {
+            steps.exhausted = true;
+            return Err(super::general::ResidentExecutionError::PlanningStepLimit {
+                limit: steps.limit,
+            });
+        }
+        steps.remaining -= 1;
+        Ok(())
+    })
 }
 
 pub(crate) fn with_control_work_budget<T>(execute: impl FnOnce() -> T) -> T {
@@ -332,6 +562,7 @@ pub(crate) struct AdmittedMutationPlan<P> {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(crate) struct ResidentBudgetMeter {
     accumulated: KernelCostEstimate,
+    analysis_allowance: Option<(u64, u64)>,
 }
 
 /// Authority proving one complete checked estimate passed central resident
@@ -357,6 +588,20 @@ pub(crate) struct AdmittedKernel<P> {
 }
 
 impl KernelCostEstimate {
+    pub(crate) fn check_analysis_limits(self) -> Result<(), ResidentKernelError> {
+        if self.demand.output_elements > mech_core::RESIDENT_MAX_OUTPUT_ELEMENTS as u64
+            || self.demand.persistent_bytes > mech_core::RESIDENT_MAX_BYTES
+            || self.temporary_bytes() > mech_core::RESIDENT_MAX_BYTES
+            || self.cloned_bytes() > mech_core::RESIDENT_MAX_BYTES
+            || self.retained_nodes() > mech_core::RESIDENT_MAX_RETAINED_NODES
+            || self.compute_work() > MAX_RESIDENT_COMPUTE_WORK
+            || self.comparison_work() > MAX_RESIDENT_COMPARISON_WORK
+        {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(())
+    }
+
     pub(crate) const fn comparison_work(self) -> u64 {
         self.demand.work.comparison
     }
@@ -454,8 +699,7 @@ impl KernelCostEstimate {
         }
         #[cfg(test)]
         {
-            return detached_test_turn_plan(self.demand)
-                .and_then(ResidentBudgetPermit::from_turn_plan);
+            return detached_turn_plan(self.demand).and_then(ResidentBudgetPermit::from_turn_plan);
         }
         #[cfg(not(test))]
         {
@@ -517,7 +761,7 @@ impl KernelCostEstimate {
 }
 
 #[cfg(test)]
-fn detached_test_turn_plan(demand: ResourceDemand) -> Result<TurnMemoryPlan, ResidentKernelError> {
+fn detached_turn_plan(demand: ResourceDemand) -> Result<TurnMemoryPlan, ResidentKernelError> {
     let target = mech_core::TargetMemoryProfile::current_resident_cpu()
         .map_err(|_| ResidentKernelError::InvalidShape)?;
     let node = mech_core::NodeId::new(0);
@@ -581,6 +825,29 @@ impl<P> PreparedKernel<P> {
             _permit: self.cost.checked()?,
         })
     }
+
+    /// Reserve a closed construction under analysis authority, without
+    /// manufacturing a turn permit or invoking a resident executor.
+    pub(crate) fn prepare_for_analysis(
+        self,
+        admit: impl FnOnce(KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    ) -> Result<P, ResidentKernelError> {
+        self.cost.check_analysis_limits()?;
+        admit(self.cost)?;
+        Ok(self.plan)
+    }
+
+    /// Admit work performed by a control node outside an ordinary kernel
+    /// call. Match result conversion owns its payload through the control
+    /// write scope, while this permit validates and accumulates the complete
+    /// conversion demand against the same resident target limits.
+    pub(crate) fn admit_control(self) -> Result<AdmittedKernel<P>, ResidentKernelError> {
+        let _scope = ControlWorkScopeGuard::enter();
+        Ok(AdmittedKernel {
+            plan: self.plan,
+            _permit: self.cost.checked()?,
+        })
+    }
 }
 
 impl<P> AdmittedKernel<P> {
@@ -626,6 +893,18 @@ impl<P> PreparedMutationPlan<P> {
             operation: self.operation,
             _permit: self.cost.turn_plan(Some(self.final_output))?,
         })
+    }
+
+    /// Analysis owns a separate cumulative allowance. This authorizes only
+    /// closed-value construction, never a resident turn or publication.
+    #[cfg(feature = "table")]
+    pub(crate) fn prepare_for_analysis(
+        self,
+        admit: impl FnOnce(KernelCostEstimate) -> Result<(), ResidentKernelError>,
+    ) -> Result<P, ResidentKernelError> {
+        self.cost.check_analysis_limits()?;
+        admit(self.cost)?;
+        Ok(self.operation)
     }
 }
 
@@ -738,7 +1017,7 @@ pub(crate) fn preflight_canonical_data_finalization(
     data: &ValueData,
 ) -> Result<u64, ResidentKernelError> {
     measure_canonical_data_comparison_work(meter, schema, data)?;
-    let remaining = meter.estimate().remaining_incremental_work()?;
+    let remaining = meter.remaining_incremental_work()?;
     let budget = SnapshotCanonicalizationBudget::new(remaining);
     let work = mech_core::snapshot::canonical_data_draft_finalization_work_with_budget(
         schema, data, &budget,
@@ -882,13 +1161,59 @@ impl<P> AdmittedMutationPlan<P> {
 }
 
 impl ResidentBudgetMeter {
+    /// Explicit borrowed measurement outside a turn. Default meters retain
+    /// their turn-only authority in both production and test builds.
+    pub(crate) fn for_closed_analysis(compute: u64, comparison: u64) -> Self {
+        Self {
+            accumulated: KernelCostEstimate::default(),
+            analysis_allowance: Some((compute, comparison)),
+        }
+    }
+
+    pub(crate) fn preflight_meter(&self) -> Result<Self, ResidentKernelError> {
+        Ok(match self.analysis_allowance {
+            Some((compute, comparison)) => Self::for_closed_analysis(
+                compute
+                    .checked_sub(self.accumulated.compute_work())
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                comparison
+                    .checked_sub(self.accumulated.comparison_work())
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            ),
+            None => Self::default(),
+        })
+    }
+
+    pub(crate) fn remaining_incremental_work(&self) -> Result<u64, ResidentKernelError> {
+        if let Some((compute, comparison)) = self.analysis_allowance {
+            self.accumulated.check_analysis_limits()?;
+            Ok(compute
+                .checked_sub(self.accumulated.compute_work())
+                .ok_or(ResidentKernelError::InvalidShape)?
+                .min(
+                    comparison
+                        .checked_sub(self.accumulated.comparison_work())
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                ))
+        } else {
+            self.accumulated.remaining_incremental_work()
+        }
+    }
+
     fn charge(
         &mut self,
         update: impl FnOnce(&mut KernelCostEstimate) -> Result<(), ResidentKernelError>,
     ) -> Result<(), ResidentKernelError> {
         let mut next = self.accumulated;
         update(&mut next)?;
-        next.check_planning_progress()?;
+        if let Some((compute, comparison)) = self.analysis_allowance {
+            next.check_analysis_limits()?;
+            if next.compute_work() > compute || next.comparison_work() > comparison {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+        } else {
+            next.check_planning_progress()?;
+        }
         self.accumulated = next;
         Ok(())
     }
@@ -1005,8 +1330,8 @@ mod tests {
 
     #[test]
     fn nested_turn_authority_restores_previous_plan_after_panic() {
-        let outer = Arc::new(detached_test_turn_plan(ResourceDemand::default()).unwrap());
-        let inner = Arc::new(detached_test_turn_plan(ResourceDemand::default()).unwrap());
+        let outer = Arc::new(detached_turn_plan(ResourceDemand::default()).unwrap());
+        let inner = Arc::new(detached_turn_plan(ResourceDemand::default()).unwrap());
         assert!(with_active_turn_plan(|plan| plan.is_none()));
         with_resident_turn_plan(outer.clone(), || {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -1030,7 +1355,53 @@ mod tests {
     }
 
     #[test]
-    fn resident_estimates_reconcile_with_the_real_node_turn_plan() {
+    fn standalone_control_admission_accumulates_repeated_work() {
+        let cost = KernelCostEstimate {
+            demand: ResourceDemand {
+                work: mech_core::WorkDemand {
+                    compute: MAX_RESIDENT_COMPUTE_WORK / 2 + 1,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        };
+        let plan = Arc::new(detached_turn_plan(ResourceDemand::default()).unwrap());
+        with_resident_turn_plan(plan, || {
+            with_control_work_budget(|| {
+                assert!(PreparedKernel::new((), cost).admit_control().is_ok());
+                assert!(matches!(
+                    PreparedKernel::new((), cost).admit_control(),
+                    Err(ResidentKernelError::InvalidShape),
+                ));
+            });
+        });
+    }
+
+    #[test]
+    fn standalone_control_admission_accumulates_repeated_comparisons() {
+        let cost = KernelCostEstimate {
+            demand: ResourceDemand {
+                work: mech_core::WorkDemand {
+                    comparison: MAX_RESIDENT_COMPARISON_WORK / 2 + 1,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        };
+        let plan = Arc::new(detached_turn_plan(ResourceDemand::default()).unwrap());
+        with_resident_turn_plan(plan, || {
+            with_control_work_budget(|| {
+                assert!(PreparedKernel::new((), cost).admit_control().is_ok());
+                assert!(matches!(
+                    PreparedKernel::new((), cost).admit_control(),
+                    Err(ResidentKernelError::InvalidShape),
+                ));
+            });
+        });
+    }
+
+    #[test]
+    fn control_admission_reconciles_with_the_real_node_turn_plan() {
         let node = mech_core::NodeId::new(7);
         let program = crate::memory_planner::ProgramMemoryPlan {
             allocations: vec![mech_core::AllocationPlan {
@@ -1065,24 +1436,57 @@ mod tests {
             &crate::memory_planner::TurnMemoryFacts::default(),
         )
         .unwrap();
-        let checked = with_resident_turn_plan(base, || {
-            KernelCostEstimate {
-                demand: ResourceDemand {
-                    persistent_bytes: 24,
-                    ..ResourceDemand::default()
-                },
-            }
-            .checked()
+        let checked = with_resident_turn_plan(base.clone(), || {
+            with_control_work_budget(|| {
+                PreparedKernel::new(
+                    (),
+                    KernelCostEstimate {
+                        demand: ResourceDemand {
+                            persistent_bytes: 24,
+                            ..ResourceDemand::default()
+                        },
+                    },
+                )
+                .admit_control()
+            })
         })
         .unwrap();
-        assert_eq!(checked._plan.node, node);
-        assert_eq!(checked._plan.allocations[0].capacity_bytes, 24);
-        assert_eq!(checked._plan.arenas[0].capacity_bytes, 24);
+        assert_eq!(checked._permit._plan.node, node);
+        assert_eq!(
+            checked._permit._plan.allocations[0].id,
+            mech_core::MemoryObjectId::new(3)
+        );
+        assert_eq!(
+            checked._permit._plan.allocations[0].owner,
+            mech_core::MemoryObjectOwner::NodeScratch { node, ordinal: 0 }
+        );
+        assert_eq!(checked._permit._plan.allocations[0].capacity_bytes, 24);
+        assert_eq!(checked._permit._plan.arenas[0].capacity_bytes, 24);
+
+        let mut bounded = base;
+        bounded.budget_limits.max_output_bytes = Some(23);
+        assert!(matches!(
+            with_resident_turn_plan(bounded, || {
+                with_control_work_budget(|| {
+                    PreparedKernel::new(
+                        (),
+                        KernelCostEstimate {
+                            demand: ResourceDemand {
+                                persistent_bytes: 24,
+                                ..ResourceDemand::default()
+                            },
+                        },
+                    )
+                    .admit_control()
+                })
+            }),
+            Err(ResidentKernelError::InvalidShape)
+        ));
     }
 
     #[test]
     fn incremental_progress_checks_match_full_admission_without_rebuilding_the_plan() {
-        let mut base = detached_test_turn_plan(ResourceDemand::default()).unwrap();
+        let mut base = detached_turn_plan(ResourceDemand::default()).unwrap();
         base.facts.additional_demand.work.compute = 17;
         let base = Arc::new(base);
         let snapshot = (*base).clone();
@@ -1139,7 +1543,7 @@ mod tests {
 
     #[test]
     fn incremental_progress_cannot_admit_candidate_publication_facts() {
-        let base = detached_test_turn_plan(ResourceDemand::default()).unwrap();
+        let base = detached_turn_plan(ResourceDemand::default()).unwrap();
         with_resident_turn_plan(base, || {
             assert_eq!(
                 KernelCostEstimate {

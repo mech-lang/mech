@@ -80,22 +80,7 @@ fn certification_rows() -> Vec<CertificationRow> {
         .collect()
 }
 
-fn inventory_contracts() -> BTreeMap<String, (String, String, String, String)> {
-    let productions =
-        fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
-            .unwrap();
-    let productions = productions
-        .lines()
-        .skip(1)
-        .map(|line| {
-            let fields = line.split('\t').collect::<Vec<_>>();
-            assert_eq!(fields.len(), 17);
-            (
-                fields[1].to_owned(),
-                (fields[13].to_owned(), fields[14].to_owned()),
-            )
-        })
-        .collect::<BTreeMap<_, _>>();
+fn inventory_contracts() -> BTreeMap<String, (String, String)> {
     let schema = fs::read_to_string(
         repository_root().join("docs/design/grammar-audit/phase-2i-syntax-schema.tsv"),
     )
@@ -106,19 +91,22 @@ fn inventory_contracts() -> BTreeMap<String, (String, String, String, String)> {
         .map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
             assert_eq!(fields.len(), 6);
-            let (spec, cases) = productions
-                .get(fields[0])
-                .unwrap_or_else(|| panic!("production inventory for {}", fields[0]));
             (
                 fields[0].to_owned(),
-                (
-                    fields[2].to_owned(),
-                    fields[3].to_owned(),
-                    spec.clone(),
-                    cases.clone(),
-                ),
+                (fields[2].to_owned(), fields[3].to_owned()),
             )
         })
+        .collect()
+}
+
+fn conformance_case_ids() -> BTreeSet<String> {
+    let cases =
+        fs::read_to_string(repository_root().join("src/syntax/tests/fixtures/grammar/cases.tsv"))
+            .expect("read canonical grammar cases");
+    cases
+        .lines()
+        .skip(1)
+        .map(|line| line.split('\t').next().unwrap().to_owned())
         .collect()
 }
 
@@ -862,7 +850,7 @@ fn recovery_evidence_uses_normalized_identity_and_preserves_structured_changes()
 
 fn assert_certified_inventory<'a>(
     names: impl IntoIterator<Item = &'a str>,
-    contracts: &BTreeMap<String, (String, String, String, String)>,
+    contracts: &BTreeMap<String, (String, String)>,
 ) {
     let names = names.into_iter().collect::<Vec<_>>();
     let unique = names.iter().copied().collect::<BTreeSet<_>>();
@@ -953,6 +941,7 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
     let contracts = inventory_contracts();
     assert_eq!(contracts.len(), 80);
     assert_certified_inventory(rows.iter().map(|row| row.name.as_str()), &contracts);
+    let case_ids = conformance_case_ids();
     let mut stale_hashes = Vec::new();
     for row in rows {
         let contract = contracts
@@ -960,8 +949,20 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             .unwrap_or_else(|| panic!("Phase 2I schema row for {}", row.name));
         assert_eq!(&row.emission_policy, &contract.0, "{}", row.name);
         assert_eq!(&row.syntax_kind, &contract.1, "{}", row.name);
-        assert_eq!(&row.spec_location, &contract.2, "{}", row.name);
-        assert_eq!(&row.conformance_cases, &contract.3, "{}", row.name);
+        assert_eq!(
+            row.spec_location,
+            format!("docs/design/specification.mec::{}", row.name),
+            "{}",
+            row.name
+        );
+        assert_ne!(row.conformance_cases, "none", "{}", row.name);
+        for case in row.conformance_cases.split(',') {
+            assert!(
+                case_ids.contains(case),
+                "{} references unknown canonical conformance case {case}",
+                row.name
+            );
+        }
         let rule = canonical_rule_id(&row.name).expect("registered canonical rule");
         assert_eq!(canonical_rule_name(rule), Some(row.name.as_str()));
 
@@ -1518,10 +1519,6 @@ fn behavioral_evidence(path: &Path) -> bool {
         || path.ends_with("src/engine/tests/canonical_source_semantics.rs")
 }
 
-fn source_semantic_evidence(path: &Path) -> bool {
-    path.ends_with("src/engine/tests/canonical_source_semantics.rs")
-}
-
 fn assert_allowed_mech_import(path: &Path, declaration: &str) {
     let declaration = declaration
         .chars()
@@ -1533,6 +1530,15 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
         .map(|path| format!("use{path}"))
         .unwrap_or(declaration);
     if behavioral_evidence(path) && declaration.contains("mech_core") {
+        let inventory: serde_json::Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tests/architecture/canonical-evidence-imports.json"
+        )))
+        .expect("canonical evidence import inventory is valid JSON");
+        let file = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .expect("behavioral evidence has a file name");
         let allowed = if let Some(items) = declaration
             .strip_prefix(concat!("usemech_", "core::{"))
             .and_then(|items| items.strip_suffix("};"))
@@ -1541,30 +1547,9 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
                 .split(',')
                 .filter(|item| !item.is_empty())
                 .all(|item| {
-                    if source_semantic_evidence(path) {
-                        matches!(
-                            item,
-                            "ChangeDetectionPolicy"
-                                | "DimensionExpr"
-                                | "FunctionCatalogBuilder"
-                                | "IntegerWidth"
-                                | "OutputConstruction"
-                                | "ReactiveInstanceId"
-                                | "SchemaBody"
-                                | "SchemaDraft"
-                                | "SchemaTableBuilder"
-                                | "ShapeRule"
-                                | "ValueData"
-                        )
-                    } else {
-                        matches!(
-                            item,
-                            "FunctionCatalogBuilder"
-                                | "ReactiveInstanceId"
-                                | "ResidentValueRef"
-                                | "ValueDataDraftasData"
-                        )
-                    }
+                    inventory[file]["root"].as_array().is_some_and(|allowed| {
+                        allowed.iter().any(|allowed| allowed.as_str() == Some(item))
+                    })
                 })
         } else if let Some(items) = declaration
             .strip_prefix(concat!("usemech_", "core::snapshot::{"))
@@ -1573,15 +1558,12 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
             items
                 .split(',')
                 .filter(|item| !item.is_empty())
-                .all(|item| match source_semantic_evidence(path) {
-                    true => matches!(
-                        item,
-                        "SnapshotValidationContext" | "ValueDataDraft" | "ValueDraft"
-                    ),
-                    false => matches!(
-                        item,
-                        "MapEntryDraft" | "NamedValueDraft" | "TableColumnDraft"
-                    ),
+                .all(|item| {
+                    inventory[file]["snapshot"]
+                        .as_array()
+                        .is_some_and(|allowed| {
+                            allowed.iter().any(|allowed| allowed.as_str() == Some(item))
+                        })
                 })
         } else {
             false
@@ -1918,14 +1900,14 @@ fn behavioral_authority_allowance_excludes_parser_routes_and_unrelated_core_type
         semantic_path,
         concat!(
             "use mech_",
-            "core::{ChangeDetectionPolicy, DimensionExpr, FunctionCatalogBuilder, IntegerWidth, OutputConstruction, ReactiveInstanceId, SchemaBody, SchemaDraft, SchemaTableBuilder, ShapeRule, ValueData};"
+            "core::{CanonicalNominalPath, ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, KindExpr, ManagedMemoryBudget, OutputConstruction, ReactiveInstanceId, ResidentValueRef, SchemaBody, ShapeRule, ValueData, ValueDataDraft};"
         ),
     );
     assert_canonical_only(
         semantic_path,
         concat!(
             "use mech_",
-            "core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};"
+            "core::snapshot::{ReifiedKind, ReifiedTypeDraft};"
         ),
     );
     for evidence in [

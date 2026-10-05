@@ -77,7 +77,7 @@ fn r6_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'static
     {
         return Some("F06");
     }
-    if name.starts_with("Convert") || name == "convert/kind" {
+    if name.starts_with("Convert") || name.starts_with("convert/") {
         return Some("F07");
     }
     if name.starts_with("VariableDefine") || name == "integrity/constraint" {
@@ -949,6 +949,268 @@ mod ordinary_managed_execution {
                     &after.schemas().unwrap()
                 )
                 .unwrap()
+        );
+    }
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn maintained_interval_set_definition_materializes_the_resolved_element_kind() {
+        let element = SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        });
+        let function = specialize(
+            "set/define",
+            [2, 9]
+                .into_iter()
+                .map(|value| {
+                    ValueCell::from_schema_data(element.clone(), ValueDataDraft::U8(value)).unwrap()
+                })
+                .collect(),
+        );
+        assert_eq!(
+            function.instance().solve_reactive().unwrap(),
+            ReactiveSolveStatus::Unchanged,
+        );
+        let value = function.output().snapshot().unwrap();
+        let schema = value.schemas().unwrap();
+        assert_eq!(
+            schema.get(value.schema()).unwrap().body(),
+            &SchemaBody::Set {
+                element: Box::new(element),
+                cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+            },
+        );
+        assert!(value.shape().parameter_values().is_empty());
+        assert_eq!(
+            value.canonical_data_draft().unwrap(),
+            ValueDataDraft::Set(
+                vec![ValueDataDraft::U8(2), ValueDataDraft::U8(9)].into_boxed_slice(),
+            ),
+        );
+        assert_eq!(
+            function.bound_call().outputs()[0],
+            function.output().resolved_descriptor().unwrap(),
+        );
+    }
+
+    #[cfg(all(feature = "u8", feature = "full_compiler"))]
+    #[test]
+    fn maintained_interval_set_algebra_binds_and_executes_with_input_schema_authority() {
+        let element = SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        });
+        let body = SchemaBody::Set {
+            element: Box::new(element.clone()),
+            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+        };
+        let input = |values: &[u8]| {
+            ValueCell::from_schema_data(
+                body.clone(),
+                ValueDataDraft::Set(
+                    values
+                        .iter()
+                        .copied()
+                        .map(ValueDataDraft::U8)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            )
+            .unwrap()
+        };
+        for (operation, expected, bound) in [
+            ("set/union", &[2, 5, 9][..], 4),
+            ("set/intersection", &[5][..], 2),
+            ("set/difference", &[2][..], 2),
+            ("set/symmetric-difference", &[2, 9][..], 4),
+        ] {
+            let function = specialize(operation, vec![input(&[2, 5]), input(&[5, 9])]);
+            let output_body = SchemaBody::Set {
+                element: Box::new(element.clone()),
+                cardinality: CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Constant(bound)),
+                },
+            };
+            for _ in 0..2 {
+                function.instance().solve_result().unwrap();
+                let value = function.output().snapshot().unwrap();
+                let schema = value.schemas().unwrap();
+                assert_eq!(
+                    schema.get(value.schema()).unwrap().body(),
+                    &output_body,
+                    "{operation}"
+                );
+                assert!(value.shape().parameter_values().is_empty(), "{operation}");
+                assert_eq!(
+                    value.canonical_data_draft().unwrap(),
+                    ValueDataDraft::Set(
+                        expected
+                            .iter()
+                            .copied()
+                            .map(ValueDataDraft::U8)
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    ),
+                    "{operation}",
+                );
+                assert!(
+                    function.bound_call().outputs()[0]
+                        .has_same_type_contract(&function.output().resolved_descriptor().unwrap()),
+                    "{operation}",
+                );
+            }
+        }
+    }
+
+    #[cfg(feature = "u8")]
+    fn interval_u8_schema() -> SchemaBody {
+        SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        })
+    }
+
+    #[cfg(feature = "u8")]
+    fn assert_interval_cell(cell: &ValueCell, body: &SchemaBody, data: ValueDataDraft) {
+        let expected = ValueCell::from_schema_data(body.clone(), data)
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        let actual = cell.snapshot().unwrap();
+        assert_eq!(actual.schema_key(), expected.schema_key());
+        assert_eq!(actual.shape(), expected.shape());
+        assert_eq!(
+            actual.canonical_data_draft().unwrap(),
+            expected.canonical_data_draft().unwrap()
+        );
+        assert_eq!(
+            actual
+                .schemas()
+                .unwrap()
+                .get(actual.schema())
+                .unwrap()
+                .body(),
+            body
+        );
+        assert_eq!(cell.resolved_descriptor().unwrap().shape(), actual.shape());
+    }
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn interval_scalar_checked_mutable_replacement_retains_identity_revision_and_recovers() {
+        let body = interval_u8_schema();
+        let cell = ValueCell::from_schema_data(body.clone(), ValueDataDraft::U8(2)).unwrap();
+        let alias = cell.clone();
+        let identity = cell.reactive_cell_id();
+        let descriptor = cell.resolved_descriptor().unwrap();
+        let revision = cell.published_version();
+        assert_interval_cell(&alias, &body, ValueDataDraft::U8(2));
+        let external = |value| ValueCell::from_exact(value).unwrap().snapshot().unwrap();
+        let invalid = external(10u8);
+        let error = cell.rebind_snapshot_candidate(&invalid).unwrap_err();
+        let error = &error.kind_as::<ValueCellSnapshotFailure>().unwrap().error;
+        assert!(
+            matches!(error, snapshot::SnapshotValueError::IntegerIntervalViolationV1 { path } if path.segments().is_empty())
+        );
+        assert_eq!(cell.published_version(), revision);
+        assert_eq!(cell.reactive_cell_id(), identity);
+        assert_eq!(cell.resolved_descriptor().unwrap(), descriptor);
+        assert_interval_cell(&alias, &body, ValueDataDraft::U8(2));
+        // The actual replacement authority also refuses an unconverted base
+        // snapshot; checked host entry must not become implicit live narrowing.
+        assert!(cell.replace(&invalid).is_err());
+        assert_eq!(cell.published_version(), revision);
+        assert_interval_cell(&alias, &body, ValueDataDraft::U8(2));
+        let next = cell.rebind_snapshot_candidate(&external(3u8)).unwrap();
+        cell.replace(&next).unwrap();
+        assert!(cell.published_version() > revision);
+        assert_eq!(cell.reactive_cell_id(), identity);
+        assert_eq!(cell.resolved_descriptor().unwrap(), descriptor);
+        assert_interval_cell(&alias, &body, ValueDataDraft::U8(3));
+    }
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn interval_matrix_transpose_rejects_late_mutable_member_without_partial_publication() {
+        let body = |rows, columns| SchemaBody::Matrix {
+            element: Box::new(interval_u8_schema()),
+            dimensions: vec![
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let matrix = |values: &[u8]| {
+            ValueDataDraft::Matrix(values.iter().copied().map(ValueDataDraft::U8).collect())
+        };
+        let input = ValueCell::from_schema_data(body(2, 3), matrix(&[2, 4, 5, 6, 7, 8])).unwrap();
+        let alias = input.clone();
+        let descriptor = input.resolved_descriptor().unwrap();
+        let function = transpose(input.clone());
+        let output = function.output().clone();
+        function.instance().solve_result().unwrap();
+        assert_interval_cell(&alias, &body(2, 3), matrix(&[2, 4, 5, 6, 7, 8]));
+        assert_interval_cell(&output, &body(3, 2), matrix(&[2, 6, 4, 7, 5, 8]));
+        assert_eq!(
+            function.bound_call().outputs()[0],
+            output.resolved_descriptor().unwrap()
+        );
+        let input_revision = input.published_version();
+        let output_revision = output.published_version();
+        let input_identity = input.reactive_cell_id();
+        let output_identity = output.reactive_cell_id();
+
+        // This is the mutable cell's supported raw candidate adapter, not an
+        // unsafe invalid Value. Five valid members precede the invalid sixth.
+        let error = input
+            .rebuild_matrix_drafts(
+                vec![2, 3].into_boxed_slice(),
+                [3, 4, 5, 6, 7, 10]
+                    .into_iter()
+                    .map(ValueDataDraft::U8)
+                    .collect(),
+            )
+            .unwrap_err();
+        let error = &error.kind_as::<ValueCellSnapshotFailure>().unwrap().error;
+        assert!(
+            matches!(error, snapshot::SnapshotValueError::IntegerIntervalViolationV1 { path } if path.segments() == [snapshot::SnapshotPathSegment::MatrixElement(5)])
+        );
+        assert_eq!(input.published_version(), input_revision);
+        assert_eq!(output.published_version(), output_revision);
+        assert_eq!(input.resolved_descriptor().unwrap(), descriptor);
+        assert_eq!(input.reactive_cell_id(), input_identity);
+        assert_eq!(output.reactive_cell_id(), output_identity);
+        assert_interval_cell(&alias, &body(2, 3), matrix(&[2, 4, 5, 6, 7, 8]));
+        assert_interval_cell(&output, &body(3, 2), matrix(&[2, 6, 4, 7, 5, 8]));
+
+        let next = input
+            .rebuild_matrix_drafts(
+                vec![2, 3].into_boxed_slice(),
+                [3, 4, 5, 6, 7, 9]
+                    .into_iter()
+                    .map(ValueDataDraft::U8)
+                    .collect(),
+            )
+            .unwrap();
+        input.replace(&next).unwrap();
+        assert!(input.published_version() > input_revision);
+        function.instance().solve_result().unwrap();
+        assert!(output.published_version() > output_revision);
+        assert_eq!(input.reactive_cell_id(), input_identity);
+        assert_eq!(output.reactive_cell_id(), output_identity);
+        assert_eq!(input.resolved_descriptor().unwrap(), descriptor);
+        assert_interval_cell(&alias, &body(2, 3), matrix(&[3, 4, 5, 6, 7, 9]));
+        assert_interval_cell(&output, &body(3, 2), matrix(&[3, 6, 4, 7, 5, 9]));
+        assert_eq!(
+            function.bound_call().outputs()[0],
+            output.resolved_descriptor().unwrap()
         );
     }
 

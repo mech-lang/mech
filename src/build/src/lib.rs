@@ -1,11 +1,18 @@
 //! Deterministic native application planning and generation for Mech.
 
+#![cfg_attr(
+    all(windows, feature = "process-supervision"),
+    feature(windows_process_extensions_main_thread_handle)
+)]
+
 mod analysis;
 pub mod cargo;
 pub mod dependency;
 pub mod error;
 pub mod host;
 pub mod plan;
+#[cfg(feature = "process-supervision")]
+pub mod process;
 pub mod project;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -55,23 +62,60 @@ impl NativeApplicationBuilder {
         }
 
         let program = ParsedProgram::from_bytes(&request.bytecode)?;
-        plan::validate_target_index_constants(&program, request.target.as_deref())?;
+        let artifact = if program.artifact.is_empty() {
+            None
+        } else {
+            validate_artifact_execution_authority(&program)?;
+            let artifact = mech_engine::decode_program_artifact_bytecode_v1(&request.bytecode)
+                .map_err(|error| {
+                    error::native_build_error(
+                        error::NativeBuildErrorKind::NativeProgramArtifactInvalid {
+                            reason: format!("{error:?}"),
+                        },
+                        None,
+                    )
+                })?;
+            analysis::artifact::validate_artifact_requirement_reachability(&artifact)?;
+            Some(artifact)
+        };
+        plan::validate_target_index_constants(
+            &program,
+            artifact.as_ref(),
+            request.target.as_deref(),
+        )?;
         let mut native_resolver = analysis::NativeBytecodeContractResolver::new(
             &program.requirements,
             request.runtime_config.as_ref(),
             &self.environment.host_catalog,
             request.target.as_deref(),
         )?;
-        program.validate_runtime_contracts_with(
-            &self.environment.function_catalog,
-            &mut native_resolver,
-        )?;
-        let runtime_functions = analysis::analyze_runtime_functions(
-            &program,
-            &self.environment.function_catalog,
-            request.instruction_type_bindings.as_deref(),
-            request.instruction_type_binding_requirements.as_deref(),
-        )?;
+        let artifact_features = if let Some(artifact) = artifact.as_ref() {
+            analysis::artifact::plan_artifact_external_contracts(
+                artifact,
+                &self.environment.function_catalog,
+                &mut native_resolver,
+            )?;
+            Some(analysis::artifact::analyze_artifact_native_features(
+                artifact,
+                &self.environment.function_catalog,
+            ))
+        } else {
+            program.validate_runtime_contracts_with(
+                &self.environment.function_catalog,
+                &mut native_resolver,
+            )?;
+            None
+        };
+        let runtime_functions = if artifact_features.is_some() {
+            Vec::new()
+        } else {
+            analysis::analyze_runtime_functions(
+                &program,
+                &self.environment.function_catalog,
+                request.instruction_type_bindings.as_deref(),
+                request.instruction_type_binding_requirements.as_deref(),
+            )?
+        };
         for function in &runtime_functions {
             plan::validate_installer_path(&function.installer_path)?;
         }
@@ -91,12 +135,19 @@ impl NativeApplicationBuilder {
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        if let Some(artifact) = &artifact_features {
+            core_features.extend(artifact.value_features.iter().cloned());
+        }
         core_features.insert("program".to_owned());
         let mut engine_features = runtime_types
             .cargo_features
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        if let Some(artifact) = &artifact_features {
+            engine_features.extend(artifact.value_features.iter().cloned());
+            engine_features.extend(artifact.engine_features.iter().cloned());
+        }
         // `mech-engine` retains dynamic row-vector construction through its
         // matrix-assignment implementation. A program that returns only a
         // `RowVectorD` therefore still needs this engine-internal closure;
@@ -119,6 +170,9 @@ impl NativeApplicationBuilder {
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        if let Some(artifact) = &artifact_features {
+            runtime_features.extend(artifact.value_features.iter().cloned());
+        }
         runtime_features.insert("runtime".to_owned());
         runtime_features.insert("string".to_owned());
         runtime_features.insert("resident-routing".to_owned());
@@ -363,6 +417,49 @@ impl NativeApplicationBuilder {
             request.offline,
         )
     }
+}
+
+fn validate_artifact_execution_authority(program: &ParsedProgram) -> MResult<()> {
+    let mut legacy_sections = Vec::new();
+    if program.header.register_count != 0 {
+        legacy_sections.push("registers");
+    }
+    if program.header.instruction_count != 0 {
+        legacy_sections.push("instruction header");
+    }
+    if !program.types.is_empty() {
+        legacy_sections.push("types");
+    }
+    if !program.constants.is_empty() {
+        legacy_sections.push("constants");
+    }
+    if !program.constant_blob.is_empty() {
+        legacy_sections.push("constant blob");
+    }
+    if !program.symbols.is_empty() {
+        legacy_sections.push("symbols");
+    }
+    if !program.mutable_symbols.is_empty() {
+        legacy_sections.push("mutable symbols");
+    }
+    if !program.instructions.is_empty() {
+        legacy_sections.push("instructions");
+    }
+    if !program.dictionary.is_empty() {
+        legacy_sections.push("dictionary");
+    }
+    if legacy_sections.is_empty() {
+        return Ok(());
+    }
+    Err(error::native_build_error(
+        error::NativeBuildErrorKind::NativeProgramArtifactInvalid {
+            reason: format!(
+                "canonical artifact bytecode contains parallel legacy execution authority: {}",
+                legacy_sections.join(", ")
+            ),
+        },
+        None,
+    ))
 }
 
 pub(crate) fn validate_production_native_runtime_config(

@@ -515,7 +515,7 @@ required-features = ["compiler"]
 
 [[test]]
 name = "resident_ekf_artifact_closure"
-required-features = ["compiler", "resident-artifact"]
+required-features = ["semantic-compiler", "resident-artifact"]
 
 [[test]]
 name = "resident_ekf_contract"
@@ -523,8 +523,8 @@ required-features = ["resident-ekf"]
 
 [[test]]
 name = "resident_ekf_program_activation"
-required-features = ["compiler", "resident-artifact"]
+required-features = ["semantic-compiler", "resident-artifact"]
 
 [[test]]
 name = "resident_ekf_program_execution"
-required-features = ["compiler", "resident-artifact"]
+required-features = ["semantic-compiler", "resident-artifact"]

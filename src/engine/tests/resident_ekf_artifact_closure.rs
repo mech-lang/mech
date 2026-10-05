@@ -1,4 +1,4 @@
-#![cfg(all(feature = "resident-artifact", feature = "compiler"))]
+#![cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
 
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, ChangeDetectionPolicy, ConstantId,

@@ -24,8 +24,12 @@ primitive Bool/Index/F64 bindings and yields. Live matrix/set inputs, repeated
 bindings, generator/filter/join behavior, normalization, work admission, and failed
 publication recovery have execution regressions. Compound match results and nested
 match bodies/guards now use the same ordinary construction and memory providers.
-Comprehension composite bindings/yields, computed pattern blocks, composition with
-nested comprehensions, and the FSM resident continuation owner remain unfinished.
+S8 executes composite comprehension bindings and yields, including retained
+tuple values and whole-tuple bindings, and composes nested matches and
+comprehensions through one recursive control body with owned element-shape
+witnesses. Computed patterns lower their pure lexical operations before the
+owning generator, so each outer binding gets one ordered evaluation before
+candidate filtering. The FSM resident continuation owner remains unfinished.
 FSM pipes now retain machine identity, named and positional argument bindings,
 ordered stage kinds, and recursively typed stage values in the artifact itself.
 Source-map strings are not an FSM execution input. The `~>` commit, resume,
@@ -42,13 +46,15 @@ changed from 4 to 5 and every other section payload remained byte-identical. Onl
 those 50 semantic hashes changed; sources, dispositions and required outcomes did
 not. Positive compound-match, nested-match and exact table-join behavior remains
 in the completion suite. The required FSM executable witness now reaches a
-typed revision-six artifact rather than an ordinary source operation. Revision 6
-adds the FSM body variant; revision 5 remains the closed nested-match graph grammar.
+typed revision-seven artifact rather than an ordinary source operation. Revision 7
+retains the FSM body variant introduced in revision 6; revision 5 remains the closed
+nested-match graph grammar.
 
 ## FSM graph revision
 
-Graph payload revision 6 closes the representation introduced by typed FSM bodies.
-The 51 artifact-bearing semantic witnesses were regenerated with the revision-six
+Graph payload revision 7 retains typed FSM bodies and adds explicit
+structural-pattern parameter sources.
+The 51 artifact-bearing semantic witnesses were regenerated with the revision-seven
 producer; their semantic hashes changed because the complete artifact bytecode is
 part of each witness fingerprint. The source programs, dispositions, required
 outcomes, and non-graph artifact sections are unchanged. Revision 5 remains rejected
@@ -57,6 +63,71 @@ The committed 20-fixture bytecode-v1 corpus was also regenerated and checked acr
 five fresh producer processes. Seventeen compiler-produced, graph-bearing fixtures
 changed at identical byte lengths; the three constructed scalar, matrix, and
 composite fixtures remain unchanged.
+
+## Composed-control graph revision
+
+Graph payload revision 8 gives comprehension declarations canonical block IDs and
+uses the same recursive operation body in match blocks and comprehension steps.
+Nested control contract references retain canonical preorder, and mixed match and
+comprehension depth and population share the artifact admission limits. Matrix
+comprehensions embed the yielded element's dimension parameters before their own
+cardinality parameter and reject inconsistent element shapes before publication.
+Revision 7 remains rejected without a compatibility reader.
+
+## Nominal-pattern graph revision
+
+Graph payload revision 9 adds one canonical nominal-enum pattern to the shared
+structural grammar. It carries the declared variant ordinal and either the
+variant's recursive payload pattern or no payload. The artifact validator checks
+that the ordinal and payload agree with the scrutinee's exact nominal enum
+schema. Revision 8 remains rejected without a compatibility reader.
+
+## Pattern-function graph revision
+
+Graph payload revision 10 gives every match declaration an explicit partial
+dispatch bit. Ordinary expressions keep exhaustive admission. Pattern-function
+calls may publish a partial declaration and fail execution when no ordered arm
+matches, without a synthetic fallback value. Revision 9 remains rejected without
+a compatibility reader.
+
+Graph payload revision 11 gives recursive pattern functions one typed lexical
+`Recur` operation. Its input and output must exactly match the enclosing
+function match; execution binds it to admitted resident call frames. Revision
+10 remains rejected without a compatibility reader.
+
+Graph payload revision 12 adds typed lexical `Suspend` and `Publish` operations
+for declared FSM continuations. `Suspend` preserves the enclosing state schema;
+`Publish` preserves the enclosing output schema. The validator rejects either
+operation outside its owning match or with malformed inputs. Revision 11 remains
+rejected without a compatibility reader.
+
+## S8 corrective graph recertification
+
+R23 recertifies the 51 artifact-bearing Phase 2I witnesses after the accepted
+corrective stack advanced the extracted graph payload from revision 6 through
+revision 13:
+
+| Revision | Owner | Reviewed representation change |
+| --- | --- | --- |
+| 7 | R10 | Canonical structural match patterns and their typed recursive bindings. |
+| 8 | R11 | Recursive match/comprehension operation bodies and canonical block ownership. |
+| 9 | R13 | Nominal enum patterns with exact variant ordinals and optional payload patterns. |
+| 10 | R16 | Explicit partial dispatch for pattern-bodied functions. |
+| 11 | R17 | Typed lexical `Recur` operations for bounded resident calls. |
+| 12 | R18 | Typed lexical `Suspend` and `Publish` continuation operations. |
+| 13 | R19 | Activation bodies, exhaustive trigger ownership and typed sampled-input equality. |
+
+The semantic fingerprint deliberately includes the complete artifact bytecode,
+so every artifact-bearing row changes when the required graph revision changes,
+including rows whose own source graph uses only ordinary operations. The refresh
+does not replace behavioral acceptance: before hashing, every row must still
+produce exactly one mapped output, retain one contract entry per source node,
+compile a validated artifact, preserve its canonical schemas/constants/source
+anchors and include its slot-shape ownership. The neighboring certification
+tests separately retain compound-kind schemas, contextual error anchors, linear
+gathers, whole-selection identity and non-wire shape/slot sensitivity. The new
+control, nominal-kind and continuation behavior remains covered in its R10-R19
+owner suites; R23 changes no source, disposition or required outcome cell.
 
 ## Complete syntax evidence
 

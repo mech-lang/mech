@@ -58,3 +58,43 @@ fn recovery_cannot_promote_a_valid_prefix_to_executable_input() {
     assert!(!classify("x := 1\ny := [1,,2]\n"));
     assert!(classify("// comment\nx := 1\n"));
 }
+
+#[test]
+fn program_classification_includes_declarations_without_calling_them_executable() {
+    for source in [
+        "+> ./dep.mec\n",
+        "+> @env := cli/env\n",
+        "<+ value\n",
+        "@ui := fs://workspace\n",
+        "```mech\n+> @out := cli/stdout\n```\n",
+    ] {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x57b), Revision(0), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(
+            parsed.diagnostics.is_empty(),
+            "{source:?}: {:?}",
+            parsed.diagnostics
+        );
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        assert!(document.contains_program_source(), "{source:?}");
+        assert!(!document.contains_executable_source(), "{source:?}");
+    }
+    for source in [
+        "-- comment\n",
+        "Displayed {{+> ./dep.mec}}.\n",
+        "```mech:disabled\n+> ./dep.mec\n```\n",
+    ] {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x57c), Revision(0), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(
+            !DocumentSyntax::cast(parsed.syntax())
+                .unwrap()
+                .contains_program_source(),
+            "{source:?}"
+        );
+    }
+}

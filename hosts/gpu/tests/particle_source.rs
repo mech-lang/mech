@@ -4,10 +4,7 @@ use mech_compute::{
     BackendRequest, ComputeDispatchRequest, ComputeElementType, ComputeInitializerSet,
     ComputeOutputSelection, ComputePlatform, ComputeValue, TensorLayout,
 };
-use mech_core::{
-    Body, ComputePlacement, MechCode, ParsedProgram, Program, ResolvedOperationContract, Section,
-    SectionElement, ValueData,
-};
+use mech_core::{ComputePlacement, ResolvedOperationContract, ValueData};
 use mech_engine::{SlotRole, decode_program_artifact_sections, encode_program_artifact_sections};
 use mech_gpu::{
     ComputeHostFactory, ComputeLowerer, ElementwiseKernel, ExecutionTarget, GpuBindingRole,
@@ -21,6 +18,15 @@ use mech_runtime::{
     TransactionId,
 };
 use std::num::NonZeroU32;
+
+fn unavailable_gpu(context: &str, reason: impl std::fmt::Display) {
+    assert_ne!(
+        std::env::var("MECH_REQUIRE_GPU").as_deref(),
+        Ok("1"),
+        "{context}: required actual WebGPU execution unavailable: {reason}"
+    );
+    eprintln!("SKIP {context} WebGPU execution: {reason}");
+}
 
 const PARTICLE_SOURCE: &str = r#"
 ~positions := host-positions
@@ -58,19 +64,38 @@ fn compile_source(
     source: &str,
     inputs: impl IntoIterator<Item = (&'static str, RuntimeHostInputValue)>,
 ) -> mech_engine::ProgramArtifact {
-    let tree = mech_syntax::parse(source).expect("source must parse");
+    let document = retained_document(source);
     let inputs = inputs
         .into_iter()
         .map(|(name, value)| (name.to_owned(), value))
         .collect::<BTreeMap<_, _>>();
     let external_input_names = inputs
         .keys()
-        .map(|name| name.strip_prefix("host-").unwrap_or(name).to_owned())
+        .filter_map(|name| {
+            let exposed = name.strip_prefix("host-").unwrap_or(name);
+            (!source.contains(&format!("~{exposed} := {name}"))).then(|| exposed.to_owned())
+        })
         .collect();
     compiler()
-        .compile_tree_artifact_with_inputs(&tree, &inputs, &external_input_names)
+        .compile_document_artifact_with_inputs(&document, &inputs, &external_input_names)
         .expect("source must compile")
         .into_artifact()
+}
+
+fn retained_document(source: &str) -> mech_runtime::SourceDocument {
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://particle-source",
+        mech_syntax::document::Revision(0),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .expect("source must parse");
+    assert!(
+        document.is_strictly_clean(),
+        "{:?}",
+        document.snapshot().diagnostics
+    );
+    document
 }
 
 fn compiler() -> ProgramCompiler {
@@ -80,60 +105,28 @@ fn compiler() -> ProgramCompiler {
         .expect("source compiler must build")
 }
 
-fn isolated_gpu_tree(source: &str) -> Program {
-    let tree = mech_syntax::parse(source).expect("complete mixed source must parse");
-    let imports = tree
-        .body
-        .sections
-        .iter()
-        .flat_map(|section| &section.elements)
-        .filter_map(|element| {
-            let SectionElement::MechCode(code) = element else {
-                return None;
-            };
-            let imports = code
-                .iter()
-                .filter(|(code, _)| matches!(code, MechCode::Import(_)))
-                .cloned()
-                .collect::<Vec<_>>();
-            (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
-        })
-        .collect::<Vec<_>>();
-    let region = tree
-        .body
-        .sections
-        .iter()
-        .find(|section| !section.annotations.is_empty())
-        .expect("mixed source must contain a compute region")
-        .clone();
-    Program {
-        title: None,
-        body: Body {
-            sections: vec![
-                Section {
-                    subtitle: None,
-                    annotations: Vec::new(),
-                    elements: imports,
-                },
-                region,
-            ],
-        },
-    }
-}
-
 fn compile_isolated_gpu_source(source: &str) -> mech_engine::ProgramArtifact {
-    let external_input_names = ["force-point", "force-strength", "dt"]
-        .into_iter()
-        .map(str::to_owned)
-        .collect();
+    let start = [
+        "particle-field @compute\n",
+        "particle-field @cpu\n",
+        "particle-field @gpu\n",
+    ]
+    .into_iter()
+    .find_map(|heading| source.find(heading))
+    .expect("mixed source must contain its compute region");
+    let document = retained_document(&format!(
+        "+> math\n@particles := compute://particles/kernel{{:write(input/force-point), :write(input/force-strength), :write(input/dt), :write(turn)}}\n\
+         @particles/input/force-point <- [0f32; 0f32]\n\
+         @particles/input/force-strength <- 0f32\n\
+         @particles/input/dt <- 0.016666667<f32>\n\
+         @particles/turn <- 1\n\n{}",
+        &source[start..]
+    ));
     compiler()
-        .compile_tree_artifact_with_inputs(
-            &isolated_gpu_tree(source),
-            &Default::default(),
-            &external_input_names,
-        )
+        .compile_mixed_document(&document)
         .expect("isolated GPU source must compile")
-        .into_artifact()
+        .compute
+        .artifact
 }
 
 fn particle_inputs() -> Vec<(&'static str, RuntimeHostInputValue)> {
@@ -199,6 +192,37 @@ fn lowered_program_exposes_exact_typed_region_ports() {
 }
 
 #[test]
+fn published_input_keeps_its_pre_dispatch_value_when_it_updates_state() {
+    let artifact = compile_source(
+        "~state := 1f32\nx := host-x\nstate = x\nx\n",
+        [("host-x", RuntimeHostInputValue::F32(7.0))],
+    );
+    let program = ComputeLowerer
+        .compile(&artifact)
+        .expect("input-fed state must lower");
+    let inputs = BTreeMap::from([("x".to_owned(), vec![7.0])]);
+    let mut cpu = program.prepare_cpu(&inputs).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![7.0]);
+    cpu.dispatch_turns(1).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![7.0]);
+}
+
+#[test]
+fn published_state_prefers_its_own_committed_generation() {
+    let artifact = compile_source(
+        "~first := 1f32\n~second := 9f32\nnext-first := first + 1f32\nfirst = next-first\nsecond = first\nfirst\n",
+        [],
+    );
+    let program = ComputeLowerer
+        .compile(&artifact)
+        .expect("dependent state updates must lower");
+    let mut cpu = program.prepare_cpu(&BTreeMap::new()).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![1.0]);
+    cpu.dispatch_turns(1).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![2.0]);
+}
+
+#[test]
 fn compiler_product_runs_through_the_backend_neutral_cpu_session() {
     let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
     let lowered = ComputeLowerer
@@ -256,6 +280,7 @@ fn particle_source_and_bytecode_share_cpu_and_wgpu_results() {
             ) {
                 Ok(factory) => factory,
                 Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                    unavailable_gpu("particle source/bytecode", &error);
                     return None;
                 }
                 Err(error) => panic!("{backend} rejected particle bytecode: {error}"),
@@ -351,28 +376,26 @@ fn ordinary_compute_host_dispatches_the_compiler_product_after_commit() {
 #[test]
 fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
     let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "64f32", 1);
-    let complete = mech_syntax::parse(&source).expect("complete source must parse");
+    let complete = retained_document(&source);
     assert!(
         complete
-            .body
-            .sections
+            .document()
+            .sections()
             .iter()
-            .any(|section| section.annotations.is_empty())
+            .any(|section| section.subtitle().is_none())
     );
-    let product = compiler()
-        .compile_tree(&isolated_gpu_tree(&source))
-        .expect("named source must compile");
+    let artifact = compile_isolated_gpu_source(&source);
 
-    assert_eq!(product.artifact().compute_regions().len(), 1);
-    let region = &product.artifact().compute_regions()[0];
+    assert_eq!(artifact.compute_regions().len(), 1);
+    let region = &artifact.compute_regions()[0];
     assert_eq!(region.name.as_ref(), "particle-field");
     assert_eq!(region.placement, ComputePlacement::Compute);
     assert!(!region.nodes.is_empty());
-    let bytecode = ParsedProgram::from_bytes(product.bytecode()).unwrap();
-    let bytecode_artifact = decode_program_artifact_sections(&bytecode.artifact).unwrap();
+    let bytecode = encode_program_artifact_sections(&artifact).unwrap();
+    let bytecode_artifact = decode_program_artifact_sections(&bytecode).unwrap();
     assert_eq!(
         bytecode_artifact.compute_regions(),
-        product.artifact().compute_regions()
+        artifact.compute_regions()
     );
 
     let lowering_artifact = compile_isolated_gpu_source(&source);
@@ -686,21 +709,13 @@ result
 
 #[test]
 fn particle_example_is_one_mixed_mech_document() {
-    let tree = mech_syntax::parse(SERVED_PARTICLE_SOURCE).expect("complete source must parse");
-    let regions = tree
-        .body
-        .sections
-        .iter()
-        .filter(|section| !section.annotations.is_empty())
-        .collect::<Vec<_>>();
-    assert_eq!(regions.len(), 1);
+    let document = retained_document(SERVED_PARTICLE_SOURCE);
+    let sections = document.document().sections();
+    assert_eq!(sections.len(), 2);
+    assert!(sections[0].subtitle().is_none());
     assert_eq!(
-        mech_engine::section_compute_placement(regions[0]).unwrap(),
-        Some(ComputePlacement::Compute)
-    );
-    assert_eq!(
-        regions[0].subtitle.as_ref().unwrap().to_string().trim(),
-        "particle-field"
+        sections[1].subtitle().unwrap().title_text().unwrap(),
+        "particle-field @compute"
     );
     assert!(SERVED_PARTICLE_SOURCE.contains("pointer://pointer/frame"));
     assert!(SERVED_PARTICLE_SOURCE.contains("compute://particles/kernel"));
@@ -846,17 +861,21 @@ fn native_gpu_matches_the_cpu_backend_when_an_adapter_is_available() {
         ("dt".to_owned(), vec![0.1]),
     ]);
     let cpu = program.run_cpu(&inputs).expect("CPU backend must run");
-    let gpu = match program.run_gpu(&inputs) {
+    let gpu = match program.run_gpu_profiled(&inputs) {
         Ok(gpu) => gpu,
-        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => {
+            unavailable_gpu("particle numerical comparison", "GPU adapter unavailable");
+            return;
+        }
         Err(error) => panic!("GPU dispatch failed: {error}"),
     };
+    eprintln!("particle numerical actual WebGPU adapter: {}", gpu.adapter);
     assert_eq!(
         cpu.keys().collect::<Vec<_>>(),
-        gpu.keys().collect::<Vec<_>>()
+        gpu.outputs.keys().collect::<Vec<_>>()
     );
     for (name, cpu_values) in cpu {
-        assert_close(&gpu[&name], &cpu_values);
+        assert_close(&gpu.outputs[&name], &cpu_values);
     }
 }
 
@@ -875,7 +894,13 @@ fn served_particle_shader_matches_cpu_with_pointer_force() {
     let cpu = program.run_cpu(&inputs).expect("CPU reference must run");
     let gpu = match program.run_gpu_profiled(&inputs) {
         Ok(gpu) => gpu,
-        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => {
+            unavailable_gpu(
+                "served particle pointer-force numerical comparison",
+                "GPU adapter unavailable",
+            );
+            return;
+        }
         Err(error) => panic!("served particle shader failed: {error}"),
     };
     eprintln!("served particle adapter: {}", gpu.adapter);
@@ -929,9 +954,16 @@ fn resident_gpu_feeds_particle_outputs_into_the_next_turn() {
     ]);
     let mut resident = match program.prepare_resident(&initial_inputs) {
         Ok(resident) => resident,
-        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => {
+            unavailable_gpu("particle recurrence", "GPU adapter unavailable");
+            return;
+        }
         Err(error) => panic!("resident GPU preparation failed: {error}"),
     };
+    eprintln!(
+        "particle recurrence actual WebGPU adapter: {}",
+        resident.adapter()
+    );
     let gpu = resident.run_turns(3).expect("resident turns must run");
     assert_close(&gpu.outputs["result.0"], &expected["result.0"]);
     assert_close(&gpu.outputs["result.1"], &expected["result.1"]);
@@ -966,9 +998,16 @@ fn resident_gpu_accepts_new_inputs_without_resetting_state() {
 
     let mut resident = match program.prepare_resident(&initial) {
         Ok(resident) => resident,
-        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => {
+            unavailable_gpu("particle live-input update", "GPU adapter unavailable");
+            return;
+        }
         Err(error) => panic!("resident GPU preparation failed: {error}"),
     };
+    eprintln!(
+        "particle live-input actual WebGPU adapter: {}",
+        resident.adapter()
+    );
     resident
         .dispatch_turns(30)
         .expect("initial GPU turns must run");
@@ -1124,7 +1163,7 @@ result
         })
         .collect::<std::collections::BTreeSet<_>>();
 
-    assert!(operations.contains("matrix/multiply"));
+    assert!(operations.contains("matrix/matmul"));
     assert!(operations.contains("core/assign"));
     assert!(operations.iter().all(|name| !name.starts_with("runtime/")));
 }
@@ -1308,6 +1347,10 @@ fn canonical_activation_initializers_are_shared_and_run_only_once() {
     }
     match kernel.prepare_resident(&inputs) {
         Ok(mut gpu) => {
+            eprintln!(
+                "particle computed-initializer actual WebGPU adapter: {}",
+                gpu.adapter()
+            );
             let published = gpu.run_turns(2).unwrap().state;
             assert_eq!(
                 published.len(),
@@ -1318,7 +1361,10 @@ fn canonical_activation_initializers_are_shared_and_run_only_once() {
             }
         }
         Err(mech_gpu::BatchedExecutionError::Native(detail))
-            if detail == "GPU adapter unavailable" => {}
+            if detail == "GPU adapter unavailable" =>
+        {
+            unavailable_gpu("particle computed initializer", &detail);
+        }
         Err(error) => panic!("computed-initializer GPU preparation failed: {error}"),
     }
     assert_eq!(

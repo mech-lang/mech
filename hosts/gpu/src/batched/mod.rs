@@ -494,7 +494,7 @@ struct BatchedState {
     shape: FixedShape,
     initializer: Vec<f32>,
     update: Vec<ScalarOperand>,
-    read_binding: u32,
+    read_binding: Option<u32>,
     write_binding: u32,
 }
 
@@ -547,7 +547,9 @@ pub struct FixedShapeInputBuffer {
 #[derive(Clone, Debug, PartialEq)]
 pub struct FixedShapeStateBuffer {
     pub slot: CellSlotId,
-    pub read_binding: u32,
+    /// Publication storage retains two physical buffers, but only recurrence
+    /// state exposes the current buffer to the shader.
+    pub read_binding: Option<u32>,
     pub write_binding: u32,
     pub elements_per_instance: usize,
     pub elements: usize,
@@ -707,6 +709,7 @@ impl FixedShapeKernel {
                     .iter()
                     .map(|publication| publication.slot),
             )
+            .chain(storage.inputs.iter().map(|input| input.slot))
             .collect::<BTreeSet<_>>();
         if program
             .interface()
@@ -718,7 +721,9 @@ impl FixedShapeKernel {
                 "fixed-shape output has no publication storage",
             ));
         }
-        if retained_slots.len() != storage.states.len() + storage.publications.len() {
+        if retained_slots.len()
+            != storage.states.len() + storage.publications.len() + storage.inputs.len()
+        {
             return Err(fixed_shape_program_error(
                 "fixed-shape retained storage slots overlap",
             ));
@@ -749,7 +754,7 @@ impl FixedShapeKernel {
                     shape: state.shape,
                     initializer: state.initializer.to_vec(),
                     update: state.update.to_vec(),
-                    read_binding: binding,
+                    read_binding: Some(binding),
                     write_binding: binding + 1,
                 };
                 binding += 2;
@@ -768,10 +773,10 @@ impl FixedShapeKernel {
                 shape: publication.shape,
                 initializer: vec![0.0; publication.shape.elements()],
                 update: publication.value.to_vec(),
-                read_binding: binding,
-                write_binding: binding + 1,
+                read_binding: None,
+                write_binding: binding,
             });
-            binding += 2;
+            binding += 1;
         }
         let constraints = storage
             .constraints
@@ -896,7 +901,7 @@ impl FixedShapeKernel {
 
     pub fn integrity_buffer(&self) -> Option<FixedShapeIntegrityBuffer> {
         (!self.constraints.is_empty()).then_some(FixedShapeIntegrityBuffer {
-            binding: (self.inputs.len() + self.states.len() * 2) as u32,
+            binding: shader_binding_count(&self.inputs, &self.states),
             words: FIXED_SHAPE_INTEGRITY_WORDS,
         })
     }
@@ -1119,6 +1124,11 @@ impl BatchedCpuSession {
         &self.state
     }
 
+    /// Current supplied inputs, independent of committed turn results.
+    pub fn input_values(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        &self.inputs
+    }
+
     pub const fn fault_count(&self) -> u64 {
         self.faults.fault_count
     }
@@ -1219,6 +1229,11 @@ impl BatchedSimdCpuSession {
         &self.state
     }
 
+    /// Current supplied inputs, independent of committed turn results.
+    pub fn input_values(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        &self.inputs
+    }
+
     pub const fn fault_count(&self) -> u64 {
         self.faults.fault_count
     }
@@ -1277,18 +1292,7 @@ fn infer_broadcast_instances(
     inputs: &BTreeMap<String, Vec<f32>>,
 ) -> Result<u32, GpuAdmissionError> {
     let resolved_dimensions = resolve_compute_slot_dimensions(artifact);
-    let required = turn_required_nodes(artifact);
-    let required_slots = required
-        .iter()
-        .flat_map(|node| artifact.nodes()[node.get() as usize].input_bindings.clone())
-        .filter_map(|binding| match artifact.bindings().get(binding as usize) {
-            Some(BindingDeclaration::Input {
-                source: ArtifactSource::Slot(slot),
-                ..
-            }) => Some(*slot),
-            _ => None,
-        })
-        .collect::<BTreeSet<_>>();
+    let required_slots = required_fixed_shape_input_slots(artifact);
     let slots = artifact
         .slots()
         .iter()
@@ -1396,6 +1400,45 @@ fn infer_broadcast_instances(
     })
 }
 
+fn required_fixed_shape_input_slots(artifact: &ProgramArtifact) -> BTreeSet<CellSlotId> {
+    let required = turn_required_nodes(artifact);
+    let mut slots = required
+        .iter()
+        .flat_map(|node| artifact.nodes()[node.get() as usize].input_bindings.clone())
+        .filter_map(|binding| match artifact.bindings().get(binding as usize) {
+            Some(BindingDeclaration::Input {
+                source: ArtifactSource::Slot(slot),
+                ..
+            }) => Some(*slot),
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
+    let declared_inputs = artifact
+        .inputs()
+        .iter()
+        .map(|input| input.slot)
+        .collect::<BTreeSet<_>>();
+    slots.extend(artifact.outputs().iter().filter_map(|output| {
+        let slot = physical_publication_slot(artifact, output.source)?;
+        declared_inputs.contains(&slot).then_some(slot)
+    }));
+    slots
+}
+
+fn physical_publication_slot(artifact: &ProgramArtifact, slot: CellSlotId) -> Option<CellSlotId> {
+    match artifact.slots().get(slot.get() as usize)?.producer {
+        ProducerReference::Output {
+            source: ArtifactSource::Slot(source),
+            ..
+        } => physical_publication_slot(artifact, source),
+        ProducerReference::Output {
+            source: ArtifactSource::Constant(_),
+            ..
+        } => None,
+        ProducerReference::Input(_) | ProducerReference::NodeOutput { .. } => Some(slot),
+    }
+}
+
 struct PendingState {
     slot: CellSlotId,
     shape: FixedShape,
@@ -1408,6 +1451,7 @@ struct BatchCompiler<'a> {
     artifact: &'a ProgramArtifact,
     instances: u32,
     resolved_dimensions: BTreeMap<CellSlotId, Box<[u64]>>,
+    published_slots: BTreeSet<CellSlotId>,
     shapes: BTreeMap<CellSlotId, FixedShape>,
     register_offsets: BTreeMap<CellSlotId, usize>,
     register_count: usize,
@@ -1501,6 +1545,7 @@ impl<'a> BatchCompiler<'a> {
             activation: mech_compute::ComputeActivationValues::new(artifact),
             instances,
             resolved_dimensions: resolve_compute_slot_dimensions(artifact),
+            published_slots: BTreeSet::new(),
             shapes: BTreeMap::new(),
             register_offsets: BTreeMap::new(),
             register_count: 0,
@@ -1531,6 +1576,12 @@ impl<'a> BatchCompiler<'a> {
                 "the outer batch must contain at least one instance",
             );
         }
+        // The interface owner resolves aliases and recursively expands tuple
+        // publications. Use its physical leaves before deciding which static
+        // selectors may be erased, and retain that exact interface for storage.
+        let interface =
+            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
+        self.published_slots = interface.outputs.iter().map(|output| output.slot).collect();
         self.collect_slots();
         self.collect_inputs();
         self.lower_nodes();
@@ -1607,14 +1658,19 @@ impl<'a> BatchCompiler<'a> {
                 diagnostics: self.diagnostics,
             });
         }
-        let interface =
-            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
         let mut published = BTreeSet::new();
+        let input_slots = self
+            .inputs
+            .iter()
+            .map(|(slot, _, _)| *slot)
+            .collect::<BTreeSet<_>>();
         let publications = interface
             .outputs
             .iter()
             .filter(|output| {
-                !self.states.contains_key(&output.slot) && published.insert(output.slot)
+                !self.states.contains_key(&output.slot)
+                    && !input_slots.contains(&output.slot)
+                    && published.insert(output.slot)
             })
             .map(|output| {
                 let shape = self.shape(output.slot)?;
@@ -1664,7 +1720,7 @@ impl<'a> BatchCompiler<'a> {
                     shape: state.shape,
                     initializer: state.initializer,
                     update: state.update.unwrap(),
-                    read_binding,
+                    read_binding: Some(read_binding),
                     write_binding,
                 }
             })
@@ -1713,7 +1769,7 @@ impl<'a> BatchCompiler<'a> {
 
     fn collect_slots(&mut self) {
         let required_nodes = turn_required_nodes(self.artifact);
-        let required_slots = required_nodes
+        let mut required_slots = required_nodes
             .iter()
             .flat_map(|node| {
                 let node = &self.artifact.nodes()[node.get() as usize];
@@ -1736,6 +1792,7 @@ impl<'a> BatchCompiler<'a> {
                     }))
             })
             .collect::<BTreeSet<_>>();
+        required_slots.extend(required_fixed_shape_input_slots(self.artifact));
         for slot in self.artifact.slots() {
             // E3 gives public outputs dedicated publication slots. Batched
             // kernels operate on the underlying numeric graph and persistent
@@ -1762,7 +1819,7 @@ impl<'a> BatchCompiler<'a> {
                     continue;
                 }
             }
-            if self.static_selector_slot(slot.slot) {
+            if self.static_selector_slot(slot.slot) && !self.published_slot(slot.slot) {
                 continue;
             }
             let shape = match self
@@ -1802,24 +1859,7 @@ impl<'a> BatchCompiler<'a> {
     }
 
     fn collect_inputs(&mut self) {
-        let required = turn_required_nodes(self.artifact);
-        let required_slots = required
-            .iter()
-            .flat_map(|node| {
-                self.artifact.nodes()[node.get() as usize]
-                    .input_bindings
-                    .clone()
-            })
-            .filter_map(
-                |binding| match self.artifact.bindings().get(binding as usize) {
-                    Some(BindingDeclaration::Input {
-                        source: ArtifactSource::Slot(slot),
-                        ..
-                    }) => Some(*slot),
-                    _ => None,
-                },
-            )
-            .collect::<BTreeSet<_>>();
+        let required_slots = required_fixed_shape_input_slots(self.artifact);
         for input in self.artifact.inputs() {
             if required_slots.contains(&input.slot)
                 && let Some(shape) = self.shapes.get(&input.slot).copied()
@@ -1874,6 +1914,20 @@ impl<'a> BatchCompiler<'a> {
                     .iter()
                     .all(|output| self.static_selector_slot(*output))
             {
+                let published_outputs = outputs
+                    .iter()
+                    .copied()
+                    .filter(|output| self.published_slot(*output))
+                    .collect::<Vec<_>>();
+                for output in published_outputs {
+                    if let Err(detail) = self.lower_published_static_selector(output) {
+                        self.reject(
+                            Some(node.node),
+                            Some(display_operation(&node.operation)),
+                            detail,
+                        );
+                    }
+                }
                 continue;
             }
             if outputs.iter().any(|slot| self.states.contains_key(slot)) {
@@ -1914,7 +1968,7 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_concatenate(output, &inputs, false)
             } else if operation == "matrix/transpose" {
                 self.lower_transpose(output, &inputs)
-            } else if operation == "matrix/multiply" {
+            } else if matches!(operation.as_str(), "matrix/multiply" | "matrix/matmul") {
                 self.lower_matmul(output, &inputs)
             } else if operation == "matrix/solve" {
                 self.lower_solve(output, &inputs)
@@ -1924,6 +1978,8 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_negate(output, &inputs)
             } else if operation == "math/abs" {
                 self.lower_absolute(output, &inputs)
+            } else if operation == "convert/kind" {
+                self.lower_copy(output, &inputs)
             } else if let Some(comparison) = comparison_operation(&operation) {
                 self.lower_compare(output, &inputs, comparison)
             } else if let Some(logic) = logic_operation(&operation) {
@@ -2085,12 +2141,37 @@ impl<'a> BatchCompiler<'a> {
                 inputs.len()
             ));
         }
-        let source = self.source_shape(inputs[0])?;
         let result = self.shape(output)?;
         let operation_name = display_operation(operation);
         let mode = operation
             .resolved_selection_mode(inputs.len() - 1)
             .ok_or_else(|| format!("{operation_name} has no canonical selection mode"))?;
+        if inputs.len() == 2
+            && mode == ResolvedSelectionMode::LinearScalar
+            && let Some(members) = self.composite_pack_inputs(inputs[0])?
+        {
+            let selected = self.constant_indices(inputs[1], members.len(), "composite")?;
+            let [selected] = selected.as_slice() else {
+                return Err("composite access requires exactly one static selector".to_owned());
+            };
+            let source = members[*selected];
+            let source_shape = self.source_shape(source)?;
+            if source_shape != result {
+                return Err(format!(
+                    "composite member shape {source_shape:?} does not match access result {result:?}"
+                ));
+            }
+            self.reserve_scalar_instructions(result.elements(), 1, 1)?;
+            for component in 0..result.elements() {
+                self.emit(
+                    output,
+                    component,
+                    ScalarComputation::Copy(self.operand(source, component)?),
+                );
+            }
+            return Ok(());
+        }
+        let source = self.source_shape(inputs[0])?;
         if inputs.len() == 2
             && matches!(
                 mode,
@@ -2151,6 +2232,71 @@ impl<'a> BatchCompiler<'a> {
                     ),
                 );
             }
+        }
+        Ok(())
+    }
+
+    fn composite_pack_inputs(
+        &self,
+        source: ArtifactSource,
+    ) -> Result<Option<Vec<ArtifactSource>>, String> {
+        let ArtifactSource::Slot(slot) = source else {
+            return Ok(None);
+        };
+        let declaration = self
+            .artifact
+            .slots()
+            .get(slot.get() as usize)
+            .ok_or_else(|| format!("slot {} does not exist", slot.get()))?;
+        let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+            return Ok(None);
+        };
+        let producer = self
+            .artifact
+            .nodes()
+            .get(node.get() as usize)
+            .and_then(mech_engine::NodeDeclaration::as_operation)
+            .ok_or_else(|| format!("slot {} has no operation producer", slot.get()))?;
+        if display_operation(&producer.operation) != "core/composite-pack" {
+            return Ok(None);
+        }
+        producer
+            .input_bindings
+            .clone()
+            .map(
+                |binding| match self.artifact.bindings().get(binding as usize) {
+                    Some(BindingDeclaration::Input { source, .. }) => Ok(*source),
+                    _ => Err(format!(
+                        "composite producer node {} has an invalid input binding",
+                        node.get()
+                    )),
+                },
+            )
+            .collect::<Result<Vec<_>, _>>()
+            .map(Some)
+    }
+
+    fn lower_copy(&mut self, output: CellSlotId, inputs: &[ArtifactSource]) -> Result<(), String> {
+        let [input] = inputs else {
+            return Err(format!(
+                "fixed-shape conversion requires one input, found {}",
+                inputs.len()
+            ));
+        };
+        let source = self.source_shape(*input)?;
+        let result = self.shape(output)?;
+        if source != result {
+            return Err(format!(
+                "fixed-shape conversion cannot change shape from {source:?} to {result:?}"
+            ));
+        }
+        self.reserve_scalar_instructions(result.elements(), 1, 1)?;
+        for component in 0..result.elements() {
+            self.emit(
+                output,
+                component,
+                ScalarComputation::Copy(self.operand(*input, component)?),
+            );
         }
         Ok(())
     }
@@ -2771,7 +2917,7 @@ impl<'a> BatchCompiler<'a> {
                         })
                         .collect::<Vec<_>>();
                     match display_operation(&node.operation).as_str() {
-                        "access/index" => {
+                        "access/index" | "convert/kind" => {
                             let [input] = inputs.as_slice() else {
                                 return Err("static index conversion must have exactly one input"
                                     .to_owned());
@@ -2908,7 +3054,10 @@ impl<'a> BatchCompiler<'a> {
                     let Some(node) = node.as_operation() else {
                         return Ok(None);
                     };
-                    if display_operation(&node.operation) != "access/index" {
+                    if !matches!(
+                        display_operation(&node.operation).as_str(),
+                        "access/index" | "convert/kind"
+                    ) {
                         return Ok(None);
                     }
                     let inputs = node
@@ -2952,7 +3101,10 @@ impl<'a> BatchCompiler<'a> {
         let Some(producer) = producer.as_operation() else {
             return false;
         };
-        if display_operation(&producer.operation) == "access/index" {
+        if matches!(
+            display_operation(&producer.operation).as_str(),
+            "access/index" | "convert/kind"
+        ) {
             return true;
         }
         let consumers = self
@@ -2962,20 +3114,129 @@ impl<'a> BatchCompiler<'a> {
             .filter_map(|binding| match binding {
                 BindingDeclaration::Input {
                     node,
+                    port_ordinal,
                     source: ArtifactSource::Slot(source),
                     ..
-                } if *source == slot => Some(*node),
+                } if *source == slot => Some((*node, *port_ordinal)),
                 _ => None,
             })
             .collect::<Vec<_>>();
         !consumers.is_empty()
-            && consumers.iter().all(|consumer| {
+            && consumers.iter().all(|(consumer, port_ordinal)| {
                 self.artifact
                     .nodes()
                     .get(consumer.get() as usize)
                     .and_then(mech_engine::NodeDeclaration::as_operation)
-                    .is_some_and(|node| display_operation(&node.operation) == "access/index")
+                    .is_some_and(|node| {
+                        (*port_ordinal > 0 && node.operation.module_path.as_ref() == ["access"])
+                            || display_operation(&node.operation) == "convert/kind"
+                            // A pack carrying a published leaf is structural,
+                            // not an arithmetic consumer. That leaf is retained
+                            // and materialized rather than selector-only erased.
+                            || (display_operation(&node.operation) == "core/composite-pack"
+                                && self.published_slot(slot))
+                    })
             })
+    }
+
+    fn published_slot(&self, slot: CellSlotId) -> bool {
+        self.published_slots.contains(&slot)
+    }
+
+    fn lower_published_static_selector(&mut self, slot: CellSlotId) -> Result<(), String> {
+        let declaration = self
+            .artifact
+            .slots()
+            .get(slot.get() as usize)
+            .ok_or_else(|| format!("published selector slot {} does not exist", slot.get()))?;
+        let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+            return Err("published static selector has no operation producer".to_owned());
+        };
+        let producer = self
+            .artifact
+            .nodes()
+            .get(node.get() as usize)
+            .and_then(mech_engine::NodeDeclaration::as_operation)
+            .ok_or_else(|| "published static selector producer does not exist".to_owned())?;
+        let operation = display_operation(&producer.operation);
+        let values = if matches!(
+            operation.as_str(),
+            "range/exclusive"
+                | "range/exclusive-increment"
+                | "range/inclusive"
+                | "range/inclusive-increment"
+        ) {
+            let (inclusive, incremented, expected) = match operation.as_str() {
+                "range/exclusive" => (false, false, 2),
+                "range/exclusive-increment" => (false, true, 3),
+                "range/inclusive" => (true, false, 2),
+                "range/inclusive-increment" => (true, true, 3),
+                _ => unreachable!(),
+            };
+            let inputs = producer
+                .input_bindings
+                .clone()
+                .filter_map(
+                    |binding| match self.artifact.bindings().get(binding as usize) {
+                        Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                        _ => None,
+                    },
+                )
+                .collect::<Vec<_>>();
+            if inputs.len() != expected {
+                return Err(format!(
+                    "published static {operation} must have {expected} inputs"
+                ));
+            }
+            let mut endpoints = Vec::with_capacity(expected);
+            for source in inputs {
+                let Some(endpoint) = self.static_range_endpoint(source)? else {
+                    return Err(format!("published static {operation} has a live endpoint"));
+                };
+                endpoints.push(endpoint);
+            }
+            let mut values = Vec::new();
+            mech_core::visit_canonical_value_range(
+                &endpoints,
+                inclusive,
+                incremented,
+                MAX_STATIC_SELECTOR_ELEMENTS,
+                |value| {
+                    let value = match value {
+                        ValueData::F32(value) => value.to_f32(),
+                        ValueData::F64(value) => value.to_f64() as f32,
+                        value => mech_core::canonical_positional_ordinal(&value)? as f32,
+                    };
+                    values.push(value);
+                    Ok::<(), mech_core::CanonicalSelectorError>(())
+                },
+            )
+            .map_err(|error| format!("invalid published static {operation}: {error:?}"))?;
+            values
+        } else {
+            self.static_selector_indices(ArtifactSource::Slot(slot), MAX_STATIC_SELECTOR_ELEMENTS)?
+                .ok_or_else(|| "published selector is not compile-time constant".to_owned())?
+                .iter()
+                .map(|value| *value as f32)
+                .collect::<Vec<_>>()
+        };
+        let shape = self.shape(slot)?;
+        if values.len() != shape.elements() {
+            return Err(format!(
+                "published static selector has {} values but shape {shape:?} contains {}",
+                values.len(),
+                shape.elements()
+            ));
+        }
+        self.reserve_scalar_instructions(values.len(), 1, 1)?;
+        for (component, value) in values.into_iter().enumerate() {
+            self.emit(
+                slot,
+                component,
+                ScalarComputation::Copy(ScalarOperand::Constant(value)),
+            );
+        }
+        Ok(())
     }
 
     fn source_shape(&self, source: ArtifactSource) -> Result<FixedShape, String> {
@@ -3250,11 +3511,12 @@ fn generate_wgsl(
         ));
     }
     for state in states {
-        shader.push_str(&format!(
-            "@group(0) @binding({}) var<storage, read> state_read_{}: array<f32>;\n",
-            state.read_binding,
-            state.slot.get()
-        ));
+        if let Some(read_binding) = state.read_binding {
+            shader.push_str(&format!(
+                "@group(0) @binding({read_binding}) var<storage, read> state_read_{}: array<f32>;\n",
+                state.slot.get()
+            ));
+        }
         shader.push_str(&format!(
             "@group(0) @binding({}) var<storage, read_write> state_write_{}: array<f32>;\n",
             state.write_binding,
@@ -3262,7 +3524,7 @@ fn generate_wgsl(
         ));
     }
     if !constraints.is_empty() {
-        let binding = inputs.len() as u32 + states.len() as u32 * 2;
+        let binding = shader_binding_count(inputs, states);
         shader.push_str(&format!(
             "@group(0) @binding({binding}) var<storage, read_write> integrity_fault: array<atomic<u32>>;\n\n\
              fn record_integrity_fault(code: u32, instance: u32) {{\n\
@@ -3333,9 +3595,32 @@ fn generate_wgsl(
     shader
 }
 
+/// Physical ownership includes both halves of every ping-pong allocation.
+/// Shader visibility includes only the halves used by the compute entry point.
+fn shader_binding_count(inputs: &[BatchedInput], states: &[BatchedState]) -> u32 {
+    inputs.len() as u32
+        + states
+            .iter()
+            .map(|state| 1 + u32::from(state.read_binding.is_some()))
+            .sum::<u32>()
+}
+
 #[cfg(test)]
 mod axis_tests {
     use super::*;
+    use mech_engine::{
+        ExecutableNodeBody, OutputDeclaration, ProgramArtifactDraft, SlotDeclaration,
+    };
+
+    fn compile_fixed_source(source: &str) -> ProgramArtifact {
+        mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_source_artifact(source)
+            .unwrap()
+            .into_artifact()
+    }
 
     fn typed_selector(kind: &str, value: u8) -> String {
         match kind {
@@ -3400,6 +3685,345 @@ mod axis_tests {
             ),
             Err(mech_core::MemoryPlanError::TargetLimitExceeded { .. })
         ));
+    }
+
+    #[test]
+    fn legacy_matrix_multiply_artifacts_remain_gpu_lowerable() {
+        let artifact = compile_fixed_source(
+            "matrix := [1f32 2f32; 3f32 4f32]\nproduct := matrix/matmul(matrix, matrix)\nproduct\n",
+        );
+        let mut nodes = artifact.nodes().to_vec();
+        let operation = nodes
+            .iter_mut()
+            .find_map(|node| match &mut node.body {
+                ExecutableNodeBody::Operation(operation)
+                    if operation.operation.module_path.as_ref() == ["matrix"]
+                        && operation.operation.operation_name == "matmul" =>
+                {
+                    Some(operation)
+                }
+                _ => None,
+            })
+            .expect("matrix product node must exist");
+        operation.operation.operation_name = "multiply".to_owned();
+        let legacy = ProgramArtifactDraft {
+            schemas: artifact.schemas().clone(),
+            constants: artifact.constants().clone(),
+            contracts: artifact.contracts().clone(),
+            requirements: artifact.requirements().clone(),
+            inputs: artifact.inputs().into(),
+            slots: artifact.slots().into(),
+            nodes: nodes.into_boxed_slice(),
+            bindings: artifact.bindings().into(),
+            outputs: artifact.outputs().into(),
+            constraints: artifact.constraints().into(),
+            compute_regions: artifact.compute_regions().into(),
+        }
+        .finalize()
+        .unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&legacy).unwrap(),
+        )
+        .unwrap();
+
+        let inputs = BTreeMap::new();
+        let expected = [7.0, 15.0, 10.0, 22.0].repeat(3);
+        let mut expected_interface = None;
+        for (label, artifact) in [
+            ("canonical matmul", &artifact),
+            ("legacy multiply", &legacy),
+            ("decoded legacy multiply", &decoded),
+        ] {
+            let kernel = crate::ComputeLowerer.compile_batched(artifact, 3).unwrap();
+            let interface = kernel.compute_program().interface();
+            assert_eq!(interface.outputs.len(), 1, "{label}");
+            let output = &interface.outputs[0];
+            assert_eq!(output.dimensions.as_ref(), [2, 2], "{label}");
+            if let Some(expected_interface) = &expected_interface {
+                assert_eq!(interface, expected_interface, "{label}");
+            } else {
+                expected_interface = Some(interface.clone());
+            }
+            let mut scalar = kernel.prepare_cpu(&inputs).unwrap();
+            scalar.dispatch_turns(1).unwrap();
+            assert_eq!(scalar.state()[&output.slot], expected, "{label} scalar");
+            let mut simd = kernel.prepare_simd_cpu(&inputs).unwrap();
+            simd.dispatch_turns(1).unwrap();
+            assert_eq!(simd.state()[&output.slot], expected, "{label} SIMD");
+
+            #[cfg(feature = "native")]
+            match kernel.prepare_resident(&inputs) {
+                Ok(mut gpu) => {
+                    eprintln!("R26 {label} actual WebGPU adapter: {}", gpu.adapter());
+                    gpu.dispatch_turns(1).unwrap();
+                    let (_, values) = gpu.read_published_state().unwrap();
+                    assert_eq!(values[&output.slot], expected, "{label} WebGPU");
+                }
+                Err(BatchedExecutionError::Native(message))
+                    if message == "GPU adapter unavailable" =>
+                {
+                    assert!(
+                        std::env::var("MECH_REQUIRE_GPU").as_deref() != Ok("1"),
+                        "{label}: required actual WebGPU adapter unavailable"
+                    );
+                    eprintln!("SKIP R26 {label} WebGPU execution: adapter unavailable");
+                }
+                Err(error) => panic!("{label} WebGPU preparation failed: {error}"),
+            }
+        }
+    }
+
+    #[test]
+    fn directly_published_inputs_define_fixed_shape_batch_storage() {
+        let artifact = compile_fixed_source("value := signal<f32>\nvalue\n");
+        let inputs = BTreeMap::from([("signal".to_owned(), vec![1.0, 2.0, 3.0])]);
+        let kernel = crate::ComputeLowerer.compile_batched(&artifact, 3).unwrap();
+
+        assert_eq!(kernel.instances(), 3);
+        assert_eq!(kernel.inputs().collect::<Vec<_>>(), vec![("signal", 1)]);
+        let program = kernel.compute_program();
+        let output = &program.interface().outputs[0];
+        assert_eq!(output.name.as_ref(), "result");
+        assert_eq!(
+            output.slot,
+            program.interface().input_named("signal").unwrap().slot
+        );
+        assert!(
+            program
+                .fixed_shape_storage()
+                .unwrap()
+                .publications
+                .is_empty()
+        );
+        assert!(kernel.physical_states().is_empty());
+        let mut session = kernel.prepare_cpu(&inputs).unwrap();
+        assert_eq!(session.attempted_turns(), 0);
+        assert_eq!(session.input_values()[&output.slot], [1.0, 2.0, 3.0]);
+        session.dispatch_turns(1).unwrap();
+        assert!(session.state().is_empty());
+        assert_eq!(session.input_values()[&output.slot], [1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn published_static_selector_remains_materialized() {
+        for (range, operation_name, expected) in [
+            ("1f32..=2f32", "range/inclusive", [1.0, 2.0]),
+            ("1f32..3f32", "range/exclusive", [1.0, 2.0]),
+            ("1f32..2f32..=3f32", "range/inclusive-increment", [1.0, 3.0]),
+            ("1f32..2f32..4f32", "range/exclusive-increment", [1.0, 3.0]),
+        ] {
+            let source_artifact = compile_fixed_source(&format!(
+                "selector := {range}\nvalues := [10f32; 20f32; 30f32]\nselected := values[selector]\nselected\n",
+            ));
+            let selector = source_artifact
+                .nodes()
+                .iter()
+                .find_map(|node| {
+                    let operation = node.as_operation()?;
+                    (display_operation(&operation.operation) == operation_name)
+                        .then(|| operation.output_bindings.clone())
+                })
+                .and_then(|bindings| {
+                    bindings.into_iter().find_map(|binding| {
+                        let BindingDeclaration::Output { target, .. } =
+                            source_artifact.bindings().get(binding as usize)?
+                        else {
+                            return None;
+                        };
+                        Some(*target)
+                    })
+                })
+                .expect("the range producer must have an output slot");
+            let selector_schema = source_artifact.slots()[selector.get() as usize].schema;
+            let mut outputs = source_artifact.outputs().to_vec();
+            let output_id = mech_core::OutputId(outputs.len() as u32);
+            let mut slots = source_artifact.slots().to_vec();
+            let output_slot = CellSlotId(slots.len() as u32);
+            slots.push(SlotDeclaration {
+                slot: output_slot,
+                schema: selector_schema,
+                role: SlotRole::Output,
+                producer: ProducerReference::Output {
+                    output: output_id,
+                    source: ArtifactSource::Slot(selector),
+                },
+                initializer: None,
+            });
+            outputs.push(OutputDeclaration {
+                output: output_id,
+                name: "selector".to_owned(),
+                interactive_binding: None,
+                source: output_slot,
+                schema: selector_schema,
+            });
+            let artifact = ProgramArtifactDraft {
+                schemas: source_artifact.schemas().clone(),
+                constants: source_artifact.constants().clone(),
+                contracts: source_artifact.contracts().clone(),
+                requirements: source_artifact.requirements().clone(),
+                inputs: source_artifact.inputs().into(),
+                slots: slots.into_boxed_slice(),
+                nodes: source_artifact.nodes().into(),
+                bindings: source_artifact.bindings().into(),
+                outputs: outputs.into_boxed_slice(),
+                constraints: source_artifact.constraints().into(),
+                compute_regions: source_artifact.compute_regions().into(),
+            }
+            .finalize()
+            .unwrap();
+            assert!(artifact.outputs().iter().any(|output| {
+                physical_publication_slot(&artifact, output.source) == Some(selector)
+            }));
+
+            let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+                &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            for artifact in [&artifact, &decoded] {
+                let selected = physical_publication_slot(artifact, artifact.outputs()[0].source)
+                    .expect("selected publication must retain its physical slot");
+                let kernel = crate::ComputeLowerer.compile_batched(artifact, 2).unwrap();
+                let storage = kernel.compute_program().fixed_shape_storage().unwrap();
+                assert!(storage.publications.iter().any(|publication| {
+                    publication.slot == selector && publication.shape.elements() == 2
+                }));
+                let mut session = kernel.prepare_cpu(&BTreeMap::new()).unwrap();
+                session.dispatch_turns(1).unwrap();
+                assert_eq!(session.state()[&selector], expected.repeat(2), "{range}");
+                let selected_values = expected.map(|index| index * 10.0).repeat(2);
+                assert_eq!(session.state()[&selected], selected_values, "{range}");
+            }
+        }
+    }
+
+    #[test]
+    fn tuple_published_static_selectors_share_the_interface_publication_contract() {
+        for (range, operation_name, expected) in [
+            ("1f32..=2f32", "range/inclusive", [1.0, 2.0]),
+            ("1f32..3f32", "range/exclusive", [1.0, 2.0]),
+            ("1f32..2f32..=3f32", "range/inclusive-increment", [1.0, 3.0]),
+            ("1f32..2f32..4f32", "range/exclusive-increment", [1.0, 3.0]),
+        ] {
+            for (publication, positions, publishes_input) in [
+                ("(selected, selector)", 2, false),
+                ("((selected, selector), (selector, extra))", 4, true),
+                ("(selector, (selected, selector))", 3, false),
+            ] {
+                let artifact = compile_fixed_source(&format!(
+                    "extra := sample<f32>\nselector := {range}\nvalues := [10f32; 20f32; 30f32]\nselected := values[selector]\n{publication}\n"
+                ));
+                assert!(
+                    artifact
+                        .nodes()
+                        .iter()
+                        .any(
+                            |node| node
+                                .as_operation()
+                                .is_some_and(|node| display_operation(&node.operation)
+                                    == "core/composite-pack")
+                        )
+                );
+                let selector = artifact
+                    .nodes()
+                    .iter()
+                    .find_map(|node| {
+                        let node = node.as_operation()?;
+                        if display_operation(&node.operation) != operation_name {
+                            return None;
+                        }
+                        node.output_bindings.clone().find_map(|binding| {
+                            match artifact.bindings().get(binding as usize)? {
+                                BindingDeclaration::Output { target, .. } => Some(*target),
+                                _ => None,
+                            }
+                        })
+                    })
+                    .expect("source must retain the range producer");
+                let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+                    &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+                )
+                .unwrap();
+                for artifact in [&artifact, &decoded] {
+                    let interface = build_compute_region_interface(artifact, None).unwrap();
+                    assert_eq!(interface.outputs.len(), positions, "{publication}");
+                    let selected = interface
+                        .outputs
+                        .iter()
+                        .find(|output| output.slot != selector && !output.dimensions.is_empty())
+                        .expect("selected matrix must have a physical publication")
+                        .slot;
+                    for output in &interface.outputs {
+                        if output.slot == selector {
+                            assert_eq!(output.dimensions.as_ref(), [1, 2]);
+                        } else if output.slot == selected {
+                            assert_eq!(output.dimensions.as_ref(), [2, 1]);
+                        }
+                    }
+                    let kernel = crate::ComputeLowerer.compile_batched(artifact, 2).unwrap();
+                    assert_eq!(kernel.compute_program().interface(), &interface);
+                    let storage = kernel.compute_program().fixed_shape_storage().unwrap();
+                    assert_eq!(storage.publications.len(), 2);
+                    assert_eq!(
+                        storage
+                            .publications
+                            .iter()
+                            .filter(|value| value.slot == selector)
+                            .count(),
+                        1
+                    );
+                    assert!(
+                        storage
+                            .publications
+                            .iter()
+                            .any(|value| value.slot == selector
+                                && value.shape
+                                    == FixedShape {
+                                        rows: 1,
+                                        columns: 2
+                                    })
+                    );
+                    assert!(
+                        storage
+                            .publications
+                            .iter()
+                            .any(|value| value.slot == selected
+                                && value.shape
+                                    == FixedShape {
+                                        rows: 2,
+                                        columns: 1
+                                    })
+                    );
+                    let inputs = BTreeMap::from([("sample".to_owned(), vec![7.0, 11.0])]);
+                    let mut session = kernel.prepare_cpu(&inputs).unwrap();
+                    session.dispatch_turns(1).unwrap();
+                    assert_eq!(
+                        session.state()[&selector],
+                        expected.repeat(2),
+                        "{publication}: {range}"
+                    );
+                    assert_eq!(
+                        session.state()[&selected],
+                        expected.map(|index| index * 10.0).repeat(2),
+                        "{publication}: {range}"
+                    );
+                    if publishes_input {
+                        let input = interface
+                            .inputs
+                            .iter()
+                            .find(|input| input.name.as_ref() == "sample")
+                            .unwrap();
+                        assert!(
+                            interface
+                                .outputs
+                                .iter()
+                                .any(|output| output.slot == input.slot)
+                        );
+                        assert!(!session.state().contains_key(&input.slot));
+                        assert_eq!(session.input_values()[&input.slot], [7.0, 11.0]);
+                    }
+                }
+            }
+        }
     }
 
     #[test]
@@ -3793,14 +4417,26 @@ mod axis_tests {
 
     #[test]
     fn gpu_matrix_solve_rejects_singular_inputs_without_publishing() {
-        let source = "portable singular solve @compute\n\
+        let source = "GPU matrix solve\n\
+                      ===============================================================================\n\n\
+                      @worker := compute://worker/kernel{:write(input/coefficients), :write(input/rhs), :write(turn)}\n\
+                      @worker/input/coefficients <- [4f32 1f32; 2f32 3f32]\n\
+                      @worker/input/rhs <- [1f32; 2f32]\n\
+                      @worker/turn <- 1\n\n\
+                      portable singular solve @compute\n\
                       -------------------------------------------------------------------------------\n\
-                      coefficients := source-coefficients\n\
-                      rhs := source-rhs\n\
+                      coefficients := [4f32 1f32; 2f32 3f32]\n\
+                      rhs := [1f32; 2f32]\n\
                       ~result := [7f32; 8f32]\n\
                       result = coefficients \\ rhs\n\
                       result\n";
-        let tree = mech_syntax::parse(source).unwrap();
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "test://gpu-singular-solve",
+            mech_syntax::document::Revision(0),
+            Arc::<str>::from(source),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
         let planning_inputs = BTreeMap::from([
             (
                 "source-coefficients".to_owned(),
@@ -3819,17 +4455,49 @@ mod axis_tests {
                 },
             ),
         ]);
-        let artifact = mech_runtime::RuntimeBuilder::new()
-            .function_catalog(mech_stdlib::source_native_plan_catalog())
-            .build_compiler()
-            .unwrap()
-            .compile_tree_artifact_with_inputs(
-                &tree,
-                &planning_inputs,
-                &BTreeSet::from(["coefficients".to_owned(), "rhs".to_owned()]),
+        let values = planning_inputs
+            .iter()
+            .map(|(name, value)| (name.clone(), value.clone().into_value().unwrap()))
+            .collect::<BTreeMap<_, _>>();
+        let schemas = values
+            .iter()
+            .map(|(name, value)| {
+                (
+                    name.clone(),
+                    mech_core::ValueCell::from_snapshot(value.clone())
+                        .unwrap()
+                        .closed_schema_body()
+                        .unwrap(),
+                )
+            })
+            .collect();
+        let external = BTreeSet::from(["coefficients".to_owned(), "rhs".to_owned()]);
+        let prepared = mech_engine::CanonicalSourceFrontend
+            .prepare_mixed_document_with_planning_contract(
+                &document.document(),
+                mech_stdlib::source_native_plan_catalog(),
+                schemas,
+                BTreeMap::new(),
+                &external,
+                &BTreeSet::new(),
+                &BTreeSet::new(),
             )
+            .unwrap();
+        let constants = prepared
+            .compute
+            .program()
+            .inputs
+            .iter()
+            .enumerate()
+            .filter(|(_, input)| !external.contains(&input.name))
+            .map(|(ordinal, input)| (ordinal as u32, values[&input.name].clone()))
+            .collect::<Vec<_>>();
+        let artifact = prepared
+            .compute
+            .bind_input_constants(&constants)
             .unwrap()
-            .into_artifact();
+            .compile_artifact()
+            .unwrap();
         let activation_inputs = BTreeMap::from([
             ("coefficients".to_owned(), vec![1.0, 2.0, 2.0, 4.0]),
             ("rhs".to_owned(), vec![1.0, 2.0]),
@@ -4040,7 +4708,9 @@ mod native {
                 let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some(&binding.name),
                     contents: bytemuck::cast_slice(values),
-                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                    usage: wgpu::BufferUsages::STORAGE
+                        | wgpu::BufferUsages::COPY_DST
+                        | wgpu::BufferUsages::COPY_SRC,
                 });
                 let object = planned_execution
                     .binding_object(binding.binding)
@@ -4249,7 +4919,14 @@ mod native {
                     .iter()
                     .map(|output| {
                         let slot = CellSlotId::new(output.slot);
-                        (slot, state_buffers[&slot][1 - group].clone())
+                        let buffer = if output.binding.is_some() {
+                            // The shared physical plan aliases directly published
+                            // inputs, which remain readable without a turn.
+                            input_buffers[&slot].clone()
+                        } else {
+                            state_buffers[&slot][1 - group].clone()
+                        };
+                        (slot, buffer)
                     })
                     .collect()
             });
@@ -4497,10 +5174,9 @@ mod native {
             Ok(started.elapsed())
         }
 
-        fn record_completed_writes(
+        fn record_completed_input_uploads(
             &mut self,
             uploaded_objects: &[MemoryObjectId],
-            written_state_groups: [bool; 2],
         ) -> Result<(), BatchedExecutionError> {
             for object in uploaded_objects {
                 let bytes = self
@@ -4519,6 +5195,15 @@ mod native {
                     .record_device_write(*object, bytes)
                     .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             }
+            Ok(())
+        }
+
+        fn record_completed_writes(
+            &mut self,
+            uploaded_objects: &[MemoryObjectId],
+            written_state_groups: [bool; 2],
+        ) -> Result<(), BatchedExecutionError> {
+            self.record_completed_input_uploads(uploaded_objects)?;
             for (object, bytes) in self.memory_plan.writable_device_objects().iter().copied() {
                 self.managed_memory
                     .record_device_write(object, bytes)
@@ -4788,9 +5473,21 @@ mod native {
                 );
                 readbacks.push((*slot, size));
             }
+            let mut uploaded_objects = Vec::new();
+            uploaded_objects
+                .try_reserve_exact(self.queued_uploads.len())
+                .map_err(|_| {
+                    BatchedExecutionError::Native(
+                        "GPU upload publication reservation was not available".to_owned(),
+                    )
+                })?;
+            let upload_holds = self.queued_uploads.drain(..).map(|(object, hold)| {
+                uploaded_objects.push(object);
+                hold
+            });
             let unsubmitted = self
                 .submission_tracker
-                .reserve_batch(core::iter::once(readback_hold))
+                .reserve_batch(core::iter::once(readback_hold).chain(upload_holds))
                 .map_err(BatchedExecutionError::Native)?;
             let submission = self.queue.submit(Some(encoder.finish()));
             unsubmitted.record_submitted(submission);
@@ -4837,8 +5534,11 @@ mod native {
                 &self.managed_memory,
             )
             .map_err(|error| BatchedExecutionError::Native(error.to_string()));
-            let state = readback_result?;
             completion_result?;
+            // Copy-only readback also flushes pending input uploads, but does
+            // not execute a turn or publish any candidate state/derived value.
+            self.record_completed_input_uploads(&uploaded_objects)?;
+            let state = readback_result?;
             for slot in state.keys().copied() {
                 let object = self
                     .memory_plan

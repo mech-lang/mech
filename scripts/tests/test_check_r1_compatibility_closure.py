@@ -75,7 +75,7 @@ class R1CompatibilityClosureTests(unittest.TestCase):
 
     def test_implementation_namespace_fails(self):
         root = self.fixture()
-        path = root / "src/engine/src/resident/numeric.rs"
+        path = root / "src/engine/src/resident/numeric/mod.rs"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             'let operation = vec!["runtime", "AddF64"];\n',
@@ -119,7 +119,7 @@ class R1CompatibilityClosureTests(unittest.TestCase):
     def test_matrix_not_source_and_resident_proofs_are_required(self):
         for relative in (
             "machines/logic/src/not.rs",
-            "src/engine/src/resident/numeric.rs",
+            "src/engine/src/resident/numeric/mod.rs",
         ):
             with self.subTest(relative=relative):
                 root = self.fixture()

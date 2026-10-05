@@ -158,11 +158,11 @@ fn closure_bytes(body: &SchemaBody) -> Option<u64> {
     body.clone_allocation_bound_bytes()?.checked_mul(5)
 }
 
-pub(super) fn binding_cost(
+pub(super) fn binding_cost<'a>(
     output: &Schema,
-    components: &[(&SchemaBody, &Schema)],
+    components: impl IntoIterator<Item = Option<(&'a SchemaBody, &'a Schema)>>,
 ) -> Option<CompositeBindingCost> {
-    let count = components.len() as u64;
+    let mut count = 0_u64;
     let output_parameters = output.dimension_parameters().len() as u64;
     let mut child_parameters = 0_u64;
     let mut actual_heap = 0_u64;
@@ -170,7 +170,9 @@ pub(super) fn binding_cost(
     let mut actual = Walk::default();
     let mut expected = Walk::default();
     let mut schema_visits = schema_work(output)?;
-    for (component, child) in components {
+    for component in components {
+        let (component, child) = component?;
+        count = count.checked_add(1)?;
         child_parameters =
             child_parameters.checked_add(child.dimension_parameters().len() as u64)?;
         actual_heap = actual_heap.checked_add(closure_bytes(child.body())?)?;
@@ -283,7 +285,7 @@ mod tests {
                 vec![SchemaBody::Bool; count].into_boxed_slice(),
             ));
             let components = vec![(&SchemaBody::Bool, &scalar); count];
-            binding_cost(&output, &components).unwrap()
+            binding_cost(&output, components.iter().copied().map(Some)).unwrap()
         };
         let small = bound(32);
         let large = bound(64);
@@ -304,7 +306,7 @@ mod tests {
                 element: Box::new(SchemaBody::Bool),
                 dimensions: vec![DimensionExpr::Constant(1); rank].into_boxed_slice(),
             });
-            binding_cost(&output, &[(&SchemaBody::Dynamic, &child)]).unwrap()
+            binding_cost(&output, [Some((&SchemaBody::Dynamic, &child))]).unwrap()
         };
         let small = bound(2);
         let large = bound(64);
@@ -323,7 +325,7 @@ mod tests {
                 }]
                 .into_boxed_slice(),
             ));
-            binding_cost(&output, &[(&SchemaBody::Bool, &scalar)]).unwrap()
+            binding_cost(&output, [Some((&SchemaBody::Bool, &scalar))]).unwrap()
         };
         let small = bound("a".into());
         let large = bound("a".repeat(4097));

@@ -78,14 +78,88 @@ fn canonical_document_root_owns_the_whole_source_fixture_corpus() {
 
 #[test]
 fn canonical_document_is_the_supported_document_root() {
-    let parsed = mech_syntax::document::parse_syntax(
-        source("answer := 42\n"),
-        mech_syntax::document::ParseRoot::Document,
-        mech_syntax::document::ParserImplementation::Canonical,
-        ParseConfig::default(),
-    )
-    .unwrap();
+    let parsed = parse_canonical_document(source("answer := 42\n"), ParseConfig::default());
     assert_eq!(parsed.syntax().kind(), SyntaxKind::Document);
+}
+
+#[test]
+fn standalone_ranges_keep_executable_document_ownership() {
+    for text in [
+        "1..10\n",
+        "1..=10\n",
+        "1..2..9\n",
+        "1..2..=9\n",
+        "-3..=3\n",
+        "1.5..=3.5\r\n",
+    ] {
+        let parsed = parse_canonical_document(source(text), ParseConfig::default());
+        assert!(
+            parsed.is_strictly_clean(),
+            "{text:?}: {:?}",
+            parsed.diagnostics
+        );
+        validate_lossless(&parsed.root, &parsed.source).unwrap();
+        assert_eq!(
+            reconstruct_source(&parsed.root, &parsed.source).unwrap(),
+            text
+        );
+        assert_eq!(
+            count(&parsed.syntax(), SyntaxKind::RangeExpression),
+            1,
+            "{text:?}"
+        );
+        assert_eq!(count(&parsed.syntax(), SyntaxKind::MechCode), 1, "{text:?}");
+        assert_eq!(
+            count(&parsed.syntax(), SyntaxKind::OrderedListItem),
+            0,
+            "{text:?}"
+        );
+    }
+}
+
+#[test]
+fn ordered_list_markers_do_not_split_adjacent_range_periods() {
+    use mech_syntax::document::parser::canonical::CanonicalRuleOutcome;
+
+    for text in ["1..10\n", "1..=10\n", "1..2..9\n", "1..2..=9\n"] {
+        let parsed = parse_canonical_document_rule_for_test(
+            source(text),
+            rules::ORDERED_LIST_ITEM,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch, "{text:?}");
+        assert!(parsed.consumed.is_empty(), "{text:?}");
+        assert!(parsed.diagnostics.is_empty(), "{text:?}");
+    }
+    for (text, items) in [
+        ("1.first\n2.second\n", 2),
+        ("1. first\n", 1),
+        ("1. .dot-prefixed prose\n", 1),
+    ] {
+        let parsed = parse_canonical_document(source(text), ParseConfig::default());
+        assert!(
+            parsed.is_strictly_clean(),
+            "{text:?}: {:?}",
+            parsed.diagnostics
+        );
+        validate_lossless(&parsed.root, &parsed.source).unwrap();
+        assert_eq!(
+            reconstruct_source(&parsed.root, &parsed.source).unwrap(),
+            text
+        );
+        assert_eq!(
+            count(&parsed.syntax(), SyntaxKind::OrderedListItem),
+            items,
+            "{text:?}"
+        );
+        assert_eq!(
+            count(&parsed.syntax(), SyntaxKind::RangeExpression),
+            0,
+            "{text:?}"
+        );
+        assert_eq!(count(&parsed.syntax(), SyntaxKind::MechCode), 0, "{text:?}");
+    }
 }
 
 #[test]

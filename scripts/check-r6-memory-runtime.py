@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DYNAMIC_RESIDENT_OWNER = "src/engine/src/function/dynamic.rs"
 REQUIRED = (
     "src/core/src/memory_runtime/mod.rs",
     "src/core/src/memory_runtime/identity.rs",
@@ -35,9 +36,8 @@ REQUIRED = (
     "src/engine/src/memory_planner/program.rs",
     "src/engine/src/memory_planner/resident.rs",
     "src/engine/src/resident/general/mod.rs",
-    "src/engine/src/interpreter/mod.rs",
-    "src/engine/src/literals.rs",
-    "src/engine/src/structures.rs",
+    "src/engine/src/intrinsics/kind_conversion.rs",
+    "src/engine/src/resident/composite.rs",
     "src/engine/src/intrinsics/define.rs",
     "src/engine/src/intrinsics/constructors.rs",
     "src/engine/src/intrinsics/table_ops.rs",
@@ -50,6 +50,7 @@ REQUIRED = (
     "src/engine/src/function/external/resource_read.rs",
     "src/engine/src/function/external/host_call.rs",
     "src/engine/src/function/module.rs",
+    DYNAMIC_RESIDENT_OWNER,
     "src/core/src/cell_binding.rs",
     "src/core/src/function/argument.rs",
     "src/core/src/function/mod.rs",
@@ -492,15 +493,26 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("scalar matrix or table finalization bypasses packed construction")
     rebinds = list(function_bodies(snapshot, "rebind"))
+    contextual_rebinds = list(function_bodies(snapshot, "rebind_with_context"))
+    rebind_ownership = (
+        contextual_rebinds[0]
+        if contextual_rebinds
+        else (rebinds[0] if rebinds else "")
+    )
+    admitted_schema_owner = (
+        "schemas: Some(context.try_clone_schemas()?)"
+        if contextual_rebinds
+        else "schemas: Some(Arc::new(schemas.clone()))"
+    )
     frozen_data = balanced_body(snapshot, "FrozenSnapshotData")
     frozen_storage = balanced_body(snapshot, "FrozenSnapshotStorage")
     if (
         "FrozenSnapshotData" not in snapshot
         or not rebinds
-        or "return Ok(self.clone())" not in rebinds[0]
+        or "return Ok(self.clone())" not in rebind_ownership
         or "root: self.root.clone()" not in snapshot
-        or "schema_body_contains_dynamic" not in rebinds[0]
-        or "schemas: Some(Arc::new(schemas.clone()))" not in rebinds[0]
+        or "schema_body_contains_dynamic" not in rebind_ownership
+        or admitted_schema_owner not in rebind_ownership
     ):
         found.append("canonical snapshots do not preserve shared frozen ownership")
     if (
@@ -1144,16 +1156,23 @@ def failures(root: Path) -> list[str]:
     if not re.search(r"\bMemoryDomain\s*::\s*new\s*\(", bytecode_constants):
         found.append("decoded constants do not share a managed bytecode session")
 
-    interpreter = rust_code(sources.get("src/engine/src/interpreter/mod.rs", ""))
-    literal = rust_code(sources.get("src/engine/src/literals.rs", ""))
-    interpreter_body = balanced_body(interpreter, "Interpreter")
-    if interpreter_body is None or not re.search(
-        r"\bmemory_domain\s*:\s*MemoryDomain\b", interpreter_body
+    realization = rust_code(sources.get("src/engine/src/memory_runtime/realize.rs", ""))
+    program_memory = balanced_body(realization, "ManagedProgramMemory")
+    if program_memory is None or not re.search(r"\bdomain\s*:\s*MemoryDomain\b", program_memory):
+        found.append("ManagedProgramMemory does not own one ordinary program memory session")
+    activation_source = rust_code(sources.get("src/engine/src/resident/general/mod.rs", ""))
+    activations = list(function_bodies(activation_source, "activate_internal"))
+    activation = re.sub(r"\s+", "", activations[0]) if activations else ""
+    if (
+        "ManagedProgramMemory::realize_with_memory_budget(&plan.memory_plan,memory_budget.as_ref())" not in activation
+        or "TypedResidentArena::allocate_from_plan(&plan.memory_plan,ResidentStorageClass::Constant,&managed_memory,)" not in activation
+        or "StateArena::new(&plan.memory_plan,&plan.slots,&managed_memory)" not in activation
+        or "TurnWorkspace::new(&plan,&managed_memory)" not in activation
+        or "_managed_memory:managed_memory" not in activation
     ):
-        found.append("Interpreter does not own one ordinary program memory session")
-    if not re.search(r"\.\s*import_owned_in\s*\(\s*p\.memory_domain\s*\(\s*\)\s*\)", literal):
-        found.append("source literals do not enter the interpreter memory session")
-    conversion_staging = list(function_bodies(literal, "stage_conversion_output"))
+        found.append("source constants and state do not share the retained program memory session")
+    conversion_execution = rust_code(sources.get("src/engine/src/intrinsics/kind_conversion.rs", ""))
+    conversion_staging = list(function_bodies(conversion_execution, "stage_conversion_output"))
     if (
         not conversion_staging
         or "snapshot_input_cell_with_construction" not in conversion_staging[0]
@@ -1221,7 +1240,7 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("managed table join materializes input columns before construction admission")
     conversion_footprints = list(
-        function_bodies(literal, "prospective_conversion_output_footprint")
+        function_bodies(conversion_execution, "prospective_conversion_output_footprint")
     )
     if (
         not conversion_footprints
@@ -1231,15 +1250,24 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("conversion footprint ignores target payload expansion")
 
-    structures = rust_code(sources.get("src/engine/src/structures.rs", ""))
+    composite = rust_code(sources.get("src/engine/src/resident/composite.rs", ""))
+    packs = list(function_bodies(composite, "composite_pack"))
+    pack = packs[0] if packs else ""
+    admission = pack.find(".admit()?")
+    preparation = pack.find("current_constructor(plan, inputs)")
+    materialization = pack.find("canonical_snapshot_data_draft")
     if (
-        "snapshot_input_cell_with_construction" not in structures
-        or "try_rebuild_tuple_values" not in structures
-        or "try_rebuild_record_values" not in structures
-        or "try_rebuild_table_values" not in structures
-        or "try_rebuild_matrix_drafts_with" not in structures
+        "resident_child_clone_cost" not in pack
+        or "PreparedKernel::new" not in pack
+        or admission < 0
+        or preparation < admission
+        or materialization < admission
+        or ".construct(children, Some(&budget))" not in pack
+        or "ResidentValueRef::Snapshot([Some(value)])" not in pack
+        or "value.clone()" not in pack
+        or "*target = Some(next)" not in pack
     ):
-        found.append("aggregate packs reread cells outside frame-owned construction")
+        found.append("Resident aggregate construction bypasses admitted immutable inputs")
     table_ops = rust_code(sources.get("src/engine/src/intrinsics/table_ops.rs", ""))
     join_solves = list(function_bodies(table_ops, "solve_managed"))
     if not any(
@@ -1250,8 +1278,8 @@ def failures(root: Path) -> list[str]:
     ) or "try_finish_preallocated_with" not in table_ops or table_ops.count("try_vec_with_capacity") < 5:
         found.append("table join constructs a detached logical cell during execution")
 
-    module = rust_code(sources.get("src/engine/src/function/module.rs", ""))
-    dynamic_resident = list(function_bodies(module, "dynamic_resident_execute"))
+    dynamic = rust_code(sources.get(DYNAMIC_RESIDENT_OWNER, ""))
+    dynamic_resident = list(function_bodies(dynamic, "dynamic_resident_execute"))
     if (
         not dynamic_resident
         or "candidate.as_mut_ptr()" not in dynamic_resident[0]

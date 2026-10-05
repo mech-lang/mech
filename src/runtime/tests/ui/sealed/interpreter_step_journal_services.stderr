@@ -1,15 +1,16 @@
-error[E0603]: struct `Interpreter` is private
- --> tests/ui/sealed/interpreter_step_journal_services.rs:1:18
+error[E0624]: method `advance_reactive_turn_with_journal_and_services` is private
+ --> tests/ui/sealed/interpreter_step_journal_services.rs:5:15
   |
-1 | use mech_engine::Interpreter;
-  |                  ^^^^^^^^^^^ private struct
+5 |       drop(plan.advance_reactive_turn_with_journal_and_services());
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ private method
   |
-note: the struct `Interpreter` is defined here
- --> $WORKSPACE/src/engine/src/lib.rs
+ ::: $WORKSPACE/src/core/src/function/mod.rs
   |
-  |     Interpreter, InterpreterExecution, InterpreterRef, RuntimeContextBinding,
-  |     ^^^^^^^^^^^
-help: import `Interpreter` directly
-  |
-1 | use mech_engine::interpreter::Interpreter;
-  |                  +++++++++++++
+  | /     pub(crate) fn advance_reactive_turn_with_journal_and_services(
+  | |         &mut self,
+  | |         state: &mut ReactiveTurnState,
+  | |         dirty_cells: &[CanonicalCellId],
+  | |         journal: &mut CanonicalTurnJournal,
+  | |         services: &mut dyn MechExecutionServices,
+  | |     ) -> MResult<ReactiveTurnOutcome> {
+  | |_____________________________________- private method defined here

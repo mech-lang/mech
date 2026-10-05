@@ -75,20 +75,7 @@ impl MechRuntime {
     /// executor remains responsible for its own resource accounting.
     #[cfg(any(feature = "source", feature = "resident-routing"))]
     pub(in crate::runtime) fn enforce_source_byte_limit(&self, source_bytes: u64) -> MResult<()> {
-        if let Some(max) = self.config.limits.max_source_bytes {
-            if source_bytes > max {
-                return Err(MechError::new(
-                    ResourceBudgetExceededError {
-                        resource: "source_bytes",
-                        used: 0,
-                        requested: source_bytes,
-                        max: Some(max),
-                    },
-                    None,
-                ));
-            }
-        }
-        Ok(())
+        enforce_source_byte_limit(self.config.limits.max_source_bytes, source_bytes)
     }
 
     pub(in crate::runtime) fn apply_context_event_retention(&self, context: &mut RuntimeContext) {
@@ -119,6 +106,28 @@ pub(in crate::runtime) fn enforce_turn_duration_limit(
             },
             None,
         ));
+    }
+    Ok(())
+}
+
+/// Shared admission check for direct source and every resolved graph member.
+#[cfg(any(feature = "source", feature = "resident-routing"))]
+pub(in crate::runtime) fn enforce_source_byte_limit(
+    max: Option<u64>,
+    source_bytes: u64,
+) -> MResult<()> {
+    if let Some(max) = max {
+        if source_bytes > max {
+            return Err(MechError::new(
+                ResourceBudgetExceededError {
+                    resource: "source_bytes",
+                    used: 0,
+                    requested: source_bytes,
+                    max: Some(max),
+                },
+                None,
+            ));
+        }
     }
     Ok(())
 }

@@ -23,47 +23,11 @@ pub(super) fn node_bodies_semantically_equal(
         (ExecutableNodeBody::Match(left), ExecutableNodeBody::Match(right)) => {
             comparison.match_declaration(left, right)
         }
+        (ExecutableNodeBody::Activation(left), ExecutableNodeBody::Activation(right)) => {
+            comparison.match_declaration(left, right)
+        }
         (ExecutableNodeBody::Comprehension(left), ExecutableNodeBody::Comprehension(right)) => {
-            left.kind == right.kind
-                && comparison.collection_value(left.yield_value, right.yield_value)
-                && left.steps.len() == right.steps.len()
-                && left.steps.iter().zip(&right.steps).all(|(left, right)| {
-                    use mech_engine::ComprehensionStep;
-                    match (left, right) {
-                        (
-                            ComprehensionStep::Generator {
-                                source: left,
-                                pattern: left_pattern,
-                            },
-                            ComprehensionStep::Generator {
-                                source: right,
-                                pattern: right_pattern,
-                            },
-                        ) => {
-                            comparison.collection_value(*left, *right)
-                                && comparison.collection_pattern(left_pattern, right_pattern)
-                        }
-                        (ComprehensionStep::Filter(left), ComprehensionStep::Filter(right)) => {
-                            comparison.collection_value(*left, *right)
-                        }
-                        (
-                            ComprehensionStep::Operation(left),
-                            ComprehensionStep::Operation(right),
-                        ) => {
-                            left.local == right.local
-                                && left.operation == right.operation
-                                && comparison.schema(left.schema, right.schema)
-                                && comparison.contract(left.contract, right.contract)
-                                && left.inputs.len() == right.inputs.len()
-                                && left
-                                    .inputs
-                                    .iter()
-                                    .zip(&right.inputs)
-                                    .all(|(left, right)| comparison.collection_value(*left, *right))
-                        }
-                        _ => false,
-                    }
-                })
+            comparison.comprehension_declaration(left, right)
         }
         (ExecutableNodeBody::Fsm(left), ExecutableNodeBody::Fsm(right)) => left == right,
         _ => false,
@@ -114,14 +78,38 @@ impl Comparison<'_> {
                 })
     }
 
-    fn pattern(&self, left: mech_engine::MatchPattern, right: mech_engine::MatchPattern) -> bool {
+    fn pattern(&self, left: &mech_engine::MatchPattern, right: &mech_engine::MatchPattern) -> bool {
         match (left, right) {
             (
                 mech_engine::MatchPattern::Literal(left),
                 mech_engine::MatchPattern::Literal(right),
-            ) => self.value(ControlValue::Constant(left), ControlValue::Constant(right)),
+            ) => self.value(
+                ControlValue::Constant(*left),
+                ControlValue::Constant(*right),
+            ),
             (mech_engine::MatchPattern::Wildcard, mech_engine::MatchPattern::Wildcard)
             | (mech_engine::MatchPattern::Bind, mech_engine::MatchPattern::Bind) => true,
+            (
+                mech_engine::MatchPattern::Structural(left),
+                mech_engine::MatchPattern::Structural(right),
+            ) => self.collection_pattern(left, right, |comparison, left, right| {
+                use mech_engine::MatchPatternValue;
+                match (left, right) {
+                    (MatchPatternValue::Literal(left), MatchPatternValue::Literal(right)) => {
+                        comparison.value(
+                            ControlValue::Constant(*left),
+                            ControlValue::Constant(*right),
+                        )
+                    }
+                    (MatchPatternValue::Binding(left), MatchPatternValue::Binding(right)) => {
+                        left == right
+                    }
+                    (MatchPatternValue::Input(left), MatchPatternValue::Input(right)) => {
+                        left == right
+                    }
+                    _ => false,
+                }
+            }),
             _ => false,
         }
     }
@@ -165,18 +153,23 @@ impl Comparison<'_> {
         }
     }
 
-    fn collection_pattern(
+    fn collection_pattern<V, F>(
         &self,
-        left: &mech_engine::CollectionPattern,
-        right: &mech_engine::CollectionPattern,
-    ) -> bool {
+        left: &mech_engine::CollectionPattern<SchemaId, V>,
+        right: &mech_engine::CollectionPattern<SchemaId, V>,
+        values_equal: F,
+    ) -> bool
+    where
+        F: Fn(&Self, &V, &V) -> bool + Copy,
+    {
         use mech_engine::CollectionPattern;
-        let fields = |left: &[CollectionPattern], right: &[CollectionPattern]| {
+        let fields = |left: &[CollectionPattern<SchemaId, V>],
+                      right: &[CollectionPattern<SchemaId, V>]| {
             left.len() == right.len()
                 && left
                     .iter()
                     .zip(right)
-                    .all(|(left, right)| self.collection_pattern(left, right))
+                    .all(|(left, right)| self.collection_pattern(left, right, values_equal))
         };
         match (left, right) {
             (CollectionPattern::Wildcard, CollectionPattern::Wildcard) => true,
@@ -191,7 +184,26 @@ impl Comparison<'_> {
                 },
             ) => left == right && self.schema(*left_schema, *right_schema),
             (CollectionPattern::Equal(left), CollectionPattern::Equal(right)) => {
-                self.collection_value(*left, *right)
+                values_equal(self, left, right)
+            }
+            (
+                CollectionPattern::Enum {
+                    ordinal: left_ordinal,
+                    payload: left_payload,
+                },
+                CollectionPattern::Enum {
+                    ordinal: right_ordinal,
+                    payload: right_payload,
+                },
+            ) => {
+                left_ordinal == right_ordinal
+                    && match (left_payload, right_payload) {
+                        (Some(left), Some(right)) => {
+                            self.collection_pattern(left, right, values_equal)
+                        }
+                        (None, None) => true,
+                        _ => false,
+                    }
             }
             (CollectionPattern::Tuple(left), CollectionPattern::Tuple(right)) => {
                 fields(left, right)
@@ -211,7 +223,9 @@ impl Comparison<'_> {
                 fields(left_prefix, right_prefix)
                     && fields(left_suffix, right_suffix)
                     && match (left_rest, right_rest) {
-                        (Some(left), Some(right)) => self.collection_pattern(left, right),
+                        (Some(left), Some(right)) => {
+                            self.collection_pattern(left, right, values_equal)
+                        }
                         (None, None) => true,
                         _ => false,
                     }
@@ -226,6 +240,7 @@ impl Comparison<'_> {
         right: &mech_engine::MatchDeclaration,
     ) -> bool {
         left.scrutinee == right.scrutinee
+            && left.partial == right.partial
             && left.captures.len() == right.captures.len()
             && left
                 .captures
@@ -236,13 +251,63 @@ impl Comparison<'_> {
                 })
             && left.arms.len() == right.arms.len()
             && left.arms.iter().zip(&right.arms).all(|(left, right)| {
-                self.pattern(left.pattern, right.pattern)
+                self.pattern(&left.pattern, &right.pattern)
                     && match (&left.guard, &right.guard) {
                         (Some(left), Some(right)) => self.block(left, right),
                         (None, None) => true,
                         _ => false,
                     }
                     && self.block(&left.body, &right.body)
+            })
+    }
+
+    fn comprehension_declaration(
+        &self,
+        left: &mech_engine::ComprehensionDeclaration,
+        right: &mech_engine::ComprehensionDeclaration,
+    ) -> bool {
+        left.id == right.id
+            && left.kind == right.kind
+            && self.collection_value(left.yield_value, right.yield_value)
+            && left.steps.len() == right.steps.len()
+            && left.steps.iter().zip(&right.steps).all(|(left, right)| {
+                use mech_engine::ComprehensionStep;
+                match (left, right) {
+                    (
+                        ComprehensionStep::Generator {
+                            source: left,
+                            pattern: left_pattern,
+                        },
+                        ComprehensionStep::Generator {
+                            source: right,
+                            pattern: right_pattern,
+                        },
+                    ) => {
+                        self.collection_value(*left, *right)
+                            && self.collection_pattern(
+                                left_pattern,
+                                right_pattern,
+                                |comparison, left, right| {
+                                    comparison.collection_value(*left, *right)
+                                },
+                            )
+                    }
+                    (ComprehensionStep::Filter(left), ComprehensionStep::Filter(right)) => {
+                        self.collection_value(*left, *right)
+                    }
+                    (ComprehensionStep::Operation(left), ComprehensionStep::Operation(right)) => {
+                        left.local == right.local
+                            && self.local_body(&left.body, &right.body)
+                            && self.schema(left.schema, right.schema)
+                            && left.inputs.len() == right.inputs.len()
+                            && left
+                                .inputs
+                                .iter()
+                                .zip(&right.inputs)
+                                .all(|(left, right)| self.collection_value(*left, *right))
+                    }
+                    _ => false,
+                }
             })
     }
 
@@ -266,6 +331,15 @@ impl Comparison<'_> {
             (ControlOperationBody::Match(left), ControlOperationBody::Match(right)) => {
                 self.match_declaration(left, right)
             }
+            (
+                ControlOperationBody::Comprehension(left),
+                ControlOperationBody::Comprehension(right),
+            ) => self.comprehension_declaration(left, right),
+            (ControlOperationBody::Recur(left), ControlOperationBody::Recur(right)) => {
+                left == right
+            }
+            (ControlOperationBody::Suspend, ControlOperationBody::Suspend)
+            | (ControlOperationBody::Publish, ControlOperationBody::Publish) => true,
             _ => false,
         }
     }
@@ -303,9 +377,10 @@ impl Comparison<'_> {
 #[cfg(test)]
 mod tests {
     use super::node_bodies_semantically_equal;
-    use mech_engine::{ExecutableNodeBody, ProgramArtifact};
+    use mech_engine::{CanonicalSourceFrontend, ExecutableNodeBody, ProgramArtifact};
     use mech_syntax::document::{
-        AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
+        AstNode, DocumentId, DocumentSyntax, ExpressionSyntax, ParseConfig, Revision, SyntaxNode,
+        TextSnapshot, parse_canonical_document,
     };
 
     fn compile(source: &str) -> ProgramArtifact {
@@ -339,6 +414,41 @@ mod tests {
             .body
     }
 
+    fn compile_document(source: &str) -> ProgramArtifact {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(823), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        CanonicalSourceFrontend
+            .compile_document(&document)
+            .unwrap()
+            .compile_artifact()
+            .unwrap()
+    }
+
+    fn activation(artifact: &ProgramArtifact) -> &ExecutableNodeBody {
+        &artifact
+            .nodes()
+            .iter()
+            .find(|node| matches!(node.body, ExecutableNodeBody::Activation(_)))
+            .unwrap()
+            .body
+    }
+
+    #[test]
+    fn activation_reuse_compares_computed_pattern_inputs() {
+        let source = "event := event-source<[f64]:1,2>\nexpected := expected-source<f64>\n~selected := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\nselected\n";
+        let original = compile_document(source);
+        let shifted = compile_document(&format!("padding := 7u8\n{source}"));
+        assert!(node_bodies_semantically_equal(
+            &original,
+            activation(&original),
+            &shifted,
+            activation(&shifted),
+        ));
+    }
+
     #[test]
     fn literal_pattern_reuse_resolves_the_owning_constant_arena() {
         let source = "signal<f64> ? | 0 => 10 | * => 20";
@@ -356,6 +466,44 @@ mod tests {
         }
         assert!(moved);
         let changed = compile("signal<f64> ? | 1 => 10 | * => 20");
+        assert!(!node_bodies_semantically_equal(
+            &original,
+            control(&original),
+            &changed,
+            control(&changed)
+        ));
+    }
+
+    #[test]
+    fn structural_match_reuse_compares_the_complete_canonical_pattern() {
+        let source = "signal<(f64,f64)> ? | (left, right) => left + right | * => 0";
+        let original = compile(source);
+        let shifted = compile(&format!("(7u8, ({source}))"));
+        assert!(node_bodies_semantically_equal(
+            &original,
+            control(&original),
+            &shifted,
+            control(&shifted)
+        ));
+
+        let changed = compile("signal<(f64,f64)> ? | (same, same) => same + same | * => 0");
+        assert!(!node_bodies_semantically_equal(
+            &original,
+            control(&original),
+            &changed,
+            control(&changed)
+        ));
+
+        let source = "[1 2 3] ? | [head | [2, 3]] => head | * => 0";
+        let original = compile(source);
+        let shifted = compile(&format!("(7u8, ({source}))"));
+        assert!(node_bodies_semantically_equal(
+            &original,
+            control(&original),
+            &shifted,
+            control(&shifted)
+        ));
+        let changed = compile("[1 2 3] ? | [head | [2, 4]] => head | * => 0");
         assert!(!node_bodies_semantically_equal(
             &original,
             control(&original),

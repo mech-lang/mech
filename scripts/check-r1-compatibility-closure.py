@@ -60,10 +60,10 @@ ARTIFACT_COMPLETENESS_PROOFS = (
         ),
     ),
     (
-        "src/engine/src/program/compiler_planning.rs",
+        "src/engine/tests/canonical_document_state.rs",
         (
-            "ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1",
-            "artifact_a.contracts().get(node.as_operation().unwrap().contract)",
+            "canonical_documents_emit_complete_equivalent_bytecode_artifacts",
+            "artifact.contracts().get(operation.contract)",
         ),
     ),
     (
@@ -82,7 +82,7 @@ ARTIFACT_COMPLETENESS_PROOFS = (
         ),
     ),
     (
-        "src/engine/src/resident/numeric.rs",
+        "src/engine/src/resident/numeric/mod.rs",
         (
             "fn bool_vector_not(",
             "one_by_one_boolean_matrix_not_uses_matrix_change_contract",

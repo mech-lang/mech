@@ -1,9 +1,15 @@
+#[cfg(feature = "dynamic-modules")]
+pub use super::dynamic::DynamicModuleLoader;
+#[cfg(feature = "dynamic-modules")]
+use super::dynamic::{
+    ValidatedDynamicKernelKind, check_dynamic_kernel_status, dynamic_null_binary_f64_f64_to_f64,
+    dynamic_trace, mech_str_to_string,
+};
 use crate::*;
+#[cfg(any(test, feature = "dynamic-modules"))]
 use std::collections::{BTreeMap, BTreeSet};
 #[cfg(feature = "dynamic-modules")]
 use std::collections::{HashMap, HashSet};
-#[cfg(feature = "dynamic-modules")]
-use std::path::PathBuf;
 #[cfg(all(test, not(feature = "dynamic-modules")))]
 use std::sync::Arc;
 #[cfg(feature = "dynamic-modules")]
@@ -95,9 +101,14 @@ pub struct DynamicFunctionModuleFragment {
     pub module: String,
     pub entries: Vec<FunctionExtensionEntry>,
     pub exports: Vec<DynamicFunctionExport>,
+    #[cfg(feature = "dynamic-modules")]
+    source_declarations: BTreeMap<ExtensionFunctionId, FunctionTypeDeclaration>,
+    #[cfg(feature = "dynamic-modules")]
+    source_contracts: BTreeMap<ExtensionFunctionId, Box<[OperationContractDeclaration]>>,
 }
 
 impl DynamicFunctionModuleFragment {
+    #[cfg(any(test, feature = "dynamic-modules"))]
     fn manifest(&self) -> ModuleManifest {
         ModuleManifest {
             module: self.module.clone(),
@@ -113,75 +124,6 @@ impl DynamicFunctionModuleFragment {
 pub trait ModuleLoader {
     fn can_load(&self, module: &str) -> bool;
     fn load(&self, module: &str) -> MResult<DynamicFunctionModuleFragment>;
-}
-
-#[cfg(feature = "dynamic-modules")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum ValidatedDynamicKernelKind {
-    UnaryF64ToF64,
-    BinaryF64F64ToF64,
-    UnaryF64ViewToF64View,
-}
-
-#[cfg(feature = "dynamic-modules")]
-#[derive(Default)]
-pub struct DynamicModuleLoader;
-
-#[cfg(feature = "dynamic-modules")]
-impl DynamicModuleLoader {
-    fn dynamic_error(msg: impl Into<String>) -> MechError {
-        MechError::new(GenericError { msg: msg.into() }, None).with_compiler_loc()
-    }
-
-    fn find_library(module: &str) -> Option<PathBuf> {
-        let module_file_part = module.replace('-', "_").replace('/', "_");
-        let candidates = [
-            format!("mech_module_{module_file_part}.dll"),
-            format!("libmech_module_{module_file_part}.so"),
-            format!("libmech_module_{module_file_part}.dylib"),
-        ];
-
-        let mut dirs: Vec<PathBuf> = std::env::var_os("MECH_MODULE_PATH")
-            .map(|paths| std::env::split_paths(&paths).collect())
-            .unwrap_or_default();
-        dirs.push(PathBuf::from("target/mech-modules"));
-
-        for dir in dirs {
-            for candidate in &candidates {
-                let path = dir.join(candidate);
-                if path.is_file() {
-                    return Some(path);
-                }
-            }
-        }
-
-        None
-    }
-
-    fn call_status(status: mech_abi::MechStatusV1, context: impl Into<String>) -> MResult<()> {
-        if status == mech_abi::MechStatusV1::OK {
-            Ok(())
-        } else {
-            Err(Self::dynamic_error(format!(
-                "{} returned status {}",
-                context.into(),
-                status.0
-            )))
-        }
-    }
-
-    fn validate_dynamic_kernel_kind(
-        kind: mech_abi::MechKernelKindV1,
-    ) -> MResult<ValidatedDynamicKernelKind> {
-        match kind.0 {
-            1 => Ok(ValidatedDynamicKernelKind::UnaryF64ToF64),
-            2 => Ok(ValidatedDynamicKernelKind::BinaryF64F64ToF64),
-            3 => Ok(ValidatedDynamicKernelKind::UnaryF64ViewToF64View),
-            other => Err(Self::dynamic_error(format!(
-                "dynamic module exported unsupported kernel kind {other}"
-            ))),
-        }
-    }
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -273,6 +215,7 @@ impl ModuleLoader for DynamicModuleLoader {
         let mut canonical_order = Vec::<String>::new();
         let mut dynamic_specializers =
             HashMap::<String, Vec<Arc<dyn CanonicalFunctionSpecializer>>>::new();
+        let mut dynamic_kinds = HashMap::<String, BTreeSet<ValidatedDynamicKernelKind>>::new();
 
         for index in 0..export_count {
             let mut export = mech_abi::MechExportV1 {
@@ -312,7 +255,12 @@ impl ModuleLoader for DynamicModuleLoader {
 
             let item = item.to_string();
 
-            match Self::validate_dynamic_kernel_kind(export.kind)? {
+            let kernel_kind = Self::validate_dynamic_kernel_kind(export.kind)?;
+            dynamic_kinds
+                .entry(export_name.clone())
+                .or_default()
+                .insert(kernel_kind);
+            match kernel_kind {
                 ValidatedDynamicKernelKind::BinaryF64F64ToF64 => {
                     let kernel = unsafe { export.function.binary_f64_f64_to_f64 };
                     let specializer_name = export_name.clone();
@@ -381,6 +329,8 @@ impl ModuleLoader for DynamicModuleLoader {
 
         let mut entries = Vec::with_capacity(canonical_order.len());
         let mut exports = Vec::with_capacity(canonical_order.len());
+        let mut source_declarations = BTreeMap::new();
+        let mut source_contracts = BTreeMap::new();
         for canonical_name in canonical_order {
             let mut specializers = dynamic_specializers
                 .remove(&canonical_name)
@@ -402,6 +352,39 @@ impl ModuleLoader for DynamicModuleLoader {
                 item,
                 extension: entry.id,
             });
+            let kinds = dynamic_kinds
+                .remove(&canonical_name)
+                .expect("every ordered dynamic function has ABI kinds");
+            let mut schemes = Vec::new();
+            if kinds.contains(&ValidatedDynamicKernelKind::UnaryF64ToF64)
+                || kinds.contains(&ValidatedDynamicKernelKind::UnaryF64ViewToF64View)
+            {
+                schemes.extend(
+                    mech_core::type_system::predicate_unary_same(
+                        mech_core::BuiltinKindPredicate::FloatingPoint,
+                    )
+                    .map_err(|error| MechError::new(error, None).with_compiler_loc())?,
+                );
+            }
+            if kinds.contains(&ValidatedDynamicKernelKind::BinaryF64F64ToF64) {
+                schemes.extend(
+                    mech_core::type_system::promoted_binary_elementwise()
+                        .map_err(|error| MechError::new(error, None).with_compiler_loc())?,
+                );
+            }
+            source_declarations.insert(entry.id, FunctionTypeDeclaration::from_schemes(schemes));
+            let mut contracts = Vec::new();
+            if kinds.contains(&ValidatedDynamicKernelKind::UnaryF64ToF64) {
+                contracts.push(DYNAMIC_UNARY_SCALAR_CONTRACT.clone());
+            }
+            if kinds.contains(&ValidatedDynamicKernelKind::UnaryF64ViewToF64View) {
+                contracts.push(DYNAMIC_UNARY_VIEW_CONTRACT.clone());
+            }
+            if kinds.contains(&ValidatedDynamicKernelKind::BinaryF64F64ToF64) {
+                contracts.push(DYNAMIC_BINARY_SCALAR_CONTRACT.clone());
+                contracts.push(DYNAMIC_BINARY_BROADCAST_CONTRACT.clone());
+            }
+            source_contracts.insert(entry.id, contracts.into_boxed_slice());
             entries.push(entry);
         }
 
@@ -409,401 +392,10 @@ impl ModuleLoader for DynamicModuleLoader {
             module: module.to_string(),
             entries,
             exports,
+            source_declarations,
+            source_contracts,
         })
     }
-}
-
-#[cfg(feature = "dynamic-modules")]
-unsafe extern "C" fn dynamic_null_binary_f64_f64_to_f64(
-    _n: f64,
-    _k: f64,
-    _out: *mut f64,
-) -> mech_abi::MechStatusV1 {
-    mech_abi::MechStatusV1::UNSUPPORTED
-}
-
-#[cfg(feature = "dynamic-modules")]
-unsafe fn mech_str_to_string(s: mech_abi::MechStrV1) -> MResult<String> {
-    if s.ptr.is_null() {
-        return Err(DynamicModuleLoader::dynamic_error("null MechStrV1 pointer"));
-    }
-
-    let bytes = unsafe { std::slice::from_raw_parts(s.ptr, s.len) };
-    std::str::from_utf8(bytes)
-        .map(|s| s.to_string())
-        .map_err(|err| {
-            DynamicModuleLoader::dynamic_error(format!(
-                "invalid utf8 in dynamic module string: {err}"
-            ))
-        })
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn dynamic_trace(message: impl AsRef<str>) {
-    if std::env::var_os("MECH_DYNAMIC_TRACE").is_some() {
-        eprintln!("[mech-dynamic] {}", message.as_ref());
-    }
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn dynamic_status_name(status: mech_abi::MechStatusV1) -> &'static str {
-    match status.0 {
-        0 => "Ok",
-        1 => "InvalidIndex",
-        2 => "NullPointer",
-        3 => "WrongType",
-        4 => "WrongShape",
-        5 => "Unsupported",
-        6 => "Panic",
-        _ => "Unknown",
-    }
-}
-
-#[cfg(feature = "dynamic-modules")]
-fn check_dynamic_kernel_status(function: &str, status: mech_abi::MechStatusV1) -> MResult<()> {
-    if status == mech_abi::MechStatusV1::OK {
-        return Ok(());
-    }
-
-    Err(DynamicModuleLoader::dynamic_error(format!(
-        "dynamic kernel `{}` returned {} (status {})",
-        function,
-        dynamic_status_name(status),
-        status.0,
-    )))
-}
-
-#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
-enum DynamicResidentKernelKind {
-    UnaryScalar(mech_abi::MechUnaryF64ToF64KernelV1),
-    BinaryScalar(mech_abi::MechBinaryF64F64ToF64KernelV1),
-    UnaryView(mech_abi::MechUnaryF64ViewToF64ViewKernelV1),
-}
-
-#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
-struct DynamicResidentKernelState {
-    _library: Arc<libloading::Library>,
-    kernel: DynamicResidentKernelKind,
-}
-
-#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
-fn dynamic_resident_contract_matches(
-    request: &ResidentKernelBindRequest<'_>,
-    input_count: usize,
-    shape: ShapeRule,
-    change_detection: ChangeDetectionPolicy,
-) -> bool {
-    let ResolvedOperationContract::Declared(contract) = request.contract else {
-        return false;
-    };
-    contract.interaction == ExternalInteraction::Pure
-        && contract.inputs.len() == input_count
-        && request.inputs.len() == input_count
-        && contract.outputs.len() == 1
-        && contract
-            .inputs
-            .iter()
-            .zip(request.inputs)
-            .all(|(port, layout)| {
-                port.schema == layout.schema_id
-                    && port.access == AccessMode::Read
-                    && port.delivery == DeliveryMode::Signal
-                    && layout.kind == ResidentValueKind::F64
-                    && layout.shape.len().is_some()
-            })
-        && contract.outputs[0].schema == request.output.schema_id
-        && contract.outputs[0].access == AccessMode::Write
-        && contract.outputs[0].delivery == DeliveryMode::Signal
-        && contract.outputs[0].construction == OutputConstruction::FullWrite { shape }
-        && contract.outputs[0].alias == AliasPolicy::NoAlias
-        && contract.outputs[0].change_detection == change_detection
-        && request.output.kind == ResidentValueKind::F64
-        && request.output.shape.len().is_some()
-}
-
-#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
-fn dynamic_binary_layout_matches(request: &ResidentKernelBindRequest<'_>) -> bool {
-    let [lhs, rhs] = request.inputs else {
-        return false;
-    };
-    let output = request.output.shape;
-    (lhs.shape == ResidentShape::SCALAR || lhs.shape == output)
-        && (rhs.shape == ResidentShape::SCALAR || rhs.shape == output)
-        && (lhs.shape == output || rhs.shape == output)
-}
-
-#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
-fn dynamic_resident_kernel_kind(
-    request: &ResidentKernelBindRequest<'_>,
-) -> Option<ValidatedDynamicKernelKind> {
-    match request.inputs {
-        [input]
-            if input.kind == ResidentValueKind::F64
-                && request.output.kind == ResidentValueKind::F64
-                && input.shape == request.output.shape =>
-        {
-            if input.shape == ResidentShape::SCALAR {
-                Some(ValidatedDynamicKernelKind::UnaryF64ToF64)
-            } else {
-                Some(ValidatedDynamicKernelKind::UnaryF64ViewToF64View)
-            }
-        }
-        [_, _] if dynamic_binary_layout_matches(request) => {
-            Some(ValidatedDynamicKernelKind::BinaryF64F64ToF64)
-        }
-        _ => None,
-    }
-}
-
-#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
-fn load_dynamic_resident_kernel(
-    module: &str,
-    canonical_name: &str,
-    expected: ValidatedDynamicKernelKind,
-) -> MResult<Arc<DynamicResidentKernelState>> {
-    let path = DynamicModuleLoader::find_library(module).ok_or_else(|| {
-        DynamicModuleLoader::dynamic_error(format!("dynamic module `{module}` was not found"))
-    })?;
-    let library = Arc::new(unsafe { libloading::Library::new(&path) }.map_err(|error| {
-        DynamicModuleLoader::dynamic_error(format!(
-            "failed to open dynamic module `{module}` at {}: {error}",
-            path.display()
-        ))
-    })?);
-    let (abi_version, module_name_fn, export_count_fn, get_export_fn) = unsafe {
-        (
-            *library
-                .get::<mech_abi::MechModuleAbiVersionFnV1>(b"mech_module_abi_version_v1\0")
-                .map_err(|error| DynamicModuleLoader::dynamic_error(error.to_string()))?,
-            *library
-                .get::<mech_abi::MechModuleNameFnV1>(b"mech_module_name_v1\0")
-                .map_err(|error| DynamicModuleLoader::dynamic_error(error.to_string()))?,
-            *library
-                .get::<mech_abi::MechModuleExportCountFnV1>(b"mech_module_export_count_v1\0")
-                .map_err(|error| DynamicModuleLoader::dynamic_error(error.to_string()))?,
-            *library
-                .get::<mech_abi::MechModuleGetExportFnV1>(b"mech_module_get_export_v1\0")
-                .map_err(|error| DynamicModuleLoader::dynamic_error(error.to_string()))?,
-        )
-    };
-    let version = unsafe { abi_version() };
-    if version != mech_abi::MECH_MODULE_ABI_VERSION_V1 {
-        return Err(DynamicModuleLoader::dynamic_error(format!(
-            "unsupported dynamic module ABI version {version}; expected {}",
-            mech_abi::MECH_MODULE_ABI_VERSION_V1
-        )));
-    }
-    let mut module_name = mech_abi::MechStrV1 {
-        ptr: core::ptr::null(),
-        len: 0,
-    };
-    DynamicModuleLoader::call_status(
-        unsafe { module_name_fn(&mut module_name) },
-        "mech_module_name_v1",
-    )?;
-    if unsafe { mech_str_to_string(module_name) }? != module {
-        return Err(DynamicModuleLoader::dynamic_error(format!(
-            "dynamic module name did not match requested module `{module}`"
-        )));
-    }
-
-    let mut selected = None;
-    for index in 0..unsafe { export_count_fn() } {
-        let mut export = mech_abi::MechExportV1 {
-            name: mech_abi::MechStrV1 {
-                ptr: core::ptr::null(),
-                len: 0,
-            },
-            kind: mech_abi::MechKernelKindV1::BINARY_F64_F64_TO_F64,
-            function: mech_abi::MechKernelFnV1 {
-                binary_f64_f64_to_f64: dynamic_null_binary_f64_f64_to_f64,
-            },
-        };
-        DynamicModuleLoader::call_status(
-            unsafe { get_export_fn(index, &mut export) },
-            format!("mech_module_get_export_v1({index})"),
-        )?;
-        if unsafe { mech_str_to_string(export.name) }? != canonical_name
-            || DynamicModuleLoader::validate_dynamic_kernel_kind(export.kind)? != expected
-        {
-            continue;
-        }
-        if selected.is_some() {
-            return Err(DynamicModuleLoader::dynamic_error(format!(
-                "dynamic module `{module}` exported duplicate resident kernel `{canonical_name}`"
-            )));
-        }
-        selected = Some(match expected {
-            ValidatedDynamicKernelKind::UnaryF64ToF64 => {
-                DynamicResidentKernelKind::UnaryScalar(unsafe { export.function.unary_f64_to_f64 })
-            }
-            ValidatedDynamicKernelKind::BinaryF64F64ToF64 => {
-                DynamicResidentKernelKind::BinaryScalar(unsafe {
-                    export.function.binary_f64_f64_to_f64
-                })
-            }
-            ValidatedDynamicKernelKind::UnaryF64ViewToF64View => {
-                DynamicResidentKernelKind::UnaryView(unsafe {
-                    export.function.unary_f64_view_to_f64_view
-                })
-            }
-        });
-    }
-    let kernel = selected.ok_or_else(|| {
-        DynamicModuleLoader::dynamic_error(format!(
-            "dynamic module `{module}` has no compatible resident export `{canonical_name}`"
-        ))
-    })?;
-    Ok(Arc::new(DynamicResidentKernelState {
-        _library: library,
-        kernel,
-    }))
-}
-
-#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
-pub(crate) fn bind_dynamic_resident_operation(
-    module_path: &[String],
-    operation_name: &str,
-    request: &ResidentKernelBindRequest<'_>,
-) -> Option<Result<BoundResidentKernel, ResidentKernelBindError>> {
-    let module = module_path.join("/");
-    DynamicModuleLoader::find_library(&module)?;
-    let expected = match dynamic_resident_kernel_kind(request) {
-        Some(expected) => expected,
-        None => return Some(Err(ResidentKernelBindError::UnsupportedLayout)),
-    };
-    let scalar = request.output.shape == ResidentShape::SCALAR;
-    let (shape, change_detection) = match expected {
-        ValidatedDynamicKernelKind::UnaryF64ToF64 => (
-            ShapeRule::SameAsInput { input: 0 },
-            ChangeDetectionPolicy::ExactScalar,
-        ),
-        ValidatedDynamicKernelKind::UnaryF64ViewToF64View => (
-            ShapeRule::SameAsInput { input: 0 },
-            ChangeDetectionPolicy::KernelReported,
-        ),
-        ValidatedDynamicKernelKind::BinaryF64F64ToF64 => (
-            ShapeRule::Declared,
-            if scalar {
-                ChangeDetectionPolicy::ExactScalar
-            } else {
-                ChangeDetectionPolicy::KernelReported
-            },
-        ),
-    };
-    if !dynamic_resident_contract_matches(request, request.inputs.len(), shape, change_detection) {
-        return Some(Err(ResidentKernelBindError::UnsupportedContract));
-    }
-    let canonical_name = format!("{module}/{operation_name}");
-    let state = match load_dynamic_resident_kernel(&module, &canonical_name, expected) {
-        Ok(state) => state,
-        Err(_) => return Some(Err(ResidentKernelBindError::InvalidParameters)),
-    };
-    Some(Ok(BoundResidentKernel::new(
-        dynamic_resident_execute,
-        vec![
-            u64::from(request.output.shape.rows),
-            u64::from(request.output.shape.columns),
-        ]
-        .into_boxed_slice(),
-    )
-    .with_retained_state(state)))
-}
-
-#[cfg(all(feature = "dynamic-modules", feature = "resident-artifact"))]
-fn dynamic_resident_execute(
-    bound: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    let state = bound
-        .retained_state::<DynamicResidentKernelState>()
-        .ok_or(ResidentKernelError::InvalidInput)?;
-    let ResidentValueMut::F64(candidate) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    // Resident supplies the non-published transaction stage as `candidate`.
-    // The module writes that admitted storage directly: a partial ABI write
-    // is discarded with the turn on error, so no output-sized bridge Vec is
-    // allocated and published state remains failure-atomic.
-    let changed = match state.kernel {
-        DynamicResidentKernelKind::UnaryScalar(kernel) => {
-            let input = inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?;
-            if input.len() != 1 || candidate.len() != 1 {
-                return Err(ResidentKernelError::InvalidShape);
-            }
-            let previous = candidate[0].to_bits();
-            let status = unsafe { kernel(input[0], candidate.as_mut_ptr()) };
-            if status != mech_abi::MechStatusV1::OK {
-                return Err(ResidentKernelError::Arithmetic);
-            }
-            candidate[0].to_bits() != previous
-        }
-        DynamicResidentKernelKind::BinaryScalar(kernel) => {
-            let lhs = inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?;
-            let rhs = inputs.f64(1).ok_or(ResidentKernelError::InvalidInput)?;
-            if (lhs.len() != 1 && lhs.len() != candidate.len())
-                || (rhs.len() != 1 && rhs.len() != candidate.len())
-            {
-                return Err(ResidentKernelError::InvalidShape);
-            }
-            let mut changed = false;
-            for (index, target) in candidate.iter_mut().enumerate() {
-                let previous = target.to_bits();
-                let status = unsafe {
-                    kernel(
-                        lhs[if lhs.len() == 1 { 0 } else { index }],
-                        rhs[if rhs.len() == 1 { 0 } else { index }],
-                        target,
-                    )
-                };
-                if status != mech_abi::MechStatusV1::OK {
-                    return Err(ResidentKernelError::Arithmetic);
-                }
-                changed |= target.to_bits() != previous;
-            }
-            changed
-        }
-        DynamicResidentKernelKind::UnaryView(kernel) => {
-            let input = inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?;
-            if input.len() != candidate.len() {
-                return Err(ResidentKernelError::InvalidShape);
-            }
-            let [rows, columns] = bound.parameters() else {
-                return Err(ResidentKernelError::InvalidShape);
-            };
-            let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-            let columns =
-                usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
-            if rows.checked_mul(columns) != Some(candidate.len()) {
-                return Err(ResidentKernelError::InvalidShape);
-            }
-            let status = unsafe {
-                kernel(
-                    mech_abi::MechF64ViewV1 {
-                        ptr: input.as_ptr(),
-                        len: input.len(),
-                        rows,
-                        cols: columns,
-                    },
-                    mech_abi::MechF64ViewMutV1 {
-                        ptr: candidate.as_mut_ptr(),
-                        len: candidate.len(),
-                        rows,
-                        cols: columns,
-                    },
-                )
-            };
-            if status != mech_abi::MechStatusV1::OK {
-                return Err(ResidentKernelError::Arithmetic);
-            }
-            // The ABI owns the whole candidate view and does not expose a
-            // per-element write callback. Conservatively report a successful
-            // non-empty call as changed without allocating a comparison copy.
-            !candidate.is_empty()
-        }
-    };
-    Ok(changed)
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -1763,55 +1355,68 @@ impl ModuleRegistry {
     }
 }
 
+/// Load one validated dynamic ABI module into the immutable source catalog.
+/// Resident activation binds the same operation names directly from the ABI,
+/// so no interpreter extension store participates in compilation or turns.
+#[cfg(feature = "dynamic-modules")]
+pub fn install_dynamic_source_module(
+    builder: &mut FunctionCatalogBuilder,
+    module: &str,
+) -> MResult<ModuleManifest> {
+    let fragment = ModuleRegistry::available().load(module)?;
+    validate_dynamic_fragment(&fragment)?;
+    let manifest = fragment.manifest();
+    let entries = fragment
+        .entries
+        .iter()
+        .map(|entry| (entry.id, entry))
+        .collect::<BTreeMap<_, _>>();
+    for export in &fragment.exports {
+        let entry = entries.get(&export.extension).ok_or_else(|| {
+            invalid_dynamic_fragment(
+                &fragment,
+                format!("export `{}` has no source entry", export.item),
+            )
+        })?;
+        let declaration = fragment
+            .source_declarations
+            .get(&export.extension)
+            .cloned()
+            .ok_or_else(|| {
+                invalid_dynamic_fragment(
+                    &fragment,
+                    format!("export `{}` has no source type declaration", export.item),
+                )
+            })?;
+        let contracts = fragment
+            .source_contracts
+            .get(&export.extension)
+            .cloned()
+            .ok_or_else(|| {
+                invalid_dynamic_fragment(
+                    &fragment,
+                    format!("export `{}` has no source operation contracts", export.item),
+                )
+            })?;
+        let operation = builder.insert_canonical_specializer_with_contracts(
+            entry.canonical_name.clone(),
+            declaration,
+            contracts.into_vec(),
+            Arc::clone(&entry.specializer),
+        )?;
+        builder.insert_export(FunctionExport {
+            operation,
+            canonical_name: entry.canonical_name.clone(),
+            module: Some(fragment.module.clone()),
+            item: Some(export.item.clone()),
+            exposure: FunctionExposure::ModuleOnly,
+        })?;
+    }
+    Ok(manifest)
+}
+
 fn missing_module(module: &str) -> MechError {
     MechError::new(MissingFunctionError::named(module), None).with_compiler_loc()
-}
-
-fn missing_module_item(module: &str, item: &str) -> MechError {
-    MechError::new(
-        MissingFunctionError::named(format!("{module}/{item}")),
-        None,
-    )
-    .with_compiler_loc()
-}
-
-fn static_module_manifest(catalog: &FunctionCatalog, module: &str) -> Option<ModuleManifest> {
-    if !catalog.has_module(module) {
-        return None;
-    }
-
-    Some(ModuleManifest {
-        module: module.to_string(),
-        items: catalog
-            .module_exports(module)
-            .map(|export| {
-                export
-                    .item
-                    .clone()
-                    .expect("catalog module exports always have an item")
-            })
-            .collect(),
-    })
-}
-
-fn bind_static_exports<'a>(
-    interpreter: &Interpreter,
-    bindings: impl IntoIterator<Item = (&'a FunctionExport, String)>,
-) -> MResult<()> {
-    let mut state = interpreter.state.borrow_mut();
-    let checkpoint = state.function_environment.clone();
-
-    for (export, visible_name) in bindings {
-        if let Err(error) = state
-            .function_environment
-            .bind_catalog_export(export, &visible_name)
-        {
-            state.function_environment = checkpoint;
-            return Err(error);
-        }
-    }
-
-    Ok(())
 }
 
 fn invalid_dynamic_fragment(
@@ -1831,6 +1436,7 @@ fn invalid_dynamic_fragment(
     .with_compiler_loc()
 }
 
+#[cfg(any(test, feature = "dynamic-modules"))]
 fn validate_dynamic_fragment(
     fragment: &DynamicFunctionModuleFragment,
 ) -> MResult<BTreeMap<String, (ExtensionFunctionId, String)>> {
@@ -1923,183 +1529,9 @@ fn validate_dynamic_fragment(
     Ok(exports_by_item)
 }
 
-fn install_dynamic_fragment(
-    interpreter: &Interpreter,
-    fragment: DynamicFunctionModuleFragment,
-    binding_requests: Vec<(String, String)>,
-) -> MResult<ModuleManifest> {
-    let exports_by_item = validate_dynamic_fragment(&fragment)?;
-    let mut bindings = Vec::with_capacity(binding_requests.len());
-    for (item, visible_name) in binding_requests {
-        let Some((extension, canonical_name)) = exports_by_item.get(&item) else {
-            return Err(missing_module_item(&fragment.module, &item));
-        };
-        bindings.push((*extension, canonical_name.clone(), visible_name));
-    }
-
-    let manifest = fragment.manifest();
-    let mut state = interpreter.state.borrow_mut();
-    let mut next_extensions = state.function_extensions.clone();
-    for entry in fragment.entries {
-        next_extensions.insert_or_replace(entry)?;
-    }
-    for export in fragment.exports {
-        next_extensions.insert_module_export_or_replace(
-            fragment.module.clone(),
-            export.item,
-            export.extension,
-        )?;
-    }
-
-    let mut next_environment = state.function_environment.clone();
-    for (extension, canonical_name, visible_name) in bindings {
-        next_environment.bind_extension(&canonical_name, &visible_name, extension)?;
-    }
-
-    state.function_extensions = next_extensions;
-    state.function_environment = next_environment;
-    Ok(manifest)
-}
-
-fn load_module_with_registry(
-    interpreter: &Interpreter,
-    module: &str,
-    registry: &ModuleRegistry,
-) -> MResult<ModuleManifest> {
-    let catalog = interpreter.function_catalog();
-    if let Some(manifest) = static_module_manifest(catalog, module) {
-        let bindings = catalog.module_exports(module).map(|export| {
-            let item = export
-                .item
-                .as_deref()
-                .expect("catalog module exports always have an item");
-            (export, format!("{module}/{item}"))
-        });
-        bind_static_exports(interpreter, bindings)?;
-        return Ok(manifest);
-    }
-
-    let fragment = registry.load(module)?;
-    let binding_requests = fragment
-        .exports
-        .iter()
-        .map(|export| (export.item.clone(), format!("{module}/{}", export.item)))
-        .collect();
-    install_dynamic_fragment(interpreter, fragment, binding_requests)
-}
-
-pub fn load_module(interpreter: &Interpreter, module: &str) -> MResult<ModuleManifest> {
-    load_module_with_registry(interpreter, module, &ModuleRegistry::available())
-}
-
-pub fn import_module_qualified(interpreter: &Interpreter, module: &str) -> MResult<ModuleManifest> {
-    load_module(interpreter, module)
-}
-
-pub fn import_module_item(interpreter: &Interpreter, module: &str, item: &str) -> MResult<()> {
-    let catalog = interpreter.function_catalog();
-    if catalog.has_module(module) {
-        let export = catalog
-            .module_export(module, item)
-            .ok_or_else(|| missing_module_item(module, item))?;
-        let local_name = item.rsplit('/').next().unwrap_or(item);
-        return bind_static_exports(interpreter, [(export, local_name.to_string())]);
-    }
-
-    let fragment = ModuleRegistry::available().load(module)?;
-    let local_name = item.rsplit('/').next().unwrap_or(item);
-    install_dynamic_fragment(
-        interpreter,
-        fragment,
-        vec![(item.to_string(), local_name.to_string())],
-    )?;
-    Ok(())
-}
-
-pub fn import_module_item_as(
-    interpreter: &Interpreter,
-    module: &str,
-    item: &str,
-    alias: &str,
-) -> MResult<()> {
-    let catalog = interpreter.function_catalog();
-    if catalog.has_module(module) {
-        let export = catalog
-            .module_export(module, item)
-            .ok_or_else(|| missing_module_item(module, item))?;
-        return bind_static_exports(interpreter, [(export, alias.to_string())]);
-    }
-
-    let fragment = ModuleRegistry::available().load(module)?;
-    install_dynamic_fragment(
-        interpreter,
-        fragment,
-        vec![(item.to_string(), alias.to_string())],
-    )?;
-    Ok(())
-}
-
-pub fn import_module_group(
-    interpreter: &Interpreter,
-    module: &str,
-    items: &[String],
-) -> MResult<()> {
-    let catalog = interpreter.function_catalog();
-    if catalog.has_module(module) {
-        let mut bindings = Vec::with_capacity(items.len());
-        for item in items {
-            let export = catalog
-                .module_export(module, item)
-                .ok_or_else(|| missing_module_item(module, item))?;
-            let local_name = item.rsplit('/').next().unwrap_or(item);
-            bindings.push((export, local_name.to_string()));
-        }
-        return bind_static_exports(interpreter, bindings);
-    }
-
-    let fragment = ModuleRegistry::available().load(module)?;
-    let binding_requests = items
-        .iter()
-        .map(|item| {
-            let local_name = item.rsplit('/').next().unwrap_or(item);
-            (item.clone(), local_name.to_string())
-        })
-        .collect();
-    install_dynamic_fragment(interpreter, fragment, binding_requests)?;
-    Ok(())
-}
-
-pub fn import_module_glob(interpreter: &Interpreter, module: &str) -> MResult<()> {
-    let catalog = interpreter.function_catalog();
-    if catalog.has_module(module) {
-        let bindings = catalog.module_exports(module).map(|export| {
-            let item = export
-                .item
-                .as_deref()
-                .expect("catalog module exports always have an item");
-            let local_name = item.rsplit('/').next().unwrap_or(item);
-            (export, local_name.to_string())
-        });
-        return bind_static_exports(interpreter, bindings);
-    }
-
-    let fragment = ModuleRegistry::available().load(module)?;
-    let binding_requests = fragment
-        .exports
-        .iter()
-        .map(|export| {
-            let local_name = export.item.rsplit('/').next().unwrap_or(&export.item);
-            (export.item.clone(), local_name.to_string())
-        })
-        .collect();
-    install_dynamic_fragment(interpreter, fragment, binding_requests)?;
-    Ok(())
-}
-
 #[cfg(test)]
-mod static_catalog_module_tests {
+mod dynamic_fragment_validation_tests {
     use super::*;
-    use std::sync::atomic::{AtomicBool, Ordering};
 
     struct TestSpecializer;
 
@@ -2110,101 +1542,6 @@ mod static_catalog_module_tests {
             _: &mut SpecializationContext<'_>,
         ) -> MResult<SpecializedFunction> {
             unreachable!("module visibility tests do not specialize functions")
-        }
-    }
-
-    fn static_catalog() -> Arc<FunctionCatalog> {
-        let mut builder = FunctionCatalogBuilder::new();
-        for (canonical_name, module, item) in [
-            ("math/sin", "math", "sin"),
-            ("math/cos", "math", "cos"),
-            ("stats/sum/column", "stats", "sum/column"),
-        ] {
-            let operation = builder
-                .insert_canonical_specializer_with_contract(
-                    canonical_name,
-                    mech_core::maintained_source_type_declaration(canonical_name).unwrap(),
-                    crate::test_support::catalog::pure_test_operation_contract(1),
-                    Arc::new(TestSpecializer),
-                )
-                .unwrap();
-            builder
-                .insert_export(FunctionExport {
-                    operation,
-                    canonical_name: canonical_name.to_string(),
-                    module: Some(module.to_string()),
-                    item: Some(item.to_string()),
-                    exposure: FunctionExposure::ModuleOnly,
-                })
-                .unwrap();
-        }
-        Arc::new(builder.build().unwrap())
-    }
-
-    fn interpreter() -> Interpreter {
-        Interpreter::with_function_catalog(0, 100, static_catalog())
-    }
-
-    fn binding(interpreter: &Interpreter, name: &str) -> Option<FunctionBinding> {
-        interpreter
-            .state
-            .borrow()
-            .function_environment
-            .resolve_name(name)
-    }
-
-    #[test]
-    fn qualified_item_alias_glob_and_nested_imports_bind_exact_catalog_exports() {
-        let qualified = interpreter();
-        let manifest = load_module(&qualified, "math").unwrap();
-        assert_eq!(manifest.items, ["cos", "sin"]);
-        assert_eq!(
-            binding(&qualified, "math/cos"),
-            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
-                "math/cos",
-            ))),
-        );
-        assert_eq!(binding(&qualified, "cos"), None);
-
-        let item = interpreter();
-        import_module_item(&item, "stats", "sum/column").unwrap();
-        assert_eq!(
-            binding(&item, "column"),
-            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
-                "stats/sum/column",
-            ))),
-        );
-        assert_eq!(binding(&item, "stats/sum/column"), None);
-
-        let alias = interpreter();
-        import_module_item_as(&alias, "math", "cos", "trig").unwrap();
-        assert_eq!(
-            binding(&alias, "trig"),
-            Some(FunctionBinding::CatalogOperation(OperationId::from_name(
-                "math/cos",
-            ))),
-        );
-        assert_eq!(binding(&alias, "cos"), None);
-
-        let glob = interpreter();
-        import_module_glob(&glob, "math").unwrap();
-        assert!(binding(&glob, "cos").is_some());
-        assert!(binding(&glob, "sin").is_some());
-        assert_eq!(binding(&glob, "math/cos"), None);
-    }
-
-    struct RecordingLoader {
-        probed: Arc<AtomicBool>,
-    }
-
-    impl ModuleLoader for RecordingLoader {
-        fn can_load(&self, _: &str) -> bool {
-            self.probed.store(true, Ordering::SeqCst);
-            true
-        }
-
-        fn load(&self, _: &str) -> MResult<DynamicFunctionModuleFragment> {
-            unreachable!("an exact static module must take precedence")
         }
     }
 
@@ -2238,111 +1575,11 @@ mod static_catalog_module_tests {
             module: module.to_string(),
             entries,
             exports,
+            #[cfg(feature = "dynamic-modules")]
+            source_declarations: BTreeMap::new(),
+            #[cfg(feature = "dynamic-modules")]
+            source_contracts: BTreeMap::new(),
         }
-    }
-
-    #[test]
-    fn exact_static_module_precedes_every_dynamic_loader() {
-        let interpreter = interpreter();
-        let probed = Arc::new(AtomicBool::new(false));
-        let registry = ModuleRegistry::new().with_loader(Box::new(RecordingLoader {
-            probed: probed.clone(),
-        }));
-
-        load_module_with_registry(&interpreter, "math", &registry).unwrap();
-
-        assert!(!probed.load(Ordering::SeqCst));
-    }
-
-    #[test]
-    fn dynamic_fragment_installs_exact_exports_and_qualified_bindings() {
-        let interpreter = interpreter();
-        let registry = ModuleRegistry::new().with_loader(Box::new(FragmentLoader {
-            fragment: dynamic_fragment("dynamic", &["sin", "sum/column"]),
-        }));
-
-        let manifest = load_module_with_registry(&interpreter, "dynamic", &registry).unwrap();
-
-        assert_eq!(manifest.module, "dynamic");
-        assert_eq!(manifest.items, ["sin", "sum/column"]);
-        let sin = ExtensionFunctionId::from_name("dynamic/sin");
-        let column = ExtensionFunctionId::from_name("dynamic/sum/column");
-        assert_eq!(
-            binding(&interpreter, "dynamic/sin"),
-            Some(FunctionBinding::Extension(sin)),
-        );
-        assert_eq!(
-            binding(&interpreter, "dynamic/sum/column"),
-            Some(FunctionBinding::Extension(column)),
-        );
-        assert_eq!(binding(&interpreter, "sin"), None);
-
-        let state = interpreter.state.borrow();
-        assert!(state.function_extensions.entry(sin).is_some());
-        assert!(state.function_extensions.entry(column).is_some());
-        assert_eq!(
-            state.function_extensions.module_export("dynamic", "sin"),
-            Some(sin),
-        );
-        assert_eq!(
-            state
-                .function_extensions
-                .module_export("dynamic", "sum/column"),
-            Some(column),
-        );
-    }
-
-    #[test]
-    fn failed_dynamic_binding_does_not_install_entries_exports_or_names() {
-        let interpreter = interpreter();
-        let extension = ExtensionFunctionId::from_name("dynamic/sin");
-
-        let error = install_dynamic_fragment(
-            &interpreter,
-            dynamic_fragment("dynamic", &["sin"]),
-            vec![(String::from("sin"), String::new())],
-        )
-        .unwrap_err();
-
-        assert_eq!(error.kind_name(), "FunctionEnvironmentInvalidBinding");
-        let state = interpreter.state.borrow();
-        assert!(state.function_extensions.entry(extension).is_none());
-        assert_eq!(
-            state.function_extensions.module_export("dynamic", "sin"),
-            None,
-        );
-        assert_eq!(state.function_environment.resolve_name("dynamic/sin"), None);
-        assert_eq!(state.function_environment.resolve_name("sin"), None);
-    }
-
-    #[test]
-    fn checkpoint_restore_removes_a_loaded_dynamic_fragment_without_changing_the_catalog() {
-        let mut interpreter = interpreter();
-        let catalog = Arc::clone(interpreter.function_catalog());
-        let extension = ExtensionFunctionId::from_name("dynamic/sin");
-        let checkpoint = interpreter.checkpoint().unwrap();
-
-        install_dynamic_fragment(
-            &interpreter,
-            dynamic_fragment("dynamic", &["sin"]),
-            vec![(String::from("sin"), String::from("s"))],
-        )
-        .unwrap();
-        assert_eq!(
-            binding(&interpreter, "s"),
-            Some(FunctionBinding::Extension(extension)),
-        );
-
-        interpreter.restore(checkpoint).unwrap();
-
-        assert!(Arc::ptr_eq(interpreter.function_catalog(), &catalog));
-        let state = interpreter.state.borrow();
-        assert!(state.function_extensions.entry(extension).is_none());
-        assert_eq!(
-            state.function_extensions.module_export("dynamic", "sin"),
-            None,
-        );
-        assert_eq!(state.function_environment.resolve_name("s"), None);
     }
 
     #[test]
@@ -2364,30 +1601,44 @@ mod static_catalog_module_tests {
     }
 
     #[test]
-    fn missing_item_in_static_module_does_not_mutate_visibility() {
-        let interpreter = interpreter();
-
-        let error = import_module_item(&interpreter, "math", "missing").unwrap_err();
-
-        assert_eq!(error.kind_name(), "MissingFunction");
-        assert_eq!(binding(&interpreter, "missing"), None);
-        assert_eq!(binding(&interpreter, "math/missing"), None);
+    fn exact_dynamic_exports_are_validated_without_source_workspace() {
+        let fragment = dynamic_fragment("dynamic", &["sin", "sum/column"]);
+        let exports = validate_dynamic_fragment(&fragment).unwrap();
+        assert_eq!(exports.len(), 2);
+        assert_eq!(exports["sin"].1, "dynamic/sin");
+        assert_eq!(exports["sum/column"].1, "dynamic/sum/column");
+        let manifest = fragment.manifest();
+        assert_eq!(manifest.items, ["sin", "sum/column"]);
     }
 
     #[test]
-    fn failed_group_import_rolls_back_every_earlier_binding() {
-        let interpreter = interpreter();
-
-        let error = import_module_group(
-            &interpreter,
-            "math",
-            &[String::from("sin"), String::from("missing")],
-        )
-        .unwrap_err();
-
-        assert_eq!(error.kind_name(), "MissingFunction");
-        assert_eq!(binding(&interpreter, "sin"), None);
-        assert_eq!(binding(&interpreter, "missing"), None);
+    fn malformed_dynamic_fragments_are_rejected_before_catalog_installation() {
+        let valid = dynamic_fragment("dynamic", &["sin", "cos"]);
+        let mut candidates = Vec::new();
+        let mut duplicate_entry = valid.clone();
+        duplicate_entry
+            .entries
+            .push(duplicate_entry.entries[0].clone());
+        candidates.push((duplicate_entry, "duplicate extension entry"));
+        let mut duplicate_export = valid.clone();
+        duplicate_export
+            .exports
+            .push(duplicate_export.exports[0].clone());
+        candidates.push((duplicate_export, "duplicate exact export item"));
+        let mut missing = valid.clone();
+        missing.exports[0].extension = ExtensionFunctionId::from_name("absent/item");
+        candidates.push((missing, "references missing extension"));
+        let mut wrong_name = valid.clone();
+        wrong_name.exports[0].item = "different".into();
+        candidates.push((wrong_name, "instead of exact canonical name"));
+        let mut unexported = valid.clone();
+        unexported.exports.pop();
+        candidates.push((unexported, "has no exact module export"));
+        for (candidate, expected) in candidates {
+            let error = validate_dynamic_fragment(&candidate).unwrap_err();
+            assert!(error.full_chain_message().contains(expected), "{error:?}");
+        }
+        assert_eq!(validate_dynamic_fragment(&valid).unwrap().len(), 2);
     }
 }
 

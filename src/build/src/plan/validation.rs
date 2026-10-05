@@ -34,9 +34,24 @@ pub(crate) fn validate_target(value: &str) -> MResult<()> {
 
 pub(crate) fn validate_target_index_constants(
     program: &ParsedProgram,
+    artifact: Option<&mech_engine::ProgramArtifact>,
     target: Option<&str>,
 ) -> MResult<()> {
-    let Some(value) = program.maximum_index_constant()? else {
+    let maximum_index = match artifact {
+        Some(artifact) => artifact
+            .constants()
+            .maximum_index_constant(artifact.schemas())
+            .map_err(|error| {
+                native_build_error(
+                    NativeBuildErrorKind::NativeProgramArtifactInvalid {
+                        reason: format!("canonical Index constant inspection failed: {error:?}"),
+                    },
+                    None,
+                )
+            })?,
+        None => program.maximum_index_constant()?,
+    };
+    let Some(value) = maximum_index else {
         return Ok(());
     };
     let pointer_width = target_pointer_width(target)?;
@@ -187,9 +202,9 @@ mod tests {
         .unwrap();
         let program = ParsedProgram::from_bytes(&bytes).unwrap();
 
-        let error =
-            validate_target_index_constants(&program, Some("i686-pc-windows-msvc")).unwrap_err();
+        let error = validate_target_index_constants(&program, None, Some("i686-pc-windows-msvc"))
+            .unwrap_err();
         assert_eq!(error.kind_name(), "NativeBuildIndexConstantOutOfRange");
-        validate_target_index_constants(&program, Some("x86_64-unknown-linux-gnu")).unwrap();
+        validate_target_index_constants(&program, None, Some("x86_64-unknown-linux-gnu")).unwrap();
     }
 }

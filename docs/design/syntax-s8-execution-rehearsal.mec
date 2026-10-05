@@ -1,5 +1,5 @@
 S8B — Execution interfaces and the deleted-code rehearsal
-===============================================================================
+========================================================================
 
 Status: execution preparation and review correction; product qualification remains open.
 Parent: S8A b573284cb4587d4fb0085cc69a80a036830f1b76.
@@ -253,6 +253,139 @@ Proceed in this order, repairing concrete failures in their shared owner:
    review note, then obtain a clean review and green exact-head CI. Re-run affected
    checks after a correction; do not add optional cleanup or new language features.
 
+R26 physical publication correction, 2026-10-03
+----------------------------------------------
+
+The correction starts from R26 `3f1f23772a588c980c2a84c3acc5bb73ecc60fee`
+on R06 `e5101287f1c2436d6fdb8a00566274f92ba3d0d0`. Review 5402937177
+identified that the direct-output selector regression did not cover ordinary
+tuple publications. A source-level `(selected, selector)` reproduction failed
+before the fix with unsupported `range/inclusive` lowering; that nonempty test
+passed after the correction.
+
+The batch compiler now obtains the existing compute interface before selector
+classification and retains that same interface for final publication storage.
+Its physical output leaves already resolve aliases and recursively expand
+composite packs. Selector retention uses those leaves, not a second incomplete
+publication traversal. A pack carrying a published selector is a structural
+consumer; the selector remains admitted, materialized and published. Existing
+range, scalar-instruction and selector-source limits remain unchanged.
+
+The added source/decoded regression exercises all four inclusive/exclusive range
+forms with and without increments. Ordinary tuples, nested tuples, repeated
+selector publications and a directly published input run across two batch lanes.
+Assertions cover complete interface equality, selector 1x2 and selected-value
+2x1 geometry, one physical buffer for repeated publications, exact selector and
+selected values, and input publication. It constructs normal canonical source
+artifacts rather than adding a manual OutputDeclaration to avoid tuple packing.
+
+Fresh locked nightly-2026-03-03 checks passed:
+
+- GPU native library: 56 tests, including the strengthened full-shape regression.
+- `parallel_ekf`: 22 tests.
+- `particle_source`: 32 tests.
+- Default GPU library: 26 tests before strengthening its explicit axis assertions;
+  the final stronger case ran in the native library profile above.
+- CI impact/full-contract Python suites: 75 tests.
+- Warning policy, formatting and whitespace checks.
+
+Earlier 55/22/32 results belong to `3f1f23772a`; they are not substituted for
+the new run. The direct-publication and persisted matrix/multiply regressions
+remain in place. This is owner correction evidence, not final product-matrix or
+landing qualification. R26 CI remains paused and the correcting head requests
+another review; no R15 or S8C changes are part of this correction.
+
+R26 current-input publication correction, 2026-10-03
+--------------------------------------------------
+
+Production correction `5888faaa6f7e2634fa6dcbd8100f374433757707` starts
+from R26 `efc049e9dee196e4ae293efbe568105cfb6c55ea` on R06
+`e5101287f1c2436d6fdb8a00566274f92ba3d0d0`. The two preceding CI-trigger
+commits have the same tree as the already reviewed tuple correction
+`873ebe7cf3722e12ec7d94e1d175701a98c759e9`. That tuple correction remains
+intact; the present correction adds no operations or supported value families.
+
+A valid canonical mixed-source/public-backend regression executed on reviewed
+`3f1f23772a588c980c2a84c3acc5bb73ecc60fee` inferred five lanes, accepted a
+scalar initializer of 7, and returned five zeros from the exact named input
+publication before any dispatch. Earlier fixtures rejected at source admission
+are not counted as reproductions. Distinct batched initializers are additionally
+checked on the correcting implementation.
+
+Fixed-shape input publications now alias retained input storage. Scalar, SIMD,
+JIT and GPU output reads distinguish current supplied inputs from initialized
+or last-committed state and derived publications. Preparation performs no hidden
+turn. Native copy-only readback completes pending input uploads without claiming
+shader/state writes. The physical plan prefers an existing Output binding and
+uses an Input binding only when no Output exists, preserving elementwise paths.
+Initializers and updates share the existing broadcast validator; public row-major
+matrix values are projected once into the fixed kernel's column-major storage.
+
+Source and decoded-artifact cases assert complete public names, order, schemas,
+shapes and values across direct, alias, tuple, nested and duplicate publications;
+an unconsumed input in a legal nonempty region; inferred five-lane batches and
+tail samples; nonsquare 2x3 matrices; input update; successful and rejected turns;
+and valid recovery. State-generation cases use the existing interactive host
+output-path projection and assert actual State owners. Document expressions after
+assignment remain derived candidates rather than being relabeled as state.
+
+Deterministic negative controls were executed and restored before qualification:
+disconnecting tuple-leaf discovery rejected range/inclusive in the ordinary-source
+four-range test; restoring the old input publication shadow and state-only read
+returned five zeros again in the pre-dispatch public test. The retained low-level
+manual-output test is not substituted for ordinary-source acceptance.
+
+The first native numerical run exposed a test fixture that labeled physical
+column-major matrix initializers as row-major. Test-only correction
+`665526f6f3d2df4c980f58ba93148ed502488962` declares that physical layout
+accurately. Independent 2x2 solve arithmetic confirms the original expected
+values. Public runtime matrices remain row-major. No numerical reference value
+or tolerance was changed, and the suites were rerun rather than counting the
+partially failed first run as success.
+
+Fresh qualification below uses locked nightly-2026-03-03, warnings denied,
+`CARGO_INCREMENTAL=0` and `CARGO_BUILD_JOBS=2` on `665526f6f3d2df4c980f58ba93148ed502488962`:
+
+- `cargo +nightly-2026-03-03 test --locked -p mech-compute --lib`: 17 passed.
+- `cargo +nightly-2026-03-03 test --locked -p mech-gpu --lib
+  --test canonical_publication -- --test-threads=2`: 27 library and 9 publication
+  tests passed in the default profile.
+- `cargo +nightly-2026-03-03 test --locked -p mech-gpu --features native,jit
+  --test canonical_publication
+  jit_publications_preserve_input_and_committed_state_generations -- --exact
+  --nocapture`: 1 passed, 10 filtered. This executes the public JIT lifecycle
+  case, not merely its feature-enabled compilation.
+- `cargo +nightly-2026-03-03 test --locked -p mech-runtime --no-default-features
+  --features full_source,resident-routing-source --test s8_recovery_numeric_targets
+  legacy_matrix_multiply_bytecode_remains_resolvable -- --exact`: 1 passed,
+  21 filtered. This executes persisted bytecode, not merely compilation.
+- With `MECH_REQUIRE_GPU=1`, `cargo +nightly-2026-03-03 test --locked -p mech-gpu
+  --features native --lib --test canonical_publication --test canonical_shipped_ekf
+  -- --nocapture --test-threads=2`: 57 library, 10 publication and 1 shipped-region
+  tests passed. Actual native adapter: Apple M1, Metal. Canonical matmul, legacy
+  multiply and decoded legacy multiply execute and assert complete values.
+- With `MECH_REQUIRE_GPU=1`, `cargo +nightly-2026-03-03 test --locked -p mech-gpu
+  --features native --test parallel_ekf --test particle_source
+  -- --nocapture --test-threads=2`: 22 EKF and 32 particle tests passed with actual
+  Apple M1/Metal execution. Device absence fails this mandatory profile; fallback
+  or unavailable-device skips cannot satisfy it. Existing numerical references
+  and tolerances are unchanged; served-particle maximum CPU/GPU error was 5.960e-8.
+
+The CI impact/full-contract Python suites passed all 75 tests. Formatting,
+whitespace, warning policy, memory planner/runtime, interactive architecture,
+production resident routing, compiler planning quarantine, runtime factory
+safety, canonical evidence imports and retired-value checks passed. The browser
+compute lifecycle harness and browser bridge syntax check passed; its GPU
+buffers are mocks and do not qualify a browser device or the assembled product.
+
+R06 is sealed at the unchanged parent `e5101287f1`, with clean exact-head review
+and successful Full CI run 37155590828. R26's previous clean review applies to
+`873ebe7cf3`; the existing Full CI run 37166299442 applies to `efc049e9d` and
+was still running at this publication. Neither qualifies the new correction.
+The correcting R26 review is requested after publication. New-head CI remains
+paused pending explicit authorization, and this evidence is not a seal. R25
+and assembled S8C product/distribution qualification remain separate gates.
+
 Type coverage audit
 -------------------------------------------------------------------------------
 
@@ -276,3 +409,323 @@ Do not silently mark an uncovered row unsupported. An unsupported disposition
 must already belong to the maintained contract, or be an explicit scope decision.
 Any new failure found by this sweep is recorded under its existing gate; the seal
 requires zero unresolved required rows, not an arbitrary number of review rounds.
+
+Configured served source graphs
+-------------------------------
+
+The public C qualification candidate now uses `configured_browser_compiler_builder`
+for ordinary served roots, with the same host projection and runtime configuration
+that the server injects into the browser. Source and dependency edges come from
+one retained workspace snapshot. Browser transport documents have stable bundle
+URIs and retain the workspace revision; compilation never reconstructs an import
+graph from newer file contents. Configured run paths select executable roots
+independently of rendered dependencies and prose.
+
+`configured_served_root_uses_snapshot_dependencies_and_planning_hosts` covers a
+configured timer read, retained relative imports, dependency hashes, prose-only
+rendering, old-snapshot stability after a disk edit, and old-artifact rejection
+following dependency refresh. The full native server regression suite passes
+90 tests in the cutover candidate. This qualifies the ordinary server connection;
+full served mixed EKF/particles and the canonical browser document transport
+remain open acceptance work.
+
+Rooted cutover qualification
+----------------------------
+
+The candidate based on B `f64f54ce8` routes ordinary, interactive and mixed
+rooted compilation through the prepared retained-document graph. The redundant
+tree dependency compiler is removed. Runtime declaration and execution tests
+now enter canonical indexing and document compilation with the parser deleted.
+The source-only fixture executes imported roots through the public ordinary and
+interactive interfaces, including dependency failure and compiler reuse.
+
+The complete runtime library profile (`full_compiler,resident-routing-source,compute`)
+executes 706 tests: 682 pass and 24 fail. Both maintained mixed-root import and
+user-function regressions pass, together with the supplied-input/default tests.
+This candidate is not sealed. The remaining failures identify interactive state
+and result identity, ordered roots, output/metadata adoption, and application
+execution obligations. Full browser document transport, served mixed applications
+and the final distribution matrix also remain open. Backend-only qualification
+must not be substituted for those product results.
+
+
+Canonical frozen-EKF product qualification
+------------------------------------------
+
+The maintained artifact-closure, activation and execution targets now run under
+`full_source,resident-artifact` with the retired parser deleted. All 18 tests pass
+(5 closure, 2 activation, 11 execution). Source and decoded bytecode execute the
+complete 4,096-turn frozen trace with the existing reference values and trajectory
+hash unchanged. Abort, retry, integrity, effects and epoch checks also pass.
+
+Recurrence assertions select `SlotRole::State`; physical retained storage also
+contains the separately published three-scalar estimate. The canonical graph has
+four identity-copy nodes, 24 checked steps, 21 unchecked steps and 120 candidate
+bytes. These assertions describe the current canonical artifact, not the removed
+compiler's storage layout.
+
+This qualifies the frozen artifact product only. Full served mixed EKF/particles,
+the browser loader and the remaining C runtime/distribution failures stay open.
+
+
+Canonical publication consumer qualification
+--------------------------------------------
+
+C runtime regressions now inspect the canonical artifact's interactive bindings,
+including source/bytecode mutability and function-local isolation. Ordinary
+consumers query the final program output instead of demanding hidden symbols.
+Conversion tests assert exact published scalar/matrix types and values; dynamic
+selector tests exercise changing inputs on source and bytecode graphs. Neither
+test requires the retired compiler's instruction names. N-body inspection follows
+recurrence roles rather than treating the published position buffer as state.
+
+The complete C runtime library run executes 710 tests: 698 pass and 12 fail. The
+remaining failures cover provider planning/error classification, portable selector
+admission, ordered roots, formatted output ownership, pattern functions, collection
+shape/control/initializers, and both N-body application references. The N-body
+numerical, trajectory and display-bound assertions remain unchanged. These are
+open qualification failures, not ignored tests or a completed cutover seal.
+
+S8C browser source-boundary correction, 2026-10-03
+-------------------------------------------------
+
+This correction starts from C `d0d1f4d2840cea6f559b5823b9fa987ed0cb1122`,
+on R15 `54a0397e126a3b21616b8ccad728d293d884c96e`, with R26 `3f1f23772a`
+and R06 `e5101287f1` below it. The newer stack identities include the R26
+selector regression but do not replace C's preceding fixes. Historical suite
+results above are retained as history, not attributed to this correction.
+
+The four current review obligations are closed at their shared owners:
+
+1. Static sources retain their defining nominal origin and transported package
+   identity in the manifest. The bootstrap passes those values to the same
+   provenance-aware source resolver used by served documents. The regression
+   compares complete enum nominal and schema identities with native compilation,
+   not just printed values. Old static nominal sources without provenance are
+   refused with a regeneration instruction rather than assigned a new identity.
+
+2. Publication invokes the selected package's actual WASM compiler and shared
+   resident target preflight. `ProgramCompiler::preflight_resident_artifact`
+   reuses the loader's effect-free provider planning facts and resident admission
+   owner. It does not activate an instance, start drivers, run turns, or deliver
+   effects. There is no duplicate scalar/operator feature checklist. Node.js 22+
+   is an explicit publication dependency, and the relevant CI jobs install it.
+   Native planning and target admission finish before any output is published.
+   The admitted JS/WASM/snippet bytes and configuration text are frozen and those
+   same bytes are published, including when the original inputs change during
+   the probe. The child uses its stable package directory, bounded diagnostics
+   and a 60-second admission deadline.
+
+3. Every ordinary WasmProject construction path retains the same pointer handle
+   installed in its input driver. Readiness reflects the running driver, not
+   merely a configured host. Static bootstrap events deliver normalized position,
+   primary-button state and elapsed time; stop, unload and error detach listeners.
+   The existing WasmDocument lifecycle remains unchanged.
+
+4. Rich comment parsing is bounded by the physical line. An incomplete opener
+   rewinds speculative markup and consumes inert literal text without refunding
+   work. LF, CRLF, bare CR, EOF, scalar chunk boundaries and exhausted processing
+   fuel are covered; completed rich markup remains structured. Public bundle
+   execution and rendered HTML preserve the following program and escape markup.
+
+Fresh executed checks, all using nightly-2026-03-03 and locked Rust dependencies:
+
+- `mech-syntax --no-default-features --features full --lib`: 131 passed.
+- `mech-wasm --no-default-features --features browser_project,browser_compute
+  --lib project::tests::`: 60 passed. This includes live static pointer delivery,
+  start/stop readiness, duplicate-host rejection, nominal regeneration and
+  admission-versus-loading comparisons for scalar and operation cases.
+- `mech --no-default-features --features
+  full_source,bundle_web,formatter,serve,compute_backends_native --lib`:
+  303 passed, one environment-dependent actual-package test separately executed.
+  The native server lifecycle check used a permitted temporary loopback port.
+- `scripts/tests/static-project.test.mjs`: 6 passed.
+- CI impact/full-contract Python suites: 75 passed.
+- Actual `browser_project` package built with wasm-pack for wasm32, then exercised
+  by the publisher: native-supported `math/fmod` is rejected by this narrower
+  package before creating output; a compatible enum/u8/i32-source retry succeeds.
+  The ignored-by-default actual-package case ran and passed separately, using
+  the final native test executable. Full CI now selects it while the freshly
+  built browser package is still present.
+- Actual browser admission matches actual source loading for the checked scalar
+  cases. Valid u8/i32 annotations are accepted by this package; invalid literal
+  spellings are not used as evidence of a feature gap. A console-writing source
+  passes the compiler probe without logging an effect.
+- Maintained `browser_compute_canary` wasm32 check passed. An ad-hoc
+  `browser_project_core,browser_compute` native combination remains unqualified:
+  existing compare macro warnings in its incomplete vector feature closure are
+  not suppressed or repaired as part of this patch.
+- Canonical evidence imports, warning policy, compiler-planning quarantine,
+  runtime-factory safety, production resident routing, interactive architecture,
+  retired-value-system absence, formatting and whitespace checks passed.
+
+The initial broader native run exposed stale server tests decoding retained
+source as a native artifact, an empty compute-host configuration, missing
+controller setup, and CLI mocks lacking the new target API. Those fixtures now
+assert the current retained-source contract, exact dependency routes/resolutions,
+native execution and valid configured hosts. The final 303-test run is green;
+initial failed runs are not counted as qualification.
+
+Four deterministic negative controls were executed and restored:
+
+- Removing nominal provenance delivery fails the exact bootstrap provenance test.
+- Omitting pointer listener installation fails the normalized-sample test.
+- Disabling literal comment fallback fails the physical-line test (`-- use { here`
+  stops at byte 7 instead of byte 13).
+- Bypassing the real target compiler lets missing `math/fmod` escape admission
+  and fails the actual-package refusal assertion. Restored admission rejects it.
+
+Each mutation ran a nonempty decisive case. Restored Node, syntax and real-package
+checks pass. These suite counts overlap and are not added into a coverage total.
+C is not sealed. CI remains paused; the published correcting head is submitted
+for review before returning to the outstanding R26 review finding.
+
+S8C static mixed loading and live ingress correction, 2026-10-04
+--------------------------------------------------------------
+
+The correcting implementation/test candidate is
+`433e159345c623e38a9bd0f4bb8cbda3a87f639a`, on R15
+`7b197ca5fbec577ecb3125c305219297d844d420`, R26
+`0f1c8feabf87a0bb86f9a986d3e6329639ff8ee8`, and sealed R06
+`e5101287f1c2436d6fdb8a00566274f92ba3d0d0`. All 13 C patches through
+`4a936c78aa03388a2eb59a03f37273859dc9ab1b` have identical range-diff
+entries across the restack. The issued-settings correction in `29d116413`
+is an additional implementation delta, not an identical-tree restack.
+`433e15934` changes only two wasm-target fixture arguments; the production
+correction and native qualification remain at `29d116413`.
+
+Codex review 5403855830 applies to the previous published C head
+`0f7f327ac969de4e52471b8f0060b19b81250bae`. Its P2 comment 4175773279
+and P1 comment 4175773281 are corrected at their shared lifecycle and
+preparation owners:
+
+- Served pointer events query the accepted running input driver. A configured
+  but unused host does not submit events; replacing source to remove or restore
+  the last read updates readiness without stale button/time state. Stop and
+  encoded reset retain driver ownership. Static pointer readiness is preserved.
+- Static admission and public source constructors reuse the existing mixed-root
+  preparation, compute factory and coordinator. The admission factory does not
+  create a device, activate a runtime, advance a turn, start drivers or deliver
+  effects. Retained imports, nominal identity, issued authority, runtime limits
+  and grants remain in the existing owners.
+- The static bundle emits the existing browser-compute bridge unchanged. Its
+  client uses Device/Session ownership, exact completion and pending-command
+  gating; refusal never replays an input. Stop retires a pending session, and
+  unload during device creation disposes the late resource. Automatic CPU
+  reconstruction is limited to pre-start device failure, not a submitted turn.
+
+A related concrete mismatch was corrected in both served and static preparation:
+backend/manifest selection now uses the issued compute settings that the runtime
+uses. Legitimate CPU/WGPU/auto overrides work without changing roots, grants or
+host identity; a settings/compiled-region mismatch is still rejected by the
+factory. This is not a new evaluator, catalog expansion or transaction redesign.
+
+The original served pointer handler fails the inactive-driver regression against
+`0f7f327ac9`, while the corrected handler passes. The final 16-case static client
+suite has eight passing and eight failing cases against that reviewed source,
+and all 16 pass after restoration. These tests use real Session ownership with
+mocked device resources, not actual browser GPU qualification. Native tests
+assert the exact original `RuntimeHostProviderNotFound` and missing-compute
+provider message; issued-settings tests execute the original source-only backend
+negative control and assert `ComputeHostConfiguration` on a region mismatch.
+
+Two initial new execution fixtures incorrectly expected an initialized derived
+sample or attempted manual advancement of an external-input program. The
+runtime correctly leaves those samples dormant and rejects manual advancement.
+The fixtures now start the registered pointer driver and execute only through
+admitted host input. No runtime allowance or hidden preparation dispatch was
+added. An earlier broad canary run also selected an nbody case outside that
+profile's combinatorics catalog. None of those failed attempts is a passing
+qualification result.
+
+The first real Chrome constructor attempt executed one case and correctly
+rejected a fixture's null source-resolution value. The production static client
+already supplies an array. `433e15934` supplies explicit empty arrays in the two
+new browser fixtures without relaxing the public API; that failed attempt is
+not a browser pass.
+
+Fresh native commands below all ran on exact code/test head `29d116413`, with
+`CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2` and normal test threads:
+
+```sh
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_project,browser_compute --lib -- --nocapture
+# 100 passed; one intentionally ignored million-particle stress case.
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_compute_canary --lib project::tests::static_ -- --nocapture
+# 4 passed.
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_compute_canary --lib project::tests::served_pointer -- --nocapture
+# 2 passed.
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_compute_canary --lib \
+  project::tests::served_compute_preparation_uses_issued_backend_settings -- --exact --nocapture
+# 1 passed.
+cargo +nightly-2026-03-03 test --locked -p mech-wasm --no-default-features \
+  --features browser_project --lib -- --nocapture
+# 78 passed, no ignored or skipped cases.
+cargo +nightly-2026-03-03 test --locked -p mech --no-default-features \
+  --features full_compiler,bundle_web --lib bundle_web::tests:: -- --nocapture
+# 65 passed, one actual-package prerequisite case ignored, 24 filtered out.
+```
+
+The focused seven canary cases are not a full-canary pass. Native full-owner and
+no-compute results are separate feature profiles; these counts overlap and are
+not added into a coverage total. `node --test scripts/tests/static-project.test.mjs`
+passes 16 cases; the maintained browser-compute lifecycle harness and both
+client syntax checks pass. Formatting, warning policy, interactive architecture,
+resident routing, compiler-planning quarantine, canonical evidence imports and
+whitespace checks pass on this candidate.
+
+The bundle filter includes both library and CLI bundle owners. Asset checks assert
+the full emitted bridge bytes and client import route. Package mocks do not prove
+actual browser execution; the prerequisite-gated actual-package case above is
+not claimed as freshly passed.
+
+Both real browser cases passed separately on `433e15934`, each with one executed
+test, zero failures/ignored cases and 36 filtered cases. The constructor case
+uses the public served constructor and ordinary source constructor, real pointer
+ingress/frame execution, expected CPU output and bridge metadata. The other case
+checks static and served-document backend/manifest selection under three issued
+settings overrides. These are actual browser/Wasm CPU and metadata witnesses,
+not actual GPU execution or an assembled bundle/application qualification.
+
+The exact commands, from the C worktree, were:
+
+```sh
+CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 RUSTUP_TOOLCHAIN=nightly-2026-03-03 \
+  WASM_BINDGEN_TEST_TIMEOUT=180 \
+  WASM_BINDGEN_TEST_WEBDRIVER_JSON=/private/tmp/mech-s8c-chromedriver.wGgBhE/webdriver.json \
+  wasm-pack test --headless --chrome \
+  --chromedriver /private/tmp/mech-s8c-chromedriver.wGgBhE/chromedriver-mac-arm64/chromedriver \
+  --release src/wasm --locked --lib --no-default-features \
+  --features browser_compute_canary -- \
+  project::browser_tests::static_compute_document_uses_the_registered_mixed_runtime_and_bridge \
+  --exact --nocapture
+CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 RUSTUP_TOOLCHAIN=nightly-2026-03-03 \
+  WASM_BINDGEN_TEST_TIMEOUT=180 \
+  WASM_BINDGEN_TEST_WEBDRIVER_JSON=/private/tmp/mech-s8c-chromedriver.wGgBhE/webdriver.json \
+  wasm-pack test --headless --chrome \
+  --chromedriver /private/tmp/mech-s8c-chromedriver.wGgBhE/chromedriver-mac-arm64/chromedriver \
+  --release src/wasm --locked --lib --no-default-features \
+  --features browser_compute_canary -- \
+  project::browser_tests::served_static_and_document_compute_metadata_follow_issued_settings \
+  --exact --nocapture
+```
+
+The runner was wasm-bindgen-test-runner 0.2.126 through wasm-pack 0.12.1.
+Chrome 154.0.8037.93 and official ChromeDriver 154.0.8037.92 share the verified
+154.0.8037 build. The capabilities file selects the installed Chrome binary
+and an isolated temporary profile under the driver directory, with no-first-run
+and no-default-browser-check; no real user profile was used. The official driver
+archive is at
+`https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.92/mac-arm64/chromedriver-mac-arm64.zip`.
+Both runner logs report accepted capabilities and one running test, rather than
+crediting installation or a zero-test invocation as a browser pass.
+
+The final evidence commit adds only this record; it does not change production
+or test behavior. C remains unsealed and its CI remains paused. R26 has an applicable
+clean review and authorized exact-head Full CI running separately; R15's boundary
+acceptance is locally qualified with CI still paused. Old C review/CI results
+remain historical, and R25 plus assembled C product/distribution gates are not
+claimed by this correction.

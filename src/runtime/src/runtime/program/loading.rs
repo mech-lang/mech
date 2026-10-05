@@ -24,7 +24,7 @@ use crate::{
     RuntimeResourceWriteIntent, runtime::MechRuntime,
 };
 #[cfg(feature = "resident-routing-source")]
-use mech_engine::{CompilerPlanningConfig, CompilerPlanningLimits, ProgramCompilationProduct};
+use mech_engine::ProgramCompilationProduct;
 
 use super::diagnostics::activation_failure_for_artifact;
 use super::value::{initial_prepared_value, initial_value};
@@ -136,6 +136,56 @@ impl MechRuntime {
         })
     }
 
+    /// Compile and activate a rooted source graph through the canonical
+    /// frontend, preserving retained nominal declaration provenance and every
+    /// named root symbol needed by live hosts.
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_canonical_root_program(
+        &mut self,
+        request: SourceRequest,
+        module_options: ModuleBuildOptions<'_>,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_production_with_projection(
+            durability,
+            InitialValueProjection::InteractiveRootResult,
+            |runtime| {
+                let resolved = runtime.resolve_source(request.clone())?.ok_or_else(|| {
+                    route_failure(
+                        ResidentRouteFailureClass::InvalidArtifact,
+                        format!("root source `{}` was not found", request.specifier),
+                    )
+                })?;
+                match &resolved.source {
+                    MechSourceCode::String(source) => {
+                        runtime.enforce_source_byte_limit(
+                            u64::try_from(source.len()).unwrap_or(u64::MAX),
+                        )?;
+                        Ok(Arc::new(
+                            runtime
+                                .plan_canonical_resolved_root_source_product(
+                                    resolved,
+                                    module_options,
+                                )?
+                                .into_parts()
+                                .0,
+                        ))
+                    }
+                    MechSourceCode::ByteCode(bytecode) => {
+                        runtime.enforce_source_byte_limit(
+                            u64::try_from(bytecode.len()).unwrap_or(u64::MAX),
+                        )?;
+                        runtime.decode_artifact(bytecode)
+                    }
+                    _ => Err(route_failure(
+                        ResidentRouteFailureClass::SemanticUnsupported,
+                        "root source kind is not resident-routable",
+                    )),
+                }
+            },
+        )
+    }
+
     /// Compile and activate a rooted source graph with every root symbol
     /// retained for live interactive inspection.
     #[cfg(feature = "resident-routing-source")]
@@ -210,34 +260,40 @@ impl MechRuntime {
         self.load_production_with(durability, |_| Ok(Arc::new(artifact)))
     }
 
+    /// Plans and loads one strictly admitted retained document through the
+    /// resident route. The retained revision is the only source authority.
     #[cfg(feature = "resident-routing-source")]
-    /// Plans and loads an already parsed Mech program through the resident
-    /// route. This entry point never falls back to another executor.
-    pub fn load_tree_program(
+    pub fn load_document_program(
         &mut self,
-        tree: &mech_core::Program,
+        document: &crate::SourceDocument,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(u64::from(document.source().byte_len().0))?;
         self.load_production_with(durability, |runtime| {
-            Ok(Arc::new(runtime.plan_tree_product(tree)?.into_parts().0))
+            Ok(Arc::new(
+                runtime.plan_document_product(document)?.into_parts().0,
+            ))
         })
     }
 
-    /// Activates an already parsed document while retaining its root symbols
-    /// for an interactive host. Encoded browser documents use this path so
-    /// execution never depends on formatter/parser round-tripping.
+    /// Activates a retained canonical document while retaining its root
+    /// symbols for an interactive host.
     #[cfg(feature = "resident-routing-source")]
-    pub fn load_interactive_tree_program(
+    pub fn load_interactive_document_program(
         &mut self,
-        tree: &mech_core::Program,
+        document: &crate::SourceDocument,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(u64::from(document.source().byte_len().0))?;
         self.load_production_with_projection(
             durability,
             InitialValueProjection::InteractiveRootResult,
             |runtime| {
                 Ok(Arc::new(
-                    runtime.plan_interactive_tree_product(tree)?.into_parts().0,
+                    runtime
+                        .plan_interactive_document_product(document)?
+                        .into_parts()
+                        .0,
                 ))
             },
         )
@@ -271,8 +327,7 @@ impl MechRuntime {
         let result = resident(self).and_then(|artifact| {
             self.install_resident_artifact(artifact, durability, initial_value_projection)
         });
-        if result.is_err() {
-            debug_assert!(matches!(self.active_program, ActiveProgramExecution::None));
+        if result.is_err() && matches!(self.active_program, ActiveProgramExecution::None) {
             self.program_execution_info = RuntimeProgramExecutionInfo::default();
         }
         result
@@ -285,7 +340,17 @@ impl MechRuntime {
         module_options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?
-            .compile_resolved_root(resolved, module_options)
+            .compile_canonical_resolved_root(resolved, false, Some(module_options))
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_canonical_resolved_root_source_product(
+        &mut self,
+        resolved: crate::ResolvedSource,
+        module_options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?
+            .compile_canonical_resolved_root(resolved, true, Some(module_options))
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -295,7 +360,7 @@ impl MechRuntime {
         module_options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?
-            .compile_interactive_resolved_root(resolved, module_options)
+            .compile_canonical_resolved_root(resolved, true, Some(module_options))
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -312,13 +377,23 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing-source")]
+    fn plan_document_product(
+        &mut self,
+        document: &crate::SourceDocument,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?.compile_document(document)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_interactive_document_product(
+        &mut self,
+        document: &crate::SourceDocument,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?.compile_interactive_document(document)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
     fn compiler_view(&self) -> MResult<super::ProgramCompilerView<'_>> {
-        let program_config = CompilerPlanningConfig {
-            name: self.config.name.clone(),
-            limits: CompilerPlanningLimits {
-                max_planning_steps: self.config.limits.max_steps_per_turn_as_usize()?,
-            },
-        };
         Ok(super::ProgramCompilerView::new(
             Arc::clone(&self.function_catalog),
             self.source_resolver.as_ref(),
@@ -326,24 +401,9 @@ impl MechRuntime {
             &self.module_builder,
             &self.host_interfaces,
             &self.module_manifests,
-            program_config,
+            self.config.limits.max_steps_per_turn_as_usize()?,
+            self.config.limits.max_source_bytes,
         ))
-    }
-
-    #[cfg(feature = "resident-routing-source")]
-    fn plan_tree_product(
-        &mut self,
-        tree: &mech_core::Program,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_tree(tree)
-    }
-
-    #[cfg(feature = "resident-routing-source")]
-    fn plan_interactive_tree_product(
-        &mut self,
-        tree: &mech_core::Program,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_interactive_tree(tree)
     }
 
     #[cfg(feature = "resident-routing")]
@@ -415,9 +475,18 @@ impl MechRuntime {
             )
         })?;
         if !external && !preflight.plan.inputs.is_empty() {
-            return Err(super::unsupported_route(
-                "pure production resident programs cannot require turn inputs",
-            ));
+            let names = artifact
+                .inputs()
+                .iter()
+                .map(|input| {
+                    mech_engine::decode_source_input_name(&input.name)
+                        .unwrap_or_else(|| input.name.clone())
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            return Err(super::unsupported_route(format!(
+                "pure production resident programs cannot require turn inputs: {names}",
+            )));
         }
 
         if let Some(authority) = authority.as_ref() {
@@ -428,6 +497,28 @@ impl MechRuntime {
                 authority,
             )
             .map_err(classify_provider_preflight)?;
+        }
+
+        #[cfg(feature = "resident-routing-source")]
+        if matches!(
+            initial_value_projection,
+            InitialValueProjection::InteractiveRootResult
+        ) && artifact.requirements().is_empty()
+            && artifact.inputs().is_empty()
+            && artifact.slots().is_empty()
+            && artifact.nodes().is_empty()
+            && artifact.bindings().is_empty()
+            && artifact.outputs().is_empty()
+            && artifact.constraints().is_empty()
+        {
+            // Canonical interactive preparation may retain declarations, but
+            // an admitted graph with no work must not activate an instance,
+            // start a driver, or manufacture an accepted turn.
+            return Ok(RuntimeProgramLoadOutcome {
+                route: RuntimeProgramRoute::None,
+                initial_value: crate::RuntimeValueSnapshot::empty(),
+                info: RuntimeProgramExecutionInfo::default(),
+            });
         }
 
         let instance_id = self.allocate_resident_instance()?;
@@ -458,7 +549,9 @@ impl MechRuntime {
             ..RuntimeProgramExecutionInfo::default()
         };
 
-        let initial_snapshot;
+        let initial_output = initial_output_index(&artifact, initial_value_projection);
+        let mut prepared_initial = None;
+        let mut needs_post_drain_snapshot = false;
         let active = if external {
             let authority = authority.expect("external authority was built");
             let mut coordinator = ResidentExternalCoordinator::new_live(
@@ -470,19 +563,23 @@ impl MechRuntime {
                 ResidentExternalLimits::default(),
             )?;
             let trigger_sources = coordinator.trigger_sources()?;
-            self.ensure_exact_resident_input_drivers(&trigger_sources)?;
-            let output_index = initial_output_index(&artifact, initial_value_projection);
-            let mut prepared_initial = None;
-            if trigger_sources.is_empty() {
-                let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
+            let input_sources = coordinator.input_sources()?;
+            let has_driverless_trigger = coordinator.has_driverless_trigger_observation()?;
+            self.ensure_exact_resident_input_drivers(&input_sources)?;
+            let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
+            if coordinator.initial_publication_required() {
                 let turn_started = Instant::now();
                 let admission = coordinator.admit_turn()?;
-                let outcome = coordinator.execute_admitted_turn(admission, |prepared| {
+                let outcome = coordinator.execute_admitted_initial_turn(admission, |prepared| {
                     super::super::limits::enforce_turn_duration_limit(
                         max_turn_duration_ms,
                         turn_started,
                     )?;
-                    prepared_initial = Some(initial_prepared_value(prepared, output_index)?);
+                    if prepared.will_have_ready_continuation() {
+                        needs_post_drain_snapshot = true;
+                    } else {
+                        prepared_initial = Some(initial_prepared_value(prepared, initial_output)?);
+                    }
                     Ok(())
                 })?;
                 if let Some(error) = super::resident_host_turn_error(&outcome) {
@@ -495,20 +592,43 @@ impl MechRuntime {
                 }
                 info.resident_accepted_turns = 1;
             }
-            initial_snapshot = match prepared_initial {
-                Some(snapshot) => snapshot,
-                None => initial_value(coordinator.instance(), output_index)?,
-            };
+            self.drain_loading_external_continuations(&mut coordinator, &mut info)?;
+            if has_driverless_trigger {
+                let turn_started = Instant::now();
+                let admission = coordinator.admit_turn()?;
+                let outcome = coordinator.execute_admitted_provider_turn(admission, |_| {
+                    super::super::limits::enforce_turn_duration_limit(
+                        max_turn_duration_ms,
+                        turn_started,
+                    )
+                })?;
+                if let Some(error) = super::resident_host_turn_error(&outcome) {
+                    return Err(route_failure(
+                        ResidentRouteFailureClass::ActivationFailure,
+                        format!(
+                            "driverless resident observation did not complete cleanly: {error:?}"
+                        ),
+                    ));
+                }
+                // The provider turn publishes after any dormant initial turn,
+                // so a snapshot captured by that earlier turn is no longer
+                // authoritative even when the bootstrap has no continuation.
+                prepared_initial = None;
+                needs_post_drain_snapshot = true;
+                info.resident_accepted_turns += 1;
+                self.drain_loading_external_continuations(&mut coordinator, &mut info)?;
+            }
             ActiveProgramExecution::ResidentExternal(ResidentExternalExecution {
                 artifact,
                 coordinator,
                 trigger_sources,
+                input_sources,
                 grants: authority,
             })
         } else {
             let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
             let turn_started = Instant::now();
-            let prepared = instance.prepare_turn(&[]).map_err(|error| {
+            let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
                 route_failure(
                     ResidentRouteFailureClass::ActivationFailure,
                     format!("initial pure resident turn failed: {error:?}"),
@@ -521,10 +641,11 @@ impl MechRuntime {
                 prepared.abort();
                 return Err(error);
             }
-            initial_snapshot = initial_prepared_value(
-                &prepared,
-                initial_output_index(&artifact, initial_value_projection),
-            )?;
+            if prepared.will_have_ready_continuation() {
+                needs_post_drain_snapshot = true;
+            } else {
+                prepared_initial = Some(initial_prepared_value(&prepared, initial_output)?);
+            }
             prepared.publish().map_err(|error| {
                 route_failure(
                     ResidentRouteFailureClass::ActivationFailure,
@@ -535,12 +656,101 @@ impl MechRuntime {
             ActiveProgramExecution::ResidentPure(ResidentPureExecution { artifact, instance })
         };
         self.active_program = active;
-        self.program_execution_info = info.clone();
+        self.program_execution_info = info;
+        if let Err(error) = self.drain_resident_continuations() {
+            if matches!(self.active_program, ActiveProgramExecution::ResidentPure(_)) {
+                self.active_program = ActiveProgramExecution::None;
+                self.program_execution_info = RuntimeProgramExecutionInfo::default();
+            }
+            return Err(error);
+        }
+        let initial_snapshot = match prepared_initial {
+            Some(snapshot) if !needs_post_drain_snapshot => Ok(snapshot),
+            _ => match &self.active_program {
+                ActiveProgramExecution::ResidentPure(execution) => {
+                    initial_value(&execution.instance, initial_output)
+                }
+                ActiveProgramExecution::ResidentExternal(execution) => {
+                    initial_value(execution.coordinator.instance(), initial_output)
+                }
+                ActiveProgramExecution::None => unreachable!(),
+            },
+        };
+        let initial_snapshot = match initial_snapshot {
+            Ok(snapshot) => snapshot,
+            Err(error) => {
+                if matches!(self.active_program, ActiveProgramExecution::ResidentPure(_)) {
+                    self.active_program = ActiveProgramExecution::None;
+                    self.program_execution_info = RuntimeProgramExecutionInfo::default();
+                }
+                return Err(error);
+            }
+        };
+        let info = self.program_execution_info.clone();
         Ok(RuntimeProgramLoadOutcome {
             route: info.route,
             initial_value: initial_snapshot,
             info,
         })
+    }
+
+    fn drain_loading_external_continuations(
+        &mut self,
+        coordinator: &mut ResidentExternalCoordinator,
+        info: &mut RuntimeProgramExecutionInfo,
+    ) -> MResult<()> {
+        let max_work = self.config.limits.max_steps_per_turn_as_usize()?;
+        let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
+        for _ in 0..max_work {
+            let Some(wakeup) = coordinator.instance().continuation_wakeup() else {
+                return Ok(());
+            };
+            if !coordinator.instance().accepts_continuation_wakeup(wakeup) {
+                continue;
+            }
+            let turn_started = Instant::now();
+            let admission = coordinator.admit_turn()?;
+            let before = coordinator.structural_probe();
+            let outcome = coordinator.execute_admitted_continuation_turn(admission, |_| {
+                super::super::limits::enforce_turn_duration_limit(
+                    max_turn_duration_ms,
+                    turn_started,
+                )
+            })?;
+            let after = coordinator.structural_probe();
+            self.resident_production_probe
+                .observe_structural_delta(before, after);
+            match &outcome {
+                crate::ResidentExternalTurnOutcome::Rejected { .. } => {
+                    info.resident_rejected_turns = info.resident_rejected_turns.saturating_add(1);
+                    self.resident_production_probe.resident_rejections = self
+                        .resident_production_probe
+                        .resident_rejections
+                        .saturating_add(1);
+                }
+                crate::ResidentExternalTurnOutcome::Accepted { .. }
+                | crate::ResidentExternalTurnOutcome::PublishedIndeterminate { .. } => {
+                    info.resident_accepted_turns = info.resident_accepted_turns.saturating_add(1);
+                    self.resident_production_probe.resident_turns = self
+                        .resident_production_probe
+                        .resident_turns
+                        .saturating_add(1);
+                }
+            }
+            if let Some(error) = super::resident_host_turn_error(&outcome) {
+                return Err(route_failure(
+                    ResidentRouteFailureClass::ActivationFailure,
+                    format!("initial resident continuation did not complete cleanly: {error:?}"),
+                ));
+            }
+        }
+        if coordinator.instance().continuation_wakeup().is_some() {
+            return Err(route_failure(
+                ResidentRouteFailureClass::ActivationFailure,
+                "resident continuation wakeup limit exhausted".to_owned(),
+            ));
+        }
+        Ok(())
     }
 
     fn ensure_exact_resident_input_drivers(
@@ -651,95 +861,110 @@ impl MechRuntime {
         &self,
         artifact: &ProgramArtifact,
     ) -> MResult<ActivationFacts> {
-        let mut facts = ActivationFacts::default();
-        for node in artifact.nodes() {
-            let Some(requirement) = node
-                .as_operation()
-                .and_then(|operation| operation.requirement)
-            else {
-                continue;
-            };
-            let Some(ApplicationRequirement::Resource(request)) =
-                artifact.requirements().get(requirement)
-            else {
-                continue;
-            };
-            if request.intent != ResourceIntent::Read {
-                continue;
-            }
-            let mut dynamic_outputs = Vec::new();
-            for binding_index in node.output_bindings.clone() {
-                let Some(BindingDeclaration::Output { target, .. }) =
-                    artifact.bindings().get(binding_index as usize)
-                else {
-                    return Err(route_failure(
-                        ResidentRouteFailureClass::InvalidArtifact,
-                        "resident observation has an invalid output binding",
-                    ));
-                };
-                let declaration = artifact.slots().get(target.get() as usize).ok_or_else(|| {
-                    route_failure(
-                        ResidentRouteFailureClass::InvalidArtifact,
-                        "resident observation output slot is out of range",
-                    )
-                })?;
-                let schema = artifact
-                    .schemas()
-                    .entry(declaration.schema)
-                    .ok_or_else(|| {
-                        route_failure(
-                            ResidentRouteFailureClass::InvalidArtifact,
-                            "resident observation output schema is out of range",
-                        )
-                    })?;
-                if !schema.schema().dimension_parameters().is_empty() {
-                    dynamic_outputs.push((*target, schema));
-                }
-            }
-            if dynamic_outputs.is_empty() {
-                continue;
-            }
-            let binding = self
-                .resources
-                .resident_provider_binding(&request.base_uri)
-                .map_err(classify_provider_preflight)?;
-            let planned = binding
-                .plan_read(RuntimeResourceReadRequest {
-                    base_uri: request.base_uri.clone(),
-                    path: request.path.clone(),
-                    context_name: request.context_name.clone(),
-                })
-                .map_err(classify_provider_preflight)?;
-            for (target, schema) in dynamic_outputs {
-                if schema.key() != planned.schema_key() {
-                    return Err(route_failure(
-                        ResidentRouteFailureClass::ProviderContractMismatch,
-                        "provider planning value does not match the declared observation schema",
-                    ));
-                }
-                schema
-                    .schema()
-                    .instantiate_shape(planned.shape().parameter_values().to_vec().into_boxed_slice())
-                    .map_err(|error| {
-                        route_failure(
-                            ResidentRouteFailureClass::ProviderContractMismatch,
-                            format!("provider planning value has an invalid observation shape: {error:?}"),
-                        )
-                    })?;
-                if let Some(existing) = facts.slot_shapes.insert(target, planned.shape().clone())
-                    && existing != *planned.shape()
-                {
-                    return Err(route_failure(
-                        ResidentRouteFailureClass::ProviderContractMismatch,
-                        "provider planning values disagree about an observation slot shape",
-                    ));
-                }
-            }
-        }
-        Ok(facts)
+        plan_resident_activation_facts(&self.resources, artifact)
     }
 }
 
+/// Provider-owned planning snapshots shared by loading and target preflight.
+/// This reads only the provider's effect-free plan_read boundary.
+pub(super) fn plan_resident_activation_facts(
+    resources: &crate::RuntimeResourceRegistry,
+    artifact: &ProgramArtifact,
+) -> MResult<ActivationFacts> {
+    let mut facts = ActivationFacts::default();
+    for node in artifact.nodes() {
+        let Some(requirement) = node
+            .as_operation()
+            .and_then(|operation| operation.requirement)
+        else {
+            continue;
+        };
+        let Some(ApplicationRequirement::Resource(request)) =
+            artifact.requirements().get(requirement)
+        else {
+            continue;
+        };
+        if request.intent != ResourceIntent::Read {
+            continue;
+        }
+        let mut dynamic_outputs = Vec::new();
+        for binding_index in node.output_bindings.clone() {
+            let Some(BindingDeclaration::Output { target, .. }) =
+                artifact.bindings().get(binding_index as usize)
+            else {
+                return Err(route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    "resident observation has an invalid output binding",
+                ));
+            };
+            let declaration = artifact.slots().get(target.get() as usize).ok_or_else(|| {
+                route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    "resident observation output slot is out of range",
+                )
+            })?;
+            let schema = artifact
+                .schemas()
+                .entry(declaration.schema)
+                .ok_or_else(|| {
+                    route_failure(
+                        ResidentRouteFailureClass::InvalidArtifact,
+                        "resident observation output schema is out of range",
+                    )
+                })?;
+            if !schema.schema().dimension_parameters().is_empty() {
+                dynamic_outputs.push((*target, schema));
+            }
+        }
+        if dynamic_outputs.is_empty() {
+            continue;
+        }
+        let binding = resources
+            .resident_provider_binding(&request.base_uri)
+            .map_err(classify_provider_preflight)?;
+        let planned = binding
+            .plan_read(RuntimeResourceReadRequest {
+                base_uri: request.base_uri.clone(),
+                path: request.path.clone(),
+                context_name: request.context_name.clone(),
+            })
+            .map_err(classify_provider_preflight)?;
+        for (target, schema) in dynamic_outputs {
+            if schema.key() != planned.schema_key() {
+                return Err(route_failure(
+                    ResidentRouteFailureClass::ProviderContractMismatch,
+                    "provider planning value does not match the declared observation schema",
+                ));
+            }
+            schema
+                .schema()
+                .instantiate_shape(
+                    planned
+                        .shape()
+                        .parameter_values()
+                        .to_vec()
+                        .into_boxed_slice(),
+                )
+                .map_err(|error| {
+                    route_failure(
+                        ResidentRouteFailureClass::ProviderContractMismatch,
+                        format!(
+                            "provider planning value has an invalid observation shape: {error:?}"
+                        ),
+                    )
+                })?;
+            if let Some(existing) = facts.slot_shapes.insert(target, planned.shape().clone())
+                && existing != *planned.shape()
+            {
+                return Err(route_failure(
+                    ResidentRouteFailureClass::ProviderContractMismatch,
+                    "provider planning values disagree about an observation slot shape",
+                ));
+            }
+        }
+    }
+    Ok(facts)
+}
 fn classify_provider_preflight(error: MechError) -> MechError {
     let kind = error.kind_name();
     let class = match kind.as_str() {

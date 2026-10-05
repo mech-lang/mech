@@ -276,6 +276,9 @@ pub struct FixedShapeIr {
 /// Backend-neutral resident storage for a scalarized fixed-shape region.
 /// Physical backends may assign bindings or convert layouts once when they
 /// compile this plan, but they do not consult the source artifact again.
+/// An output whose physical slot is an input reads the current supplied input,
+/// including before a turn and after a rejected turn. It has no publication
+/// shadow. State and derived publications expose their committed generations.
 #[derive(Clone, Debug, Default)]
 pub struct FixedShapeStoragePlan {
     pub instances: u32,
@@ -303,6 +306,7 @@ pub struct FixedShapeStateStorage {
 
 /// A retained derived result, committed with state only after a successful turn.
 /// Publication buffers begin zeroed and never feed recurrence registers.
+/// Direct input outputs instead alias input storage and are not listed here.
 #[derive(Clone, Debug)]
 pub struct FixedShapePublicationStorage {
     pub slot: CellSlotId,

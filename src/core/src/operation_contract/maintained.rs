@@ -70,6 +70,13 @@ pub fn maintained_operation_contract(
     } else {
         ChangeDetectionPolicy::ExactScalar
     };
+    if matches!(
+        name,
+        "core/assign/identity-indices" | "core/assign/selection-order" | "core/assign/broadcast"
+    ) {
+        return (input_count == 1)
+            .then(|| elementwise_operation_contract(1, ChangeDetectionPolicy::KernelReported));
+    }
     // Compound selected writes have the same addressed RMW contract as a
     // replacement; their numeric operation is retained in the semantic identity.
     let assignment_name = match name.rsplit_once('/') {
@@ -77,7 +84,8 @@ pub fn maintained_operation_contract(
             base @ ("core/assign/indexed-axis"
             | "core/assign/indexed-rows"
             | "core/assign/indexed-columns"
-            | "core/assign/indexed-rectangle"),
+            | "core/assign/indexed-rectangle"
+            | "core/assign/nested"),
             "add" | "sub" | "mul" | "div" | "pow",
         )) => base,
         _ => name,
@@ -89,6 +97,7 @@ pub fn maintained_operation_contract(
         }
         "core/assign/indexed-columns" => Some((3, RegionPolicy::IndexedAxis { axis: 1 })),
         "core/assign/indexed-rectangle" => Some((4, RegionPolicy::RectangularRegion)),
+        "core/assign/nested" if input_count >= 3 => Some((input_count, RegionPolicy::WholeValue)),
         "core/assign/collection-entry" => Some((3, RegionPolicy::CollectionEntry)),
         "core/assign/single-element" => Some((3, RegionPolicy::SingleElement)),
         _ => None,
@@ -244,6 +253,13 @@ pub fn maintained_operation_contract(
             },
             ChangeDetectionPolicy::KernelReported,
         )),
+        "core/enum-pack" if input_count == 2 => Some(declaration(
+            InputPortLayout::Fixed(vec![read(), read()].into_boxed_slice()),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::KernelReported,
+        )),
         "matrix/horzcat"
         | "matrix/vertcat"
         | "matrix/comprehension"
@@ -277,7 +293,7 @@ pub fn maintained_operation_contract(
         }
         "option/some" => Some(full(ShapeRule::Declared)),
         "convert/kind" | "core/assign" => Some(full(ShapeRule::SameAsInput { input: 0 })),
-        "matrix/matmul" | "matrix/multiply" | "matrix/dot" => Some(declaration(
+        "matrix/matmul" | "matrix/dot" => Some(declaration(
             fixed(),
             OutputConstruction::FullWrite {
                 shape: if matrix_output {

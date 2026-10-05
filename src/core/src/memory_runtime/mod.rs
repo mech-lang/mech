@@ -13,6 +13,7 @@ mod identity;
 mod payload;
 mod transaction;
 
+pub(crate) use self::access::RetainedPublicationLease;
 pub use self::access::*;
 pub use self::allocation::{PlannedArenaElement, PlannedArenaProjection};
 pub(crate) use self::budget::ManagedMemoryCharge;

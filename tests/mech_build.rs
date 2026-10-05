@@ -205,41 +205,71 @@ fn compute_metadata_round_trips_but_native_package_products_fail_before_writing(
     let root = temp_root("compute-product-admission");
     let source = root.join("mixed.mec");
     let bytecode = root.join("mixed.mecb");
-    std::fs::write(
-        &source,
-        concat!(
-            "+> math\n\n",
-            "seed := 1\n\n",
-            "kernel @compute\n",
-            "-------------------------------------------------------------------------------\n\n",
-            "answer := seed + 1\n",
-            "answer\n",
-        ),
-    )
-    .unwrap();
-
-    assert_success(
-        run_build(&root, &source, "bytecode", &bytecode, false),
-        "compute source to metadata bytecode",
-    );
-    let parsed = ParsedProgram::from_bytes(&std::fs::read(&bytecode).unwrap()).unwrap();
-    assert!(!parsed.artifact.compute_regions.is_empty());
-
-    for (emit, keep, output) in [
-        ("native", false, root.join("mixed-native")),
-        ("cargo-project", false, root.join("mixed.cargo")),
-        ("plan", false, root.join("mixed.build-plan.json")),
-        ("bytecode", true, root.join("mixed-copy.mecb")),
+    std::fs::write(root.join("dep.mec"), "value := 1f32\n<+ value\n").unwrap();
+    for (heading, placement) in [
+        ("kernel @compute", mech_core::ComputePlacement::Compute),
+        ("A1. kernel @cpu", mech_core::ComputePlacement::Cpu),
+        ("É2. kernel @gpu", mech_core::ComputePlacement::Gpu),
     ] {
-        let result = run_build(&root, &bytecode, emit, &output, keep);
-        let stderr = String::from_utf8_lossy(&result.stderr);
-        assert!(!result.status.success(), "{emit} unexpectedly succeeded");
-        assert!(
-            stderr.contains("cannot package named compute regions"),
-            "{stderr}"
+        std::fs::write(
+            &source,
+            format!(
+                "+> math\n+> ./dep.mec\n\ncoordinator := 0f32\n\n{heading}\n\
+                 -------------------------------------------------------------------------------\n\n\
+                 seed := dep/value\nanswer := seed + 1f32\nanswer\n"
+            ),
+        )
+        .unwrap();
+        assert_success(
+            run_build(&root, &source, "bytecode", &bytecode, false),
+            "compute source to metadata bytecode",
         );
-        assert!(!output.exists(), "{emit} wrote {}", output.display());
-        assert!(!PathBuf::from(format!("{}.project", output.display())).exists());
+        let bytes = std::fs::read(&bytecode).unwrap();
+        let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
+        assert!(!parsed.artifact.compute_regions.is_empty());
+        let artifact = decode_program_artifact_sections(&parsed.artifact).unwrap();
+        assert_eq!(artifact.compute_regions().len(), 1);
+        let region = &artifact.compute_regions()[0];
+        assert_eq!(region.name.as_ref(), "kernel");
+        assert_eq!(region.placement, placement);
+        assert!(!region.nodes.is_empty());
+        assert!(
+            artifact.inputs().is_empty(),
+            "imported values must be bound"
+        );
+        assert_eq!(
+            region.nodes.as_ref(),
+            artifact
+                .nodes()
+                .iter()
+                .map(|node| node.node)
+                .collect::<Vec<_>>()
+        );
+        let copy = root.join("copied.mecb");
+        assert_success(
+            run_build(&root, &bytecode, "bytecode", &copy, false),
+            "metadata bytecode copy",
+        );
+        assert_eq!(std::fs::read(copy).unwrap(), bytes);
+
+        for (emit, keep, output) in [
+            ("native", false, root.join("mixed-native")),
+            ("cargo-project", false, root.join("mixed.cargo")),
+            ("plan", false, root.join("mixed.build-plan.json")),
+            ("bytecode", true, root.join("mixed-copy.mecb")),
+        ] {
+            for input in [&source, &bytecode] {
+                let result = run_build(&root, input, emit, &output, keep);
+                let stderr = String::from_utf8_lossy(&result.stderr);
+                assert!(!result.status.success(), "{emit} unexpectedly succeeded");
+                assert!(
+                    stderr.contains("cannot package named compute regions"),
+                    "{stderr}"
+                );
+                assert!(!output.exists(), "{emit} wrote {}", output.display());
+                assert!(!PathBuf::from(format!("{}.project", output.display())).exists());
+            }
+        }
     }
 
     std::fs::remove_dir_all(root).unwrap();

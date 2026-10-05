@@ -4,9 +4,9 @@ use crate::{FloatWidth, IntegerWidth, SchemaBody, SchemaTable};
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, vec::Vec};
+use std::{boxed::Box, vec, vec::Vec};
 
 pub(super) trait SnapshotByteSink {
     fn write(&mut self, bytes: &[u8]);
@@ -29,6 +29,19 @@ impl VecSnapshotSink {
 impl SnapshotByteSink for VecSnapshotSink {
     fn write(&mut self, bytes: &[u8]) {
         self.bytes.extend_from_slice(bytes);
+    }
+}
+
+struct FixedSnapshotSink<'a> {
+    bytes: &'a mut [u8],
+    offset: usize,
+}
+
+impl SnapshotByteSink for FixedSnapshotSink<'_> {
+    fn write(&mut self, bytes: &[u8]) {
+        let end = self.offset + bytes.len();
+        self.bytes[self.offset..end].copy_from_slice(bytes);
+        self.offset = end;
     }
 }
 
@@ -314,9 +327,26 @@ impl Value {
 }
 
 pub(super) fn canonical_material(schema: &SchemaBody, data: &ValueData) -> Box<[u8]> {
-    let mut sink = VecSnapshotSink::new();
+    let length = canonical_data_payload_len(schema, data);
+    canonical_material_with_len(schema, data, length)
+}
+
+pub(super) fn canonical_material_with_len(
+    schema: &SchemaBody,
+    data: &ValueData,
+    length: usize,
+) -> Box<[u8]> {
+    let mut bytes = vec![0; length].into_boxed_slice();
+    let mut sink = FixedSnapshotSink {
+        bytes: &mut bytes,
+        offset: 0,
+    };
     encode_data(schema, data, &mut sink);
-    sink.finish()
+    assert_eq!(
+        sink.offset, length,
+        "canonical payload length changed during encoding"
+    );
+    bytes
 }
 
 /// Returns the canonical payload length for already validated schema-directed
@@ -385,6 +415,9 @@ fn visit_sequence_work<E>(
     count_encoded: bool,
     visitor: &mut impl FnMut(CanonicalDataWork) -> Result<(), E>,
 ) -> Result<(), CanonicalDataWorkError<E>> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return visit_sequence_work(&interval.base_body(), values, count_encoded, visitor);
+    }
     let fixed = match (schema, values) {
         (SchemaBody::UnsignedInteger(IntegerWidth::W8), SequenceStorage::U8(values)) => {
             Some((values.len(), core::mem::size_of::<u8>()))
@@ -484,6 +517,9 @@ fn visit_data_work<E>(
     count_encoded: bool,
     visitor: &mut impl FnMut(CanonicalDataWork) -> Result<(), E>,
 ) -> Result<(), CanonicalDataWorkError<E>> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return visit_data_work(&interval.base_body(), data, count_encoded, visitor);
+    }
     let scalar = match (schema, data) {
         (SchemaBody::Bool, ValueData::Bool(_)) => Some(1),
         (SchemaBody::UnsignedInteger(IntegerWidth::W8), ValueData::U8(_))
@@ -967,6 +1003,9 @@ fn retained_data_footprint(
     schema: &SchemaBody,
     data: &ValueData,
 ) -> Result<ValueFootprint, ValueFootprintError> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return retained_data_footprint(&interval.base_body(), data);
+    }
     let inline = checked_size_of::<ValueData>()?;
     match (schema, data) {
         (SchemaBody::Dynamic, ValueData::Dynamic(value)) => {
@@ -1109,6 +1148,9 @@ fn retained_data_footprint(
 }
 
 pub(super) fn encode_data(schema: &SchemaBody, data: &ValueData, sink: &mut dyn SnapshotByteSink) {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return encode_data(&interval.base_body(), data, sink);
+    }
     match (schema, data) {
         (SchemaBody::Dynamic, ValueData::Dynamic(value)) => sink.write(&value.canonical),
         (SchemaBody::Bool, ValueData::Bool(value)) => write_u8(sink, u8::from(*value)),

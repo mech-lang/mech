@@ -15,6 +15,46 @@ SPEC.loader.exec_module(CHECKER)
 
 
 class RetiredValueSystemAbsenceTests(unittest.TestCase):
+    def test_masking_does_not_copy_unconsumed_source_suffixes(self):
+        class BorrowedSource(str):
+            def __getitem__(self, key):
+                if isinstance(key, slice) and key.start is not None and key.stop is None:
+                    raise AssertionError("masking copied the unconsumed source suffix")
+                return super().__getitem__(key)
+
+        source = BorrowedSource(
+            "fn borrowed<'a>(value: &'a str) -> &'a str { value }\n" * 128
+            + 'const RAW: &str = br###"LegacyValue\nKind"###;\n'
+            + "pub mod legacy_adapter {}\n"
+        )
+        masked = CHECKER.mask_non_code(source)
+        self.assertEqual(len(masked), len(source))
+        self.assertEqual(
+            [index for index, char in enumerate(masked) if char == "\n"],
+            [index for index, char in enumerate(source) if char == "\n"],
+        )
+        self.assertNotIn("LegacyValue", masked)
+        self.assertNotIn("Kind", masked)
+        self.assertIn("fn borrowed<'a>", masked)
+        self.assertIn("pub mod legacy_adapter {}", masked)
+
+    def test_offset_raw_matches_preserve_unicode_and_following_code(self):
+        for prefix in ("r", "br", "rb"):
+            for hashes in ("", "#", "###", "#" * 255):
+                with self.subTest(prefix=prefix, hashes=len(hashes)):
+                    source = (
+                        "fn α<'a>(value: &'a str) {}\n"
+                        + f'const MESSAGE: &str = {prefix}{hashes}"LegacyValue\nλ"{hashes};\n'
+                        + "pub enum Kind { Any }\n"
+                    )
+                    masked = CHECKER.mask_non_code(source)
+                    self.assertEqual(len(masked), len(source))
+                    self.assertEqual(masked.count("\n"), source.count("\n"))
+                    self.assertNotIn("LegacyValue", masked)
+                    self.assertNotIn("λ", masked)
+                    self.assertIn("fn α<'a>", masked)
+                    self.assertIn("pub enum Kind { Any }", masked)
+
     def fixture(self, source: str = "pub struct Canonical;\n") -> Path:
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

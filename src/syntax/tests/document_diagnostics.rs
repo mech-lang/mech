@@ -1,9 +1,10 @@
 use mech_syntax::document::{
     Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticFix, DiagnosticId, DiagnosticLabel,
     DiagnosticPhase, DiagnosticStore, DiagnosticTags, DocumentId, ExpectedSyntax, FixApplicability,
-    FoundSyntax, GreenBuilder, IdGenerator, NodeIndex, RecoveryAction, Revision, Severity,
-    SyntaxElementId, SyntaxKind, TextEdit, TextRange, TextSize, TextSnapshot,
-    normalize_diagnostics, render_plain,
+    FoundSyntax, GreenBuilder, IdGenerator, NodeIndex, ParseConfig, RecoveryAction, Revision,
+    Severity, SyntaxElementId, SyntaxKind, TextEdit, TextRange, TextSize, TextSnapshot,
+    normalize_diagnostics, parse_canonical_document, reconstruct_source, render_plain,
+    validate_lossless,
 };
 
 fn paragraph_tree(
@@ -43,6 +44,8 @@ fn structural_anchor_moves_with_reused_node() {
 
 #[test]
 fn structured_diagnostic_serializes_and_renders() {
+    // This hand-built schema fixture deliberately covers labels and placeholder
+    // edits independently of whichever diagnostics the canonical grammar emits.
     let text = "x := 1 +";
     let source = TextSnapshot::new(DocumentId(9), Revision(2), text).unwrap();
     let (root, _) = paragraph_tree(text);
@@ -54,7 +57,7 @@ fn structured_diagnostic_serializes_and_renders() {
         severity: Severity::Error,
         rule: mech_syntax::document::parser::canonical_rule_id("expression"),
         context: Some(mech_syntax::document::parser::parser_context_id(
-            "prototype-expression",
+            "diagnostic-fixture",
         )),
         primary: DiagnosticAnchor::Absolute {
             revision: Revision(2),
@@ -111,4 +114,70 @@ fn structured_diagnostic_serializes_and_renders() {
     assert_eq!(normalized[0].fixes.len(), 1);
     assert_eq!(normalized[0].recovery, diagnostic.recovery);
     assert_eq!(normalized[0].tags, diagnostic.tags);
+}
+
+#[test]
+fn canonical_missing_closer_retains_position_and_applicable_repair() {
+    let text = "💡 := (1 + 2";
+    let snapshot = parse_canonical_document(
+        TextSnapshot::new(DocumentId(10), Revision(3), text).unwrap(),
+        ParseConfig::default(),
+    );
+    validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+    assert_eq!(
+        reconstruct_source(&snapshot.root, &snapshot.source).unwrap(),
+        text
+    );
+    let diagnostic = snapshot
+        .diagnostics
+        .iter()
+        .find(|diagnostic| diagnostic.code.as_str() == "syntax/missing-delimiter")
+        .expect("canonical missing closing parenthesis");
+    assert!(
+        diagnostic
+            .rule
+            .and_then(mech_syntax::document::parser::canonical_rule_name)
+            .is_some()
+    );
+    assert_eq!(diagnostic.context, None);
+    assert_eq!(
+        diagnostic.expected,
+        vec![ExpectedSyntax::Token(SyntaxKind::RightParen)]
+    );
+    let normalized =
+        normalize_diagnostics(&snapshot.diagnostics, snapshot.revision, &snapshot.nodes);
+    assert_eq!(normalized.len(), 1);
+    assert_eq!(normalized[0].code, diagnostic.code);
+    assert_eq!(
+        normalized[0].primary,
+        diagnostic
+            .primary
+            .resolve(snapshot.revision, &snapshot.nodes)
+    );
+    assert!(normalized[0].primary.unwrap().is_empty());
+    assert!(
+        snapshot
+            .diagnostics
+            .to_json()
+            .unwrap()
+            .contains("syntax/missing-delimiter")
+    );
+    assert!(
+        render_plain(diagnostic, &snapshot.source, &snapshot.nodes)
+            .contains("missing closing delimiter")
+    );
+    let fix = diagnostic
+        .fixes
+        .first()
+        .expect("canonical closer insertion fix");
+    assert_eq!(fix.applicability, FixApplicability::MachineApplicable);
+    let repaired = snapshot.source.apply_edits(&fix.edits).unwrap();
+    let repaired = parse_canonical_document(repaired, ParseConfig::default());
+    assert!(repaired.is_strictly_clean(), "{:#?}", repaired.diagnostics);
+    validate_lossless(&repaired.root, &repaired.source).unwrap();
+    assert!(
+        reconstruct_source(&repaired.root, &repaired.source)
+            .unwrap()
+            .contains("2)")
+    );
 }

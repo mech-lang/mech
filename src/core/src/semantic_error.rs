@@ -116,6 +116,7 @@ pub enum SemanticModelError {
         name: String,
     },
     SchemaNotKeyableV1,
+    InvalidIntegerIntervalV1,
     ShapeParameterCountMismatchV1 {
         expected: u32,
         actual: u32,

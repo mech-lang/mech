@@ -153,6 +153,39 @@ pub struct ResidentProductionProbe {
     pub scene_effects_for_rejected_turns: u64,
 }
 
+impl ResidentProductionProbe {
+    pub(crate) fn observe_structural_delta(
+        &mut self,
+        before: super::external::ResidentExternalStructuralProbe,
+        after: super::external::ResidentExternalStructuralProbe,
+    ) {
+        self.scene_effects_before_publication =
+            self.scene_effects_before_publication.saturating_add(
+                after
+                    .effects_delivered_before_publication
+                    .saturating_sub(before.effects_delivered_before_publication)
+                    as u64,
+            );
+        self.scene_effects_for_rejected_turns =
+            self.scene_effects_for_rejected_turns.saturating_add(
+                after
+                    .effects_delivered_for_rejected_turns
+                    .saturating_sub(before.effects_delivered_for_rejected_turns)
+                    as u64,
+            );
+        self.scene_effects_prepared = self.scene_effects_prepared.saturating_add(
+            after
+                .scene_effects_prepared
+                .saturating_sub(before.scene_effects_prepared) as u64,
+        );
+        self.scene_effects_delivered = self.scene_effects_delivered.saturating_add(
+            after
+                .scene_effects_delivered
+                .saturating_sub(before.scene_effects_delivered) as u64,
+        );
+    }
+}
+
 impl crate::runtime::MechRuntime {
     pub fn resident_production_probe(&self) -> ResidentProductionProbe {
         self.resident_production_probe
@@ -163,15 +196,30 @@ impl crate::runtime::MechRuntime {
         max_inputs: usize,
     ) -> mech_core::MResult<ResidentHostDrainOutcome> {
         self.revalidate_active_resident_grants()?;
-        let trigger_sources = if let super::ActiveProgramExecution::ResidentExternal(execution) =
-            &self.active_program
-        {
-            execution.trigger_sources.clone()
-        } else {
-            return Err(super::invalid_active_program(
-                "resident host draining requires an active external resident program",
-            ));
-        };
+        let continuation_ready = matches!(
+            &self.active_program,
+            super::ActiveProgramExecution::ResidentExternal(execution)
+                if execution.coordinator.instance().continuation_wakeup().is_some()
+        );
+        if continuation_ready {
+            // Continuations belong to the host turn that created them. Keep
+            // later packets queued until that turn has either drained or
+            // failed, so live input reads cannot observe a newer packet out
+            // of order.
+            self.drain_resident_continuations()?;
+        }
+        let (trigger_sources, input_sources) =
+            if let super::ActiveProgramExecution::ResidentExternal(execution) = &self.active_program
+            {
+                (
+                    execution.trigger_sources.clone(),
+                    execution.input_sources.clone(),
+                )
+            } else {
+                return Err(super::invalid_active_program(
+                    "resident host draining requires an active external resident program",
+                ));
+            };
         let mut packets = Vec::new();
         let mut coalescing_group = None::<Option<crate::input::RuntimeHostInputCoalescingGroup>>;
         for _ in 0..max_inputs {
@@ -202,27 +250,44 @@ impl crate::runtime::MechRuntime {
         }
 
         let mut matched_packets = 0;
+        let mut triggered_packets = 0;
         let mut latest_updates = BTreeMap::new();
         for packet in &packets {
             let mut matched = false;
+            let mut triggered = false;
             for update in &packet.updates {
+                if input_sources.iter().any(|source| source == &update.source) {
+                    matched = true;
+                    latest_updates.insert(update.source.clone(), update.value.clone());
+                }
                 if trigger_sources
                     .iter()
                     .any(|source| source == &update.source)
                 {
-                    matched = true;
-                    latest_updates.insert(update.source.clone(), update.value.clone());
+                    triggered = true;
                 }
             }
             matched_packets += usize::from(matched);
+            triggered_packets += usize::from(triggered);
         }
         let latest_updates = latest_updates
             .into_iter()
             .map(|(source, value)| crate::RuntimeHostInputUpdate { source, value })
             .collect::<Vec<_>>();
         let ignored_packets = packets.len().saturating_sub(matched_packets);
-        let coalesced_packets = matched_packets.saturating_sub(1);
-        let turn = if matched_packets == 0 {
+        let coalesced_packets = triggered_packets.saturating_sub(1);
+        let turn = if triggered_packets == 0 {
+            if !latest_updates.is_empty() {
+                let super::ActiveProgramExecution::ResidentExternal(execution) =
+                    &mut self.active_program
+                else {
+                    unreachable!("resident route checked before ingress dequeue")
+                };
+                if let Err(error) = execution.coordinator.sample_host_updates(&latest_updates) {
+                    self.restore_resident_host_packets(packets)?;
+                    return Err(error);
+                }
+            }
             None
         } else {
             let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
@@ -259,41 +324,7 @@ impl crate::runtime::MechRuntime {
             )?;
             let after = execution.coordinator.structural_probe();
             self.resident_production_probe
-                .scene_effects_before_publication = self
-                .resident_production_probe
-                .scene_effects_before_publication
-                .saturating_add(
-                    after
-                        .effects_delivered_before_publication
-                        .saturating_sub(before.effects_delivered_before_publication)
-                        as u64,
-                );
-            self.resident_production_probe
-                .scene_effects_for_rejected_turns = self
-                .resident_production_probe
-                .scene_effects_for_rejected_turns
-                .saturating_add(
-                    after
-                        .effects_delivered_for_rejected_turns
-                        .saturating_sub(before.effects_delivered_for_rejected_turns)
-                        as u64,
-                );
-            self.resident_production_probe.scene_effects_prepared = self
-                .resident_production_probe
-                .scene_effects_prepared
-                .saturating_add(
-                    after
-                        .scene_effects_prepared
-                        .saturating_sub(before.scene_effects_prepared) as u64,
-                );
-            self.resident_production_probe.scene_effects_delivered = self
-                .resident_production_probe
-                .scene_effects_delivered
-                .saturating_add(
-                    after
-                        .scene_effects_delivered
-                        .saturating_sub(before.scene_effects_delivered) as u64,
-                );
+                .observe_structural_delta(before, after);
             match &turn {
                 crate::ResidentExternalTurnOutcome::Accepted { .. } => {
                     self.program_execution_info.resident_accepted_turns = self
@@ -337,6 +368,13 @@ impl crate::runtime::MechRuntime {
             .program_execution_info
             .coalesced_host_packets
             .saturating_add(coalesced_packets as u64);
+
+        if matches!(
+            turn,
+            Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+        ) {
+            self.drain_resident_continuations()?;
+        }
 
         Ok(ResidentHostDrainOutcome {
             dequeued_packets: packets.len(),

@@ -24,7 +24,20 @@ fn json(relative: &str) -> Value {
 #[test]
 fn ordinary_ekf_resident_source_parses_without_grammar_changes() {
     let source = read("tests/architecture/resident-activation/ekf-source-v1.mec");
-    mech_syntax::parser::parse(&source).expect("the frozen ordinary source must parse completely");
+    let parsed = mech_syntax::document::parse_canonical_document(
+        mech_syntax::document::TextSnapshot::new(
+            mech_syntax::document::DocumentId(0xE4F),
+            mech_syntax::document::Revision(1),
+            source.as_str(),
+        )
+        .unwrap(),
+        mech_syntax::document::ParseConfig::default(),
+    );
+    assert!(
+        parsed.diagnostics.is_empty(),
+        "the frozen ordinary source must parse completely: {:?}",
+        parsed.diagnostics
+    );
     assert!(source.contains(
         "finite-candidate! := ekf/candidate-finite(corrected-state,\n  symmetrized-covariance)"
     ));

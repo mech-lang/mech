@@ -425,6 +425,11 @@ fn rejected_artifact_record(
     failure: ArtifactResidentExecutionError,
 ) -> MResult<ResidentTurnRecord> {
     let (phase, kind, message) = match failure {
+        ArtifactResidentExecutionError::PlanningStepLimit { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentPlanningStepLimit",
+            "resident planning exceeded its configured step limit",
+        ),
         ArtifactResidentExecutionError::MemoryRuntime { .. } => (
             TurnFailurePhase::Execution,
             "ResidentMemoryRuntime",

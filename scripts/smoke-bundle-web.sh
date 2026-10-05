@@ -142,7 +142,7 @@ from pathlib import Path
 import sys
 
 manifest = json.loads(Path(sys.argv[1]).read_text())
-if manifest.get("version") != 3:
+if manifest.get("version") != 4:
     raise SystemExit(f"unexpected source manifest version: {manifest!r}")
 sources = manifest.get("sources")
 if not isinstance(sources, list):
@@ -155,8 +155,10 @@ if pairs != expected:
     raise SystemExit(f"unexpected source manifest entries: {manifest!r}")
 if manifest.get("roots") != ["demo.mec"]:
     raise SystemExit(f"unexpected source manifest roots: {manifest!r}")
-if sources[0].get("artifactUrl") != "code/demo.mec":
-    raise SystemExit(f"root source has no canonical artifact: {sources!r}")
+if manifest.get("resolutions") != []:
+    raise SystemExit(f"unexpected source manifest resolutions: {manifest!r}")
+if sources[0].get("documentUrl") != "code/demo.mec":
+    raise SystemExit(f"root source has no canonical document payload: {sources!r}")
 PY
 
 set +e

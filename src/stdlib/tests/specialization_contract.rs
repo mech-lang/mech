@@ -8,9 +8,10 @@
 use mech_core::snapshot::F64Bits;
 use mech_core::{
     ApplicationRequirement, BytecodeCompilerContext, CardinalitySpec, EncodedConstant, FloatWidth,
-    FunctionCatalog, MResult, OperationId, Ref, Register, ResolvedCall, SchemaBody,
-    SourceTypeAuthority, SpecializationContext, SpecializationInvocation, TypeConstraintOrigin,
-    TypeOverloadCandidate, ValueCell, ValueDataDraft, hash_str, resolve_type_overloads,
+    FunctionCatalog, FunctionTypeDeclaration, MResult, OperationId, Ref, Register, ResolvedCall,
+    SchemaBody, SourceTypeAuthority, SpecializationContext, SpecializationInvocation,
+    TypeConstraintOrigin, TypeOverloadCandidate, ValueCell, ValueDataDraft, hash_str,
+    instantiate_source_scheme_template, resolve_type_overloads,
 };
 use nalgebra::{DMatrix, DVector, Matrix2, Vector2};
 use serde::Deserialize;
@@ -345,11 +346,12 @@ fn canonical_specialization_preserves_the_frozen_operation_factory_and_storage_c
         let SourceTypeAuthority::Schemes(declaration) = &specializer.type_authority else {
             panic!("{} must have a semantic type declaration", case.name)
         };
-        assert!(
-            declaration.template.is_none(),
-            "{} unexpectedly requires an arity-derived scheme",
-            case.name,
-        );
+        let instantiated = declaration.template.map(|template| {
+            let schemes = instantiate_source_scheme_template(template, &original_inputs)
+                .unwrap_or_else(|error| panic!("{} semantic template: {error:?}", case.name));
+            FunctionTypeDeclaration::from_schemes(schemes)
+        });
+        let declaration = instantiated.as_ref().unwrap_or(declaration);
         let candidates = declaration
             .overloads
             .iter()

@@ -216,7 +216,11 @@ fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
         .iter()
         .find_map(|step| match step {
             mech_engine::ComprehensionStep::Operation(operation)
-                if operation.operation.canonical_name() == "math/add" =>
+                if matches!(
+                    &operation.body,
+                    mech_engine::ControlOperationBody::Operation { operation, .. }
+                        if operation.canonical_name() == "math/add"
+                ) =>
             {
                 Some(operation)
             }
@@ -1397,10 +1401,9 @@ fn c32_invalid_kind_combinations_remain_source_semantic_errors() {
 #[cfg(all(feature = "resident-artifact", feature = "full_source"))]
 #[test]
 fn c32_arithmetic_availability_is_a_resident_target_capability() {
-    use mech_core::{ExecutionTarget, FunctionCatalogBuilder, NodeId, ResidentKernelBindError};
+    use mech_core::{ExecutionTarget, FunctionCatalogBuilder, NodeId};
     use mech_engine::resident::{
-        ActivationFacts, ResidentActivationError, ResidentActivationOptions, preflight_activation,
-        preflight_resident_target,
+        ActivationFacts, ResidentActivationOptions, preflight_activation, preflight_resident_target,
     };
     let mut builder = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut builder).unwrap();
@@ -1428,40 +1431,35 @@ fn c32_arithmetic_availability_is_a_resident_target_capability() {
                 &ActivationFacts::default(),
                 ResidentActivationOptions::default(),
             )
-            .unwrap_err();
-            assert_eq!(
-                binding,
-                ResidentActivationError::KernelBind {
-                    node,
-                    // Multiplication's final row-form fallback reports its
-                    // contract mismatch after rejecting the scalar layout.
-                    error: if operation == "math/mul" {
-                        ResidentKernelBindError::UnsupportedContract
-                    } else {
-                        ResidentKernelBindError::UnsupportedLayout
-                    }
-                },
-                "{source}"
-            );
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
             let capability = preflight_resident_target(
                 artifact,
                 &catalog,
                 &ActivationFacts::default(),
                 ResidentActivationOptions::default(),
             )
-            .unwrap_err();
-            assert_eq!(capability.target, ExecutionTarget::ResidentCpu);
-            assert_eq!(capability.node, Some(node));
-            assert_eq!(capability.operation.unwrap().canonical_name(), operation);
-            assert_eq!(capability.reason, format!("{binding:?}"));
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+            assert_eq!(binding.concrete_cases, capability.concrete_cases);
+            let case = capability
+                .concrete_cases
+                .iter()
+                .find(|case| case.node == node)
+                .expect("arithmetic node must retain its concrete capability");
+            assert_eq!(case.operation.canonical_name(), operation, "{source}");
+            assert!(
+                case.targets.contains(ExecutionTarget::ResidentCpu),
+                "{source}"
+            );
         }
     }
 }
 
 #[cfg(all(feature = "resident-artifact", feature = "full_source"))]
 #[test]
-fn resident_supports_c32_literal_storage_and_c64_arithmetic_execution() {
-    use mech_core::snapshot::{Complex64Bits, F64Bits, SnapshotValidationContext};
+fn resident_supports_complex_literal_storage_and_arithmetic_execution() {
+    use mech_core::snapshot::{
+        Complex32Bits, Complex64Bits, F32Bits, F64Bits, SnapshotValidationContext,
+    };
     use mech_core::{
         FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueData, ValueDataDraft,
         ValueDraft,
@@ -1475,6 +1473,9 @@ fn resident_supports_c32_literal_storage_and_c64_arithmetic_execution() {
     let catalog = builder.build().unwrap();
     for (source, literal, scale, offset) in [
         ("1+2i<c32>", true, 1.0, 0.0),
+        ("signal<c32> + 1<c32>", false, 1.0, 1.0),
+        ("signal<c32> * 2<c32>", false, 2.0, 0.0),
+        ("-(signal<c32>)", false, -1.0, 0.0),
         ("signal<c64> + 1<c64>", false, 1.0, 1.0),
         ("signal<c64> * 2<c64>", false, 2.0, 0.0),
     ] {
@@ -1505,10 +1506,17 @@ fn resident_supports_c32_literal_storage_and_c64_arithmetic_execution() {
                         ValueDraft {
                             schema: artifact.inputs()[0].schema,
                             shape_values: Box::new([]),
-                            data: ValueDataDraft::Complex64(Complex64Bits::new(
-                                F64Bits::from_f64(number),
-                                F64Bits::from_f64(2.0),
-                            )),
+                            data: if source.contains("<c32>") {
+                                ValueDataDraft::Complex32(Complex32Bits::new(
+                                    F32Bits::from_f32(number as f32),
+                                    F32Bits::from_f32(2.0),
+                                ))
+                            } else {
+                                ValueDataDraft::Complex64(Complex64Bits::new(
+                                    F64Bits::from_f64(number),
+                                    F64Bits::from_f64(2.0),
+                                ))
+                            },
                         }
                         .finalize(&SnapshotValidationContext::new(artifact.schemas()))
                         .unwrap(),
@@ -1528,6 +1536,10 @@ fn resident_supports_c32_literal_storage_and_c64_arithmetic_execution() {
                 if literal {
                     assert!(
                         matches!(result.data(), ValueData::Complex32(value) if value.real().to_f32() == 1.0 && value.imaginary().to_f32() == 2.0)
+                    );
+                } else if source.contains("<c32>") {
+                    assert!(
+                        matches!(result.data(), ValueData::Complex32(value) if f64::from(value.real().to_f32()) == number * scale + offset && f64::from(value.imaginary().to_f32()) == 2.0 * scale)
                     );
                 } else {
                     assert!(
@@ -2390,5 +2402,57 @@ fn review_ordered_extrema_infer_their_peer_at_the_artifact_boundary() {
                 .body(),
             &SchemaBody::FloatingPoint(FloatWidth::W64)
         );
+    }
+}
+
+#[test]
+fn fixed_matrix_snapshots_bind_to_inferred_input_dimensions() {
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_core::{DimensionExpr, SchemaDraft, SchemaTableBuilder};
+    for (rows, columns) in [(2, 2), (1, 4), (3, 1)] {
+        let mut table = SchemaTableBuilder::new();
+        let handle = table
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Constant(rows),
+                            DimensionExpr::Constant(columns),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = table.finish().unwrap();
+        let schema = built.resolve(handle).unwrap();
+        let (table, _) = built.into_parts();
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                (0..rows * columns)
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&table))
+        .unwrap();
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression("matrix<[u64]>"))
+            .unwrap()
+            .bind_input_constants(&[(0, value)])
+            .unwrap();
+        assert!(compiled.program().inputs.is_empty());
+        let SourceValue::Constant(id) = compiled.program().outputs[0].source else {
+            panic!("bound input must become constant");
+        };
+        let value = compiled.constants().get(id).unwrap();
+        assert_eq!(value.shape().parameter_values(), &[rows, columns]);
     }
 }

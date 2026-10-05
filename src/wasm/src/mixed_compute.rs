@@ -13,7 +13,7 @@ use mech_compute::{
     ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputePortId,
     ComputeProgram, ComputeSession, ComputeValue, TensorLayout, WGPU_BACKEND,
 };
-use mech_core::{MResult, MechError, MechErrorKind, Program};
+use mech_core::{MResult, MechError, MechErrorKind};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
     ComputeHostFactory, ComputeHostStateSnapshotHandle, ComputeLowerer, CpuScalarBackendFactory,
@@ -21,10 +21,10 @@ use mech_gpu::{
 };
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
-    MechRuntime, RuntimeBuilder, RuntimeHostFactory, RuntimeHostInput, RuntimeHostInputDriver,
-    RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeHostInstallation,
-    RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest, SourceDocument,
-    materialize_host_manifest, parse_config_document,
+    MechRuntime, ModuleBuildOptions, RuntimeBuilder, RuntimeHostFactory, RuntimeHostInput,
+    RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue,
+    RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    SourceDocument, SourceRequest, materialize_host_manifest, parse_config_document,
 };
 use mech_syntax::document::{ParseConfig, Revision};
 use wasm_bindgen::prelude::*;
@@ -54,6 +54,7 @@ impl WasmMixedComputeProject {
         source: &str,
         backend_override: &str,
         gpu_available: bool,
+        provenance: JsValue,
     ) -> Result<WasmMixedComputeProject, JsValue> {
         let document = parse_config_document(
             "browser-project/mech.mcfg",
@@ -62,13 +63,25 @@ impl WasmMixedComputeProject {
         )
         .map_err(js_error)?;
         let parse_started = Instant::now();
-        let source_document = SourceDocument::parse_resolved(
+        let mut source_document = SourceDocument::parse_resolved(
             "browser:mixed-compute",
             Revision(0),
             Arc::<str>::from(source),
             ParseConfig::default(),
         )
         .map_err(|error| js_error(mixed_error(format!("invalid retained source: {error:?}"))))?;
+        if !provenance.is_undefined() && !provenance.is_null() {
+            let retained: crate::project::ServedSourceProvenance =
+                serde_wasm_bindgen::from_value(provenance).map_err(|decode_error| {
+                    JsValue::from_str(&format!(
+                        "invalid browser compute nominal provenance: {decode_error}"
+                    ))
+                })?;
+            source_document = source_document.with_nominal_origin(retained.nominal_origin);
+            if let Some(package_id) = retained.nominal_package_id {
+                source_document = source_document.with_nominal_package_id(package_id);
+            }
+        }
         source_document
             .index()
             .map_err(|error| js_error(MechError::new(error, None)))?;
@@ -382,29 +395,14 @@ pub(crate) fn prepare_browser_compute_runtime(
             backend_override,
         } => (1, None, Some(outputs), Some(backend_override)),
     };
-    let command = ComputeCommandHandle::new(prepared.region.clone(), generation);
-    let registry = match outputs {
-        Some(outputs) => browser_compute_backend_registry(command.clone(), outputs, gpu_available)?,
-        None => browser_resident_compute_backend_registry(command.clone(), gpu_available)?,
-    };
-    let mut factory = ComputeHostFactory::new(
-        prepared.region.clone(),
-        prepared.placement,
-        prepared.program.clone(),
-        prepared.initializers.clone(),
-        registry,
-        ComputePlatform::Browser,
-    )?
-    .with_retained_outputs(prepared.retained_outputs.clone())?;
-    if let Some(backend_override) = backend_override.filter(|value| !value.is_empty()) {
-        factory = factory.with_backend_override(
-            BackendRequest::parse(backend_override)
-                .map_err(|failure| mixed_error(failure.to_string()))?,
-        );
-    }
-    let backend = factory
-        .resolved_backend_id(&document.hosts[compute_index].settings)?
-        .to_string();
+    let (mut factory, command, backend) = prepare_browser_compute_factory(
+        document,
+        &prepared,
+        gpu_available,
+        generation,
+        outputs,
+        backend_override,
+    )?;
     let manifest = gpu_program_manifest(
         prepared.kernel.plan_source(),
         &initializer_values(&prepared.program, &prepared.initializers)?,
@@ -413,6 +411,37 @@ pub(crate) fn prepare_browser_compute_runtime(
         prepared.timings,
     )
     .map_err(|failure| mixed_error(format!("browser compute manifest failed: {failure:?}")))?;
+    // Carry the validated source request to the asynchronous bridge. The
+    // serialized host-authority object is not the parsed ConfigValue settings.
+    let requested_backend = backend_override
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| match &document.hosts[compute_index].settings {
+            ConfigValue::Map(settings) => match settings.get("backend") {
+                Some(ConfigValue::String(backend)) => backend.as_str(),
+                _ => "auto",
+            },
+            _ => "auto",
+        });
+    Reflect::set(
+        &manifest,
+        &JsValue::from_str("region"),
+        &JsValue::from_str(&prepared.region),
+    )
+    .map_err(|failure| {
+        mixed_error(format!(
+            "browser compute manifest region failed: {failure:?}"
+        ))
+    })?;
+    Reflect::set(
+        &manifest,
+        &JsValue::from_str("requestedBackend"),
+        &JsValue::from_str(requested_backend),
+    )
+    .map_err(|failure| {
+        mixed_error(format!(
+            "browser compute manifest backend failed: {failure:?}"
+        ))
+    })?;
     let physical_revision = Reflect::get(&manifest, &JsValue::from_str("physicalRevision"))
         .map_err(|failure| {
             mixed_error(format!(
@@ -448,6 +477,53 @@ pub(crate) fn prepare_browser_compute_runtime(
     })
 }
 
+/// Admission shares live browser backend selection, but creates no manifest,
+/// device, session, activation, or turn. Capability is checked independently of
+/// the publisher machine's adapter availability.
+#[cfg(feature = "served_project_authority")]
+pub(crate) fn prepare_browser_compute_admission_factory(
+    document: &MechConfigDocument,
+    prepared: &PreparedComputeRegion,
+) -> MResult<ComputeHostFactory> {
+    prepare_browser_compute_factory(document, prepared, true, 1, None, None)
+        .map(|(factory, _, _)| factory)
+}
+
+fn prepare_browser_compute_factory(
+    document: &MechConfigDocument,
+    prepared: &PreparedComputeRegion,
+    gpu_available: bool,
+    generation: u64,
+    outputs: Option<BrowserOutputHandle>,
+    backend_override: Option<&str>,
+) -> MResult<(ComputeHostFactory, ComputeCommandHandle, String)> {
+    let compute_index = configured_host_index(document, "compute")?;
+    let command = ComputeCommandHandle::new(prepared.region.clone(), generation);
+    let registry = match outputs {
+        Some(outputs) => browser_compute_backend_registry(command.clone(), outputs, gpu_available)?,
+        None => browser_resident_compute_backend_registry(command.clone(), gpu_available)?,
+    };
+    let mut factory = ComputeHostFactory::new(
+        prepared.region.clone(),
+        prepared.placement,
+        prepared.program.clone(),
+        prepared.initializers.clone(),
+        registry,
+        ComputePlatform::Browser,
+    )?
+    .with_retained_outputs(prepared.retained_outputs.clone())?;
+    if let Some(backend_override) = backend_override.filter(|value| !value.is_empty()) {
+        factory = factory.with_backend_override(
+            BackendRequest::parse(backend_override)
+                .map_err(|failure| mixed_error(failure.to_string()))?,
+        );
+    }
+    let backend = factory
+        .resolved_backend_id(&document.hosts[compute_index].settings)?
+        .to_string();
+    Ok((factory, command, backend))
+}
+
 #[derive(Debug)]
 pub(crate) enum PreparedGpuKernel {
     Elementwise(ElementwiseKernel),
@@ -468,34 +544,6 @@ impl PreparedGpuKernel {
             Self::FixedShape(program) => GpuKernelPlanSource::FixedShape(program),
         }
     }
-}
-
-#[cfg(test)]
-fn compile_named_compute_region(
-    document: &MechConfigDocument,
-    tree: &Program,
-    parsing: f64,
-    pointer: PointerInputHandle,
-) -> MResult<PreparedComputeRegion> {
-    let compiler_started = Instant::now();
-    let mut builder = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_native_plan_catalog())
-        .host_factory(Box::new(PointerHostFactory::new(pointer)))?;
-    for host in document
-        .hosts
-        .iter()
-        .filter(|host| host.provider != "compute")
-    {
-        builder = builder.host_instance(host.clone());
-    }
-    if let Some(run) = &document.run {
-        for grant in &run.grants {
-            builder = builder.run_resource_grant(grant.clone());
-        }
-    }
-    let mut compiler = builder.build_compiler()?;
-    let catalog_setup = milliseconds(compiler_started);
-    prepare_compute_region(&mut compiler, tree, parsing, catalog_setup)
 }
 
 fn compile_named_compute_document_region(
@@ -536,15 +584,14 @@ pub(crate) fn prepare_compute_document_region(
     finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
 }
 
-pub(crate) fn prepare_compute_region(
+pub(crate) fn prepare_compute_root_region(
     compiler: &mut mech_runtime::ProgramCompiler,
-    tree: &Program,
-    parsing: f64,
-    catalog_setup: f64,
+    request: SourceRequest,
+    options: ModuleBuildOptions<'_>,
 ) -> MResult<PreparedComputeRegion> {
     let artifact_started = Instant::now();
-    let mixed = compiler.compile_mixed_tree(tree)?;
-    finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
+    let mixed = compiler.compile_canonical_mixed_root(request, options)?;
+    finish_prepared_compute_region(mixed, 0.0, 0.0, artifact_started)
 }
 
 fn finish_prepared_compute_region(
@@ -2281,10 +2328,18 @@ state
     fn compile_fixture(config: &str, source: &str) -> (MechConfigDocument, PreparedComputeRegion) {
         let document =
             parse_config_document("test.mcfg", config, ConfigProfileOptions::default()).unwrap();
-        let tree = mech_syntax::parse(source).unwrap();
+        let source = SourceDocument::parse_resolved(
+            "test:mixed-compute",
+            Revision(0),
+            Arc::<str>::from(source),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        source.index().unwrap();
         let pointer_index = configured_host_index(&document, "pointer").unwrap();
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
-        let prepared = compile_named_compute_region(&document, &tree, 0.0, pointer).unwrap();
+        let prepared =
+            compile_named_compute_document_region(&document, &source, 0.0, pointer).unwrap();
         (document, prepared)
     }
 
@@ -2368,8 +2423,16 @@ state
         );
         let pointer_index = configured_host_index(&document, "pointer").unwrap();
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
-        let tree = mech_syntax::parse(SERVED_SOURCE).unwrap();
-        let prepared = compile_named_compute_region(&document, &tree, 0.0, pointer).unwrap();
+        let source = SourceDocument::parse_resolved(
+            "test:served-mixed-compute",
+            Revision(0),
+            Arc::<str>::from(SERVED_SOURCE),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        source.index().unwrap();
+        let prepared =
+            compile_named_compute_document_region(&document, &source, 0.0, pointer).unwrap();
         let inputs = initializer_values(&prepared.program, &prepared.initializers).unwrap();
 
         assert_eq!(prepared.region, "particle-field");

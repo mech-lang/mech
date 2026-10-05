@@ -1,7 +1,18 @@
 //! Retained physical context probes shared by document boundaries and recovery.
 use super::ContextView;
-use super::mechdown::{FenceDelimiter, FenceStart};
 use super::terminal::is_horizontal_space;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum FenceDelimiter {
+    Grave,
+    Tilde,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct FenceStart {
+    pub delimiter: FenceDelimiter,
+    pub indentation_bytes: u32,
+}
 
 pub(crate) enum Progress<T> {
     Complete(T),

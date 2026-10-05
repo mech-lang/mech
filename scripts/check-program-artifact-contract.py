@@ -169,6 +169,42 @@ def validate_bytecode_sections(source: str, required: list[str]) -> list[str]:
     return failures
 
 
+def validate_canonical_compilation_product(program: str, runtime_compiler: str) -> list[str]:
+    """Follow the normal retained-source path to its exact immutable artifact."""
+    failures: list[str] = []
+    constructor = function_body(program, "pub fn from_canonical_artifact(")
+    if constructor is None:
+        failures.append("normal compiler path is missing the immutable canonical artifact product constructor")
+    else:
+        compact = re.sub(r"\s+", "", constructor)
+        if "letbytecode=encode_program_artifact_bytecode_v1(&artifact)" not in compact:
+            failures.append("canonical compilation product does not encode the exact supplied artifact")
+        if "Ok(Self{artifact,bytecode," not in compact:
+            failures.append("canonical compilation product does not retain the supplied artifact and its encoded bytes")
+
+    document = function_body(runtime_compiler, "pub(crate) fn compile_document(")
+    compact_document = re.sub(r"\s+", "", document or "")
+    if "letartifact=self.canonical_document_artifact(document)?;" not in compact_document:
+        failures.append("normal document compilation does not obtain the canonical document artifact")
+    if "ProgramCompilationProduct::from_canonical_artifact(artifact)" not in compact_document:
+        failures.append("normal document compilation does not forward its exact canonical artifact to the product")
+
+    artifact = function_body(runtime_compiler, "fn canonical_document_artifact(")
+    if "self.canonical_document_artifact_with_projection(document,false)" not in re.sub(r"\s+", "", artifact or ""):
+        failures.append("normal document artifact path does not select the retained canonical preparation owner")
+    preparation = function_body(runtime_compiler, "fn canonical_document_artifact_with_projection(")
+    compact_preparation = re.sub(r"\s+", "", preparation or "")
+    for required in (
+        "CanonicalSourceFrontend::compile_document_with_catalog_and_resources",
+        "CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources",
+        "Arc::clone(&self.function_catalog)",
+        "program.compile_artifact_with_external_contracts(&ResidentExternalContractResolver::new(self.resources,))",
+    ):
+        if required not in compact_preparation:
+            failures.append(f"canonical document artifact preparation is missing {required}")
+    return failures
+
+
 def changed_protected_paths(
     root: Path, base: str, paths: list[str], head: str = "HEAD"
 ) -> list[str]:
@@ -180,6 +216,63 @@ def changed_protected_paths(
         capture_output=True,
     )
     return [line for line in result.stdout.splitlines() if line]
+
+
+def validate_ordinary_source_proof(source: str) -> list[str]:
+    proof = function_body(
+        source, "fn canonical_documents_emit_complete_equivalent_bytecode_artifacts()"
+    )
+    if proof is None:
+        return ["ordinary-source artifact proof is missing its canonical document test"]
+    failures: list[str] = []
+    for required in (
+        "include_str!",
+        "scalar-alias.mec",
+        "state-register.mec",
+        "matrix-literal.mec",
+        "comparison-output.mec",
+        "integrity-constraint.mec",
+        "compiled(source).compile_artifact()",
+        "encode_program_artifact_bytecode_v1(&artifact)",
+        "encode_program_artifact_bytecode_v1(&repeated)",
+        "decode_program_artifact_bytecode_v1(&bytecode)",
+        "encode_program_artifact_bytecode_v1(&decoded)",
+        "assert_eq!(bytecode, reencoded)",
+        "assert_eq!(artifact.revision(), repeated.revision())",
+        "assert_eq!(artifact.revision(), decoded.revision())",
+    ):
+        if required not in proof:
+            failures.append(f"ordinary-source artifact proof is missing {required}")
+    for field in (
+        "requirements", "compute_regions", "contracts", "inputs",
+        "slots", "bindings", "outputs", "constraints", "nodes",
+    ):
+        assertion = f"assert_eq!(artifact.{field}(), decoded.{field}())"
+        if assertion not in proof:
+            failures.append(f"ordinary-source artifact proof is missing {assertion}")
+    compact = re.sub(r"\s+", "", proof)
+    for required in (
+        "assert_eq!(artifact.schemas().len(), decoded.schemas().len())",
+        "for (left, right) in artifact.schemas().entries().zip(decoded.schemas().entries())",
+        "assert_eq!(left.key(), right.key())",
+        "assert_eq!(left.canonical_bytes(), right.canonical_bytes())",
+        "assert_eq!(artifact.constants().len(), decoded.constants().len())",
+        "for raw in 0..artifact.constants().len()",
+        "artifact.constants().get(id).unwrap().canonical_snapshot_bytes(artifact.schemas()).unwrap()",
+        "decoded.constants().get(id).unwrap().canonical_snapshot_bytes(decoded.schemas()).unwrap()",
+        "assert_eq!(artifact_constant, decoded_constant)",
+    ):
+        if re.sub(r"\s+", "", required) not in compact:
+            failures.append(f"ordinary-source artifact proof is missing {required}")
+    if proof.count("compiled(source).compile_artifact()") < 2:
+        failures.append("ordinary-source artifact proof must compile each fixture independently twice")
+    if re.search(
+        r"assert_eq!\(\s*bytecode,\s*mech_engine::encode_program_artifact_bytecode_v1"
+        r"\(&repeated\)\.unwrap\(\)\s*\);",
+        proof,
+    ) is None:
+        failures.append("ordinary-source artifact proof must compare independently compiled bytes")
+    return failures
 
 
 def run(root: Path = ROOT) -> list[str]:
@@ -215,6 +308,7 @@ def run(root: Path = ROOT) -> list[str]:
     sections += (root / "src/core/src/program/bytecode/header.rs").read_text()
     test = (root / "src/engine/tests/program_artifact_contract.rs").read_text()
     program = (root / "src/engine/src/program/compiler_planning.rs").read_text()
+    runtime_compiler = (root / "src/runtime/src/runtime/program/compiler.rs").read_text()
     encoding = (root / "src/engine/src/artifact/encoding.rs").read_text()
     snapshot_data = (root / "src/core/src/snapshot/data.rs").read_text()
     failures.extend(validate_model(model, manifest))
@@ -233,28 +327,9 @@ def run(root: Path = ROOT) -> list[str]:
     for forbidden in ("LegacyValue", "LegacyCompiledGraph", "artifact_from_legacy_graph"):
         if forbidden in bytecode:
             failures.append(f"bytecode decoder retains forbidden compatibility token {forbidden}")
-    for required in (
-        "compile_program_product",
-        "compile_executable_program_artifact",
-        "encode_program_artifact_sections",
-        "write_bytecode_with_artifact",
-    ):
-        if required not in program:
-            failures.append(f"normal compiler path is missing {required}")
-    for required in (
-        "include_str!",
-        "plan_source_for_test",
-        "compile_program_product",
-        "ParsedProgram::from_bytes",
-        "decode_program_artifact_sections",
-        "artifact_a.revision()",
-        "artifact_b.revision()",
-        "comparison-output.mec",
-        "integrity-constraint.mec",
-        "artifact_a.constraints()",
-    ):
-        if required not in program:
-            failures.append(f"ordinary-source artifact proof is missing {required}")
+    failures.extend(validate_canonical_compilation_product(program, runtime_compiler))
+    source_proof = (root / "src/engine/tests/canonical_document_state.rs").read_text()
+    failures.extend(validate_ordinary_source_proof(source_proof))
     for required in (
         "IntegrityConstraintSchemaMismatch",
         "CompiledTypeBindingMismatch",

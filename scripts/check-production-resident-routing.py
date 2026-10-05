@@ -94,6 +94,38 @@ def line_number(source: str, offset: int) -> int:
     return source.count("\n", 0, offset) + 1
 
 
+def rust_function_body(source: str, name: str) -> str | None:
+    """Return the body of a named Rust function using balanced braces."""
+    signature = re.search(rf"\bfn\s+{re.escape(name)}(?:\s*<[^;{{}}]*>)?\s*\(", source)
+    if signature is None:
+        return None
+    brace = source.find("{", signature.end())
+    if brace < 0:
+        return None
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(brace, len(source)):
+        char = source[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return source[brace + 1 : index]
+    return None
+
+
 def check_product_references() -> list[str]:
     failures: list[str] = []
     for path, source in product_sources():
@@ -107,6 +139,23 @@ def check_product_references() -> list[str]:
                 failures.append(
                     f"{path}:{index + 1}: direct old executor call {match.group(0).strip()}"
                 )
+    return failures
+
+
+def check_retired_executor_boundary(root: Path = ROOT) -> list[str]:
+    failures: list[str] = []
+    engine_lib = (root / "src/engine/src/lib.rs").read_text(encoding="utf-8")
+    if re.search(r"\bmod\s+interpreter\s*;|\binterpreter::", engine_lib):
+        failures.append(
+            "src/engine/src/lib.rs: retired interpreter module must not remain reachable"
+        )
+    interpreter = root / "src/engine/src/interpreter"
+    if interpreter.is_file() or (
+        interpreter.is_dir() and any(path.is_file() for path in interpreter.rglob("*"))
+    ):
+        failures.append("src/engine/src/interpreter: retired executor workspace remains")
+    if (root / "src/engine/src/program/instance.rs").exists():
+        failures.append("src/engine/src/program/instance.rs: obsolete program instance remains")
     return failures
 
 
@@ -185,7 +234,6 @@ def check_required_product_seams() -> list[str]:
     required = {
         "src/cli/commands/run.rs": "load_source_program",
         "src/build/src/project/render.rs": "load_bytecode_program",
-        "src/wasm/src/project.rs": "load_root_program",
         "hosts/browser/src/config.rs": "resident_durability",
         "hosts/terminal/src/provider.rs": "CLI_OUTPUT_EFFECT_CONTRACT",
     }
@@ -195,6 +243,11 @@ def check_required_product_seams() -> list[str]:
         if needle not in source:
             failures.append(f"{relative}: missing resident production seam {needle}")
     wasm_source = (ROOT / "src/wasm/src/project.rs").read_text(encoding="utf-8")
+    run_source_roots = rust_function_body(wasm_source, "run_source_roots")
+    if run_source_roots is None or "load_interactive_root_program" not in run_source_roots:
+        failures.append(
+            "src/wasm/src/project.rs: run_source_roots must load the interactive resident root program"
+        )
     evaluate_boundary = re.compile(
         r'#\[cfg\(feature = "legacy-interpreter"\)\]\s*pub fn evaluate\s*\('
     )
@@ -253,18 +306,7 @@ def check_required_product_seams() -> list[str]:
         failures.append(
             "src/runtime/src/runtime/program/compiler.rs: compiler modules must not share ValRef identity"
         )
-    engine_lib = (ROOT / "src/engine/src/lib.rs").read_text(encoding="utf-8")
-    if re.search(r"(?m)^\s*pub\s+mod\s+interpreter\s*;", engine_lib):
-        failures.append("src/engine/src/lib.rs: interpreter module must remain private")
-    if not re.search(
-        r'#\[cfg\(feature = "semantic-compiler"\)\]\s*mod\s+interpreter\s*;',
-        engine_lib,
-    ):
-        failures.append(
-            "src/engine/src/lib.rs: private interpreter module must be semantic-compiler-only"
-        )
-    if (ROOT / "src/engine/src/program/instance.rs").exists():
-        failures.append("src/engine/src/program/instance.rs: obsolete program instance remains")
+    failures.extend(check_retired_executor_boundary())
     terminal_provider = (ROOT / "hosts/terminal/src/provider.rs").read_text(
         encoding="utf-8"
     )

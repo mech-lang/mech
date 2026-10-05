@@ -11,9 +11,57 @@ pub(super) enum PendingCollectionValue {
     Local(u32),
 }
 
-pub(super) type PendingComprehension =
-    ComprehensionDeclaration<OperationContractDeclaration, SchemaDraft, PendingCollectionValue>;
-type SourcePattern = CollectionPattern<PendingValue, PendingValue>;
+pub(super) struct PendingComprehension {
+    pub(super) id: crate::ControlBlockId,
+    pub(super) kind: crate::ComprehensionKind,
+    pub(super) steps: Box<[PendingComprehensionStep]>,
+    pub(super) yield_value: PendingCollectionValue,
+}
+
+pub(super) enum PendingComprehensionStep {
+    Generator {
+        source: PendingCollectionValue,
+        pattern: CollectionPattern<SchemaDraft, PendingCollectionValue>,
+    },
+    Operation(PendingComprehensionOperation),
+    Filter(PendingCollectionValue),
+}
+
+pub(super) struct PendingComprehensionOperation {
+    pub(super) local: u32,
+    pub(super) body: PendingControlOperationBody,
+    pub(super) inputs: Box<[PendingCollectionValue]>,
+    pub(super) schema: SchemaDraft,
+}
+
+impl PendingComprehension {
+    pub(super) fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        for step in &self.steps {
+            match step {
+                PendingComprehensionStep::Generator { pattern, .. } => {
+                    pattern.bindings(&mut |_, schema| visit(schema));
+                }
+                PendingComprehensionStep::Filter(_) => {}
+                PendingComprehensionStep::Operation(operation) => {
+                    visit(&operation.schema);
+                    match &operation.body {
+                        PendingControlOperationBody::Operation { .. }
+                        | PendingControlOperationBody::Recur(_)
+                        | PendingControlOperationBody::Suspend
+                        | PendingControlOperationBody::Publish => {}
+                        PendingControlOperationBody::Match(nested) => {
+                            nested.visit_schemas(visit);
+                        }
+                        PendingControlOperationBody::Comprehension(nested) => {
+                            nested.visit_schemas(visit);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+pub(super) type SourcePattern = CollectionPattern<PendingValue, PendingValue>;
 
 enum Qualifier {
     Generator {
@@ -21,6 +69,113 @@ enum Qualifier {
         pattern: SourcePattern,
     },
     Filter(PendingValue),
+}
+
+fn assign_pattern_binding_locals(
+    pattern: &SourcePattern,
+    start: u32,
+    next_local: &mut u32,
+    local_ids: &mut BTreeMap<u32, u32>,
+    syntax: &SyntaxNode,
+) -> Result<(), SourceSemanticError> {
+    let mut bindings = Vec::new();
+    pattern.bindings(&mut |local, _| bindings.push(local));
+    for local in bindings {
+        let node = start
+            .checked_add(local)
+            .ok_or_else(|| unsupported(syntax, "collection local identity space was exhausted"))?;
+        if local_ids.insert(node, *next_local).is_some() {
+            return Err(internal(
+                SourceSemanticAnchor::for_node(syntax),
+                "collection binding received more than one local identity".to_owned(),
+            ));
+        }
+        *next_local = next_local
+            .checked_add(1)
+            .ok_or_else(|| unsupported(syntax, "collection local identity space was exhausted"))?;
+    }
+    Ok(())
+}
+
+fn assign_qualifier_locals(
+    qualifier: &Qualifier,
+    start: u32,
+    next_local: &mut u32,
+    local_ids: &mut BTreeMap<u32, u32>,
+    syntax: &SyntaxNode,
+) -> Result<(), SourceSemanticError> {
+    if let Qualifier::Generator { pattern, .. } = qualifier {
+        assign_pattern_binding_locals(pattern, start, next_local, local_ids, syntax)?;
+    }
+    Ok(())
+}
+
+fn remap_pattern_binding_locals(
+    pattern: &mut CollectionPattern<SchemaDraft, PendingCollectionValue>,
+    start: u32,
+    local_ids: &BTreeMap<u32, u32>,
+    syntax: &SyntaxNode,
+) -> Result<(), SourceSemanticError> {
+    match pattern {
+        CollectionPattern::Wildcard | CollectionPattern::Equal(_) => {}
+        CollectionPattern::Bind { local, .. } => {
+            let node = start.checked_add(*local).ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(syntax),
+                    "collection binding identity overflowed during canonical remapping".to_owned(),
+                )
+            })?;
+            *local = *local_ids.get(&node).ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(syntax),
+                    "collection binding was absent from the canonical local schedule".to_owned(),
+                )
+            })?;
+        }
+        CollectionPattern::Enum { payload, .. } => {
+            if let Some(payload) = payload {
+                remap_pattern_binding_locals(payload, start, local_ids, syntax)?;
+            }
+        }
+        CollectionPattern::Tuple(items) => {
+            for item in items {
+                remap_pattern_binding_locals(item, start, local_ids, syntax)?;
+            }
+        }
+        CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => {
+            for item in prefix {
+                remap_pattern_binding_locals(item, start, local_ids, syntax)?;
+            }
+            if let Some(rest) = rest {
+                remap_pattern_binding_locals(rest, start, local_ids, syntax)?;
+            }
+            for item in suffix {
+                remap_pattern_binding_locals(item, start, local_ids, syntax)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn require_preceding_collection_inputs(
+    inputs: Box<[PendingCollectionValue]>,
+    local: u32,
+    syntax: &SyntaxNode,
+) -> Result<Box<[PendingCollectionValue]>, SourceSemanticError> {
+    if inputs
+        .iter()
+        .any(|input| matches!(input, PendingCollectionValue::Local(input) if *input >= local))
+    {
+        return Err(unsupported(
+            syntax,
+            "computed pattern operations cannot depend on bindings declared by the same generator",
+        ));
+    }
+    Ok(inputs)
 }
 
 fn unsupported(syntax: &SyntaxNode, message: &str) -> SourceSemanticError {
@@ -31,6 +186,65 @@ fn unsupported(syntax: &SyntaxNode, message: &str) -> SourceSemanticError {
     }
 }
 
+fn canonical_component_schema_draft(
+    parent: &SchemaDraft,
+    body: &SchemaBody,
+    syntax: &SyntaxNode,
+) -> Result<SchemaDraft, SourceSemanticError> {
+    let component = SchemaDraft {
+        body: body.clone(),
+        dimension_parameters: parent.dimension_parameters.clone(),
+    }
+    .finalize()
+    .map_err(|error| {
+        internal(
+            SourceSemanticAnchor::for_node(syntax),
+            format!("unable to canonicalize collection component schema: {error:?}"),
+        )
+    })?;
+    Ok(SchemaDraft {
+        body: component.body().clone(),
+        dimension_parameters: component
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(id, parameter)| DimensionParameterDeclaration {
+                id: DimensionParameterId::new(id as u32),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: parameter.lifetime(),
+                lower_bound: parameter.lower_bound().clone(),
+                upper_bound: parameter.upper_bound().cloned(),
+            })
+            .collect(),
+    })
+}
+
+fn array_rest_schema(
+    element: &SchemaDraft,
+    syntax: &SyntaxNode,
+) -> Result<SchemaDraft, SourceSemanticError> {
+    let mut parameters = element.dimension_parameters.to_vec();
+    let extent =
+        DimensionParameterId::new(u32::try_from(parameters.len()).map_err(|_| {
+            unsupported(syntax, "array-rest dimension identity space was exhausted")
+        })?);
+    parameters.push(DimensionParameterDeclaration {
+        id: extent,
+        origin: DimensionParameterOrigin::Inferred,
+        lifetime: DimensionLifetime::Turn,
+        lower_bound: DimensionExpr::Constant(0),
+        upper_bound: None,
+    });
+    Ok(SchemaDraft {
+        dimension_parameters: parameters.into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(element.body.clone()),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Parameter(extent)]
+                .into_boxed_slice(),
+        },
+    })
+}
+
 impl SemanticBuilder {
     pub(super) fn comprehension(
         &mut self,
@@ -39,12 +253,36 @@ impl SemanticBuilder {
         qualifiers: Vec<mech_syntax::document::ComprehensionQualifierSyntax>,
         operation: &'static str,
     ) -> Result<PendingValue, SourceSemanticError> {
+        if self.control_depth >= crate::MAX_CONTROL_DEPTH {
+            return Err(SourceSemanticError {
+                code: "source-semantics/control-depth-limit",
+                message: "executable control exceeds the nesting limit".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+        if self.control_depth == 0 {
+            self.next_control_block = 0;
+        }
+        let id = self.next_control_block;
+        self.next_control_block = id
+            .checked_add(1)
+            .filter(|id| *id as usize <= crate::MAX_CONTROL_BLOCKS)
+            .ok_or_else(|| unsupported(syntax, "control block identity space was exhausted"))?;
         let saved = self.bindings.clone();
         let saved_definitions = core::mem::take(&mut self.scope_definitions);
         let start = self.nodes.len();
         self.control_depth += 1;
-        let compiled = self.collection_body(syntax, result, qualifiers, operation, start);
+        self.comprehension_depth += 1;
+        let compiled = self.collection_body(
+            syntax,
+            result,
+            qualifiers,
+            operation,
+            crate::ControlBlockId(id),
+            start,
+        );
         self.control_depth -= 1;
+        self.comprehension_depth -= 1;
         self.bindings = saved;
         self.scope_definitions = saved_definitions;
         compiled
@@ -56,6 +294,7 @@ impl SemanticBuilder {
         result: Option<ExpressionSyntax>,
         qualifiers: Vec<mech_syntax::document::ComprehensionQualifierSyntax>,
         operation: &'static str,
+        id: crate::ControlBlockId,
         start: usize,
     ) -> Result<PendingValue, SourceSemanticError> {
         let mut events = Vec::new();
@@ -76,7 +315,7 @@ impl SemanticBuilder {
                     let schema = self.schema_draft_of(source)?;
                     let element = match &schema.body {
                         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => {
-                            schema_component(&schema, element)
+                            canonical_component_schema_draft(&schema, element, generator.syntax())?
                         }
                         SchemaBody::Dynamic => schema,
                         _ => {
@@ -91,15 +330,13 @@ impl SemanticBuilder {
                         generator.syntax(),
                         "a generator pattern",
                     )?;
-                    let before_bindings = self.nodes.len();
                     let pattern = self.collection_pattern(&pattern, &element, start, &mut names)?;
-                    let mut pattern_values = Vec::new();
-                    collect_pattern_values(&pattern, &mut pattern_values);
-                    if pattern_values.iter().any(|value| matches!(value, PendingValue::Node(index)
-                        if *index as usize >= before_bindings && !matches!(self.nodes[*index as usize].body, PendingNodeBody::CollectionBinding))) {
-                        return Err(unsupported(generator.syntax(), "computed pattern expressions require an executable pattern evaluation block"));
-                    }
-                    events.push((before_bindings, Qualifier::Generator { source, pattern }));
+                    // Pattern expressions are ordinary pure lexical operations. Place
+                    // their executable steps before this generator so each value is
+                    // evaluated in the current outer binding before candidate matching.
+                    // Newly declared pattern bindings remain private to the generator
+                    // and are omitted from the step stream below.
+                    events.push((self.nodes.len(), Qualifier::Generator { source, pattern }));
                 }
                 ComprehensionQualifierValueSyntax::Definition(definition) => {
                     if definition.mutability_marker().is_some() {
@@ -128,19 +365,20 @@ impl SemanticBuilder {
         let result = self.required(result, syntax, "a collection yield")?;
         let result = self.expression(&result)?.0;
         let element = self.schema_draft_of(result)?;
-        // A dynamically shaped element needs its own nested shape witness;
-        // it cannot borrow the result collection's cardinality parameter.
-        if !element.dimension_parameters.is_empty() {
-            return Err(unsupported(
-                syntax,
-                "collection elements require a closed shape",
-            ));
-        }
         let kind = if operation == "set/comprehension" {
             crate::ComprehensionKind::Set
         } else {
             crate::ComprehensionKind::Matrix
         };
+        // Set identity remains restricted to keyable closed elements. Matrix
+        // comprehensions own a distinct prefix of parameters for their yielded
+        // element and append their cardinality after that prefix.
+        if kind == crate::ComprehensionKind::Set && !element.dimension_parameters.is_empty() {
+            return Err(unsupported(
+                syntax,
+                "collection elements require a closed shape",
+            ));
+        }
         let output = if is_dynamic_schema_draft(&element) {
             element
         } else if kind == crate::ComprehensionKind::Set {
@@ -155,31 +393,88 @@ impl SemanticBuilder {
                 },
             }
         } else {
-            let extent = DimensionParameterId::new(0);
+            let mut parameters = Vec::new();
+            let element = embed_schema_draft(
+                &element,
+                &mut parameters,
+                SourceSemanticAnchor::for_node(syntax),
+            )?;
+            let extent =
+                DimensionParameterId::new(u32::try_from(parameters.len()).map_err(|_| {
+                    unsupported(syntax, "collection dimension identity space was exhausted")
+                })?);
+            parameters.push(DimensionParameterDeclaration {
+                id: extent,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            });
             SchemaDraft {
-                dimension_parameters: vec![DimensionParameterDeclaration {
-                    id: extent,
-                    origin: DimensionParameterOrigin::Inferred,
-                    lifetime: DimensionLifetime::Turn,
-                    lower_bound: DimensionExpr::Constant(0),
-                    upper_bound: None,
-                }]
-                .into_boxed_slice(),
+                dimension_parameters: parameters.into_boxed_slice(),
                 body: SchemaBody::Matrix {
-                    element: Box::new(element.body),
+                    element: Box::new(element),
                     dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Parameter(extent)]
                         .into_boxed_slice(),
                 },
             }
         };
+        // Canonical local identities follow executable declaration order, not
+        // raw semantic-node order. A computed pattern may create operations
+        // after an earlier binder node, but those operations execute before
+        // the generator declares its bindings.
+        let start_node = u32::try_from(start)
+            .map_err(|_| unsupported(syntax, "collection local identity space was exhausted"))?;
+        let mut local_ids = BTreeMap::new();
+        let mut next_local = 0_u32;
+        let mut event_index = 0;
+        for (offset, node) in self.nodes[start..].iter().enumerate() {
+            while events
+                .get(event_index)
+                .is_some_and(|(position, _)| *position == start + offset)
+            {
+                assign_qualifier_locals(
+                    &events[event_index].1,
+                    start_node,
+                    &mut next_local,
+                    &mut local_ids,
+                    syntax,
+                )?;
+                event_index += 1;
+            }
+            if !matches!(node.body, PendingNodeBody::CollectionBinding) {
+                let node = start_node
+                    .checked_add(u32::try_from(offset).map_err(|_| {
+                        unsupported(syntax, "collection local identity space was exhausted")
+                    })?)
+                    .ok_or_else(|| {
+                        unsupported(syntax, "collection local identity space was exhausted")
+                    })?;
+                local_ids.insert(node, next_local);
+                next_local = next_local.checked_add(1).ok_or_else(|| {
+                    unsupported(syntax, "collection local identity space was exhausted")
+                })?;
+            }
+        }
+        while let Some((_, event)) = events.get(event_index) {
+            assign_qualifier_locals(event, start_node, &mut next_local, &mut local_ids, syntax)?;
+            event_index += 1;
+        }
+
         let mut inputs = Vec::new();
         let mut capture =
             |value: PendingValue| -> Result<PendingCollectionValue, SourceSemanticError> {
                 match value {
                     PendingValue::Constant(id) => Ok(PendingCollectionValue::Constant(id)),
-                    PendingValue::Node(index) if index as usize >= start => {
-                        Ok(PendingCollectionValue::Local(index - start as u32))
-                    }
+                    PendingValue::Node(index) if index as usize >= start => Ok(
+                        PendingCollectionValue::Local(*local_ids.get(&index).ok_or_else(|| {
+                            internal(
+                                SourceSemanticAnchor::for_node(syntax),
+                                "collection value was absent from the canonical local schedule"
+                                    .to_owned(),
+                            )
+                        })?),
+                    ),
                     PendingValue::UnresolvedEmpty(anchor) => Err(unresolved_empty(anchor)),
                     _ => {
                         let ordinal = match inputs.iter().position(|existing| *existing == value) {
@@ -199,7 +494,7 @@ impl SemanticBuilder {
         let mut converted_events = Vec::new();
         for (position, event) in events {
             let event = match event {
-                Qualifier::Filter(value) => ComprehensionStep::Filter(capture(value)?),
+                Qualifier::Filter(value) => PendingComprehensionStep::Filter(capture(value)?),
                 Qualifier::Generator { source, pattern } => {
                     // Resolve inferred binder schemas only after the entire
                     // lexical body has contributed its ordinary type constraints.
@@ -210,7 +505,7 @@ impl SemanticBuilder {
                         .copied()
                         .map(&mut capture)
                         .collect::<Result<Vec<_>, _>>()?;
-                    let pattern = pattern.map(
+                    let mut pattern = pattern.map(
                         &|value| {
                             self.schema_draft_of(*value)
                                 .expect("retained lexical binding")
@@ -222,7 +517,8 @@ impl SemanticBuilder {
                                 .unwrap()]
                         },
                     );
-                    ComprehensionStep::Generator {
+                    remap_pattern_binding_locals(&mut pattern, start_node, &local_ids, syntax)?;
+                    PendingComprehensionStep::Generator {
                         source: capture(source)?,
                         pattern,
                     }
@@ -241,6 +537,19 @@ impl SemanticBuilder {
             {
                 steps.push(events.next().unwrap().1);
             }
+            let raw_node = start_node
+                .checked_add(u32::try_from(offset).map_err(|_| {
+                    unsupported(syntax, "collection local identity space was exhausted")
+                })?)
+                .ok_or_else(|| {
+                    unsupported(syntax, "collection local identity space was exhausted")
+                })?;
+            let scheduled_local = *local_ids.get(&raw_node).ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(syntax),
+                    "collection node was absent from the canonical local schedule".to_owned(),
+                )
+            })?;
             match node.body {
                 PendingNodeBody::CollectionBinding => {}
                 PendingNodeBody::Operation {
@@ -250,17 +559,61 @@ impl SemanticBuilder {
                 } if node.state.is_none()
                     && contract.interaction == mech_core::ExternalInteraction::Pure =>
                 {
-                    steps.push(ComprehensionStep::Operation(ComprehensionOperation {
-                        local: offset as u32,
-                        operation,
-                        contract,
-                        schema: node.schema,
-                        inputs: node
-                            .inputs
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs
                             .into_iter()
                             .map(&mut capture)
                             .collect::<Result<Box<[_]>, _>>()?,
-                    }));
+                        scheduled_local,
+                        syntax,
+                    )?;
+                    steps.push(PendingComprehensionStep::Operation(
+                        PendingComprehensionOperation {
+                            local: scheduled_local,
+                            body: PendingControlOperationBody::Operation {
+                                operation,
+                                contract,
+                            },
+                            schema: node.schema,
+                            inputs,
+                        },
+                    ));
+                }
+                PendingNodeBody::Match(control) if node.state.is_none() => {
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs
+                            .into_iter()
+                            .map(&mut capture)
+                            .collect::<Result<Box<[_]>, _>>()?,
+                        scheduled_local,
+                        syntax,
+                    )?;
+                    steps.push(PendingComprehensionStep::Operation(
+                        PendingComprehensionOperation {
+                            local: scheduled_local,
+                            body: PendingControlOperationBody::Match(control),
+                            schema: node.schema,
+                            inputs,
+                        },
+                    ));
+                }
+                PendingNodeBody::Comprehension(control) if node.state.is_none() => {
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs
+                            .into_iter()
+                            .map(&mut capture)
+                            .collect::<Result<Box<[_]>, _>>()?,
+                        scheduled_local,
+                        syntax,
+                    )?;
+                    steps.push(PendingComprehensionStep::Operation(
+                        PendingComprehensionOperation {
+                            local: scheduled_local,
+                            body: PendingControlOperationBody::Comprehension(control),
+                            schema: node.schema,
+                            inputs,
+                        },
+                    ));
                 }
                 _ => {
                     return Err(unsupported(
@@ -273,7 +626,8 @@ impl SemanticBuilder {
         steps.extend(events.map(|(_, event)| event));
         let node = self.nodes.len() as u32;
         self.nodes.push(PendingNode {
-            body: PendingNodeBody::Comprehension(ComprehensionDeclaration {
+            body: PendingNodeBody::Comprehension(PendingComprehension {
+                id,
                 kind,
                 steps: steps.into_boxed_slice(),
                 yield_value,
@@ -293,7 +647,7 @@ impl SemanticBuilder {
         Ok(PendingValue::Node(node))
     }
 
-    fn collection_pattern(
+    pub(super) fn collection_pattern(
         &mut self,
         pattern: &PatternSyntax,
         expected: &SchemaDraft,
@@ -310,7 +664,7 @@ impl SemanticBuilder {
                         let name = node_text(identifier.syntax())?;
                         if let Some(value) = names.get(&name).copied() {
                             if let Some(annotation) = variable.annotation() {
-                                let mut annotation = annotation_schema_draft(&annotation)?;
+                                let mut annotation = self.annotation_schema_draft(&annotation)?;
                                 let actual = self.schema_draft_of(value)?;
                                 if !annotation.dimension_parameters.is_empty()
                                     && !is_dynamic_schema_draft(&actual)
@@ -347,7 +701,7 @@ impl SemanticBuilder {
                         } else {
                             let mut schema = variable
                                 .annotation()
-                                .map(|annotation| annotation_schema_draft(&annotation))
+                                .map(|annotation| self.annotation_schema_draft(&annotation))
                                 .transpose()?
                                 .unwrap_or_else(|| expected.clone());
                             if !schema.dimension_parameters.is_empty()
@@ -389,7 +743,42 @@ impl SemanticBuilder {
                             }
                         }
                     } else {
-                        CollectionPattern::Equal(self.expression(&expression)?.0)
+                        let value = if matches!(expected.body, SchemaBody::Enum { .. }) {
+                            self.expression_with_expected(
+                                &expression,
+                                Some(ExpectedSchema::Value(expected)),
+                            )?
+                            .0
+                        } else {
+                            self.expression(&expression)?.0
+                        };
+                        if !is_dynamic_schema_draft(expected) {
+                            self.conform_dynamic_to_schema(value, expected, pattern.syntax())?;
+                            if self.schema_draft_of(value)? != *expected {
+                                return Err(unsupported(
+                                    pattern.syntax(),
+                                    "computed pattern differs from the collection element kind",
+                                ));
+                            }
+                        }
+                        if let PendingValue::Constant(index) = value
+                            && matches!(expected.body, SchemaBody::Enum { .. })
+                        {
+                            if let ValueDataDraft::Enum(EnumDraft {
+                                ordinal,
+                                payload: None,
+                            }) = &self.constants[index].data
+                            {
+                                CollectionPattern::Enum {
+                                    ordinal: *ordinal,
+                                    payload: None,
+                                }
+                            } else {
+                                CollectionPattern::Equal(value)
+                            }
+                        } else {
+                            CollectionPattern::Equal(value)
+                        }
                     }
                 }
                 PatternValueSyntax::Tuple(tuple) => self.collection_tuple_pattern(
@@ -421,7 +810,9 @@ impl SemanticBuilder {
                 }
                 PatternValueSyntax::Array(array) => {
                     let element = match &expected.body {
-                        SchemaBody::Matrix { element, .. } => schema_component(expected, element),
+                        SchemaBody::Matrix { element, .. } => {
+                            canonical_component_schema_draft(expected, element, pattern.syntax())?
+                        }
                         SchemaBody::Dynamic => expected.clone(),
                         _ => {
                             return Err(unsupported(
@@ -434,6 +825,7 @@ impl SemanticBuilder {
                     let mut suffix = Vec::new();
                     let mut rest = None;
                     let mut bind_rest = false;
+                    let rest_schema = array_rest_schema(&element, array.syntax())?;
                     for item in array.elements() {
                         if item.spread().is_some() || item.rest().is_some() {
                             if rest.is_some() || bind_rest {
@@ -445,7 +837,7 @@ impl SemanticBuilder {
                             if let Some(pattern) = item.pattern() {
                                 rest = Some(Box::new(self.collection_pattern(
                                     &pattern,
-                                    &builtin_schema_draft(BuiltinSchema::Dynamic),
+                                    &rest_schema,
                                     start,
                                     names,
                                 )?));
@@ -458,7 +850,7 @@ impl SemanticBuilder {
                             if bind_rest {
                                 rest = Some(Box::new(self.collection_pattern(
                                     &pattern,
-                                    &builtin_schema_draft(BuiltinSchema::Dynamic),
+                                    &rest_schema,
                                     start,
                                     names,
                                 )?));
@@ -513,10 +905,14 @@ impl SemanticBuilder {
                 .iter()
                 .enumerate()
                 .map(|(index, item)| {
-                    let schema = fields.map_or_else(
-                        || builtin_schema_draft(BuiltinSchema::Dynamic),
-                        |fields| schema_component(expected, &fields[index]),
-                    );
+                    let schema = match fields {
+                        None => builtin_schema_draft(BuiltinSchema::Dynamic),
+                        Some(fields) => canonical_component_schema_draft(
+                            expected,
+                            &fields[index],
+                            item.syntax(),
+                        )?,
+                    };
                     self.collection_pattern(item, &schema, start, names)
                 })
                 .collect::<Result<Box<[_]>, _>>()?,
@@ -531,6 +927,66 @@ impl SemanticBuilder {
         start: usize,
         names: &mut BTreeMap<String, PendingValue>,
     ) -> Result<SourcePattern, SourceSemanticError> {
+        let enum_expected = match &expected.body {
+            SchemaBody::Enum { .. } => Some(expected.clone()),
+            SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Enum { .. }) => {
+                Some(canonical_component_schema_draft(expected, payload, name)?)
+            }
+            _ => None,
+        };
+        if let Some(enum_expected) = enum_expected {
+            let SchemaBody::Enum { key, variants } = &enum_expected.body else {
+                unreachable!("optional enum pattern projection retains the enum body")
+            };
+            let name_text = node_text(name)?;
+            let variant_name = name_text.trim_start_matches(':');
+            let variant_name = if let Some((qualifier, variant)) = variant_name.rsplit_once('/') {
+                // Imported enum values carry their exact schema, although
+                // their defining declaration is not local to this document.
+                let local = self.declared_kinds.get(qualifier);
+                if !local.is_some_and(|schema| schema.body == enum_expected.body)
+                    && (local.is_some()
+                        || self.imported_enum_qualifiers.get(key).map(String::as_str)
+                            != Some(qualifier))
+                {
+                    return Err(unsupported(name, "unknown enum qualifier in pattern"));
+                }
+                variant
+            } else {
+                variant_name
+            };
+            let (ordinal, variant) = variants
+                .iter()
+                .enumerate()
+                .find(|(_, variant)| variant.name == variant_name)
+                .ok_or_else(|| unsupported(name, "unknown enum variant in pattern"))?;
+            let payload = match (&variant.payload, items.as_slice()) {
+                (None, []) => None,
+                (Some(payload), [pattern]) => Some(Box::new(self.collection_pattern(
+                    pattern,
+                    &canonical_component_schema_draft(&enum_expected, payload, name)?,
+                    start,
+                    names,
+                )?)),
+                (None, _) => {
+                    return Err(unsupported(
+                        name,
+                        "enum variant pattern has an unexpected payload",
+                    ));
+                }
+                (Some(_), _) => {
+                    return Err(unsupported(
+                        name,
+                        "enum variant pattern requires exactly one payload pattern",
+                    ));
+                }
+            };
+            return Ok(CollectionPattern::Enum {
+                ordinal: u32::try_from(ordinal)
+                    .map_err(|_| unsupported(name, "enum variant identity is exhausted"))?,
+                payload,
+            });
+        }
         let path = CanonicalNominalPath::new(
             node_text(name)?
                 .split('/')
@@ -544,7 +1000,7 @@ impl SemanticBuilder {
         );
         let payload = match &expected.body {
             SchemaBody::Tuple(fields) if fields.len() == 2 => {
-                schema_component(expected, &fields[1])
+                canonical_component_schema_draft(expected, &fields[1], name)?
             }
             _ => builtin_schema_draft(BuiltinSchema::Dynamic),
         };
@@ -561,6 +1017,11 @@ impl SemanticBuilder {
 fn collect_pattern_values(pattern: &SourcePattern, values: &mut Vec<PendingValue>) {
     match pattern {
         CollectionPattern::Equal(value) => values.push(*value),
+        CollectionPattern::Enum { payload, .. } => {
+            if let Some(payload) = payload {
+                collect_pattern_values(payload, values);
+            }
+        }
         CollectionPattern::Tuple(items) => {
             for item in items {
                 collect_pattern_values(item, values);
@@ -605,21 +1066,52 @@ pub(super) fn resolve_comprehension(
         PendingCollectionValue::Local(local) => ComprehensionValue::Local(local),
     };
     ComprehensionDeclaration {
+        id: control.id,
         kind: control.kind,
         steps: control
             .steps
             .iter()
             .map(|step| match step {
-                ComprehensionStep::Generator { source, pattern } => ComprehensionStep::Generator {
-                    source: value(source),
-                    pattern: pattern.map(&schema, &value),
-                },
-                ComprehensionStep::Filter(filter) => ComprehensionStep::Filter(value(filter)),
-                ComprehensionStep::Operation(operation) => {
+                PendingComprehensionStep::Generator { source, pattern } => {
+                    ComprehensionStep::Generator {
+                        source: value(source),
+                        pattern: pattern.map(&schema, &value),
+                    }
+                }
+                PendingComprehensionStep::Filter(filter) => {
+                    ComprehensionStep::Filter(value(filter))
+                }
+                PendingComprehensionStep::Operation(operation) => {
                     ComprehensionStep::Operation(ComprehensionOperation {
                         local: operation.local,
-                        operation: operation.operation.clone(),
-                        contract: operation.contract.clone(),
+                        body: match &operation.body {
+                            PendingControlOperationBody::Operation {
+                                operation,
+                                contract,
+                            } => crate::ControlOperationBody::Operation {
+                                operation: operation.clone(),
+                                contract: contract.clone(),
+                            },
+                            PendingControlOperationBody::Match(nested) => {
+                                crate::ControlOperationBody::Match(resolve_pending_match(
+                                    nested, schemas, constants,
+                                ))
+                            }
+                            PendingControlOperationBody::Comprehension(nested) => {
+                                crate::ControlOperationBody::Comprehension(resolve_comprehension(
+                                    nested, schemas, constants,
+                                ))
+                            }
+                            PendingControlOperationBody::Recur(ancestor) => {
+                                crate::ControlOperationBody::Recur(*ancestor)
+                            }
+                            PendingControlOperationBody::Suspend => {
+                                crate::ControlOperationBody::Suspend
+                            }
+                            PendingControlOperationBody::Publish => {
+                                crate::ControlOperationBody::Publish
+                            }
+                        },
                         inputs: operation.inputs.iter().map(value).collect(),
                         schema: schema(&operation.schema),
                     })
@@ -669,10 +1161,7 @@ mod tests {
         ] {
             compile(source).compile_artifact().unwrap();
         }
-        for source in [
-            "[x | x <- [1 2], x<bool> <- [true false]]",
-            "[1 | 1 + 1 <- [2 3]]",
-        ] {
+        for source in ["[x | x <- [1 2], x<bool> <- [true false]]"] {
             let error = CanonicalSourceFrontend
                 .compile_expression(&expression(source))
                 .err()
@@ -682,6 +1171,15 @@ mod tests {
                 "{source}: {error:?}"
             );
         }
+        let source = "{x | (x, x + 1) <- {(1, 2)}}";
+        let error = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .err()
+            .expect("a pre-generator expression cannot consume that generator's binding");
+        assert_eq!(
+            error.code, "source-semantics/unsupported-comprehension-control",
+            "{source}: {error:?}"
+        );
     }
 
     #[test]
@@ -698,6 +1196,9 @@ mod tests {
             "[item + 1 | item <- [1 2 3], item > 1]",
             "{item + 1 | item <- {1,2,3}, item > 1}",
             "[(x,y) | x <- [1 2], x <- [2 3], y <- [4 5]]",
+            "[1 | 1 + 1 <- [2 3]]",
+            "[x | x <- [1 2], x + 1 <- [2 4]]",
+            "{x | (x, 1 + 1) <- {(1, 2)}}",
         ] {
             let mut compiled = compile(source);
             let artifact = compiled
@@ -857,7 +1358,12 @@ mod tests {
                             _ => None,
                         })
                         .unwrap();
-                    operation.contract = mech_core::OperationContractId::new(u32::MAX);
+                    let crate::ControlOperationBody::Operation { contract, .. } =
+                        &mut operation.body
+                    else {
+                        panic!("fixture ordinary operation")
+                    };
+                    *contract = mech_core::OperationContractId::new(u32::MAX);
                 }
                 9 => {
                     // A comprehension constructs one row even when its generator
@@ -1191,6 +1697,19 @@ mod tests {
                     (
                         vec![row(&[7.0, 8.0, 9.0]), row(&[10.0, 11.0, 12.0])],
                         vec![16.0, 22.0],
+                    ),
+                ],
+            ),
+            (
+                "[rest[1] + rest[2] | [head | rest] <- signal<[[f64]:1,3]:1,2>]",
+                vec![
+                    (
+                        vec![row(&[1.0, 2.0, 3.0]), row(&[4.0, 5.0, 6.0])],
+                        vec![5.0, 11.0],
+                    ),
+                    (
+                        vec![row(&[7.0, 8.0, 9.0]), row(&[10.0, 11.0, 12.0])],
+                        vec![17.0, 23.0],
                     ),
                 ],
             ),

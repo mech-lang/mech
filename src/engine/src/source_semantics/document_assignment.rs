@@ -51,22 +51,28 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(item.syntax()),
             });
         }
-        // A fused addressed update is closed over the destination element
-        // kind. Mixed kinds must retain the maintained arithmetic conversions
-        // before assignment converts the result to the destination kind.
-        let same_element = if arithmetic.is_some()
-            && let SchemaBody::Matrix { element, .. } = &schema.body
+        if items.len() > 1
+            && arithmetic.is_some()
+            && matches!(&schema.body, SchemaBody::Matrix { element, .. }
+                if !matches!(element.as_ref(), SchemaBody::Matrix { .. } | SchemaBody::Record(_) | SchemaBody::Table { .. } | SchemaBody::Tuple(_) | SchemaBody::Map { .. }))
+            && items.iter().all(|item| {
+                matches!(
+                    item,
+                    SubscriptItemSyntax::Bracket(_) | SubscriptItemSyntax::Brace(_)
+                )
+            })
         {
-            let replacement_schema = self.schema_draft_of(replacement)?;
-            let replacement_element = match &replacement_schema.body {
-                SchemaBody::Matrix { element, .. } => element.as_ref(),
-                scalar => scalar,
-            };
-            element.as_ref() == replacement_element
-        } else {
-            false
-        };
-        let read_selection = !remaining.is_empty() || (arithmetic.is_some() && !same_element);
+            return self.document_nested_matrix_update(
+                base,
+                items,
+                replacement,
+                arithmetic.unwrap(),
+                statement,
+                value_syntax,
+            );
+        }
+        let read_selection = !remaining.is_empty()
+            || (arithmetic.is_some() && !matches!(schema.body, SchemaBody::Matrix { .. }));
         let (selected, selected_schema, selectors, operation) = match item {
             SubscriptItemSyntax::Bracket(bracket) => {
                 let selectors = self.subscript_values(&bracket.values())?;
@@ -141,7 +147,6 @@ impl SemanticBuilder {
             }
         };
         if remaining.is_empty()
-            && same_element
             && let Some(arithmetic) = arithmetic
             && matches!(schema.body, SchemaBody::Matrix { .. })
             && matches!(
@@ -155,8 +160,20 @@ impl SemanticBuilder {
             // A gather followed by arithmetic and replacement loses repeated
             // selector occurrences. Carry the update into the addressed RMW
             // owner so each occurrence reads the current candidate value.
-            let replacement =
-                self.conform_assignment_value(replacement, selected_schema, value_syntax)?;
+            let declaration = self.source_type_declaration(arithmetic).map_err(|_| {
+                internal(
+                    SourceSemanticAnchor::for_node(statement),
+                    format!("assignment operation {arithmetic} has no maintained type declaration"),
+                )
+            })?;
+            let (inputs, _) = self.resolve_declared_call_with_destination(
+                arithmetic,
+                vec![base, replacement],
+                statement,
+                declaration,
+                Some(selected_schema),
+            )?;
+            let replacement = inputs[1];
             let operation = format!("{operation}/{}", arithmetic.strip_prefix("math/").unwrap());
             let mut inputs = vec![base, replacement];
             inputs.extend(selectors);
@@ -184,6 +201,79 @@ impl SemanticBuilder {
         let mut inputs = vec![base, replacement];
         inputs.extend(selectors);
         Ok(self.emit_with_schema_draft(operation, inputs, schema, statement, "state-update", None))
+    }
+
+    fn document_nested_matrix_update(
+        &mut self,
+        base: PendingValue,
+        items: &[SubscriptItemSyntax],
+        replacement: PendingValue,
+        arithmetic: &str,
+        statement: &SyntaxNode,
+        _value_syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let schema = self.schema_draft_of(base)?;
+        let SchemaBody::Matrix { .. } = &schema.body else {
+            unreachable!()
+        };
+        // The final RMW owner retains the complete selector chain. This keeps
+        // turn-varying selector populations live without materializing a dense
+        // selected-value proxy or a base-sized identity-address matrix.
+        let mut selected_schema = schema.clone();
+        let mut selection_plan = Vec::new();
+        for item in items {
+            let selectors = match item {
+                SubscriptItemSyntax::Bracket(bracket) => {
+                    self.subscript_values(&bracket.values())?
+                }
+                SubscriptItemSyntax::Brace(brace) => self.subscript_values(&brace.values())?,
+                _ => unreachable!("nested matrix updates admit bracket and brace selectors"),
+            };
+            let mode = match selectors.as_slice() {
+                [None] => 1,
+                [Some(_)] => 2,
+                [Some(_), None] => 3,
+                [None, Some(_)] => 4,
+                [Some(_), Some(_)] => 5,
+                [None, None] => 6,
+                _ => unreachable!("selection validation checks arity"),
+            };
+            let (_, selectors, next_schema) =
+                self.prepare_selection_schema(selected_schema, selectors, item.syntax())?;
+            selection_plan
+                .push(self.constant_exact(SchemaBody::Index, ValueDataDraft::Index(mode)));
+            selection_plan.extend(selectors);
+            selected_schema = next_schema;
+        }
+        let declaration = self.source_type_declaration(arithmetic).map_err(|_| {
+            internal(
+                SourceSemanticAnchor::for_node(statement),
+                format!("assignment operation {arithmetic} has no maintained type declaration"),
+            )
+        })?;
+        let (inputs, _) = self.resolve_declared_call_with_destination(
+            arithmetic,
+            vec![base, replacement],
+            statement,
+            declaration,
+            Some(selected_schema),
+        )?;
+        let operation = format!(
+            "core/assign/nested/{}",
+            arithmetic.strip_prefix("math/").unwrap()
+        );
+        let mut inputs = vec![base, inputs[1]];
+        inputs.extend(selection_plan);
+        Ok(
+            self.emit_with_schema_draft(
+                &operation,
+                inputs,
+                schema,
+                statement,
+                "state-update",
+                None,
+            ),
+        )
     }
 
     fn conform_assignment_value(

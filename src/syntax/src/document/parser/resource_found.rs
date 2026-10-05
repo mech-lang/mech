@@ -21,9 +21,6 @@ impl Continuation {
                 LexicalMode::CanonicalGrammar => {
                     Classifier::Filtered(FilteredContinuation::new(start))
                 }
-                LexicalMode::PrototypeDocument => {
-                    unreachable!("prototype found syntax is constant")
-                }
             },
             diagnostic,
             end,

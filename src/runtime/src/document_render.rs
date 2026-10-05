@@ -1,13 +1,15 @@
 //! Canonical document rendering from retained syntax and completed scope results.
 
-use std::collections::{HashMap, HashSet};
+use std::borrow::Cow;
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use mech_engine::{CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_syntax::document::{
     AstNode, CodeBlockSyntax, CodeFenceScope, DocumentScopeId, DocumentSyntax,
-    EvalInlineMechCodeSyntax, IdentifierSyntax, InlineMechCodeSyntax, MechCodeSyntax,
-    MikaSectionSyntax, NodeFlags, OptionMapSyntax, ParagraphSyntax, SectionElementSyntax,
-    SectionSyntax, SyntaxElement, SyntaxKind, SyntaxNode, TextRange, TitleSyntax, UlSubtitleSyntax,
+    EvalInlineMechCodeSyntax, IdentifierSyntax, InlineMechCodeSyntax, MechCodeAltSyntax,
+    MechCodeSyntax, MikaSectionSyntax, NodeFlags, OperatorSyntax, OptionMapSyntax, ParagraphSyntax,
+    SectionElementSyntax, SectionSyntax, SyntaxElement, SyntaxKind, SyntaxNode, TextRange,
+    TextSize, TitleSyntax, UlSubtitleSyntax,
 };
 
 use crate::RuntimeValueSnapshot;
@@ -195,16 +197,7 @@ impl CanonicalDocumentRenderer {
             output.push_str("<span class='");
             output.push_str(repl_item_class(&item));
             output.push_str("'>");
-            for token in item.tokens() {
-                let text = token.text().map_err(|_| range_error(token.range()))?;
-                if token.kind() == SyntaxKind::Semicolon {
-                    output.push_str("<span class='mech-code-terminal'>");
-                    output.push_str(&escape_html(&text));
-                    output.push_str("</span>");
-                } else {
-                    output.push_str(&escape_html(&text));
-                }
-            }
+            render_canonical_source_html(&item, None, None, &mut output)?;
             output.push_str("</span>");
             cursor = range.end;
         }
@@ -221,7 +214,7 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source, true)
+        self.render_html_mode(document, &[], RenderMode::Source, true, &[])
     }
 
     /// Format section content for a host shim that owns the article and title.
@@ -229,7 +222,179 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source, false)
+        self.render_html_mode(document, &[], RenderMode::Source, false, &[])
+    }
+
+    /// Format a browser fragment with addresses for values in the resident
+    /// interactive document. The host fills these slots after publication.
+    pub fn format_html_body_live(
+        &self,
+        document: &DocumentSyntax,
+        output_addresses: &[(TextRange, u64)],
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, &[], RenderMode::Live, false, output_addresses)
+    }
+
+    /// Format a live browser document before execution, preserving canonical output addresses.
+    pub fn format_browser_html(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, &[], RenderMode::Browser, true, &[])
+    }
+
+    /// Render the documented host-shim regions from the same retained syntax and
+    /// inline/document rendering authority used by complete documents.
+    pub fn format_browser_html_slots(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
+        self.format_html_slots_mode(document, RenderMode::Browser, true)
+    }
+
+    /// Format a served source page without executable browser mounts.
+    pub fn format_static_html_slots(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
+        self.format_html_slots_mode(document, RenderMode::Source, true)
+    }
+
+    /// Render passive region copies whose navigation targets belong to the
+    /// primary document. Links still point to those primary targets.
+    pub fn format_passive_html_slots(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
+        self.format_html_slots_mode(document, RenderMode::Source, false)
+    }
+
+    fn format_html_slots_mode(
+        &self,
+        document: &DocumentSyntax,
+        mode: RenderMode,
+        owns_navigation_targets: bool,
+    ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
+        let (fields, hidden_fields) = title_slot_fields(document)?;
+        let mut lookup = ResultLookup::new_with_excluded(document, &[], mode, &hidden_fields)?;
+        lookup.owns_navigation_targets = owns_navigation_targets;
+        let summary_lookup = lookup.without_live_mounts();
+        let owner = document.scope_id();
+        let mut slots = BTreeMap::new();
+        for (name, child) in fields {
+            let mut html = String::new();
+            if child.kind() == SyntaxKind::InlineParagraph {
+                render_inline_html(&child, owner, &lookup, &mut html)?;
+            } else {
+                render_document_node_html(&child, owner, &lookup, &mut html)?;
+            }
+            slots.insert(name, html);
+        }
+        let mut intro = String::new();
+        let mut abstract_html = String::new();
+        let mut footnotes = String::new();
+        let mut content = String::new();
+        let mut toc_entries = Vec::new();
+        let mut numbered = 0usize;
+        let mut section_html = String::new();
+        if let Some(body) = document.body() {
+            for section in body.sections() {
+                for child in section.syntax().children() {
+                    let value = SectionElementSyntax::cast(child.clone())
+                        .and_then(|element| element.value())
+                        .unwrap_or(child);
+                    if value.kind() == SyntaxKind::UlSubtitle {
+                        if numbered > 0 && !section_html.is_empty() {
+                            let wrapped = wrap_titled_section(&section_html);
+                            content.push_str(&wrapped);
+                            slots
+                                .entry(format!("SECTION{numbered}"))
+                                .or_insert_with(String::new)
+                                .push_str(&wrapped);
+                            section_html.clear();
+                        }
+                        numbered += 1;
+                    }
+                    if matches!(value.kind(), SyntaxKind::UlSubtitle | SyntaxKind::Subtitle) {
+                        let (number, level) = lookup.subtitle_coordinates(&value)?;
+                        let paragraph = value
+                            .children()
+                            .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
+                            .ok_or_else(|| range_error(value.range()))?;
+                        let mut toc = String::new();
+                        toc.push_str("<a href='#");
+                        toc.push_str(&escape_attribute(&number));
+                        toc.push_str("'>");
+                        if let Some((cutoff, _)) = subtitle_annotation(&paragraph)? {
+                            render_inline_children_html_until(
+                                &paragraph,
+                                owner,
+                                &summary_lookup,
+                                &mut toc,
+                                cutoff,
+                                &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+                            )?;
+                        } else {
+                            render_inline_children_html(
+                                &paragraph,
+                                owner,
+                                &summary_lookup,
+                                &mut toc,
+                                &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+                            )?;
+                        }
+                        toc.push_str("</a>");
+                        toc_entries.push((level, toc));
+                    }
+                    let target = match value.kind() {
+                        SyntaxKind::AbstractEl => &mut abstract_html,
+                        SyntaxKind::Footnote => &mut footnotes,
+                        _ if numbered == 0 => &mut intro,
+                        _ => &mut section_html,
+                    };
+                    render_document_node_html(&value, owner, &lookup, target)?;
+                }
+            }
+        }
+        if numbered > 0 && !section_html.is_empty() {
+            let wrapped = wrap_titled_section(&section_html);
+            content.push_str(&wrapped);
+            slots
+                .entry(format!("SECTION{numbered}"))
+                .or_insert_with(String::new)
+                .push_str(&wrapped);
+        }
+        // The ordinary final result belongs after the document's source body.
+        let result_region = if numbered == 0 {
+            &mut intro
+        } else {
+            &mut content
+        };
+        append_program_html(
+            owner,
+            &CanonicalRenderScope::Root,
+            &lookup,
+            result_region,
+            visible_root_program_range(document.syntax()),
+        )?;
+        let mut cited = String::new();
+        append_citations_html(&lookup, &mut cited)?;
+        let toc = render_table_of_contents(&toc_entries);
+        if !footnotes.is_empty() {
+            footnotes = format!(
+                "<section class='mech-footnotes'><h3 class='mech-backmatter-heading'>Footnotes</h3>{footnotes}</section>"
+            );
+        }
+        slots.extend([
+            ("INTRO".to_owned(), intro),
+            ("ABSTRACT".to_owned(), abstract_html),
+            ("FOOTNOTES".to_owned(), footnotes),
+            ("CITED".to_owned(), cited),
+            ("TOC".to_owned(), toc),
+            ("CONTENTS".to_owned(), content.clone()),
+            ("CONTENT".to_owned(), content),
+        ]);
+        Ok(slots)
     }
 
     pub fn render_html(
@@ -237,7 +402,7 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, results, RenderMode::Completed, true)
+        self.render_html_mode(document, results, RenderMode::Completed, true, &[])
     }
 
     fn render_html_mode(
@@ -246,8 +411,10 @@ impl CanonicalDocumentRenderer {
         results: &[CanonicalScopeResults],
         mode: RenderMode,
         document_frame: bool,
+        output_addresses: &[(TextRange, u64)],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        let lookup = ResultLookup::new(document, results, mode)?;
+        let mut lookup = ResultLookup::new(document, results, mode)?;
+        lookup.output_addresses = Cow::Owned(output_addresses.iter().copied().collect());
         let mut output = String::new();
         if document_frame {
             output.push_str("<article class='mech-document'>");
@@ -284,6 +451,90 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
         self.render_text_mode(document, &[], RenderMode::Source)
+    }
+
+    /// Pretty-print executable canonical items while retaining document prose,
+    /// comments, strings, and source directives in their original regions.
+    pub fn format_pretty_text(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        let source = document
+            .syntax()
+            .source()
+            .text(document.syntax().range())
+            .map_err(|_| range_error(document.syntax().range()))?;
+        let mut code_nodes = Vec::new();
+        collect_nodes(document.syntax(), SyntaxKind::MechCode, &mut code_nodes);
+        let mut items = Vec::new();
+        for code in code_nodes {
+            let Some(code) = MechCodeSyntax::cast(code) else {
+                continue;
+            };
+            for item in code.items() {
+                let Some(value) = item.value() else {
+                    continue;
+                };
+                if matches!(value.kind(), SyntaxKind::Comment | SyntaxKind::BlankLine) {
+                    continue;
+                }
+                items.push(value);
+            }
+        }
+        for kind in [SyntaxKind::EvalInlineMechCode, SyntaxKind::InlineMechCode] {
+            let mut inline_nodes = Vec::new();
+            collect_nodes(document.syntax(), kind, &mut inline_nodes);
+            for inline in inline_nodes {
+                let value = if let Some(inline) = EvalInlineMechCodeSyntax::cast(inline.clone()) {
+                    inline
+                        .expression()
+                        .map(|expression| expression.syntax().clone())
+                } else {
+                    inline
+                        .children()
+                        .find_map(MechCodeAltSyntax::cast)
+                        .and_then(|item| item.value())
+                };
+                if let Some(value) = value {
+                    items.push(value);
+                }
+            }
+        }
+        collect_nodes(document.syntax(), SyntaxKind::OptionMap, &mut items);
+        // Title imports sit outside MechCode, but use the same source formatter.
+        collect_nodes(document.syntax(), SyntaxKind::ModuleImport, &mut items);
+        let mut edits = Vec::new();
+        for value in items {
+            let formatted = format_canonical_item(&value)?;
+            if formatted != node_text(&value)? {
+                edits.push((
+                    value.range().start.0 as usize,
+                    value.range().end.0 as usize,
+                    formatted,
+                ));
+            }
+        }
+        edits.sort_by_key(|(start, end, _)| (*start, usize::MAX - *end));
+        let mut formatted = String::with_capacity(source.len());
+        let mut cursor = 0;
+        for (start, end, replacement) in edits {
+            if start < cursor {
+                continue;
+            }
+            formatted.push_str(
+                source
+                    .get(cursor..start)
+                    .ok_or_else(|| range_error(document.syntax().range()))?,
+            );
+            formatted.push_str(&replacement);
+            cursor = end;
+        }
+        formatted.push_str(
+            source
+                .get(cursor..)
+                .ok_or_else(|| range_error(document.syntax().range()))?,
+        );
+        Ok(formatted)
     }
 
     pub fn render_text(
@@ -362,6 +613,141 @@ fn repl_item_class(item: &SyntaxNode) -> &'static str {
     }
 }
 
+fn has_syntax_kind(node: &SyntaxNode, kind: SyntaxKind) -> bool {
+    node.kind() == kind || node.children().any(|child| has_syntax_kind(&child, kind))
+}
+
+fn render_canonical_source_html(
+    node: &SyntaxNode,
+    parent_node: Option<&SyntaxNode>,
+    comment_context: Option<(DocumentScopeId, &ResultLookup<'_>)>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    let kind = node.kind();
+    let parent = parent_node.map(SyntaxNode::kind);
+    if kind == SyntaxKind::Comment {
+        output.push_str("<span class='mech-comment'>");
+        if let Some((owner, lookup)) = comment_context {
+            // Document comments own rich inline presentation and its exact
+            // scope/mode. REPL source display has no execution context.
+            render_inline_html(node, owner, lookup, output)?;
+        } else {
+            push_source(node, node.range(), output, true)?;
+        }
+        output.push_str("</span>");
+        return Ok(());
+    }
+    if kind == SyntaxKind::Identifier
+        && matches!(
+            parent,
+            Some(SyntaxKind::Variable | SyntaxKind::VariableDefine | SyntaxKind::VariableAssign)
+        )
+    {
+        let name = node_text(node)?;
+        output.push_str(&format!(
+            "<span class='mech-var-name' data-mech-var-name='{}'>{}</span>",
+            escape_attribute(name.trim()),
+            escape_html(&name),
+        ));
+        return Ok(());
+    }
+    let long_context = |node: &SyntaxNode| {
+        node.kind() == SyntaxKind::ContextDeclaration
+            && node
+                .children()
+                .filter(|child| child.kind() == SyntaxKind::ContextCapabilityDeclaration)
+                .count()
+                > 3
+    };
+    // A resource URI's grammar owns the scheme/path separator. Treat the
+    // identifier portions as complete roles rather than coloring characters.
+    if kind == SyntaxKind::ContextBaseResourceUri {
+        let text = node_text(node)?;
+        let (provider, path) = text
+            .split_once("://")
+            .ok_or_else(|| range_error(node.range()))?;
+        output.push_str("<span class='mech-context-provider'>");
+        output.push_str(&escape_html(provider));
+        output.push_str("</span><span class='mech-context-scheme-op'>://</span><span class='mech-context-path'>");
+        output.push_str(&escape_html(path));
+        output.push_str("</span>");
+        return Ok(());
+    }
+    let class = match kind {
+        SyntaxKind::Number => Some("mech-number"),
+        SyntaxKind::PrefixedContextPath => Some("mech-context-reference"),
+        SyntaxKind::AtomLiteral => Some("mech-atom"),
+        SyntaxKind::Identifier if parent == Some(SyntaxKind::ContextDeclaration) => {
+            Some("mech-context-name")
+        }
+        SyntaxKind::Identifier
+            if matches!(
+                parent,
+                Some(SyntaxKind::AtomLiteral | SyntaxKind::ContextCapabilityDeclaration)
+            ) =>
+        {
+            Some("mech-atom-name")
+        }
+        SyntaxKind::ContextCapabilityDeclaration if parent_node.is_some_and(long_context) => {
+            Some("mech-context-capability mech-context-capability-row")
+        }
+        SyntaxKind::ContextCapabilityDeclaration => Some("mech-context-capability"),
+        SyntaxKind::ContextCapabilityPath => Some("mech-context-path"),
+        SyntaxKind::ContextDeclaration if long_context(node) => {
+            Some("mech-context-declaration mech-statement-context-block")
+        }
+        SyntaxKind::ContextDeclaration => Some("mech-context-declaration"),
+        SyntaxKind::FsmDeclare => Some("mech-fsm-declare"),
+        SyntaxKind::VariableDefine if has_syntax_kind(node, SyntaxKind::Table) => {
+            Some("mech-variable-define mech-variable-define-table mech-statement-table-define")
+        }
+        _ => None,
+    };
+    if let Some(class) = class {
+        output.push_str(&format!("<span class='{class}'>"));
+    }
+    for element in node.children_with_tokens() {
+        match element {
+            SyntaxElement::Node(child) => {
+                render_canonical_source_html(&child, Some(node), comment_context, output)?;
+            }
+            SyntaxElement::Token(token) => {
+                let class = match token.kind() {
+                    SyntaxKind::Colon
+                        if matches!(
+                            kind,
+                            SyntaxKind::AtomLiteral | SyntaxKind::ContextCapabilityDeclaration
+                        ) =>
+                    {
+                        Some("mech-atom-sigil")
+                    }
+                    SyntaxKind::Colon if kind == SyntaxKind::KindMatrix => {
+                        Some("mech-matrix-size-colon")
+                    }
+                    SyntaxKind::Comma if kind == SyntaxKind::KindMatrix => {
+                        Some("mech-matrix-size-separator")
+                    }
+                    SyntaxKind::Semicolon => Some("mech-code-terminal"),
+                    _ => None,
+                };
+                if let Some(class) = class {
+                    output.push_str(&format!("<span class='{class}'>"));
+                }
+                output.push_str(&escape_html(
+                    &token.text().map_err(|_| range_error(token.range()))?,
+                ));
+                if class.is_some() {
+                    output.push_str("</span>");
+                }
+            }
+        }
+    }
+    if class.is_some() {
+        output.push_str("</span>");
+    }
+    Ok(())
+}
+
 fn render_repl_gap_html(gap: &str, output: &mut String) {
     let mut remaining = gap;
     while !remaining.is_empty() {
@@ -400,15 +786,49 @@ struct ResultKey {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum RenderMode {
     Source,
+    Live,
+    Browser,
     Completed,
+}
+
+/// Select the final value of each shim slot before rendering or numbering its
+/// references. Full-document rendering still presents every authored field.
+fn title_slot_fields(
+    document: &DocumentSyntax,
+) -> Result<(Vec<(String, SyntaxNode)>, Vec<TextRange>), CanonicalDocumentRenderError> {
+    let mut fields = Vec::<(String, SyntaxNode)>::new();
+    let mut hidden = Vec::new();
+    if let Some(front) = document.title().and_then(|title| title.front_matter()) {
+        let mut key = None;
+        for child in front.syntax().children() {
+            if child.kind() == SyntaxKind::Identifier {
+                key = Some(node_text(&child)?.to_uppercase());
+            } else if matches!(
+                child.kind(),
+                SyntaxKind::InlineParagraph | SyntaxKind::Img | SyntaxKind::Figures
+            ) {
+                let name = key.take().ok_or_else(|| range_error(child.range()))?;
+                if let Some(index) = fields.iter().position(|(existing, _)| *existing == name) {
+                    hidden.push(fields.remove(index).1.range());
+                }
+                fields.push((name, child));
+            }
+        }
+    }
+    Ok((fields, hidden))
 }
 
 struct ResultLookup<'a> {
     mode: RenderMode,
-    values: HashMap<ResultKey, &'a RuntimeValueSnapshot>,
-    citation_numbers: HashMap<String, usize>,
-    citations: Vec<(DocumentScopeId, SyntaxNode)>,
-    footnote_numbers: HashMap<String, usize>,
+    owns_navigation_targets: bool,
+    root_owner: DocumentScopeId,
+    values: Cow<'a, HashMap<ResultKey, &'a RuntimeValueSnapshot>>,
+    output_addresses: Cow<'a, HashMap<TextRange, u64>>,
+    citation_numbers: Cow<'a, HashMap<String, usize>>,
+    citations: Cow<'a, [(DocumentScopeId, SyntaxNode)]>,
+    footnote_numbers: Cow<'a, HashMap<String, usize>>,
+    coordinates: Cow<'a, HashMap<TextRange, RetainedCoordinates>>,
+    subtitle_anchors: Cow<'a, HashMap<TextRange, String>>,
 }
 
 impl<'a> ResultLookup<'a> {
@@ -416,6 +836,15 @@ impl<'a> ResultLookup<'a> {
         document: &DocumentSyntax,
         results: &'a [CanonicalScopeResults],
         mode: RenderMode,
+    ) -> Result<Self, CanonicalDocumentRenderError> {
+        Self::new_with_excluded(document, results, mode, &[])
+    }
+
+    fn new_with_excluded(
+        document: &DocumentSyntax,
+        results: &'a [CanonicalScopeResults],
+        mode: RenderMode,
+        excluded: &[TextRange],
     ) -> Result<Self, CanonicalDocumentRenderError> {
         let mut owners = document
             .mika_scopes()
@@ -505,6 +934,11 @@ impl<'a> ResultLookup<'a> {
             SyntaxKind::Reference,
             &mut citation_occurrences,
         );
+        citation_occurrences.retain(|node| {
+            !excluded
+                .iter()
+                .any(|range| range.contains_range(node.range()))
+        });
         citation_occurrences.sort_by_key(|node| node.range().start);
         let mut citation_numbers = HashMap::new();
         for occurrence in citation_occurrences {
@@ -542,6 +976,11 @@ impl<'a> ResultLookup<'a> {
             SyntaxKind::FootnoteReference,
             &mut footnote_occurrences,
         );
+        footnote_occurrences.retain(|node| {
+            !excluded
+                .iter()
+                .any(|range| range.contains_range(node.range()))
+        });
         footnote_occurrences.sort_by_key(|node| node.range().start);
         let mut footnote_numbers = HashMap::new();
         for occurrence in footnote_occurrences {
@@ -556,11 +995,65 @@ impl<'a> ResultLookup<'a> {
         }
         Ok(Self {
             mode,
-            values,
-            citation_numbers,
-            citations,
-            footnote_numbers,
+            owns_navigation_targets: true,
+            root_owner: document.scope_id(),
+            values: Cow::Owned(values),
+            output_addresses: Cow::Owned(HashMap::new()),
+            citation_numbers: Cow::Owned(citation_numbers),
+            citations: Cow::Owned(citations),
+            footnote_numbers: Cow::Owned(footnote_numbers),
+            coordinates: Cow::Owned(retained_coordinates),
+            subtitle_anchors: Cow::Owned(document_subtitle_anchors(document)?),
         })
+    }
+
+    // Summary copies retain semantic markup and completed values, but only
+    // the original source occurrence owns a live browser output mount.
+    fn without_live_mounts(&self) -> ResultLookup<'_> {
+        ResultLookup {
+            mode: match self.mode {
+                RenderMode::Live | RenderMode::Browser => RenderMode::Source,
+                mode => mode,
+            },
+            owns_navigation_targets: false,
+            root_owner: self.root_owner,
+            values: Cow::Borrowed(&self.values),
+            output_addresses: Cow::Borrowed(&self.output_addresses),
+            citation_numbers: Cow::Borrowed(&self.citation_numbers),
+            citations: Cow::Borrowed(&self.citations),
+            footnote_numbers: Cow::Borrowed(&self.footnote_numbers),
+            coordinates: Cow::Borrowed(&self.coordinates),
+            subtitle_anchors: Cow::Borrowed(&self.subtitle_anchors),
+        }
+    }
+
+    fn subtitle_coordinates(
+        &self,
+        node: &SyntaxNode,
+    ) -> Result<(&str, usize), CanonicalDocumentRenderError> {
+        let (_, level) = subtitle_coordinates(node)?;
+        let anchor = self
+            .subtitle_anchors
+            .get(&node.range())
+            .ok_or_else(|| range_error(node.range()))?;
+        Ok((anchor, level))
+    }
+
+    fn inline_value(
+        &self,
+        owner: DocumentScopeId,
+        range: TextRange,
+    ) -> Option<&RuntimeValueSnapshot> {
+        let coordinates = self.coordinates.get(&range)?;
+        if coordinates.owner != owner {
+            return None;
+        }
+        self.get(
+            owner,
+            coordinates.scope.as_ref()?,
+            SourceDocumentOutputKind::Inline,
+            Some(range),
+        )
     }
 
     fn get(
@@ -625,7 +1118,12 @@ fn render_title_html(
         .syntax()
         .tokens()
         .into_iter()
-        .find(|token| token.kind() == SyntaxKind::Newline)
+        .find(|token| {
+            matches!(
+                token.kind(),
+                SyntaxKind::Newline | SyntaxKind::CarriageReturn
+            )
+        })
         .map(|token| token.range().start)
         .ok_or_else(|| range_error(title.syntax().range()))?;
     let title_text = title
@@ -752,8 +1250,8 @@ fn render_document_node_html(
     ) {
         render_figure_container_html(value, owner, lookup, output)?;
     } else if let Some(code) = MechCodeSyntax::cast(value.clone()) {
-        output.push_str("<pre class='mech-code'><code>");
-        output.push_str(&escape_html(&node_text(code.syntax())?));
+        output.push_str("<pre class='mech-code' data-mech-source><code>");
+        render_code_comments(code.syntax(), owner, lookup, output, true)?;
         output.push_str("</code></pre>");
     } else if UlSubtitleSyntax::cast(value.clone()).is_some()
         || value.kind() == SyntaxKind::Subtitle
@@ -769,12 +1267,171 @@ fn render_document_node_html(
     Ok(())
 }
 
+fn wrap_titled_section(html: &str) -> String {
+    format!("<section class='mechdown-section mechdown-titled-section'>{html}</section>")
+}
+
 fn render_subtitle_html(
     node: &SyntaxNode,
     owner: DocumentScopeId,
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    let (section, level) = lookup.subtitle_coordinates(node)?;
+    let paragraph = node
+        .children()
+        .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
+        .ok_or_else(|| range_error(node.range()))?;
+    output.push_str(&format!("<h{level} class='mech-subtitle'"));
+    if lookup.owns_navigation_targets {
+        output.push_str(" id='");
+        output.push_str(&escape_attribute(section));
+        output.push('\'');
+    }
+    let annotation = subtitle_annotation(&paragraph)?;
+    if let Some((_, annotation)) = &annotation {
+        output.push_str(" data-mech-annotations='");
+        output.push_str(&escape_attribute(annotation));
+        output.push('\'');
+    }
+    output.push('>');
+    if let Some((cutoff, _)) = &annotation {
+        render_inline_children_html_until(
+            &paragraph,
+            owner,
+            lookup,
+            output,
+            *cutoff,
+            &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+        )?;
+    } else {
+        render_inline_children_html(
+            &paragraph,
+            owner,
+            lookup,
+            output,
+            &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+        )?;
+    }
+    if let Some((_, annotation)) = annotation {
+        output.push_str("<span class='mech-section-annotations'>");
+        output.push_str(&escape_html(&annotation));
+        output.push_str("</span>");
+    }
+    output.push_str(&format!("</h{level}>"));
+    Ok(())
+}
+
+fn subtitle_annotation(
+    paragraph: &SyntaxNode,
+) -> Result<Option<(TextSize, String)>, CanonicalDocumentRenderError> {
+    let source = node_text(paragraph)?;
+    let first_line = source.lines().next().unwrap_or_default();
+    let line_end = paragraph.range().start.0
+        + first_line
+            .trim_end_matches(mech_syntax::document::parser::terminal::is_horizontal_space)
+            .len() as u32;
+    let tokens = paragraph
+        .tokens()
+        .into_iter()
+        .filter(|token| token.range().end.0 <= line_end)
+        .collect::<Vec<_>>();
+    let mut cursor = tokens.len();
+    let mut annotation_start = None;
+    // Walk complete @identifier groups backward from the end of the heading.
+    // The canonical paragraph's token categories retain the identifier grammar,
+    // including Unicode and its allowed symbols, without reparsing the heading.
+    loop {
+        let end = cursor;
+        while cursor > 0
+            && matches!(
+                tokens[cursor - 1].kind(),
+                SyntaxKind::Alpha
+                    | SyntaxKind::Digit
+                    | SyntaxKind::Emoji
+                    | SyntaxKind::Ampersand
+                    | SyntaxKind::Dollar
+                    | SyntaxKind::Percent
+                    | SyntaxKind::Slash
+                    | SyntaxKind::HashTag
+                    | SyntaxKind::Backslash
+                    | SyntaxKind::Tilde
+                    | SyntaxKind::Plus
+                    | SyntaxKind::Dash
+                    | SyntaxKind::Asterisk
+                    | SyntaxKind::Caret
+            )
+        {
+            cursor -= 1;
+        }
+        if cursor == end
+            || cursor < 2
+            || !matches!(tokens[cursor].kind(), SyntaxKind::Alpha | SyntaxKind::Emoji)
+            || tokens[cursor - 1].kind() != SyntaxKind::At
+            || !matches!(
+                tokens[cursor - 2].kind(),
+                SyntaxKind::Whitespace | SyntaxKind::Tab
+            )
+        {
+            break;
+        }
+        annotation_start = Some(tokens[cursor - 1].range().start);
+        cursor -= 1;
+        while cursor > 0
+            && matches!(
+                tokens[cursor - 1].kind(),
+                SyntaxKind::Whitespace | SyntaxKind::Tab
+            )
+        {
+            cursor -= 1;
+        }
+    }
+    let Some(start) = annotation_start else {
+        return Ok(None);
+    };
+    let offset = (start.0 - paragraph.range().start.0) as usize;
+    let cutoff = first_line[..offset]
+        .trim_end_matches(mech_syntax::document::parser::terminal::is_horizontal_space)
+        .len();
+    Ok(Some((
+        TextSize(paragraph.range().start.0 + cutoff as u32),
+        first_line[offset..]
+            .trim_end_matches(mech_syntax::document::parser::terminal::is_horizontal_space)
+            .to_owned(),
+    )))
+}
+
+fn render_table_of_contents(entries: &[(usize, String)]) -> String {
+    fn render_level(entries: &[(usize, String)], cursor: &mut usize, output: &mut String) {
+        let level = entries[*cursor].0;
+        while *cursor < entries.len() && entries[*cursor].0 == level {
+            output.push_str("<li>");
+            output.push_str(&entries[*cursor].1);
+            *cursor += 1;
+            while *cursor < entries.len() && entries[*cursor].0 > level {
+                output.push_str("<ul class='toc-sub'>");
+                render_level(entries, cursor, output);
+                output.push_str("</ul>");
+            }
+            output.push_str("</li>");
+        }
+    }
+
+    if entries.is_empty() {
+        return String::new();
+    }
+    let mut output = "<nav class='toc mech-toc' aria-label='Table of contents'><div class='toc-title'>Contents</div><ul>".to_owned();
+    let mut cursor = 0;
+    while cursor < entries.len() {
+        render_level(entries, &mut cursor, &mut output);
+    }
+    output.push_str("</ul></nav>");
+    output
+}
+
+fn subtitle_coordinates(
+    node: &SyntaxNode,
+) -> Result<(String, usize), CanonicalDocumentRenderError> {
     let source = node_text(node)?;
     let first_line = source
         .lines()
@@ -785,9 +1442,16 @@ fn render_subtitle_html(
         let section = first_line
             .split_once('.')
             .map(|(section, _)| section)
-            .filter(|section| valid_section_number(section))
-            .ok_or_else(|| range_error(node.range()))?;
-        (section, 2usize)
+            .filter(|section| valid_section_number(section));
+        // Underlined headings may be named/annotated without an authored
+        // section number. Use their retained anchor for a unique navigation
+        // address instead of rejecting otherwise valid document syntax.
+        return Ok((
+            section
+                .map(str::to_owned)
+                .unwrap_or_else(|| format!("at-{}", node.range().start.0)),
+            2,
+        ));
     } else {
         let (section, _) = first_line
             .strip_prefix('(')
@@ -797,22 +1461,44 @@ fn render_subtitle_html(
         let depth = section.split('.').count();
         (section, if depth < 3 { 3 } else { depth + 1 }.min(6))
     };
-    let paragraph = node
-        .children()
-        .find(|child| child.kind() == SyntaxKind::ParagraphNewline)
-        .ok_or_else(|| range_error(node.range()))?;
-    output.push_str(&format!("<h{level} class='mech-subtitle' id='section-"));
-    output.push_str(&escape_attribute(section));
-    output.push_str("'>");
-    render_inline_children_html(
-        &paragraph,
-        owner,
-        lookup,
-        output,
-        &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
-    )?;
-    output.push_str(&format!("</h{level}>"));
-    Ok(())
+    Ok((section.to_owned(), level))
+}
+
+fn document_subtitle_anchors(
+    document: &DocumentSyntax,
+) -> Result<HashMap<TextRange, String>, CanonicalDocumentRenderError> {
+    let mut headings = Vec::new();
+    for kind in [SyntaxKind::UlSubtitle, SyntaxKind::Subtitle] {
+        collect_nodes(document.syntax(), kind, &mut headings);
+    }
+    headings.sort_by_key(|heading| heading.range().start);
+    let headings = headings
+        .into_iter()
+        .map(|heading| Ok((heading.range(), subtitle_coordinates(&heading)?.0)))
+        .collect::<Result<Vec<_>, CanonicalDocumentRenderError>>()?;
+    let reserved = headings
+        .iter()
+        .map(|(_, section)| section.clone())
+        .collect::<HashSet<_>>();
+    let mut used = HashSet::new();
+    let mut anchors = HashMap::new();
+    for (range, section) in headings {
+        let mut anchor = section.clone();
+        if used.contains(&anchor) {
+            // Keep the first authored link and distinguish later occurrences
+            // by their retained source position, without changing visible text.
+            let base = format!("{section}-at-{}", range.start.0);
+            anchor = base.clone();
+            let mut suffix = 2;
+            while used.contains(&anchor) || reserved.contains(&anchor) {
+                anchor = format!("{base}-{suffix}");
+                suffix += 1;
+            }
+        }
+        used.insert(anchor.clone());
+        anchors.insert(range, anchor);
+    }
+    Ok(anchors)
 }
 
 fn valid_section_number(value: &str) -> bool {
@@ -848,7 +1534,7 @@ fn render_document_node_text(
     } else if let Some(fence) = CodeBlockSyntax::cast(value.clone()) {
         render_fence_text(&fence, owner, lookup, output)?;
     } else if let Some(mika) = find::<MikaSectionSyntax>(value) {
-        if lookup.mode == RenderMode::Source {
+        if lookup.mode != RenderMode::Completed {
             output.push_str(&node_text(value)?);
             return Ok(());
         }
@@ -860,9 +1546,9 @@ fn render_document_node_text(
             .body()
             .and_then(|body| visible_root_program_range(body.syntax()));
         append_program_text(child, &CanonicalRenderScope::Root, lookup, output, required)?;
-    } else if MechCodeSyntax::cast(value.clone()).is_some()
-        || UlSubtitleSyntax::cast(value.clone()).is_some()
-    {
+    } else if let Some(code) = MechCodeSyntax::cast(value.clone()) {
+        render_code_comments(code.syntax(), owner, lookup, output, false)?;
+    } else if UlSubtitleSyntax::cast(value.clone()).is_some() {
         output.push_str(&node_text(value)?);
     } else if value.kind() == mech_syntax::document::SyntaxKind::BlankLine {
         output.push_str(&node_text(value)?);
@@ -1224,6 +1910,7 @@ fn render_figures_html(
         output.push_str("</div>");
     }
     output.push_str("</div><figcaption class='mech-figure-table-caption'>");
+    let summary_lookup = lookup.without_live_mounts();
     for (index, (label, image)) in panels.iter().enumerate() {
         if index > 0 {
             output.push(' ');
@@ -1233,7 +1920,7 @@ fn render_figures_html(
         output.push_str(&escape_html(label));
         output.push_str(")</span> ");
         if let Some(caption) = &image.caption {
-            render_inline_html(caption, owner, lookup, output)?;
+            render_inline_html(caption, owner, &summary_lookup, output)?;
         }
         output.push_str("</span>");
     }
@@ -1257,9 +1944,13 @@ fn render_note_definition_html(
 ) -> Result<(), CanonicalDocumentRenderError> {
     let prefix = "footnote";
     let label = definition_label(node)?;
-    output.push_str("<aside class='mech-footnote' id='");
-    output.push_str(&escape_attribute(&format!("{prefix}-{label}")));
-    output.push_str("'><span class='mech-footnote-id'>");
+    output.push_str("<aside class='mech-footnote'");
+    if lookup.owns_navigation_targets {
+        output.push_str(" id='");
+        output.push_str(&escape_attribute(&format!("{prefix}-{label}")));
+        output.push('\'');
+    }
+    output.push_str("><span class='mech-footnote-id'>");
     if let Some(number) = lookup.footnote_numbers.get(&label) {
         output.push_str(&number.to_string());
     } else {
@@ -1311,16 +2002,20 @@ fn append_citations_html(
     output.push_str(
         "<section class='mech-works-cited'><h3 class='mech-backmatter-heading'>Works Cited</h3>",
     );
-    for (owner, citation) in &lookup.citations {
+    for (owner, citation) in lookup.citations.iter() {
         let label = definition_label(citation)?;
         let number = lookup
             .citation_numbers
             .get(&label)
             .copied()
             .ok_or_else(|| range_error(citation.range()))?;
-        output.push_str("<div class='mech-citation' id='reference-");
-        output.push_str(&escape_attribute(&label));
-        output.push_str("'><span class='mech-citation-id'>[");
+        output.push_str("<div class='mech-citation'");
+        if lookup.owns_navigation_targets {
+            output.push_str(" id='reference-");
+            output.push_str(&escape_attribute(&label));
+            output.push('\'');
+        }
+        output.push_str("><span class='mech-citation-id'>[");
         output.push_str(&number.to_string());
         output.push_str("]:</span><div class='mech-citation-body'>");
         for child in citation.children() {
@@ -1373,7 +2068,7 @@ fn render_inline_text(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    if lookup.mode == RenderMode::Source {
+    if lookup.mode != RenderMode::Completed {
         return push_source(node, node.range(), output, false);
     }
     let mut replacements = Vec::new();
@@ -1384,17 +2079,14 @@ fn render_inline_text(
         let range = replacement.range();
         push_source(node, TextRange::new(cursor, range.start), output, false)?;
         if EvalInlineMechCodeSyntax::cast(replacement.clone()).is_some() {
-            let value = lookup
-                .get(
-                    owner,
-                    &CanonicalRenderScope::Root,
-                    SourceDocumentOutputKind::Inline,
-                    Some(range),
-                )
-                .ok_or_else(|| CanonicalDocumentRenderError {
-                    message: "evaluated inline expression has no completed scope result".to_owned(),
-                    range: Some(range),
-                })?;
+            let value =
+                lookup
+                    .inline_value(owner, range)
+                    .ok_or_else(|| CanonicalDocumentRenderError {
+                        message: "evaluated inline expression has no completed scope result"
+                            .to_owned(),
+                        range: Some(range),
+                    })?;
             output.push_str(&value.format_canonical_inline());
         } else {
             let source = node.source().text(range).map_err(|_| range_error(range))?;
@@ -1422,6 +2114,43 @@ fn render_inline_html(
 ) -> Result<(), CanonicalDocumentRenderError> {
     match node.kind() {
         SyntaxKind::EvalInlineMechCode => {
+            if lookup.mode == RenderMode::Live {
+                let range = node.range();
+                if let Some(address) = lookup.output_addresses.get(&range) {
+                    output.push_str(&format!(
+                        "<code id='{address}:0' class='mech-inline-mech-code' data-mech-source>{}</code>",
+                        escape_html(&node_text(node)?)
+                    ));
+                } else {
+                    output.push_str("<code class='mech-inline'>");
+                    output.push_str(&escape_html(&node_text(node)?));
+                    output.push_str("</code>");
+                }
+                return Ok(());
+            }
+            if lookup.mode == RenderMode::Browser {
+                if lookup
+                    .coordinates
+                    .get(&node.range())
+                    .is_some_and(|coordinates| {
+                        coordinates.owner == lookup.root_owner
+                            && coordinates.scope.as_ref() == Some(&CanonicalRenderScope::Root)
+                    })
+                {
+                    append_browser_mount(
+                        output,
+                        "span",
+                        "class='mech-inline-mech-code'",
+                        SourceDocumentOutputKind::Inline,
+                        node.range(),
+                    );
+                } else {
+                    output.push_str("<code class='mech-inline'>");
+                    output.push_str(&escape_html(&node_text(node)?));
+                    output.push_str("</code>");
+                }
+                return Ok(());
+            }
             if lookup.mode == RenderMode::Source {
                 output.push_str("<code class='mech-inline'>");
                 output.push_str(&escape_html(&node_text(node)?));
@@ -1429,17 +2158,14 @@ fn render_inline_html(
                 return Ok(());
             }
             let range = node.range();
-            let value = lookup
-                .get(
-                    owner,
-                    &CanonicalRenderScope::Root,
-                    SourceDocumentOutputKind::Inline,
-                    Some(range),
-                )
-                .ok_or_else(|| CanonicalDocumentRenderError {
-                    message: "evaluated inline expression has no completed scope result".to_owned(),
-                    range: Some(range),
-                })?;
+            let value =
+                lookup
+                    .inline_value(owner, range)
+                    .ok_or_else(|| CanonicalDocumentRenderError {
+                        message: "evaluated inline expression has no completed scope result"
+                            .to_owned(),
+                        range: Some(range),
+                    })?;
             output.push_str(&value.format_html());
             Ok(())
         }
@@ -1513,14 +2239,9 @@ fn render_inline_html(
         ),
         SyntaxKind::Reference => render_citation_reference_html(node, lookup, output),
         SyntaxKind::FootnoteReference => render_footnote_reference_html(node, lookup, output),
-        SyntaxKind::SectionReference => render_reference_html(
-            node,
-            "mech-section-reference-link",
-            "section",
-            "§",
-            "",
-            output,
-        ),
+        SyntaxKind::SectionReference => {
+            render_reference_html(node, "mech-section-reference-link", "", "§", "", output)
+        }
         SyntaxKind::Img => render_image_html(node, owner, lookup, output),
         _ => render_inline_children_html(node, owner, lookup, output, &[]),
     }
@@ -1556,6 +2277,52 @@ fn render_inline_children_html(
                 output.push_str(&escape_html(
                     &token.text().map_err(|_| range_error(token.range()))?,
                 ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn render_inline_children_html_until(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+    cutoff: TextSize,
+    skipped_tokens: &[SyntaxKind],
+) -> Result<(), CanonicalDocumentRenderError> {
+    for element in node.children_with_tokens() {
+        let range = match &element {
+            SyntaxElement::Node(child) => child.range(),
+            SyntaxElement::Token(token) => token.range(),
+        };
+        if range.start >= cutoff {
+            continue;
+        }
+        match element {
+            SyntaxElement::Node(child) if range.end <= cutoff => {
+                render_inline_html(&child, owner, lookup, output)?
+            }
+            SyntaxElement::Node(child) => render_inline_children_html_until(
+                &child,
+                owner,
+                lookup,
+                output,
+                cutoff,
+                skipped_tokens,
+            )?,
+            SyntaxElement::Token(token) if skipped_tokens.contains(&token.kind()) => {}
+            SyntaxElement::Token(token) if range.end <= cutoff => {
+                output.push_str(&escape_html(
+                    &token.text().map_err(|_| range_error(token.range()))?,
+                ));
+            }
+            SyntaxElement::Token(_token) => {
+                let source = node
+                    .source()
+                    .text(TextRange::new(range.start, cutoff))
+                    .map_err(|_| range_error(range))?;
+                output.push_str(&escape_html(&source));
             }
         }
     }
@@ -1720,7 +2487,11 @@ fn render_reference_html(
         .strip_prefix(source_prefix)
         .and_then(|source| source.strip_suffix(source_suffix))
         .unwrap_or(&source);
-    let target = format!("{target_prefix}-{label}");
+    let target = if target_prefix.is_empty() {
+        label.to_owned()
+    } else {
+        format!("{target_prefix}-{label}")
+    };
     output.push_str("<a class='");
     output.push_str(class);
     output.push_str("' href='#");
@@ -2012,6 +2783,57 @@ fn collect_inline_replacements(node: &SyntaxNode, output: &mut Vec<SyntaxNode>) 
     }
 }
 
+fn render_code_comments(
+    code: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+    html: bool,
+) -> Result<(), CanonicalDocumentRenderError> {
+    if html {
+        return render_canonical_source_html(code, None, Some((owner, lookup)), output);
+    }
+    if !html && lookup.mode == RenderMode::Source {
+        return push_source(code, code.range(), output, false);
+    }
+    let mut comments = Vec::new();
+    let mut pending = vec![code.clone()];
+    while let Some(node) = pending.pop() {
+        if matches!(node.kind(), SyntaxKind::Comment | SyntaxKind::Number) {
+            comments.push(node);
+        } else {
+            pending.extend(node.children());
+        }
+    }
+    comments.sort_by_key(|comment| comment.range().start);
+    let mut cursor = code.range().start;
+    for comment in comments {
+        push_source(
+            code,
+            TextRange::new(cursor, comment.range().start),
+            output,
+            html,
+        )?;
+        if html {
+            output.push_str(if comment.kind() == SyntaxKind::Number {
+                "<span class='mech-number'>"
+            } else {
+                "<span class='mech-comment'>"
+            });
+        }
+        if comment.kind() == SyntaxKind::Number {
+            push_source(&comment, comment.range(), output, html)?;
+        } else {
+            render_inline(&comment, owner, lookup, output, html)?;
+        }
+        if html {
+            output.push_str("</span>");
+        }
+        cursor = comment.range().end;
+    }
+    push_source(code, TextRange::new(cursor, code.range().end), output, html)
+}
+
 fn render_fence_html(
     fence: &CodeBlockSyntax,
     owner: DocumentScopeId,
@@ -2031,11 +2853,20 @@ fn render_fence_html(
             message: "code fence has no valid presentation options".to_owned(),
             range: Some(fence.syntax().range()),
         })?;
+    if matches!(info.scope, CodeFenceScope::Inert)
+        && fence_language(fence)
+            .is_some_and(|language| matches!(language.as_str(), "diagram" | "chart"))
+    {
+        output.push_str("<div class='mech-diagram mermaid' data-mech-diagram>");
+        output.push_str(&escape_html(&fence_body(fence)?));
+        output.push_str("</div>");
+        return Ok(());
+    }
     output.push_str("<figure class='mech-code-block");
     if info.hidden {
         output.push_str(" hidden");
     }
-    output.push('\'');
+    output.push_str("' data-mech-source");
     if !presentation.styles.is_empty() {
         let styles = presentation
             .styles
@@ -2056,11 +2887,56 @@ fn render_fence_html(
         output.push('\'');
     }
     output.push('>');
-    output.push_str(&escape_html(&fence_body(fence)?));
+    if let Some(code) = fence
+        .mech_code()
+        .filter(|_| render_scope(&info.scope).is_some())
+    {
+        render_code_comments(code.syntax(), owner, lookup, output, true)?;
+    } else {
+        output.push_str(&escape_html(&fence_body(fence)?));
+    }
     output.push_str("</code></pre>");
     let scope = render_scope(&info.scope);
+    if lookup.mode == RenderMode::Live
+        && !info.hidden
+        && presentation.show_output
+        && scope.is_some()
+    {
+        let range = fence
+            .delimiter_range()
+            .unwrap_or_else(|| fence.syntax().range());
+        if let Some(address) = lookup
+            .output_addresses
+            .get(&range)
+            .or_else(|| lookup.output_addresses.get(&fence.syntax().range()))
+        {
+            output.push_str(&format!(
+                "<div class='mech-block-output' id='{address}:0'></div>"
+            ));
+        }
+    }
+    if lookup.mode == RenderMode::Browser
+        && presentation.show_output
+        && !info.hidden
+        && owner == lookup.root_owner
+        && scope.as_ref() == Some(&CanonicalRenderScope::Root)
+        && fence
+            .mech_code()
+            .is_some_and(|code| scope_has_compiled_value(code.syntax()))
+    {
+        append_browser_mount(
+            output,
+            "figcaption",
+            "class='mech-block-output'",
+            SourceDocumentOutputKind::Fence,
+            fence.syntax().range(),
+        );
+    }
     if lookup.mode == RenderMode::Completed
         && presentation.show_output
+        && fence
+            .mech_code()
+            .is_some_and(|code| scope_has_compiled_value(code.syntax()))
         && let Some(scope) = scope
     {
         let value = lookup
@@ -2098,7 +2974,7 @@ fn render_fence_text(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    if lookup.mode == RenderMode::Source {
+    if lookup.mode != RenderMode::Completed {
         output.push_str(&node_text(fence.syntax())?);
         return Ok(());
     }
@@ -2109,7 +2985,14 @@ fn render_fence_text(
     if info.hidden {
         return Ok(());
     }
-    output.push_str(&fence_body(fence)?);
+    let executable_code = fence
+        .mech_code()
+        .filter(|_| render_scope(&info.scope).is_some());
+    if let Some(code) = executable_code.as_ref() {
+        render_code_comments(code.syntax(), owner, lookup, output, false)?;
+    } else {
+        output.push_str(&fence_body(fence)?);
+    }
     let presentation = fence
         .presentation()
         .ok_or_else(|| CanonicalDocumentRenderError {
@@ -2118,6 +3001,9 @@ fn render_fence_text(
         })?;
     if lookup.mode == RenderMode::Completed
         && presentation.show_output
+        && executable_code
+            .as_ref()
+            .is_some_and(|code| scope_has_compiled_value(code.syntax()))
         && let Some(scope) = render_scope(&info.scope)
     {
         let value = lookup
@@ -2159,7 +3045,7 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
     fn collect(node: &SyntaxNode, latest: &mut Option<(TextRange, bool)>) {
         if matches!(
             node.kind(),
-            SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+            SyntaxKind::InlineMechCode | SyntaxKind::MikaSection | SyntaxKind::Comment
         ) {
             return;
         }
@@ -2185,7 +3071,17 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
         }
         if matches!(
             node.kind(),
+            SyntaxKind::ContextSend | SyntaxKind::ActivationScope
+        ) {
+            if latest.is_none() {
+                retain_latest(latest, node.range(), false);
+            }
+            return;
+        }
+        if matches!(
+            node.kind(),
             SyntaxKind::VariableDefine
+                | SyntaxKind::TupleDestructure
                 | SyntaxKind::Expression
                 | SyntaxKind::OpAssign
                 | SyntaxKind::VariableAssign
@@ -2197,6 +3093,12 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
             node.kind(),
             SyntaxKind::ContextDeclaration
                 | SyntaxKind::ExportDeclaration
+                | SyntaxKind::FunctionDefine
+                | SyntaxKind::InvariantDefine
+                | SyntaxKind::KindDefine
+                | SyntaxKind::EnumDefine
+                | SyntaxKind::FsmSpecification
+                | SyntaxKind::FsmImplementation
                 | SyntaxKind::ImportDeclaration
                 | SyntaxKind::ModuleImport
         ) {
@@ -2212,6 +3114,165 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
     latest.and_then(|(range, visible)| visible.then_some(range))
 }
 
+/// Browser transport identity derived from the canonical output's retained anchor.
+/// Program results keep their document-boundary address across REPL appends.
+pub fn canonical_document_output_id(kind: SourceDocumentOutputKind, range: TextRange) -> u64 {
+    if kind == SourceDocumentOutputKind::Program {
+        return mech_core::root_document_program_output_id();
+    }
+    mech_core::hash_str(&format!(
+        "mech/canonical-document-output/v1:{kind:?}:{}:{}",
+        range.start.0, range.end.0
+    ))
+}
+
+/// Stable browser addresses for source-visible canonical presentation outputs.
+///
+/// This is the syntax-only half of the browser publication contract. It lets
+/// formatting products describe their rendered mounts without enabling the
+/// semantic compiler. The compiler independently publishes the same inline and
+/// fence owners in source order.
+pub fn canonical_document_presentation_output_ids(
+    document: &DocumentSyntax,
+) -> Result<Vec<u64>, CanonicalDocumentRenderError> {
+    Ok(canonical_document_presentation_outputs(document)?
+        .into_iter()
+        .map(|output| output.output_id)
+        .collect())
+}
+
+/// One source-visible presentation output in renderer order.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CanonicalDocumentPresentationOutput {
+    pub kind: SourceDocumentOutputKind,
+    pub range: TextRange,
+    pub output_id: u64,
+}
+
+pub fn canonical_document_presentation_outputs(
+    document: &DocumentSyntax,
+) -> Result<Vec<CanonicalDocumentPresentationOutput>, CanonicalDocumentRenderError> {
+    let mut outputs = Vec::new();
+    collect_root_presentation_outputs(document.syntax(), &mut outputs)?;
+    outputs.sort_by_key(|output| output.range.start);
+    Ok(outputs)
+}
+
+fn collect_root_presentation_outputs(
+    node: &SyntaxNode,
+    outputs: &mut Vec<CanonicalDocumentPresentationOutput>,
+) -> Result<(), CanonicalDocumentRenderError> {
+    if matches!(
+        node.kind(),
+        SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+    ) {
+        return Ok(());
+    }
+    if EvalInlineMechCodeSyntax::cast(node.clone()).is_some() {
+        let range = node.range();
+        outputs.push(CanonicalDocumentPresentationOutput {
+            kind: SourceDocumentOutputKind::Inline,
+            range,
+            output_id: canonical_document_output_id(SourceDocumentOutputKind::Inline, range),
+        });
+        return Ok(());
+    }
+    if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+        let Some(info) = fence.info() else {
+            return Err(range_error(fence.syntax().range()));
+        };
+        if !matches!(info.scope, CodeFenceScope::Root) {
+            return Ok(());
+        }
+        let Some(code) = fence.mech_code() else {
+            return Err(range_error(fence.syntax().range()));
+        };
+        collect_root_presentation_outputs(code.syntax(), outputs)?;
+        let presentation = fence
+            .presentation()
+            .ok_or_else(|| range_error(fence.syntax().range()))?;
+        if presentation.show_output && scope_has_compiled_value(code.syntax()) {
+            let range = fence.syntax().range();
+            outputs.push(CanonicalDocumentPresentationOutput {
+                kind: SourceDocumentOutputKind::Fence,
+                range,
+                output_id: canonical_document_output_id(SourceDocumentOutputKind::Fence, range),
+            });
+        }
+        return Ok(());
+    }
+    for child in node.children() {
+        collect_root_presentation_outputs(&child, outputs)?;
+    }
+    Ok(())
+}
+
+fn scope_has_compiled_value(node: &SyntaxNode) -> bool {
+    if matches!(
+        node.kind(),
+        SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+    ) {
+        return false;
+    }
+    if EvalInlineMechCodeSyntax::cast(node.clone()).is_some()
+        || matches!(
+            node.kind(),
+            SyntaxKind::ActivationScope
+                | SyntaxKind::ContextSend
+                | SyntaxKind::VariableDefine
+                | SyntaxKind::TupleDestructure
+                | SyntaxKind::Expression
+                | SyntaxKind::OpAssign
+                | SyntaxKind::VariableAssign
+        )
+    {
+        return true;
+    }
+    if matches!(
+        node.kind(),
+        SyntaxKind::FunctionDefine
+            | SyntaxKind::InvariantDefine
+            | SyntaxKind::KindDefine
+            | SyntaxKind::EnumDefine
+            | SyntaxKind::FsmSpecification
+            | SyntaxKind::FsmImplementation
+            | SyntaxKind::ContextDeclaration
+            | SyntaxKind::ImportDeclaration
+            | SyntaxKind::ExportDeclaration
+            | SyntaxKind::ModuleImport
+    ) {
+        return false;
+    }
+    if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+        return matches!(
+            fence.info().map(|info| info.scope),
+            Some(CodeFenceScope::Root)
+        ) && fence
+            .mech_code()
+            .is_some_and(|code| scope_has_compiled_value(code.syntax()));
+    }
+    node.children()
+        .any(|child| scope_has_compiled_value(&child))
+}
+
+/// Whether the canonical root scope can produce a runtime value.
+pub fn canonical_document_has_root_program(document: &DocumentSyntax) -> bool {
+    scope_has_compiled_value(document.syntax())
+}
+
+fn append_browser_mount(
+    output: &mut String,
+    tag: &str,
+    class_attribute: &str,
+    kind: SourceDocumentOutputKind,
+    range: TextRange,
+) {
+    let id = canonical_document_output_id(kind, range);
+    output.push_str(&format!(
+        "<{tag} {class_attribute} id='{id}:0' data-mech-output-address='{id}:0'></{tag}>"
+    ));
+}
+
 fn append_program_html(
     owner: DocumentScopeId,
     scope: &CanonicalRenderScope,
@@ -2219,7 +3280,22 @@ fn append_program_html(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    if lookup.mode == RenderMode::Source {
+    if lookup.mode == RenderMode::Browser {
+        if owner == lookup.root_owner
+            && *scope == CanonicalRenderScope::Root
+            && let Some(range) = required
+        {
+            append_browser_mount(
+                output,
+                "output",
+                "class='mech-block-output mech-program-output'",
+                SourceDocumentOutputKind::Program,
+                range,
+            );
+        }
+        return Ok(());
+    }
+    if lookup.mode != RenderMode::Completed {
         return Ok(());
     }
     let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);
@@ -2246,7 +3322,7 @@ fn append_program_text(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    if lookup.mode == RenderMode::Source {
+    if lookup.mode != RenderMode::Completed {
         return Ok(());
     }
     let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);
@@ -2306,6 +3382,292 @@ fn push_source(
 
 fn node_text(node: &SyntaxNode) -> Result<String, CanonicalDocumentRenderError> {
     node.text().map_err(|_| range_error(node.range()))
+}
+
+fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentRenderError> {
+    let mut protected = Vec::new();
+    for kind in [
+        SyntaxKind::Comment,
+        SyntaxKind::StringLiteral,
+        SyntaxKind::Utf8String,
+        SyntaxKind::RawString,
+    ] {
+        collect_nodes(node, kind, &mut protected);
+    }
+    let protected = protected
+        .into_iter()
+        .map(|node| node.range())
+        .collect::<Vec<_>>();
+    let mut operator_nodes = Vec::new();
+    collect_operator_nodes(node, &mut operator_nodes);
+    let prefix_ranges = operator_nodes
+        .iter()
+        .filter(|operator| operator.syntax().kind() == SyntaxKind::NotOperation)
+        .filter_map(|operator| operator.operator_token_range())
+        .collect::<Vec<_>>();
+    let mut operator_ranges = operator_nodes
+        .into_iter()
+        // Range productions require the operator to touch both bounds.
+        .filter(|operator| {
+            !matches!(
+                operator.syntax().kind(),
+                SyntaxKind::RangeOperator
+                    | SyntaxKind::RangeExclusiveOperation
+                    | SyntaxKind::RangeInclusiveOperation
+            )
+        })
+        .filter_map(|operator| operator.operator_token_range())
+        .collect::<Vec<_>>();
+    let mut compound_assignments = Vec::new();
+    collect_nodes(
+        node,
+        SyntaxKind::OpAssignOperator,
+        &mut compound_assignments,
+    );
+    operator_ranges.extend(
+        compound_assignments
+            .into_iter()
+            .map(|operator| operator.range()),
+    );
+    let mut context_sends = Vec::new();
+    collect_nodes(node, SyntaxKind::ContextSend, &mut context_sends);
+    operator_ranges.extend(context_sends.iter().filter_map(context_send_operator_range));
+    let mut context_declarations = Vec::new();
+    collect_nodes(
+        node,
+        SyntaxKind::ContextDeclaration,
+        &mut context_declarations,
+    );
+    let context_braces = context_declarations
+        .iter()
+        .flat_map(|declaration| declaration.children_with_tokens())
+        .filter_map(|element| match element {
+            SyntaxElement::Token(token)
+                if matches!(token.kind(), SyntaxKind::LeftBrace | SyntaxKind::RightBrace) =>
+            {
+                Some(token.range())
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let mut long_group_starts = Vec::new();
+    let mut long_group_ends = Vec::new();
+    for declaration in &context_declarations {
+        if declaration
+            .children()
+            .filter(|child| child.kind() == SyntaxKind::ContextCapabilityDeclaration)
+            .count()
+            > 3
+        {
+            for element in declaration.children_with_tokens() {
+                if let SyntaxElement::Token(token) = element {
+                    match token.kind() {
+                        SyntaxKind::LeftBrace | SyntaxKind::Comma => {
+                            long_group_starts.push(token.range())
+                        }
+                        SyntaxKind::RightBrace => long_group_ends.push(token.range()),
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+    let newline = if node_text(node)?.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    };
+    let mut previous_long_group_start = false;
+    let mut separator_lists = Vec::new();
+    for kind in [
+        SyntaxKind::ArgumentList,
+        SyntaxKind::ImportGroupItems,
+        SyntaxKind::ContextDeclaration,
+        SyntaxKind::OptionMap,
+        SyntaxKind::Tuple,
+        SyntaxKind::TupleStruct,
+        SyntaxKind::TupleStructPattern,
+        SyntaxKind::AtomStructPattern,
+        SyntaxKind::Map,
+        SyntaxKind::Record,
+        SyntaxKind::Set,
+        SyntaxKind::TupleDestructure,
+        SyntaxKind::TuplePattern,
+    ] {
+        collect_nodes(node, kind, &mut separator_lists);
+    }
+    let separator_list_ranges = separator_lists
+        .into_iter()
+        .map(|arguments| arguments.range())
+        .collect::<Vec<_>>();
+    // Function inputs have no ArgumentList wrapper. Normalize only direct
+    // signature commas, without claiming separators in the function body.
+    let mut signature_nodes = Vec::new();
+    for kind in [SyntaxKind::FunctionDefine, SyntaxKind::FunctionOutArgs] {
+        collect_nodes(node, kind, &mut signature_nodes);
+    }
+    let signature_comma_ranges = signature_nodes
+        .into_iter()
+        .flat_map(|signature| signature.children_with_tokens())
+        .filter_map(|element| match element {
+            SyntaxElement::Token(token) if token.kind() == SyntaxKind::Comma => Some(token.range()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let mut binding_nodes = Vec::new();
+    for kind in [
+        SyntaxKind::MapEntry,
+        SyntaxKind::RecordBinding,
+        SyntaxKind::BoundCallArgument,
+        SyntaxKind::OptionMapping,
+    ] {
+        collect_nodes(node, kind, &mut binding_nodes);
+    }
+    let binding_colon_ranges = binding_nodes
+        .into_iter()
+        .flat_map(|binding| binding.children_with_tokens())
+        .filter_map(|element| match element {
+            SyntaxElement::Token(token) if token.kind() == SyntaxKind::Colon => Some(token.range()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let mut output = String::new();
+    let mut gap = String::new();
+    let mut previous = None;
+    let mut previous_literal = None;
+    let mut previous_context_open = false;
+    let mut previous_ended_operator = false;
+    let mut previous_was_prefix = false;
+    let mut previous_was_separator = false;
+    for token in node.tokens() {
+        let kind = token.kind();
+        let text = token.text().map_err(|_| range_error(token.range()))?;
+        let literal = protected
+            .iter()
+            .find(|range| token.range().start >= range.start && token.range().end <= range.end)
+            .copied();
+        if literal.is_some() && literal == previous_literal {
+            output.push_str(&text);
+            previous = Some(kind);
+            continue;
+        }
+        if literal.is_none()
+            && matches!(
+                kind,
+                SyntaxKind::Whitespace
+                    | SyntaxKind::Tab
+                    | SyntaxKind::Newline
+                    | SyntaxKind::CarriageReturn
+            )
+        {
+            gap.push_str(&text);
+            continue;
+        }
+        let operator = operator_ranges
+            .iter()
+            .find(|range| token.range().start >= range.start && token.range().end <= range.end);
+        let starts_operator = kind == SyntaxKind::OutputOperator
+            || operator.is_some_and(|range| token.range().start == range.start);
+        let ends_operator = kind == SyntaxKind::OutputOperator
+            || operator.is_some_and(|range| token.range().end == range.end);
+        let separator = (kind == SyntaxKind::Comma
+            && (signature_comma_ranges.contains(&token.range())
+                || separator_list_ranges.iter().any(|range| {
+                    token.range().start >= range.start && token.range().end <= range.end
+                })))
+            || (kind == SyntaxKind::Colon && binding_colon_ranges.contains(&token.range()));
+        let closes_delimiter = matches!(
+            kind,
+            SyntaxKind::RightParen | SyntaxKind::RightBracket | SyntaxKind::RightBrace
+        );
+        let follows_open_delimiter = matches!(
+            previous,
+            Some(SyntaxKind::LeftParen | SyntaxKind::LeftBracket | SyntaxKind::LeftBrace)
+        );
+        if long_group_ends.contains(&token.range()) {
+            output.push_str(newline);
+        } else if previous_long_group_start {
+            output.push_str(newline);
+            output.push_str("  ");
+        } else if gap.contains(['\r', '\n']) {
+            output.push_str(&gap);
+        } else if context_braces.contains(&token.range()) && kind == SyntaxKind::LeftBrace
+            || previous_context_open && kind != SyntaxKind::RightBrace
+            || context_braces.contains(&token.range())
+                && kind == SyntaxKind::RightBrace
+                && previous != Some(SyntaxKind::LeftBrace)
+        {
+            output.push(' ');
+        } else if separator || closes_delimiter || follows_open_delimiter || previous_was_prefix {
+            // Canonical separators and delimiter interiors never retain
+            // horizontal padding.
+        } else if previous.is_some() {
+            if previous_was_separator
+                || !gap.is_empty()
+                || starts_operator
+                || previous_ended_operator
+                || matches!(
+                    kind,
+                    SyntaxKind::DefineOperatorToken | SyntaxKind::AssignOperator
+                )
+                || matches!(
+                    previous,
+                    Some(SyntaxKind::DefineOperatorToken | SyntaxKind::AssignOperator)
+                )
+            {
+                output.push(' ');
+            }
+        } else {
+            output.push_str(&gap);
+        }
+        gap.clear();
+        output.push_str(&text);
+        previous = Some(kind);
+        previous_long_group_start = long_group_starts.contains(&token.range());
+        previous_literal = literal;
+        previous_context_open =
+            kind == SyntaxKind::LeftBrace && context_braces.contains(&token.range());
+        previous_ended_operator = ends_operator;
+        previous_was_prefix =
+            ends_operator && operator.is_some_and(|range| prefix_ranges.contains(range));
+        previous_was_separator = separator;
+    }
+    output.push_str(&gap);
+    Ok(output)
+}
+
+fn collect_operator_nodes(node: &SyntaxNode, output: &mut Vec<OperatorSyntax>) {
+    if let Some(operator) = OperatorSyntax::cast(node.clone()) {
+        output.push(operator);
+    }
+    for child in node.children() {
+        collect_operator_nodes(&child, output);
+    }
+}
+
+fn context_send_operator_range(node: &SyntaxNode) -> Option<TextRange> {
+    // The target and expression are child nodes; the transparent send operator
+    // retains its glyphs as direct tokens, including its optional spacing.
+    let mut glyphs = node
+        .children_with_tokens()
+        .into_iter()
+        .filter_map(|element| match element {
+            SyntaxElement::Token(token)
+                if !matches!(
+                    token.kind(),
+                    SyntaxKind::Whitespace
+                        | SyntaxKind::Tab
+                        | SyntaxKind::Newline
+                        | SyntaxKind::CarriageReturn
+                ) =>
+            {
+                Some(token)
+            }
+            _ => None,
+        });
+    let first = glyphs.next()?;
+    let last = glyphs.last().unwrap_or_else(|| first.clone());
+    Some(TextRange::new(first.range().start, last.range().end))
 }
 
 fn range_error(range: TextRange) -> CanonicalDocumentRenderError {
