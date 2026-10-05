@@ -200,7 +200,11 @@ try {
     const doc = WasmDocument.fromEncodedWithSources(fixture.encoded, 'document.mec', fixture.sources);
     const response = doc.replReplaceSource(declaration);
     assert(doc.replSource() === declaration, 'resolver-owned declaration accepted: ' + JSON.stringify(response));
-    assert(doc.renderedSymbol('ans') == null, 'declaration preparation has no fabricated result');
+    let absentResult = false;
+    try {doc.renderedSymbol('ans');} catch (error) {
+      absentResult = String(error) === 'document symbol `ans` is not resident';
+    }
+    assert(absentResult, 'declaration preparation has no fabricated result');
     const accepted = {source: doc.replSource(), info: doc.runtimeInfo()};
     assert(accepted.info.route === 'none' && accepted.info.program_revision == null
       && accepted.info.plan_generation == null && accepted.info.layout_generation == null
