@@ -1,0 +1,20 @@
+   Compiling mech-wasm v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/wasm)
+    Finished `test` profile [unoptimized] target(s) in 7.79s
+     Running unittests src/lib.rs (/private/tmp/mech-v04-target-streaming/debug/deps/mech_wasm-80d31cabfa2b47a2)
+
+running 12 tests
+test type_inspection::tests::document_without_active_source_has_information_only ... ok
+test type_inspection::tests::document_named_semantic_errors_keep_source_ranges ... ok
+test type_inspection::tests::document_inline_values_use_root_bindings_and_named_fences_stay_isolated ... ok
+test type_inspection::tests::document_named_fences_publish_independent_values_in_place ... ok
+test type_inspection::tests::document_named_scope_uses_host_function_catalog ... ok
+test type_inspection::tests::document_mika_named_scopes_keep_local_owners ... ok
+test type_inspection::tests::document_reserved_fences_and_output_settings_are_preserved ... ok
+test type_inspection::tests::semantic_interval_rejection_preserves_source_anchor ... ok
+test type_inspection::tests::inspection_exports_canonical_record_html ... ok
+test type_inspection::tests::same_instance_rejects_and_recovers ... ok
+test type_inspection::tests::document_scopes_share_repeated_fences_and_reset_each_run ... ok
+test type_inspection::tests::fixtures_compare_independent_scalar_values ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 111 filtered out; finished in 3.61s
+

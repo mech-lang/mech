@@ -1,4 +1,4 @@
-const tags = new Set(['ARTICLE','SECTION','HEADER','FOOTER','DIV','SPAN','H1','H2','H3','H4','H5','H6','P','STRONG','EM','B','I','S','DEL','MARK','SMALL','SUP','SUB','PRE','CODE','BR','HR','UL','OL','LI','DL','DT','DD','BLOCKQUOTE','TABLE','THEAD','TBODY','TFOOT','TR','TH','TD','CAPTION','FIGURE','FIGCAPTION','A','IMG','DETAILS','SUMMARY']);
+const tags = new Set(['ARTICLE','SECTION','HEADER','FOOTER','DIV','SPAN','H1','H2','H3','H4','H5','H6','P','STRONG','EM','B','I','S','DEL','MARK','SMALL','SUP','SUB','PRE','CODE','BR','HR','UL','OL','LI','DL','DT','DD','BLOCKQUOTE','TABLE','THEAD','TBODY','TFOOT','TR','TH','TD','CAPTION','FIGURE','FIGCAPTION','OUTPUT','A','IMG','DETAILS','SUMMARY']);
 function safeUrl(value) {
   try {return ['http:','https:','mailto:'].includes(new URL(value, document.baseURI).protocol);} catch {return false;}
 }

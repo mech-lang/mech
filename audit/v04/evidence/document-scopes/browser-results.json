@@ -1,0 +1,2279 @@
+{
+  "status": "passed",
+  "cases": 14,
+  "records": [
+    {
+      "case": "user document executes independent named scopes and displays typed fence outputs",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "answer := 123\n",
+            "kind": "f64",
+            "output": "f64123"
+          },
+          {
+            "scope": "bar",
+            "code": "answer := 456\n",
+            "kind": "f64",
+            "output": "f64456"
+          }
+        ],
+        "preview": "CalculationThe result is published by the final expression.fooanswer := 123\nf64123baranswer := 456\nf64456Section OneThis is the first section.",
+        "outputs": "foo · 1f64123bar · 2f64456",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><header class='mech-document-header' data-mech-start='0' data-mech-end='25'><h1 class='mech-document-title'>Calculation</h1></header><section class='mech-section'><div class='mech-source-region' data-mech-start='25' data-mech-end='73'><p>The result is published by the final expression.</p></div><div class='mech-source-region' data-mech-start='75' data-mech-end='106'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>123</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>123</span></figcaption></figure></div><div class='mech-source-region' data-mech-start='106' data-mech-end='137'><figure class='mech-code-block' data-mech-source data-mech-scope='bar'><div class='mech-scope-label'>bar</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>456</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>456</span></figcaption></figure></div></section><section class='mech-section'><div class='mech-source-region' data-mech-start='137' data-mech-end='184'><h2 class='mech-subtitle' id='1'>Section One</h2></div><div class='mech-source-region' data-mech-start='184' data-mech-end='210'><p>This is the first section.</p></div></section></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              },
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "bar",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              },
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              }
+            ]
+          }
+        ],
+        "source": "Calculation\n===========\n\nThe result is published by the final expression.\n\n```mech:foo\nanswer := 123\n```\n\n```mech:bar\nanswer := 456\n```\n\n1. Section One\n------------------------------\n\nThis is the first section.\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>123</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              75,
+              106
+            ],
+            "scalar_text": "123",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "123",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4638355772470722560))"
+          },
+          {
+            "html": "<span class='mech-value'>456</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              106,
+              137
+            ],
+            "scalar_text": "456",
+            "schema": "FloatingPoint(W64)",
+            "scope": "bar",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "456",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4646729653027864576))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "repeat compile preserves two output mounts",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "answer := 123\n",
+            "kind": "f64",
+            "output": "f64123"
+          },
+          {
+            "scope": "bar",
+            "code": "answer := 456\n",
+            "kind": "f64",
+            "output": "f64456"
+          }
+        ],
+        "preview": "CalculationThe result is published by the final expression.fooanswer := 123\nf64123baranswer := 456\nf64456Section OneThis is the first section.",
+        "outputs": "foo · 1f64123bar · 2f64456",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><header class='mech-document-header' data-mech-start='0' data-mech-end='25'><h1 class='mech-document-title'>Calculation</h1></header><section class='mech-section'><div class='mech-source-region' data-mech-start='25' data-mech-end='73'><p>The result is published by the final expression.</p></div><div class='mech-source-region' data-mech-start='75' data-mech-end='106'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>123</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>123</span></figcaption></figure></div><div class='mech-source-region' data-mech-start='106' data-mech-end='137'><figure class='mech-code-block' data-mech-source data-mech-scope='bar'><div class='mech-scope-label'>bar</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>456</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>456</span></figcaption></figure></div></section><section class='mech-section'><div class='mech-source-region' data-mech-start='137' data-mech-end='184'><h2 class='mech-subtitle' id='1'>Section One</h2></div><div class='mech-source-region' data-mech-start='184' data-mech-end='210'><p>This is the first section.</p></div></section></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              },
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "bar",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              },
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              }
+            ]
+          }
+        ],
+        "source": "Calculation\n===========\n\nThe result is published by the final expression.\n\n```mech:foo\nanswer := 123\n```\n\n```mech:bar\nanswer := 456\n```\n\n1. Section One\n------------------------------\n\nThis is the first section.\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>123</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              75,
+              106
+            ],
+            "scalar_text": "123",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "123",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4638355772470722560))"
+          },
+          {
+            "html": "<span class='mech-value'>456</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              106,
+              137
+            ],
+            "scalar_text": "456",
+            "schema": "FloatingPoint(W64)",
+            "scope": "bar",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "456",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4646729653027864576))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "edits clear old fence outputs until compilation",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "answer := 789\n",
+            "kind": "f64",
+            "output": "f64789"
+          },
+          {
+            "scope": "bar",
+            "code": "answer := 456\n",
+            "kind": "f64",
+            "output": "f64456"
+          }
+        ],
+        "preview": "CalculationThe result is published by the final expression.fooanswer := 789\nf64789baranswer := 456\nf64456Section OneThis is the first section.",
+        "outputs": "foo · 1f64789bar · 2f64456",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><header class='mech-document-header' data-mech-start='0' data-mech-end='25'><h1 class='mech-document-title'>Calculation</h1></header><section class='mech-section'><div class='mech-source-region' data-mech-start='25' data-mech-end='73'><p>The result is published by the final expression.</p></div><div class='mech-source-region' data-mech-start='75' data-mech-end='106'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>789</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>789</span></figcaption></figure></div><div class='mech-source-region' data-mech-start='106' data-mech-end='137'><figure class='mech-code-block' data-mech-source data-mech-scope='bar'><div class='mech-scope-label'>bar</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>456</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>456</span></figcaption></figure></div></section><section class='mech-section'><div class='mech-source-region' data-mech-start='137' data-mech-end='184'><h2 class='mech-subtitle' id='1'>Section One</h2></div><div class='mech-source-region' data-mech-start='184' data-mech-end='210'><p>This is the first section.</p></div></section></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>789</span>",
+                "kind": "f64",
+                "scalar_text": "789",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "789",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4650151333213503488))"
+              },
+              {
+                "html": "<span class='mech-value'>789</span>",
+                "kind": "f64",
+                "scalar_text": "789",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "789",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4650151333213503488))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "bar",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              },
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              }
+            ]
+          }
+        ],
+        "source": "Calculation\n===========\n\nThe result is published by the final expression.\n\n```mech:foo\nanswer := 789\n```\n\n```mech:bar\nanswer := 456\n```\n\n1. Section One\n------------------------------\n\nThis is the first section.\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>789</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              75,
+              106
+            ],
+            "scalar_text": "789",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "789",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4650151333213503488))"
+          },
+          {
+            "html": "<span class='mech-value'>456</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              106,
+              137
+            ],
+            "scalar_text": "456",
+            "schema": "FloatingPoint(W64)",
+            "scope": "bar",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "456",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4646729653027864576))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "root bindings are isolated and repeated scope fences share state in source order",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "~answer := 10\nanswer += 1\nanswer\n",
+            "kind": "f64",
+            "output": "f6411"
+          },
+          {
+            "scope": "bar",
+            "code": "answer := 20\n",
+            "kind": "f64",
+            "output": "f6420"
+          },
+          {
+            "scope": "foo",
+            "code": "answer += 2\nanswer\n",
+            "kind": "f64",
+            "output": "f6413"
+          }
+        ],
+        "preview": "answer := 9\n\nfoo~answer := 10\nanswer += 1\nanswer\nf6411baranswer := 20\nf6420fooanswer += 2\nanswer\nf6413f649",
+        "outputs": "root · 1f649foo · 2f6411bar · 3f6420foo · 4f6413",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><section class='mech-section'><div class='mech-source-region' data-mech-start='0' data-mech-end='13'><pre class='mech-code' data-mech-source><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>9</span>\n\n</code></pre></div><div class='mech-source-region' data-mech-start='13' data-mech-end='63'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code>~<span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>10</span>\nanswer += <span class='mech-number'>1</span>\n<span class='mech-var-name' data-mech-var-name='answer'>answer</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>11</span></figcaption></figure></div><div class='mech-source-region' data-mech-start='63' data-mech-end='93'><figure class='mech-code-block' data-mech-source data-mech-scope='bar'><div class='mech-scope-label'>bar</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>20</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>20</span></figcaption></figure></div><div class='mech-source-region' data-mech-start='93' data-mech-end='128'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code>answer += <span class='mech-number'>2</span>\n<span class='mech-var-name' data-mech-var-name='answer'>answer</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>13</span></figcaption></figure></div></section><output class='mech-program-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>9</span></output></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1040,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "root",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>9</span>",
+                "kind": "f64",
+                "scalar_text": "9",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "9",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4621256167635550208))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 2750,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>13</span>",
+                "kind": "f64",
+                "scalar_text": "13",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "13",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4623507967449235456))"
+              },
+              {
+                "html": "<span class='mech-value'>11</span>",
+                "kind": "f64",
+                "scalar_text": "11",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "11",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4622382067542392832))"
+              },
+              {
+                "html": "<span class='mech-value'>13</span>",
+                "kind": "f64",
+                "scalar_text": "13",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "13",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4623507967449235456))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "bar",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>20</span>",
+                "kind": "f64",
+                "scalar_text": "20",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "20",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4626322717216342016))"
+              },
+              {
+                "html": "<span class='mech-value'>20</span>",
+                "kind": "f64",
+                "scalar_text": "20",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "20",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4626322717216342016))"
+              }
+            ]
+          }
+        ],
+        "source": "answer := 9\n\n```mech:foo\n~answer := 10\nanswer += 1\nanswer\n```\n\n```mech:bar\nanswer := 20\n```\n\n```mech:foo\nanswer += 2\nanswer\n```\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>9</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Program",
+            "range": [
+              0,
+              11
+            ],
+            "scalar_text": "9",
+            "schema": "FloatingPoint(W64)",
+            "scope": "root",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "9",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4621256167635550208))"
+          },
+          {
+            "html": "<span class='mech-value'>11</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              13,
+              63
+            ],
+            "scalar_text": "11",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "11",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4622382067542392832))"
+          },
+          {
+            "html": "<span class='mech-value'>20</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              63,
+              93
+            ],
+            "scalar_text": "20",
+            "schema": "FloatingPoint(W64)",
+            "scope": "bar",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "20",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4626322717216342016))"
+          },
+          {
+            "html": "<span class='mech-value'>13</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              93,
+              128
+            ],
+            "scalar_text": "13",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "13",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4623507967449235456))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "each run resets named state",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "~answer := 10\nanswer += 1\nanswer\n",
+            "kind": "f64",
+            "output": "f6411"
+          },
+          {
+            "scope": "bar",
+            "code": "answer := 20\n",
+            "kind": "f64",
+            "output": "f6420"
+          },
+          {
+            "scope": "foo",
+            "code": "answer += 2\nanswer\n",
+            "kind": "f64",
+            "output": "f6413"
+          }
+        ],
+        "preview": "answer := 9\n\nfoo~answer := 10\nanswer += 1\nanswer\nf6411baranswer := 20\nf6420fooanswer += 2\nanswer\nf6413f649",
+        "outputs": "root · 1f649foo · 2f6411bar · 3f6420foo · 4f6413",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><section class='mech-section'><div class='mech-source-region' data-mech-start='0' data-mech-end='13'><pre class='mech-code' data-mech-source><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>9</span>\n\n</code></pre></div><div class='mech-source-region' data-mech-start='13' data-mech-end='63'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code>~<span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>10</span>\nanswer += <span class='mech-number'>1</span>\n<span class='mech-var-name' data-mech-var-name='answer'>answer</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>11</span></figcaption></figure></div><div class='mech-source-region' data-mech-start='63' data-mech-end='93'><figure class='mech-code-block' data-mech-source data-mech-scope='bar'><div class='mech-scope-label'>bar</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>20</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>20</span></figcaption></figure></div><div class='mech-source-region' data-mech-start='93' data-mech-end='128'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code>answer += <span class='mech-number'>2</span>\n<span class='mech-var-name' data-mech-var-name='answer'>answer</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>13</span></figcaption></figure></div></section><output class='mech-program-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>9</span></output></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1040,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "root",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>9</span>",
+                "kind": "f64",
+                "scalar_text": "9",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "9",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4621256167635550208))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 2750,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>13</span>",
+                "kind": "f64",
+                "scalar_text": "13",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "13",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4623507967449235456))"
+              },
+              {
+                "html": "<span class='mech-value'>11</span>",
+                "kind": "f64",
+                "scalar_text": "11",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "11",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4622382067542392832))"
+              },
+              {
+                "html": "<span class='mech-value'>13</span>",
+                "kind": "f64",
+                "scalar_text": "13",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "13",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4623507967449235456))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "bar",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>20</span>",
+                "kind": "f64",
+                "scalar_text": "20",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "20",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4626322717216342016))"
+              },
+              {
+                "html": "<span class='mech-value'>20</span>",
+                "kind": "f64",
+                "scalar_text": "20",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "20",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4626322717216342016))"
+              }
+            ]
+          }
+        ],
+        "source": "answer := 9\n\n```mech:foo\n~answer := 10\nanswer += 1\nanswer\n```\n\n```mech:bar\nanswer := 20\n```\n\n```mech:foo\nanswer += 2\nanswer\n```\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>9</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Program",
+            "range": [
+              0,
+              11
+            ],
+            "scalar_text": "9",
+            "schema": "FloatingPoint(W64)",
+            "scope": "root",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "9",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4621256167635550208))"
+          },
+          {
+            "html": "<span class='mech-value'>11</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              13,
+              63
+            ],
+            "scalar_text": "11",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "11",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4622382067542392832))"
+          },
+          {
+            "html": "<span class='mech-value'>20</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              63,
+              93
+            ],
+            "scalar_text": "20",
+            "schema": "FloatingPoint(W64)",
+            "scope": "bar",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "20",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4626322717216342016))"
+          },
+          {
+            "html": "<span class='mech-value'>13</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              93,
+              128
+            ],
+            "scalar_text": "13",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "13",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4623507967449235456))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "named scopes use the standard library catalog",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "answer := math/sub(right: 3, left: 10)\n",
+            "kind": "f64",
+            "output": "f647"
+          }
+        ],
+        "preview": "fooanswer := math/sub(right: 3, left: 10)\nf647",
+        "outputs": "foo · 1f647",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><section class='mech-section'><div class='mech-source-region' data-mech-start='0' data-mech-end='55'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := math/sub(right: <span class='mech-number'>3</span>, left: <span class='mech-number'>10</span>)\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>7</span></figcaption></figure></div></section></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1669,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>7</span>",
+                "kind": "f64",
+                "scalar_text": "7",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "7",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4619567317775286272))"
+              },
+              {
+                "html": "<span class='mech-value'>7</span>",
+                "kind": "f64",
+                "scalar_text": "7",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "7",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4619567317775286272))"
+              }
+            ]
+          }
+        ],
+        "source": "```mech:foo\nanswer := math/sub(right: 3, left: 10)\n```\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>7</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              0,
+              55
+            ],
+            "scalar_text": "7",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "7",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4619567317775286272))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "inline expressions render root values alongside named outputs",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "answer := 123\n",
+            "kind": "f64",
+            "output": "f64123"
+          }
+        ],
+        "preview": "answer := 42\n\nThe answer is 42.fooanswer := 123\nf64123",
+        "outputs": "root · 1f6442foo · 2f64123",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><section class='mech-section'><div class='mech-source-region' data-mech-start='0' data-mech-end='14'><pre class='mech-code' data-mech-source><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>42</span>\n\n</code></pre></div><div class='mech-source-region' data-mech-start='14' data-mech-end='37'><p>The answer is <span class='mech-value'>42</span>.</p></div><div class='mech-source-region' data-mech-start='39' data-mech-end='69'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>123</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>123</span></figcaption></figure></div></section></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "root",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>42</span>",
+                "kind": "f64",
+                "scalar_text": "42",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "42",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4631107791820423168))"
+              },
+              {
+                "html": "<span class='mech-value'>42</span>",
+                "kind": "f64",
+                "scalar_text": "42",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "42",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4631107791820423168))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              },
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              }
+            ]
+          }
+        ],
+        "source": "answer := 42\n\nThe answer is {answer}.\n\n```mech:foo\nanswer := 123\n```\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>42</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Inline",
+            "range": [
+              28,
+              36
+            ],
+            "scalar_text": "42",
+            "schema": "FloatingPoint(W64)",
+            "scope": "root",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "42",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4631107791820423168))"
+          },
+          {
+            "html": "<span class='mech-value'>123</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              39,
+              69
+            ],
+            "scalar_text": "123",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "123",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4638355772470722560))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "matrix and record fence values use canonical HTML formatting",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "matrix",
+            "code": "answer := [1 2;\n3 4]\n",
+            "kind": "[f64]:2,2",
+            "output": "[f64]:2,21234"
+          },
+          {
+            "scope": "record",
+            "code": "answer := {x: 3, y: 4}\n",
+            "kind": "record",
+            "output": "recordx3y4"
+          }
+        ],
+        "preview": "matrixanswer := [1 2;\n3 4]\n[f64]:2,21234recordanswer := {x: 3, y: 4}\nrecordx3y4",
+        "outputs": "matrix · 1[f64]:2,21234record · 2recordx3y4",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><section class='mech-section'><div class='mech-source-region' data-mech-start='0' data-mech-end='41'><figure class='mech-code-block' data-mech-source data-mech-scope='matrix'><div class='mech-scope-label'>matrix</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := [<span class='mech-number'>1</span> <span class='mech-number'>2</span><span class='mech-code-terminal'>;</span>\n<span class='mech-number'>3</span> <span class='mech-number'>4</span>]\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>[f64]:2,2</div><table class='mech-matrix'><tbody><tr><td><span class='mech-value'>1</span></td><td><span class='mech-value'>2</span></td></tr><tr><td><span class='mech-value'>3</span></td><td><span class='mech-value'>4</span></td></tr></tbody></table></figcaption></figure></div><div class='mech-source-region' data-mech-start='41' data-mech-end='83'><figure class='mech-code-block' data-mech-source data-mech-scope='record'><div class='mech-scope-label'>record</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := {x: <span class='mech-number'>3</span>, y: <span class='mech-number'>4</span>}\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>record</div><table class='mech-record'><tbody><tr><th scope='row'>x</th><td><span class='mech-value'>3</span></td></tr><tr><th scope='row'>y</th><td><span class='mech-value'>4</span></td></tr></tbody></table></figcaption></figure></div></section></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: Matrix { element: FloatingPoint(W64), dimensions: [Constant(2), Constant(2)] } })",
+          "Some(Schema { dimension_parameters: [], body: Matrix { element: FloatingPoint(W64), dimensions: [Constant(2), Constant(2)] } })",
+          "Some(Schema { dimension_parameters: [], body: Record([SchemaField { name: \"x\", schema: FloatingPoint(W64) }, SchemaField { name: \"y\", schema: FloatingPoint(W64) }]) })",
+          "Some(Schema { dimension_parameters: [], body: Record([SchemaField { name: \"x\", schema: FloatingPoint(W64) }, SchemaField { name: \"y\", schema: FloatingPoint(W64) }]) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1592,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "matrix",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: Matrix { element: FloatingPoint(W64), dimensions: [Constant(2), Constant(2)] } })",
+              "Some(Schema { dimension_parameters: [], body: Matrix { element: FloatingPoint(W64), dimensions: [Constant(2), Constant(2)] } })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<table class='mech-matrix'><tbody><tr><td><span class='mech-value'>1</span></td><td><span class='mech-value'>2</span></td></tr><tr><td><span class='mech-value'>3</span></td><td><span class='mech-value'>4</span></td></tr></tbody></table>",
+                "kind": "[f64]:2,2",
+                "scalar_text": null,
+                "schema": "Matrix { element: FloatingPoint(W64), dimensions: [Constant(2), Constant(2)] }",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "[1 2; 3 4]",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "Matrix(MatrixValue { elements: F64([F64Bits(4607182418800017408), F64Bits(4611686018427387904), F64Bits(4613937818241073152), F64Bits(4616189618054758400)]) })"
+              },
+              {
+                "html": "<table class='mech-matrix'><tbody><tr><td><span class='mech-value'>1</span></td><td><span class='mech-value'>2</span></td></tr><tr><td><span class='mech-value'>3</span></td><td><span class='mech-value'>4</span></td></tr></tbody></table>",
+                "kind": "[f64]:2,2",
+                "scalar_text": null,
+                "schema": "Matrix { element: FloatingPoint(W64), dimensions: [Constant(2), Constant(2)] }",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "[1 2; 3 4]",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "Matrix(MatrixValue { elements: F64([F64Bits(4607182418800017408), F64Bits(4611686018427387904), F64Bits(4613937818241073152), F64Bits(4616189618054758400)]) })"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1813,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "record",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: Record([SchemaField { name: \"x\", schema: FloatingPoint(W64) }, SchemaField { name: \"y\", schema: FloatingPoint(W64) }]) })",
+              "Some(Schema { dimension_parameters: [], body: Record([SchemaField { name: \"x\", schema: FloatingPoint(W64) }, SchemaField { name: \"y\", schema: FloatingPoint(W64) }]) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<table class='mech-record'><tbody><tr><th scope='row'>x</th><td><span class='mech-value'>3</span></td></tr><tr><th scope='row'>y</th><td><span class='mech-value'>4</span></td></tr></tbody></table>",
+                "kind": "record",
+                "scalar_text": null,
+                "schema": "Record([SchemaField { name: \"x\", schema: FloatingPoint(W64) }, SchemaField { name: \"y\", schema: FloatingPoint(W64) }])",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "{3, 4}",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "Record(RecordValue { fields: [F64(F64Bits(4613937818241073152)), F64(F64Bits(4616189618054758400))] })"
+              },
+              {
+                "html": "<table class='mech-record'><tbody><tr><th scope='row'>x</th><td><span class='mech-value'>3</span></td></tr><tr><th scope='row'>y</th><td><span class='mech-value'>4</span></td></tr></tbody></table>",
+                "kind": "record",
+                "scalar_text": null,
+                "schema": "Record([SchemaField { name: \"x\", schema: FloatingPoint(W64) }, SchemaField { name: \"y\", schema: FloatingPoint(W64) }])",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "{3, 4}",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "Record(RecordValue { fields: [F64(F64Bits(4613937818241073152)), F64(F64Bits(4616189618054758400))] })"
+              }
+            ]
+          }
+        ],
+        "source": "```mech:matrix\nanswer := [1 2;\n3 4]\n```\n\n```mech:record\nanswer := {x: 3, y: 4}\n```\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<table class='mech-matrix'><tbody><tr><td><span class='mech-value'>1</span></td><td><span class='mech-value'>2</span></td></tr><tr><td><span class='mech-value'>3</span></td><td><span class='mech-value'>4</span></td></tr></tbody></table>",
+            "kind": "[f64]:2,2",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              0,
+              41
+            ],
+            "scalar_text": null,
+            "schema": "Matrix { element: FloatingPoint(W64), dimensions: [Constant(2), Constant(2)] }",
+            "scope": "matrix",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "[1 2; 3 4]",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "Matrix(MatrixValue { elements: F64([F64Bits(4607182418800017408), F64Bits(4611686018427387904), F64Bits(4613937818241073152), F64Bits(4616189618054758400)]) })"
+          },
+          {
+            "html": "<table class='mech-record'><tbody><tr><th scope='row'>x</th><td><span class='mech-value'>3</span></td></tr><tr><th scope='row'>y</th><td><span class='mech-value'>4</span></td></tr></tbody></table>",
+            "kind": "record",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              41,
+              83
+            ],
+            "scalar_text": null,
+            "schema": "Record([SchemaField { name: \"x\", schema: FloatingPoint(W64) }, SchemaField { name: \"y\", schema: FloatingPoint(W64) }])",
+            "scope": "record",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "{3, 4}",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "Record(RecordValue { fields: [F64(F64Bits(4613937818241073152)), F64(F64Bits(4616189618054758400))] })"
+          }
+        ]
+      }
+    },
+    {
+      "case": "disabled inert hidden and suppressed-output fences retain their semantics",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "code": "answer := 999\n"
+          },
+          {
+            "code": "this is source text\n"
+          },
+          {
+            "scope": "foo",
+            "code": "answer := 2\n"
+          },
+          {
+            "scope": "bar",
+            "code": "answer := 3\n",
+            "kind": "f64",
+            "output": "f643"
+          }
+        ],
+        "preview": "answer := 999\nthis is source text\nfooanswer := 2\nbaranswer := 3\nf643",
+        "outputs": "bar · 1f643",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><section class='mech-section'><div class='mech-source-region' data-mech-start='32' data-mech-end='68'><figure class='mech-code-block' data-mech-source><pre><code>answer := 999\n</code></pre></figure></div><div class='mech-source-region' data-mech-start='68' data-mech-end='101'><figure class='mech-code-block' data-mech-source><pre><code data-language='rust'>this is source text\n</code></pre></figure></div><div class='mech-source-region' data-mech-start='101' data-mech-end='145'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>2</span>\n</code></pre></figure></div><div class='mech-source-region' data-mech-start='145' data-mech-end='173'><figure class='mech-code-block' data-mech-source data-mech-scope='bar'><div class='mech-scope-label'>bar</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>3</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>3</span></figcaption></figure></div></section></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1040,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "root",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>1</span>",
+                "kind": "f64",
+                "scalar_text": "1",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "1",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4607182418800017408))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1040,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>2</span>",
+                "kind": "f64",
+                "scalar_text": "2",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "2",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4611686018427387904))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "bar",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>3</span>",
+                "kind": "f64",
+                "scalar_text": "3",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "3",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4613937818241073152))"
+              },
+              {
+                "html": "<span class='mech-value'>3</span>",
+                "kind": "f64",
+                "scalar_text": "3",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "3",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4613937818241073152))"
+              }
+            ]
+          }
+        ],
+        "source": "```mech:hidden\nanswer := 1\n```\n\n```mech:disabled\nanswer := 999\n```\n\n```rust\nthis is source text\n```\n\n```mech:foo{output: false}\nanswer := 2\n```\n\n```mech:bar\nanswer := 3\n```\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>3</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              145,
+              173
+            ],
+            "scalar_text": "3",
+            "schema": "FloatingPoint(W64)",
+            "scope": "bar",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "3",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4613937818241073152))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "named semantic error retains precise source navigation and independent scope result",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "answer := 10⟨u8:1..10⟩\n"
+          },
+          {
+            "scope": "bar",
+            "code": "answer := 456\n"
+          }
+        ],
+        "preview": "fooanswer := 10⟨u8:1..10⟩\n1Line 2, column 11integer literal is outside its annotated intervalbaranswer := 456\n",
+        "outputs": "Resolve the reported diagnostics, then compile again.bar · 1f64456",
+        "errors": "1 error",
+        "callouts": [
+          "1Line 2, column 11integer literal is outside its annotated interval"
+        ],
+        "marks": [
+          "10"
+        ],
+        "state": "error"
+      },
+      "result": {
+        "diagnostics": [
+          {
+            "code": "source-semantics/integer-interval-violation",
+            "document": "50430479028978029",
+            "message": "integer literal is outside its annotated interval",
+            "phase": "semantic_checking",
+            "presentation": {
+              "excerpt": " --> document:2:11\n  |\n1 | ```mech:foo\n2 | answer := 10⟨u8:1..10⟩\n  |           ^^ integer literal is outside its annotated interval\n3 | ```\n",
+              "report": "Error[source-semantics/integer-interval-violation]: integer literal is outside its annotated interval\n --> document:2:11\n  |\n1 | ```mech:foo\n2 | answer := 10⟨u8:1..10⟩\n  |           ^^ integer literal is outside its annotated interval\n3 | ```\n"
+            },
+            "range": [
+              22,
+              24
+            ],
+            "revision": "0",
+            "severity": "error"
+          }
+        ],
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "diagnostics": [
+              {
+                "code": "source-semantics/integer-interval-violation",
+                "document": "50430479028978029",
+                "message": "integer literal is outside its annotated interval",
+                "phase": "semantic_checking",
+                "presentation": {
+                  "excerpt": " --> document:2:11\n  |\n1 | ```mech:foo\n2 | answer := 10⟨u8:1..10⟩\n  |           ^^ integer literal is outside its annotated interval\n3 | ```\n",
+                  "report": "Error[source-semantics/integer-interval-violation]: integer literal is outside its annotated interval\n --> document:2:11\n  |\n1 | ```mech:foo\n2 | answer := 10⟨u8:1..10⟩\n  |           ^^ integer literal is outside its annotated interval\n3 | ```\n"
+                },
+                "range": [
+                  22,
+                  24
+                ],
+                "revision": "0",
+                "severity": "error"
+              }
+            ],
+            "name": "foo",
+            "owner": "document",
+            "stages": {
+              "parsing": "completed",
+              "semantic_checking": "rejected"
+            }
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "bar",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              },
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              }
+            ]
+          }
+        ],
+        "source": "```mech:foo\nanswer := 10⟨u8:1..10⟩\n```\n\n```mech:bar\nanswer := 456\n```\n",
+        "stages": {
+          "activation": "incomplete",
+          "artifact_construction": "incomplete",
+          "execution": "incomplete",
+          "parsing": "completed",
+          "semantic_checking": "incomplete"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>456</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              44,
+              74
+            ],
+            "scalar_text": "456",
+            "schema": "FloatingPoint(W64)",
+            "scope": "bar",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "456",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4646729653027864576))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "syntax recovery retains diagnostics and later document sections",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "answer := [1 2\n"
+          }
+        ],
+        "preview": "fooanswer := [1 2\n1Line 2, column 11missing closing delimiterNextA later paragraph.",
+        "outputs": "Resolve the reported diagnostics, then compile again.",
+        "errors": "1 error",
+        "callouts": [
+          "1Line 2, column 11missing closing delimiter"
+        ],
+        "marks": [
+          "["
+        ],
+        "state": "error"
+      },
+      "result": {
+        "diagnostics": [
+          {
+            "code": "syntax/missing-delimiter",
+            "context": null,
+            "expected": [
+              {
+                "kind": "token",
+                "value": "RightBracket"
+              }
+            ],
+            "fixes": [
+              {
+                "applicability": "machine-applicable",
+                "edits": [
+                  {
+                    "delete": {
+                      "end": 27,
+                      "start": 27
+                    },
+                    "insert": "]"
+                  }
+                ],
+                "title": "Insert `]`"
+              }
+            ],
+            "found": {
+              "kind": "Eof",
+              "text": null
+            },
+            "id": 1,
+            "labels": [
+              {
+                "anchor": {
+                  "kind": "absolute",
+                  "range": {
+                    "end": 27,
+                    "start": 27
+                  },
+                  "revision": 0
+                },
+                "message": "closing delimiter expected before this boundary"
+              }
+            ],
+            "message": "missing closing delimiter",
+            "phase": "syntax",
+            "primary": {
+              "element": {
+                "Node": 75
+              },
+              "kind": "element",
+              "relative": {
+                "end": 1,
+                "start": 0
+              }
+            },
+            "recovery": {
+              "at": 27,
+              "kind": "insert",
+              "syntax": {
+                "kind": "token",
+                "value": "RightBracket"
+              }
+            },
+            "related": [],
+            "rule": 365099244,
+            "severity": "error",
+            "tags": 0
+          }
+        ],
+        "inputs": [],
+        "outputs": [],
+        "scopes": [],
+        "source": "```mech:foo\nanswer := [1 2\n```\n\n1. Next\n---\n\nA later paragraph.\n",
+        "stages": {
+          "parsing": "completed",
+          "semantic_checking": "blocked by strict syntax validation"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": []
+      }
+    },
+    {
+      "case": "prose-only document retains information severity",
+      "passed": true,
+      "state": {
+        "fences": [],
+        "preview": "CalculationA paragraph.",
+        "outputs": "Document inspection completed. Add executable Mech code to produce program output.",
+        "errors": "1 info",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [
+          {
+            "code": "source-semantics/empty-document",
+            "document": "50430479028978029",
+            "message": "canonical document contains no executable source unit",
+            "phase": "semantic_checking",
+            "presentation": {
+              "excerpt": " --> document:1:1\n  |\n1 | Calculation\n  | ^^^^^^^^^^^\n2 | ===========\n  | ^^^^^^^^^^^\n3 | \n  | ^\n4 | A paragraph.\n  | ^^^^^^^^^^^^ canonical document contains no executable source unit\n5 | \n",
+              "report": "Info[source-semantics/empty-document]: canonical document contains no executable source unit\n --> document:1:1\n  |\n1 | Calculation\n  | ^^^^^^^^^^^\n2 | ===========\n  | ^^^^^^^^^^^\n3 | \n  | ^\n4 | A paragraph.\n  | ^^^^^^^^^^^^ canonical document contains no executable source unit\n5 | \n"
+            },
+            "range": [
+              0,
+              38
+            ],
+            "revision": "0",
+            "severity": "info"
+          }
+        ],
+        "inputs": [],
+        "outputs": [],
+        "scopes": [],
+        "source": "Calculation\n===========\n\nA paragraph.\n",
+        "stages": {
+          "activation": "executable source required",
+          "artifact_construction": "executable source required",
+          "execution": "executable source required",
+          "parsing": "completed",
+          "semantic_checking": "executable source required"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": []
+      }
+    },
+    {
+      "case": "Mika-local named scopes retain their owners",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "answer := 123\n",
+            "kind": "f64",
+            "output": "f64123"
+          },
+          {
+            "scope": "foo",
+            "code": "answer := 456\n",
+            "kind": "f64",
+            "output": "f64456"
+          }
+        ],
+        "preview": "fooanswer := 123\nf64123fooanswer := 456\nf64456",
+        "outputs": "foo · 1f64123Mika at byte 36 · foo · 2f64456",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><section class='mech-section'><div class='mech-source-region' data-mech-start='0' data-mech-end='31'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>123</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>123</span></figcaption></figure></div><div class='mech-source-region' data-mech-start='31' data-mech-end='73'><section class='mech-mika'><section class='mech-section'><div class='mech-source-region' data-mech-start='39' data-mech-end='69'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>456</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>456</span></figcaption></figure></div></section></section></div></section></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              },
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "Mika at byte 36",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              },
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              }
+            ]
+          }
+        ],
+        "source": "```mech:foo\nanswer := 123\n```\n\n~∘~⸢```mech:foo\nanswer := 456\n```\n⸥\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>123</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              0,
+              31
+            ],
+            "scalar_text": "123",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "123",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4638355772470722560))"
+          },
+          {
+            "html": "<span class='mech-value'>456</span>",
+            "kind": "f64",
+            "owner": "Mika at byte 36",
+            "presentation": "Fence",
+            "range": [
+              39,
+              69
+            ],
+            "scalar_text": "456",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "456",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4646729653027864576))"
+          }
+        ]
+      }
+    },
+    {
+      "case": "phone layout preserves fence output placement and program output below editor",
+      "passed": true,
+      "state": {
+        "fences": [
+          {
+            "scope": "foo",
+            "code": "answer := 123\n",
+            "kind": "f64",
+            "output": "f64123"
+          },
+          {
+            "scope": "bar",
+            "code": "answer := 456\n",
+            "kind": "f64",
+            "output": "f64456"
+          }
+        ],
+        "preview": "CalculationThe result is published by the final expression.fooanswer := 123\nf64123baranswer := 456\nf64456Section OneThis is the first section.",
+        "outputs": "foo · 1f64123bar · 2f64456",
+        "errors": "0",
+        "callouts": [],
+        "marks": [],
+        "state": ""
+      },
+      "result": {
+        "diagnostics": [],
+        "document_html": "<article class='mech-document'><header class='mech-document-header' data-mech-start='0' data-mech-end='25'><h1 class='mech-document-title'>Calculation</h1></header><section class='mech-section'><div class='mech-source-region' data-mech-start='25' data-mech-end='73'><p>The result is published by the final expression.</p></div><div class='mech-source-region' data-mech-start='75' data-mech-end='106'><figure class='mech-code-block' data-mech-source data-mech-scope='foo'><div class='mech-scope-label'>foo</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>123</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>123</span></figcaption></figure></div><div class='mech-source-region' data-mech-start='106' data-mech-end='137'><figure class='mech-code-block' data-mech-source data-mech-scope='bar'><div class='mech-scope-label'>bar</div><pre><code><span class='mech-var-name' data-mech-var-name='answer'>answer</span> := <span class='mech-number'>456</span>\n</code></pre><figcaption class='mech-output'><div class='mech-output-kind'>f64</div><span class='mech-value'>456</span></figcaption></figure></div></section><section class='mech-section'><div class='mech-source-region' data-mech-start='137' data-mech-end='184'><h2 class='mech-subtitle' id='1'>Section One</h2></div><div class='mech-source-region' data-mech-start='184' data-mech-end='210'><p>This is the first section.</p></div></section></article>",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "scopes": [
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "foo",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              },
+              {
+                "html": "<span class='mech-value'>123</span>",
+                "kind": "f64",
+                "scalar_text": "123",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "123",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4638355772470722560))"
+              }
+            ]
+          },
+          {
+            "artifact_bytes": 1104,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "name": "bar",
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })",
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "owner": "document",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "values": [
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              },
+              {
+                "html": "<span class='mech-value'>456</span>",
+                "kind": "f64",
+                "scalar_text": "456",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "text": "456",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4646729653027864576))"
+              }
+            ]
+          }
+        ],
+        "source": "Calculation\n===========\n\nThe result is published by the final expression.\n\n```mech:foo\nanswer := 123\n```\n\n```mech:bar\nanswer := 456\n```\n\n1. Section One\n------------------------------\n\nThis is the first section.\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "html": "<span class='mech-value'>123</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              75,
+              106
+            ],
+            "scalar_text": "123",
+            "schema": "FloatingPoint(W64)",
+            "scope": "foo",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "123",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4638355772470722560))"
+          },
+          {
+            "html": "<span class='mech-value'>456</span>",
+            "kind": "f64",
+            "owner": "document",
+            "presentation": "Fence",
+            "range": [
+              106,
+              137
+            ],
+            "scalar_text": "456",
+            "schema": "FloatingPoint(W64)",
+            "scope": "bar",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "text": "456",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4646729653027864576))"
+          }
+        ]
+      }
+    }
+  ]
+}

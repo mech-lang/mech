@@ -1,0 +1,128 @@
+{
+  "status": "passed",
+  "cases": 7,
+  "records": [
+    {
+      "case": "initial canonical preview",
+      "passed": true,
+      "result": {
+        "html": "<article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"25\" data-mech-end=\"73\"><p>The result is published by the final expression.</p></div><div class=\"mech-source-region\" data-mech-start=\"75\" data-mech-end=\"110\"><figure class=\"mech-code-block\" data-mech-source=\"\"><pre><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <span class=\"mech-number\">6</span> * <span class=\"mech-number\">7</span>\n<span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span>\n</code></pre></figure></div></section></article>",
+        "status": "Current source"
+      }
+    },
+    {
+      "case": "live document structures",
+      "passed": true,
+      "result": {
+        "html": "<article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"29\"><h1 class=\"mech-document-title\">Live document</h1></header><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"29\" data-mech-end=\"63\"><p>A <strong class=\"mech-strong\">bold</strong> and <em class=\"mech-emphasis\">italic</em> paragraph.</p></div><div class=\"mech-source-region\" data-mech-start=\"65\" data-mech-end=\"93\"><ul class=\"mech-unordered-list\"><li>First item\n</li><li>Second item\n</li></ul></div><div class=\"mech-source-region\" data-mech-start=\"93\" data-mech-end=\"128\"><figure class=\"mech-code-block\" data-mech-source=\"\"><pre><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <span class=\"mech-number\">6</span> * <span class=\"mech-number\">7</span>\n<span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span>\n</code></pre></figure></div></section></article>",
+        "strong": true,
+        "em": true,
+        "items": 2
+      }
+    },
+    {
+      "case": "desktop output placement and kind",
+      "passed": true,
+      "result": {
+        "columns": {
+          "top": 261.625,
+          "bottom": 756.765625,
+          "left": 103,
+          "right": 1337
+        },
+        "output": {
+          "top": 774.765625,
+          "bottom": 979.046875,
+          "left": 103,
+          "right": 1337
+        },
+        "source": {
+          "top": 261.625,
+          "bottom": 756.765625,
+          "left": 103,
+          "right": 711
+        },
+        "preview": {
+          "top": 261.625,
+          "bottom": 756.765625,
+          "left": 729,
+          "right": 1337
+        },
+        "kind": "f64",
+        "outputText": "root \u00b7 1f6442"
+      }
+    },
+    {
+      "case": "code fence retained as code",
+      "passed": true,
+      "result": {
+        "code": "{\"value\": 7}\n",
+        "altered": false
+      }
+    },
+    {
+      "case": "passive preview markup",
+      "passed": true,
+      "result": {
+        "active": false,
+        "scoped": true,
+        "executed": false
+      }
+    },
+    {
+      "case": "semantic source diagnostic preserved",
+      "passed": true,
+      "result": {
+        "marked": true,
+        "diagnostics": [
+          {
+            "code": "source-semantics/integer-interval-violation",
+            "document": "50430479028978029",
+            "message": "integer literal is outside its annotated interval",
+            "phase": "semantic_checking",
+            "presentation": {
+              "excerpt": " --> document:1:11\n  |\n1 | answer := 10\u27e8u8:1..10\u27e9\n  |           ^^ integer literal is outside its annotated interval\n2 | answer\n",
+              "report": "Error[source-semantics/integer-interval-violation]: integer literal is outside its annotated interval\n --> document:1:11\n  |\n1 | answer := 10\u27e8u8:1..10\u27e9\n  |           ^^ integer literal is outside its annotated interval\n2 | answer\n"
+            },
+            "range": [
+              10,
+              12
+            ],
+            "revision": "0",
+            "severity": "error",
+            "start": 10,
+            "end": 12,
+            "line": 1,
+            "column": 11
+          }
+        ]
+      }
+    },
+    {
+      "case": "mobile pane order and width",
+      "passed": true,
+      "result": {
+        "source": {
+          "top": 255.625,
+          "bottom": 702.765625,
+          "left": 33,
+          "right": 667
+        },
+        "preview": {
+          "top": 720.765625,
+          "bottom": 1151.96875,
+          "left": 33,
+          "right": 667
+        },
+        "output": {
+          "top": 1169.96875,
+          "bottom": 1374.25,
+          "left": 33,
+          "right": 667
+        },
+        "pageWidth": 700,
+        "viewportWidth": 700
+      }
+    }
+  ]
+}
