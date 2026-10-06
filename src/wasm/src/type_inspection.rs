@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
-    IntegerInterval, IntegerWidth, ReactiveInstanceId, SchemaBody, SchemaDraft, SchemaTableBuilder,
-    Value, ValueDataDraft, ValueDraft,
+    CanonicalNominalPath, IntegerInterval, IntegerWidth, ReactiveInstanceId, SchemaBody,
+    SchemaDraft, SchemaTableBuilder, Value, ValueDataDraft, ValueDraft,
 };
 use mech_engine::resident::{ActivationFacts, CapturedValueInput, ReactiveInstance, activate};
 use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
@@ -60,13 +60,42 @@ fn describe(value: &Value) -> Json {
     result
 }
 
-/// Parse, check, construct, activate and execute through real public interfaces.
-/// Each successful stage is reported separately; source diagnostics retain anchors.
+/// One editable standalone document inspected through canonical compilation.
+/// Reuse this owner for subsequent checks and edits of the same document.
+#[wasm_bindgen]
+pub struct WasmTypeInspector {
+    nominal_origin: CanonicalNominalPath,
+}
+
+#[wasm_bindgen]
+impl WasmTypeInspector {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self {
+            nominal_origin: SourceDocument::new_standalone_origin(),
+        }
+    }
+
+    /// Parse, check, construct, activate and execute using this document's owner.
+    /// Source diagnostics retain anchors, and enum identity survives edits.
+    pub fn inspect(&self, source: &str) -> String {
+        inspect(source, &self.nominal_origin).to_string()
+    }
+}
+
+impl Default for WasmTypeInspector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Inspect one fresh standalone document. Retain a `WasmTypeInspector` when
+/// repeated calls represent edits to the same document.
 #[wasm_bindgen(js_name = inspectMechTypes)]
 pub fn inspect_mech_types(source: &str) -> String {
-    inspect(source).to_string()
+    WasmTypeInspector::new().inspect(source)
 }
-fn inspect(source: &str) -> Json {
+fn inspect(source: &str, nominal_origin: &CanonicalNominalPath) -> Json {
     let mut result = json!({"source":source,"target":if cfg!(target_arch="wasm32"){"WASM-hosted resident CPU"}else{"native resident CPU"},"stages":{},"diagnostics":[]});
     let document = match SourceDocument::parse_resolved(
         "audit:types",
@@ -74,7 +103,7 @@ fn inspect(source: &str) -> Json {
         source,
         ParseConfig::default(),
     ) {
-        Ok(value) => value,
+        Ok(value) => value.with_nominal_origin(nominal_origin.clone()),
         Err(error) => {
             result["diagnostics"] = json!([{"phase":"parsing","message":format!("{error:?}")}]);
             return result;
@@ -88,7 +117,8 @@ fn inspect(source: &str) -> Json {
         return result;
     }
     let catalog = mech_stdlib::source_catalog();
-    let program = match CanonicalSourceFrontend
+    let program = match document
+        .canonical_frontend()
         .compile_document_with_catalog(&document.document(), Arc::clone(&catalog))
     {
         Ok(value) => value,
@@ -320,6 +350,109 @@ impl TypePublicationSession {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn inspect(source: &str) -> Json {
+        serde_json::from_str(&inspect_mech_types(source)).unwrap()
+    }
+
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    mod standalone_enums {
+        use super::*;
+
+        const SOURCE: &str = "<color> := :red | :green | :blue\nmy-color<color> := :red\n";
+
+        fn inspect_with(inspector: &WasmTypeInspector, source: &str) -> Json {
+            serde_json::from_str(&inspector.inspect(source)).unwrap()
+        }
+
+        #[test]
+        fn exact_enum_source_publishes_red_and_edits_keep_its_identity() {
+            let inspector = WasmTypeInspector::new();
+            let first = inspect_with(&inspector, SOURCE);
+            assert_eq!(first["stages"]["execution"], "completed", "{first}");
+            assert_eq!(first["diagnostics"], json!([]), "{first}");
+            assert_eq!(
+                first["values"][0]["value"], "Enum(EnumValue { ordinal: 0, payload: None })",
+                "{first}"
+            );
+            let schema = first["values"][0]["schema"].as_str().unwrap();
+            assert!(schema.contains("name: \"red\""), "{schema}");
+            let path = CanonicalNominalPath::new(
+                inspector
+                    .nominal_origin
+                    .segments()
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once("color".to_owned()))
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap();
+            let expected = mech_core::NominalKey::from_path(mech_core::NominalKind::Enum, &path);
+            assert!(schema.contains(&format!("{expected:?}")), "{schema}");
+
+            for source in [
+                SOURCE.replace("my-color<color> := :red", "my-color<color> := :green"),
+                SOURCE.to_owned(),
+            ] {
+                let next = inspect_with(&inspector, &source);
+                assert_eq!(next["stages"]["execution"], "completed", "{next}");
+                assert_eq!(next["values"][0]["schema"], first["values"][0]["schema"]);
+            }
+        }
+
+        #[test]
+        fn independent_inspectors_and_one_shot_calls_have_distinct_enum_owners() {
+            let first = inspect_with(&WasmTypeInspector::new(), SOURCE);
+            let independent = inspect_with(&WasmTypeInspector::new(), SOURCE);
+            let one_shot = inspect(SOURCE);
+            let next_one_shot = inspect(SOURCE);
+            for result in [&first, &independent, &one_shot, &next_one_shot] {
+                assert_eq!(result["stages"]["execution"], "completed", "{result}");
+            }
+            assert_ne!(
+                first["values"][0]["schema"],
+                independent["values"][0]["schema"]
+            );
+            assert_ne!(
+                one_shot["values"][0]["schema"],
+                next_one_shot["values"][0]["schema"]
+            );
+        }
+
+        #[test]
+        fn invalid_enum_variant_is_rejected_without_changing_the_owner() {
+            let inspector = WasmTypeInspector::new();
+            let first = inspect_with(&inspector, SOURCE);
+            let rejected = inspect_with(
+                &inspector,
+                &SOURCE.replace("my-color<color> := :red", "my-color<color> := :yellow"),
+            );
+            assert_eq!(
+                rejected["stages"]["semantic_checking"], "rejected",
+                "{rejected}"
+            );
+            assert_eq!(
+                rejected["diagnostics"][0]["code"],
+                "source-semantics/unknown-enum-variant"
+            );
+            assert_eq!(
+                rejected["product_diagnostic"]["semantic"]["code"],
+                rejected["diagnostics"][0]["code"]
+            );
+            assert_eq!(
+                rejected["product_diagnostic"]["semantic"]["range"],
+                rejected["diagnostics"][0]["range"]
+            );
+            assert!(rejected.get("values").is_none());
+            let restored = inspect_with(&inspector, SOURCE);
+            assert_eq!(restored["stages"]["execution"], "completed", "{restored}");
+            assert_eq!(
+                restored["values"][0]["schema"],
+                first["values"][0]["schema"]
+            );
+        }
+    }
+
     #[test]
     fn same_instance_rejects_and_recovers() {
         let mut session = TypePublicationSession::create().unwrap();
