@@ -111,7 +111,7 @@ The added-material census counts every changed source file against the preserved
 | Change category | Net physical lines |
 |---|---:|
 | absorbed R-stack proof | 815 |
-| audit and demo | 3,036 |
+| audit and demo | 3,042 |
 | optional WASM inspection | 1,078 |
 | production corrections and integration | 96 |
 | reproduction sources retained with evidence | 559 |

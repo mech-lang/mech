@@ -1,0 +1,6 @@
+# Preserve supplied text, recorded transcripts and generated patch bytes.
+assignment.txt -whitespace
+data/census.csv whitespace=cr-at-eol
+evidence/**/*.log -whitespace
+evidence/**/*.patch -whitespace
+evidence/**/*-sections.txt -whitespace

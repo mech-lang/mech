@@ -22,6 +22,26 @@
       "notes": []
     },
     {
+      "path": "audit/v04/.gitattributes",
+      "change_category": "audit and demo",
+      "sha256": "54b19e918d21110ee2642b47af7a4d1fa6a889291e93fd2e3151c00f1715eec1",
+      "baseline_bytes": 0,
+      "baseline_physical_lines": 0,
+      "subsystem": "audit",
+      "responsibility": "audit",
+      "role": "configuration",
+      "underlying_role": "configuration",
+      "language": "Other text",
+      "bytes": 239,
+      "physical_lines": 6,
+      "nonblank_lines": 6,
+      "source_file": false,
+      "generated_marker": false,
+      "generator": null,
+      "attribution": "deterministic path rules",
+      "notes": []
+    },
+    {
       "path": "audit/v04/.gitignore",
       "change_category": "audit and demo",
       "sha256": "b89afd71b8f3c738575498ef4fc777410703272ab148a5fff8cdea56fe8059c3",
@@ -708,7 +728,7 @@
     {
       "path": "audit/v04/report.md",
       "change_category": "audit and demo",
-      "sha256": "e18c495ec72ef2e27f6ce07d2cd89606b9386a1834a6adf9d180caaca8919503",
+      "sha256": "6284563f477a8fe9bd7b30d301bb03371d7bbbd095161d8540a99b0ed571703f",
       "baseline_bytes": 0,
       "baseline_physical_lines": 0,
       "subsystem": "audit",
@@ -1749,9 +1769,9 @@
     },
     {
       "category": "audit and demo",
-      "files": 50,
-      "net_physical_lines": 3036,
-      "net_bytes": 288382
+      "files": 51,
+      "net_physical_lines": 3042,
+      "net_bytes": 288621
     },
     {
       "category": "optional WASM inspection",
@@ -1779,13 +1799,13 @@
     }
   ],
   "current_totals": {
-    "files": 82,
-    "bytes": 1078472,
-    "physical_lines": 21811,
-    "nonblank_lines": 20660
+    "files": 83,
+    "bytes": 1078711,
+    "physical_lines": 21817,
+    "nonblank_lines": 20666
   },
-  "net_physical_lines": 6102,
-  "net_bytes": 427996,
-  "evidence_bytes": 10536636,
-  "data_bytes": 3611654
+  "net_physical_lines": 6108,
+  "net_bytes": 428235,
+  "evidence_bytes": 10536875,
+  "data_bytes": 3612292
 }
