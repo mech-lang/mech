@@ -339,15 +339,36 @@ class ImpactClassifierTests(unittest.TestCase):
         combined = self.classify(["src/cli/commands/repl/presentation.rs", "machines/math/src/ops/add.rs"])
         self.assertEqual(combined["contract_families"], ["artifact", "cli", "linkage", "numeric"])
 
-    def test_ordinary_mec_documentation_is_not_an_unknown_product(self):
-        for path in ("docs/reference/matrix.mec", "docs/getting-started/repl.mec", "docs/mechdown/table.mec"):
-            result = self.classify([path])
-            self.assertTrue(result["docs_only"])
-            self.assertEqual(result["owner_shards"], [])
-            self.assertFalse(result["dependent_contracts_required"])
+    def test_ordinary_documentation_is_not_an_unknown_product(self):
+        for path in (
+            "docs/index.mec", "docs/LICENSE", "docs/reference/matrix.mec",
+            "docs/getting-started/repl.mec", "docs/mechdown/table.mec",
+            "docs/reference/commands/format.mec",
+        ):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertTrue(result["docs_only"])
+                self.assertEqual(result["matched_owners"], ["docs"])
+                self.assertEqual(result["unmatched_paths"], [])
+                self.assertEqual(result["owner_shards"], [])
+                self.assertEqual(result["contract_families"], [])
+                self.assertFalse(result["full_validation_required"])
+                self.assertFalse(result["dependent_contracts_required"])
         self.assertFalse(self.classify(["docs/design/specification.mec"])["docs_only"])
         self.assertFalse(self.classify(["docs/design/grammar-audit/README.mec"])["docs_only"])
         self.assertFalse(self.classify(["tests/fixtures/format_static/main.mec"])["docs_only"])
+
+    def test_ordinary_docs_do_not_hide_authoritative_or_unknown_changes(self):
+        ordinary = ["docs/index.mec", "docs/LICENSE"]
+        for path in ("docs/design/specification.mec", "docs/design/grammar-audit/ports.tsv",
+                     "docs/design/grammar-audit/new-input.data", "docs/new-input.data"):
+            with self.subTest(path=path):
+                expected = self.classify([path])
+                result = self.classify([*ordinary, path])
+                self.assertFalse(result["docs_only"])
+                for key in ("changed_owners", "unmatched_paths", "contract_families",
+                            "full_validation_required", "standard_canaries_required"):
+                    self.assertEqual(result[key], expected[key], key)
 
     def test_manual_measurement_rejects_invalid_identity_and_paths(self):
         sha = "a" * 40

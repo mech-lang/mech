@@ -274,7 +274,7 @@ standard = false
 cross_cutting = false
 
 [owners.docs]
-paths = ["*.md", "LICENSE", "docs/**/*.mec"]
+paths = ["*.md", "LICENSE", "docs/LICENSE", "docs/*.mec"]
 command = []
 standard = false
 cross_cutting = false
