@@ -1,5 +1,6 @@
 import {renderMechValue} from './human-data.js';
 import {renderDocumentPreview} from './document-preview.js';
+import {annotateDocumentPreview} from './document-annotations.js';
 const examples = {
   document: 'Calculation\n===========\n\nThe result is published by the final expression.\n\n```mech\nanswer := 6 * 7\nanswer\n```\n',
   matrix: 'matrix := [1 2;\n3 4]\nmatrix\n',
@@ -60,6 +61,7 @@ export function prepareDocumentEditor() {
   const $ = id => document.getElementById(id);
   const area = $('document-source'), colors = $('document-colors'), layer = $('document-highlight');
   let api, parser, snapshot, parsedSource, colorSpans = [], diagnostics = [], diagnosticSource = null;
+  let clearPreviewAnnotations = () => {};
   let parseTimer, composing = false, busy = false, runNumber = 0, revision = 0, documentNumber = 500000n;
   area.value = examples.document;
   const lifecycle = new AbortController(), eventOptions = {signal: lifecycle.signal};
@@ -117,7 +119,12 @@ export function prepareDocumentEditor() {
     clearTimeout(parseTimer);
     if (!api || composing) return;
     const source = area.value;
-    if (source === parsedSource && snapshot) return;
+    if (source === parsedSource && snapshot) {
+      colorSpans = syntaxSpans(snapshot, byteOffsets(source));
+      if (snapshot.strictly_clean) {paint();renderPreviewDiagnostics();}
+      else showDiagnostics(syntaxDiagnostics(), true);
+      return;
+    }
     if (!parser) {parser = new api.WasmSyntaxEditor(documentNumber++, source); snapshot = parser.snapshot();}
     else snapshot = parser.replace(0, encoder.encode(parsedSource).length, source).snapshot;
     parsedSource = source;
@@ -161,9 +168,9 @@ export function prepareDocumentEditor() {
       presentation: snapshot.diagnostic_presentations[index],
     }));
   }
-  function diagnosticHeading(diagnostic, preview = false) {
+  function diagnosticHeading(diagnostic) {
     const button = document.createElement(diagnostic.range ? 'button' : 'div');
-    button.className = preview ? 'preview-diagnostic-heading' : `diagnostic-row diagnostic-${diagnostic.severity}`;
+    button.className = `diagnostic-row diagnostic-${diagnostic.severity}`;
     if (diagnostic.range) {button.type = 'button';button.onclick = () => locate(diagnostic);}
     const severity = document.createElement('span');severity.className = 'diagnostic-severity';
     severity.textContent = diagnostic.severity === 'info' ? 'Info' : diagnostic.severity === 'warning' ? 'Warning' : 'Error';
@@ -186,22 +193,22 @@ export function prepareDocumentEditor() {
     }
     pre.append(code);return pre;
   }
-  function diagnosticCard(diagnostic, preview = false) {
+  function diagnosticCard(diagnostic) {
     const card = document.createElement('article');
-    card.className = preview ? `preview-diagnostic preview-diagnostic-${diagnostic.severity}` : `diagnostic-card diagnostic-${diagnostic.severity}`;
-    card.append(diagnosticHeading(diagnostic, preview));
-    if (!preview && diagnostic.code) {
+    card.className = `diagnostic-card diagnostic-${diagnostic.severity}`;
+    card.append(diagnosticHeading(diagnostic));
+    if (diagnostic.code) {
       const code = document.createElement('div');code.className = 'diagnostic-code';code.textContent = diagnostic.code;card.append(code);
     }
     const presentation = diagnostic.presentation;
-    const text = preview ? presentation?.excerpt : presentation?.report?.split('\n').slice(1).join('\n');
-    if (text) card.append(sourceReport(text, preview ? 'preview-error-source' : 'diagnostic-source'));
+    const text = presentation?.report?.split('\n').slice(1).join('\n');
+    if (text) card.append(sourceReport(text, 'diagnostic-source'));
     return card;
   }
   function renderPreviewDiagnostics() {
     const preview = $('document-preview');
-    preview.querySelectorAll('.preview-diagnostic,.preview-diagnostic-summary').forEach(node => node.remove());
-    preview.querySelectorAll('.preview-region-error,.preview-region-warning').forEach(node => node.classList.remove('preview-region-error','preview-region-warning'));
+    clearPreviewAnnotations();
+    clearPreviewAnnotations = () => {};
     const issues = diagnosticSource === area.value ? diagnostics.filter(d => d.severity === 'error' || d.severity === 'warning') : [];
     const errors = issues.filter(d => d.severity === 'error').length;
     const warnings = issues.length - errors;
@@ -210,19 +217,9 @@ export function prepareDocumentEditor() {
     previewStatus.dataset.state = preview.dataset.state;
     const count = [errors ? `${errors} error${errors === 1 ? '' : 's'}` : '', warnings ? `${warnings} warning${warnings === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
     previewStatus.textContent = preview.dataset.renderFailed ? `Preview pending${count ? ' · ' + count : ''}` : `Current source${!snapshot.strictly_clean ? ' · recovered syntax' : ''}${count ? ' · ' + count : ''}`;
-    if (!issues.length) return;
-    const summary = document.createElement('div');summary.className = 'preview-diagnostic-summary';summary.setAttribute('role','status');
-    const heading = document.createElement('strong');heading.textContent = count;
-    const detail = document.createElement('span');detail.textContent = 'Source diagnostics appear at the affected document regions.';
-    summary.append(heading,detail);preview.prepend(summary);
-    const regions = [...preview.querySelectorAll('[data-mech-start][data-mech-end]')].map(element => ({element,start:Number(element.dataset.mechStart),end:Number(element.dataset.mechEnd)})).filter(region => Number.isInteger(region.start) && Number.isInteger(region.end) && region.end >= region.start);
-    for (const diagnostic of issues) {
-      const region = diagnostic.range ? regions.filter(region => diagnostic.range[0] >= region.start && diagnostic.range[1] <= region.end).sort((a,b) => (a.end-a.start)-(b.end-b.start))[0] : null;
-      const card = diagnosticCard(diagnostic, true);
-      if (region) {region.element.classList.add(`preview-region-${diagnostic.severity}`);region.element.insertBefore(card, [...region.element.children].find(child => !child.classList.contains('preview-diagnostic')) || null);}
-      else {card.classList.add('preview-diagnostic-unmapped');summary.after(card);}
-    }
+    if (issues.length) clearPreviewAnnotations = annotateDocumentPreview(preview,issues,byteOffsets(area.value),area.value,locate,snapshot.tree);
   }
+
   function showDiagnostics(records, live = false) {
     const source = area.value, offsets = byteOffsets(source);
     diagnosticSource = source;
@@ -295,7 +292,7 @@ export function prepareDocumentEditor() {
   document.addEventListener('keydown', event => {
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.altKey && !event.isComposing && !composing) {event.preventDefault();compile();}
   }, eventOptions);
-  window.addEventListener('pagehide', () => {clearTimeout(parseTimer);parser?.free();parser = null;snapshot = null;parsedSource = undefined;}, eventOptions);
+  window.addEventListener('pagehide', () => {clearTimeout(parseTimer);clearPreviewAnnotations();parser?.free();parser = null;snapshot = null;parsedSource = undefined;}, eventOptions);
   window.addEventListener('pageshow', event => {if (event.persisted) {scheduleParse();}}, eventOptions);
   paint();
   return {

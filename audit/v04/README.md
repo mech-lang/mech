@@ -50,7 +50,7 @@ Open `http://127.0.0.1:8764/audit/v04/site/`. The atlas reads the generated JSON
 
 The streaming adapter calls Mech’s `DocumentStream` and `DocumentSession` APIs. Application demonstrations use the retained runtime and maintained browser compute bridge. Browser transport preserves wide integers exactly using strings or `BigInt`.
 
-The document editor shows syntax diagnostics while editing and compiles with Ctrl+Enter. Its preview attaches error indicators to canonical source regions. Source excerpts, caret underlines, secondary labels and suggested fixes are formatted in Rust. The verification records for this interface are in `evidence/rich-diagnostics/`.
+The document editor shows syntax diagnostics while editing and compiles with Ctrl+Enter. Its preview attaches error indicators to canonical source regions. The preview marks the rendered code and connects its error ranges to numbered callouts. Source excerpts, caret underlines, secondary labels and suggested fixes in Diagnostics are formatted in Rust. The verification records for this interface are in `evidence/rich-diagnostics/`.
 
 ## Validation ownership
 
@@ -67,6 +67,7 @@ With the server running, use the existing Chrome harness through these entry poi
 ```sh
 python3 audit/v04/check-atlas.py
 python3 audit/v04/check-streaming-browser.py
+python3 audit/v04/check-preview-annotations.py
 python3 audit/v04/check_types_browser.py
 python3 audit/v04/check-product-browser.py
 python3 audit/v04/check-diffusion-browser.py
