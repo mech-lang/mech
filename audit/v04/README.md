@@ -36,7 +36,7 @@ python3 audit/v04/record-wasm-artifact.py
 python3 audit/v04/prepare-demo-fixtures.py
 ```
 
-The recorder verifies required exports, copies the package into the site and records exact source and executable hashes. `site/pkg/` is generated and ignored by Git. The recorded 208,709,347-byte package uses the existing release settings with wasm-opt disabled in the package manifest.
+The recorder verifies required exports, copies the package into the site, creates gzip transport chunks and records exact source and executable hashes. `site/pkg/` is generated and ignored by Git. The current package uses the existing release settings with wasm-opt disabled in the package manifest.
 
 ## Run the website
 
@@ -49,6 +49,8 @@ python3 -m http.server 8764 --bind 127.0.0.1
 Open `http://127.0.0.1:8764/audit/v04/site/`. The atlas reads the generated JSON directly. The demonstrations load the `mech-wasm` package built from this checkout. Package identity and precise feature selections are recorded alongside the build evidence. The website runs on localhost.
 
 The streaming adapter calls Mech’s `DocumentStream` and `DocumentSession` APIs. Application demonstrations use the retained runtime and maintained browser compute bridge. Browser transport preserves wide integers exactly using strings or `BigInt`.
+
+The document editor shows syntax diagnostics while editing and compiles with Ctrl+Enter. Its preview attaches error indicators to canonical source regions. Source excerpts, caret underlines, secondary labels and suggested fixes are formatted in Rust. The verification records for this interface are in `evidence/rich-diagnostics/`.
 
 ## Validation ownership
 
