@@ -394,6 +394,7 @@ jobs:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
+      RUSTUP_TOOLCHAIN: nightly-2026-03-03
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
