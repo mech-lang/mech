@@ -14,6 +14,10 @@ pub struct CanonicalWasmDocument {
 }
 
 impl CanonicalWasmDocument {
+    pub(crate) fn from_document(document: SourceDocument) -> Self {
+        Self { document }
+    }
+
     /// Retain exact source and diagnostics. Strict admission happens at each
     /// consumer boundary so malformed source remains reportable.
     pub fn retain(
@@ -22,7 +26,9 @@ impl CanonicalWasmDocument {
         source: impl Into<Arc<str>>,
     ) -> MResult<Self> {
         SourceDocument::parse_resolved(canonical_uri, revision, source, ParseConfig::default())
-            .map(|document| Self { document })
+            .map(|document| Self {
+                document: document.with_standalone_nominal_origin(),
+            })
             .map_err(|error| {
                 browser_source_error(format!("invalid retained browser source: {error:?}"))
             })
@@ -53,7 +59,13 @@ impl CanonicalWasmDocument {
                 source.into(),
             )])
             .map_err(|error| browser_source_error(format!("invalid source edit: {error:?}")))?;
-        let candidate = SourceDocument::parse(snapshot, ParseConfig::default());
+        let mut candidate = SourceDocument::parse(snapshot, ParseConfig::default());
+        if let Some(origin) = self.document.nominal_origin() {
+            candidate = candidate.with_nominal_origin(origin.clone());
+        }
+        if let Some(package_id) = self.document.nominal_package_id() {
+            candidate = candidate.with_nominal_package_id(package_id);
+        }
         candidate
             .index()
             .map_err(|error| MechError::new(error, None))?;
@@ -104,6 +116,79 @@ mod tests {
     use mech_engine::CanonicalSourceFrontend;
     #[cfg(feature = "mika")]
     use mech_runtime::{CanonicalRenderScope, RuntimeValueSnapshot};
+
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    fn enum_key(document: &CanonicalWasmDocument) -> mech_core::NominalKey {
+        let retained = document.document();
+        let program = retained
+            .canonical_frontend()
+            .compile_document_with_catalog(&retained.document(), mech_stdlib::source_catalog())
+            .unwrap();
+        program
+            .schemas()
+            .entries()
+            .find_map(|entry| match entry.schema().body() {
+                mech_core::SchemaBody::Enum { key, .. } => Some(*key),
+                _ => None,
+            })
+            .expect("the enum declaration must retain its nominal schema")
+    }
+
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    #[test]
+    fn standalone_browser_enums_keep_identity_across_edits_and_isolate_documents() {
+        let source = "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n";
+        let first =
+            CanonicalWasmDocument::retain("browser:document.mec", Revision(0), source).unwrap();
+        let independent =
+            CanonicalWasmDocument::retain("browser:document.mec", Revision(0), source).unwrap();
+        let edited = first
+            .replace_source("<event> := :idle | :busy\nvalue<event> := :busy\nvalue\n")
+            .unwrap();
+        assert_eq!(
+            first.document().nominal_origin(),
+            edited.document().nominal_origin()
+        );
+        assert_eq!(enum_key(&first), enum_key(&edited));
+        assert_ne!(enum_key(&first), enum_key(&independent));
+    }
+
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    #[test]
+    fn browser_edits_preserve_explicit_package_provenance() {
+        let origin =
+            mech_core::CanonicalNominalPath::new(["package".to_owned(), "events".to_owned()])
+                .unwrap();
+        let first = CanonicalWasmDocument {
+            document: SourceDocument::parse_resolved(
+                "browser:document.mec",
+                Revision(0),
+                "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n",
+                ParseConfig::default(),
+            )
+            .unwrap()
+            .with_nominal_origin(origin.clone())
+            .with_nominal_package_id("package-owner")
+            .with_standalone_nominal_origin(),
+        };
+        let edited = first
+            .replace_source("<event> := :idle | :busy\nvalue<event> := :busy\nvalue\n")
+            .unwrap();
+        assert_eq!(edited.document().nominal_origin(), Some(&origin));
+        assert_eq!(
+            edited.document().nominal_package_id(),
+            Some("package-owner")
+        );
+        let declaration = mech_core::CanonicalNominalPath::new([
+            "package".to_owned(),
+            "events".to_owned(),
+            "event".to_owned(),
+        ])
+        .unwrap();
+        let expected = mech_core::NominalKey::from_path(mech_core::NominalKind::Enum, &declaration);
+        assert_eq!(enum_key(&first), expected);
+        assert_eq!(enum_key(&edited), expected);
+    }
 
     #[cfg(feature = "mika")]
     fn results(

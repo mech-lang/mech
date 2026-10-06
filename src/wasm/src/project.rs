@@ -883,7 +883,7 @@ impl WasmDocumentBootstrap {
     }
 
     pub(crate) fn initial_document(&self) -> SourceDocument {
-        self.document_base()
+        self.preserve_document_provenance(self.document_base())
     }
 
     fn document_base(&self) -> SourceDocument {
@@ -892,7 +892,33 @@ impl WasmDocumentBootstrap {
     }
 
     fn stage_document_base(&self, document: SourceDocument) {
+        let document = self.preserve_document_provenance(document);
         self.document_base.borrow_mut().stage(document);
+    }
+
+    fn preserve_document_provenance(&self, document: SourceDocument) -> SourceDocument {
+        if let Some(provenance) = self.provenance.get(&self.root_specifier) {
+            return document.with_nominal_provenance(
+                provenance.nominal_origin.clone(),
+                provenance.nominal_package_id.clone(),
+            );
+        }
+        if document.nominal_origin().is_some() {
+            return document;
+        }
+        let base = self.document_base();
+        let owner = if base.nominal_origin().is_some() {
+            &base
+        } else {
+            self.document.document()
+        };
+        match owner.nominal_origin() {
+            Some(origin) => document.with_nominal_provenance(
+                origin.clone(),
+                owner.nominal_package_id().map(str::to_owned),
+            ),
+            None => document,
+        }
     }
 
     fn stage_repl_document_boundary(&self, request: &str) -> MResult<()> {
@@ -1468,35 +1494,34 @@ fn runtime_document(
             .find_map(|child| enclosing_fence_end(&child, point))
     }
 
+    let candidate = source.preserve_document_provenance(candidate.clone());
     let original = source.initial_repl_source();
     let candidate_source = candidate.source().to_contiguous_string();
     let (base, suffix) = candidate_source
         .strip_prefix(&original)
         .map(|suffix| (original.as_str(), suffix))
         .unwrap_or((candidate_source.as_str(), ""));
-    let nominal_origin = candidate.nominal_origin().cloned().or_else(|| {
-        source
-            .provenance
-            .get(&source.root_specifier)
-            .map(|provenance| provenance.nominal_origin.clone())
-    });
-    let nominal_package_id = candidate
-        .nominal_package_id()
-        .map(str::to_owned)
-        .or_else(|| {
-            source
-                .provenance
-                .get(&source.root_specifier)
-                .and_then(|provenance| provenance.nominal_package_id.clone())
-        });
-    let retain_provenance = |mut document: SourceDocument| {
+    // Resolver provenance owns packaged roots. A standalone editor owner is
+    // only a fallback, and its package discriminator must not leak into a
+    // different defining origin.
+    let (nominal_origin, nominal_package_id) =
+        if let Some(provenance) = source.provenance.get(&source.root_specifier) {
+            (
+                Some(provenance.nominal_origin.clone()),
+                provenance.nominal_package_id.clone(),
+            )
+        } else {
+            (
+                candidate.nominal_origin().cloned(),
+                candidate.nominal_package_id().map(str::to_owned),
+            )
+        };
+    let retain_provenance = |document: SourceDocument| {
         if let Some(origin) = &nominal_origin {
-            document = document.with_nominal_origin(origin.clone());
+            document.with_nominal_provenance(origin.clone(), nominal_package_id.clone())
+        } else {
+            document
         }
-        if let Some(package_id) = &nominal_package_id {
-            document = document.with_nominal_package_id(package_id.clone());
-        }
-        document
     };
     let base_document = retain_provenance(
         SourceDocument::parse_resolved(
@@ -3113,6 +3138,11 @@ mod document {
                 payload.source(),
             )
             .map_err(to_js_error)?;
+            let document = retain_browser_root_provenance(
+                document,
+                provenance.get(root_specifier),
+                initial_bundle.as_ref(),
+            );
             let document_base = Rc::new(RefCell::new(Staged {
                 active: document.document().clone(),
                 pending: None,
@@ -3254,6 +3284,11 @@ mod document {
                 payload.source(),
             )
             .map_err(to_js_error)?;
+            let retained = retain_browser_root_provenance(
+                retained,
+                provenance.get(root_specifier),
+                initial_bundle.as_ref(),
+            );
             let document_base = Rc::new(RefCell::new(Staged {
                 active: retained.document().clone(),
                 pending: None,
@@ -3382,20 +3417,10 @@ mod document {
                 replacement_bootstrap.root_specifier.clone(),
                 payload.source().to_owned(),
             );
-            replacement_bootstrap.document = CanonicalWasmDocument::retain(
-                "runtime:interactive",
-                mech_syntax::document::Revision(
-                    replacement_bootstrap
-                        .document
-                        .document()
-                        .source()
-                        .revision()
-                        .0
-                        .saturating_add(1),
-                ),
-                payload.source(),
-            )
-            .map_err(to_js_error)?;
+            replacement_bootstrap.document = replacement_bootstrap
+                .document
+                .replace_source(payload.source())
+                .map_err(to_js_error)?;
             replacement_bootstrap.initial_bundle = None;
             replacement_bootstrap.document_base = Rc::new(RefCell::new(Staged {
                 active: replacement_bootstrap.document.document().clone(),
@@ -4283,6 +4308,28 @@ fn decode_document_payload(encoded: &str) -> Result<BrowserDocumentPayload, JsVa
     BrowserDocumentPayload::decode(encoded).map_err(to_js_error)
 }
 
+fn retain_browser_root_provenance(
+    document: CanonicalWasmDocument,
+    provenance: Option<&ServedSourceProvenance>,
+    bundle: Option<&CanonicalProgramBundle>,
+) -> CanonicalWasmDocument {
+    let retained = document.document().clone();
+    let retained = if let Some(provenance) = provenance {
+        retained.with_nominal_provenance(
+            provenance.nominal_origin.clone(),
+            provenance.nominal_package_id.clone(),
+        )
+    } else if let Some(bundle) = bundle.filter(|bundle| bundle.root_nominal_origin.is_some()) {
+        retained.with_nominal_provenance(
+            bundle.root_nominal_origin.clone().unwrap(),
+            bundle.root_nominal_package_id.clone(),
+        )
+    } else {
+        retained
+    };
+    CanonicalWasmDocument::from_document(retained)
+}
+
 fn decode_document_bundle(
     encoded: &str,
     root_specifier: &str,
@@ -5115,6 +5162,7 @@ fn document_source_resolver(
     document: &SourceDocument,
     source: &WasmDocumentBootstrap,
 ) -> MResult<InMemorySourceResolver> {
+    let document = source.preserve_document_provenance(document.clone());
     if source.root_specifier.trim().is_empty() {
         return Err(document_runtime_error(
             "document root specifier must not be empty",
@@ -5159,19 +5207,13 @@ fn document_source_resolver(
         ));
     }
     let candidate_source = document.source().to_contiguous_string();
-    let mut resolved = ResolvedSource::new(
+    let resolved = ResolvedSource::new(
         &source.root_specifier,
         "runtime:interactive",
         MechSourceCode::String(candidate_source),
     )
     .with_source_document(document.clone())?
     .with_kind(SourceKind::Mech);
-    if let Some(retained) = source.provenance.get(&source.root_specifier) {
-        resolved = resolved.with_nominal_origin(retained.nominal_origin.clone());
-        if let Some(package_id) = &retained.nominal_package_id {
-            resolved = resolved.with_nominal_package_id(package_id.clone());
-        }
-    }
     resolver.insert_source(&source.root_specifier, resolved)?;
     for resolution in &derived_root_resolutions {
         resolver.insert_resolution_entry(resolution)?;
@@ -6954,11 +6996,182 @@ phase"#;
             format!("{source}\nnext := 1\n"),
             mech_syntax::document::ParseConfig::default(),
         )
-        .unwrap();
+        .unwrap()
+        .with_standalone_nominal_origin()
+        .with_nominal_package_id("stale-editor-package");
         let (runtime_source, output) = runtime_document(&bootstrap, &candidate).unwrap();
         assert!(output.is_some());
         assert_eq!(runtime_source.nominal_origin(), Some(&origin));
         assert_eq!(runtime_source.nominal_package_id(), Some("sha256:fixture"));
+    }
+
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    #[test]
+    fn standalone_document_enum_owner_survives_staged_edits_and_reset() {
+        let source = "<color> := :red | :green | :blue\nmy-color<color> := :red\n";
+        let edited = source.replace("my-color<color> := :red", "my-color<color> := :blue");
+        let encoded = document_payload("document.mec", source).encode().unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        let original = document.repl.session.symbol("my-color").unwrap().unwrap();
+        let origin = document
+            .repl
+            .session
+            .source_document()
+            .unwrap()
+            .nominal_origin()
+            .cloned();
+        let replacement = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            edited,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        document.bootstrap.stage_document_base(replacement.clone());
+        document.repl.session.replace_document(replacement).unwrap();
+        document.refresh_document_output_ordinals(None).unwrap();
+        assert_eq!(
+            document.bootstrap.document_base().nominal_origin(),
+            origin.as_ref()
+        );
+        let output_id = document.bootstrap.program_output_id().unwrap().unwrap();
+        let edited = document
+            .runtime()
+            .unwrap()
+            .output_value(output_id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(original.schema_key(), edited.schema_key());
+        assert_ne!(original, edited);
+
+        document.reset(&encoded).unwrap();
+        assert_eq!(
+            document.bootstrap.document_base().nominal_origin(),
+            origin.as_ref()
+        );
+        assert_eq!(
+            document.repl.session.symbol("my-color").unwrap().unwrap(),
+            original
+        );
+        let independent = WasmDocument::from_encoded(&encoded).unwrap();
+        assert_ne!(
+            independent
+                .repl
+                .session
+                .symbol("my-color")
+                .unwrap()
+                .unwrap()
+                .schema_key(),
+            original.schema_key()
+        );
+    }
+
+    #[cfg(all(feature = "enum", feature = "kind_define"))]
+    #[test]
+    fn root_provenance_without_package_id_replaces_stale_metadata_without_outputs() {
+        let origin =
+            mech_core::CanonicalNominalPath::new(["package".to_owned(), "events".to_owned()])
+                .unwrap();
+        for source in ["", "<event> := :idle | :busy\n"] {
+            let mut bootstrap = document_bootstrap("main.mec", source, HashMap::new(), Vec::new());
+            bootstrap.provenance.insert(
+                "main.mec".to_owned(),
+                ServedSourceProvenance {
+                    nominal_origin: origin.clone(),
+                    nominal_package_id: None,
+                },
+            );
+            let candidate = bootstrap
+                .document
+                .document()
+                .clone()
+                .with_nominal_package_id("stale-editor-package");
+            let (runtime_source, output) = runtime_document(&bootstrap, &candidate).unwrap();
+            assert!(output.is_none());
+            assert_eq!(runtime_source.nominal_origin(), Some(&origin));
+            assert_eq!(runtime_source.nominal_package_id(), None);
+            let resolver = document_source_resolver(&candidate, &bootstrap).unwrap();
+            let resolved =
+                mech_runtime::SourceResolver::resolve(&resolver, &SourceRequest::new("main.mec"))
+                    .unwrap()
+                    .unwrap();
+            assert_eq!(resolved.nominal_origin.as_ref(), Some(&origin));
+            assert_eq!(resolved.nominal_package_id, None);
+            assert_eq!(
+                resolved.source_document().unwrap().nominal_package_id(),
+                None
+            );
+        }
+    }
+
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    #[test]
+    fn browser_root_admission_restores_bundle_origin_and_prefers_resolver_pair() {
+        let source = "<color> := :red | :blue\nmy-color<color> := :red\n";
+        let retained = SourceDocument::parse_resolved(
+            "bundle:///document.mec",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap()
+        .with_standalone_nominal_origin();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()
+            .unwrap();
+        let product = compiler.compile_document(&retained).unwrap();
+        let bundle =
+            CanonicalProgramBundle::from_product("bundle:///document.mec", &retained, &product)
+                .unwrap();
+        let unowned = || {
+            CanonicalWasmDocument::retain(
+                "runtime:interactive",
+                mech_syntax::document::Revision(0),
+                source,
+            )
+            .unwrap()
+        };
+        let restored = retain_browser_root_provenance(unowned(), None, Some(&bundle));
+        assert_eq!(
+            restored.document().nominal_origin(),
+            retained.nominal_origin()
+        );
+        let restored_product = compiler.compile_document(restored.document()).unwrap();
+        assert_eq!(
+            restored_product
+                .artifact()
+                .schemas()
+                .get(restored_product.artifact().outputs()[0].schema)
+                .unwrap()
+                .body(),
+            product
+                .artifact()
+                .schemas()
+                .get(product.artifact().outputs()[0].schema)
+                .unwrap()
+                .body()
+        );
+        let configured = ServedSourceProvenance {
+            nominal_origin: mech_core::CanonicalNominalPath::new([
+                "package".to_owned(),
+                "colors".to_owned(),
+            ])
+            .unwrap(),
+            nominal_package_id: None,
+        };
+        let stale = CanonicalWasmDocument::from_document(
+            unowned()
+                .document()
+                .clone()
+                .with_nominal_package_id("stale-editor-package"),
+        );
+        let admitted = retain_browser_root_provenance(stale, Some(&configured), Some(&bundle));
+        assert_eq!(
+            admitted.document().nominal_origin(),
+            Some(&configured.nominal_origin)
+        );
+        assert_eq!(admitted.document().nominal_package_id(), None);
     }
 
     #[test]
@@ -9121,6 +9334,108 @@ mod browser_tests {
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
+
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    #[wasm_bindgen_test]
+    fn public_enum_document_edits_reset_and_rejection_preserve_nominal_identity() {
+        let source = "<color> := :red | :green | :blue\nmy-color<color> := :red\n";
+        let edited = source.replace("my-color<color> := :red", "my-color<color> := :blue");
+        let invalid = source.replace("my-color<color> := :red", "my-color<color> := :yellow");
+        let encoded = encoded_document(source);
+        for packaged in [false, true] {
+            let mut document = if packaged {
+                let sources = Object::new();
+                Reflect::set(
+                    &sources,
+                    &JsValue::from_str("document.mec"),
+                    &JsValue::from_str(source),
+                )
+                .unwrap();
+                let provenance = serde_wasm_bindgen::to_value(&serde_json::json!({
+                    "document.mec": {
+                        "nominalOrigin": {"segments": ["package", "colors"]},
+                        "nominalPackageId": null
+                    }
+                }))
+                .unwrap();
+                WasmDocument::from_encoded_with_bundle(
+                    &encoded,
+                    "document.mec",
+                    sources.into(),
+                    Array::new().into(),
+                    provenance,
+                )
+                .unwrap()
+            } else {
+                WasmDocument::from_encoded(&encoded).unwrap()
+            };
+            let origin = document
+                .repl
+                .session
+                .source_document()
+                .unwrap()
+                .nominal_origin()
+                .unwrap()
+                .clone();
+            if packaged {
+                assert_eq!(origin.segments(), &["package", "colors"]);
+            }
+            assert_eq!(
+                document.bootstrap.document.document().nominal_origin(),
+                Some(&origin)
+            );
+            let original = document.repl.session.symbol("my-color").unwrap().unwrap();
+            document.repl_replace_source(&edited).unwrap();
+            let updated = document.repl.session.symbol("my-color").unwrap().unwrap();
+            assert_eq!(original.schema_key(), updated.schema_key());
+            assert_ne!(original, updated);
+            assert_eq!(
+                document.bootstrap.document_base().nominal_origin(),
+                Some(&origin)
+            );
+            let output_id = document.bootstrap.program_output_id().unwrap().unwrap();
+            assert_eq!(
+                document
+                    .runtime()
+                    .unwrap()
+                    .output_value(output_id)
+                    .unwrap()
+                    .unwrap(),
+                updated
+            );
+
+            assert!(document.repl_replace_source(&invalid).is_err());
+            assert_eq!(document.repl_source(), edited);
+            assert_eq!(
+                document.repl.session.symbol("my-color").unwrap().unwrap(),
+                updated
+            );
+            assert_eq!(
+                document.bootstrap.document_base().nominal_origin(),
+                Some(&origin)
+            );
+            document.reset(&encoded).unwrap();
+            assert_eq!(
+                document.repl.session.symbol("my-color").unwrap().unwrap(),
+                original
+            );
+            assert_eq!(
+                document.bootstrap.document_base().nominal_origin(),
+                Some(&origin)
+            );
+            document.repl_invoke(":clear").unwrap();
+            document.repl_invoke(":reset").unwrap();
+            assert_eq!(
+                document.repl.session.symbol("my-color").unwrap().unwrap(),
+                original
+            );
+            assert_eq!(
+                document.bootstrap.document_base().nominal_origin(),
+                Some(&origin)
+            );
+            document.stop().unwrap();
+        }
+    }
 
     #[cfg(all(
         feature = "browser_host_timer",
