@@ -1646,6 +1646,23 @@ enum ExpectedSchema<'schema> {
     MatrixElement(&'schema SchemaDraft),
 }
 
+fn is_integer_literal_context(schema: &SchemaDraft) -> bool {
+    matches!(
+        schema.body,
+        SchemaBody::SignedInteger(_) | SchemaBody::UnsignedInteger(_)
+    )
+}
+
+fn is_integer_literal_source(source: &str) -> bool {
+    let magnitude = source.trim_start_matches('-');
+    ["0d", "0x", "0o", "0b"]
+        .iter()
+        .any(|prefix| magnitude.starts_with(prefix))
+        || magnitude
+            .chars()
+            .all(|character| character.is_ascii_digit() || character == '_')
+}
+
 impl<'schema> ExpectedSchema<'schema> {
     fn schema(self) -> &'schema SchemaDraft {
         match self {
@@ -3644,16 +3661,138 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         }
-        let mut operands = operands.into_iter();
-        let first = self.required(operands.next(), syntax, "a left operand")?;
-        let mut value =
-            self.formula_with_expected(&first, if operators.is_empty() { expected } else { None })?;
-        for (operator, rhs) in operators.into_iter().zip(operands) {
-            let operator = self.operator(&operator)?;
-            let rhs = self.formula(&rhs)?;
-            value = self.emit_operator(operator, value, rhs, syntax)?;
+        if operators.is_empty() {
+            return self.formula_with_expected(&operands[0], expected);
         }
-        Ok(value)
+        let operators = operators
+            .iter()
+            .map(|operator| self.operator(operator))
+            .collect::<Result<Vec<_>, _>>()?;
+        let numeric = operators.iter().all(|operator| {
+            matches!(
+                operator,
+                CanonicalOperator::Add
+                    | CanonicalOperator::Subtract
+                    | CanonicalOperator::Multiply
+                    | CanonicalOperator::Divide
+                    | CanonicalOperator::Power
+                    | CanonicalOperator::Modulus
+                    | CanonicalOperator::NotEqual
+                    | CanonicalOperator::EqualTo
+                    | CanonicalOperator::StrictNotEqual
+                    | CanonicalOperator::StrictEqual
+                    | CanonicalOperator::GreaterThan
+                    | CanonicalOperator::LessThan
+                    | CanonicalOperator::GreaterThanEqual
+                    | CanonicalOperator::LessThanEqual
+            )
+        });
+        let inferable = operands
+            .iter()
+            .map(|operand| self.is_unsuffixed_integer_formula(operand))
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut peer = None;
+        let mut context = None;
+        if numeric {
+            // Only pure literal expressions precede this operand. Lower it once
+            // to obtain a concrete peer kind before defaulting those literals.
+            if let Some(index) = inferable.iter().position(|literal| !literal) {
+                let value = self.formula(&operands[index])?;
+                let schema = self.schema_draft_of(value)?;
+                if is_integer_literal_context(&schema) {
+                    context = Some(schema);
+                }
+                peer = Some((index, value));
+            }
+            let arithmetic = !matches!(
+                operators[0],
+                CanonicalOperator::NotEqual
+                    | CanonicalOperator::EqualTo
+                    | CanonicalOperator::StrictNotEqual
+                    | CanonicalOperator::StrictEqual
+                    | CanonicalOperator::GreaterThan
+                    | CanonicalOperator::LessThan
+                    | CanonicalOperator::GreaterThanEqual
+                    | CanonicalOperator::LessThanEqual
+            );
+            if context.is_none() && arithmetic {
+                context = expected
+                    .map(ExpectedSchema::schema)
+                    .filter(|schema| is_integer_literal_context(schema))
+                    .cloned();
+            }
+        }
+        let mut value = None;
+        for (index, operand) in operands.iter().enumerate() {
+            let rhs = if let Some((_, value)) = peer.filter(|(peer, _)| *peer == index) {
+                value
+            } else {
+                self.formula_with_expected(
+                    operand,
+                    context
+                        .as_ref()
+                        .filter(|_| inferable[index])
+                        .map(ExpectedSchema::Value),
+                )?
+            };
+            value = Some(match value {
+                None => rhs,
+                Some(lhs) => self.emit_operator(operators[index - 1], lhs, rhs, syntax)?,
+            });
+        }
+        Ok(value.expect("validated operator operands"))
+    }
+
+    fn is_unsuffixed_integer_formula(
+        &self,
+        formula: &FormulaSyntax,
+    ) -> Result<bool, SourceSemanticError> {
+        let operands = match formula {
+            FormulaSyntax::Additive(value) => value.operands(),
+            FormulaSyntax::Multiplicative(value) => value.operands(),
+            FormulaSyntax::Power(value) => value.operands(),
+            FormulaSyntax::Logic(value) if value.operators().is_empty() => value.operands(),
+            FormulaSyntax::Comparison(value) if value.operators().is_empty() => value.operands(),
+            FormulaSyntax::Table(value) if value.operators().is_empty() => value.operands(),
+            FormulaSyntax::Set(value) if value.operators().is_empty() => value.operands(),
+            FormulaSyntax::Factor(value) => return self.is_unsuffixed_integer_factor(value),
+            _ => return Ok(false),
+        };
+        for operand in operands {
+            if !self.is_unsuffixed_integer_formula(&operand)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    fn is_unsuffixed_integer_factor(
+        &self,
+        factor: &FactorSyntax,
+    ) -> Result<bool, SourceSemanticError> {
+        if factor.transpose().is_some() {
+            return Ok(false);
+        }
+        match factor.value() {
+            Some(FactorValueSyntax::Literal(literal)) if literal.annotation().is_none() => {
+                let Some(LiteralValueSyntax::Number(number)) = literal.value() else {
+                    return Ok(false);
+                };
+                Ok(selected_integer_suffix(&number)?.is_none()
+                    && is_integer_literal_source(&canonical_number_source(&number)?))
+            }
+            Some(FactorValueSyntax::Negate(value)) => match value.operand() {
+                Some(operand) => self.is_unsuffixed_integer_factor(&operand),
+                None => Ok(false),
+            },
+            Some(FactorValueSyntax::Parenthetical(value)) => match value.expression() {
+                Some(ExpressionBodySyntax::Formula(formula)) => {
+                    self.is_unsuffixed_integer_formula(&formula)
+                }
+                _ => Ok(false),
+            },
+            _ => Ok(false),
+        }
     }
 
     fn operator<O: AstNode>(&self, operator: &O) -> Result<CanonicalOperator, SourceSemanticError> {
@@ -3849,7 +3988,7 @@ impl SemanticBuilder {
                 } else {
                     let operand =
                         self.required(value.operand(), value.syntax(), "a unary operand")?;
-                    let operand = self.factor(&operand)?;
+                    let operand = self.factor_with_expected(&operand, expected)?;
                     let schema = self.schema_draft_of(operand)?;
                     let scalar = builtin_schema_for_body(&schema.body);
                     let matrix_element = match &schema.body {
@@ -4863,6 +5002,13 @@ impl SemanticBuilder {
             }
             LiteralValueSyntax::Number(value) => {
                 let source = canonical_number_source(&value)?;
+                let annotation = annotation.or_else(|| {
+                    contextual
+                        .filter(|schema| is_integer_literal_context(schema))
+                        .filter(|_| selected_integer_suffix(&value).ok() == Some(None))
+                        .filter(|_| is_integer_literal_source(&source))
+                        .and_then(|schema| builtin_schema_for_body(&schema.body))
+                });
                 self.number_literal(&value, annotation, source)
             }
             LiteralValueSyntax::Empty(_) => {
@@ -5049,6 +5195,13 @@ impl SemanticBuilder {
             return Ok(None);
         }
         let source = format!("-{source}");
+        let annotation = annotation.or_else(|| {
+            expected
+                .map(ExpectedSchema::schema)
+                .filter(|schema| is_integer_literal_context(schema))
+                .filter(|_| suffix.is_none() && is_integer_literal_source(&source))
+                .and_then(|schema| builtin_schema_for_body(&schema.body))
+        });
         self.number_literal(&number, annotation, source).map(Some)
     }
 

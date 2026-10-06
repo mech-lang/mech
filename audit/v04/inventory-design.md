@@ -2,7 +2,9 @@
 
 The retained program begins with 100 units. Each turn computes `stock + arrivals - demand` in Mech. Four source integrity constraints require nonnegative arrivals, demand and stock, and a maximum stock of 1,000,000. A rejected prepared turn preserves the accepted output, publication epoch and state hash. Subsequent inputs reach the same resident instance.
 
-The native executable and browser instance use the exact source in `evidence/inventory/inventory.mec`. The browser package includes a crate-local copy, exported by `inventorySource()`. The page compares this source with its served fixture and records SHA-256. Native and browser evidence compare source bytes and nine expected results.
+The original native executable and browser records use the source in `evidence/inventory/inventory.mec`. The current browser fixture uses unsuffixed integer literals in its four comparisons. Its crate-local copy is exported by `inventorySource()`. The page compares this source with its served fixture and records SHA-256. The literal inference checks preserve the current source, executable identity, and expected results under `evidence/literal-inference/`.
+
+With signed i64 operands, `arrivals >= 0` and `1000000 >= stock` construct checked i64 literals. Both operand orders and nested literal arithmetic are covered by compiler tests. Exact values beyond the f64 integer precision range and out-of-range source diagnostics are checked separately. The language rules are recorded in `docs/design/type-system-v1.md`.
 
 ## Public boundary
 
@@ -22,7 +24,7 @@ The browser harness runs the nine-turn corpus, then uses the visible controls fo
 
 The initial source used an interval-constrained stock directly in arithmetic. The canonical frontend rejected that operand with `source-semantics/non-numeric-arithmetic-kind`. The interval contract excludes arithmetic capability. The preserved native rejection establishes this boundary. The final source uses ordinary signed integers and integrity constraints, both supported through the generic source/runtime path. Source revisions, native logs and bytecode are retained under `evidence/inventory/`.
 
-## Recorded outcomes
+## Original recorded outcomes
 
 The final native workload, both native adapter tests, the nine browser fixture turns, the alternate-source accumulator, admission failures and visible-control checks passed. Native and browser source SHA-256 is `b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a`. The shared final WASM SHA-256 is `f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194`; its size is 208,709,347 bytes. The manifest identifies the broad browser feature configuration and all source modifications.
 

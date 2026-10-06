@@ -5530,6 +5530,119 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
 }
 
 #[test]
+fn unsuffixed_integer_literals_infer_from_operator_peers_and_declarations() {
+    for (source, expected) in [
+        ("x<i64> >= 0", SchemaBody::Bool),
+        ("1000000 >= x<i64>", SchemaBody::Bool),
+        (
+            "x<i64> + (1 + 2)",
+            SchemaBody::SignedInteger(mech_core::IntegerWidth::W64),
+        ),
+        (
+            "(1 + 2) + x<i64>",
+            SchemaBody::SignedInteger(mech_core::IntegerWidth::W64),
+        ),
+        (
+            "1 + 2 + x<i64>",
+            SchemaBody::SignedInteger(mech_core::IntegerWidth::W64),
+        ),
+        ("x<i64> >= -9223372036854775808", SchemaBody::Bool),
+        (
+            "x<u128> == 340282366920938463463374607431768211455",
+            SchemaBody::Bool,
+        ),
+        (
+            "1 + 2",
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+        ),
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error}"));
+        assert_eq!(
+            compiled
+                .schemas()
+                .get(compiled.program().outputs[0].schema)
+                .unwrap()
+                .body(),
+            &expected,
+            "{source}"
+        );
+        compiled.compile_artifact().unwrap();
+    }
+    let exact = CanonicalSourceFrontend
+        .compile_document(&document("value<i64> := 9007199254740993\nvalue\n"))
+        .unwrap();
+    let SourceValue::Constant(id) = exact.program().outputs[0].source else {
+        panic!("constant")
+    };
+    assert!(matches!(
+        exact.constants().get(id).unwrap().data(),
+        ValueData::I64(9007199254740993)
+    ));
+}
+
+#[test]
+fn inferred_integer_literals_check_ranges_and_preserve_explicit_operand_kinds() {
+    for (source, code) in [
+        ("x<i8> + 128", "source-semantics/invalid-number-literal"),
+        ("256 >= x<u8>", "source-semantics/invalid-number-literal"),
+        ("x<u64> >= -1", "source-semantics/invalid-number-literal"),
+        (
+            "x<i64> >= 9223372036854775808",
+            "source-semantics/invalid-number-literal",
+        ),
+        (
+            "x<u128> >= 340282366920938463463374607431768211456",
+            "source-semantics/invalid-number-literal",
+        ),
+        (
+            "x<i64> >= 0<f64>",
+            "source-semantics/incompatible-comparison-kinds",
+        ),
+        (
+            "x<i64> >= 0.0",
+            "source-semantics/incompatible-comparison-kinds",
+        ),
+        (
+            "x<i64> >= 0f64",
+            "source-semantics/incompatible-comparison-kinds",
+        ),
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .err()
+            .expect(source);
+        assert_eq!(error.code, code, "{source}: {error}");
+        assert!(error.anchor.range.end > error.anchor.range.start);
+    }
+    let error = CanonicalSourceFrontend
+        .compile_document(&document(
+            "zero := 0\nx<i64> := 1\nresult := x >= zero\nresult\n",
+        ))
+        .err()
+        .expect("a named f64 value retains its declared/inferred kind");
+    assert_eq!(error.code, "source-semantics/incompatible-comparison-kinds");
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn contextual_integer_literals_execute_after_bytecode_roundtrip() {
+    for (expression, expected) in [
+        ("stock >= 0", ValueDataDraft::Bool(true)),
+        ("1000000 >= stock", ValueDataDraft::Bool(true)),
+        ("stock + (1 + 2)", ValueDataDraft::I64(103)),
+        ("(1 + 2) + stock", ValueDataDraft::I64(103)),
+        ("stock + -1", ValueDataDraft::I64(99)),
+    ] {
+        execute_document(
+            &format!("stock<i64> := 100\nanswer := {expression}\nanswer\n"),
+            [(vec![], expected)],
+        );
+    }
+}
+
+#[test]
 fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
     for (source, expected) in [
         ("1u8", "u8"),
@@ -5930,7 +6043,7 @@ fn semantic_kind_edges_are_resolved_before_graph_emission() {
         node.outputs.iter().all(|output| match output {
             mech_engine::SourceNodeOutput::Derived { schema } => matches!(
                 late_annotation.schemas().get(*schema).unwrap().body(),
-                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+                SchemaBody::UnsignedInteger(IntegerWidth::W8)
             ),
             mech_engine::SourceNodeOutput::State(_) => false,
         })

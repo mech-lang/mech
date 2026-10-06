@@ -158,6 +158,23 @@ String/numeric conversion, structural aggregate conversion, or Dynamic escape.
 
 ## 12. Numeric promotion table
 
+Unsuffixed integer literals receive a contextual integer kind before numeric
+promotion. In an arithmetic or comparison operator chain, the first concrete
+scalar integer operand supplies that kind to literal operands on either side.
+Parentheses and arithmetic expressions composed entirely of unsuffixed integer
+literals retain this context. An integer declaration supplies the context when
+an arithmetic expression has no concrete integer peer.
+
+Literal construction checks the exact source integer against the selected
+kind's range, including unary negation. An out-of-range literal produces a
+source diagnostic. Decimal integer literals without an integer context retain
+the default `f64` kind. Explicit literal annotations and suffixes, fractional
+and scientific literals, and previously bound values retain their own kinds.
+
+For example, with `stock<i64>`, `stock >= 0`, `1000000 >= stock`, and
+`stock + (1 + 2)` construct `i64` literals. `stock >= 0<f64>` continues to
+resolve the explicitly selected `f64` operand through the promotion table.
+
 Promotion chooses the smallest type to which both operands convert losslessly:
 same type, then the smallest containing integer, then rational when applicable,
 then float, then complex. If no such type exists, promotion fails.
