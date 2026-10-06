@@ -24,10 +24,71 @@ sys.path.insert(0, str(ROOT))
 from tests.browser.harness import ChromeSession, NavigationContextPending, free_port, wait_for_http
 
 
-def served_compute_fixture(work: Path) -> dict:
-    """Produce the admitted bundle and authority through the shipping server."""
-    project = work / "compute-project"
+def served_fixture(work: Path, name: str, source: str, *, dependency: str | None = None,
+                   config: str | None = None) -> dict:
+    """Read the actual shipping server's payload and presentation for a source."""
+    project = work / name
     project.mkdir()
+    (project / "document.mec").write_text(source)
+    sources = {"document.mec": source}
+    if dependency is not None:
+        (project / "dep.mec").write_text(dependency)
+        sources["dep.mec"] = dependency
+    if config is not None:
+        (project / "mech.mcfg").write_text(config)
+    binary = Path(os.environ.get("MECH_BIN", ROOT / "target/debug/mech"))
+    if not binary.is_absolute():
+        binary = ROOT / binary
+    port = free_port()
+    with (work / f"{name}-server.log").open("wb") as log:
+        server = subprocess.Popen([str(binary), "serve", str(project), "--port", str(port),
+                                   "--wasm", str(ROOT / "src/wasm/pkg")],
+                                  cwd=ROOT, stdin=subprocess.DEVNULL, stdout=log, stderr=log)
+        try:
+            base = f"http://127.0.0.1:{port}"
+            wait_for_http(base + "/code/document.mec", server, timeout=120)
+            def read(route):
+                with urllib.request.urlopen(base + route, timeout=15) as response:
+                    return response.read().decode()
+            encoded = read("/code/document.mec")
+            html = read("/document.mec")
+            match = re.search(r"window\.__MECH_HOST_CONFIG = (.*?);</script>", html)
+            if config is not None and not match:
+                raise RuntimeError("served document has no projected host authority")
+            return {"encoded": encoded, "config": config, "source": source,
+                    "sources": sources, "html": html,
+                    "authority": json.loads(match.group(1)) if match else None}
+        finally:
+            server.terminate()
+            try:
+                server.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                server.kill()
+                server.wait(timeout=5)
+
+
+def document_fixtures(work: Path) -> dict:
+    rich = ('~answer := 0\nanswer += 2 -- **Count** [docs](https://mech-lang.org) '
+            '`literal` {{answer + 99}}: {ans}, {ans + 1}.\nanswer\n')
+    prose = ('\nA paragraph with *emphasis* and [documentation](https://mech-lang.org).\n'
+             '\nAnother paragraph displays {answer}.\n\nanswer\n')
+    cases = {
+        "plain": "~answer := 0\nanswer += 2\nanswer\n",
+        "replacement": "~answer := 0\nanswer += 3\nanswer\n",
+        "capture": "answer := 41\nanswer\n",
+        "capture-fenced": "~~~mech\nanswer := 41\nanswer\n~~~\n",
+        "rich": rich + prose,
+        "rich-fenced": "~~~mech\n" + rich + "~~~\n" + prose,
+        "imported": "+> ./dep.mec\n~answer := 0\nanswer += dep/value\nanswer\n",
+    }
+    return {
+        name: served_fixture(work, name, source,
+                             dependency="value := 2\n<+ value\n" if name == "imported" else None)
+        for name, source in cases.items()
+    }
+
+
+def served_compute_fixture(work: Path) -> dict:
     source = """@compute := compute://worker/kernel{:write(turn), :read(sample/result)}
 @clock := timer://clock/tick{:read(tick)}
 @compute/turn <- @clock/tick
@@ -41,53 +102,24 @@ counter += 1f32
 counter
 """
     config = 'config := {runtime: {resident-durability: "volatile"} hosts: [{name: "clock" provider: "timer" settings: {frequency-hz: 1000 queue-policy: "latest"}} {name: "worker" provider: "compute" settings: {region: "calculation" backend: "cpu"}}] run: {paths: ["document.mec"] grants: [{target: "clock/tick" operations: ["read"] paths: ["tick"]} {target: "worker/kernel" operations: ["read", "write"] paths: ["turn", "sample/result"]}]} serve: {paths: ["document.mec"]}}'
-    (project / "document.mec").write_text(source)
-    (project / "mech.mcfg").write_text(config)
-    binary = Path(os.environ.get("MECH_BIN", ROOT / "target/debug/mech"))
-    if not binary.is_absolute():
-        binary = ROOT / binary
-    port = free_port()
-    with (work / "compute-server.log").open("wb") as log:
-        server = subprocess.Popen([str(binary), "serve", str(project), "--port", str(port),
-                                   "--wasm", str(ROOT / "src/wasm/pkg")],
-                                  cwd=ROOT, stdin=subprocess.DEVNULL, stdout=log, stderr=log)
-        try:
-            base = f"http://127.0.0.1:{port}"
-            wait_for_http(base + "/code/document.mec", server, timeout=120)
-            def read(route):
-                with urllib.request.urlopen(base + route, timeout=15) as response:
-                    return response.read().decode()
-            encoded = read("/code/document.mec")
-            html = read("/document.mec")
-            match = re.search(r"window\.__MECH_HOST_CONFIG = (.*?);</script>", html)
-            if not match:
-                raise RuntimeError("served document has no projected host authority")
-            return {"encoded": encoded, "config": config, "source": source,
-                    "sources": {"document.mec": source}, "html": html,
-                    "authority": json.loads(match.group(1))}
-        finally:
-            server.terminate()
-            try:
-                server.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                server.kill()
-                server.wait()
+    return served_fixture(work, "compute-project", source, config=config)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--browser", help="path to Chrome or Edge")
-    parser.add_argument("--fixtures", required=True, help="full-source-runtime emitted bundle directory")
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--served-compute", action="store_true", help="exercise configured compute edits through the shipping server and WasmDocument")
     args = parser.parse_args()
-    work_parent = ROOT / "target" if args.served_compute else None
-    if work_parent is not None:
-        work_parent.mkdir(parents=True, exist_ok=True)
+    work_parent = ROOT / "target"
+    work_parent.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="canonical-document-bundle-", dir=work_parent))
     shutil.copytree(ROOT / "src/wasm/pkg", work / "pkg")
-    fixtures = {name: json.loads((Path(args.fixtures) / f"{name}.json").read_text())
-                for name in ("plain", "imported", "replacement", "capture", "capture-fenced", "rich", "rich-fenced")}
+    try:
+        fixtures = document_fixtures(work)
+    except Exception:
+        print(f"Document fixture artifacts: {work}", file=sys.stderr)
+        raise
     if args.served_compute:
         try:
             fixtures["served-compute"] = served_compute_fixture(work)

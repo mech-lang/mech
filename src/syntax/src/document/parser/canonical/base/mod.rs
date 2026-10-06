@@ -202,6 +202,7 @@ pub(crate) fn supports(rule: RuleId) -> bool {
     fixed_terminal_spec(rule).is_some() || NON_FIXED_RULES.contains(&rule)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> bool {
     let mut continuation = continuation::Continuation::new(rule);
     let mut allowance = u64::MAX;
@@ -216,6 +217,7 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> bool {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn parse_exact_tag(parser: &mut Parser<'_>, literal: &str, kind: SyntaxKind) -> bool {
     let mut child = ExactTag::new(literal, kind);
     loop {

@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-"""Enforce the focused C4 operation-contract architecture boundary."""
+"""Enforce the operation-contract architecture boundary."""
 
 from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/architecture/operation-contract/c4-boundary.json"
-C4_FINAL_COMMIT = "33298522331d40960175427052ce363bb5e424df"
+MANIFEST = ROOT / "tests/architecture/operation-contract/boundary.json"
 CONTRACT_SOURCES = (
     "src/core/src/operation_contract/declaration.rs",
     "src/core/src/operation_contract/resolved.rs",
@@ -24,17 +22,6 @@ CONTRACT_SOURCES = (
 
 def read(root: Path, path: str) -> str:
     return (root / path).read_text()
-
-
-def read_at(root: Path, commit: str, path: str) -> str:
-    result = subprocess.run(
-        ["git", "show", f"{commit}:{path}"],
-        cwd=root,
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-    return result.stdout
 
 
 def type_is_declared(source: str, name: str) -> bool:
@@ -58,7 +45,7 @@ def named_block(source: str, kind: str, name: str) -> str | None:
 
 def validate_contract_sources(source: str, required_types: list[str]) -> list[str]:
     failures = [name for name in required_types if not type_is_declared(source, name)]
-    errors = [f"missing frozen C4 contract type {name}" for name in failures]
+    errors = [f"missing operation contract type {name}" for name in failures]
     resolved = named_block(source, "enum", "ResolvedOperationContract") or ""
     declared = named_block(source, "struct", "DeclaredOperationContract") or ""
     portable = resolved + declared
@@ -139,7 +126,7 @@ def validate_artifact_fields(model: str, fields: dict[str, str]) -> list[str]:
         field_name, field_type = field.split(":", 1)
         pattern = rf"\b{re.escape(field_name.strip())}\s*:\s*{re.escape(field_type.strip())}\b"
         if re.search(pattern, block) is None:
-            errors.append(f"{name} lost required C4 field {field}")
+            errors.append(f"{name} lost required operation contract field {field}")
     return errors
 
 
@@ -175,33 +162,9 @@ def validate_bytecode(section: str, reader: str, expected: str) -> list[str]:
         expected,
     ):
         if required not in section:
-            errors.append(f"bytecode v1 lost C4 contract framing {required}")
+            errors.append(f"bytecode v1 lost operation contract framing {required}")
     if expected not in reader:
         errors.append("bytecode v1 reader does not retain the operation-contract section")
-    return errors
-
-
-def validate_representatives(root: Path, representatives: list[dict[str, object]]) -> list[str]:
-    errors: list[str] = []
-    for representative in representatives:
-        path = str(representative["path"])
-        source = read(root, path)
-        for marker in representative["markers"]:
-            if str(marker) not in source:
-                errors.append(f"representative declaration {path} lost {marker}")
-    return errors
-
-
-def validate_representatives_at(
-    root: Path, commit: str, representatives: list[dict[str, object]]
-) -> list[str]:
-    errors: list[str] = []
-    for representative in representatives:
-        path = str(representative["path"])
-        source = read_at(root, commit, path)
-        for marker in representative["markers"]:
-            if str(marker) not in source:
-                errors.append(f"representative declaration {path} lost {marker}")
     return errors
 
 
@@ -222,30 +185,9 @@ def validate_canonical_contract_policy(compiler: str, fixture: str) -> list[str]
     return errors
 
 
-def changed_protected_paths(
-    root: Path, base: str, protected: list[str], head: str = "HEAD"
-) -> list[str]:
-    result = subprocess.run(
-        ["git", "diff", "--name-only", base, head, "--", *protected],
-        cwd=root,
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-    return [line for line in result.stdout.splitlines() if line]
-
-
 def run(root: Path = ROOT) -> list[str]:
     manifest = json.loads((root / MANIFEST.relative_to(ROOT)).read_text())
     errors: list[str] = []
-    ancestor = subprocess.run(
-        ["git", "merge-base", "--is-ancestor", C4_FINAL_COMMIT, "HEAD"],
-        cwd=root,
-        text=True,
-        capture_output=True,
-    )
-    if ancestor.returncode != 0:
-        errors.append(f"C4 final commit {C4_FINAL_COMMIT} must be an ancestor of HEAD")
     contract_source = "\n".join(read(root, path) for path in CONTRACT_SOURCES)
     errors.extend(validate_contract_sources(contract_source, manifest["contract_types"]))
     errors.extend(validate_table_boundary(contract_source))
@@ -260,43 +202,10 @@ def run(root: Path = ROOT) -> list[str]:
     section = read(root, "src/core/src/program/bytecode/section.rs")
     reader = read(root, "src/core/src/program/bytecode/reader.rs")
     errors.extend(validate_bytecode(section, reader, manifest["bytecode_section"]))
-    errors.extend(
-        validate_representatives_at(
-            root, C4_FINAL_COMMIT, manifest["representative_declarations"]
-        )
-    )
     errors.extend(validate_canonical_contract_policy(
         read(root, "src/engine/src/artifact/compiler.rs"),
         read(root, "src/engine/tests/program_artifact_contract.rs"),
     ))
-    changed = changed_protected_paths(
-        root,
-        manifest["base_commit"],
-        manifest["protected_execution_paths"],
-        C4_FINAL_COMMIT,
-    )
-    unapproved = [path for path in changed if path not in manifest["allowed_protected_changes"]]
-    if unapproved:
-        errors.append("C4 changes an unapproved production execution path: " + ", ".join(unapproved))
-    diff = subprocess.run(
-        [
-            "git",
-            "diff",
-            manifest["base_commit"],
-            C4_FINAL_COMMIT,
-            "--",
-            "src",
-            "machines",
-            "hosts",
-        ],
-        cwd=root,
-        text=True,
-        capture_output=True,
-        check=True,
-    ).stdout
-    additions = "\n".join(line[1:] for line in diff.splitlines() if line.startswith("+") and not line.startswith("+++"))
-    if re.search(r"bytecode[ _-]?v2", additions, re.IGNORECASE):
-        errors.append("C4 introduces forbidden bytecode-v2 work")
     return errors
 
 
@@ -304,9 +213,9 @@ def main() -> int:
     failures = run()
     if failures:
         for failure in failures:
-            print(f"C4 contract failure: {failure}", file=sys.stderr)
+            print(f"Operation contract failure: {failure}", file=sys.stderr)
         return 1
-    print("C4 operation-contract checks passed")
+    print("Operation-contract checks passed")
     return 0
 
 

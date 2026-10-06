@@ -115,8 +115,7 @@ pub trait ResidentReplRuntimeFactory {
     }
 
     /// Build and activate one strictly admitted retained canonical revision.
-    /// Hosts preparing the S8 cutover override this instead of reconstructing
-    /// an executable tree from the source projection.
+    /// Hosts override this to preserve canonical document authority through activation.
     fn activate_document(
         &self,
         events: MechEventBuffer,
@@ -275,7 +274,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.submit_without_source_echo(entry, false)
     }
 
-    /// Submit only after S7B has finalized the complete entry stream. Open,
+    /// Submit only after the stream parser has finalized the complete entry stream. Open,
     /// limited, and cancelled streams fail before candidate construction and
     /// therefore cannot execute or replace the accepted runtime.
     pub fn submit_finished_stream(

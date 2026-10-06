@@ -393,7 +393,7 @@ class ChromeSession:
         log: str | os.PathLike[str],
         *,
         flags: list[str] | tuple[str, ...] = (),
-        startup_timeout: float = 30,
+        startup_timeout: float = 60,
         window_size: tuple[int, int] | None = None,
     ) -> None:
         self.browser = find_browser(browser)
@@ -414,6 +414,20 @@ class ChromeSession:
             # Callers cannot own a session until start returns, so partial
             # startup remains this object's responsibility.
             self.close()
+            # A failed start has no caller-owned session from which to collect
+            # artifacts. Keep Chrome's diagnostic output in the CI log too.
+            try:
+                with self.log.open("rb") as log:
+                    log.seek(0, os.SEEK_END)
+                    log.seek(max(0, log.tell() - 16_000))
+                    stderr = log.read().decode("utf-8", errors="replace")
+            except OSError as error:
+                stderr = f"unable to read browser stderr: {error}"
+            print(
+                f"Browser startup failed: {self.browser}\n"
+                f"Browser stderr ({self.log}, last 16000 bytes):\n{stderr or '<empty>'}",
+                file=sys.stderr,
+            )
             raise
 
     def _start(self) -> "ChromeSession":
@@ -440,8 +454,11 @@ class ChromeSession:
             start_new_session=True,
         )
         endpoint = f"http://127.0.0.1:{debug_port}/json/version"
+        # A listening socket can precede a responsive browser UI thread.
+        # Match ChromeDriver's startup allowance without extending page tests.
         deadline = time.monotonic() + self.startup_timeout
         websocket_url = None
+        last_error = None
         while time.monotonic() < deadline:
             if self.process.poll() is not None:
                 raise BrowserFailure(f"browser exited with status {self.process.returncode}")
@@ -451,10 +468,14 @@ class ChromeSession:
                 websocket_url = version.get("webSocketDebuggerUrl")
                 if isinstance(websocket_url, str):
                     break
-            except OSError:
+            except OSError as error:
+                last_error = error
                 time.sleep(0.1)
         if not isinstance(websocket_url, str):
-            raise BrowserFailure("browser debugging endpoint did not become ready")
+            raise BrowserFailure(
+                f"browser debugging endpoint did not become ready at {endpoint} "
+                f"within {self.startup_timeout:g}s; last connection error: {last_error}"
+            )
         self.devtools = DevTools(self.process, websocket_url)
         target = self.devtools.call("Target.createTarget", {"url": "about:blank"})["targetId"]
         self.session_id = self.devtools.call(

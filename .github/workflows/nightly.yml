@@ -28,6 +28,7 @@ jobs:
     needs: context
     uses: ./.github/workflows/ci-full.yml
     with:
+      validation_ref: ${{ github.sha }}
       release_channel: nightly
       release_date: ${{ needs.context.outputs.date }}
 
@@ -40,6 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Download validated standard and full packages
         uses: actions/download-artifact@v4

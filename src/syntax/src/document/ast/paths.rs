@@ -24,7 +24,7 @@ macro_rules! path_ast_node {
     };
 }
 
-// Typed view of the existing Phase 2A path-segment node.
+// Typed view of the existing lexical grammar path-segment node.
 path_ast_node!(IdentifierPathSegmentSyntax, IdentifierPathSegment);
 path_ast_node!(ContextAddressPathSyntax, ContextAddressPath);
 path_ast_node!(PrefixedContextPathSyntax, PrefixedContextPath);

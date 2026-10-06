@@ -9169,18 +9169,11 @@ mod tests {
                 .or_else(|| node.children().find_map(find_expression))
         }
         for source in ["_", "unknown(math/add(1,2))"] {
-            let parsed =
-                mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test(
-                    mech_syntax::document::TextSnapshot::new(
-                        DocumentId(0x548),
-                        Revision(1),
-                        source,
-                    )
+            let parsed = mech_syntax::document::parse_canonical_document(
+                mech_syntax::document::TextSnapshot::new(DocumentId(0x548), Revision(1), source)
                     .unwrap(),
-                    mech_syntax::document::parser::rules::EXPRESSION,
-                    mech_syntax::document::ParseConfig::default(),
-                )
-                .unwrap();
+                mech_syntax::document::ParseConfig::default(),
+            );
             assert!(parsed.is_strictly_clean());
             let expression = find_expression(parsed.syntax()).unwrap();
             let mut builder =

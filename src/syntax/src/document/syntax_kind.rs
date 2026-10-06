@@ -84,7 +84,7 @@ define_syntax_kinds! {
   Unknown => token,
   Eof => token,
 
-  // Phase 2A semantic token categories. `DefineOperator` above remains the
+  // lexical grammar semantic token categories. `DefineOperator` above remains the
   // Phase 1 structural node; the lexical category has an explicit token name.
   AbstractSigil => token,
   Alpha => token,
@@ -155,7 +155,7 @@ define_syntax_kinds! {
   Underscore => token,
   WarningSigil => token,
 
-  // Phase 2A canonical grammar and compatibility-value nodes.
+  // lexical grammar canonical grammar and compatibility-value nodes.
   CanonicalFragment => node,
   GrammarDocument => node,
   Grammar => node,
@@ -179,7 +179,7 @@ define_syntax_kinds! {
   IdentifierPathSegment => node,
   EscapedCharacter => node,
 
-  // Phase 2B canonical Mechdown values.
+  // document markup canonical Mechdown values.
   InlineCode => node,
   InlineEquation => node,
   RawHyperlink => node,
@@ -190,7 +190,7 @@ define_syntax_kinds! {
   BlankLine => node,
   Equation => node,
 
-  // Phase 2C closed literal, path, and primitive-kind values. Keep this
+  // literal, path, and kind grammar closed literal, path, and primitive-kind values. Keep this
   // append-only: persisted green-tree discriminants depend on the prior order.
   EmptyLiteral => node,
   AtomLiteral => node,
@@ -218,7 +218,7 @@ define_syntax_kinds! {
   KindEmpty => node,
   KindAtom => node,
 
-  // Phase 2D closed expression-operator values. Keep this append-only:
+  // expression grammar closed expression-operator values. Keep this append-only:
   // persisted green-tree discriminants depend on every preceding kind.
   AddSubOperator => node,
   MulDivOperator => node,
@@ -273,7 +273,7 @@ define_syntax_kinds! {
   NotElementOfOperation => node,
   SymmetricDifferenceOperation => node,
 
-  // Phase 2E closed module-import values. Keep this append-only: persisted
+  // module import grammar closed module-import values. Keep this append-only: persisted
   // green-tree discriminants depend on every preceding kind.
   ModuleImportNameSegment => node,
   ModuleImportIntrinsicSegment => node,
@@ -293,7 +293,7 @@ define_syntax_kinds! {
   ModuleOnlyImport => node,
   ModuleImport => node,
 
-  // Phase 2F source-import values. Keep this append-only: persisted green-tree
+  // declaration grammar source-import values. Keep this append-only: persisted green-tree
   // discriminants depend on every preceding kind.
   SourceImportTail => node,
   SourcePathComponent => node,
@@ -306,7 +306,7 @@ define_syntax_kinds! {
   SourceImportSpecifier => node,
   ImportDeclaration => node,
 
-  // Phase 2F declaration values follow the source-import tail. Keep this
+  // declaration values follow the source-import tail. Keep this
   // append-only: persisted green-tree discriminants depend on every prior kind.
   ExportDeclaration => node,
   ContextDeclaration => node,
@@ -316,7 +316,7 @@ define_syntax_kinds! {
   ContextCapabilityPath => node,
   ContextCapabilityScope => node,
 
-  // Phase 2G closed executable primitives. Keep this append-only: persisted
+  // executable primitives closed executable primitives. Keep this append-only: persisted
   // green-tree discriminants depend on every preceding kind.
   SelectAllSubscript => node,
   SwizzleSubscript => node,
@@ -330,13 +330,13 @@ define_syntax_kinds! {
   DivAssignOperation => node,
   ExpAssignOperation => node,
 
-  // Phase 2H closed structure shell. Keep this append-only: persisted
+  // structure grammar closed structure shell. Keep this append-only: persisted
   // green-tree discriminants depend on every preceding kind.
   TableRowSeparator => node,
   EmptyMap => node,
   EmptySet => node,
 
-  // Phase 2I-B recursive-core syntax schema. Keep this append-only: persisted
+  // executable grammar-B recursive-core syntax schema. Keep this append-only: persisted
   // green-tree discriminants depend on every preceding kind.
   Literal => node,
   Kind => node,
@@ -412,7 +412,7 @@ define_syntax_kinds! {
   TableExpression => node,
   SetExpression => node,
 
-  // S7 canonical document grammar. Keep this append-only: these roles are
+  // canonical document grammar. Keep this append-only: these roles are
   // generated from the document closure rooted at `parse`.
   AbstractEl => node,
   ActivationArm => node,
@@ -522,7 +522,7 @@ mod tests {
     use super::SyntaxKind;
 
     #[test]
-    fn phase_2a_kinds_are_append_only() {
+    fn lexical_kinds_are_append_only() {
         assert_eq!(SyntaxKind::Document as u16, 0);
         assert_eq!(SyntaxKind::DefineOperator as u16, 20);
         assert_eq!(SyntaxKind::Text as u16, 24);
@@ -533,7 +533,7 @@ mod tests {
     }
 
     #[test]
-    fn phase_2b_kinds_are_append_only() {
+    fn document_markup_kinds_are_append_only() {
         let appended = [
             SyntaxKind::InlineCode,
             SyntaxKind::InlineEquation,
@@ -552,7 +552,7 @@ mod tests {
     }
 
     #[test]
-    fn phase_2c_kinds_are_append_only() {
+    fn literal_path_kind_kinds_are_append_only() {
         let appended = [
             SyntaxKind::EmptyLiteral,
             SyntaxKind::AtomLiteral,
@@ -582,7 +582,7 @@ mod tests {
         ];
         // `IntegerLiteral` already exists at its Phase 1 discriminant and is the
         // canonical node reused by this closed island. Every genuinely new Phase
-        // 2C kind follows the existing Phase 2B tail in the specified order.
+        // 2C kind follows the existing document markup tail in the specified order.
         assert_eq!(SyntaxKind::IntegerLiteral as u16, 19);
         for (offset, kind) in appended.into_iter().enumerate() {
             assert_eq!(kind as u16, 143 + offset as u16);
@@ -591,7 +591,7 @@ mod tests {
     }
 
     #[test]
-    fn phase_2d_kinds_are_append_only() {
+    fn expression_kinds_are_append_only() {
         let appended = [
             SyntaxKind::AddSubOperator,
             SyntaxKind::MulDivOperator,
@@ -653,7 +653,7 @@ mod tests {
     }
 
     #[test]
-    fn phase_2e_kinds_are_append_only() {
+    fn module_import_kinds_are_append_only() {
         let appended = [
             SyntaxKind::ModuleImportNameSegment,
             SyntaxKind::ModuleImportIntrinsicSegment,
@@ -680,7 +680,7 @@ mod tests {
     }
 
     #[test]
-    fn phase_2f_source_import_kinds_are_append_only() {
+    fn declaration_source_import_kinds_are_append_only() {
         let appended = [
             SyntaxKind::SourceImportTail,
             SyntaxKind::SourcePathComponent,
@@ -707,7 +707,7 @@ mod tests {
     }
 
     #[test]
-    fn phase_2g_executable_primitive_kinds_are_append_only() {
+    fn primitive_executable_primitive_kinds_are_append_only() {
         let appended = [
             SyntaxKind::SelectAllSubscript,
             SyntaxKind::SwizzleSubscript,
@@ -728,7 +728,7 @@ mod tests {
     }
 
     #[test]
-    fn phase_2h_structure_shell_kinds_are_append_only() {
+    fn structure_structure_shell_kinds_are_append_only() {
         let appended = [
             SyntaxKind::TableRowSeparator,
             SyntaxKind::EmptyMap,
@@ -741,7 +741,7 @@ mod tests {
     }
 
     #[test]
-    fn phase_2i_recursive_schema_kinds_are_append_only() {
+    fn executable_recursive_schema_kinds_are_append_only() {
         let appended = [
             SyntaxKind::Literal,
             SyntaxKind::Kind,
@@ -824,7 +824,7 @@ mod tests {
     }
 
     #[test]
-    fn s7_document_kinds_are_append_only() {
+    fn document_document_kinds_are_append_only() {
         assert_eq!(SyntaxKind::AbstractEl as u16, 341);
         assert_eq!(SyntaxKind::WarningBlock as u16, 441);
         assert_eq!(

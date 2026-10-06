@@ -1,25 +1,29 @@
 use super::*;
-use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
-use mech_syntax::document::{ParseConfig, RuleId, TextSnapshot};
 
-fn parse<T: AstNode>(source: &str, rule: RuleId) -> T {
+use mech_syntax::document::{ParseConfig, TextSnapshot};
+
+fn parse<T: AstNode>(source: &str) -> T {
     fn find<T: AstNode>(node: SyntaxNode) -> Option<T> {
         T::cast(node.clone()).or_else(|| node.children().find_map(find::<T>))
     }
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x544), Revision(1), source).unwrap(),
-        rule,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(parsed.is_strictly_clean(), "{source}");
-    assert_eq!(parsed.consumed.end.0 as usize, source.len(), "{source}");
-    find(parsed.syntax()).unwrap()
+    assert_eq!(
+        parsed.syntax().range().end.0 as usize,
+        source.len(),
+        "{source}"
+    );
+    let syntax = find::<T>(parsed.syntax()).unwrap();
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    syntax
 }
 
 fn selected(definition: &str, expression: &str) -> CanonicalSourceProgram {
-    let definition: VariableDefineSyntax = parse(definition, rules::VARIABLE_DEFINE);
-    let expression: ExpressionSyntax = parse(expression, rules::EXPRESSION);
+    let definition: VariableDefineSyntax = parse(definition);
+    let expression: ExpressionSyntax = parse(expression);
     let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(expression.syntax()));
     builder
         .declare_definition_input_annotations(&definition, &BTreeSet::new())
@@ -451,8 +455,8 @@ fn latest_review_selection_rejects_nonpositional_and_mismatched_map_keys() {
         ("a := (1,2)", "a[\"x\"]"),
         ("a := {1: true}", "a{\"x\"}"),
     ] {
-        let definition: VariableDefineSyntax = parse(definition, rules::VARIABLE_DEFINE);
-        let expression: ExpressionSyntax = parse(source, rules::EXPRESSION);
+        let definition: VariableDefineSyntax = parse(definition);
+        let expression: ExpressionSyntax = parse(source);
         let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(expression.syntax()));
         builder.definition(&definition).unwrap();
         let error = builder
@@ -778,8 +782,8 @@ fn maintained_underscore_set_relation_infers_both_operand_positions() {
     // is not a canonical source identifier. Exercise the declared-call boundary
     // directly without extending the frozen grammar or adding a source alias.
     for reversed in [false, true] {
-        let signal: ExpressionSyntax = parse("signal", rules::EXPRESSION);
-        let peer: ExpressionSyntax = parse("{1}", rules::EXPRESSION);
+        let signal: ExpressionSyntax = parse("signal");
+        let peer: ExpressionSyntax = parse("{1}");
         let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(signal.syntax()));
         let signal_value = builder.expression(&signal).unwrap().0;
         let peer_value = builder.expression(&peer).unwrap().0;

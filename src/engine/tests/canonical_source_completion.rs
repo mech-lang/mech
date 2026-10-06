@@ -12,8 +12,6 @@ use mech_engine::{
     ControlOperationBody, ControlParameterSource, ExecutableNodeBody, MatchPattern,
     ProgramArtifactDraft,
 };
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
-use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
     VariableDefineSyntax, parse_canonical_document,
@@ -23,19 +21,23 @@ fn definition(source: &str) -> VariableDefineSyntax {
     fn find(node: SyntaxNode) -> Option<VariableDefineSyntax> {
         VariableDefineSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
     }
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x555), Revision(1), source).unwrap(),
-        rules::VARIABLE_DEFINE,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(
         parsed.is_strictly_clean(),
         "{source}: {:?}",
         parsed.diagnostics
     );
-    assert_eq!(parsed.consumed.end.0 as usize, source.len(), "{source}");
-    find(parsed.syntax()).unwrap()
+    assert_eq!(
+        parsed.syntax().range().end.0 as usize,
+        source.len(),
+        "{source}"
+    );
+    let syntax = find(parsed.syntax()).unwrap();
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    syntax
 }
 
 fn compile(source: &str) -> CanonicalSourceProgram {

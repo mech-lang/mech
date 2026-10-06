@@ -1,4 +1,4 @@
-//! Canonical module-import productions for the Phase 2E closed island.
+//! Canonical module-import productions for the module import grammar closed island.
 //!
 //! This module deliberately stops at module imports. Source-import
 //! declarations and the complete code-level alternative remain outside this
@@ -15,8 +15,8 @@ use super::super::rule::rules;
 use super::base;
 use super::combinator::{self, Attempt};
 
-/// The complete closed module-import set directly ported by Phase 2E.
-pub(crate) const PHASE_2E_IMPORT_RULES: &[RuleId; 19] = &[
+/// The complete closed module-import set directly ported by module import grammar.
+pub(crate) const MODULE_IMPORT_RULES: &[RuleId; 19] = &[
     rules::MODULE_IMPORT_NAME_SEGMENT,
     rules::MODULE_IMPORT_INTRINSIC_SEGMENT,
     rules::MODULE_IMPORT_PATH_SEGMENT,
@@ -38,12 +38,13 @@ pub(crate) const PHASE_2E_IMPORT_RULES: &[RuleId; 19] = &[
     rules::MODULE_IMPORT,
 ];
 
-/// Whether `rule` belongs to the Phase 2E closed module-import layer.
+/// Whether `rule` belongs to the module import grammar closed module-import layer.
 pub(crate) fn supports(rule: RuleId) -> bool {
-    PHASE_2E_IMPORT_RULES.contains(&rule)
+    MODULE_IMPORT_RULES.contains(&rule)
 }
 
-/// Dispatch one exact Phase 2E module-import production.
+/// Dispatch one exact module-import production.
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::MODULE_IMPORT_NAME_SEGMENT => parse_module_import_name_segment(parser),
@@ -65,12 +66,13 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
         rules::MODULE_SUFFIX_IMPORT => parse_module_suffix_import(parser),
         rules::MODULE_ONLY_IMPORT => parse_module_only_import(parser),
         rules::MODULE_IMPORT => parse_module_import(parser),
-        _ => unreachable!("Phase 2E support guard rejects every other RuleId"),
+        _ => unreachable!("module import grammar support guard rejects every other RuleId"),
     })
 }
 
 mod continuation;
 pub(crate) use continuation::{Continuation, Progress};
+#[cfg(test)]
 fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {
@@ -82,60 +84,79 @@ fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
         }
     }
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import_name_segment(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT_NAME_SEGMENT)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import_intrinsic_segment(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT_INTRINSIC_SEGMENT)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import_path_segment(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT_PATH_SEGMENT)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import_path(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT_PATH)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import_alias_segment(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT_ALIAS_SEGMENT)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import_alias_path(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT_ALIAS_PATH)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import_value_alias(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT_VALUE_ALIAS)
 }
+#[cfg(test)]
 pub(crate) fn parse_context_import_alias_segment(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_IMPORT_ALIAS_SEGMENT)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import_context_alias(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT_CONTEXT_ALIAS)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import_alias(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT_ALIAS)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_root(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_ROOT)
 }
+#[cfg(test)]
 pub(crate) fn parse_import_alias_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::IMPORT_ALIAS_OPERATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_import_group_separator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::IMPORT_GROUP_SEPARATOR)
 }
+#[cfg(test)]
 pub(crate) fn parse_import_group_item(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::IMPORT_GROUP_ITEM)
 }
+#[cfg(test)]
 pub(crate) fn parse_import_group_items(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::IMPORT_GROUP_ITEMS)
 }
+#[cfg(test)]
 pub(crate) fn parse_aliased_item_import(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::ALIASED_ITEM_IMPORT)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_suffix_import(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_SUFFIX_IMPORT)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_only_import(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_ONLY_IMPORT)
 }
+#[cfg(test)]
 pub(crate) fn parse_module_import(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULE_IMPORT)
 }

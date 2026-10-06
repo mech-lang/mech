@@ -60,6 +60,11 @@ pub fn finish(stream: &mut DocumentStream, allowance: u64) -> Arc<SyntaxSnapshot
 }
 pub fn equivalent(snapshot: &SyntaxSnapshot, text: &str) {
     let expected = parse_canonical_document(snapshot.source.clone(), ParseConfig::default());
+    equivalent_to(snapshot, text, &expected);
+}
+
+// Reuse a fixture oracle across chunk boundaries and work allowances.
+pub fn equivalent_to(snapshot: &SyntaxSnapshot, text: &str, expected: &SyntaxSnapshot) {
     same_tree(&snapshot.root, &expected.root);
     assert_eq!(
         reconstruct_source(&snapshot.root, &snapshot.source).unwrap(),

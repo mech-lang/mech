@@ -190,6 +190,7 @@ impl Continuation {
         Progress::Complete(self.result)
     }
 }
+#[cfg(test)]
 fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {
@@ -203,13 +204,16 @@ fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
 }
 
 /// The path token remains transparent and emits its canonical lexical child.
+#[cfg(test)]
 pub(crate) fn parse_context_address_path_token(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_ADDRESS_PATH_TOKEN)
 }
+#[cfg(test)]
 pub(crate) fn parse_context_address_path(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CONTEXT_ADDRESS_PATH)
 }
 /// Incomplete context prefixes remain losing candidates until final recovery is selected by their owner.
+#[cfg(test)]
 pub(crate) fn parse_prefixed_context_path(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::PREFIXED_CONTEXT_PATH)
 }

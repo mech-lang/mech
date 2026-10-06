@@ -203,7 +203,7 @@ fn growth(family: &str, make_source: impl Fn(usize) -> String) {
         for n in [64, 128, 256, 512] {
             let work = workload(&make_source(n), views, family != "malformed-tail");
             eprintln!(
-                "S7B_STREAM family={family} n={n} normal_views={views} bytes={} accounted={} consumer_read={} logical_removed={} updates={} consumer_work={} ranges_adopted={} ranges_removed={} range_visits={}",
+                "DOCUMENT_STREAM family={family} n={n} normal_views={views} bytes={} accounted={} consumer_read={} logical_removed={} updates={} consumer_work={} ranges_adopted={} ranges_removed={} range_visits={}",
                 work.accepted_bytes,
                 work.accounted,
                 work.consumer.records_read,
@@ -224,7 +224,7 @@ fn growth(family: &str, make_source: impl Fn(usize) -> String) {
     }
     assert!(
         failures.is_empty(),
-        "S7B <=3x doubling gate failed for {family}: {failures:?}"
+        "streaming growth exceeded the 3x doubling bound for {family}: {failures:?}"
     );
 }
 
@@ -268,14 +268,14 @@ fn small_append_cost_is_independent_of_settled_prefix() {
             Some(&mut work.consumer),
         );
         eprintln!(
-            "S7B_STREAM family=settled n={n} accounted={}",
+            "DOCUMENT_STREAM family=settled n={n} accounted={}",
             work.accounted
         );
         costs.push(work.accounted_work());
     }
     assert!(
         costs[3] <= costs[0] * 3,
-        "S7B stable-prefix gate failed: {costs:?}"
+        "settled-prefix work exceeded the linear growth bound: {costs:?}"
     );
 }
 
@@ -325,14 +325,14 @@ fn large_config() -> (ParseConfig, mech_syntax::document::StreamLimits) {
 fn large_growth(family: &str, make_source: impl Fn(usize) -> String, clean: bool) {
     let (config, limits) = large_config();
     eprintln!(
-        "S7B_LARGE_CONFIG family={family} config={config:?} session={limits:?} chunk_bytes=64 allowance=65536"
+        "DOCUMENT_STREAM_LARGE_CONFIG family={family} config={config:?} session={limits:?} chunk_bytes=64 allowance=65536"
     );
     let mut previous: Option<(u64, u64)> = None;
     for n in [8_192, 16_384, 32_768, 65_536] {
         let source = make_source(n);
         let work = workload_with_config(&source, true, clean, config, limits, 64);
         eprintln!(
-            "S7B_LARGE family={family} n={n} bytes={} accounted={} consumer_read={} logical_removed={} updates={} consumer_work={} ranges_adopted={} ranges_removed={} range_visits={}",
+            "DOCUMENT_STREAM_LARGE family={family} n={n} bytes={} accounted={} consumer_read={} logical_removed={} updates={} consumer_work={} ranges_adopted={} ranges_removed={} range_visits={}",
             work.accepted_bytes,
             work.accounted,
             work.consumer.records_read,
@@ -410,7 +410,7 @@ fn large_settled_prefix_does_not_increase_small_append_work() {
         append(&mut session, "Next.\n", true, &mut work);
         work.consumer.assert_matches(&session.view());
         eprintln!(
-            "S7B_LARGE family=settled n={n} bytes={} accounted={} consumer={}",
+            "DOCUMENT_STREAM_LARGE family=settled n={n} bytes={} accounted={} consumer={}",
             prefix.len(),
             work.accounted,
             work.consumer.work() - before

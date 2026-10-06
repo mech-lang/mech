@@ -152,6 +152,7 @@ impl KindContinuation {
             work: 0,
         }
     }
+    #[cfg(test)]
     pub fn kind(position: KindPosition) -> Self {
         Self {
             frames: alloc::vec![Frame::Kind(position)],
@@ -159,6 +160,7 @@ impl KindContinuation {
             work: 0,
         }
     }
+    #[cfg(test)]
     pub fn matrix(position: KindPosition) -> Self {
         Self {
             frames: alloc::vec![Frame::Matrix(position)],
@@ -173,6 +175,7 @@ impl KindContinuation {
             work: 0,
         }
     }
+    #[cfg(test)]
     pub fn drive(&mut self, parser: &mut Parser<'_>) -> Attempt {
         loop {
             let mut allowance = u64::MAX;

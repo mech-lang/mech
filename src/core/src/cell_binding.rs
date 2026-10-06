@@ -635,7 +635,7 @@ fn realize_managed_canonical_value(
     let object = owner.plan_object_key(realized.revision(), object_id)?;
     let payload = planned_payload_object(owner, &realized, object)?;
     let value = if value.has_retained_payload_ticket() {
-        // This cell admits its own logical envelope through the R5 plan, but
+        // This cell admits its own logical envelope through the memory plan, but
         // the shared immutable data already owns the one physical payload
         // ticket. Importing it must not mint another full allocation charge.
         realized.record_initialized(payload, footprint.retained_bytes)?;
@@ -1625,7 +1625,7 @@ impl ValueCell {
         )
     }
 
-    /// Constructs one owned logical cell over an initialized R5 plan object.
+    /// Constructs one owned logical cell over an initialized memory plan object.
     /// This boundary installs storage ownership; it never allocates backing
     /// from a runtime representation alone.
     pub fn allocate_planned(
@@ -1695,7 +1695,7 @@ impl ValueCell {
         crate::ResolvedValueDescriptor::from_schema(schema, shape).map_err(MechError::from)
     }
 
-    /// Measures the currently published semantic value for R5/R6 live
+    /// Measures the currently published semantic value for managed live
     /// footprint resolution. This walks an immutable snapshot without
     /// rebuilding its canonical tree.
     #[cfg(feature = "functions")]
@@ -3546,105 +3546,6 @@ impl ValueCell {
         )
     }
 
-    /// Constructs a matrix whose schema is the already-resolved semantic
-    /// output type. Direct source specializers use this boundary adapter when
-    /// the result retains a compound dimension relation such as a sum of
-    /// concatenated axes. Runtime storage remains selected independently.
-    #[doc(hidden)]
-    pub fn matrix_from_resolved_type_cells(
-        resolved: &ResolvedType,
-        rows: usize,
-        columns: usize,
-        cells: &[Self],
-        schema_sources: &[Self],
-    ) -> MResult<Self> {
-        if rows.saturating_mul(columns) != cells.len() {
-            return Err(MechError::new(
-                ValueCellOutputConstructionUnsupported {
-                    representation: FunctionValueRepresentation::AnyValue,
-                    reason: format!(
-                        "matrix dimensions require {} elements but {} were supplied",
-                        rows.saturating_mul(columns),
-                        cells.len()
-                    ),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let crate::KindExpr::Matrix { dimensions, .. } = resolved.kind() else {
-            return Err(MechError::from(TypeResolutionError::incompatible(
-                "resolved matrix output",
-                TypeConstraintFailure::StructuralMismatch {
-                    expected: "matrix".into(),
-                    actual: resolved.semantic_name(),
-                },
-            )));
-        };
-        let element = if let Some(first) = cells.first() {
-            first.closed_schema_body()?
-        } else if let Some(element) = schema_sources.iter().find_map(|source| {
-            let SchemaBody::Matrix { element, .. } = source.closed_schema_body().ok()? else {
-                return None;
-            };
-            Some(*element)
-        }) {
-            element
-        } else {
-            return Err(MechError::new(
-                ValueCellOutputConstructionUnsupported {
-                    representation: FunctionValueRepresentation::AnyValue,
-                    reason: "an empty resolved matrix requires an element schema template".into(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        };
-        let mut values = Vec::with_capacity(cells.len());
-        for cell in cells {
-            if cell.closed_schema_body()? != element {
-                return Err(MechError::new(
-                    ValueCellOutputConstructionUnsupported {
-                        representation: cell.representation(),
-                        reason: "matrix elements must share one canonical schema".into(),
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-            values.push(canonical_cell_draft(cell)?);
-        }
-        let draft = crate::SchemaDraft {
-            dimension_parameters: resolved.dimension_parameters().to_vec().into_boxed_slice(),
-            body: SchemaBody::Matrix {
-                element: Box::new(element),
-                dimensions: dimensions.clone(),
-            },
-        };
-        let (schema, shape, schemas) = merged_resolved_matrix_schema(
-            draft,
-            vec![rows as u64, columns as u64].into_boxed_slice(),
-            schema_sources,
-        )?;
-        let value = finalize_draft(
-            schema,
-            &shape,
-            schemas.as_ref(),
-            ValueDataDraft::Matrix(values.into_boxed_slice()),
-        )?;
-        let owner = cells
-            .first()
-            .or_else(|| schema_sources.first())
-            .and_then(ValueCell::memory_domain)
-            .ok_or_else(|| {
-                MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
-                    object: None,
-                    reason: "resolved matrix output has no owning memory session".into(),
-                })
-            })?;
-        Self::from_runtime_value_in(&owner, value, schemas)
-    }
-
     /// Constructs one homogeneous matrix directly from canonical drafts while
     /// retaining the solver's resolved dimension expressions. Source matrix
     /// constructors use this path so a dense input is never expanded into one
@@ -3731,20 +3632,6 @@ impl ValueCell {
             unreachable!("validated tuple schema retains tuple data")
         };
         child_cells(schemas.into_vec(), values.into_vec()).map(Some)
-    }
-
-    /// Returns tuple child cells while retaining identities captured during
-    /// canonical tuple assembly. Source destructuring uses this narrow path
-    /// to keep reactive topology; ordinary value inspection remains detached.
-    #[doc(hidden)]
-    pub fn reactive_tuple_elements(&self) -> MResult<Option<Vec<Self>>> {
-        let SchemaBody::Tuple(_) = self.closed_schema_body()? else {
-            return Ok(None);
-        };
-        match &self.binding.compiler_children {
-            Some(children) => Ok(Some(children.to_vec())),
-            None => self.tuple_elements(),
-        }
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -4046,7 +3933,7 @@ impl ValueCell {
             let realized = owner.realize_owned_value_plan(plan)?;
             let plan = realized
                 .owned_value_plan()
-                .expect("owned realization retains its R5 plan");
+                .expect("owned realization retains its memory plan");
             let object = owner.plan_object_key(realized.revision(), object_id)?;
             let prepared = owner.prepare_owned_initialization(
                 &realized,
@@ -4223,7 +4110,7 @@ impl ValueCell {
         }
     }
 
-    /// Constructs an external-call argument snapshot through the R5
+    /// Constructs an external-call argument snapshot through the planned
     /// marshalling authority. Existing immutable canonical roots are shared;
     /// fixed managed storage debits draft and finalization allocations from
     /// the call's prepared scratch before materializing them.
@@ -4430,7 +4317,7 @@ impl ValueCell {
     }
 
     /// Materializes a replacement only in the unpublished region selected
-    /// by this value's R5 transaction. Callers can collect several candidates
+    /// by this value's managed memory transaction. Callers can collect several candidates
     /// before obtaining a single publication gate.
     pub(crate) fn stage_managed_replacement(
         &self,
@@ -4655,7 +4542,7 @@ impl ValueCell {
                 .ok_or_else(|| {
                     managed_host_shape_error(
                         managed.object,
-                        "published call output has no retained R5 storage authority",
+                        "published call output has no retained planned storage authority",
                     )
                 })?;
             Some((call.output_storage[output].clone(), call.target.clone()))
@@ -4675,7 +4562,7 @@ impl ValueCell {
         } else {
             return Err(managed_host_shape_error(
                 managed.object,
-                "whole-cell growth requires retained R5 storage authority",
+                "whole-cell growth requires retained planned storage authority",
             ));
         };
         let elements = descriptor

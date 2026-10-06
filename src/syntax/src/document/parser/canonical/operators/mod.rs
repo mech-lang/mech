@@ -1,4 +1,4 @@
-//! Canonical closed expression-operator productions for Phase 2D.
+//! Canonical closed expression-operator productions for expression grammar.
 //!
 //! This module deliberately stops at the operator layer.  The recursive
 //! expression parents select these productions in a later closed phase.
@@ -14,8 +14,8 @@ mod continuation;
 mod spec;
 pub(crate) use continuation::{Continuation, Progress};
 
-/// The complete closed operator set directly ported by Phase 2D.
-pub(crate) const PHASE_2D_OPERATOR_RULES: &[RuleId; 53] = &[
+/// The complete closed operator set directly ported by expression grammar.
+pub(crate) const EXPRESSION_OPERATOR_RULES: &[RuleId; 53] = &[
     rules::ADD_SUB_OPERATOR,
     rules::MUL_DIV_OPERATOR,
     rules::POWER_OPERATOR,
@@ -85,11 +85,12 @@ enum OperatorGuard {
     NotGeneratorArrow,
 }
 
-/// Whether `rule` belongs to the Phase 2D closed operator layer.
+/// Whether `rule` belongs to the expression grammar closed operator layer.
 pub(crate) fn supports(rule: RuleId) -> bool {
-    PHASE_2D_OPERATOR_RULES.contains(&rule)
+    EXPRESSION_OPERATOR_RULES.contains(&rule)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::ADD_SUB_OPERATOR => parse_add_sub_operator(parser),
@@ -145,9 +146,10 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
         rules::ELEMENT_OF => parse_element_of(parser),
         rules::NOT_ELEMENT_OF => parse_not_element_of(parser),
         rules::SYMMETRIC_DIFFERENCE => parse_symmetric_difference(parser),
-        _ => unreachable!("Phase 2D support guard rejects every other RuleId"),
+        _ => unreachable!("expression grammar support guard rejects every other RuleId"),
     })
 }
+#[cfg(test)]
 fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {
@@ -159,214 +161,267 @@ fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
         }
     }
 }
+#[cfg(test)]
 pub(crate) fn parse_add_sub_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::ADD_SUB_OPERATOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_mul_div_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MUL_DIV_OPERATOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_power_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::POWER_OPERATOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_matrix_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MATRIX_OPERATOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_range_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::RANGE_OPERATOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_comparison_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::COMPARISON_OPERATOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_logic_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::LOGIC_OPERATOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_table_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::TABLE_OPERATOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_set_operator(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SET_OPERATOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_add(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::ADD)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_subtract(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SUBTRACT)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_raw_subtract(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::RAW_SUBTRACT)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_spaced_subtract(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SPACED_SUBTRACT)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_multiply(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MULTIPLY)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_divide(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::DIVIDE)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_modulus(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MODULUS)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_power(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::POWER)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_matrix_multiply(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MATRIX_MULTIPLY)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_matrix_solve(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::MATRIX_SOLVE)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_dot_product(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::DOT_PRODUCT)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_cross_product(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::CROSS_PRODUCT)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_transpose(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::TRANSPOSE)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_range_inclusive(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::RANGE_INCLUSIVE)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_range_exclusive(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::RANGE_EXCLUSIVE)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_not_equal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::NOT_EQUAL)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_equal_to(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::EQUAL_TO)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_strict_not_equal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::STRICT_NOT_EQUAL)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_strict_equal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::STRICT_EQUAL)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_greater_than(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::GREATER_THAN)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_less_than(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::LESS_THAN)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_greater_than_equal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::GREATER_THAN_EQUAL)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_less_than_equal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::LESS_THAN_EQUAL)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_or(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::OR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_and(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::AND)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_not(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::NOT)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_xor(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::XOR)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_join(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::JOIN)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_left_join(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::LEFT_JOIN)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_right_join(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::RIGHT_JOIN)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_full_join(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::FULL_JOIN)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_left_semi_join(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::LEFT_SEMI_JOIN)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_left_anti_join(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::LEFT_ANTI_JOIN)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_union_op(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::UNION_OP)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_intersection(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::INTERSECTION)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_difference(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::DIFFERENCE)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_complement(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::COMPLEMENT)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_subset(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SUBSET)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_superset(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SUPERSET)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_proper_subset(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::PROPER_SUBSET)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_proper_superset(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::PROPER_SUPERSET)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_element_of(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::ELEMENT_OF)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_not_element_of(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::NOT_ELEMENT_OF)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_symmetric_difference(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SYMMETRIC_DIFFERENCE)
 }

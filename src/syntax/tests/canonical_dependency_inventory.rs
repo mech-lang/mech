@@ -76,23 +76,6 @@ fn read_dependency_rows() -> BTreeMap<String, DependencyRow> {
     rows
 }
 
-fn canonical_inventory_names() -> BTreeSet<String> {
-    let source = fs::read_to_string(repository_root().join("docs/design/grammar-audit/ports.tsv"))
-        .expect("read ports.tsv");
-    let mut lines = source.lines();
-    let header = fields(lines.next().expect("ports.tsv header"));
-    let name = header
-        .iter()
-        .position(|field| *field == "grammar-name")
-        .unwrap();
-    let names = lines
-        .map(fields)
-        .map(|row| row[name].to_owned())
-        .collect::<BTreeSet<_>>();
-    assert_eq!(names.len(), EXPECTED_RULES);
-    names
-}
-
 fn port_names() -> BTreeSet<String> {
     let source = fs::read_to_string(repository_root().join("docs/design/grammar-audit/ports.tsv"))
         .expect("read ports.tsv");
@@ -101,7 +84,7 @@ fn port_names() -> BTreeSet<String> {
         lines.next(),
         Some(
             "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
-             activation-status\tnode-policy\tphase\tnotes"
+             grammar-scope\tnode-policy\tcomponent\tnotes"
         )
     );
     let names = lines
@@ -285,8 +268,7 @@ fn canonical_parser_independently_verifies_every_generated_dependency() {
     assert_eq!(rules.len(), EXPECTED_RULES);
 
     let generated = read_dependency_rows();
-    let inventory = canonical_inventory_names();
-    assert_eq!(port_names(), inventory);
+    let inventory = port_names();
     assert_eq!(
         generated.keys().cloned().collect::<BTreeSet<_>>(),
         inventory
@@ -413,4 +395,26 @@ fn canonical_dependency_regressions_cover_recursive_core_edges() {
             "brace-subscript",
         ],
     );
+}
+
+#[test]
+fn supported_rules_have_closed_canonical_dependencies() {
+    let ports = fs::read_to_string(repository_root().join("docs/design/grammar-audit/ports.tsv"))
+        .expect("read ports.tsv");
+    let supported = ports
+        .lines()
+        .skip(1)
+        .map(fields)
+        .filter(|row| row[2] == "certified")
+        .map(|row| row[0])
+        .collect::<BTreeSet<_>>();
+    let graph = read_dependency_rows();
+    for name in &supported {
+        for child in &graph[*name].children {
+            assert!(
+                supported.contains(child.as_str()),
+                "{name} has unsupported child {child}"
+            );
+        }
+    }
 }

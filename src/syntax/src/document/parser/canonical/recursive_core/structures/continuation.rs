@@ -54,6 +54,7 @@ impl StructureContinuation {
             work: 0,
         }
     }
+    #[cfg(test)]
     pub fn drive(&mut self, parser: &mut Parser<'_>) -> Attempt {
         loop {
             let mut allowance = u64::MAX;

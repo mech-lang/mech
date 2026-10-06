@@ -735,27 +735,62 @@ fn source_palette_follows_construct_roles_and_context_parts() {
     ] {
         assert!(css.contains(contract), "source palette lost {contract}");
     }
+}
 
-    let formatter = fs::read_to_string(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/syntax/src/formatter.rs"),
-    )
-    .unwrap();
-    for markup in [
-        "mech-atom-sigil",
-        "mech-enum-variant-sigil",
-        "mech-match-guard-separator",
-        "mech-pattern-array-open",
-        "mech-state-variable-separator",
-        "mech-fsm-start-op",
-        "mech-context-provider",
-        "mech-context-capability",
-        "mech-grammar-sequence-op",
-        "mech-match-guard",
-        "mech-pattern-array-op",
-        "mech-pattern-separator",
-        "mech-matrix-size-separator",
+#[cfg(feature = "formatter")]
+#[test]
+fn rendered_source_roles_have_palette_selectors() {
+    use mech_runtime::CanonicalDocumentRenderer;
+    use mech_syntax::document::{
+        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+        parse_canonical_document,
+    };
+
+    let css = include("mech-source.css");
+    for (source, roles) in [
+        (
+            "status := :ready\n",
+            &["mech-atom", "mech-atom-sigil", "mech-atom-name"][..],
+        ),
+        (
+            "@filters := compute://filters/kernel { :read(sample/result.0) }\n0\n",
+            &[
+                "mech-context-name",
+                "mech-context-provider",
+                "mech-context-scheme-op",
+                "mech-context-path",
+                "mech-context-capability",
+                "mech-atom-sigil",
+                "mech-atom-name",
+            ][..],
+        ),
+        (
+            "values<[u8]:4,4> := [1 2;3 4]\n",
+            &["mech-matrix-size-colon", "mech-matrix-size-separator"][..],
+        ),
     ] {
-        assert!(formatter.contains(markup), "formatter lost {markup}");
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(1), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.diagnostics.is_empty(), "{:#?}", parsed.diagnostics);
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        let renderer = CanonicalDocumentRenderer;
+        for html in [
+            renderer.format_html(&document).unwrap(),
+            renderer
+                .render_repl_source_html(&document)
+                .unwrap()
+                .unwrap(),
+        ] {
+            for role in roles {
+                assert!(
+                    html.contains(&format!("class='{role}'")),
+                    "rendered source lost {role}: {html}"
+                );
+                assert!(css.contains(&format!(".{role}")), "palette lost {role}");
+            }
+        }
     }
 }
 

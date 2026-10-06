@@ -9,6 +9,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rust_source import rust_code
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SURFACE_PATH = (
@@ -33,88 +36,10 @@ INCLUDE = re.compile(r"\binclude\s*!\s*\(")
 STATIC_INCLUDE_ARGUMENT = re.compile(
     r'\s*"(?P<path>[A-Za-z0-9_./-]+)"\s*\)',
 )
-CHAR_LITERAL = re.compile(
-    r"(?:b)?'(?:\\(?:[nrt0\\'\"]|x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]{1,6}\})|[^\\'\r\n])'"
-)
-RAW_STRING_START = re.compile(r'(?:br|rb|r)(?P<hashes>#{0,255})"')
-
-
-def mask_non_code(source: str) -> str:
-    """Mask Rust comments and literals while retaining line offsets."""
-    masked = list(source)
-
-    def blank(start: int, end: int) -> None:
-        for index in range(start, end):
-            if masked[index] != "\n":
-                masked[index] = " "
-
-    index = 0
-    while index < len(source):
-        if source.startswith("//", index):
-            end = source.find("\n", index + 2)
-            end = len(source) if end < 0 else end
-            blank(index, end)
-            index = end
-            continue
-
-        if source.startswith("/*", index):
-            depth = 1
-            end = index + 2
-            while end < len(source) and depth:
-                if source.startswith("/*", end):
-                    depth += 1
-                    end += 2
-                elif source.startswith("*/", end):
-                    depth -= 1
-                    end += 2
-                else:
-                    end += 1
-            blank(index, end)
-            index = end
-            continue
-
-        character = CHAR_LITERAL.match(source, index)
-        if character is not None:
-            blank(index, character.end())
-            index = character.end()
-            continue
-
-        # Match against the borrowed source at its current offset. Copying the
-        # remaining suffix at every character makes this scan quadratic.
-        raw = RAW_STRING_START.match(source, index)
-        if raw is not None:
-            terminator = '"' + raw.group("hashes")
-            content = raw.end()
-            close = source.find(terminator, content)
-            end = len(source) if close < 0 else close + len(terminator)
-            blank(index, end)
-            index = end
-            continue
-
-        prefix = 2 if source.startswith(('b"', 'c"'), index) else 1
-        if source[index] == '"' or prefix == 2:
-            end = index + prefix
-            escaped = False
-            while end < len(source):
-                character = source[end]
-                end += 1
-                if escaped:
-                    escaped = False
-                elif character == "\\":
-                    escaped = True
-                elif character == '"':
-                    break
-            blank(index, end)
-            index = end
-            continue
-
-        index += 1
-
-    return "".join(masked)
 
 
 def normalize_raw_identifiers(source: str) -> str:
-    """Normalize Rust's ``r#name`` spelling without changing byte offsets."""
+    """Normalize Rust's ``r#name`` spelling without changing source offsets."""
     return re.sub(r"\br#(?=[A-Za-z_][A-Za-z0-9_]*)", "  ", source)
 
 
@@ -133,7 +58,7 @@ def executable_rust_sources(root: Path) -> tuple[list[Path], list[str]]:
         seen.add(resolved)
         found.append(path)
         source = path.read_text(encoding="utf-8")
-        masked = mask_non_code(source)
+        masked = rust_code(source)
         relative = path.relative_to(root).as_posix()
         for include in INCLUDE.finditer(masked):
             argument = STATIC_INCLUDE_ARGUMENT.match(source, include.end())
@@ -200,7 +125,7 @@ def failures(root: Path) -> list[str]:
             )
             continue
         source = normalize_raw_identifiers(
-            mask_non_code(path.read_text(encoding="utf-8"))
+            rust_code(path.read_text(encoding="utf-8"))
         )
         if re.search(entry["pattern"], source) is None:
             failures.append(
@@ -210,7 +135,7 @@ def failures(root: Path) -> list[str]:
     failures.extend(include_failures)
     for path in sources:
         source = normalize_raw_identifiers(
-            mask_non_code(path.read_text(encoding="utf-8"))
+            rust_code(path.read_text(encoding="utf-8"))
         )
         relative = path.relative_to(root).as_posix()
         for pattern, label in (

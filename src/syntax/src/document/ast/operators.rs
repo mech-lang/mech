@@ -1,4 +1,4 @@
-//! Typed syntax views for the closed Phase 2D operator productions.
+//! Typed syntax views for the closed expression grammar operator productions.
 
 use crate::document::{AstNode, SyntaxKind, SyntaxNode, SyntaxToken, TextRange, TokenFlags};
 
@@ -23,7 +23,7 @@ macro_rules! operator_ast_node {
     };
 }
 
-/// The semantic meaning represented by a Phase 2D operator node.
+/// The semantic meaning represented by a expression grammar operator node.
 ///
 /// The lossless syntax keeps distinctions such as raw versus spaced
 /// subtraction. Both spellings carry the same compatibility meaning here.
@@ -78,7 +78,7 @@ pub enum CanonicalOperator {
     SymmetricDifference,
 }
 
-/// A typed view over any Phase 2D node-valued operator production.
+/// A typed view over any expression grammar node-valued operator production.
 #[derive(Clone, Debug)]
 pub struct OperatorSyntax(SyntaxNode);
 

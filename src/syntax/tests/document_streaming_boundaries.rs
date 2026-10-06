@@ -48,6 +48,10 @@ fn every_byte_split_preserves_unicode_and_grammar_boundaries() {
         "```text\né👩‍💻\n```\n",
         "╭◉╮\n(◉ ◯ ◉)\n",
     ] {
+        let expected = parse_canonical_document(
+            TextSnapshot::new(DocumentId(826), Revision(0), text).unwrap(),
+            ParseConfig::default(),
+        );
         for split in 0..=text.len() {
             let mut stream = DocumentStream::new(DocumentId(826), ParseConfig::default());
             let mut transport = Utf8Transport::default();
@@ -58,7 +62,7 @@ fn every_byte_split_preserves_unicode_and_grammar_boundaries() {
                 .feed(&mut stream, &text.as_bytes()[split..])
                 .unwrap();
             transport.finish().unwrap();
-            equivalent(&finish(&mut stream, 127), text);
+            equivalent_to(&finish(&mut stream, 127), text, &expected);
         }
         let mut stream = DocumentStream::new(DocumentId(826), ParseConfig::default());
         let mut transport = Utf8Transport::default();
@@ -68,7 +72,7 @@ fn every_byte_split_preserves_unicode_and_grammar_boundaries() {
                 .unwrap();
         }
         transport.finish().unwrap();
-        equivalent(&finish(&mut stream, 127), text);
+        equivalent_to(&finish(&mut stream, 127), text, &expected);
     }
 }
 #[test]

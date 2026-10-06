@@ -3724,11 +3724,11 @@ parse := parse-mech ;
 parse-grammar := grammar ;
 ```
 
-(13.1) Phase 0 Scope, Authority, and Notation
+(13.1) grammar reconstruction Scope, Authority, and Notation
 -------------------------------------------------------------------------------
 
 The canonical rules and mechanics in this section describe concrete syntax at
-the recorded Phase 0 baseline,
+the recorded grammar reconstruction baseline,
 `75bb213f42a0f8116ca1299d1d39a5cf14fc0303`, the merge commit for PR 680.
 The parser implementation at that baseline is authoritative. Comments,
 formatter output, historical grammar fragments, and examples are supporting
@@ -3754,7 +3754,7 @@ them. `?[separator, element]` denotes the corresponding zero-or-more form.
 This preserves the implementation distinction between `separated_list1` and
 `separated_list0`.
 
-The Phase 0 extraction includes `activation.rs` and `imports.rs`, because
+The grammar reconstruction extraction includes `activation.rs` and `imports.rs`, because
 `parser.rs::mech_code_alt` selects `activation_scope` and `module_import` at
 this baseline.
 
@@ -4402,7 +4402,7 @@ emoji-classification heuristic, permissive based-number digit alphabets,
 left-associated power, dash/slash identifiers, rational-versus-division
 spacing, the dead non-grammar `table_bottom` helper, double-parsed checked-list
 paragraphs, prefix-complete fenced Mech, source whitespace deletion in
-`parse-grammar`, and empty inline-equation/meta-terminal panics. Phase 0
+`parse-grammar`, and empty inline-equation/meta-terminal panics. grammar reconstruction
 records these facts; it does not repair them.
 
 (13.10) Public and Embedded Entry Points

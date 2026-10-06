@@ -20,11 +20,9 @@ use mech_engine::__resident::{
     activate, activate_with_options,
 };
 use mech_engine::{
-    CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceValue,
-    phase_2i_semantic_disposition,
+    CANONICAL_SEMANTIC_RULES, CanonicalSemanticDisposition, CanonicalSourceFrontend, SourceValue,
+    canonical_semantic_disposition,
 };
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
-use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ExpressionSyntax, ParseConfig, Revision, SyntaxKind,
     SyntaxNode, TextSize, TextSnapshot, VariableDefineSyntax, parse_canonical_document,
@@ -35,42 +33,41 @@ fn repository_root() -> PathBuf {
 }
 
 fn expression(source: &str) -> ExpressionSyntax {
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x540), Revision(4), source).unwrap(),
-        rules::EXPRESSION,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(parsed.is_strictly_clean(), "{source:?}");
-    find(parsed.syntax(), SyntaxKind::Expression)
+    let syntax = find(parsed.syntax(), SyntaxKind::Expression)
         .and_then(ExpressionSyntax::cast)
-        .expect("canonical Expression")
+        .expect("canonical Expression");
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    syntax
 }
 
 fn recovered_expression(source: &str) -> ExpressionSyntax {
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x540), Revision(4), source).unwrap(),
-        rules::EXPRESSION,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(!parsed.is_strictly_clean(), "{source:?}");
-    find(parsed.syntax(), SyntaxKind::Expression)
+    let syntax = find(parsed.syntax(), SyntaxKind::Expression)
         .and_then(ExpressionSyntax::cast)
-        .expect("recovered Expression")
+        .expect("recovered Expression");
+    syntax
 }
 
 fn definition(source: &str) -> VariableDefineSyntax {
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x540), Revision(4), source).unwrap(),
-        rules::VARIABLE_DEFINE,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(parsed.is_strictly_clean(), "{source:?}");
-    find(parsed.syntax(), SyntaxKind::VariableDefine)
+    let syntax = find(parsed.syntax(), SyntaxKind::VariableDefine)
         .and_then(VariableDefineSyntax::cast)
-        .expect("canonical VariableDefine")
+        .expect("canonical VariableDefine");
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    syntax
 }
 
 fn find(node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -2048,7 +2045,7 @@ fn interactive_declaration_preparation_preserves_requested_and_retained_results(
 #[test]
 fn semantic_policy_covers_the_exact_generated_component() {
     let schema = fs::read_to_string(
-        repository_root().join("docs/design/grammar-audit/phase-2i-syntax-schema.tsv"),
+        repository_root().join("docs/design/grammar-audit/recursive-core-syntax-schema.tsv"),
     )
     .unwrap();
     let names = schema
@@ -2057,24 +2054,24 @@ fn semantic_policy_covers_the_exact_generated_component() {
         .map(|line| line.split('\t').next().unwrap())
         .collect::<Vec<_>>();
 
-    assert_eq!(PHASE_2I_SEMANTIC_RULES.len(), 80);
+    assert_eq!(CANONICAL_SEMANTIC_RULES.len(), 80);
     assert_eq!(
-        PHASE_2I_SEMANTIC_RULES
+        CANONICAL_SEMANTIC_RULES
             .iter()
             .map(|rule| rule.grammar_name)
             .collect::<Vec<_>>(),
         names
     );
     assert!(
-        PHASE_2I_SEMANTIC_RULES
+        CANONICAL_SEMANTIC_RULES
             .iter()
-            .any(|rule| rule.disposition == Phase2iSemanticDisposition::Executable)
+            .any(|rule| rule.disposition == CanonicalSemanticDisposition::Executable)
     );
     assert_eq!(
-        phase_2i_semantic_disposition("kind"),
-        Some(Phase2iSemanticDisposition::CompileTime)
+        canonical_semantic_disposition("kind"),
+        Some(CanonicalSemanticDisposition::CompileTime)
     );
-    assert_eq!(phase_2i_semantic_disposition("unknown"), None);
+    assert_eq!(canonical_semantic_disposition("unknown"), None);
 }
 
 #[test]
@@ -6656,7 +6653,7 @@ fn reviewed_exact_source_authorities_cover_matches_kinds_logic_and_matrices() {
     );
 
     let negated = CanonicalSourceFrontend
-        .compile_expression(&expression("¬[true false]"))
+        .compile_definition(&definition("negated := ¬[true false]"))
         .unwrap();
     assert!(matches!(
         negated

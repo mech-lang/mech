@@ -1,9 +1,14 @@
-use super::super::super::{Parser, marker::Marker, rule::rules};
+#[cfg(test)]
+use super::super::super::rule::rules;
+use super::super::super::{Parser, marker::Marker};
+#[cfg(test)]
 use super::{Attempt, Continuation};
 use crate::document::SyntaxKind;
+#[cfg(test)]
 pub(super) fn parse_expression(parser: &mut Parser<'_>) -> Attempt {
     Continuation::new(rules::EXPRESSION).drive(parser)
 }
+#[cfg(test)]
 pub(super) fn parse_formula(parser: &mut Parser<'_>) -> Attempt {
     Continuation::new(rules::FORMULA).drive(parser)
 }

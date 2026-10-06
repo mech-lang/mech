@@ -1,540 +1,540 @@
-grammar-name	family	syntax-status	semantic-status	activation-status	node-policy	phase	notes
-absolute-source-import-specifier	statements	certified	certified	active	node:AbsoluteSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-abstract-el	mechdown	certified	syntax-only	active	node:AbstractEl	S7	S7 canonical document closure generated from the specification.
-abstract-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-activation-arm	activation	certified	syntax-only	active	node:ActivationArm	S7	S7 canonical document closure generated from the specification.
-activation-scope	activation	certified	syntax-only	active	node:ActivationScope	S7	S7 canonical document closure generated from the specification.
-add	expressions	certified	certified	active	node:AddOperation	2D	Phase 2D closed expression-operator layer
-add-assign-operator	statements	certified	certified	active	node:AddAssignOperation	2G	Phase 2G closed executable primitive layer
-add-sub-operator	expressions	certified	certified	active	node:AddSubOperator	2D	Phase 2D closed expression-operator layer
-aliased-item-import	imports	certified	certified	active	node:AliasedItemImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
-alignment-separator	mechdown	certified	syntax-only	active	node:AlignmentSeparator	S7	S7 canonical document closure generated from the specification.
-alpha	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-alpha-token	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-alphanumeric	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-ampersand	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-and	expressions	certified	certified	active	node:AndOperation	2D	Phase 2D closed expression-operator layer
-any	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-any-token	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-apostrophe	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-argument-list	functions	certified	certified	candidate	node:ArgumentList	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-assign-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-asterisk	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-async-transition-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-at	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-atom	literals	certified	certified	active	node:AtomLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-backslash	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-bar	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-bare-source-import-specifier	statements	certified	certified	active	node:BareSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-binary-literal	literals	certified	certified	active	node:BinaryLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-binding	structures	certified	certified	candidate	node:RecordBinding	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-blank-line	mechdown	certified	syntax-only	active	node:BlankLine	2B	Phase 2B closed Mechdown grammar island
-body	mechdown	certified	syntax-only	active	node:Body	S7	S7 canonical document closure generated from the specification.
-boolean	literals	certified	syntax-only	active	token	2C	Phase 2C closed literal, path, and primitive kind island
-box-bl	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-bl-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-bl-round	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-br	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-br-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-br-round	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-cross	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-drawing-char	structures	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
-box-drawing-emoji	structures	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
-box-horz	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-t-bottom	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-t-left	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-t-right	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-t-top	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-tl	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-tl-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-tl-round	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-tr	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-tr-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-tr-round	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-vert	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-box-vert-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-brace-subscript	expressions	certified	certified	candidate	node:BraceSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-bracket-subscript	expressions	certified	certified	candidate	node:BracketSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-call-arg	functions	certified	certified	candidate	node:CallArgument	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-call-arg-with-binding	functions	certified	certified	candidate	node:BoundCallArgument	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-caret	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-carriage-return	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-carriage-return-new-line	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-cd-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-center-alignment	mechdown	certified	syntax-only	active	node:CenterAlignment	S7	S7 canonical document closure generated from the specification.
-check-list	mechdown	certified	syntax-only	active	node:CheckList	S7	S7 canonical document closure generated from the specification.
-check-list-item	mechdown	certified	syntax-only	active	node:CheckListItem	S7	S7 canonical document closure generated from the specification.
-check-mark	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-checked-item	mechdown	certified	syntax-only	active	node:CheckedItem	S7	S7 canonical document closure generated from the specification.
-citation	mechdown	certified	syntax-only	active	node:Citation	S7	S7 canonical document closure generated from the specification.
-clc-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-clear-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-code-block	mechdown	certified	syntax-only	active	node:CodeBlock	S7	S7 canonical document closure generated from the specification.
-code-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-code-terminal	parser	certified	syntax-only	active	node:CodeTerminal	S7	S7 canonical document closure generated from the specification.
-codeblock-sigil	mechdown	certified	syntax-only	active	transparent	2B	Phase 2B closed Mechdown grammar island
-colon	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-comma	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-comment	statements	certified	syntax-only	active	node:Comment	2B	rich comment bodies use the complete canonical paragraph-element grammar
-comment-sigil	statements	certified	syntax-only	active	transparent	2B	Phase 2B closed Mechdown grammar island
-comparison-operator	expressions	certified	certified	active	node:ComparisonOperator	2D	Phase 2D closed expression-operator layer
-complement	expressions	certified	certified	active	node:ComplementOperation	2D	Phase 2D closed expression-operator layer
-complex-number	literals	certified	certified	active	node:ComplexNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
-comprehension-qualifier	expressions	certified	certified	candidate	node:ComprehensionQualifier	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-context-address-path	expressions	certified	certified	active	node:ContextAddressPath	2C	Phase 2C closed literal, path, and primitive kind island
-context-address-path-token	expressions	certified	syntax-only	active	token	2C	Phase 2C closed literal, path, and primitive kind island
-context-base-context	statements	certified	certified	active	node:ContextBaseContext	2F	Phase 2F closed source, export, and context declaration layer
-context-base-resource-uri	statements	certified	certified	active	node:ContextBaseResourceUri	2F	Phase 2F closed source, export, and context declaration layer
-context-capability-declaration	statements	certified	certified	active	node:ContextCapabilityDeclaration	2F	Phase 2F closed source, export, and context declaration layer
-context-capability-path	statements	certified	certified	active	node:ContextCapabilityPath	2F	Phase 2F closed source, export, and context declaration layer
-context-capability-path-token	statements	certified	syntax-only	active	token	2F	Phase 2F closed source, export, and context declaration layer
-context-capability-scope	statements	certified	certified	active	node:ContextCapabilityScope	2F	Phase 2F closed source, export, and context declaration layer
-context-declaration	statements	certified	certified	active	node:ContextDeclaration	2F	Phase 2F closed source, export, and context declaration layer
-context-import-alias-segment	imports	certified	certified	active	node:ContextImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-context-send	statements	certified	syntax-only	active	node:ContextSend	S7	S7 canonical document closure generated from the specification.
-cross	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-cross-product	expressions	certified	certified	active	node:CrossProductOperation	2D	Phase 2D closed expression-operator layer
-dash	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-decimal-literal	literals	certified	certified	active	node:DecimalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-define-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-difference	expressions	certified	certified	active	node:DifferenceOperation	2D	Phase 2D closed expression-operator layer
-digit	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-digit-sequence	base	certified	certified	active	node:DigitSequence	2A	Phase 2A canonical base closure
-digit-token	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-div-assign-operator	statements	certified	certified	active	node:DivAssignOperation	2G	Phase 2G closed executable primitive layer
-divide	expressions	certified	certified	active	node:DivideOperation	2D	Phase 2D closed expression-operator layer
-docs-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-dollar	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-dot-product	expressions	certified	certified	active	node:DotProductOperation	2D	Phase 2D closed expression-operator layer
-dot-subscript	expressions	certified	certified	active	node:DotSubscript	2G	Phase 2G closed executable primitive layer
-dot-subscript-int	expressions	certified	certified	active	node:DotSubscriptInt	2G	Phase 2G closed executable primitive layer
-element-of	expressions	certified	certified	active	node:ElementOfOperation	2D	Phase 2D closed expression-operator layer
-emoji	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-emoji-grapheme	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-emphasis	mechdown	certified	syntax-only	active	node:Emphasis	S7	S7 canonical document closure generated from the specification.
-emphasis-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-empty	literals	certified	certified	active	node:EmptyLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-empty-map	structures	certified	certified	active	node:EmptyMap	2H	Phase 2H closed structure shell
-empty-paragraph	mechdown	certified	syntax-only	active	node:EmptyParagraph	S7	S7 canonical document closure generated from the specification.
-empty-set	structures	certified	certified	active	node:EmptySet	2H	Phase 2H closed structure shell
-english-false-literal	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-english-true-literal	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-enum-define	statements	certified	syntax-only	active	node:EnumDefine	S7	S7 canonical document closure generated from the specification.
-enum-separator	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
-enum-variant	statements	certified	syntax-only	active	node:EnumVariant	S7	S7 canonical document closure generated from the specification.
-enum-variant-inline-kind	statements	certified	syntax-only	active	node:EnumVariantInlineKind	S7	S7 canonical document closure generated from the specification.
-enum-variant-kind	statements	certified	syntax-only	active	node:EnumVariantKind	S7	S7 canonical document closure generated from the specification.
-equal	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-equal-to	expressions	certified	certified	active	node:EqualToOperation	2D	Phase 2D closed expression-operator layer
-equation	mechdown	certified	certified	active	node:Equation	2B	Phase 2B closed Mechdown grammar island
-equation-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-error-alt-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-error-block	mechdown	certified	syntax-only	active	node:ErrorBlock	S7	S7 canonical document closure generated from the specification.
-error-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-escaped-char	base	certified	certified	active	node:EscapedCharacter	2A	Phase 2A canonical base closure
-eval-inline-mech-code	mechdown	certified	syntax-only	active	node:EvalInlineMechCode	S7	S7 canonical document closure generated from the specification.
-exclamation	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-exp-assign-operator	statements	certified	certified	active	node:ExpAssignOperation	2G	Phase 2G closed executable primitive layer
-export-declaration	statements	certified	certified	active	node:ExportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
-expression	expressions	certified	certified	candidate	node:Expression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-factor	expressions	certified	certified	candidate	node:Factor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-false-literal	literals	certified	syntax-only	active	token	2C	Phase 2C closed literal, path, and primitive kind island
-fancy-table	structures	certified	certified	candidate	node:FancyTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-fancy-table-header	structures	certified	certified	candidate	node:FancyTableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-field	structures	certified	certified	candidate	node:TableField	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-figure-item	mechdown	certified	syntax-only	active	node:FigureItem	S7	S7 canonical document closure generated from the specification.
-figures	mechdown	certified	syntax-only	active	node:Figures	S7	S7 canonical document closure generated from the specification.
-figures-row	mechdown	certified	syntax-only	active	node:FiguresRow	S7	S7 canonical document closure generated from the specification.
-float	mechdown	certified	syntax-only	active	node:Float	S7	S7 canonical document closure generated from the specification.
-float-decimal-start	literals	certified	certified	active	node:FloatDecimalStart	2C	Phase 2C closed literal, path, and primitive kind island
-float-full	literals	certified	certified	active	node:FloatFull	2C	Phase 2C closed literal, path, and primitive kind island
-float-left	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-float-literal	literals	certified	certified	active	node:FloatLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-float-right	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-float-sigil	mechdown	certified	syntax-only	active	node:FloatSigil	S7	S7 canonical document closure generated from the specification.
-footnote	mechdown	certified	syntax-only	active	node:Footnote	S7	S7 canonical document closure generated from the specification.
-footnote-prefix	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-footnote-reference	mechdown	certified	certified	active	node:FootnoteReference	2B	Phase 2B closed Mechdown grammar island
-forbidden-emoji	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-formula	expressions	certified	certified	candidate	transparent	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-formula-subscript	expressions	certified	certified	candidate	node:FormulaSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm	state_machines	certified	syntax-only	active	node:Fsm	S7	S7 canonical document closure generated from the specification.
-fsm-args	state_machines	certified	certified	candidate	node:FsmArguments	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-arm	state_machines	certified	syntax-only	active	node:FsmArm	S7	S7 canonical document closure generated from the specification.
-fsm-async-transition	state_machines	certified	certified	candidate	node:FsmAsyncTransition	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-block-transition	state_machines	certified	syntax-only	active	node:FsmBlockTransition	S7	S7 canonical document closure generated from the specification.
-fsm-comment-arm	state_machines	certified	syntax-only	active	node:FsmCommentArm	S7	S7 canonical document closure generated from the specification.
-fsm-declare	state_machines	certified	syntax-only	active	node:FsmDeclare	S7	S7 canonical document closure generated from the specification.
-fsm-guard	state_machines	certified	syntax-only	active	node:FsmGuard	S7	S7 canonical document closure generated from the specification.
-fsm-guard-arm	state_machines	certified	syntax-only	active	node:FsmGuardArm	S7	S7 canonical document closure generated from the specification.
-fsm-implementation	state_machines	certified	syntax-only	active	node:FsmImplementation	S7	S7 canonical document closure generated from the specification.
-fsm-instance	state_machines	certified	certified	candidate	node:FsmInstance	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-output	state_machines	certified	certified	candidate	node:FsmOutput	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-pipe	state_machines	certified	certified	candidate	node:FsmPipe	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-fsm-specification	state_machines	certified	syntax-only	active	node:FsmSpecification	S7	S7 canonical document closure generated from the specification.
-fsm-state-definition	state_machines	certified	syntax-only	active	node:FsmStateDefinition	S7	S7 canonical document closure generated from the specification.
-fsm-state-definition-variables	state_machines	certified	syntax-only	active	node:FsmStateDefinitionVariables	S7	S7 canonical document closure generated from the specification.
-fsm-state-transition	state_machines	certified	certified	candidate	node:FsmStateTransition	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-statement-transition	state_machines	certified	syntax-only	active	node:FsmStatementTransition	S7	S7 canonical document closure generated from the specification.
-fsm-transition	state_machines	certified	syntax-only	active	node:FsmTransition	S7	S7 canonical document closure generated from the specification.
-fsm-value	state_machines	certified	certified	candidate	node:FsmValue	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-full-join	expressions	certified	certified	active	node:FullJoinOperation	2D	Phase 2D closed expression-operator layer
-function-arg	functions	certified	syntax-only	active	node:FunctionArg	S7	S7 canonical document closure generated from the specification.
-function-call	functions	certified	certified	candidate	node:FunctionCall	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-function-define	functions	certified	syntax-only	active	node:FunctionDefine	S7	S7 canonical document closure generated from the specification.
-function-define-match-arms	functions	certified	syntax-only	active	node:FunctionDefineMatchArms	S7	S7 canonical document closure generated from the specification.
-function-define-statements	functions	certified	syntax-only	active	node:FunctionDefineStatements	S7	S7 canonical document closure generated from the specification.
-function-match-arm	functions	certified	syntax-only	active	node:FunctionMatchArm	S7	S7 canonical document closure generated from the specification.
-function-out-arg	functions	certified	syntax-only	active	node:FunctionOutArg	S7	S7 canonical document closure generated from the specification.
-function-out-args	functions	certified	syntax-only	active	node:FunctionOutArgs	S7	S7 canonical document closure generated from the specification.
-gen-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-generator	expressions	certified	certified	candidate	node:Generator	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-generator-arrow	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-generator-arrow-u	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-grammar	grammar	certified	certified	active	node:Grammar	2A	Phase 2A grammar metalanguage
-grammar-definition	grammar	certified	certified	active	node:GrammarDefinition	2A	Phase 2A grammar metalanguage
-grammar-expression	grammar	certified	certified	active	node:GrammarExpression	2A	Phase 2A grammar metalanguage
-grammar-factor	grammar	certified	certified	active	node:GrammarFactor	2A	Phase 2A grammar metalanguage
-grammar-group	grammar	certified	certified	active	node:GrammarGroup	2A	Phase 2A grammar metalanguage
-grammar-identifier	grammar	certified	certified	active	node:GrammarIdentifier	2A	Phase 2A grammar metalanguage
-grammar-list	grammar	certified	certified	active	node:GrammarList	2A	Phase 2A grammar metalanguage
-grammar-not	grammar	certified	certified	active	node:GrammarNot	2A	Phase 2A grammar metalanguage
-grammar-optional	grammar	certified	certified	active	node:GrammarOptional	2A	Phase 2A grammar metalanguage
-grammar-peek	grammar	certified	certified	active	node:GrammarPeek	2A	Phase 2A grammar metalanguage
-grammar-range	grammar	certified	certified	active	node:GrammarRange	2A	Phase 2A grammar metalanguage
-grammar-repeat0	grammar	certified	certified	active	node:GrammarRepeat0	2A	Phase 2A grammar metalanguage
-grammar-repeat1	grammar	certified	certified	active	node:GrammarRepeat1	2A	Phase 2A grammar metalanguage
-grammar-rule	grammar	certified	certified	active	node:GrammarRule	2A	Phase 2A grammar metalanguage
-grammar-term	grammar	certified	certified	active	node:GrammarTerm	2A	Phase 2A grammar metalanguage
-grammar-terminal	grammar	certified	certified	active	node:GrammarTerminal	2A	Phase 2A grammar metalanguage
-grammar-terminal-token	grammar	certified	certified	active	node:GrammarTerminalToken	2A	Phase 2A grammar metalanguage
-grave	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-grave-codeblock-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-greater-than	expressions	certified	certified	active	node:GreaterThanOperation	2D	Phase 2D closed expression-operator layer
-greater-than-equal	expressions	certified	certified	active	node:GreaterThanEqualOperation	2D	Phase 2D closed expression-operator layer
-grouping-symbol	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-guard-operator	state_machines	certified	syntax-only	active	transparent	2G	Phase 2G closed executable primitive layer
-hashtag	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-header-field	structures	certified	certified	candidate	node:HeaderField	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-help-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-hexadecimal-literal	literals	certified	certified	active	node:HexadecimalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-highlight	mechdown	certified	syntax-only	active	node:Highlight	S7	S7 canonical document closure generated from the specification.
-highlight-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-http-prefix	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-hyperlink	mechdown	certified	syntax-only	active	node:Hyperlink	S7	S7 canonical document closure generated from the specification.
-idea-block	mechdown	certified	syntax-only	active	node:IdeaBlock	S7	S7 canonical document closure generated from the specification.
-idea-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-identifier	base	certified	certified	active	node:Identifier	2A	Phase 2A canonical base closure
-identifier-path-segment	base	certified	certified	active	node:IdentifierPathSegment	2A	Phase 2A canonical base closure
-identifier-path-segment-emoji	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-identifier-symbol	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-img	mechdown	certified	syntax-only	active	node:Img	S7	S7 canonical document closure generated from the specification.
-img-prefix	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-import-alias-operator	imports	certified	syntax-only	active	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
-import-declaration	statements	certified	certified	active	node:ImportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
-import-group-item	imports	certified	certified	active	node:ImportGroupItem	2E	Phase 2E corrected module-import closure (IMPORT-001)
-import-group-items	imports	certified	certified	active	node:ImportGroupItems	2E	Phase 2E corrected module-import closure (IMPORT-001)
-import-group-separator	imports	certified	syntax-only	active	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
-import-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure; renamed by IMPORT-001
-info-block	mechdown	certified	syntax-only	active	node:InfoBlock	S7	S7 canonical document closure generated from the specification.
-info-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-inline-code	mechdown	certified	certified	active	node:InlineCode	2B	Phase 2B closed Mechdown grammar island
-inline-equation	mechdown	certified	certified	active	node:InlineEquation	2B	Phase 2B closed Mechdown grammar island
-inline-mech-code	mechdown	certified	syntax-only	active	node:InlineMechCode	S7	S7 canonical document closure generated from the specification.
-inline-paragraph	mechdown	certified	syntax-only	active	node:InlineParagraph	S7	S7 canonical document closure generated from the specification.
-inline-table	structures	certified	certified	candidate	node:InlineTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-inline-table-header	structures	certified	certified	candidate	node:InlineTableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-inline-table-row	structures	certified	certified	candidate	node:InlineTableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-integer-literal	literals	certified	certified	active	node:IntegerLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-intersection	expressions	certified	certified	active	node:IntersectionOperation	2D	Phase 2D closed expression-operator layer
-invariant-define	statements	certified	syntax-only	active	node:InvariantDefine	S7	S7 canonical document closure generated from the specification.
-join	expressions	certified	certified	active	node:JoinOperation	2D	Phase 2D closed expression-operator layer
-kind	literals	certified	certified	candidate	node:Kind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-annotation	literals	certified	certified	candidate	node:KindAnnotation	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-any	literals	certified	certified	active	node:KindAny	2C	Phase 2C closed literal, path, and primitive kind island
-kind-atom	literals	certified	certified	active	node:KindAtom	2C	Phase 2C closed literal, path, and primitive kind island
-kind-define	statements	certified	syntax-only	active	node:KindDefine	S7	S7 canonical document closure generated from the specification.
-kind-empty	literals	certified	certified	active	node:KindEmpty	2C	Phase 2C closed literal, path, and primitive kind island
-kind-kind	literals	certified	certified	candidate	node:KindKind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-map	literals	certified	certified	candidate	node:KindMap	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-matrix	literals	certified	certified	candidate	node:KindMatrix	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-record	literals	certified	certified	candidate	node:KindRecord	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-scalar	literals	certified	certified	candidate	node:KindScalar	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-set	literals	certified	certified	candidate	node:KindSet	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-table	literals	certified	certified	candidate	node:TableKind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-tuple	literals	certified	certified	candidate	node:KindTuple	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-with-option	literals	certified	certified	candidate	node:KindWithOption	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-l1	expressions	certified	certified	candidate	node:LogicExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l2	expressions	certified	certified	candidate	node:ComparisonExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l3	expressions	certified	certified	candidate	node:AdditiveExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l4	expressions	certified	certified	candidate	node:MultiplicativeExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l5	expressions	certified	certified	candidate	node:PowerExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l6	expressions	certified	certified	candidate	node:TableExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l7	expressions	certified	certified	candidate	node:SetExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-left-alignment	mechdown	certified	syntax-only	active	node:LeftAlignment	S7	S7 canonical document closure generated from the specification.
-left-angle	literals	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
-left-angle1	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-left-angle2	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-left-anti-join	expressions	certified	certified	active	node:LeftAntiJoinOperation	2D	Phase 2D closed expression-operator layer
-left-brace	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-left-bracket	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-left-join	expressions	certified	certified	active	node:LeftJoinOperation	2D	Phase 2D closed expression-operator layer
-left-parenthesis	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-left-semi-join	expressions	certified	certified	active	node:LeftSemiJoinOperation	2D	Phase 2D closed expression-operator layer
-less-than	expressions	certified	certified	active	node:LessThanOperation	2D	Phase 2D closed expression-operator layer
-less-than-equal	expressions	certified	certified	active	node:LessThanEqualOperation	2D	Phase 2D closed expression-operator layer
-list-separator	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
-literal	literals	certified	certified	candidate	node:Literal	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-load-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-logic-operator	expressions	certified	certified	active	node:LogicOperator	2D	Phase 2D closed expression-operator layer
-ls-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-map	structures	certified	certified	candidate	node:Map	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-mapping	structures	certified	certified	candidate	node:MapEntry	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-match-arm	expressions	certified	certified	candidate	node:MatchArm	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-match-expression	expressions	unported	pending	inactive	undecided		Outside canonical Document reachability; not activated.
-matrix	structures	certified	certified	candidate	node:Matrix	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-matrix-column	structures	certified	certified	candidate	node:MatrixColumn	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-matrix-comprehension	expressions	certified	certified	candidate	node:MatrixComprehension	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-matrix-end	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
-matrix-multiply	expressions	certified	certified	active	node:MatrixMultiplyOperation	2D	Phase 2D closed expression-operator layer
-matrix-operator	expressions	certified	certified	active	node:MatrixOperator	2D	Phase 2D closed expression-operator layer
-matrix-row	structures	certified	certified	candidate	node:MatrixRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-matrix-solve	expressions	certified	certified	active	node:MatrixSolveOperation	2D	Phase 2D closed expression-operator layer
-matrix-start	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
-mech-code	parser	certified	syntax-only	active	node:MechCode	S7	S7 canonical document closure generated from the specification.
-mech-code-alt	parser	certified	syntax-only	active	node:MechCodeAlt	S7	S7 canonical document closure generated from the specification.
-mechdown-list	mechdown	certified	syntax-only	active	node:MechdownList	S7	S7 canonical document closure generated from the specification.
-mechdown-table	mechdown	certified	syntax-only	active	node:MechdownTable	S7	S7 canonical document closure generated from the specification.
-mechdown-table-header	mechdown	certified	syntax-only	active	node:MechdownTableHeader	S7	S7 canonical document closure generated from the specification.
-mechdown-table-no-header	mechdown	certified	syntax-only	active	node:MechdownTableNoHeader	S7	S7 canonical document closure generated from the specification.
-mechdown-table-row	mechdown	certified	syntax-only	active	node:MechdownTableRow	S7	S7 canonical document closure generated from the specification.
-mechdown-table-with-header	mechdown	certified	syntax-only	active	node:MechdownTableWithHeader	S7	S7 canonical document closure generated from the specification.
-micro-mika	mika	certified	syntax-only	active	node:MicroMika	S7	S7 canonical document closure generated from the specification.
-mika	mika	certified	syntax-only	active	node:Mika	S7	S7 canonical document closure generated from the specification.
-mika-arm-left	mika	certified	syntax-only	active	node:MikaArmLeft	S7	S7 canonical document closure generated from the specification.
-mika-arm-right	mika	certified	syntax-only	active	node:MikaArmRight	S7	S7 canonical document closure generated from the specification.
-mika-expression-inner	mika	certified	syntax-only	active	node:MikaExpressionInner	S7	S7 canonical document closure generated from the specification.
-mika-eye-left	mika	certified	syntax-only	active	node:MikaEyeLeft	S7	S7 canonical document closure generated from the specification.
-mika-eye-right	mika	certified	syntax-only	active	node:MikaEyeRight	S7	S7 canonical document closure generated from the specification.
-mika-nose	mika	certified	syntax-only	active	node:MikaNose	S7	S7 canonical document closure generated from the specification.
-mika-section	mika	certified	syntax-only	active	node:MikaSection	S7	S7 canonical document closure generated from the specification.
-mika-section-close	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-mika-section-open	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-mini-mika	mika	certified	syntax-only	active	node:MiniMika	S7	S7 canonical document closure generated from the specification.
-module-export-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-module-import	imports	certified	certified	active	node:ModuleImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-alias	imports	certified	certified	active	node:ModuleImportAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-alias-path	imports	certified	certified	active	node:ModuleImportAliasPath	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-alias-segment	imports	certified	certified	active	node:ModuleImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-context-alias	imports	certified	certified	active	node:ModuleImportContextAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-intrinsic-segment	imports	certified	certified	active	node:ModuleImportIntrinsicSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-name-segment	imports	certified	certified	active	node:ModuleImportNameSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-path	imports	certified	certified	active	node:ModuleImportPath	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-path-segment	imports	certified	certified	active	node:ModuleImportPathSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-value-alias	imports	certified	certified	active	node:ModuleImportValueAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-only-import	imports	certified	certified	active	node:ModuleOnlyImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-root	imports	certified	certified	active	node:ModuleRoot	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-suffix-import	imports	certified	certified	active	node:ModuleSuffixImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
-modulus	expressions	certified	certified	active	node:ModulusOperation	2D	Phase 2D closed expression-operator layer
-mul-assign-operator	statements	certified	certified	active	node:MulAssignOperation	2G	Phase 2G closed executable primitive layer
-mul-div-operator	expressions	certified	certified	active	node:MulDivOperator	2D	Phase 2D closed expression-operator layer
-multiply	expressions	certified	certified	active	node:MultiplyOperation	2D	Phase 2D closed expression-operator layer
-nbsp	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-negate	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-negate-factor	expressions	certified	certified	candidate	node:NegateFactor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-new-line	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-new-line-char	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-newline-indent	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
-no-alignment	mechdown	certified	syntax-only	active	node:NoAlignment	S7	S7 canonical document closure generated from the specification.
-not	expressions	certified	certified	active	node:NotOperation	2D	Phase 2D closed expression-operator layer
-not-element-of	expressions	certified	certified	active	node:NotElementOfOperation	2D	Phase 2D closed expression-operator layer
-not-equal	expressions	certified	certified	active	node:NotEqualOperation	2D	Phase 2D closed expression-operator layer
-not-factor	expressions	certified	certified	candidate	node:NotFactor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-not-mech-code	mechdown	certified	syntax-only	active	node:NotMechCode	S7	S7 canonical document closure generated from the specification.
-number	literals	certified	certified	active	node:Number	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
-octal-literal	literals	certified	certified	active	node:OctalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-op-assign	statements	certified	syntax-only	active	node:OpAssign	S7	S7 canonical document closure generated from the specification.
-op-assign-operator	statements	certified	certified	active	node:OpAssignOperator	2G	Phase 2G closed executable primitive layer
-option-map	mechdown	certified	syntax-only	active	node:OptionMap	S7	S7 canonical document closure generated from the specification.
-option-mapping	mechdown	certified	syntax-only	active	node:OptionMapping	S7	S7 canonical document closure generated from the specification.
-option-value	mechdown	certified	syntax-only	active	node:OptionValue	S7	S7 canonical document closure generated from the specification.
-or	expressions	certified	certified	active	node:OrOperation	2D	Phase 2D closed expression-operator layer
-ordered-list	mechdown	certified	syntax-only	active	node:OrderedList	S7	S7 canonical document closure generated from the specification.
-ordered-list-item	mechdown	certified	syntax-only	active	node:OrderedListItem	S7	S7 canonical document closure generated from the specification.
-output-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-output-operator-a	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-output-operator-u	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-paragraph	mechdown	certified	syntax-only	active	node:Paragraph	S7	S7 canonical document closure generated from the specification.
-paragraph-element	mechdown	certified	syntax-only	active	node:ParagraphElement	S7	S7 canonical document closure generated from the specification.
-paragraph-newline	mechdown	certified	syntax-only	active	node:ParagraphNewline	S7	S7 canonical document closure generated from the specification.
-paragraph-text	mechdown	certified	certified	active	node:ParagraphText	2B	Phase 2B closed Mechdown grammar island
-parenthetical-term	expressions	certified	certified	candidate	node:ParentheticalExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-parse	parser	certified	certified	active	root:Document	S7	S7 canonical document closure generated from the specification.
-parse-grammar	parser	certified	certified	active	root:GrammarDocument	2A	Phase 2A explicit dependency closure
-parse-mech	parser	certified	syntax-only	active	transparent	S7	S7 canonical document closure generated from the specification.
-parse-repl-command	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-pattern	patterns	certified	certified	candidate	node:Pattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-array	patterns	certified	certified	candidate	node:ArrayPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-array-item	patterns	certified	certified	candidate	transparent	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-array-token	patterns	certified	certified	candidate	node:ArrayPatternElement	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-atom-struct	patterns	certified	certified	candidate	node:AtomStructPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-tuple	patterns	certified	certified	candidate	node:TuplePattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-tuple-struct	patterns	certified	certified	candidate	node:TupleStructPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-percent	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-period	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-plan-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-plus	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-power	expressions	certified	certified	active	node:PowerOperation	2D	Phase 2D closed expression-operator layer
-power-operator	expressions	certified	certified	active	node:PowerOperator	2D	Phase 2D closed expression-operator layer
-prefixed-context-path	expressions	certified	certified	active	node:PrefixedContextPath	2C	Phase 2C closed literal, path, and primitive kind island
-profile-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-program	parser	certified	syntax-only	active	transparent	S7	S7 canonical document closure generated from the specification.
-prompt	mechdown	certified	syntax-only	active	node:Prompt	S7	S7 canonical document closure generated from the specification.
-prompt-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-proper-subset	expressions	certified	certified	active	node:ProperSubsetOperation	2D	Phase 2D closed expression-operator layer
-proper-superset	expressions	certified	certified	active	node:ProperSupersetOperation	2D	Phase 2D closed expression-operator layer
-punctuation	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-question	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-question-block	mechdown	certified	syntax-only	active	node:QuestionBlock	S7	S7 canonical document closure generated from the specification.
-question-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-quit-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-quote	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-quote-block	mechdown	certified	syntax-only	active	node:QuoteBlock	S7	S7 canonical document closure generated from the specification.
-quote-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-range-exclusive	expressions	certified	certified	active	node:RangeExclusiveOperation	2D	Phase 2D closed expression-operator layer
-range-expression	expressions	certified	certified	candidate	node:RangeExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-range-inclusive	expressions	certified	certified	active	node:RangeInclusiveOperation	2D	Phase 2D closed expression-operator layer
-range-operator	expressions	certified	certified	active	node:RangeOperator	2D	Phase 2D closed expression-operator layer
-range-subscript	expressions	certified	certified	candidate	node:RangeSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-rational-literal	literals	certified	certified	active	node:RationalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-raw-hyperlink	mechdown	certified	certified	active	node:RawHyperlink	2B	Phase 2B closed Mechdown grammar island
-raw-string	literals	certified	certified	active	node:RawString	2C	Phase 2C closed literal, path, and primitive kind island
-raw-subtract	expressions	certified	certified	active	node:RawSubtractOperation	2D	Phase 2D closed expression-operator layer
-raw-text	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-real-number	literals	certified	certified	active	node:RealNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
-record	structures	certified	certified	candidate	node:Record	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-reference	mechdown	certified	certified	active	node:Reference	2B	Phase 2B closed Mechdown grammar island
-regular-table	structures	certified	certified	candidate	node:RegularTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-relative-source-import-specifier	statements	certified	certified	active	node:RelativeSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-repl-identifier	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-right-alignment	mechdown	certified	syntax-only	active	node:RightAlignment	S7	S7 canonical document closure generated from the specification.
-right-angle	literals	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
-right-angle1	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-right-angle2	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-right-brace	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-right-bracket	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-right-join	expressions	certified	certified	active	node:RightJoinOperation	2D	Phase 2D closed expression-operator layer
-right-parenthesis	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-row-separator	structures	certified	certified	active	node:TableRowSeparator	2H	Phase 2H closed structure shell
-save-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-scientific-literal	literals	certified	certified	active	node:ScientificLiteral	2C	Phase 2C syntax port; typed scientific exponents preserve their suffix and lower deterministically while the retired parser exponent branch crashes.
-section	mechdown	certified	syntax-only	active	node:Section	S7	S7 canonical document closure generated from the specification.
-section-element	mechdown	certified	syntax-only	active	node:SectionElement	S7	S7 canonical document closure generated from the specification.
-section-reference	mechdown	certified	certified	active	node:SectionReference	2B	Phase 2B closed Mechdown grammar island
-section-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-select-all	expressions	certified	certified	active	node:SelectAllSubscript	2G	Phase 2G closed executable primitive layer
-semicolon	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-send-operator	statements	certified	syntax-only	active	transparent	2G	Phase 2G closed executable primitive layer
-set	structures	certified	certified	candidate	node:Set	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-set-comprehension	expressions	certified	certified	candidate	node:SetComprehension	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-set-operator	expressions	certified	certified	active	node:SetOperator	2D	Phase 2D closed expression-operator layer
-slash	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-slice	expressions	certified	certified	candidate	node:Slice	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-slice-ref	expressions	certified	syntax-only	active	node:SliceRef	S7	S7 canonical document closure generated from the specification.
-source-import-specifier	statements	certified	certified	active	node:SourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-source-import-tail	statements	certified	certified	active	node:SourceImportTail	2F	Phase 2F closed source, export, and context declaration layer
-source-import-uri-scheme	statements	certified	certified	active	node:SourceImportUriScheme	2F	Phase 2F closed source, export, and context declaration layer
-source-mec-path	statements	certified	certified	active	node:SourceMecPath	2F	Phase 2F closed source, export, and context declaration layer
-source-mec-path-wildcard-suffix	statements	certified	syntax-only	active	transparent	2F	Phase 2F closed source, export, and context declaration layer
-source-path-component	statements	certified	certified	active	node:SourcePathComponent	2F	Phase 2F closed source, export, and context declaration layer
-source-path-component-token	statements	certified	syntax-only	active	token	2F	Phase 2F closed source, export, and context declaration layer
-space	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-space-tab	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-space-tab0	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
-space-tab1	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
-spaced-subtract	expressions	certified	certified	active	node:SpacedSubtractOperation	2D	Phase 2D closed expression-operator layer
-spread-operator	patterns	certified	syntax-only	active	transparent	2G	Phase 2G closed executable primitive layer
-spread-operator-a	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-spread-operator-u	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-statement	statements	certified	syntax-only	active	node:Statement	S7	S7 canonical document closure generated from the specification.
-statement-separator	expressions	certified	syntax-only	active	transparent	2G	Phase 2G closed executable primitive layer
-step-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-strict-equal	expressions	certified	certified	active	node:StrictEqualOperation	2D	Phase 2D closed expression-operator layer
-strict-not-equal	expressions	certified	certified	active	node:StrictNotEqualOperation	2D	Phase 2D closed expression-operator layer
-strike-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-strikethrough	mechdown	certified	syntax-only	active	node:Strikethrough	S7	S7 canonical document closure generated from the specification.
-string	literals	certified	certified	active	node:StringLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-strong	mechdown	certified	syntax-only	active	node:Strong	S7	S7 canonical document closure generated from the specification.
-strong-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-structure	structures	certified	certified	candidate	node:Structure	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-sub-assign-operator	statements	certified	certified	active	node:SubAssignOperation	2G	Phase 2G closed executable primitive layer
-sublist	mechdown	certified	syntax-only	active	node:Sublist	S7	S7 canonical document closure generated from the specification.
-subscript	expressions	certified	certified	candidate	node:SubscriptList	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-subset	expressions	certified	certified	active	node:SubsetOperation	2D	Phase 2D closed expression-operator layer
-subtitle	mechdown	certified	syntax-only	active	node:Subtitle	S7	S7 canonical document closure generated from the specification.
-subtract	expressions	certified	certified	active	node:SubtractOperation	2D	Phase 2D closed expression-operator layer
-success-block	mechdown	certified	syntax-only	active	node:SuccessBlock	S7	S7 canonical document closure generated from the specification.
-success-check-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-success-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-superset	expressions	certified	certified	active	node:SupersetOperation	2D	Phase 2D closed expression-operator layer
-swizzle-subscript	expressions	certified	certified	active	node:SwizzleSubscript	2G	Phase 2G closed executable primitive layer
-symbol	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-symbols-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-symmetric-difference	expressions	certified	certified	active	node:SymmetricDifferenceOperation	2D	Phase 2D closed expression-operator layer
-synth-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-tab	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-table	structures	certified	certified	candidate	node:Table	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-table-column	structures	unported	pending	inactive	undecided		Outside canonical Document reachability; not activated.
-table-end	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
-table-header	structures	certified	certified	candidate	node:TableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-table-horz	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
-table-operator	expressions	certified	certified	active	node:TableOperator	2D	Phase 2D closed expression-operator layer
-table-row	structures	certified	certified	candidate	node:TableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-table-row2	structures	certified	certified	candidate	node:FancyTableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-table-separator	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
-table-start	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
-table-top	structures	certified	syntax-only	active	transparent	2H	Phase 2H closed structure shell
-tag	parser	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
-text	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-thematic-break	mechdown	certified	certified	active	node:ThematicBreak	2B	Phase 2B closed Mechdown grammar island
-thin-space	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-tilde	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-tilde-codeblock-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-title	mechdown	certified	syntax-only	active	node:Title	S7	S7 canonical document closure generated from the specification.
-title-front-matter	mechdown	certified	syntax-only	active	node:TitleFrontMatter	S7	S7 canonical document closure generated from the specification.
-transition-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-transition-operator-a	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-transition-operator-u	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-transpose	expressions	certified	syntax-only	active	transparent	2D	Phase 2D closed expression-operator layer
-true-literal	literals	certified	syntax-only	active	token	2C	Phase 2C closed literal, path, and primitive kind island
-tuple	structures	certified	certified	candidate	node:Tuple	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-tuple-destructure	statements	certified	syntax-only	active	node:TupleDestructure	S7	S7 canonical document closure generated from the specification.
-tuple-struct	structures	certified	certified	candidate	node:TupleStruct	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-typed-integer	literals	certified	certified	active	node:TypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
-ul-subtitle	mechdown	certified	syntax-only	active	node:UlSubtitle	S7	S7 canonical document closure generated from the specification.
-unchecked-item	mechdown	certified	syntax-only	active	node:UncheckedItem	S7	S7 canonical document closure generated from the specification.
-underline	mechdown	certified	syntax-only	active	node:Underline	S7	S7 canonical document closure generated from the specification.
-underline-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-underscore	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-underscore-digit	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-union-op	expressions	certified	certified	active	node:UnionOperation	2D	Phase 2D closed expression-operator layer
-unordered-list	mechdown	certified	syntax-only	active	node:UnorderedList	S7	S7 canonical document closure generated from the specification.
-unordered-list-item	mechdown	certified	syntax-only	active	node:UnorderedListItem	S7	S7 canonical document closure generated from the specification.
-untyped-integer	literals	certified	certified	active	node:UntypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
-untyped-real-number	literals	certified	certified	active	node:UntypedRealNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
-uri-scheme-part	statements	certified	syntax-only	active	token	2F	Phase 2F closed source, export, and context declaration layer
-uri-source-import-specifier	statements	certified	certified	active	node:UriSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-utf8-string	literals	certified	certified	active	node:Utf8String	2C	Phase 2C closed literal, path, and primitive kind island
-var	expressions	certified	certified	candidate	node:Variable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-variable-assign	statements	certified	syntax-only	active	node:VariableAssign	S7	S7 canonical document closure generated from the specification.
-variable-define	statements	certified	certified	candidate	node:VariableDefine	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-warning-block	mechdown	certified	syntax-only	active	node:WarningBlock	S7	S7 canonical document closure generated from the specification.
-warning-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-whitespace	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-whitespace0	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
-whitespace1	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
-whos-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
-wildcard	patterns	certified	certified	active	node:WildcardPattern	2G	Phase 2G closed executable primitive layer
-ws0e	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
-ws1e	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
-xor	expressions	certified	certified	active	node:XorOperation	2D	Phase 2D closed expression-operator layer
+grammar-name	family	syntax-status	semantic-status	grammar-scope	node-policy	component	notes
+absolute-source-import-specifier	statements	certified	certified	supporting	node:AbsoluteSourceImportSpecifier	declaration	declaration grammar closed source, export, and context declaration layer
+abstract-el	mechdown	certified	syntax-only	supporting	node:AbstractEl	document	document canonical document closure generated from the specification.
+abstract-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+activation-arm	activation	certified	syntax-only	supporting	node:ActivationArm	document	document canonical document closure generated from the specification.
+activation-scope	activation	certified	syntax-only	supporting	node:ActivationScope	document	document canonical document closure generated from the specification.
+add	expressions	certified	certified	supporting	node:AddOperation	expression	expression grammar closed expression-operator layer
+add-assign-operator	statements	certified	certified	supporting	node:AddAssignOperation	primitive	primitive grammar closed executable primitive layer
+add-sub-operator	expressions	certified	certified	supporting	node:AddSubOperator	expression	expression grammar closed expression-operator layer
+aliased-item-import	imports	certified	certified	supporting	node:AliasedItemImport	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+alignment-separator	mechdown	certified	syntax-only	supporting	node:AlignmentSeparator	document	document canonical document closure generated from the specification.
+alpha	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+alpha-token	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+alphanumeric	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+ampersand	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+and	expressions	certified	certified	supporting	node:AndOperation	expression	expression grammar closed expression-operator layer
+any	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+any-token	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+apostrophe	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+argument-list	functions	certified	certified	executable-core	node:ArgumentList	executable	executable grammar canonical recursive core; semantic disposition: structural.
+assign-operator	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+asterisk	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+async-transition-operator	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+at	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+atom	literals	certified	certified	supporting	node:AtomLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+backslash	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+bar	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+bare-source-import-specifier	statements	certified	certified	supporting	node:BareSourceImportSpecifier	declaration	declaration grammar closed source, export, and context declaration layer
+binary-literal	literals	certified	certified	supporting	node:BinaryLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+binding	structures	certified	certified	executable-core	node:RecordBinding	executable	executable grammar canonical recursive core; semantic disposition: structural.
+blank-line	mechdown	certified	syntax-only	supporting	node:BlankLine	document-markup	document-markup grammar closed Mechdown grammar island
+body	mechdown	certified	syntax-only	supporting	node:Body	document	document canonical document closure generated from the specification.
+boolean	literals	certified	syntax-only	supporting	token	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+box-bl	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-bl-bold	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-bl-round	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-br	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-br-bold	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-br-round	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-cross	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-drawing-char	structures	certified	syntax-only	supporting	token	lexical	lexical grammar explicit dependency closure
+box-drawing-emoji	structures	certified	syntax-only	supporting	token	lexical	lexical grammar explicit dependency closure
+box-horz	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-t-bottom	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-t-left	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-t-right	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-t-top	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-tl	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-tl-bold	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-tl-round	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-tr	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-tr-bold	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-tr-round	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-vert	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+box-vert-bold	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+brace-subscript	expressions	certified	certified	executable-core	node:BraceSubscript	executable	executable grammar canonical recursive core; semantic disposition: structural.
+bracket-subscript	expressions	certified	certified	executable-core	node:BracketSubscript	executable	executable grammar canonical recursive core; semantic disposition: structural.
+call-arg	functions	certified	certified	executable-core	node:CallArgument	executable	executable grammar canonical recursive core; semantic disposition: structural.
+call-arg-with-binding	functions	certified	certified	executable-core	node:BoundCallArgument	executable	executable grammar canonical recursive core; semantic disposition: structural.
+caret	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+carriage-return	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+carriage-return-new-line	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+cd-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+center-alignment	mechdown	certified	syntax-only	supporting	node:CenterAlignment	document	document canonical document closure generated from the specification.
+check-list	mechdown	certified	syntax-only	supporting	node:CheckList	document	document canonical document closure generated from the specification.
+check-list-item	mechdown	certified	syntax-only	supporting	node:CheckListItem	document	document canonical document closure generated from the specification.
+check-mark	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+checked-item	mechdown	certified	syntax-only	supporting	node:CheckedItem	document	document canonical document closure generated from the specification.
+citation	mechdown	certified	syntax-only	supporting	node:Citation	document	document canonical document closure generated from the specification.
+clc-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+clear-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+code-block	mechdown	certified	syntax-only	supporting	node:CodeBlock	document	document canonical document closure generated from the specification.
+code-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+code-terminal	parser	certified	syntax-only	supporting	node:CodeTerminal	document	document canonical document closure generated from the specification.
+codeblock-sigil	mechdown	certified	syntax-only	supporting	transparent	document-markup	document-markup grammar closed Mechdown grammar island
+colon	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+comma	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+comment	statements	certified	syntax-only	supporting	node:Comment	document-markup	rich comment bodies use the complete canonical paragraph-element grammar
+comment-sigil	statements	certified	syntax-only	supporting	transparent	document-markup	document-markup grammar closed Mechdown grammar island
+comparison-operator	expressions	certified	certified	supporting	node:ComparisonOperator	expression	expression grammar closed expression-operator layer
+complement	expressions	certified	certified	supporting	node:ComplementOperation	expression	expression grammar closed expression-operator layer
+complex-number	literals	certified	certified	supporting	node:ComplexNumber	literal-path-kind	literal-path-kind grammar canonical syntax and semantic certification; scientific-exponent selection follows the specification.
+comprehension-qualifier	expressions	certified	certified	executable-core	node:ComprehensionQualifier	executable	executable grammar canonical recursive core; semantic disposition: structural.
+context-address-path	expressions	certified	certified	supporting	node:ContextAddressPath	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+context-address-path-token	expressions	certified	syntax-only	supporting	token	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+context-base-context	statements	certified	certified	supporting	node:ContextBaseContext	declaration	declaration grammar closed source, export, and context declaration layer
+context-base-resource-uri	statements	certified	certified	supporting	node:ContextBaseResourceUri	declaration	declaration grammar closed source, export, and context declaration layer
+context-capability-declaration	statements	certified	certified	supporting	node:ContextCapabilityDeclaration	declaration	declaration grammar closed source, export, and context declaration layer
+context-capability-path	statements	certified	certified	supporting	node:ContextCapabilityPath	declaration	declaration grammar closed source, export, and context declaration layer
+context-capability-path-token	statements	certified	syntax-only	supporting	token	declaration	declaration grammar closed source, export, and context declaration layer
+context-capability-scope	statements	certified	certified	supporting	node:ContextCapabilityScope	declaration	declaration grammar closed source, export, and context declaration layer
+context-declaration	statements	certified	certified	supporting	node:ContextDeclaration	declaration	declaration grammar closed source, export, and context declaration layer
+context-import-alias-segment	imports	certified	certified	supporting	node:ContextImportAliasSegment	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+context-send	statements	certified	syntax-only	supporting	node:ContextSend	document	document canonical document closure generated from the specification.
+cross	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+cross-product	expressions	certified	certified	supporting	node:CrossProductOperation	expression	expression grammar closed expression-operator layer
+dash	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+decimal-literal	literals	certified	certified	supporting	node:DecimalLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+define-operator	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+difference	expressions	certified	certified	supporting	node:DifferenceOperation	expression	expression grammar closed expression-operator layer
+digit	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+digit-sequence	base	certified	certified	supporting	node:DigitSequence	lexical	lexical grammar canonical base closure
+digit-token	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+div-assign-operator	statements	certified	certified	supporting	node:DivAssignOperation	primitive	primitive grammar closed executable primitive layer
+divide	expressions	certified	certified	supporting	node:DivideOperation	expression	expression grammar closed expression-operator layer
+docs-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+dollar	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+dot-product	expressions	certified	certified	supporting	node:DotProductOperation	expression	expression grammar closed expression-operator layer
+dot-subscript	expressions	certified	certified	supporting	node:DotSubscript	primitive	primitive grammar closed executable primitive layer
+dot-subscript-int	expressions	certified	certified	supporting	node:DotSubscriptInt	primitive	primitive grammar closed executable primitive layer
+element-of	expressions	certified	certified	supporting	node:ElementOfOperation	expression	expression grammar closed expression-operator layer
+emoji	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+emoji-grapheme	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+emphasis	mechdown	certified	syntax-only	supporting	node:Emphasis	document	document canonical document closure generated from the specification.
+emphasis-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+empty	literals	certified	certified	supporting	node:EmptyLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+empty-map	structures	certified	certified	supporting	node:EmptyMap	structure	structure grammar closed structure shell
+empty-paragraph	mechdown	certified	syntax-only	supporting	node:EmptyParagraph	document	document canonical document closure generated from the specification.
+empty-set	structures	certified	certified	supporting	node:EmptySet	structure	structure grammar closed structure shell
+english-false-literal	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+english-true-literal	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+enum-define	statements	certified	syntax-only	supporting	node:EnumDefine	document	document canonical document closure generated from the specification.
+enum-separator	base	certified	syntax-only	supporting	transparent	lexical	lexical grammar canonical base closure
+enum-variant	statements	certified	syntax-only	supporting	node:EnumVariant	document	document canonical document closure generated from the specification.
+enum-variant-inline-kind	statements	certified	syntax-only	supporting	node:EnumVariantInlineKind	document	document canonical document closure generated from the specification.
+enum-variant-kind	statements	certified	syntax-only	supporting	node:EnumVariantKind	document	document canonical document closure generated from the specification.
+equal	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+equal-to	expressions	certified	certified	supporting	node:EqualToOperation	expression	expression grammar closed expression-operator layer
+equation	mechdown	certified	certified	supporting	node:Equation	document-markup	document-markup grammar closed Mechdown grammar island
+equation-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+error-alt-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+error-block	mechdown	certified	syntax-only	supporting	node:ErrorBlock	document	document canonical document closure generated from the specification.
+error-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+escaped-char	base	certified	certified	supporting	node:EscapedCharacter	lexical	lexical grammar canonical base closure
+eval-inline-mech-code	mechdown	certified	syntax-only	supporting	node:EvalInlineMechCode	document	document canonical document closure generated from the specification.
+exclamation	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+exp-assign-operator	statements	certified	certified	supporting	node:ExpAssignOperation	primitive	primitive grammar closed executable primitive layer
+export-declaration	statements	certified	certified	supporting	node:ExportDeclaration	declaration	declaration grammar closed source, export, and context declaration layer
+expression	expressions	certified	certified	executable-core	node:Expression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+factor	expressions	certified	certified	executable-core	node:Factor	executable	executable grammar canonical recursive core; semantic disposition: executable.
+false-literal	literals	certified	syntax-only	supporting	token	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+fancy-table	structures	certified	certified	executable-core	node:FancyTable	executable	executable grammar canonical recursive core; semantic disposition: executable.
+fancy-table-header	structures	certified	certified	executable-core	node:FancyTableHeader	executable	executable grammar canonical recursive core; semantic disposition: structural.
+field	structures	certified	certified	executable-core	node:TableField	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+figure-item	mechdown	certified	syntax-only	supporting	node:FigureItem	document	document canonical document closure generated from the specification.
+figures	mechdown	certified	syntax-only	supporting	node:Figures	document	document canonical document closure generated from the specification.
+figures-row	mechdown	certified	syntax-only	supporting	node:FiguresRow	document	document canonical document closure generated from the specification.
+float	mechdown	certified	syntax-only	supporting	node:Float	document	document canonical document closure generated from the specification.
+float-decimal-start	literals	certified	certified	supporting	node:FloatDecimalStart	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+float-full	literals	certified	certified	supporting	node:FloatFull	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+float-left	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+float-literal	literals	certified	certified	supporting	node:FloatLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+float-right	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+float-sigil	mechdown	certified	syntax-only	supporting	node:FloatSigil	document	document canonical document closure generated from the specification.
+footnote	mechdown	certified	syntax-only	supporting	node:Footnote	document	document canonical document closure generated from the specification.
+footnote-prefix	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+footnote-reference	mechdown	certified	certified	supporting	node:FootnoteReference	document-markup	document-markup grammar closed Mechdown grammar island
+forbidden-emoji	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+formula	expressions	certified	certified	executable-core	transparent	executable	executable grammar canonical recursive core; semantic disposition: executable.
+formula-subscript	expressions	certified	certified	executable-core	node:FormulaSubscript	executable	executable grammar canonical recursive core; semantic disposition: structural.
+fsm	state_machines	certified	syntax-only	supporting	node:Fsm	document	document canonical document closure generated from the specification.
+fsm-args	state_machines	certified	certified	executable-core	node:FsmArguments	executable	executable grammar canonical recursive core; semantic disposition: structural.
+fsm-arm	state_machines	certified	syntax-only	supporting	node:FsmArm	document	document canonical document closure generated from the specification.
+fsm-async-transition	state_machines	certified	certified	executable-core	node:FsmAsyncTransition	executable	executable grammar canonical recursive core; semantic disposition: structural.
+fsm-block-transition	state_machines	certified	syntax-only	supporting	node:FsmBlockTransition	document	document canonical document closure generated from the specification.
+fsm-comment-arm	state_machines	certified	syntax-only	supporting	node:FsmCommentArm	document	document canonical document closure generated from the specification.
+fsm-declare	state_machines	certified	syntax-only	supporting	node:FsmDeclare	document	document canonical document closure generated from the specification.
+fsm-guard	state_machines	certified	syntax-only	supporting	node:FsmGuard	document	document canonical document closure generated from the specification.
+fsm-guard-arm	state_machines	certified	syntax-only	supporting	node:FsmGuardArm	document	document canonical document closure generated from the specification.
+fsm-implementation	state_machines	certified	syntax-only	supporting	node:FsmImplementation	document	document canonical document closure generated from the specification.
+fsm-instance	state_machines	certified	certified	executable-core	node:FsmInstance	executable	executable grammar canonical recursive core; semantic disposition: structural.
+fsm-output	state_machines	certified	certified	executable-core	node:FsmOutput	executable	executable grammar canonical recursive core; semantic disposition: structural.
+fsm-pipe	state_machines	certified	certified	executable-core	node:FsmPipe	executable	executable grammar canonical recursive core; semantic disposition: executable.
+fsm-specification	state_machines	certified	syntax-only	supporting	node:FsmSpecification	document	document canonical document closure generated from the specification.
+fsm-state-definition	state_machines	certified	syntax-only	supporting	node:FsmStateDefinition	document	document canonical document closure generated from the specification.
+fsm-state-definition-variables	state_machines	certified	syntax-only	supporting	node:FsmStateDefinitionVariables	document	document canonical document closure generated from the specification.
+fsm-state-transition	state_machines	certified	certified	executable-core	node:FsmStateTransition	executable	executable grammar canonical recursive core; semantic disposition: structural.
+fsm-statement-transition	state_machines	certified	syntax-only	supporting	node:FsmStatementTransition	document	document canonical document closure generated from the specification.
+fsm-transition	state_machines	certified	syntax-only	supporting	node:FsmTransition	document	document canonical document closure generated from the specification.
+fsm-value	state_machines	certified	certified	executable-core	node:FsmValue	executable	executable grammar canonical recursive core; semantic disposition: structural.
+full-join	expressions	certified	certified	supporting	node:FullJoinOperation	expression	expression grammar closed expression-operator layer
+function-arg	functions	certified	syntax-only	supporting	node:FunctionArg	document	document canonical document closure generated from the specification.
+function-call	functions	certified	certified	executable-core	node:FunctionCall	executable	executable grammar canonical recursive core; semantic disposition: executable.
+function-define	functions	certified	syntax-only	supporting	node:FunctionDefine	document	document canonical document closure generated from the specification.
+function-define-match-arms	functions	certified	syntax-only	supporting	node:FunctionDefineMatchArms	document	document canonical document closure generated from the specification.
+function-define-statements	functions	certified	syntax-only	supporting	node:FunctionDefineStatements	document	document canonical document closure generated from the specification.
+function-match-arm	functions	certified	syntax-only	supporting	node:FunctionMatchArm	document	document canonical document closure generated from the specification.
+function-out-arg	functions	certified	syntax-only	supporting	node:FunctionOutArg	document	document canonical document closure generated from the specification.
+function-out-args	functions	certified	syntax-only	supporting	node:FunctionOutArgs	document	document canonical document closure generated from the specification.
+gen-operator	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+generator	expressions	certified	certified	executable-core	node:Generator	executable	executable grammar canonical recursive core; semantic disposition: structural.
+generator-arrow	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+generator-arrow-u	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+grammar	grammar	certified	certified	supporting	node:Grammar	lexical	lexical grammar grammar metalanguage
+grammar-definition	grammar	certified	certified	supporting	node:GrammarDefinition	lexical	lexical grammar grammar metalanguage
+grammar-expression	grammar	certified	certified	supporting	node:GrammarExpression	lexical	lexical grammar grammar metalanguage
+grammar-factor	grammar	certified	certified	supporting	node:GrammarFactor	lexical	lexical grammar grammar metalanguage
+grammar-group	grammar	certified	certified	supporting	node:GrammarGroup	lexical	lexical grammar grammar metalanguage
+grammar-identifier	grammar	certified	certified	supporting	node:GrammarIdentifier	lexical	lexical grammar grammar metalanguage
+grammar-list	grammar	certified	certified	supporting	node:GrammarList	lexical	lexical grammar grammar metalanguage
+grammar-not	grammar	certified	certified	supporting	node:GrammarNot	lexical	lexical grammar grammar metalanguage
+grammar-optional	grammar	certified	certified	supporting	node:GrammarOptional	lexical	lexical grammar grammar metalanguage
+grammar-peek	grammar	certified	certified	supporting	node:GrammarPeek	lexical	lexical grammar grammar metalanguage
+grammar-range	grammar	certified	certified	supporting	node:GrammarRange	lexical	lexical grammar grammar metalanguage
+grammar-repeat0	grammar	certified	certified	supporting	node:GrammarRepeat0	lexical	lexical grammar grammar metalanguage
+grammar-repeat1	grammar	certified	certified	supporting	node:GrammarRepeat1	lexical	lexical grammar grammar metalanguage
+grammar-rule	grammar	certified	certified	supporting	node:GrammarRule	lexical	lexical grammar grammar metalanguage
+grammar-term	grammar	certified	certified	supporting	node:GrammarTerm	lexical	lexical grammar grammar metalanguage
+grammar-terminal	grammar	certified	certified	supporting	node:GrammarTerminal	lexical	lexical grammar grammar metalanguage
+grammar-terminal-token	grammar	certified	certified	supporting	node:GrammarTerminalToken	lexical	lexical grammar grammar metalanguage
+grave	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+grave-codeblock-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+greater-than	expressions	certified	certified	supporting	node:GreaterThanOperation	expression	expression grammar closed expression-operator layer
+greater-than-equal	expressions	certified	certified	supporting	node:GreaterThanEqualOperation	expression	expression grammar closed expression-operator layer
+grouping-symbol	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+guard-operator	state_machines	certified	syntax-only	supporting	transparent	primitive	primitive grammar closed executable primitive layer
+hashtag	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+header-field	structures	certified	certified	executable-core	node:HeaderField	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+help-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+hexadecimal-literal	literals	certified	certified	supporting	node:HexadecimalLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+highlight	mechdown	certified	syntax-only	supporting	node:Highlight	document	document canonical document closure generated from the specification.
+highlight-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+http-prefix	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+hyperlink	mechdown	certified	syntax-only	supporting	node:Hyperlink	document	document canonical document closure generated from the specification.
+idea-block	mechdown	certified	syntax-only	supporting	node:IdeaBlock	document	document canonical document closure generated from the specification.
+idea-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+identifier	base	certified	certified	supporting	node:Identifier	lexical	lexical grammar canonical base closure
+identifier-path-segment	base	certified	certified	supporting	node:IdentifierPathSegment	lexical	lexical grammar canonical base closure
+identifier-path-segment-emoji	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+identifier-symbol	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+img	mechdown	certified	syntax-only	supporting	node:Img	document	document canonical document closure generated from the specification.
+img-prefix	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+import-alias-operator	imports	certified	syntax-only	supporting	transparent	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+import-declaration	statements	certified	certified	supporting	node:ImportDeclaration	declaration	declaration grammar closed source, export, and context declaration layer
+import-group-item	imports	certified	certified	supporting	node:ImportGroupItem	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+import-group-items	imports	certified	certified	supporting	node:ImportGroupItems	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+import-group-separator	imports	certified	syntax-only	supporting	transparent	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+import-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure; renamed by IMPORT-001
+info-block	mechdown	certified	syntax-only	supporting	node:InfoBlock	document	document canonical document closure generated from the specification.
+info-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+inline-code	mechdown	certified	certified	supporting	node:InlineCode	document-markup	document-markup grammar closed Mechdown grammar island
+inline-equation	mechdown	certified	certified	supporting	node:InlineEquation	document-markup	document-markup grammar closed Mechdown grammar island
+inline-mech-code	mechdown	certified	syntax-only	supporting	node:InlineMechCode	document	document canonical document closure generated from the specification.
+inline-paragraph	mechdown	certified	syntax-only	supporting	node:InlineParagraph	document	document canonical document closure generated from the specification.
+inline-table	structures	certified	certified	executable-core	node:InlineTable	executable	executable grammar canonical recursive core; semantic disposition: executable.
+inline-table-header	structures	certified	certified	executable-core	node:InlineTableHeader	executable	executable grammar canonical recursive core; semantic disposition: structural.
+inline-table-row	structures	certified	certified	executable-core	node:InlineTableRow	executable	executable grammar canonical recursive core; semantic disposition: structural.
+integer-literal	literals	certified	certified	supporting	node:IntegerLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+intersection	expressions	certified	certified	supporting	node:IntersectionOperation	expression	expression grammar closed expression-operator layer
+invariant-define	statements	certified	syntax-only	supporting	node:InvariantDefine	document	document canonical document closure generated from the specification.
+join	expressions	certified	certified	supporting	node:JoinOperation	expression	expression grammar closed expression-operator layer
+kind	literals	certified	certified	executable-core	node:Kind	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-annotation	literals	certified	certified	executable-core	node:KindAnnotation	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-any	literals	certified	certified	supporting	node:KindAny	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+kind-atom	literals	certified	certified	supporting	node:KindAtom	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+kind-define	statements	certified	syntax-only	supporting	node:KindDefine	document	document canonical document closure generated from the specification.
+kind-empty	literals	certified	certified	supporting	node:KindEmpty	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+kind-kind	literals	certified	certified	executable-core	node:KindKind	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-map	literals	certified	certified	executable-core	node:KindMap	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-matrix	literals	certified	certified	executable-core	node:KindMatrix	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-record	literals	certified	certified	executable-core	node:KindRecord	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-scalar	literals	certified	certified	executable-core	node:KindScalar	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-set	literals	certified	certified	executable-core	node:KindSet	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-table	literals	certified	certified	executable-core	node:TableKind	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-tuple	literals	certified	certified	executable-core	node:KindTuple	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+kind-with-option	literals	certified	certified	executable-core	node:KindWithOption	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+l1	expressions	certified	certified	executable-core	node:LogicExpression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+l2	expressions	certified	certified	executable-core	node:ComparisonExpression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+l3	expressions	certified	certified	executable-core	node:AdditiveExpression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+l4	expressions	certified	certified	executable-core	node:MultiplicativeExpression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+l5	expressions	certified	certified	executable-core	node:PowerExpression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+l6	expressions	certified	certified	executable-core	node:TableExpression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+l7	expressions	certified	certified	executable-core	node:SetExpression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+left-alignment	mechdown	certified	syntax-only	supporting	node:LeftAlignment	document	document canonical document closure generated from the specification.
+left-angle	literals	certified	syntax-only	supporting	token	lexical	lexical grammar explicit dependency closure
+left-angle1	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+left-angle2	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+left-anti-join	expressions	certified	certified	supporting	node:LeftAntiJoinOperation	expression	expression grammar closed expression-operator layer
+left-brace	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+left-bracket	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+left-join	expressions	certified	certified	supporting	node:LeftJoinOperation	expression	expression grammar closed expression-operator layer
+left-parenthesis	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+left-semi-join	expressions	certified	certified	supporting	node:LeftSemiJoinOperation	expression	expression grammar closed expression-operator layer
+less-than	expressions	certified	certified	supporting	node:LessThanOperation	expression	expression grammar closed expression-operator layer
+less-than-equal	expressions	certified	certified	supporting	node:LessThanEqualOperation	expression	expression grammar closed expression-operator layer
+list-separator	base	certified	syntax-only	supporting	transparent	lexical	lexical grammar canonical base closure
+literal	literals	certified	certified	executable-core	node:Literal	executable	executable grammar canonical recursive core; semantic disposition: executable.
+load-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+logic-operator	expressions	certified	certified	supporting	node:LogicOperator	expression	expression grammar closed expression-operator layer
+ls-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+map	structures	certified	certified	executable-core	node:Map	executable	executable grammar canonical recursive core; semantic disposition: executable.
+mapping	structures	certified	certified	executable-core	node:MapEntry	executable	executable grammar canonical recursive core; semantic disposition: structural.
+match-arm	expressions	certified	certified	executable-core	node:MatchArm	executable	executable grammar canonical recursive core; semantic disposition: structural.
+match-expression	expressions	unported	pending	outside-document	undecided		Outside the canonical Document grammar closure.
+matrix	structures	certified	certified	executable-core	node:Matrix	executable	executable grammar canonical recursive core; semantic disposition: executable.
+matrix-column	structures	certified	certified	executable-core	node:MatrixColumn	executable	executable grammar canonical recursive core; semantic disposition: structural.
+matrix-comprehension	expressions	certified	certified	executable-core	node:MatrixComprehension	executable	executable grammar canonical recursive core; semantic disposition: executable.
+matrix-end	structures	certified	syntax-only	supporting	token	structure	structure grammar closed structure shell
+matrix-multiply	expressions	certified	certified	supporting	node:MatrixMultiplyOperation	expression	expression grammar closed expression-operator layer
+matrix-operator	expressions	certified	certified	supporting	node:MatrixOperator	expression	expression grammar closed expression-operator layer
+matrix-row	structures	certified	certified	executable-core	node:MatrixRow	executable	executable grammar canonical recursive core; semantic disposition: structural.
+matrix-solve	expressions	certified	certified	supporting	node:MatrixSolveOperation	expression	expression grammar closed expression-operator layer
+matrix-start	structures	certified	syntax-only	supporting	token	structure	structure grammar closed structure shell
+mech-code	parser	certified	syntax-only	supporting	node:MechCode	document	document canonical document closure generated from the specification.
+mech-code-alt	parser	certified	syntax-only	supporting	node:MechCodeAlt	document	document canonical document closure generated from the specification.
+mechdown-list	mechdown	certified	syntax-only	supporting	node:MechdownList	document	document canonical document closure generated from the specification.
+mechdown-table	mechdown	certified	syntax-only	supporting	node:MechdownTable	document	document canonical document closure generated from the specification.
+mechdown-table-header	mechdown	certified	syntax-only	supporting	node:MechdownTableHeader	document	document canonical document closure generated from the specification.
+mechdown-table-no-header	mechdown	certified	syntax-only	supporting	node:MechdownTableNoHeader	document	document canonical document closure generated from the specification.
+mechdown-table-row	mechdown	certified	syntax-only	supporting	node:MechdownTableRow	document	document canonical document closure generated from the specification.
+mechdown-table-with-header	mechdown	certified	syntax-only	supporting	node:MechdownTableWithHeader	document	document canonical document closure generated from the specification.
+micro-mika	mika	certified	syntax-only	supporting	node:MicroMika	document	document canonical document closure generated from the specification.
+mika	mika	certified	syntax-only	supporting	node:Mika	document	document canonical document closure generated from the specification.
+mika-arm-left	mika	certified	syntax-only	supporting	node:MikaArmLeft	document	document canonical document closure generated from the specification.
+mika-arm-right	mika	certified	syntax-only	supporting	node:MikaArmRight	document	document canonical document closure generated from the specification.
+mika-expression-inner	mika	certified	syntax-only	supporting	node:MikaExpressionInner	document	document canonical document closure generated from the specification.
+mika-eye-left	mika	certified	syntax-only	supporting	node:MikaEyeLeft	document	document canonical document closure generated from the specification.
+mika-eye-right	mika	certified	syntax-only	supporting	node:MikaEyeRight	document	document canonical document closure generated from the specification.
+mika-nose	mika	certified	syntax-only	supporting	node:MikaNose	document	document canonical document closure generated from the specification.
+mika-section	mika	certified	syntax-only	supporting	node:MikaSection	document	document canonical document closure generated from the specification.
+mika-section-close	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+mika-section-open	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+mini-mika	mika	certified	syntax-only	supporting	node:MiniMika	document	document canonical document closure generated from the specification.
+module-export-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+module-import	imports	certified	certified	supporting	node:ModuleImport	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-import-alias	imports	certified	certified	supporting	node:ModuleImportAlias	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-import-alias-path	imports	certified	certified	supporting	node:ModuleImportAliasPath	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-import-alias-segment	imports	certified	certified	supporting	node:ModuleImportAliasSegment	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-import-context-alias	imports	certified	certified	supporting	node:ModuleImportContextAlias	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-import-intrinsic-segment	imports	certified	certified	supporting	node:ModuleImportIntrinsicSegment	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-import-name-segment	imports	certified	certified	supporting	node:ModuleImportNameSegment	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-import-path	imports	certified	certified	supporting	node:ModuleImportPath	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-import-path-segment	imports	certified	certified	supporting	node:ModuleImportPathSegment	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-import-value-alias	imports	certified	certified	supporting	node:ModuleImportValueAlias	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-only-import	imports	certified	certified	supporting	node:ModuleOnlyImport	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-root	imports	certified	certified	supporting	node:ModuleRoot	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+module-suffix-import	imports	certified	certified	supporting	node:ModuleSuffixImport	module-import	module-import grammar corrected module-import closure (IMPORT-001)
+modulus	expressions	certified	certified	supporting	node:ModulusOperation	expression	expression grammar closed expression-operator layer
+mul-assign-operator	statements	certified	certified	supporting	node:MulAssignOperation	primitive	primitive grammar closed executable primitive layer
+mul-div-operator	expressions	certified	certified	supporting	node:MulDivOperator	expression	expression grammar closed expression-operator layer
+multiply	expressions	certified	certified	supporting	node:MultiplyOperation	expression	expression grammar closed expression-operator layer
+nbsp	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+negate	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+negate-factor	expressions	certified	certified	executable-core	node:NegateFactor	executable	executable grammar canonical recursive core; semantic disposition: executable.
+new-line	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+new-line-char	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+newline-indent	base	certified	syntax-only	supporting	transparent	lexical	lexical grammar canonical base closure
+no-alignment	mechdown	certified	syntax-only	supporting	node:NoAlignment	document	document canonical document closure generated from the specification.
+not	expressions	certified	certified	supporting	node:NotOperation	expression	expression grammar closed expression-operator layer
+not-element-of	expressions	certified	certified	supporting	node:NotElementOfOperation	expression	expression grammar closed expression-operator layer
+not-equal	expressions	certified	certified	supporting	node:NotEqualOperation	expression	expression grammar closed expression-operator layer
+not-factor	expressions	certified	certified	executable-core	node:NotFactor	executable	executable grammar canonical recursive core; semantic disposition: executable.
+not-mech-code	mechdown	certified	syntax-only	supporting	node:NotMechCode	document	document canonical document closure generated from the specification.
+number	literals	certified	certified	supporting	node:Number	literal-path-kind	literal-path-kind grammar canonical syntax and semantic certification; scientific-exponent selection follows the specification.
+octal-literal	literals	certified	certified	supporting	node:OctalLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+op-assign	statements	certified	syntax-only	supporting	node:OpAssign	document	document canonical document closure generated from the specification.
+op-assign-operator	statements	certified	certified	supporting	node:OpAssignOperator	primitive	primitive grammar closed executable primitive layer
+option-map	mechdown	certified	syntax-only	supporting	node:OptionMap	document	document canonical document closure generated from the specification.
+option-mapping	mechdown	certified	syntax-only	supporting	node:OptionMapping	document	document canonical document closure generated from the specification.
+option-value	mechdown	certified	syntax-only	supporting	node:OptionValue	document	document canonical document closure generated from the specification.
+or	expressions	certified	certified	supporting	node:OrOperation	expression	expression grammar closed expression-operator layer
+ordered-list	mechdown	certified	syntax-only	supporting	node:OrderedList	document	document canonical document closure generated from the specification.
+ordered-list-item	mechdown	certified	syntax-only	supporting	node:OrderedListItem	document	document canonical document closure generated from the specification.
+output-operator	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+output-operator-a	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+output-operator-u	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+paragraph	mechdown	certified	syntax-only	supporting	node:Paragraph	document	document canonical document closure generated from the specification.
+paragraph-element	mechdown	certified	syntax-only	supporting	node:ParagraphElement	document	document canonical document closure generated from the specification.
+paragraph-newline	mechdown	certified	syntax-only	supporting	node:ParagraphNewline	document	document canonical document closure generated from the specification.
+paragraph-text	mechdown	certified	certified	supporting	node:ParagraphText	document-markup	document-markup grammar closed Mechdown grammar island
+parenthetical-term	expressions	certified	certified	executable-core	node:ParentheticalExpression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+parse	parser	certified	certified	supporting	root:Document	document	document canonical document closure generated from the specification.
+parse-grammar	parser	certified	certified	supporting	root:GrammarDocument	lexical	lexical grammar explicit dependency closure
+parse-mech	parser	certified	syntax-only	supporting	transparent	document	document canonical document closure generated from the specification.
+parse-repl-command	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+pattern	patterns	certified	certified	executable-core	node:Pattern	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+pattern-array	patterns	certified	certified	executable-core	node:ArrayPattern	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+pattern-array-item	patterns	certified	certified	executable-core	transparent	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+pattern-array-token	patterns	certified	certified	executable-core	node:ArrayPatternElement	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+pattern-atom-struct	patterns	certified	certified	executable-core	node:AtomStructPattern	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+pattern-tuple	patterns	certified	certified	executable-core	node:TuplePattern	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+pattern-tuple-struct	patterns	certified	certified	executable-core	node:TupleStructPattern	executable	executable grammar canonical recursive core; semantic disposition: compile-time.
+percent	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+period	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+plan-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+plus	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+power	expressions	certified	certified	supporting	node:PowerOperation	expression	expression grammar closed expression-operator layer
+power-operator	expressions	certified	certified	supporting	node:PowerOperator	expression	expression grammar closed expression-operator layer
+prefixed-context-path	expressions	certified	certified	supporting	node:PrefixedContextPath	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+profile-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+program	parser	certified	syntax-only	supporting	transparent	document	document canonical document closure generated from the specification.
+prompt	mechdown	certified	syntax-only	supporting	node:Prompt	document	document canonical document closure generated from the specification.
+prompt-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+proper-subset	expressions	certified	certified	supporting	node:ProperSubsetOperation	expression	expression grammar closed expression-operator layer
+proper-superset	expressions	certified	certified	supporting	node:ProperSupersetOperation	expression	expression grammar closed expression-operator layer
+punctuation	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+question	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+question-block	mechdown	certified	syntax-only	supporting	node:QuestionBlock	document	document canonical document closure generated from the specification.
+question-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+quit-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+quote	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+quote-block	mechdown	certified	syntax-only	supporting	node:QuoteBlock	document	document canonical document closure generated from the specification.
+quote-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+range-exclusive	expressions	certified	certified	supporting	node:RangeExclusiveOperation	expression	expression grammar closed expression-operator layer
+range-expression	expressions	certified	certified	executable-core	node:RangeExpression	executable	executable grammar canonical recursive core; semantic disposition: executable.
+range-inclusive	expressions	certified	certified	supporting	node:RangeInclusiveOperation	expression	expression grammar closed expression-operator layer
+range-operator	expressions	certified	certified	supporting	node:RangeOperator	expression	expression grammar closed expression-operator layer
+range-subscript	expressions	certified	certified	executable-core	node:RangeSubscript	executable	executable grammar canonical recursive core; semantic disposition: structural.
+rational-literal	literals	certified	certified	supporting	node:RationalLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+raw-hyperlink	mechdown	certified	certified	supporting	node:RawHyperlink	document-markup	document-markup grammar closed Mechdown grammar island
+raw-string	literals	certified	certified	supporting	node:RawString	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+raw-subtract	expressions	certified	certified	supporting	node:RawSubtractOperation	expression	expression grammar closed expression-operator layer
+raw-text	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+real-number	literals	certified	certified	supporting	node:RealNumber	literal-path-kind	literal-path-kind grammar canonical syntax and semantic certification; scientific-exponent selection follows the specification.
+record	structures	certified	certified	executable-core	node:Record	executable	executable grammar canonical recursive core; semantic disposition: executable.
+reference	mechdown	certified	certified	supporting	node:Reference	document-markup	document-markup grammar closed Mechdown grammar island
+regular-table	structures	certified	certified	executable-core	node:RegularTable	executable	executable grammar canonical recursive core; semantic disposition: executable.
+relative-source-import-specifier	statements	certified	certified	supporting	node:RelativeSourceImportSpecifier	declaration	declaration grammar closed source, export, and context declaration layer
+repl-identifier	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+right-alignment	mechdown	certified	syntax-only	supporting	node:RightAlignment	document	document canonical document closure generated from the specification.
+right-angle	literals	certified	syntax-only	supporting	token	lexical	lexical grammar explicit dependency closure
+right-angle1	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+right-angle2	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+right-brace	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+right-bracket	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+right-join	expressions	certified	certified	supporting	node:RightJoinOperation	expression	expression grammar closed expression-operator layer
+right-parenthesis	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+row-separator	structures	certified	certified	supporting	node:TableRowSeparator	structure	structure grammar closed structure shell
+save-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+scientific-literal	literals	certified	certified	supporting	node:ScientificLiteral	literal-path-kind	literal-path-kind grammar syntax port; typed scientific exponents preserve their suffix and lower deterministically while the retired parser exponent branch crashes.
+section	mechdown	certified	syntax-only	supporting	node:Section	document	document canonical document closure generated from the specification.
+section-element	mechdown	certified	syntax-only	supporting	node:SectionElement	document	document canonical document closure generated from the specification.
+section-reference	mechdown	certified	certified	supporting	node:SectionReference	document-markup	document-markup grammar closed Mechdown grammar island
+section-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+select-all	expressions	certified	certified	supporting	node:SelectAllSubscript	primitive	primitive grammar closed executable primitive layer
+semicolon	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+send-operator	statements	certified	syntax-only	supporting	transparent	primitive	primitive grammar closed executable primitive layer
+set	structures	certified	certified	executable-core	node:Set	executable	executable grammar canonical recursive core; semantic disposition: executable.
+set-comprehension	expressions	certified	certified	executable-core	node:SetComprehension	executable	executable grammar canonical recursive core; semantic disposition: executable.
+set-operator	expressions	certified	certified	supporting	node:SetOperator	expression	expression grammar closed expression-operator layer
+slash	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+slice	expressions	certified	certified	executable-core	node:Slice	executable	executable grammar canonical recursive core; semantic disposition: executable.
+slice-ref	expressions	certified	syntax-only	supporting	node:SliceRef	document	document canonical document closure generated from the specification.
+source-import-specifier	statements	certified	certified	supporting	node:SourceImportSpecifier	declaration	declaration grammar closed source, export, and context declaration layer
+source-import-tail	statements	certified	certified	supporting	node:SourceImportTail	declaration	declaration grammar closed source, export, and context declaration layer
+source-import-uri-scheme	statements	certified	certified	supporting	node:SourceImportUriScheme	declaration	declaration grammar closed source, export, and context declaration layer
+source-mec-path	statements	certified	certified	supporting	node:SourceMecPath	declaration	declaration grammar closed source, export, and context declaration layer
+source-mec-path-wildcard-suffix	statements	certified	syntax-only	supporting	transparent	declaration	declaration grammar closed source, export, and context declaration layer
+source-path-component	statements	certified	certified	supporting	node:SourcePathComponent	declaration	declaration grammar closed source, export, and context declaration layer
+source-path-component-token	statements	certified	syntax-only	supporting	token	declaration	declaration grammar closed source, export, and context declaration layer
+space	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+space-tab	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+space-tab0	base	certified	syntax-only	supporting	transparent	lexical	lexical grammar canonical base closure
+space-tab1	base	certified	syntax-only	supporting	transparent	lexical	lexical grammar canonical base closure
+spaced-subtract	expressions	certified	certified	supporting	node:SpacedSubtractOperation	expression	expression grammar closed expression-operator layer
+spread-operator	patterns	certified	syntax-only	supporting	transparent	primitive	primitive grammar closed executable primitive layer
+spread-operator-a	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+spread-operator-u	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+statement	statements	certified	syntax-only	supporting	node:Statement	document	document canonical document closure generated from the specification.
+statement-separator	expressions	certified	syntax-only	supporting	transparent	primitive	primitive grammar closed executable primitive layer
+step-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+strict-equal	expressions	certified	certified	supporting	node:StrictEqualOperation	expression	expression grammar closed expression-operator layer
+strict-not-equal	expressions	certified	certified	supporting	node:StrictNotEqualOperation	expression	expression grammar closed expression-operator layer
+strike-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+strikethrough	mechdown	certified	syntax-only	supporting	node:Strikethrough	document	document canonical document closure generated from the specification.
+string	literals	certified	certified	supporting	node:StringLiteral	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+strong	mechdown	certified	syntax-only	supporting	node:Strong	document	document canonical document closure generated from the specification.
+strong-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+structure	structures	certified	certified	executable-core	node:Structure	executable	executable grammar canonical recursive core; semantic disposition: executable.
+sub-assign-operator	statements	certified	certified	supporting	node:SubAssignOperation	primitive	primitive grammar closed executable primitive layer
+sublist	mechdown	certified	syntax-only	supporting	node:Sublist	document	document canonical document closure generated from the specification.
+subscript	expressions	certified	certified	executable-core	node:SubscriptList	executable	executable grammar canonical recursive core; semantic disposition: structural.
+subset	expressions	certified	certified	supporting	node:SubsetOperation	expression	expression grammar closed expression-operator layer
+subtitle	mechdown	certified	syntax-only	supporting	node:Subtitle	document	document canonical document closure generated from the specification.
+subtract	expressions	certified	certified	supporting	node:SubtractOperation	expression	expression grammar closed expression-operator layer
+success-block	mechdown	certified	syntax-only	supporting	node:SuccessBlock	document	document canonical document closure generated from the specification.
+success-check-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+success-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+superset	expressions	certified	certified	supporting	node:SupersetOperation	expression	expression grammar closed expression-operator layer
+swizzle-subscript	expressions	certified	certified	supporting	node:SwizzleSubscript	primitive	primitive grammar closed executable primitive layer
+symbol	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+symbols-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+symmetric-difference	expressions	certified	certified	supporting	node:SymmetricDifferenceOperation	expression	expression grammar closed expression-operator layer
+synth-operator	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+tab	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+table	structures	certified	certified	executable-core	node:Table	executable	executable grammar canonical recursive core; semantic disposition: executable.
+table-column	structures	unported	pending	outside-document	undecided		Outside the canonical Document grammar closure.
+table-end	structures	certified	syntax-only	supporting	token	structure	structure grammar closed structure shell
+table-header	structures	certified	certified	executable-core	node:TableHeader	executable	executable grammar canonical recursive core; semantic disposition: structural.
+table-horz	structures	certified	syntax-only	supporting	token	structure	structure grammar closed structure shell
+table-operator	expressions	certified	certified	supporting	node:TableOperator	expression	expression grammar closed expression-operator layer
+table-row	structures	certified	certified	executable-core	node:TableRow	executable	executable grammar canonical recursive core; semantic disposition: structural.
+table-row2	structures	certified	certified	executable-core	node:FancyTableRow	executable	executable grammar canonical recursive core; semantic disposition: structural.
+table-separator	structures	certified	syntax-only	supporting	token	structure	structure grammar closed structure shell
+table-start	structures	certified	syntax-only	supporting	token	structure	structure grammar closed structure shell
+table-top	structures	certified	syntax-only	supporting	transparent	structure	structure grammar closed structure shell
+tag	parser	certified	syntax-only	supporting	token	lexical	lexical grammar explicit dependency closure
+text	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+thematic-break	mechdown	certified	certified	supporting	node:ThematicBreak	document-markup	document-markup grammar closed Mechdown grammar island
+thin-space	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+tilde	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+tilde-codeblock-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+title	mechdown	certified	syntax-only	supporting	node:Title	document	document canonical document closure generated from the specification.
+title-front-matter	mechdown	certified	syntax-only	supporting	node:TitleFrontMatter	document	document canonical document closure generated from the specification.
+transition-operator	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+transition-operator-a	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+transition-operator-u	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+transpose	expressions	certified	syntax-only	supporting	transparent	expression	expression grammar closed expression-operator layer
+true-literal	literals	certified	syntax-only	supporting	token	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+tuple	structures	certified	certified	executable-core	node:Tuple	executable	executable grammar canonical recursive core; semantic disposition: executable.
+tuple-destructure	statements	certified	syntax-only	supporting	node:TupleDestructure	document	document canonical document closure generated from the specification.
+tuple-struct	structures	certified	certified	executable-core	node:TupleStruct	executable	executable grammar canonical recursive core; semantic disposition: executable.
+typed-integer	literals	certified	certified	supporting	node:TypedInteger	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+ul-subtitle	mechdown	certified	syntax-only	supporting	node:UlSubtitle	document	document canonical document closure generated from the specification.
+unchecked-item	mechdown	certified	syntax-only	supporting	node:UncheckedItem	document	document canonical document closure generated from the specification.
+underline	mechdown	certified	syntax-only	supporting	node:Underline	document	document canonical document closure generated from the specification.
+underline-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+underscore	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+underscore-digit	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+union-op	expressions	certified	certified	supporting	node:UnionOperation	expression	expression grammar closed expression-operator layer
+unordered-list	mechdown	certified	syntax-only	supporting	node:UnorderedList	document	document canonical document closure generated from the specification.
+unordered-list-item	mechdown	certified	syntax-only	supporting	node:UnorderedListItem	document	document canonical document closure generated from the specification.
+untyped-integer	literals	certified	certified	supporting	node:UntypedInteger	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+untyped-real-number	literals	certified	certified	supporting	node:UntypedRealNumber	literal-path-kind	literal-path-kind grammar canonical syntax and semantic certification; scientific-exponent selection follows the specification.
+uri-scheme-part	statements	certified	syntax-only	supporting	token	declaration	declaration grammar closed source, export, and context declaration layer
+uri-source-import-specifier	statements	certified	certified	supporting	node:UriSourceImportSpecifier	declaration	declaration grammar closed source, export, and context declaration layer
+utf8-string	literals	certified	certified	supporting	node:Utf8String	literal-path-kind	literal-path-kind grammar closed literal, path, and primitive kind island
+var	expressions	certified	certified	executable-core	node:Variable	executable	executable grammar canonical recursive core; semantic disposition: executable.
+variable-assign	statements	certified	syntax-only	supporting	node:VariableAssign	document	document canonical document closure generated from the specification.
+variable-define	statements	certified	certified	executable-core	node:VariableDefine	executable	executable grammar canonical recursive core; semantic disposition: executable.
+warning-block	mechdown	certified	syntax-only	supporting	node:WarningBlock	document	document canonical document closure generated from the specification.
+warning-sigil	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+whitespace	base	certified	syntax-only	supporting	token	lexical	lexical grammar canonical base closure
+whitespace0	base	certified	syntax-only	supporting	transparent	lexical	lexical grammar canonical base closure
+whitespace1	base	certified	syntax-only	supporting	transparent	lexical	lexical grammar canonical base closure
+whos-rpl	repl	unported	pending	outside-document	undecided		Runtime-owned command syntax.
+wildcard	patterns	certified	certified	supporting	node:WildcardPattern	primitive	primitive grammar closed executable primitive layer
+ws0e	base	certified	syntax-only	supporting	transparent	lexical	lexical grammar canonical base closure
+ws1e	base	certified	syntax-only	supporting	transparent	lexical	lexical grammar canonical base closure
+xor	expressions	certified	certified	supporting	node:XorOperation	expression	expression grammar closed expression-operator layer

@@ -74,6 +74,7 @@ pub struct ResidentTurnRecorder {
     permits: Box<[Option<LedgerPermit>]>,
     next_turn: Option<u64>,
     records_inspected: usize,
+    #[cfg(test)]
     fail_next_preparation: bool,
 }
 
@@ -118,6 +119,7 @@ impl ResidentTurnRecorder {
             permits,
             next_turn: Some(next_turn),
             records_inspected: 0,
+            #[cfg(test)]
             fail_next_preparation: false,
         })
     }
@@ -135,6 +137,7 @@ impl ResidentTurnRecorder {
         summary: ResidentEkfTurnSummary,
     ) -> MResult<PreparedResidentAppend<'_>> {
         let identity = self.take_turn_identity()?;
+        #[cfg(test)]
         if core::mem::take(&mut self.fail_next_preparation) {
             drop(permit);
             return Err(error("forced resident ledger preparation failure"));
@@ -178,6 +181,7 @@ impl ResidentTurnRecorder {
                 return Err(error);
             }
         };
+        #[cfg(test)]
         if core::mem::take(&mut self.fail_next_preparation) {
             drop(permit);
             turn.abort();
@@ -280,22 +284,6 @@ impl ResidentTurnRecorder {
                 .map(|failure| failure.kind.as_str()),
             body: record.body,
         })
-    }
-
-    #[doc(hidden)]
-    pub fn fail_next_preparation_for_test(&mut self) {
-        self.fail_next_preparation = true;
-    }
-
-    #[doc(hidden)]
-    pub fn set_next_turn_identity_for_test(&mut self, next_turn: u64) {
-        assert_ne!(next_turn, 0, "resident turn identities are non-zero");
-        self.next_turn = Some(next_turn);
-    }
-
-    #[doc(hidden)]
-    pub fn reserve_additional_permit_for_test(&self) -> MResult<LedgerPermit> {
-        TurnLedger::reserve(&self.ledger, RESIDENT_RECORD_ESTIMATE)
     }
 
     fn take_turn_identity(&mut self) -> MResult<u64> {
@@ -530,5 +518,112 @@ impl PreparedResidentCommit<'_, '_> {
     pub fn commit(self) -> LedgerSequence {
         self.turn.publish();
         self.append.append()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_engine::__resident_ekf::ResidentEkfBatch;
+
+    const INPUT: [f64; 4] = [1.0, 0.1, 24.0, -0.6];
+
+    #[test]
+    fn record_preparation_failure_automatically_aborts_before_publication() {
+        let mut resident = ResidentEkfBatch::new(1);
+        let mut recorder = ResidentTurnRecorder::new(2, 0).unwrap();
+        let initial = resident.state(0);
+        let permit = recorder.take_admission_permit(0).unwrap();
+        let prepared = resident.prepare_scheduled_turn(INPUT).unwrap();
+        let failed_epoch = prepared.summary().after_epoch;
+        recorder.fail_next_preparation = true;
+        assert!(recorder.prepare_commit(permit, prepared).is_err());
+        assert_eq!(resident.published_epoch(), 0);
+        assert_eq!(resident.state(0), initial);
+        assert!(!resident.candidate_epoch_is_active(failed_epoch));
+        assert_eq!(recorder.recorded_ledger_len(), 0);
+        drop(TurnLedger::reserve(&recorder.ledger, RESIDENT_RECORD_ESTIMATE).unwrap());
+
+        let permit = recorder.take_admission_permit(1).unwrap();
+        let prepared = resident.prepare_scheduled_turn(INPUT).unwrap();
+        assert_eq!(prepared.summary().after_epoch, failed_epoch + 1);
+        recorder.prepare_commit(permit, prepared).unwrap().commit();
+        assert_eq!(resident.published_epoch(), failed_epoch + 1);
+        assert_ne!(resident.state(0), initial);
+        assert_eq!(recorder.recorded_ledger_len(), 1);
+    }
+
+    #[test]
+    fn artifact_record_preparation_failure_aborts_before_publication() {
+        let mut services = mech_engine::__resident::FrozenEkfCompilationServices::default();
+        let compilation = mech_engine::__resident::compile_frozen_ekf_source(
+            include_str!("../../../tests/architecture/resident-activation/ekf-source-v1.mec"),
+            &mut services,
+        )
+        .unwrap();
+        let mut instance = mech_engine::__resident::activate(
+            mech_core::ReactiveInstanceId::new(0, 0),
+            &compilation.source_artifact,
+            &mech_engine::__resident::frozen_ekf_compiler_catalog().unwrap(),
+            &mech_engine::__resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        let state = |instance: &mech_engine::__resident::ReactiveInstance| {
+            instance
+                .plan
+                .slots
+                .iter()
+                .filter(|slot| slot.role == mech_engine::SlotRole::State)
+                .map(
+                    |slot| match instance.state_borrow(slot.artifact_id).unwrap() {
+                        mech_engine::__resident::ResidentValueBorrow::F64 { values, .. } => values
+                            .iter()
+                            .map(|value| value.to_bits())
+                            .collect::<Vec<_>>(),
+                        _ => panic!("EKF resident state is f64"),
+                    },
+                )
+                .collect::<Vec<_>>()
+        };
+        let initial = state(&instance);
+        assert_eq!(initial.iter().map(Vec::len).collect::<Vec<_>>(), [3, 9]);
+        let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
+        let permit = recorder.take_admission_permit(0).unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        let prepared = instance
+            .prepare_turn(&[mech_engine::__resident::CapturedSignalInput {
+                slot,
+                value: mech_core::ResidentValueRef::F64(&INPUT),
+            }])
+            .unwrap();
+        recorder.fail_next_preparation = true;
+        assert!(recorder.prepare_artifact_commit(permit, prepared).is_err());
+        assert_eq!(instance.published_epoch().get(), 0);
+        assert_eq!(state(&instance), initial);
+        assert_eq!(recorder.recorded_ledger_len(), 0);
+    }
+
+    #[test]
+    fn final_turn_identity_is_issued_once_without_wrap_or_reuse() {
+        let mut recorder = ResidentTurnRecorder::new(2, 0).unwrap();
+        recorder.next_turn = Some(u64::MAX);
+
+        let permit = recorder.take_admission_permit(0).unwrap();
+        recorder
+            .prepare_rejected(permit, 0, ResidentExecutionError::EpochExhausted)
+            .unwrap()
+            .append();
+        let record = recorder.inspect_last().unwrap();
+        assert_eq!(record.turn_id, u64::MAX);
+        assert_eq!(record.input_first, u64::MAX);
+        assert_eq!(record.transaction_id, u128::from(u64::MAX));
+
+        let permit = recorder.take_admission_permit(1).unwrap();
+        assert!(
+            recorder
+                .prepare_rejected(permit, 0, ResidentExecutionError::EpochExhausted)
+                .is_err()
+        );
+        assert_eq!(recorder.recorded_ledger_len(), 1);
     }
 }

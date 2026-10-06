@@ -143,6 +143,10 @@ fn finalized_streams_match_one_shot_at_every_scalar_cut() {
         include_str!("fixtures/grammar/accepted/mechdown-prompt.mec"),
         include_str!("fixtures/grammar/accepted/mechdown-equation.mec"),
     ] {
+        let expected = parse_canonical_document(
+            TextSnapshot::new(DocumentId(826), Revision(0), text).unwrap(),
+            ParseConfig::default(),
+        );
         for at in text
             .char_indices()
             .map(|(at, _)| at)
@@ -156,7 +160,6 @@ fn finalized_streams_match_one_shot_at_every_scalar_cut() {
             let progress = stream.finish(13).progress;
             drain(&mut stream, progress);
             let actual = stream.materialize().unwrap();
-            let expected = parse_canonical_document(actual.source.clone(), ParseConfig::default());
             same(&actual.root, &expected.root);
             assert_eq!(
                 reconstruct_source(&actual.root, &actual.source).unwrap(),

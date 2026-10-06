@@ -8,9 +8,7 @@ use super::super::Parser;
 use super::super::recovery;
 use super::super::rule::rules;
 use super::combinator::Attempt;
-use super::document_grammar::{
-    DOCUMENT_RULE_COUNT, DOCUMENT_RULES, DocumentRule, GrammarExpression,
-};
+use super::document_grammar::{DOCUMENT_RULES, DocumentRule, GrammarExpression};
 use super::{
     base, declarations, imports, kinds, literals, mechdown, operators, paths, primitives, prose,
     recursive_core, source_imports, statements, strings, structure_shell,
@@ -33,13 +31,14 @@ pub(crate) fn parse_document_root(parser: &mut Parser<'_>) {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn supports(rule: RuleId) -> bool {
-    debug_assert_eq!(DOCUMENT_RULES.len(), DOCUMENT_RULE_COUNT);
     DOCUMENT_RULES
         .iter()
         .any(|candidate| candidate.rule == rule)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let Some(specification) = DOCUMENT_RULES.iter().find(|spec| spec.rule == rule) else {
         return Attempt::NoMatch;

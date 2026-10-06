@@ -85,7 +85,7 @@ pub fn parse_config_document(
 
 /// Compile retained canonical configuration through the existing restricted IR,
 /// analyzer, evaluator and field lowering. No source parse or general evaluator
-/// is introduced at this boundary. The shipping text route switches in S8C.
+/// is introduced at this boundary.
 #[cfg(feature = "source")]
 pub fn compile_config_document(
     source_name: impl Into<String>,

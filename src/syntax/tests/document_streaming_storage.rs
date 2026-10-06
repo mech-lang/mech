@@ -1,4 +1,4 @@
-//! B2 source storage qualification, separate from parser resumability gates.
+//! Source storage bounds and reclamation under streaming input.
 use mech_syntax::document::{DocumentId, Revision, TextEdit, TextRange, TextSize, TextSnapshot};
 
 fn empty() -> TextSnapshot {

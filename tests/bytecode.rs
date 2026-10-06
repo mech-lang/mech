@@ -960,7 +960,7 @@ fn dynamic_strict_inequality_round_trips_through_bytecode() -> MResult<()> {
 
 #[test]
 #[cfg(feature = "distribution-full")]
-fn r3_conversions_and_promoted_matrix_round_trip_through_bytecode() -> MResult<()> {
+fn typed_conversions_and_promoted_matrix_round_trip_through_bytecode() -> MResult<()> {
     let source = "scalar := 1<u8> + 2<u16>\ncast := scalar<f64>\n[1<f32> 2<f32>] + [3<f64> 4<f64>]";
     let bytecode = compile_source(source)?;
     let artifact = decoded_source_artifact(&bytecode)?;

@@ -69,7 +69,7 @@ unknown, and unsupported native providers are rejected.
 
 ## Actor and host-function boundary
 
-R21 native applications execute through canonical resident artifacts. The
+Generated native applications execute through canonical resident artifacts. The
 production native host catalog registers resource providers, not actor host
 functions. `NativeApplicationBuilder::plan` rejects any actor bootstrap with
 `NativeActorBootstrapUnsupported` before planning either instruction bytecode

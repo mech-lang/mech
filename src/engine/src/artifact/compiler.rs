@@ -675,9 +675,8 @@ fn source_matrix_literal_from_registers(
     })
 }
 
-/// Adapts the actual executable compiler product into C3's durable semantic
-/// graph. Execution still consumes the existing bytecode/plan; this product is
-/// emitted alongside it for bytecode-v1 persistence and later activation.
+/// Adapts executable compiler output into a durable semantic graph for
+/// bytecode-v1 persistence and resident activation.
 #[cfg(feature = "semantic-compiler")]
 pub fn compile_executable_program_artifact(
     compiled: &CompiledBytecode,
@@ -2711,13 +2710,13 @@ fn validate_compiled_type_sidecars(
         let Some(memory_plan) = memory_plan else {
             return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
                 instruction: instruction_index,
-                reason: "semantic type binding has no R5 memory plan".to_owned(),
+                reason: "semantic type binding has no memory plan".to_owned(),
             });
         };
         if memory_plan.bound_call != *binding {
             return Err(ArtifactBuildError::CompiledTypeBindingMismatch {
                 instruction: instruction_index,
-                reason: "R5 memory plan disagrees with semantic type binding".to_owned(),
+                reason: "memory plan disagrees with semantic type binding".to_owned(),
             });
         }
         binding.operation_descriptor().validate().map_err(|error| {

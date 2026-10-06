@@ -3,6 +3,11 @@ name: Full CI
 on:
   workflow_call:
     inputs:
+      contract_families:
+        description: JSON array of behavioral contract families; all for full qualification
+        required: false
+        type: string
+        default: '["all"]'
       release_channel:
         description: Artifact channel used by the full-validation dry run
         required: false
@@ -19,7 +24,7 @@ on:
         type: string
         default: ""
       native_plan_in_caller:
-        description: The calling workflow runs and requires the same exact-head native plan
+        description: The calling workflow runs and requires the same revision native plan
         required: false
         type: boolean
         default: false
@@ -30,6 +35,11 @@ on:
         default: false
   workflow_dispatch:
     inputs:
+      contract_families:
+        description: JSON array of behavioral contract families; all for full qualification
+        required: false
+        type: string
+        default: '["all"]'
       release_channel:
         description: Artifact channel used by the full-validation dry run
         required: true
@@ -54,7 +64,7 @@ on:
         default: false
 
 concurrency:
-  group: ci-full-${{ inputs.validation_ref || github.sha }}
+  group: ci-full-${{ github.run_id }}-${{ inputs.validation_ref || github.sha }}
   cancel-in-progress: false
 
 # This verifier belongs to the workflow revision, not the repository revision
@@ -63,7 +73,7 @@ concurrency:
 env:
   RECORD_CHECKOUT_IDENTITY: |
     case "$VALIDATION_KIND" in
-      integration-merge|exact-head|exact-ref) ;;
+      integration-merge|exact-ref) ;;
       *) echo "unsupported validation kind: $VALIDATION_KIND" >&2; exit 64 ;;
     esac
     test -n "$REQUESTED_REF"
@@ -88,6 +98,7 @@ env:
 
 jobs:
   artifact-closure:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'artifact') }}
     name: Artifact closure (${{ matrix.representative }})
     runs-on: ubuntu-latest
     strategy:
@@ -125,9 +136,10 @@ jobs:
       - name: Fetch locked artifact dependencies
         run: cargo fetch --locked
       - name: Build and inspect representative artifacts
-        run: python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}
+        run: python3 scripts/check-artifact-completeness.py ${{ matrix.representative }}
 
   architecture-contracts:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'architecture') }}
     name: Architecture contract qualification
     runs-on: ubuntu-latest
     env:
@@ -169,24 +181,23 @@ jobs:
           python3 scripts/check-no-retired-value-system.py
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
-          python3 scripts/check-r1-compatibility-closure.py
-          python3 scripts/check-r2-type-memory-boundary.py
-          python3 scripts/check-r3-type-system.py
-          python3 scripts/check-r4-type-cutover.py
-          python3 scripts/check-r5-memory-planner.py
-          python3 scripts/check-r6-memory-runtime.py
+          python3 scripts/check-type-memory-boundary.py
+          python3 scripts/check-type-system.py
+          python3 scripts/check-semantic-type-authority.py
+          python3 scripts/check-memory-planner.py
+          python3 scripts/check-memory-runtime.py
           python3 scripts/check-compiler-planning-quarantine.py
       - name: Execute resident external publication contract
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-runtime
           --no-default-features --features resident_external_test_support
           --test resident_external_contract
-      - name: Execute the complete R2 conformance boundary
+      - name: Execute the complete type and memory boundary
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-core
           --all-features --test type_memory_contract --test storage_capability
           --test operation_memory_requirement --test type_memory_boundary
-      - name: Execute the complete R3 conformance boundary
+      - name: Execute the complete type system contract
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features \
             --test type_system_builtin \
@@ -200,18 +211,19 @@ jobs:
             --no-default-features --features full_compiler,resident-routing-source \
             --lib runtime::program::tests::compiled_conversion_executes_after_bytecode_round_trip \
             -- --exact
-      - name: Execute the complete R4 conformance boundary
+      - name: Execute the complete semantic type authority contract
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features \
-            --test r4_type_cutover
+            --test canonical_type_contract
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler \
-            --test r4_type_cutover
+            --test canonical_type_contract
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
-            --test r4_type_cutover
+            --test canonical_type_contract
 
   architecture-mutations:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'architecture') }}
     name: Architecture mutation qualification (${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -251,18 +263,19 @@ jobs:
             tests/ci/test_ci_full_contract.py \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_no_retired_value_system.py \
-            scripts/tests/test_check_r1_compatibility_closure.py \
-            scripts/tests/test_check_r2_type_memory_boundary.py \
-            scripts/tests/test_check_r3_type_system.py \
-            scripts/tests/test_check_r4_type_cutover.py \
-            scripts/tests/test_check_r5_memory_planner.py \
-            scripts/tests/test_check_r6_memory_runtime.py \
+            scripts/tests/test_rust_source.py \
+            scripts/tests/test_check_type_memory_boundary.py \
+            scripts/tests/test_check_type_system.py \
+            scripts/tests/test_check_semantic_type_authority.py \
+            scripts/tests/test_check_memory_planner.py \
+            scripts/tests/test_check_memory_runtime.py \
             scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_check_compiler_planning_quarantine.py
 
   memory-planner-contract:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'memory') }}
     name: Memory planner contract
     runs-on: ubuntu-latest
     env:
@@ -289,18 +302,19 @@ jobs:
       - name: Execute the complete memory-planner conformance boundary
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core \
-            --all-features --test r5_memory_plan
+            --all-features --test memory_plan
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler \
-            --test r5_memory_plan
+            --test memory_plan
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
-            --test r5_memory_contract
+            --test memory_contract
           cargo +nightly-2026-03-03 test --locked -p mech-compute
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
-            --test r5_memory_plan
+            --test memory_plan
 
   managed-memory-runtime:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'memory') || contains(fromJSON(inputs.contract_families), 'numeric') }}
     name: Managed memory runtime
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -330,19 +344,19 @@ jobs:
       - name: Execute the complete managed-memory conformance boundary
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core \
-            --all-features --test r6_memory_runtime
+            --all-features --test memory_runtime
           cargo +nightly-2026-03-03 test --locked -p mech-core \
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
-            --test r6_memory_safety
+            --test memory_safety
           RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \
             cargo +nightly-2026-03-03 test --locked --release -p mech-core \
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
-            --test r6_memory_safety
+            --test memory_safety
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
-            --test r6_memory_runtime
+            --test memory_runtime
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
             --lib resident::general::live::
@@ -351,19 +365,20 @@ jobs:
             --lib memory_planner::resident::tests
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features standard_compiler \
-            --test r6_managed_functions
+            --test managed_functions
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
-            --test r6_managed_functions
+            --test managed_functions
           cargo +nightly-2026-03-03 test --locked -p mech-compute \
-            --test r6_memory_runtime
+            --test memory_runtime
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
-            --test r6_memory_runtime
+            --test memory_runtime
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
-            --features jit --test r6_memory_runtime
+            --features jit --test memory_runtime
           cargo +nightly-2026-03-03 check --locked -p mech-gpu --features native
 
   managed-memory-fixed-profiles:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'numeric') }}
     name: Managed memory fixed profile (${{ matrix.feature }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -409,9 +424,10 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features "full_compiler,${{ matrix.feature }}" \
-            --test r6_managed_functions
+            --test managed_functions
 
   managed-memory-miri:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'memory') }}
     name: Managed memory safety (Miri)
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -443,9 +459,10 @@ jobs:
           cargo +nightly-2026-03-03 miri test --locked \
             -p mech-core --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
-            --test r6_memory_safety
+            --test memory_safety
 
   cargo-features:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'distribution') }}
     name: Cargo feature and example checks
     runs-on: ubuntu-latest
     env:
@@ -523,6 +540,7 @@ jobs:
         run: bash scripts/ci-disk-report.sh
 
   function-system-contracts:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'numeric') }}
     name: Function-system contracts (${{ matrix.slice }})
     runs-on: ubuntu-latest
     strategy:
@@ -569,6 +587,7 @@ jobs:
         run: bash scripts/check-function-system-contracts.sh "${{ matrix.slice }}"
 
   distribution-contracts:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'distribution') }}
     name: Distribution contract (${{ matrix.profile }})
     runs-on: ubuntu-latest
     strategy:
@@ -624,6 +643,7 @@ jobs:
           python3 -B scripts/check-distribution-contracts.py --profile full
 
   wasm-source-profile:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') }}
     name: WASM source profile
     runs-on: ubuntu-latest
     env:
@@ -663,6 +683,7 @@ jobs:
         run: bash scripts/check-static-distribution-profiles.sh wasm-source
 
   engine-catalog:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'numeric') }}
     name: Complete function-system migration
     runs-on: ubuntu-latest
     env:
@@ -698,8 +719,11 @@ jobs:
 
       - name: Check complete function-system migration contracts
         run: bash scripts/check-complete-function-system-migration.sh
+      - name: Exercise the complete source catalog through the public runtime
+        run: cargo +nightly-2026-03-03 test --locked -p mech --no-default-features --features full_compiler,project --test lazy_stdlib
 
   bytecode-v1-format:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'artifact') }}
     name: Bytecode v1 format
     runs-on: ubuntu-latest
     steps:
@@ -721,6 +745,7 @@ jobs:
         run: python3 scripts/check-bytecode-v1-format.py
 
   bytecode-v1-values:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'artifact') }}
     name: Bytecode v1 values
     runs-on: ubuntu-latest
     steps:
@@ -742,6 +767,7 @@ jobs:
         run: cargo +nightly-2026-03-03 test -p mech-core --all-features program::bytecode::tests
 
   bytecode-v1-determinism:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'artifact') }}
     name: Bytecode v1 determinism
     runs-on: ubuntu-latest
     env:
@@ -776,6 +802,7 @@ jobs:
         run: cargo +nightly-2026-03-03 run --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml -- --check
 
   native-linkage-owners:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'linkage') }}
     name: Native linkage owner profiles
     runs-on: ubuntu-latest
     env:
@@ -804,6 +831,7 @@ jobs:
           python3 scripts/check-native-linkage-coverage.py owners
 
   catalog-closure:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'linkage') }}
     name: Generated catalog closure (${{ matrix.profile }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -878,6 +906,7 @@ jobs:
           retention-days: 14
 
   native-linkage-surfaces:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'linkage') }}
     name: Native linkage surface (${{ matrix.surface }})
     runs-on: ubuntu-latest
     env:
@@ -934,6 +963,7 @@ jobs:
           retention-days: 1
 
   native-linkage:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'linkage') }}
     name: Native linkage coverage
     needs: native-linkage-surfaces
     runs-on: ubuntu-latest
@@ -967,6 +997,7 @@ jobs:
           retention-days: 14
 
   native-linkage-closures:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'linkage') }}
     name: Exact native closure (${{ matrix.shard }}/8)
     needs: native-linkage
     runs-on: ubuntu-latest
@@ -1003,13 +1034,15 @@ jobs:
         run: python3 scripts/check-native-linkage-coverage.py closure ${{ matrix.shard }}
 
   native-plan:
+    if: ${{ (contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native')) && !inputs.native_plan_in_caller }}
     name: Native plan
-    if: ${{ !inputs.native_plan_in_caller }}
     uses: ./.github/workflows/ci-native-plan.yml
     with:
       validation_ref: ${{ inputs.validation_ref || github.sha }}
+      verify_reuse: ${{ github.event_name != 'pull_request' }}
 
   native-engine:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') }}
     name: Native engine applications
     runs-on: ubuntu-latest
     env:
@@ -1046,6 +1079,7 @@ jobs:
           suite: engine
 
   native-hosted:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') }}
     name: Native hosted applications
     runs-on: ubuntu-latest
     env:
@@ -1082,6 +1116,7 @@ jobs:
           suite: hosted
 
   native-live:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') }}
     name: Native live applications
     runs-on: ubuntu-latest
     steps:
@@ -1112,6 +1147,7 @@ jobs:
           -- --nocapture
 
   native-windows:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') }}
     name: Native generated applications (Windows)
     runs-on: windows-latest
     env:
@@ -1167,6 +1203,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   native-macos:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') }}
     name: Native generated applications (macOS)
     runs-on: macos-latest
     steps:
@@ -1196,6 +1233,7 @@ jobs:
           done
 
   wasm-bytecode-v1:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') }}
     name: WASM bytecode v1
     runs-on: ubuntu-latest
     steps:
@@ -1238,6 +1276,7 @@ jobs:
             --nocapture
 
   package-validation:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'distribution') }}
     name: Package validation
     runs-on: ubuntu-latest
     steps:
@@ -1266,92 +1305,93 @@ jobs:
           retention-days: 14
 
   cargo:
-    name: cargo
+    name: Selected contract gate
     if: ${{ always() }}
     needs:
-      - cargo-features
-      - memory-planner-contract
-      - managed-memory-runtime
-      - managed-memory-fixed-profiles
-      - managed-memory-miri
-      - distribution-contracts
-      - engine-catalog
-      - function-system-contracts
-      - wasm-source-profile
+      - architecture-contracts
+      - architecture-mutations
+      - artifact-closure
+      - bytecode-v1-determinism
       - bytecode-v1-format
       - bytecode-v1-values
-      - bytecode-v1-determinism
-      - native-linkage-owners
-      - native-linkage
-      - native-linkage-closures
+      - cargo-features
+      - cargo-language
+      - cargo-runtime
       - catalog-closure
-      - native-plan
+      - distribution-contracts
+      - dynamic-modules
+      - engine-catalog
+      - function-system-contracts
+      - macos-runtime
+      - managed-memory-fixed-profiles
+      - managed-memory-miri
+      - managed-memory-runtime
+      - memory-planner-contract
       - native-engine
       - native-hosted
+      - native-linkage
+      - native-linkage-closures
+      - native-linkage-owners
+      - native-linkage-surfaces
       - native-live
-      - native-windows
       - native-macos
-      - wasm-bytecode-v1
+      - native-plan
+      - native-windows
       - package-validation
+      - project-browser
+      - project-native
+      - release-package-dry-run
+      - run-only
+      - wasm-bytecode-v1
+      - wasm-source-profile
+      - windows-cli
+      - windows-cli-contracts
+      - windows-runtime-paths
     runs-on: ubuntu-latest
     steps:
-      - name: Require every Cargo contract shard
+      - name: Require exactly the selected contract families
         env:
-          ENGINE_CATALOG_RESULT: ${{ needs.engine-catalog.result }}
-          FEATURE_RESULT: ${{ needs.cargo-features.result }}
-          MANAGED_MEMORY_RESULT: ${{ needs.managed-memory-runtime.result }}
-          MANAGED_FIXED_PROFILES_RESULT: ${{ needs.managed-memory-fixed-profiles.result }}
-          MANAGED_MIRI_RESULT: ${{ needs.managed-memory-miri.result }}
-          DISTRIBUTION_RESULT: ${{ needs.distribution-contracts.result }}
-          FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
-          WASM_SOURCE_RESULT: ${{ needs.wasm-source-profile.result }}
-          BYTECODE_FORMAT_RESULT: ${{ needs.bytecode-v1-format.result }}
-          BYTECODE_VALUES_RESULT: ${{ needs.bytecode-v1-values.result }}
-          BYTECODE_DETERMINISM_RESULT: ${{ needs.bytecode-v1-determinism.result }}
-          NATIVE_LINKAGE_OWNERS_RESULT: ${{ needs.native-linkage-owners.result }}
-          NATIVE_LINKAGE_RESULT: ${{ needs.native-linkage.result }}
-          NATIVE_LINKAGE_CLOSURES_RESULT: ${{ needs.native-linkage-closures.result }}
-          CATALOG_CLOSURE_RESULT: ${{ needs.catalog-closure.result }}
-          NATIVE_PLAN_RESULT: ${{ needs.native-plan.result }}
+          CONTRACT_FAMILIES: ${{ inputs.contract_families }}
+          CONTRACT_RESULTS: ${{ toJSON(needs) }}
           NATIVE_PLAN_IN_CALLER: ${{ inputs.native_plan_in_caller || false }}
-          NATIVE_ENGINE_RESULT: ${{ needs.native-engine.result }}
-          NATIVE_HOSTED_RESULT: ${{ needs.native-hosted.result }}
-          NATIVE_LIVE_RESULT: ${{ needs.native-live.result }}
-          NATIVE_WINDOWS_RESULT: ${{ needs.native-windows.result }}
-          NATIVE_MACOS_RESULT: ${{ needs.native-macos.result }}
-          WASM_BYTECODE_RESULT: ${{ needs.wasm-bytecode-v1.result }}
-          PACKAGE_VALIDATION_RESULT: ${{ needs.package-validation.result }}
         run: |
-          test "$DISTRIBUTION_RESULT" = success
-          test "$ENGINE_CATALOG_RESULT" = success
-          test "$FEATURE_RESULT" = success
-          test "$MANAGED_MEMORY_RESULT" = success
-          test "$MANAGED_FIXED_PROFILES_RESULT" = success
-          test "$MANAGED_MIRI_RESULT" = success
-          test "$FUNCTION_SYSTEM_RESULT" = success
-          test "$WASM_SOURCE_RESULT" = success
-          test "$BYTECODE_FORMAT_RESULT" = success
-          test "$BYTECODE_VALUES_RESULT" = success
-          test "$BYTECODE_DETERMINISM_RESULT" = success
-          test "$NATIVE_LINKAGE_OWNERS_RESULT" = success
-          test "$NATIVE_LINKAGE_RESULT" = success
-          test "$NATIVE_LINKAGE_CLOSURES_RESULT" = success
-          test "$CATALOG_CLOSURE_RESULT" = success
-          if test "$NATIVE_PLAN_IN_CALLER" = true
-          then
-            test "$NATIVE_PLAN_RESULT" = skipped
-          else
-            test "$NATIVE_PLAN_RESULT" = success
-          fi
-          test "$NATIVE_ENGINE_RESULT" = success
-          test "$NATIVE_HOSTED_RESULT" = success
-          test "$NATIVE_LIVE_RESULT" = success
-          test "$NATIVE_WINDOWS_RESULT" = success
-          test "$NATIVE_MACOS_RESULT" = success
-          test "$WASM_BYTECODE_RESULT" = success
-          test "$PACKAGE_VALIDATION_RESULT" = success
+          python3 - <<'PY'
+          import json, os
+          groups = {
+              'architecture': ['architecture-contracts', 'architecture-mutations'],
+              'artifact': ['artifact-closure', 'bytecode-v1-format', 'bytecode-v1-values', 'bytecode-v1-determinism'],
+              'language': ['cargo-language'],
+              'memory': ['memory-planner-contract', 'managed-memory-runtime', 'managed-memory-miri'],
+              'numeric': ['function-system-contracts', 'engine-catalog', 'managed-memory-fixed-profiles', 'managed-memory-runtime', 'cargo-runtime'],
+              'runtime': ['cargo-runtime', 'macos-runtime', 'windows-runtime-paths', 'windows-cli', 'dynamic-modules'],
+              'cli': ['cargo-runtime', 'run-only', 'windows-cli-contracts', 'windows-cli'],
+              'linkage': ['native-linkage-owners', 'native-linkage-surfaces', 'native-linkage', 'native-linkage-closures', 'catalog-closure'],
+              'native': ['native-plan', 'native-engine', 'native-hosted', 'native-live', 'native-windows', 'native-macos', 'project-native'],
+              'browser': ['wasm-source-profile', 'wasm-bytecode-v1', 'project-browser'],
+              'distribution': ['cargo-features', 'distribution-contracts', 'package-validation', 'release-package-dry-run'],
+          }
+          selected = json.loads(os.environ["CONTRACT_FAMILIES"])
+          if not isinstance(selected, list) or not selected or any(
+              family not in {*groups, "all"} for family in selected
+          ):
+              raise SystemExit("invalid contract family selection")
+          expected = {
+              job for family, jobs in groups.items()
+              if "all" in selected or family in selected for job in jobs
+          }
+          if os.environ["NATIVE_PLAN_IN_CALLER"] == "true":
+              expected.discard("native-plan")
+          results = json.loads(os.environ["CONTRACT_RESULTS"])
+          if set(results) != {job for jobs in groups.values() for job in jobs}:
+              raise SystemExit("contract gate dependency mismatch")
+          for job, result in results.items():
+              required = "success" if job in expected else "skipped"
+              if result["result"] != required:
+                  raise SystemExit(f"{job}: expected {required}, got {result['result']}")
+          PY
 
   cargo-language:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'language') }}
     name: Cargo language tests
     runs-on: ubuntu-latest
     env:
@@ -1392,38 +1432,43 @@ jobs:
       - name: Check generated syntax inventories
         run: |
           python3 scripts/generate-canonical-rule-registry.py --check
-          python3 scripts/generate-canonical-port-registry.py --check
           python3 scripts/generate-canonical-dependencies.py --check
           python3 scripts/generate-canonical-scc-report.py --check
           python3 scripts/generate-canonical-document-grammar.py --check
 
-      # The consumer census resolves all features with locked, offline metadata.
-      # Building mech-syntax alone does not populate every workspace dependency.
-      - name: Fetch locked workspace dependencies for offline consumer census
+      - name: Fetch locked workspace dependencies for isolated profile checks
         run: cargo fetch --locked
 
       - name: Run syntax grammar suites
         run: |
-          cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features full
-          cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features base
-          # The canonical registries and grammar tests own the retired grammar assertions.
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --lib --tests --no-default-features --features full
+          # Exhaustive streaming/growth runs once above. Reduced profiles prove
+          # their feature boundary without repeating the same parser algorithm.
+          for suite in canonical_document_root canonical_base_contracts
+          do
+            cargo +nightly-2026-03-03 test --locked -p mech-syntax --no-default-features --features base \
+              --lib "document::parser::canonical::tests::$suite"
+          done
+          # Verify the explicit compiler/serde feature combination.
           cargo +nightly-2026-03-03 test --locked -p mech-syntax --no-default-features \
             --features "baselib pretty_print serde compiler program statements_default subscript_default" \
-            --test canonical_port_registry --test canonical_rule_registry \
+            --test canonical_rule_registry \
             --test canonical_recursive_core_inventory --test canonical_recursive_core_schema \
-            --test canonical_grammar --test canonical_mechdown_closed_rules \
-            --test canonical_phase_2i_certification --test canonical_phase_2i_recovery
+            --test canonical_grammar
+          for suite in canonical_mechdown_closed_rules canonical_executable_conformance canonical_executable_recovery
+          do
+            cargo +nightly-2026-03-03 test --locked -p mech-syntax --no-default-features \
+              --features "baselib pretty_print serde compiler program statements_default subscript_default" \
+              --lib "document::parser::canonical::tests::$suite"
+          done
 
       - name: Verify canonical document syntax with optional features disabled
-        run: >-
-          cargo +nightly-2026-03-03 test --locked -p mech-syntax
-          --no-default-features --test canonical_document_feature_gates
-          --test canonical_document_incremental --test document_incremental
-          --test document_incremental_properties --test document_change_map
-          --test document_streaming_complexity --test document_streaming_storage
-          --test document_streaming_lifecycle --test document_streaming_equivalence
-          --test document_streaming_boundaries --test document_streaming_recovery
-          --test document_streaming_resources --test document_streaming_publication
+        run: |
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax \
+            --no-default-features --test canonical_document_feature_gates \
+            --test document_streaming_boundaries
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax \
+            --no-default-features --lib document::parser::canonical::tests::canonical_document_root
 
       - name: Verify canonical document execution and rendered outputs
         run: |
@@ -1432,9 +1477,7 @@ jobs:
             --test canonical_declaration_handoff --test canonical_document_outputs \
             --test canonical_document_render --test canonical_source_index \
             --test source_document --test canonical_config_profile --test config_profile \
-            --test s8_recovery_index_range \
-            --test s8_recovery_numeric_targets \
-            --test s8_recovery_logical_activation_facts
+            --test source_acceptance
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_source,resident-artifact,r64,c64 \
             --lib resident::general::shape_fact_tests::
@@ -1523,7 +1566,7 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 check --locked -p mech-engine --no-default-features --features source
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features source --test canonical_source_profile --test canonical_source_review --test canonical_source_collections --test canonical_boolean_match
-          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_document_state --test canonical_document_streaming --test canonical_source_semantics --test canonical_source_review --test canonical_source_structures --test canonical_source_collections --test canonical_boolean_match --test canonical_source_completion --test canonical_phase_2i_semantic_certification
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_document_state --test canonical_document_streaming --test canonical_source_semantics --test canonical_source_review --test canonical_source_structures --test canonical_source_collections --test canonical_boolean_match --test canonical_source_completion --test canonical_executable_semantics
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --lib source_semantics::frontend::
           cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --lib resident::numeric::tests::
 
@@ -1573,6 +1616,7 @@ jobs:
         run: bash scripts/ci-disk-report.sh
 
   cargo-runtime:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'numeric') || contains(fromJSON(inputs.contract_families), 'runtime') || contains(fromJSON(inputs.contract_families), 'cli') }}
     name: Cargo runtime and host tests
     runs-on: ubuntu-latest
     env:
@@ -1594,6 +1638,7 @@ jobs:
         shell: bash
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Audit sealed runtime boundaries
+        if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') }}
         run: |
           scripts/check-runtime-boundaries.sh
           bash scripts/test-runtime-boundaries.sh
@@ -1607,13 +1652,32 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
+      - name: Verify resident recording transaction boundaries
+        if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') }}
+        run: |
+          cargo test --locked -p mech-runtime --no-default-features \
+            --features full_source,resident-routing-source,resident_ekf_benchmarks \
+            --lib resident_recording::tests
+          cargo test --locked -p mech-runtime --no-default-features \
+            --features full_source,resident-routing-source,resident_ekf_benchmarks \
+            --test resident_ekf_contract
+
       - name: Run complete runtime suite
+        if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') }}
         run: cargo test -p mech-runtime --lib --tests
 
+      - name: Run complete source and compiler runtime contracts
+        if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') }}
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime --lib --tests
+          --no-default-features
+          --features full_compiler,full_source,resident-routing-source,resident_external_test_support,resident_ekf_benchmarks,runtime_bench_probes,compute,watcher
+
       - name: Run CLI host and context-send regression coverage
+        if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') || contains(fromJSON(inputs.contract_families), 'cli') }}
         run: |
           cargo test -p mech-syntax --all-features \
-            --test canonical_declaration_rules --test canonical_phase_2f_typed_views
+            --lib document::parser::canonical::tests::canonical_declaration_
           cargo test -p mech-terminal --features provider --test provider
           cargo test -p mech-console
           cargo test -p mech-browser
@@ -1628,6 +1692,7 @@ jobs:
           cargo check -p mech-terminal --no-default-features
 
       - name: Verify native mixed compute through source and inline CLI commands
+        if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') || contains(fromJSON(inputs.contract_families), 'numeric') }}
         env:
           CARGO_BUILD_JOBS: "2"
           CARGO_PROFILE_DEV_DEBUG: "0"
@@ -1643,11 +1708,23 @@ jobs:
             --no-default-features --features distribution-full,compute_backends_native \
             --test mech_cli_host native_mixed_compute_ -- --nocapture --test-threads=1
 
+      - name: Run CLI command and presentation contracts
+        if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'cli') }}
+        run: |
+          cargo test --locked -p mech --lib --no-default-features \
+            --features distribution-standard -- --skip cli::app::tests::build_
+          cargo test --locked -p mech --no-default-features \
+            --features distribution-standard \
+            --test mech_repl --test mech_repl_ctrlc --test mech_serve \
+            --test mech_format_shims --test public_api_compat \
+            --test style_layer_contract -- --test-threads=1
+
       - name: Disk report at end
         if: always()
         run: bash scripts/ci-disk-report.sh
 
   macos-runtime:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') }}
     name: macOS runtime tests
     runs-on: macos-latest
     env:
@@ -1684,6 +1761,7 @@ jobs:
         run: cargo test -p mech-runtime --lib
 
   project-native:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') }}
     name: Project native
     runs-on: ubuntu-latest
     env:
@@ -1779,6 +1857,7 @@ jobs:
         run: bash scripts/ci-disk-report.sh
 
   project-browser:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') }}
     name: Project browser
     runs-on: ubuntu-latest
     env:
@@ -1961,6 +2040,7 @@ jobs:
         if: failure()
         run: bash scripts/ci-disk-report.sh
   run-only:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'cli') }}
     name: Run-only CLI
     runs-on: ubuntu-latest
     env:
@@ -1994,6 +2074,7 @@ jobs:
         run: cargo build --bin mech --no-default-features --features "run pretty_print"
 
   windows-runtime-paths:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') }}
     name: Windows runtime path contracts
     runs-on: windows-latest
     env:
@@ -2026,6 +2107,7 @@ jobs:
         run: cargo test -p mech-runtime --lib --no-default-features --features "base,u64" windows_ -- --nocapture
 
   windows-cli-contracts:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'cli') }}
     name: Windows CLI platform contracts
     runs-on: windows-latest
     env:
@@ -2096,8 +2178,8 @@ jobs:
           }
 
   windows-cli:
+    if: ${{ always() && (contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') || contains(fromJSON(inputs.contract_families), 'cli')) }}
     name: Windows CLI
-    if: ${{ always() }}
     needs:
       - windows-cli-contracts
       - windows-runtime-paths
@@ -2105,13 +2187,16 @@ jobs:
     steps:
       - name: Require every Windows contract shard
         env:
+          RUNTIME_REQUIRED: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') }}
+          CLI_REQUIRED: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'cli') }}
           CLI_RESULT: ${{ needs.windows-cli-contracts.result }}
           RUNTIME_RESULT: ${{ needs.windows-runtime-paths.result }}
         run: |
-          test "$CLI_RESULT" = success
-          test "$RUNTIME_RESULT" = success
+          test "$CLI_RESULT" = "$(if test "$CLI_REQUIRED" = true; then echo success; else echo skipped; fi)"
+          test "$RUNTIME_RESULT" = "$(if test "$RUNTIME_REQUIRED" = true; then echo success; else echo skipped; fi)"
 
   dynamic-modules:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'runtime') }}
     name: Dynamic modules
     runs-on: ubuntu-latest
     env:
@@ -2142,6 +2227,7 @@ jobs:
         run: bash scripts/test-dynamic-modules.sh
 
   release-package-dry-run:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'distribution') }}
     name: ${{ matrix.distribution }} release package (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:

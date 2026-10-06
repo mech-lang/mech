@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "$schema",
+    "contract",
+    "bytecode_version",
+    "bytecode_sections",
+    "artifact_fields",
+    "forbidden_artifact_tokens"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "./boundary-schema.json"
+    },
+    "contract": {
+      "const": "mech-program-artifact-v1"
+    },
+    "bytecode_version": {
+      "const": 1
+    },
+    "bytecode_sections": {
+      "type": "array",
+      "minItems": 10,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "artifact_fields": {
+      "type": "array",
+      "minItems": 9,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "artifact_internal_sidecars": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": [
+          "field",
+          "read_accessor"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "read_accessor": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "forbidden_artifact_tokens": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

@@ -15,8 +15,8 @@ SPEC.loader.exec_module(RUNNER)
 class PythonUnittestShardRunnerTests(unittest.TestCase):
     def test_module_name_accepts_repository_test_paths(self):
         self.assertEqual(
-            RUNNER.module_name("scripts/tests/test_check_r6_memory_runtime.py"),
-            "scripts.tests.test_check_r6_memory_runtime",
+            RUNNER.module_name("scripts/tests/test_check_memory_runtime.py"),
+            "scripts.tests.test_check_memory_runtime",
         )
 
     def test_partition_covers_each_test_once_and_balances_shards(self):

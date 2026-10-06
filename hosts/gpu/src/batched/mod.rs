@@ -1794,7 +1794,7 @@ impl<'a> BatchCompiler<'a> {
             .collect::<BTreeSet<_>>();
         required_slots.extend(required_fixed_shape_input_slots(self.artifact));
         for slot in self.artifact.slots() {
-            // E3 gives public outputs dedicated publication slots. Batched
+            // Public outputs have dedicated publication slots. Batched
             // kernels operate on the underlying numeric graph and persistent
             // state, so the output aliases are not registers of their own.
             if slot.role == SlotRole::Output {
@@ -3754,7 +3754,7 @@ mod axis_tests {
             #[cfg(feature = "native")]
             match kernel.prepare_resident(&inputs) {
                 Ok(mut gpu) => {
-                    eprintln!("R26 {label} actual WebGPU adapter: {}", gpu.adapter());
+                    eprintln!("{label} actual WebGPU adapter: {}", gpu.adapter());
                     gpu.dispatch_turns(1).unwrap();
                     let (_, values) = gpu.read_published_state().unwrap();
                     assert_eq!(values[&output.slot], expected, "{label} WebGPU");
@@ -3766,7 +3766,7 @@ mod axis_tests {
                         std::env::var("MECH_REQUIRE_GPU").as_deref() != Ok("1"),
                         "{label}: required actual WebGPU adapter unavailable"
                     );
-                    eprintln!("SKIP R26 {label} WebGPU execution: adapter unavailable");
+                    eprintln!("SKIP {label} WebGPU execution: adapter unavailable");
                 }
                 Err(error) => panic!("{label} WebGPU preparation failed: {error}"),
             }

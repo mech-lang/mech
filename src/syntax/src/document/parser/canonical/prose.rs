@@ -265,6 +265,7 @@ impl Continuation {
         Progress::Complete(self.result)
     }
 }
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {

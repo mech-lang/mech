@@ -1,4 +1,4 @@
-//! Canonical source-import productions for the Phase 2F closed island.
+//! Canonical source-import productions for the declaration grammar closed island.
 //!
 //! This module deliberately stops at declarations. It provides no statement or
 //! document dispatcher, so direct parser contracts remain independent from the
@@ -16,8 +16,8 @@ use super::super::rule::rules;
 use super::base;
 use super::combinator::Attempt;
 
-/// The complete closed source-import set directly ported by Phase 2F.
-pub(crate) const PHASE_2F_SOURCE_IMPORT_RULES: &[RuleId; 13] = &[
+/// The complete closed source-import set directly ported by declaration grammar.
+pub(crate) const DECLARATION_SOURCE_IMPORT_RULES: &[RuleId; 13] = &[
     rules::SOURCE_IMPORT_TAIL,
     rules::SOURCE_PATH_COMPONENT_TOKEN,
     rules::SOURCE_PATH_COMPONENT,
@@ -33,12 +33,13 @@ pub(crate) const PHASE_2F_SOURCE_IMPORT_RULES: &[RuleId; 13] = &[
     rules::IMPORT_DECLARATION,
 ];
 
-/// Whether `rule` belongs to the Phase 2F source-import layer.
+/// Whether `rule` belongs to the declaration grammar source-import layer.
 pub(crate) fn supports(rule: RuleId) -> bool {
-    PHASE_2F_SOURCE_IMPORT_RULES.contains(&rule)
+    DECLARATION_SOURCE_IMPORT_RULES.contains(&rule)
 }
 
-/// Dispatch one exact Phase 2F source-import production.
+/// Dispatch one exact declaration grammar source-import production.
+#[cfg(test)]
 pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attempt> {
     supports(rule).then(|| match rule {
         rules::SOURCE_IMPORT_TAIL => parse_source_import_tail(parser),
@@ -54,12 +55,15 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
         rules::URI_SOURCE_IMPORT_SPECIFIER => parse_uri_source_import_specifier(parser),
         rules::SOURCE_IMPORT_SPECIFIER => parse_source_import_specifier(parser),
         rules::IMPORT_DECLARATION => parse_import_declaration(parser),
-        _ => unreachable!("Phase 2F source-import support guard rejects every other RuleId"),
+        _ => unreachable!(
+            "declaration grammar source-import support guard rejects every other RuleId"
+        ),
     })
 }
 
 mod continuation;
 pub(crate) use continuation::{Continuation, Progress};
+#[cfg(test)]
 fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {
@@ -71,42 +75,55 @@ fn drive(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
         }
     }
 }
+#[cfg(test)]
 pub(crate) fn parse_source_import_tail(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SOURCE_IMPORT_TAIL)
 }
+#[cfg(test)]
 pub(crate) fn parse_source_path_component_token(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SOURCE_PATH_COMPONENT_TOKEN)
 }
+#[cfg(test)]
 pub(crate) fn parse_source_path_component(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SOURCE_PATH_COMPONENT)
 }
+#[cfg(test)]
 pub(crate) fn parse_source_mec_path(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SOURCE_MEC_PATH)
 }
+#[cfg(test)]
 pub(crate) fn parse_source_mec_path_wildcard_suffix(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SOURCE_MEC_PATH_WILDCARD_SUFFIX)
 }
+#[cfg(test)]
 pub(crate) fn parse_relative_source_import_specifier(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::RELATIVE_SOURCE_IMPORT_SPECIFIER)
 }
+#[cfg(test)]
 pub(crate) fn parse_absolute_source_import_specifier(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::ABSOLUTE_SOURCE_IMPORT_SPECIFIER)
 }
+#[cfg(test)]
 pub(crate) fn parse_bare_source_import_specifier(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::BARE_SOURCE_IMPORT_SPECIFIER)
 }
+#[cfg(test)]
 pub(crate) fn parse_uri_scheme_part(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::URI_SCHEME_PART)
 }
+#[cfg(test)]
 pub(crate) fn parse_source_import_uri_scheme(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SOURCE_IMPORT_URI_SCHEME)
 }
+#[cfg(test)]
 pub(crate) fn parse_uri_source_import_specifier(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::URI_SOURCE_IMPORT_SPECIFIER)
 }
+#[cfg(test)]
 pub(crate) fn parse_source_import_specifier(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SOURCE_IMPORT_SPECIFIER)
 }
+#[cfg(test)]
 pub(crate) fn parse_import_declaration(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::IMPORT_DECLARATION)
 }

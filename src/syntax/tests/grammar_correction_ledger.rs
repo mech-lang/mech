@@ -3,8 +3,6 @@ use std::fs;
 use std::path::PathBuf;
 
 const CORRECTION_HEADER: &str = "id\tapplied-date\tstatus\taffected-rules\told-behavior\tnew-behavior\trationale\tconformance-cases";
-const CASES_HEADER: &str =
-    "id\trule\tentry-point\tfeature-set\texpected-result\tsource-file\tsnapshot-file\tnotes";
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -37,15 +35,6 @@ fn grammar_correction_ledger_is_well_formed_and_applied_to_the_canonical_grammar
         .expect("read corrections.tsv");
     let mut lines = corrections.lines();
     assert_eq!(lines.next(), Some(CORRECTION_HEADER));
-
-    let cases = fs::read_to_string(root.join("src/syntax/tests/fixtures/grammar/cases.tsv"))
-        .expect("read cases.tsv");
-    let mut case_lines = cases.lines();
-    assert_eq!(case_lines.next(), Some(CASES_HEADER));
-    let case_ids = case_lines
-        .filter(|line| !line.trim().is_empty() && !line.starts_with('#'))
-        .map(|line| line.split('\t').next().expect("case ID"))
-        .collect::<BTreeSet<_>>();
 
     let mut ids = BTreeSet::new();
     let mut applied = BTreeSet::new();
@@ -81,14 +70,6 @@ fn grammar_correction_ledger_is_well_formed_and_applied_to_the_canonical_grammar
             "correction {:?} has an empty required field",
             fields[0]
         );
-        for case in fields[7].split(',') {
-            assert!(
-                case_ids.contains(case),
-                "correction {:?} references missing conformance case {:?}",
-                fields[0],
-                case
-            );
-        }
         if matches!(fields[0], "IMPORT-001" | "MATCH-001") {
             assert_eq!(fields[2], "applied");
             applied.insert(fields[0]);

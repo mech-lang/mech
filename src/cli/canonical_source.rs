@@ -1,7 +1,6 @@
 //! Prepared canonical source boundary for CLI classification and formatting.
 //!
-//! S8A exposes this interface without changing the shipping command routes.
-//! The coordinated cutover can adopt it without selecting between parsers.
+//! Shipping command routes share one retained canonical document authority.
 
 use std::sync::Arc;
 

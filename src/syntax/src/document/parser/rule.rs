@@ -2,10 +2,6 @@ use alloc::vec::Vec;
 
 use crate::document::{ParserContextId, RuleId};
 
-pub use super::canonical_ports::{
-    CANONICAL_PORT_COUNT, CANONICAL_PORTS, NodePolicy, PortPhase, RegistryActivationStatus,
-    RuleFamily, RulePort, SemanticPortStatus, SyntaxPortStatus,
-};
 pub use super::canonical_rules::rules;
 pub use super::canonical_rules::{CANONICAL_RULE_COUNT, CANONICAL_RULES};
 

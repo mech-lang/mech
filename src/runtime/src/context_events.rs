@@ -168,7 +168,7 @@ impl RuntimeContextEvents {
         Ok(())
     }
 
-    #[cfg(any(test, feature = "runtime_bench_probes"))]
+    #[cfg(test)]
     pub(crate) fn physical_len(&self) -> usize {
         self.storage.len()
     }
@@ -217,11 +217,6 @@ impl RuntimeContextEvents {
         self.visible_start = protected_len;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::cost_probe::record_context_event_compaction(moved);
-    }
-
-    #[cfg(feature = "runtime_bench_probes")]
-    pub(crate) fn reserve_benchmark_append(&mut self) {
-        self.storage.reserve(1);
     }
 
     fn invalid_mark<T>(&self, reason: impl Into<String>) -> MResult<T> {

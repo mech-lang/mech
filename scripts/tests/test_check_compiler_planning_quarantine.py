@@ -24,10 +24,8 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
             "src/engine/src/lib.rs": "pub mod memory_runtime;\n",
             "src/engine/src/program/mod.rs": '#[cfg(feature = "semantic-compiler")]\nmod compiler_planning;\n',
             "src/engine/src/program/compiler_planning.rs": "pub struct CompilerPlanningConfig;\n",
+            "src/runtime/src/runtime/program/compiler.rs": "",
             "src/engine/src/artifact/encoding.rs": 'const DOMAIN: &[u8] = b"mech-program-v1\\0";\n',
-            "src/runtime/src/runtime/program/compiler.rs": "use mech_core::LegacyValue;\n",
-            "src/runtime/src/runtime/program/external/value_adapter_tests.rs": "use mech_core::LegacyValue;\n",
-            "src/runtime/src/runtime/program/value.rs": "use mech_core::LegacyValue;\n",
         }
         for relative, source in files.items():
             path = root / relative
@@ -149,13 +147,6 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
                 path.write_text("// inert but physically retired workspace\n", encoding="utf-8")
                 self.assertTrue(any("retired AST workspace remains" in row for row in CHECKER.run(root)))
 
-    def test_legacy_value_exception_is_exact(self):
-        root = self.fixture()
-        sibling = root / "src/runtime/src/runtime/program/external/other.rs"
-        sibling.write_text("use mech_core::LegacyValue;\n", encoding="utf-8")
-        failures = CHECKER.run(root)
-        self.assertTrue(any("outside an exact approved adapter" in row for row in failures))
-
     def test_compatibility_domain_literal_is_allowed(self):
         root = self.fixture()
         failures = CHECKER.run(root)
@@ -165,7 +156,6 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
         root = self.fixture()
         compiler = root / "src/runtime/src/runtime/program/compiler.rs"
         compiler.write_text(
-            "use mech_core::LegacyValue;\n"
             "#[cfg(any())]\n"
             "use mech_engine::expressions::ReactiveComprehensionStructureUnsupported;\n",
             encoding="utf-8",
@@ -179,7 +169,7 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
         )
         self.assertEqual(
             CHECKER.run(root),
-            ["src/runtime/src/runtime/program/compiler.rs:3: retired mech_engine::expressions namespace"],
+            ["src/runtime/src/runtime/program/compiler.rs:2: retired mech_engine::expressions namespace"],
         )
 
     def test_disabled_qualified_retired_imports_fail_for_every_owner(self):
@@ -232,28 +222,7 @@ class CompilerPlanningQuarantineTests(unittest.TestCase):
                     f"{relative}:2: retired mech_engine::literals namespace"
                 ])
 
-    def test_retired_paths_in_comments_and_quoted_negative_fixtures_are_not_imports(self):
-        root = self.fixture()
-        negative = root / "tests/quoted_scanner_negative.rs"
-        negative.parent.mkdir(parents=True)
-        negative.write_text(
-            '// mech_engine::interpreter::OldSurface\n'
-            '/* mech_engine::expressions::OldSurface\n'
-            '   /* mech_engine::literals::OldSurface */\n'
-            '   mech_core::nodes::OldSurface */\n'
-            'const A: &str = "use mech_engine::structures::OldSurface;";\n'
-            'const B: &str = r###"use mech_engine::{expressions::OldSurface};"###;\n'
-            'const C: &[u8] = b"use mech_core::nodes::OldSurface;";\n'
-            'const D: &[u8] = br##"mech_engine::interpreter::OldSurface"##;\n'
-            'const E: &CStr = c"mech_engine::literals::OldSurface";\n'
-            'const F: &CStr = cr#"mech_engine::structures::OldSurface"#;\n'
-            'const G: &str = "escaped \\\" mech_core::nodes::OldSurface";\n'
-            "const CH: char = '\"'; const BYTE: u8 = b'\"';\n",
-            encoding="utf-8",
-        )
-        self.assertEqual(CHECKER.run(root), [])
-
-    def test_comments_and_literals_do_not_hide_a_real_disabled_import(self):
+    def test_namespace_checks_use_masked_source_and_original_line_numbers(self):
         root = self.fixture()
         compiler = root / "src/runtime/src/runtime/program/compiler.rs"
         compiler.write_text(

@@ -595,7 +595,7 @@ mod vector_tests {
     }
 
     #[test]
-    fn all_positive_c0_dimension_vectors_match_exactly() {
+    fn all_positive_dimension_vectors_match_exactly() {
         let parameter = DimensionExpr::Parameter(DimensionParameterId::new(0));
         let vectors = [
             (
@@ -651,7 +651,7 @@ mod vector_tests {
     }
 
     #[test]
-    fn all_negative_c0_dimension_vectors_return_the_frozen_errors() {
+    fn all_negative_dimension_vectors_return_the_frozen_errors() {
         for expression in [
             DimensionExpr::Add(boxed([
                 DimensionExpr::Constant(u64::MAX),

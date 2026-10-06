@@ -1,4 +1,4 @@
-# Canonical scalar control in S4
+# Canonical scalar control in source semantics
 
 A scalar match owns ordered arms and their optional guards. Its scrutinee is
 evaluated once. Only a matching arm's guard executes; only the first matching arm
@@ -46,8 +46,8 @@ joins. Matrix iteration follows canonical row-major order; set construction uses
 the core key relation for deduplication and float normalization. No diagnostic
 qualifier strings or ordinary-operation placeholders participate in execution.
 
-At S4, resident comprehension execution supported Bool, Index, and F64
-bindings and yields, scalar patterns, and qualified ordinary kernels. Every
+Resident comprehension execution supports scalar bindings and yields, scalar
+patterns, and qualified ordinary kernels. Every
 inner call retains its ordinary contract and physical call-memory identity.
 The owning control accumulates work across calls, so repeated individually
 admissible scans cannot bypass the turn limit. Output growth is admitted before
@@ -55,8 +55,8 @@ allocation. Failed turns preserve published values and can recover on a smaller
 subsequent input. Pattern depth and generator nesting are bounded in artifacts;
 bytecode population limits apply before graph allocation.
 
-The later S8 control revisions extend this S4 foundation with composite
-comprehension bindings and yields, recursive match/comprehension control, and
+The canonical control graph supports composite comprehension bindings and yields,
+recursive match/comprehension control, and
 ordered computed-pattern evaluation on the canonical control graph. Matches can
 nest in match bodies and guards, and either control form can contain the other,
 with at most eight mixed control declarations on a path. FSM lowering still

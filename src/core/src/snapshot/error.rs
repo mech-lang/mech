@@ -149,7 +149,7 @@ pub enum SnapshotPathSegment {
 #[derive(Clone, Debug, PartialEq)]
 pub enum SnapshotValueError {
     Semantic(SemanticModelError),
-    /// A managed canonical construction exhausted or failed the R5/R6
+    /// A managed canonical construction exhausted or failed the managed
     /// allocation authority supplied to the common snapshot finalizer.
     MemoryRuntime(MemoryRuntimeError),
     UnknownSnapshotSchema {

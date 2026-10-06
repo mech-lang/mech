@@ -1,3 +1,0 @@
-spaced := "a b";
-range := "0" .. "9";
-items := [",", spaced];

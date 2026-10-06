@@ -1,4 +1,4 @@
-//! Typed syntax views for the closed Phase 2C literal and number productions.
+//! Typed syntax views for the closed literal, path, and kind grammar literal and number productions.
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -81,7 +81,7 @@ literal_ast_node!(HexadecimalLiteralSyntax, HexadecimalLiteral);
 literal_ast_node!(OctalLiteralSyntax, OctalLiteral);
 literal_ast_node!(BinaryLiteralSyntax, BinaryLiteral);
 
-// `digit-sequence` was introduced by Phase 2A and gains this typed view so
+// `digit-sequence` was introduced by lexical grammar and gains this typed view so
 // literal accessors need not expose untyped child-node searches.
 literal_ast_node!(DigitSequenceSyntax, DigitSequence);
 

@@ -630,10 +630,10 @@ def canonical_encoding_failures(
     )
     failures: list[Failure] = []
     for contract_id, checks in (
-        ("C0-CANONICAL-SCHEMA-ENCODING", schema_checks),
-        ("C0-KEY-SEMANTICS", key_checks),
-        ("C0-CANONICAL-PAYLOAD-ENCODING", payload_checks),
-        ("C0-DIMENSION-NORMALIZATION", dimension_checks),
+        ("VALUE-CANONICAL-SCHEMA-ENCODING", schema_checks),
+        ("VALUE-KEY-SEMANTICS", key_checks),
+        ("VALUE-CANONICAL-PAYLOAD-ENCODING", payload_checks),
+        ("VALUE-DIMENSION-NORMALIZATION", dimension_checks),
     ):
         failures.extend(
             failure(
@@ -676,7 +676,7 @@ def canonical_vector_failures(
                 "map-string-u64",
             },
             CANONICAL_REFERENCE.reproduce_value,
-            "C0-CANONICAL-PAYLOAD-ENCODING",
+            "VALUE-CANONICAL-PAYLOAD-ENCODING",
         ),
         "key_vectors": (
             {
@@ -687,7 +687,7 @@ def canonical_vector_failures(
                 "complex-not-keyable",
             },
             CANONICAL_REFERENCE.reproduce_key,
-            "C0-KEY-SEMANTICS",
+            "VALUE-KEY-SEMANTICS",
         ),
         "dimension_vectors": (
             {
@@ -700,7 +700,7 @@ def canonical_vector_failures(
                 "unknown-parameter",
             },
             CANONICAL_REFERENCE.reproduce_dimension,
-            "C0-DIMENSION-NORMALIZATION",
+            "VALUE-DIMENSION-NORMALIZATION",
         ),
         "invalid_value_vectors": (
             {
@@ -723,7 +723,7 @@ def canonical_vector_failures(
                 "shape-upper-bound-violation",
             },
             CANONICAL_REFERENCE.reproduce_invalid_value,
-            "C0-CANONICAL-INVALID-VALUE",
+            "VALUE-CANONICAL-INVALID-VALUE",
         ),
         "invalid_schema_vectors": (
             {
@@ -737,7 +737,7 @@ def canonical_vector_failures(
                 "invalid-rational-width",
             },
             CANONICAL_REFERENCE.reproduce_invalid_schema,
-            "C0-CANONICAL-INVALID-SCHEMA",
+            "VALUE-CANONICAL-INVALID-SCHEMA",
         ),
     }
     failures: list[Failure] = []
@@ -749,7 +749,7 @@ def canonical_vector_failures(
     if actual_digest != expected_digest:
         failures.append(
             failure(
-                "C0-CANONICAL-VECTOR-FREEZE",
+                "VALUE-CANONICAL-VECTOR-DIGEST",
                 "golden vector inputs and outputs",
                 str(vectors_path),
                 repr(expected_digest),
@@ -760,7 +760,7 @@ def canonical_vector_failures(
     if vectors.get("schema_version") != 3:
         failures.append(
             failure(
-                "C0-CANONICAL-PAYLOAD-ENCODING",
+                "VALUE-CANONICAL-PAYLOAD-ENCODING",
                 "golden vector schema version",
                 str(vectors_path),
                 "3",
@@ -831,7 +831,7 @@ def permanent_boundary_failures(root: Path) -> list[Failure]:
         if match is not None:
             failures.append(
                 failure(
-                    "C0-SCHEMA-DEPENDENCY",
+                    "VALUE-SCHEMA-DEPENDENCY",
                     match.group(0),
                     path.relative_to(root).as_posix(),
                     "schema module independent of runtime and engine crates",
@@ -854,7 +854,7 @@ def permanent_boundary_failures(root: Path) -> list[Failure]:
             if marker not in source:
                 failures.append(
                     failure(
-                        "C1-VALIDATED-CONSTRUCTION-ROUTE",
+                        "SEMANTIC-VALIDATED-CONSTRUCTION-ROUTE",
                         marker,
                         relative,
                         "canonical semantic construction retains every validated entry route",
@@ -868,7 +868,7 @@ def permanent_boundary_failures(root: Path) -> list[Failure]:
         if marker not in source:
             failures.append(
                 failure(
-                    "C1-FINALIZED-CONSTRUCTION",
+                    "SEMANTIC-FINALIZED-CONSTRUCTION",
                     marker,
                     canonical_test.relative_to(root).as_posix(),
                     "canonical conformance uses validated construction APIs",
@@ -892,8 +892,8 @@ def audit(
     vectors_schema = load_json(vectors_schema_path)
     failures: list[Failure] = []
     for contract_id, value, schema, path in (
-        ("C0-CANONICAL-ENCODING-SCHEMA", canonical, canonical_schema, canonical_path),
-        ("C0-CANONICAL-VECTORS-SCHEMA", vectors, vectors_schema, vectors_path),
+        ("VALUE-CANONICAL-ENCODING-SCHEMA", canonical, canonical_schema, canonical_path),
+        ("VALUE-CANONICAL-VECTORS-SCHEMA", vectors, vectors_schema, vectors_path),
     ):
         for message in schema_errors(value, schema):
             failures.append(

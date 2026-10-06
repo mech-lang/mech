@@ -1,6 +1,6 @@
 //! Canonical literal and number leaf productions.
 //!
-//! The direct leaves originated in Phase 2C. The candidate enclosing `literal`
+//! The direct leaves originated in literal, path, and kind grammar. The candidate enclosing `literal`
 //! production composes them with recursive kinds in `recursive_core::literals`.
 
 use alloc::string::String;
@@ -44,6 +44,7 @@ pub(crate) fn supports(rule: crate::document::RuleId) -> bool {
             | rules::BINARY_LITERAL
     )
 }
+#[cfg(test)]
 fn drive(parser: &mut Parser<'_>, rule: crate::document::RuleId) -> Attempt {
     let mut continuation = Continuation::new(rule);
     loop {
@@ -55,75 +56,99 @@ fn drive(parser: &mut Parser<'_>, rule: crate::document::RuleId) -> Attempt {
         }
     }
 }
+#[cfg(test)]
 pub(crate) fn parse_empty(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::EMPTY)
 }
+#[cfg(test)]
 pub(crate) fn parse_atom(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::ATOM)
 }
+#[cfg(test)]
 pub(crate) fn parse_string(parser: &mut Parser<'_>) -> Attempt {
     super::strings::parse_rule(parser, rules::STRING)
 }
+#[cfg(test)]
 pub(crate) fn parse_utf8_string(parser: &mut Parser<'_>) -> Attempt {
     super::strings::parse_rule(parser, rules::UTF8_STRING)
 }
+#[cfg(test)]
 pub(crate) fn parse_raw_string(parser: &mut Parser<'_>) -> Attempt {
     super::strings::parse_rule(parser, rules::RAW_STRING)
 }
+#[cfg(test)]
 pub(crate) fn parse_boolean(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::BOOLEAN)
 }
+#[cfg(test)]
 pub(crate) fn parse_true_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::TRUE_LITERAL)
 }
+#[cfg(test)]
 pub(crate) fn parse_false_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::FALSE_LITERAL)
 }
+#[cfg(test)]
 pub(crate) fn parse_number(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::NUMBER)
 }
+#[cfg(test)]
 pub(crate) fn parse_complex_number(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::COMPLEX_NUMBER)
 }
+#[cfg(test)]
 pub(crate) fn parse_real_number(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::REAL_NUMBER)
 }
+#[cfg(test)]
 pub(crate) fn parse_untyped_real_number(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::UNTYPED_REAL_NUMBER)
 }
+#[cfg(test)]
 pub(crate) fn parse_rational_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::RATIONAL_LITERAL)
 }
+#[cfg(test)]
 pub(crate) fn parse_scientific_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SCIENTIFIC_LITERAL)
 }
+#[cfg(test)]
 pub(crate) fn parse_float_decimal_start(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::FLOAT_DECIMAL_START)
 }
+#[cfg(test)]
 pub(crate) fn parse_float_full(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::FLOAT_FULL)
 }
+#[cfg(test)]
 pub(crate) fn parse_float_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::FLOAT_LITERAL)
 }
+#[cfg(test)]
 pub(crate) fn parse_integer_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::INTEGER_LITERAL)
 }
+#[cfg(test)]
 pub(crate) fn parse_typed_integer(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::TYPED_INTEGER)
 }
+#[cfg(test)]
 pub(crate) fn parse_untyped_integer(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::UNTYPED_INTEGER)
 }
+#[cfg(test)]
 pub(crate) fn parse_decimal_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::DECIMAL_LITERAL)
 }
+#[cfg(test)]
 pub(crate) fn parse_hexadecimal_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::HEXADECIMAL_LITERAL)
 }
+#[cfg(test)]
 pub(crate) fn parse_octal_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::OCTAL_LITERAL)
 }
+#[cfg(test)]
 pub(crate) fn parse_binary_literal(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::BINARY_LITERAL)
 }

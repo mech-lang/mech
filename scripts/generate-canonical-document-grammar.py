@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the canonical S7 document grammar from the specification."""
+"""Generate the canonical Document document grammar from the specification."""
 
 from __future__ import annotations
 
@@ -22,9 +22,9 @@ OUTPUT = (
 )
 AST_OUTPUT = ROOT / "src/syntax/src/document/ast/document_core.rs"
 CERTIFICATION_OUTPUT = (
-    ROOT / "docs/design/grammar-audit/s7-document-certification.tsv"
+    ROOT / "docs/design/grammar-audit/document-certification.tsv"
 )
-DISPOSITIONS_OUTPUT = ROOT / "docs/design/grammar-audit/s7-dispositions.tsv"
+DISPOSITIONS_OUTPUT = ROOT / "docs/design/grammar-audit/document-rule-dispositions.tsv"
 EXPECTED_DOCUMENT_RULES = 112
 
 
@@ -58,11 +58,11 @@ def document_reachability() -> set[str]:
     return reachable
 
 
-def s7_candidates(rows: list[dict[str, str]]) -> set[str]:
+def document_candidates(rows: list[dict[str, str]]) -> set[str]:
     return {
         row["grammar-name"]
         for row in rows
-        if row["phase"] == "S7" or row["syntax-status"] == "unported"
+        if row["component"] == "document" or row["syntax-status"] == "unported"
     }
 
 
@@ -70,18 +70,18 @@ def document_rules() -> list[str]:
     with PORTS.open(newline="", encoding="utf-8") as source:
         rows = list(csv.DictReader(source, delimiter="\t"))
     reachable = document_reachability()
-    candidates = s7_candidates(rows)
+    candidates = document_candidates(rows)
     names = [
         row["grammar-name"]
         for row in rows
         if row["grammar-name"] in candidates & reachable
     ]
     activated = {
-        row["grammar-name"] for row in rows if row["phase"] == "S7"
+        row["grammar-name"] for row in rows if row["component"] == "document"
     }
     if activated != set(names):
         raise SystemExit(
-            "S7 activation must equal the candidate closure reachable from parse"
+            "Document component must equal its reachable grammar closure"
         )
     return names
 
@@ -455,8 +455,6 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
         "    pub(crate) feature: Option<&'static str>,",
         "}",
         "",
-        f"pub(crate) const DOCUMENT_RULE_COUNT: usize = {len(names)};",
-        "",
         "pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[",
     ]
     for name in names:
@@ -498,7 +496,7 @@ def render_ast(names: list[str]) -> str:
         and node_kind(name) is not None
     ]
     lines = [
-        "// Generated from the canonical S7 document rule closure.",
+        "// Generated from the canonical Document document rule closure.",
         "// Do not edit by hand.",
         "",
         "use crate::document::{AstNode, SyntaxKind, SyntaxNode};",
@@ -657,7 +655,7 @@ def certified_samples() -> dict[str, str]:
         "eof": "",
     }
     certification = (
-        ROOT / "docs/design/grammar-audit/phase-2i-certification.tsv"
+        ROOT / "docs/design/grammar-audit/recursive-core-certification.tsv"
     ).read_text(encoding="utf-8")
     for line in certification.splitlines()[1:]:
         fields = line.split("\t")
@@ -739,7 +737,7 @@ def render_dispositions(document_names: list[str]) -> str:
     with PORTS.open(newline="", encoding="utf-8") as source:
         ports = list(csv.DictReader(source, delimiter="\t"))
     rows = ["grammar-name\tdisposition\trationale"]
-    candidates = s7_candidates(ports)
+    candidates = document_candidates(ports)
     document_names = set(document_names)
     for port in ports:
         name = port["grammar-name"]

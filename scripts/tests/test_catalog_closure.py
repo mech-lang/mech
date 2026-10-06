@@ -7,8 +7,10 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 from types import SimpleNamespace
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 
@@ -201,12 +203,43 @@ class CatalogClosureWorkflowTests(unittest.TestCase):
     def test_cargo_aggregate_requires_catalog_closure_success(self):
         block = job_block("cargo")
         self.assertIn("if: ${{ always() }}", block)
-        needs = re.search(r"(?ms)^    needs:\n(?P<rows>(?:      - .+\n)+)", block)
+        needs = re.search(r"(?m)^    needs:\n(?P<rows>(?:      - [a-z0-9_-]+\n)+)", block)
         self.assertIsNotNone(needs)
         self.assertIn("      - catalog-closure\n", needs.group("rows"))
-        self.assertIn("CATALOG_CLOSURE_RESULT: ${{ needs.catalog-closure.result }}", block)
-        self.assertIn('test "$CATALOG_CLOSURE_RESULT" = success', block)
+        self.assertIn("CONTRACT_FAMILIES: ${{ inputs.contract_families }}", block)
+        self.assertIn("CONTRACT_RESULTS: ${{ toJSON(needs) }}", block)
         self.assertNotIn("continue-on-error", block)
+        dependencies = re.findall(r"^      - (.+)$", needs.group("rows"), re.MULTILINE)
+        script = textwrap.dedent(block.split("        run: |\n", 1)[1])
+        linkage_jobs = {
+            "native-linkage-owners", "native-linkage-surfaces", "native-linkage",
+            "native-linkage-closures", "catalog-closure",
+        }
+        for family, selected in (("linkage", linkage_jobs), ("all", set(dependencies))):
+            for result in ("success", "failure", "cancelled", "skipped", "", None):
+                with self.subTest(family=family, catalog_result=result):
+                    results = {
+                        job: {"result": "success" if job in selected else "skipped"}
+                        for job in dependencies
+                    }
+                    if result is None:
+                        del results["catalog-closure"]
+                    else:
+                        results["catalog-closure"]["result"] = result
+                    completed = subprocess.run(
+                        ["bash", "-e", "-c", script], cwd=ROOT, capture_output=True, text=True,
+                        env={
+                            **os.environ,
+                            "CONTRACT_FAMILIES": json.dumps([family]),
+                            "CONTRACT_RESULTS": json.dumps(results),
+                            "NATIVE_PLAN_IN_CALLER": "false",
+                        },
+                    )
+                    self.assertEqual(completed.returncode == 0, result == "success", completed.stderr)
+                    if result is None:
+                        self.assertIn("contract gate dependency mismatch", completed.stderr)
+                    elif result != "success":
+                        self.assertIn("catalog-closure: expected success", completed.stderr)
 
 
 if __name__ == "__main__":

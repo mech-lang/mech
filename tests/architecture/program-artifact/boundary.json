@@ -1,0 +1,48 @@
+{
+  "$schema": "./boundary-schema.json",
+  "contract": "mech-program-artifact-v1",
+  "bytecode_version": 1,
+  "bytecode_sections": [
+    "ArtifactSchemas",
+    "ArtifactConstants",
+    "ArtifactInputs",
+    "ArtifactSlots",
+    "ArtifactProducers",
+    "ArtifactNodes",
+    "ArtifactBindings",
+    "ArtifactOutputs",
+    "ArtifactIntegrityConstraints",
+    "ArtifactOperations",
+    "ArtifactOperationContracts",
+    "ArtifactComputeRegions"
+  ],
+  "artifact_fields": [
+    "revision",
+    "schemas",
+    "constants",
+    "contracts",
+    "inputs",
+    "slots",
+    "nodes",
+    "bindings",
+    "outputs",
+    "constraints",
+    "compute_regions"
+  ],
+  "artifact_internal_sidecars": [
+    {
+      "field": "slot_shape_hints",
+      "read_accessor": "slot_shape_hint"
+    }
+  ],
+  "forbidden_artifact_tokens": [
+    "LegacyValue",
+    "ReactiveInstanceId",
+    "CellId",
+    "InstanceEpoch",
+    "PlanGeneration",
+    "LayoutGeneration",
+    "SlotIndex",
+    "Ref<"
+  ]
+}

@@ -34,8 +34,6 @@ pub(crate) struct DocumentRule {
     pub(crate) feature: Option<&'static str>,
 }
 
-pub(crate) const DOCUMENT_RULE_COUNT: usize = 112;
-
 pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
         rule: rules::ABSTRACT_EL,

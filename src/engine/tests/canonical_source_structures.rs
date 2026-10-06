@@ -5,7 +5,7 @@ use mech_core::{
 };
 use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram};
-use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+
 use mech_syntax::document::{
     AstNode, DocumentId, ParseConfig, Revision, SyntaxNode, TextSnapshot, VariableDefineSyntax,
 };
@@ -14,21 +14,23 @@ fn definition(source: &str) -> CanonicalSourceProgram {
     fn find(node: SyntaxNode) -> Option<VariableDefineSyntax> {
         VariableDefineSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
     }
-    let parsed = parse_canonical_phase_2i_rule_for_test(
+    let parsed = mech_syntax::document::parse_canonical_document(
         TextSnapshot::new(DocumentId(0x550), Revision(1), source).unwrap(),
-        rules::VARIABLE_DEFINE,
         ParseConfig::default(),
-    )
-    .unwrap();
+    );
     assert!(
         parsed.is_strictly_clean(),
         "{source}: {:?}",
         parsed.diagnostics
     );
-    assert_eq!(parsed.consumed.end.0 as usize, source.len(), "{source}");
-    CanonicalSourceFrontend
-        .compile_definition(&find(parsed.syntax()).unwrap())
-        .unwrap()
+    assert_eq!(
+        parsed.syntax().range().end.0 as usize,
+        source.len(),
+        "{source}"
+    );
+    let syntax = find(parsed.syntax()).unwrap();
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    CanonicalSourceFrontend.compile_definition(&syntax).unwrap()
 }
 
 #[test]
@@ -1527,37 +1529,18 @@ fn live_mutable_initializer_is_artifact_complete_but_rejected_before_activation(
 #[test]
 fn mutable_initialization_uses_a_previously_computed_binding() {
     use mech_engine::__resident::ResidentValueBorrow;
-    use mech_syntax::document::{DocumentSyntax, GreenBuilder, IdGenerator, SyntaxKind};
-    let sources = ["value := 1 + 2", "~state := value * 4"];
-    let mut ids = IdGenerator::default();
-    let mut builder = GreenBuilder::new(&mut ids);
-    builder.start_node(SyntaxKind::Document);
-    builder.start_node(SyntaxKind::Body);
-    for (index, source) in sources.iter().enumerate() {
-        if index > 0 {
-            builder.token(SyntaxKind::Newline, "\n").unwrap();
-        }
-        let parsed = parse_canonical_phase_2i_rule_for_test(
-            TextSnapshot::new(DocumentId(0x555), Revision(1), *source).unwrap(),
-            rules::VARIABLE_DEFINE,
-            ParseConfig::default(),
+    use mech_syntax::document::DocumentSyntax;
+    let parsed = mech_syntax::document::parse_canonical_document(
+        TextSnapshot::new(
+            DocumentId(0x555),
+            Revision(1),
+            "value := 1 + 2\n~state := value * 4",
         )
-        .unwrap();
-        assert!(parsed.is_strictly_clean());
-        fn find(node: SyntaxNode) -> Option<VariableDefineSyntax> {
-            VariableDefineSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
-        }
-        builder
-            .reuse_node(find(parsed.syntax()).unwrap().syntax().green().clone())
-            .unwrap();
-    }
-    builder.finish_node().unwrap();
-    builder.finish_node().unwrap();
-    let document = DocumentSyntax::cast(SyntaxNode::new_root(
-        builder.finish().unwrap(),
-        TextSnapshot::new(DocumentId(0x555), Revision(1), sources.join("\n")).unwrap(),
-    ))
-    .unwrap();
+        .unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
     let compiled = CanonicalSourceFrontend.compile_document(&document).unwrap();
     let artifact = compiled.compile_artifact().unwrap();
     let artifact = mech_engine::decode_program_artifact_bytecode_v1(

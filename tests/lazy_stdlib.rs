@@ -1,4 +1,4 @@
-#![cfg(all(feature = "full_source", feature = "project"))]
+#![cfg(all(feature = "full_compiler", feature = "project"))]
 
 use mech_runtime::RuntimeBuilder;
 

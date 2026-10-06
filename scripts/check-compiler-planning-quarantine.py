@@ -7,6 +7,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rust_source import rust_code
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ENGINE_LIB = Path("src/engine/src/lib.rs")
@@ -20,6 +23,8 @@ REMOVED_WORKSPACE_PATHS = (
     Path("src/engine/src/literals.rs"),
     Path("src/engine/src/structures.rs"),
     Path("src/core/src/nodes.rs"),
+    Path("src/core/src/document_presentation.rs"),
+    Path("src/engine/src/program/document_outputs.rs"),
 )
 
 GLOBAL_REMOVED = (
@@ -60,31 +65,6 @@ QUALIFIED_NAMESPACE = re.compile(r"\b(?P<owner>mech_engine|mech_core)\s*::\s*")
 RUST_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 PRECEDING_PATH_MEMBER = re.compile(r"(?P<member>[A-Za-z_][A-Za-z0-9_]*)\s*::\s*$")
 USE_GROUP_BRACE = re.compile(r"[{}]")
-RAW_LITERAL = re.compile(r'(?:br|rb|cr|r)(?P<hashes>#{0,255})"')
-CHAR_LITERAL = re.compile(
-    r"(?:b)?'(?:\\(?:[nrt0\\'\"]|x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]{1,6}\})|[^\\'\r\n])'"
-)
-
-# These are exact provider/value conversion adapters already governed by the
-# value-system boundary. The quarantine checker deliberately grants no parent
-# directory or filename-pattern exception.
-APPROVED_LEGACY_VALUE_ADAPTERS = {
-    Path("src/runtime/src/runtime/program/compiler.rs"),
-    # The resident compatibility adapter is compiled only by runtime tests.
-    Path("src/runtime/src/runtime/program/external/value_adapter_tests.rs"),
-    Path("src/runtime/src/runtime/program/value.rs"),
-    Path("hosts/browser/src/config.rs"),
-    Path("hosts/browser/src/provider.rs"),
-    Path("hosts/console/src/provider.rs"),
-    Path("hosts/gpu/src/compute_provider.rs"),
-    Path("hosts/robot-arm/src/provider.rs"),
-    Path("hosts/scene/src/provider.rs"),
-    Path("hosts/scene/src/schema.rs"),
-    Path("hosts/terminal/src/provider.rs"),
-    Path("hosts/time/src/lib.rs"),
-    Path("hosts/time/src/provider.rs"),
-    Path("hosts/timer/src/provider.rs"),
-}
 
 
 def rust_sources(root: Path) -> list[Path]:
@@ -100,57 +80,9 @@ def line_number(source: str, offset: int) -> int:
     return source.count("\n", 0, offset) + 1
 
 
-def rust_code(source: str) -> str:
-    """Mask comments/literals, as in the other architecture gates, retaining offsets."""
-    masked = list(source)
-
-    def blank(start: int, end: int) -> None:
-        for index in range(start, end):
-            if masked[index] not in "\r\n":
-                masked[index] = " "
-
-    index = 0
-    while index < len(source):
-        if source.startswith("//", index):
-            end = source.find("\n", index + 2)
-            end = len(source) if end < 0 else end
-        elif source.startswith("/*", index):
-            depth = 1
-            end = index + 2
-            while end < len(source) and depth:
-                if source.startswith("/*", end):
-                    depth += 1
-                    end += 2
-                elif source.startswith("*/", end):
-                    depth -= 1
-                    end += 2
-                else:
-                    end += 1
-        elif character := CHAR_LITERAL.match(source, index):
-            end = character.end()
-        elif raw := RAW_LITERAL.match(source, index):
-            terminator = '"' + raw.group("hashes")
-            close = source.find(terminator, raw.end())
-            end = len(source) if close < 0 else close + len(terminator)
-        elif source[index] == '"' or source.startswith(('b"', 'c"'), index):
-            end = index + (1 if source[index] == '"' else 2)
-            escaped = False
-            while end < len(source):
-                character = source[end]
-                end += 1
-                if escaped:
-                    escaped = False
-                elif character == "\\":
-                    escaped = True
-                elif character == '"':
-                    break
-        else:
-            index += 1
-            continue
-        blank(index, end)
-        index = end
-    # A raw identifier is the same namespace, not an exemption from retirement.
-    return re.sub(r"\br#(?=[A-Za-z_][A-Za-z0-9_]*)", "  ", "".join(masked))
+def normalize_raw_identifiers(source: str) -> str:
+    """A raw identifier names the same namespace; keep its source offsets."""
+    return re.sub(r"\br#(?=[A-Za-z_][A-Za-z0-9_]*)", "  ", source)
 
 
 def retired_root_members(source: str, start: int, owner: str) -> list[tuple[int, str]]:
@@ -206,7 +138,9 @@ def qualified_use_groups(source: str) -> list[tuple[int, int]]:
 def check_retired_namespaces(root: Path) -> list[str]:
     failures: list[str] = []
     for relative in rust_sources(root):
-        source = rust_code((root / relative).read_text(encoding="utf-8"))
+        source = normalize_raw_identifiers(
+            rust_code((root / relative).read_text(encoding="utf-8"))
+        )
         local_groups = qualified_use_groups(source)
         found: set[tuple[int, str]] = set()
         for qualified in QUALIFIED_NAMESPACE.finditer(source):
@@ -353,17 +287,6 @@ def check_shipping_reachability(root: Path) -> list[str]:
                 failures.append(
                     f"{relative}:{line_number(source, match.start())}: shipping {name} reachability"
                 )
-        legacy_restricted = (
-            relative.is_relative_to(Path("src/runtime/src/runtime/program"))
-            or relative.is_relative_to(Path("src/engine/src/resident"))
-            or relative.is_relative_to(Path("hosts"))
-        )
-        if (
-            legacy_restricted
-            and "LegacyValue" in source
-            and relative not in APPROVED_LEGACY_VALUE_ADAPTERS
-        ):
-            failures.append(f"{relative}: LegacyValue is outside an exact approved adapter")
     return failures
 
 

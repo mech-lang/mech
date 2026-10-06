@@ -16,9 +16,9 @@ CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
-# Source fixture seals cover the canonical artifact-only payload after R21
+# Source fixture seals cover the canonical artifact-only payload after canonical native compilation
 # retired the parallel compiled-program authority. The structural-match fixture
-# also retains R16 canonical pattern metadata.
+# also retains canonical pattern metadata.
 EXPECTED_MANIFEST_SHA256 = "9341fe9e39746bfdc255fdb7d2173dc45d53bd15df5e78f220855468c16d586b"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",

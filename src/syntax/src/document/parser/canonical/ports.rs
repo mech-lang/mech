@@ -4,11 +4,10 @@ use super::base;
 use super::combinator::Attempt;
 use super::test_support::{CanonicalSourceRuleSnapshot, parse_source_rule_prefix};
 
-/// Backwards-compatible name for Phase 2A direct-rule snapshots.
-pub type CanonicalRuleSnapshot = CanonicalSourceRuleSnapshot;
+/// Snapshot returned by direct lexical-rule test helpers.
+pub(super) type CanonicalRuleSnapshot = CanonicalSourceRuleSnapshot;
 
-#[doc(hidden)]
-pub fn canonical_base_rule_supported(rule: RuleId) -> bool {
+pub(super) fn canonical_base_rule_supported(rule: RuleId) -> bool {
     base::supports(rule)
 }
 
@@ -16,8 +15,7 @@ pub fn canonical_base_rule_supported(rule: RuleId) -> bool {
 ///
 /// `tag` is caller-parameterized and therefore uses
 /// [`parse_canonical_tag_for_test`] instead.
-#[doc(hidden)]
-pub fn parse_canonical_base_rule_for_test(
+pub(super) fn parse_canonical_base_rule_for_test(
     source: TextSnapshot,
     rule: RuleId,
     config: ParseConfig,
@@ -33,8 +31,7 @@ pub fn parse_canonical_base_rule_for_test(
 }
 
 /// Parses the caller-supplied exact `tag` production for deterministic tests.
-#[doc(hidden)]
-pub fn parse_canonical_tag_for_test(
+pub(super) fn parse_canonical_tag_for_test(
     source: TextSnapshot,
     literal: &str,
     config: ParseConfig,

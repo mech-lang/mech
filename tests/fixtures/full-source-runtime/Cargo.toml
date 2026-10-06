@@ -5,7 +5,6 @@ edition = "2024"
 publish = false
 
 [dependencies]
-mech-syntax = { path = "../../../src/syntax", default-features = false }
 mech-core = {
   path = "../../../src/core",
   default-features = false,

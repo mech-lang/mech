@@ -9,7 +9,7 @@ value design. Bytecode v1 is allowed to evolve before Mech 1.0.
 ## Conclusions
 
 - `ProgramArtifact` is the correct semantic admission boundary. The GPU host
-  did not need D1 activation internals.
+  did not need resident activation internals.
 - Existing schema bodies and compile-time matrix dimensions are sufficient for
   fixed-shape `f32` kernel admission. No value or shape redesign is indicated
   by this slice.
@@ -19,7 +19,7 @@ value design. Bytecode v1 is allowed to evolve before Mech 1.0.
 - The artifact must preserve canonical operation semantics independently from
   the selected runtime factory. This is the largest unresolved issue found.
 
-## Findings that should affect D1 or bytecode work
+## Findings that should affect resident activation or bytecode work
 
 ### 1. Preserve canonical operation identity
 
@@ -46,7 +46,7 @@ instruction without `CompiledInstructionRole`; artifact compilation then
 failed with `MissingInstructionRole`.
 
 This branch fixes the issue by materializing the return inside a combinational
-source-node boundary. This behavior should remain covered when D1 changes the
+source-node boundary. This behavior should remain covered when changing the
 source-to-artifact path.
 
 ### 3. Named computed composites can lose dependency edges
@@ -191,7 +191,7 @@ turn (1.174 billion particle-turns per second). One final full readback of both
 matrices took 15.852 ms. CPU/GPU one-turn output matched exactly and sampled
 120-turn recurrence error was 5.96e-8.
 
-This is executor machinery, not bytecode machinery. D1's
+This is executor machinery, not bytecode machinery. The
 `ProgramArtifact -> ActivatedPlan -> ReactiveInstance` separation is compatible
 with a resident GPU plan.
 

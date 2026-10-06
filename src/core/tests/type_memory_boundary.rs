@@ -797,7 +797,7 @@ fn declaration_encoding(
 }
 
 #[test]
-fn r2_analysis_is_deterministic_non_mutating_and_non_serialized() {
+fn type_memory_analysis_is_deterministic_non_mutating_and_non_serialized() {
     for (name, body) in [
         ("scalar", f64_body()),
         ("matrix", matrix_body(f64_body(), 2, 3)),
@@ -880,11 +880,11 @@ fn r2_analysis_is_deterministic_non_mutating_and_non_serialized() {
     ] {
         assert!(
             !source.contains("Serialize"),
-            "{name}: R2 metadata became serialized"
+            "{name}: type-memory metadata became serialized"
         );
         assert!(
             !source.contains("Deserialize"),
-            "{name}: R2 metadata became deserialized"
+            "{name}: type-memory metadata became deserialized"
         );
     }
 }

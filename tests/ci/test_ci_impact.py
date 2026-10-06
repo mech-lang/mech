@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import importlib.util
+import os
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -36,10 +38,10 @@ class ImpactClassifierTests(unittest.TestCase):
                 self.assertEqual(result["owner_shards"], [])
                 self.assertFalse(result["browser_canary_required"])
 
-    def test_machine_change_runs_r6_catalog_integration_not_machine_private_tests(self):
+    def test_machine_change_runs_managed_function_behavior(self):
         result = self.classify(["machines/math/src/add.rs"])
-        self.assertEqual(result["changed_owners"], ["mech-math"])
-        command = OWNERS["mech-math"]["command"]
+        self.assertEqual(result["changed_owners"], ["machine-functions"])
+        command = OWNERS["machine-functions"]["command"]
         self.assertIn("mech-stdlib", command)
         self.assertNotIn("mech-math", command)
         self.assertTrue(result["standard_canaries_required"])
@@ -57,6 +59,14 @@ class ImpactClassifierTests(unittest.TestCase):
         self.assertTrue(result["cross_cutting_standard_suite_required"])
         self.assertTrue(result["browser_canary_required"])
         self.assertEqual(len(result["owner_shards"]), len(expected))
+
+    def test_cross_cutting_keeps_directly_changed_nonstandard_owners(self):
+        result = self.classify(["src/core/src/value.rs", "hosts/robot-arm/src/lib.rs"])
+        self.assertIn("mech-robot-arm", result["changed_owners"])
+        self.assertIn("mech-core", result["changed_owners"])
+        result = self.classify(["src/core/src/value.rs", "machines/math/src/ops/add.rs"])
+        self.assertIn("mech-stdlib", result["changed_owners"])
+        self.assertNotIn("machine-functions", result["changed_owners"])
 
     def test_browser_related_change_requests_browser_canary(self):
         result = self.classify(["hosts/scene/src/lib.rs"])
@@ -99,51 +109,47 @@ class ImpactClassifierTests(unittest.TestCase):
         for path in (".github/workflows/ci.yml", "./.github/workflows/ci.yml"):
             with self.subTest(path=path):
                 result = self.classify([path])
-                self.assertEqual(result["matched_owners"], ["ci-tools"])
+                self.assertEqual(result["matched_owners"], ["architecture-contracts", "ci-tools"])
                 self.assertEqual(result["unmatched_paths"], [])
-                self.assertEqual(result["changed_owners"], [])
-                self.assertFalse(result["cross_cutting_standard_suite_required"])
+                self.assertTrue(result["changed_owners"])
+                self.assertTrue(result["cross_cutting_standard_suite_required"])
 
     def test_full_label_requests_full_validation_for_ordinary_changes(self):
         ordinary = self.classify(["machines/math/src/add.rs"])
         requested = self.classify(["machines/math/src/add.rs"], ["ci:full"])
         self.assertFalse(ordinary["full_validation_required"])
         self.assertTrue(requested["full_validation_required"])
+        requested = self.classify(["hosts/terminal/src/lib.rs"], ["ci:full"])
+        self.assertTrue(requested["browser_canary_required"])
+        self.assertTrue(requested["browser_applications_required"])
+        self.assertEqual(set(requested["contract_families"]), set(CI_IMPACT.CONTRACT_FAMILIES))
 
-    def test_machine_changes_select_the_r6_catalog_owner_suite(self):
-        for owner in (
-            "mech-math",
-            "mech-compare",
-            "mech-logic",
-            "mech-range",
-            "mech-matrix",
-            "mech-set",
-            "mech-string",
-            "mech-stats",
-            "mech-combinatorics",
-        ):
-            package = owner.removeprefix("mech-")
-            with self.subTest(owner=owner):
-                result = self.classify([f"machines/{package}/src/lib.rs"])
-                self.assertEqual(result["changed_owners"], [owner])
-                command = OWNERS[owner]["command"]
-                self.assertIn("r6_managed_functions", command)
-                self.assertIn(
-                    "catalog_inventory_is_classified_into_r6_implementation_families",
-                    command,
-                )
+    def test_machine_changes_share_one_behavior_owner(self):
+        paths = [f"machines/{package}/src/lib.rs" for package in (
+            "math", "compare", "logic", "range", "matrix", "set", "string",
+            "stats", "combinatorics",
+        )]
+        for changed in ([path] for path in paths):
+            self.assertEqual(self.classify(changed)["changed_owners"], ["machine-functions"])
+        combined = self.classify(paths)
+        self.assertEqual(combined["changed_owners"], ["machine-functions"])
+        self.assertEqual(len(combined["owner_shards"]), 1)
+        command = OWNERS["machine-functions"]["command"]
+        self.assertIn("managed_functions", command)
+        self.assertNotIn("--exact", command)
+        self.assertNotIn("machine-functions", self.classify(["src/core/src/lib.rs"])["changed_owners"])
 
     def test_architecture_contract_changes_require_full_validation(self):
         for path in (
             ".github/workflows/ci-full.yml",
             ".github/workflows/ci-native-plan.yml",
             "scripts/check-operation-contract.py",
-            "scripts/check-r2-type-memory-boundary.py",
-            "scripts/tests/test_check_r2_type_memory_boundary.py",
-            "scripts/check-r3-type-system.py",
-            "scripts/tests/test_check_r3_type_system.py",
-            "scripts/check-r4-type-cutover.py",
-            "scripts/tests/test_check_r4_type_cutover.py",
+            "scripts/check-type-memory-boundary.py",
+            "scripts/tests/test_check_type_memory_boundary.py",
+            "scripts/check-type-system.py",
+            "scripts/tests/test_check_type_system.py",
+            "scripts/check-semantic-type-authority.py",
+            "scripts/tests/test_check_semantic_type_authority.py",
             "tests/architecture/program-artifact/v1.json",
         ):
             with self.subTest(path=path):
@@ -156,13 +162,12 @@ class ImpactClassifierTests(unittest.TestCase):
             "README.md",
             "docs/design/type-memory-boundary.md",
             "docs/design/type-system-v1.md",
-            "docs/design/ROADMAP.mec",
             "docs/design/v0.4-endgame.md",
         ):
             with self.subTest(path=path):
                 result = self.classify([path])
-                self.assertIn("architecture-contracts", result["matched_owners"])
-                self.assertTrue(result["full_validation_required"])
+                self.assertTrue(result["docs_only"])
+                self.assertFalse(result["full_validation_required"])
 
     def test_docs_only_change_can_still_request_full_validation(self):
         result = self.classify(["docs/distributions.md"], ["ci:full"])
@@ -188,150 +193,199 @@ class ImpactClassifierTests(unittest.TestCase):
         )
         self.assertEqual(flattened, names)
 
+    def test_safety_and_abi_owners_require_complete_contracts(self):
+        for path in (
+            "src/core/src/types.rs", "src/engine/src/source_semantics/frontend.rs",
+            "src/runtime/src/program.rs", "src/bytecode/src/lib.rs",
+            "src/build/src/lib.rs", "Cargo.toml", "Cargo.lock",
+            "src/syntax/src/lib.rs", "src/compute/src/lib.rs",
+        ):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertTrue(result["dependent_contracts_required"])
+                self.assertTrue(result["contract_families"])
+        for path in ("src/core/src/types.rs", "src/bytecode/src/lib.rs", "Cargo.toml", "Cargo.lock", "unknown/product.rs"):
+            self.assertTrue(self.classify([path])["full_validation_required"])
 
-class RegisteredReviewTests(unittest.TestCase):
-    def test_registered_slice_runs_static_checks_and_its_focused_regressions(self):
-        result = CI_IMPACT.classify(["src/engine/src/source_semantics/frontend.rs"], ["ci:full"], OWNERS, "review")
-        self.assertEqual(result["matched_owners"], ["mech-engine"])
-        self.assertEqual(result["changed_owners"], ["s8-review-regressions"])
-        self.assertTrue(result["static_contracts_required"])
-        self.assertTrue(result["review_only"])
-        for field in ["standard_canaries_required", "windows_canary_required", "browser_canary_required", "cross_cutting_standard_suite_required", "full_validation_required"]:
-            self.assertFalse(result[field], field)
+    def test_narrow_changes_do_not_run_native_or_windows_qualification(self):
+        for path in ("hosts/terminal/src/lib.rs",):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertFalse(result["full_validation_required"])
+                self.assertFalse(result["windows_canary_required"])
+                self.assertTrue(result["standard_canaries_required"])
 
-    def test_review_ci_change_does_not_fan_out_to_all_product_owners(self):
-        result = CI_IMPACT.classify([".github/workflows/ci-full.yml"], [], OWNERS, "review")
-        self.assertEqual(result["changed_owners"], ["s8-review-regressions"])
-        self.assertFalse(result["full_validation_required"])
-        self.assertTrue(result["static_contracts_required"])
+    def test_large_browser_application_cases_follow_affected_owners(self):
+        for path in ("examples/ekf/localization.mec", "hosts/gpu/src/lib.rs", "src/engine/src/lib.rs"):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertTrue(result["browser_applications_required"])
+                self.assertTrue(result["browser_canary_required"])
+        self.assertTrue(self.classify(["machines/math/src/ops/add.rs"])["browser_applications_required"])
+        self.assertFalse(self.classify(["hosts/time/src/lib.rs"])["browser_applications_required"])
+        self.assertFalse(self.classify(["docs/distributions.md"])["browser_applications_required"])
 
-    def test_unknown_review_paths_fail_closed_to_normal_qualification(self):
-        result = CI_IMPACT.classify(["unowned-area/file.rs"], ["ci:full"], OWNERS, "review")
-        self.assertFalse(result["review_only"])
-        self.assertTrue(result["standard_canaries_required"])
+    def test_syntax_owner_keeps_compact_growth_and_stream_contracts(self):
+        command = OWNERS["mech-syntax"]["command"]
+        for target in ("document_streaming_complexity", "document_streaming_boundaries",
+                       "document_streaming_lifecycle", "document_streaming_resources",
+                       "document_streaming_storage"):
+            self.assertIn(target, command)
+        self.assertIn("--lib", command)
+        self.assertEqual(command[-3:], ["--", "--skip", "large_"])
+
+    def test_authoritative_syntax_inputs_are_never_prose_only(self):
+        for path in (
+            "docs/design/specification.mec",
+            "docs/design/grammar-audit/ports.tsv",
+            "docs/design/grammar-audit/canonical-dependencies.tsv",
+            "docs/design/grammar-audit/recursive-core.tsv",
+            "docs/design/grammar-audit/recursive-core-certification.tsv",
+            "docs/design/grammar-audit/canonical-syntax-schema.json",
+        ):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertIn("mech-syntax", result["matched_owners"])
+                self.assertFalse(result["docs_only"])
+                self.assertTrue(result["static_contracts_required"])
+                self.assertIn("language", result["contract_families"])
+                self.assertNotIn("distribution", result["contract_families"])
+                self.assertIn("mech-syntax", result["changed_owners"])
+        self.assertTrue(self.classify(["docs/design/grammar-audit/new-input.data"])["full_validation_required"])
+        self.assertTrue(self.classify(["docs/design/grammar-audit/README.md"])["docs_only"])
+
+    def test_documentation_owner_cannot_mask_an_explicit_product_owner(self):
+        owners = {
+            "docs": {"name": "docs", "paths": ["docs/**"], "command": [],
+                     "standard": False, "cross_cutting": False, "docs": True},
+            "spec": {"name": "spec", "paths": ["docs/schema.md"], "command": ["check"],
+                     "standard": True, "cross_cutting": True, "full": True},
+        }
+        result = CI_IMPACT.classify(["docs/schema.md"], [], owners)
+        self.assertFalse(result["docs_only"])
         self.assertTrue(result["full_validation_required"])
+        self.assertEqual(result["changed_owners"], ["spec"])
 
-    def test_landing_always_retains_full_product_qualification(self):
-        for paths in [["src/runtime/src/input.rs"], ["docs/distributions.md"], []]:
-            result = CI_IMPACT.classify(paths, [], OWNERS, "landing")
-            self.assertTrue(result["landing_candidate"])
-            self.assertFalse(result["review_only"])
-            self.assertFalse(result["docs_only"])
-            for field in ["standard_canaries_required", "windows_canary_required", "browser_canary_required", "full_validation_required"]:
-                self.assertTrue(result[field], field)
-            self.assertIn("mech-engine", result["changed_owners"])
-            self.assertNotIn("s8-review-regressions", result["changed_owners"])
+    def test_numeric_implementation_keeps_complete_oracles_without_release_qualification(self):
+        for path in ("machines/math/src/ops/add.rs", "machines/matrix/src/ops/transpose.rs"):
+            result = self.classify([path])
+            self.assertEqual(result["contract_families"], ["artifact", "linkage", "numeric"])
+            self.assertTrue(result["browser_applications_required"])
+            self.assertFalse(result["native_validation_required"])
+            self.assertFalse(result["full_validation_required"])
+        for path in ("machines/math/src/catalog.rs", "machines/math/build.rs"):
+            self.assertTrue(self.classify([path])["native_validation_required"])
+        self.assertTrue(self.classify(["machines/math/Cargo.toml"])["full_validation_required"])
+        self.assertTrue(self.classify(["machines/math/README.md"])["docs_only"])
 
-    def test_role_requires_exact_registered_number_branch_and_repository(self):
-        from ci_review_slices import review_role
-        self.assertEqual(review_role(844, "codex/syntax-s8r04-dynamic-binding", "mech-lang/mech", base="codex/syntax-s8r03-bound-schemas")[0], "review")
-        self.assertEqual(review_role(830, "codex/syntax-s8c-cutover", "mech-lang/mech")[0], "landing")
-        for number, branch, repo in [
-            (999, "codex/syntax-s8r04-dynamic-binding", "mech-lang/mech"),
-            (844, "codex/syntax-s8r04-copy", "mech-lang/mech"),
-            (844, "codex/syntax-s8r04-dynamic-binding", "someone/mech"),
-            (830, "codex/syntax-s8r04-dynamic-binding", "mech-lang/mech"),
-        ]:
-            self.assertEqual(review_role(number, branch, repo)[0], "ordinary")
+    def test_cli_presentation_keeps_command_contracts_without_native_generation(self):
+        result = self.classify(["src/cli/commands/repl/presentation.rs"])
+        self.assertEqual(result["contract_families"], ["cli"])
+        self.assertFalse(result["native_validation_required"])
+        self.assertFalse(result["browser_canary_required"])
+        self.assertFalse(result["full_validation_required"])
+        self.assertEqual(result["changed_owners"], [])
 
-    def test_registry_has_one_landing_and_no_empty_review_checks(self):
-        import json
-        from ci_review_slices import REGISTRY, review_role
-        registry = json.loads(REGISTRY.read_text())
-        self.assertNotIn(str(registry["landing"]["number"]), registry["slices"])
-        for number, entry in registry["slices"].items():
-            role, selected = review_role(number, entry["branch"], registry["repository"], base=entry["base"])
-            self.assertEqual(role, "review")
-            for command in selected["checks"]:
-                self.assertEqual(command[0], "cargo")
-                self.assertIn(command[2], ["test", "check"])
-                self.assertIn("--locked", command)
-        registry["slices"]["844"]["checks"] = []
-        with self.assertRaises(ValueError):
-            review_role(844, "codex/syntax-s8r04-dynamic-binding", registry["repository"], registry, base=registry["slices"]["844"]["base"])
+    def test_cli_product_paths_select_the_affected_products(self):
+        for path in ("src/serve.rs", "src/cli/commands/format/mod.rs", "src/cli/bundle_web.rs"):
+            result = self.classify([path])
+            self.assertEqual(result["contract_families"], ["browser", "cli"])
+            self.assertTrue(result["browser_canary_required"])
+            self.assertFalse(result["native_validation_required"])
+        result = self.classify(["src/cli/commands/build.rs"])
+        self.assertTrue(result["native_validation_required"])
+        self.assertIn("linkage", result["contract_families"])
+        self.assertFalse(result["full_validation_required"])
 
-    def test_interactive_registration_is_reachable_from_numeric_pr_event(self):
-        from ci_review_slices import review_role
-        role, entry = review_role(837, "codex/syntax-s8e7-interactive", "mech-lang/mech", base="codex/syntax-s8e6-graph-planning")
-        self.assertEqual(role, "review")
-        self.assertTrue(any("interactive::tests::" in command for command in entry["checks"]))
+    def test_cli_authority_keeps_artifact_memory_runtime_and_native_contracts(self):
+        for path in ("src/cli/canonical_source.rs", "src/cli/host_grants.rs",
+                     "src/cli/commands/repl/session.rs", "src/cli/commands/run.rs"):
+            result = self.classify([path])
+            self.assertTrue({"artifact", "memory", "runtime", "linkage", "native", "browser"}
+                            <= set(result["contract_families"]))
+            self.assertTrue(result["browser_applications_required"])
+            self.assertNotIn("distribution", result["contract_families"])
 
-    def test_registry_rejects_nonnumeric_keys_and_preserves_minimal_config_check(self):
-        import json
-        from ci_review_slices import REGISTRY, review_role
-        registry = json.loads(REGISTRY.read_text())
-        checks = registry["slices"]["831"]["checks"]
-        self.assertTrue(any(command[command.index("--features") + 1] == "source"
-                            and "config_profile" in command for command in checks))
-        registry["slices"]["None"] = registry["slices"].pop("837")
-        with self.assertRaises(ValueError):
-            review_role(837, "codex/syntax-s8e7-interactive", "mech-lang/mech", registry)
+    def test_root_product_and_native_fixture_changes_run_their_contracts(self):
+        for path in ("tests/mech_build.rs", "tests/fixtures/native-linkage/src/main.rs",
+                     "tests/fixtures/native-live-host/Cargo.toml"):
+            self.assertTrue(self.classify([path])["native_validation_required"])
+        self.assertIn("browser", self.classify(["tests/mech_serve.rs"])["contract_families"])
 
-    def test_review_retargeting_cannot_keep_reduced_validation(self):
-        import json
-        from ci_review_slices import REGISTRY, review_role
-        registry = json.loads(REGISTRY.read_text())
-        for number, entry in registry["slices"].items():
-            self.assertEqual(review_role(number, entry["branch"], registry["repository"], base=entry["base"])[0], "review")
-            for target in ("integration/v0.4", "main", "unexpected/parent", ""):
-                with self.subTest(number=number, target=target):
-                    role, checks = review_role(number, entry["branch"], registry["repository"], base=target)
-                    self.assertEqual(role, "ordinary")
-                    self.assertIsNone(checks)
-                    result = CI_IMPACT.classify(["src/core/src/value.rs"], [], OWNERS, role)
-                    self.assertFalse(result["review_only"])
-                    self.assertTrue(result["standard_canaries_required"])
-                    self.assertTrue(result["browser_canary_required"])
-                    self.assertNotIn("s8-review-regressions", result["changed_owners"])
-                    self.assertTrue(CI_IMPACT.classify(["src/core/src/value.rs"], ["ci:full"], OWNERS, role)["full_validation_required"])
-        for target in ("integration/v0.4", registry["slices"]["844"]["branch"], "unexpected/parent"):
-            role, _ = review_role(830, registry["landing"]["branch"], registry["repository"], base=target)
-            self.assertEqual(role, "landing")
-            self.assertTrue(CI_IMPACT.classify([], [], OWNERS, role)["full_validation_required"])
+    def test_runtime_acceptance_tests_do_not_expand_to_every_owner(self):
+        result = self.classify(["src/runtime/tests/source_acceptance_cases/numeric.rs"])
+        self.assertEqual(result["changed_owners"], [])
+        self.assertEqual(result["contract_families"], ["runtime"])
+        self.assertFalse(result["cross_cutting_standard_suite_required"])
+        self.assertFalse(result["full_validation_required"])
 
-    def test_event_passes_base_to_both_role_consumers(self):
-        import json
-        import os
-        from unittest.mock import patch
-        from ci_review_slices import REGISTRY, environment_role
-        env = {"PR_NUMBER": "844", "PR_HEAD_REF": "codex/syntax-s8r04-dynamic-binding", "PR_HEAD_REPOSITORY": "mech-lang/mech", "PR_BASE_REF": "integration/v0.4", "PR_BASE_SHA": "a" * 40}
-        registry = json.loads(REGISTRY.read_text())
-        with patch("ci_review_slices.trusted_registry_from_revision", return_value=registry):
-            with patch.dict(os.environ, env, clear=True):
-                self.assertEqual(environment_role()[0], "ordinary")
-                os.environ["PR_BASE_REF"] = "codex/syntax-s8r03-bound-schemas"
-                self.assertEqual(environment_role()[0], "review")
-        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
-        self.assertEqual(workflow.count("PR_BASE_REF: ${{ github.event.pull_request.base.ref }}"), 2)
-        self.assertEqual(workflow.count("PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}"), 2)
+    def test_runtime_test_files_delegate_to_complete_runtime_family(self):
+        self.assertEqual(OWNERS["runtime-tests"]["command"], [])
+        for path in ("src/runtime/tests/canonical_document_outputs.rs",
+                     "src/runtime/tests/canonical_mixed_resource_planning.rs",
+                     "src/runtime/tests/recording_bench_facade.rs"):
+            result = self.classify([path])
+            self.assertEqual(result["changed_owners"], [])
+            self.assertEqual(result["contract_families"], ["runtime"])
+        result = self.classify(["src/runtime/tests/resident_external_contract.rs"])
+        self.assertIn("architecture", result["contract_families"])
 
-    def test_review_registry_is_loaded_from_the_trusted_base_revision(self):
-        import json
-        from types import SimpleNamespace
-        from unittest.mock import Mock
-        from ci_review_slices import REGISTRY, trusted_registry_from_revision
-        registry = json.loads(REGISTRY.read_text())
-        run = Mock(return_value=SimpleNamespace(stdout=json.dumps(registry)))
-        revision = "b" * 40
+    def test_dependent_owners_do_not_promote_every_change_to_full(self):
+        result = self.classify(["src/syntax/src/document/parser/canonical/mod.rs"])
+        self.assertIn("mech-core", result["changed_owners"])
+        self.assertFalse(result["full_validation_required"])
+        self.assertEqual(result["contract_families"], ["artifact", "browser", "language"])
+        self.assertTrue(result["browser_applications_required"])
+        combined = self.classify(["src/cli/commands/repl/presentation.rs", "machines/math/src/ops/add.rs"])
+        self.assertEqual(combined["contract_families"], ["artifact", "cli", "linkage", "numeric"])
 
-        self.assertEqual(trusted_registry_from_revision(revision, run), registry)
-        run.assert_called_once_with(
-            ["git", "show", f"{revision}:.github/ci/s8-review-slices.json"],
-            check=True,
-            capture_output=True,
-            text=True,
+    def test_ordinary_documentation_is_not_an_unknown_product(self):
+        for path in (
+            "docs/index.mec", "docs/LICENSE", "docs/reference/matrix.mec",
+            "docs/getting-started/repl.mec", "docs/mechdown/table.mec",
+            "docs/reference/commands/format.mec",
+        ):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertTrue(result["docs_only"])
+                self.assertEqual(result["matched_owners"], ["docs"])
+                self.assertEqual(result["unmatched_paths"], [])
+                self.assertEqual(result["owner_shards"], [])
+                self.assertEqual(result["contract_families"], [])
+                self.assertFalse(result["full_validation_required"])
+                self.assertFalse(result["dependent_contracts_required"])
+        self.assertFalse(self.classify(["docs/design/specification.mec"])["docs_only"])
+        self.assertFalse(self.classify(["docs/design/grammar-audit/README.mec"])["docs_only"])
+        self.assertFalse(self.classify(["tests/fixtures/format_static/main.mec"])["docs_only"])
+
+    def test_ordinary_docs_do_not_hide_authoritative_or_unknown_changes(self):
+        ordinary = ["docs/index.mec", "docs/LICENSE"]
+        for path in ("docs/design/specification.mec", "docs/design/grammar-audit/ports.tsv",
+                     "docs/design/grammar-audit/new-input.data", "docs/new-input.data"):
+            with self.subTest(path=path):
+                expected = self.classify([path])
+                result = self.classify([*ordinary, path])
+                self.assertFalse(result["docs_only"])
+                for key in ("changed_owners", "unmatched_paths", "contract_families",
+                            "full_validation_required", "standard_canaries_required"):
+                    self.assertEqual(result[key], expected[key], key)
+
+    def test_manual_measurement_rejects_invalid_identity_and_paths(self):
+        sha = "a" * 40
+        self.assertEqual(CI_IMPACT.representative_paths('["src/cli/outcome.rs"]', sha, sha), ["src/cli/outcome.rs"])
+        for ref in ("main", "", "b" * 40):
+            with self.assertRaises(ValueError):
+                CI_IMPACT.representative_paths('["src/cli/outcome.rs"]', ref, sha)
+        for encoded in ('[]', '{}', '[1]', '["/tmp/file"]', '["../source.rs"]', '["src//file"]', '["src/./file"]', 'null'):
+            with self.subTest(encoded=encoded), self.assertRaises(ValueError):
+                CI_IMPACT.representative_paths(encoded, sha, sha)
+        result = subprocess.run(
+            [sys.executable, str(SCRIPTS / "ci-impact.py"), "--representative-paths",
+             '["src/cli/outcome.rs"]', "--expected-revision", sha],
+            env=os.environ | {"GITHUB_EVENT_NAME": "pull_request"}, capture_output=True,
         )
-        self.assertIsNone(trusted_registry_from_revision("HEAD", run))
-        self.assertEqual(run.call_count, 1)
-
-    def test_review_gate_requires_focused_success_and_does_not_claim_full_success(self):
-        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
-        review_gate = workflow.split('if test "$REVIEW_ONLY" = true')[1].split('elif test "$DOCS_ONLY"')[0]
-        self.assertIn('test "$OWNER_RESULT" = success', review_gate)
-        self.assertIn('test "$LINUX_RESULT" = skipped', review_gate)
-        self.assertIn('test "$FULL_RESULT" = skipped', workflow)
-        self.assertIn("test ! -e src/syntax/src/parser.rs", workflow)
-        self.assertIn("tests/fixtures/full-source-runtime/Cargo.toml", workflow)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b"only in an explicit manual measurement", result.stderr)
 
 
 if __name__ == "__main__":
