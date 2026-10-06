@@ -6,7 +6,7 @@ use crate::dimension::{
 };
 use crate::{
     CanonicalNominalPath, DimensionExpr, DimensionParameterDeclaration, DimensionParameterId,
-    KindId, KindNameCategory, KindParameterId, NominalKey, SemanticModelError,
+    IntegerInterval, KindId, KindNameCategory, KindParameterId, NominalKey, SemanticModelError,
 };
 
 #[cfg(feature = "no_std")]
@@ -22,6 +22,7 @@ pub enum KindExpr {
     Hole,
     Parameter(KindParameterId),
     Named(KindId),
+    IntegerInterval(IntegerInterval),
     Id,
     Index,
     Atom(NominalKey),
@@ -143,6 +144,9 @@ pub(crate) fn dependency_ordered_dimension_references(
 
 pub(crate) fn validate_kind_structure(kind: &KindExpr) -> Result<(), SemanticModelError> {
     match kind {
+        KindExpr::IntegerInterval(interval) if !interval.is_valid() => {
+            return Err(SemanticModelError::InvalidIntegerIntervalV1);
+        }
         KindExpr::Matrix { element, .. }
         | KindExpr::Option(element)
         | KindExpr::Set { element, .. }
@@ -168,6 +172,7 @@ pub(crate) fn validate_kind_structure(kind: &KindExpr) -> Result<(), SemanticMod
         | KindExpr::Hole
         | KindExpr::Parameter(_)
         | KindExpr::Named(_)
+        | KindExpr::IntegerInterval(_)
         | KindExpr::Id
         | KindExpr::Index
         | KindExpr::Atom(_)
@@ -203,6 +208,7 @@ pub(crate) fn collect_kind_dimension_references(
         | KindExpr::Hole
         | KindExpr::Parameter(_)
         | KindExpr::Named(_)
+        | KindExpr::IntegerInterval(_)
         | KindExpr::Id
         | KindExpr::Index
         | KindExpr::Atom(_)
@@ -289,6 +295,7 @@ pub(crate) fn visit_kind_parameters(
         KindExpr::Wildcard
         | KindExpr::Never
         | KindExpr::Named(_)
+        | KindExpr::IntegerInterval(_)
         | KindExpr::Id
         | KindExpr::Index
         | KindExpr::Atom(_)
@@ -351,6 +358,7 @@ pub(crate) fn visit_kind_dimensions(
         | KindExpr::Hole
         | KindExpr::Parameter(_)
         | KindExpr::Named(_)
+        | KindExpr::IntegerInterval(_)
         | KindExpr::Id
         | KindExpr::Index
         | KindExpr::Atom(_)
@@ -369,6 +377,7 @@ pub(crate) fn rewrite_kind_dimensions(
         KindExpr::Hole => KindExpr::Hole,
         KindExpr::Parameter(id) => KindExpr::Parameter(*id),
         KindExpr::Named(id) => KindExpr::Named(*id),
+        KindExpr::IntegerInterval(interval) => KindExpr::IntegerInterval(*interval),
         KindExpr::Id => KindExpr::Id,
         KindExpr::Index => KindExpr::Index,
         KindExpr::Atom(key) => KindExpr::Atom(*key),
@@ -536,6 +545,35 @@ fn encode_kind_body(
                 .canonical_path(*id)
                 .ok_or(SemanticModelError::UnknownNamedKind { id: *id })?;
             bytes.extend_from_slice(&path.canonical_bytes());
+        }
+        KindExpr::IntegerInterval(interval) => {
+            bytes.push(0x12);
+            match interval {
+                IntegerInterval::Unsigned {
+                    width,
+                    lower,
+                    upper,
+                    upper_inclusive,
+                } => {
+                    bytes.push(0);
+                    bytes.extend_from_slice(&(*width as u16).to_le_bytes());
+                    bytes.extend_from_slice(&lower.to_le_bytes());
+                    bytes.extend_from_slice(&upper.to_le_bytes());
+                    bytes.push(u8::from(*upper_inclusive));
+                }
+                IntegerInterval::Signed {
+                    width,
+                    lower,
+                    upper,
+                    upper_inclusive,
+                } => {
+                    bytes.push(1);
+                    bytes.extend_from_slice(&(*width as u16).to_le_bytes());
+                    bytes.extend_from_slice(&lower.to_le_bytes());
+                    bytes.extend_from_slice(&upper.to_le_bytes());
+                    bytes.push(u8::from(*upper_inclusive));
+                }
+            }
         }
         KindExpr::Id => bytes.push(0x05),
         KindExpr::Index => bytes.push(0x06),

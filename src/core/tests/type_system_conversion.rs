@@ -366,3 +366,44 @@ fn matrix_and_option_plans_preserve_structure() {
         ConversionStep::OptionPayload(_)
     ));
 }
+
+#[test]
+fn explicit_optional_matrix_conversion_wraps_each_element_once() {
+    let matrix = |element| {
+        ResolvedType::new(
+            KindExpr::Matrix {
+                element: Box::new(element),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                    .into_boxed_slice(),
+            },
+            Box::new([]),
+        )
+        .unwrap()
+    };
+    let source = matrix(BuiltinScalarKind::U8.kind_expr());
+    let target = matrix(KindExpr::Option(Box::new(
+        BuiltinScalarKind::U16.kind_expr(),
+    )));
+    assert!(plan_implicit_conversion(&source, &target).is_err());
+    let plan = plan_explicit_cast(&source, &target).unwrap();
+    let some = |value| {
+        ValueDataDraft::Option(snapshot::OptionDraft {
+            present: true,
+            value: Some(Box::new(value)),
+        })
+    };
+    assert_eq!(
+        execute_conversion_draft(
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(255)].into_boxed_slice()
+            ),
+            &plan.step,
+        )
+        .unwrap(),
+        ValueDataDraft::Matrix(
+            vec![some(ValueDataDraft::U16(1)), some(ValueDataDraft::U16(255))].into_boxed_slice()
+        )
+    );
+    let unchanged = plan_explicit_cast(&target, &target).unwrap();
+    assert_eq!(unchanged.step, ConversionStep::Identity);
+}

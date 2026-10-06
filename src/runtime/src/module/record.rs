@@ -1,6 +1,7 @@
-use mech_core::{MechSourceCode, Program};
-use std::sync::Arc;
+use mech_core::MechSourceCode;
 
+#[cfg(feature = "source")]
+use crate::SourceDocument;
 use crate::{
     CapabilityRequest, ModuleId, ModuleScopeMetadata, ModuleVersionId, SourceAddressReference,
     SourceContextDeclaration, SourceExportDeclaration, SourceImportDeclaration, SourceKind,
@@ -14,7 +15,8 @@ pub struct RuntimeModuleRecord {
     pub canonical_uri: String,
     pub kind: SourceKind,
     pub source: MechSourceCode,
-    pub syntax_tree: Option<Arc<Program>>,
+    #[cfg(feature = "source")]
+    pub source_document: Option<SourceDocument>,
     pub compiler_version: String,
     pub language_edition: String,
     pub target: String,
@@ -37,7 +39,7 @@ impl RuntimeModuleRecord {
         canonical_uri: impl Into<String>,
         kind: SourceKind,
         source: MechSourceCode,
-        syntax_tree: Option<Arc<Program>>,
+        #[cfg(feature = "source")] source_document: Option<SourceDocument>,
         compiler_version: impl Into<String>,
         language_edition: impl Into<String>,
         target: impl Into<String>,
@@ -58,7 +60,8 @@ impl RuntimeModuleRecord {
             canonical_uri: canonical_uri.into(),
             kind,
             source,
-            syntax_tree,
+            #[cfg(feature = "source")]
+            source_document,
             compiler_version: compiler_version.into(),
             language_edition: language_edition.into(),
             target: target.into(),
@@ -72,5 +75,24 @@ impl RuntimeModuleRecord {
             capability_requirements,
             capability_requirement_keys,
         }
+    }
+
+    /// Read the retained canonical resolver authority without falling back to
+    /// the temporary Program cache carried for the pre-cutover shipping path.
+    #[cfg(feature = "source")]
+    pub fn canonical_document_index(&self) -> mech_core::MResult<crate::CanonicalDocumentIndex> {
+        self.source_document
+            .as_ref()
+            .ok_or_else(|| {
+                mech_core::MechError::new(
+                    crate::InvalidResolvedSourceError {
+                        field: "source_document",
+                        reason: "is required for canonical admission",
+                    },
+                    None,
+                )
+            })?
+            .index()
+            .map_err(|error| mech_core::MechError::new(error, None))
     }
 }

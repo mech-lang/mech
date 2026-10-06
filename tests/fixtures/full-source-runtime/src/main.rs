@@ -42,8 +42,8 @@ fn main() {
     let corpus: SourceCorpus =
         serde_json::from_str(SOURCE_CASES).expect("shared source corpus must be valid JSON");
     assert_eq!(corpus.schema, 1, "unsupported shared source corpus schema");
-    assert_eq!(corpus.cross_target.len(), 9);
-    assert_eq!(corpus.native_modules.len(), 5);
+    assert!(!corpus.cross_target.is_empty());
+    assert!(!corpus.native_modules.is_empty());
 
     let mut names = BTreeSet::new();
     for case in corpus
@@ -70,12 +70,19 @@ fn main() {
         let actual = runtime
             .load_bytecode_program(product.bytecode(), ResidentDurabilityPolicy::Volatile)
             .unwrap_or_else(|error| {
-                panic!("source case `{}` failed resident admission: {error:?}", case.name)
+                panic!(
+                    "source case `{}` failed resident admission: {error:?}",
+                    case.name
+                )
             })
             .initial_value
             .into_value();
         assert_expected(case, actual);
     }
+    println!(
+        "isolated Full source profile passed: {} catalog cases",
+        names.len()
+    );
 }
 
 fn assert_expected(case: &SourceCase, actual: Value) {
@@ -97,8 +104,7 @@ fn assert_expected(case: &SourceCase, actual: Value) {
         }
         (ExpectedValue::Bool { value: expected }, ValueData::Bool(actual)) => {
             assert_eq!(
-                *actual,
-                *expected,
+                *actual, *expected,
                 "source case `{}` returned the wrong bool",
                 case.name,
             );

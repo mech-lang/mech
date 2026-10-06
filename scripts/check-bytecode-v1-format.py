@@ -16,28 +16,32 @@ CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
-EXPECTED_MANIFEST_SHA256 = "2a9e0d3f38dbfea1743a3b65535256d78325475f4044859d9d170289ff6d52b0"
+# Source fixture seals cover the canonical artifact-only payload after canonical native compilation
+# retired the parallel compiled-program authority. The structural-match fixture
+# also retains canonical pattern metadata.
+EXPECTED_MANIFEST_SHA256 = "9341fe9e39746bfdc255fdb7d2173dc45d53bd15df5e78f220855468c16d586b"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
-    "literal-f64.mecb": "ee2bb56ea808f5f0eb394e19c50c297a3f77c43c08238eae29e61112e481ee06",
-    "scalar-add-f64.mecb": "0ca719d6cbfeddf431b4e0e5a82408a5f63780f0d4d4b68a4d9eecf7405e824c",
-    "fixed-matrix-add-f64.mecb": "f58faf82972d24921c908251046d11a750c608ec43c0d339dbd89de8bfe345f2",
-    "dynamic-matrix-add-f64.mecb": "51feae0e363828cdde860c14c8969eb79a32382699f64f14a18e3f966b86ea9d",
-    "variadic-horzcat-f64.mecb": "4f1a78777c046c7da86db3b8394b5e712cd0838938d9aa3c27ea8fdaf724094a",
-    "string.mecb": "f1d6f944a4b17053219e3ddc3b387113ac51817576d2b8021ae91e9fc51b6989",
-    "unary.mecb": "06121a378e5e5e1881ff767b12017e5f1531e043626a692f117d4068af9c5026",
-    "ternary.mecb": "f6f3956e0e0ad1ac4dbfbe34501ab46ce758fc5808adfebc68c1651aa3df35cb",
-    "quaternary.mecb": "12fb2a340abaa236dbd726868656e5746e4b5f6ac34ae15b4688c05911123079",
-    "named-module-operation.mecb": "994a63985c5f0f36626603f55d8dc6b7a5e6b1f5a42a115ee9f48ae68a94fe6e",
-    "cli-stdout.mecb": "6e5456c54a93a98112694410027941a244122eb15b44fb144d68d67f342474e4",
-    "console.mecb": "01e2d267d7e48075a6785ba6030cf9fe5efaf9d9240cdb291ba8df3863ae59f2",
-    "time.mecb": "4151d91d2fa3765d4966f1e0045063b504788328fd4ea5fea4db5b4e965bf175",
-    "timer.mecb": "f3ecd5c2bed4f2ad1701424ec63e3e7ce62686962dcbafe6e4cd5b43bb8a70c5",
-    "scene.mecb": "c27893275f0f8d3fdc5c7a618b1fd9125870c97bb0cff6a1b4bf86e17f60e997",
-    "robot-arm.mecb": "ad2ddf30cc62963b96c75618204de5ad89aa41354f2cc59b72d7352028387ebe",
-    "synthetic-live-read.mecb": "5a91a7cf32e83297a4e2c119e6cf46d93b692c82c08cc24f77fe0c4153793139",
+    "literal-f64.mecb": "2f48e8625c61e340d2c799223e9e73f6942a2a7da1ddcd36a2aa3b1e06095beb",
+    "scalar-add-f64.mecb": "df8995213e9bd1017130ba84af93a417477b8e91defeacc136c25f281278fe2c",
+    "structural-match.mecb": "e06f056d4a9d4b7b4643c0b8f4e7650f888a34499b53e6dfe64736fd698b3c88",
+    "fixed-matrix-add-f64.mecb": "038cfbac51b1e7b1f6e0aca4a92d7d01a08a072da394d5e1caefd494107a95be",
+    "dynamic-matrix-add-f64.mecb": "6c4f51f133801d3b7f2a0d2a1ce4a005a1b53d5ea37b52aca4ccfa59020d4865",
+    "variadic-horzcat-f64.mecb": "709c4d8c6c7c908fb451c7f66373f12b4586c55e4041f5cc4754f59c78624eb5",
+    "string.mecb": "7e35ecabd69db204d61e090a1d9d2e5faf2eb144d4aec556ca90605a4a0d9f6f",
+    "unary.mecb": "32c487a06018af669d1de163f2d5f37f3a42654991d000247e496ef109a85549",
+    "ternary.mecb": "8c769dd5460cc9cb9a84e6175fd4ba9f381cae85e49856783938e9599703c42e",
+    "quaternary.mecb": "e7766cea3412e06d925bb91024f004bd00bff37c0980c5bb11b548e7eae92e42",
+    "named-module-operation.mecb": "494d1e933124cab8eb64a0345c57113b48f00eb0298401cb76e290ed19f00fa4",
+    "cli-stdout.mecb": "8dd6bf520b4cc9bb5dac0b55f2c9299961ceab977051b3850643cf618ddb1100",
+    "console.mecb": "c22e97dd9d317a957fab7ff19cc97b3d3272fbf8226759eb26b91404f6c5128b",
+    "time.mecb": "177e865d965aa06d23d076cb01fd6ced8d652544a87afc0d880a3dbab16b6e57",
+    "timer.mecb": "c99991cc994d18f9ef89e1afae1dd6401ae5b174df51ad917a512fa91dfe0831",
+    "scene.mecb": "bee9ce3aa56a83a2fbd1133d9641d9fdf0a1bc25d92dabef512d363dc0ea01a5",
+    "robot-arm.mecb": "b8b9fd61c83db7e62149a512382803a41b7c69e93dbb5188828e87a3ec4897e9",
+    "synthetic-live-read.mecb": "d6aa82c891cd8471c4f1fcb748c75509b8e700331d6c73885d5b74ae77fe2108",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",
@@ -45,6 +49,7 @@ EXPECTED_FILES = [
     "canonical-composites.mecb",
     "literal-f64.mecb",
     "scalar-add-f64.mecb",
+    "structural-match.mecb",
     "fixed-matrix-add-f64.mecb",
     "dynamic-matrix-add-f64.mecb",
     "variadic-horzcat-f64.mecb",
@@ -88,6 +93,7 @@ EXPECTED_SOURCE_FILES = [
     "scalar-add.mec",
     "scene.mec",
     "string.mec",
+    "structural-match.mec",
     "synthetic-live-read.mec",
     "ternary.mec",
     "time.mec",
@@ -927,14 +933,28 @@ def validate_fixture(entry: dict[str, object]) -> None:
         decoded_requirements == entry.get("application_requirements"),
         f"{name}: decoded requirements disagree with manifest",
     )
-    decoded_runtime_ids, _ = decode_instructions(
-        section_payloads[4],
-        int(sections[4]["item_count"]),
-        register_count,
-        int(sections[1]["item_count"]),
-        decoded_requirements,
-        name,
-    )
+    if instruction_count == 0:
+        # Canonical artifact-only fixtures need no compatibility instruction
+        # stream; their executable graph lives in the revisioned artifact
+        # sections validated by the Rust contract suite.
+        require(
+            all(artifact_present),
+            f"{name}: an instruction-free fixture requires a ProgramArtifact payload",
+        )
+        require(
+            not section_payloads[4],
+            f"{name}: zero-count instruction section has payload bytes",
+        )
+        decoded_runtime_ids: set[int] = set()
+    else:
+        decoded_runtime_ids, _ = decode_instructions(
+            section_payloads[4],
+            int(sections[4]["item_count"]),
+            register_count,
+            int(sections[1]["item_count"]),
+            decoded_requirements,
+            name,
+        )
 
     runtime_ids = entry.get("runtime_function_ids")
     require(isinstance(runtime_ids, list), f"{name}: runtime function metadata is missing")

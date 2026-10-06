@@ -105,6 +105,7 @@ fn malformed_and_duplicate_overloads_are_rejected() {
         }]
         .into_boxed_slice(),
         template: None,
+        parameter_names: None,
     };
     let mut builder = FunctionCatalogBuilder::new();
     let error = builder
@@ -126,6 +127,7 @@ fn malformed_and_duplicate_overloads_are_rejected() {
     let duplicate = FunctionTypeDeclaration {
         overloads: vec![overload.clone(), overload].into_boxed_slice(),
         template: None,
+        parameter_names: None,
     };
     let error = builder
         .insert_canonical_specializer_with_contract(
@@ -526,7 +528,11 @@ fn resolve_named_overload_with_expected(
     inputs: &[ResolvedType],
     expected_outputs: Option<&[ResolvedType]>,
 ) -> Result<mech_core::ResolvedOverload, mech_core::TypeResolutionError> {
-    let declaration = maintained_source_type_declaration(name).unwrap();
+    let mut declaration = maintained_source_type_declaration(name).unwrap();
+    if let Some(template) = declaration.template {
+        let schemes = instantiate_source_scheme_template(template, inputs).unwrap();
+        declaration = FunctionTypeDeclaration::from_schemes(schemes);
+    }
     let candidates = declaration
         .overloads
         .iter()
@@ -618,12 +624,55 @@ fn equality_broadcasts_preserve_equatable_kinds_and_axes() {
 }
 
 #[test]
+fn index_comparisons_preserve_exact_elementwise_broadcasting() {
+    let matrix = |rows, columns| {
+        ResolvedType::new(
+            KindExpr::Matrix {
+                element: Box::new(KindExpr::Index),
+                dimensions: vec![
+                    DimensionExpr::Constant(rows),
+                    DimensionExpr::Constant(columns),
+                ]
+                .into_boxed_slice(),
+            },
+            Box::new([]),
+        )
+        .unwrap()
+    };
+    let index = ResolvedType::new(KindExpr::Index, Box::new([])).unwrap();
+    for name in [
+        "compare/eq",
+        "compare/neq",
+        "compare/lt",
+        "compare/lte",
+        "compare/gt",
+        "compare/gte",
+    ] {
+        for inputs in [
+            [matrix(2, 3), index.clone()],
+            [index.clone(), matrix(2, 3)],
+            [matrix(2, 3), matrix(2, 1)],
+            [matrix(2, 3), matrix(1, 3)],
+            [matrix(2, 3), matrix(2, 3)],
+        ] {
+            let resolved = resolve_named_overload(name, &inputs).unwrap();
+            assert_eq!(
+                resolved.outputs.as_ref(),
+                &[fixed_matrix(BuiltinScalarKind::Bool, 2, 3)],
+                "{name} returned the wrong Index broadcast shape"
+            );
+            assert!(resolved.conversions.iter().all(|plan| plan.cost == 0));
+        }
+        assert!(resolve_named_overload(name, &[matrix(2, 3), matrix(3, 2)]).is_err());
+    }
+}
+
+#[test]
 fn equality_broadcasts_reject_unsupported_nominal_and_structural_elements() {
     let atom = KindExpr::Atom(mech_core::NominalKey::from_bytes([7; 32]));
     let elements = [
         atom.clone(),
         KindExpr::Id,
-        KindExpr::Index,
         KindExpr::Option(Box::new(BuiltinScalarKind::Bool.kind_expr())),
         KindExpr::Tuple(vec![BuiltinScalarKind::F64.kind_expr()].into_boxed_slice()),
     ];
@@ -992,4 +1041,22 @@ fn rational_power_selects_its_exact_integral_exponent() {
             .iter()
             .all(|plan| matches!(plan.step, mech_core::ConversionStep::Identity))
     );
+}
+
+#[test]
+fn parameter_metadata_cannot_disagree_with_the_catalog_input_authority() {
+    for names in [vec!["left", "left"], vec!["left"], vec!["", "right"]] {
+        let mut declaration = maintained_source_type_declaration("math/sub").unwrap();
+        declaration.parameter_names = Some(names.into_iter().map(String::from).collect());
+        let mut builder = FunctionCatalogBuilder::new();
+        let error = builder
+            .insert_canonical_specializer_with_contract(
+                "math/sub",
+                declaration,
+                TEST_CONTRACT.clone(),
+                Arc::new(NeverSpecialize),
+            )
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "FunctionCatalogInvalidTypeDeclaration");
+    }
 }

@@ -69,9 +69,18 @@ pub struct GpuPlanBinding {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GpuPlanState {
     pub slot: u32,
+    /// Only recurrence state requires a shader-visible current/read binding.
+    /// Publications still own the same transactional double buffer.
+    #[serde(default = "recurrence_default")]
+    pub recurrence: bool,
     pub elements: u64,
     pub elements_per_instance: u64,
     pub initial_values: Vec<f32>,
+}
+
+fn recurrence_default() -> bool {
+    // Older v1 plans exposed both halves of all resident storage.
+    true
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -255,10 +264,15 @@ impl GpuExecutionPlan {
                     state.slot
                 )));
             }
-            for role in [
-                GpuExecutionBindingRole::StateRead,
-                GpuExecutionBindingRole::StateWrite,
-            ] {
+            let roles = if state.recurrence {
+                &[
+                    GpuExecutionBindingRole::StateRead,
+                    GpuExecutionBindingRole::StateWrite,
+                ][..]
+            } else {
+                &[GpuExecutionBindingRole::StateWrite][..]
+            };
+            for &role in roles {
                 if !self.bindings.iter().any(|binding| {
                     binding.role == role
                         && binding.slot == state.slot
@@ -269,6 +283,16 @@ impl GpuExecutionPlan {
                         state.slot
                     )));
                 }
+            }
+            if !state.recurrence
+                && self.bindings.iter().any(|binding| {
+                    binding.role == GpuExecutionBindingRole::StateRead && binding.slot == state.slot
+                })
+            {
+                return Err(GpuExecutionPlanError::Invalid(format!(
+                    "publication storage {} must not expose a shader read binding",
+                    state.slot
+                )));
             }
         }
         let constraint_codes = self
@@ -414,6 +438,7 @@ fn build_elementwise_plan(
         .state_initializers()
         .map(|(slot, elements, initializer)| GpuPlanState {
             slot: slot.get(),
+            recurrence: true,
             elements,
             elements_per_instance: elements,
             initial_values: initializer.to_vec(),
@@ -464,16 +489,18 @@ fn build_fixed_shape_plan(
         })
         .collect::<Vec<_>>();
     for state in &physical_states {
-        bindings.push(GpuPlanBinding {
-            binding: state.read_binding,
-            name: format!("state.{}.read", state.slot.get()),
-            access: GpuBindingAccess::Read,
-            role: GpuExecutionBindingRole::StateRead,
-            slot: state.slot.get(),
-            elements: state.elements as u64,
-            scalar: GpuPlanScalar::F32,
-            initial_values: None,
-        });
+        if let Some(read_binding) = state.read_binding {
+            bindings.push(GpuPlanBinding {
+                binding: read_binding,
+                name: format!("state.{}.read", state.slot.get()),
+                access: GpuBindingAccess::Read,
+                role: GpuExecutionBindingRole::StateRead,
+                slot: state.slot.get(),
+                elements: state.elements as u64,
+                scalar: GpuPlanScalar::F32,
+                initial_values: None,
+            });
+        }
         bindings.push(GpuPlanBinding {
             binding: state.write_binding,
             name: format!("state.{}.write", state.slot.get()),
@@ -502,6 +529,7 @@ fn build_fixed_shape_plan(
         .iter()
         .map(|state| GpuPlanState {
             slot: state.slot.get(),
+            recurrence: state.read_binding.is_some(),
             elements: state.elements as u64,
             elements_per_instance: state.elements_per_instance as u64,
             initial_values: state.initial_values.clone(),
@@ -614,6 +642,12 @@ fn physical_outputs(
                     .find(|binding| {
                         binding.role == GpuExecutionBindingRole::Output
                             && binding.slot == output.slot
+                    })
+                    .or_else(|| {
+                        bindings.iter().find(|binding| {
+                            binding.role == GpuExecutionBindingRole::Input
+                                && binding.slot == output.slot
+                        })
                     })
                     .ok_or_else(|| {
                         GpuExecutionPlanError::Invalid(format!(
@@ -750,6 +784,93 @@ mod tests {
             physical_layout: GpuPlanLayout::RowMajor,
         });
         assert!(plan.validate().is_err());
+    }
+
+    #[test]
+    fn physical_input_outputs_alias_input_only_when_no_output_binding_exists() {
+        let mut plan = test_execution_plan(5);
+        let output = |name: &str| GpuPlanOutput {
+            name: name.to_owned(),
+            slot: 1,
+            physical_output: 0,
+            elements: 5,
+            elements_per_instance: 5,
+            dimensions: vec![5],
+            sample_dimensions: vec![5],
+            physical_layout: GpuPlanLayout::RowMajor,
+        };
+        plan.outputs = vec![output("input"), output("input-alias")];
+        plan.physical_outputs = physical_outputs(&plan.outputs, &plan.bindings).unwrap();
+        plan.validate().unwrap();
+        assert!(plan.states.is_empty());
+        assert_eq!(plan.physical_outputs.len(), 1);
+        assert_eq!(plan.physical_outputs[0].binding, Some(0));
+        assert_eq!(plan.physical_outputs[0].aliases, ["input", "input-alias"]);
+        let decoded: GpuExecutionPlan =
+            serde_json::from_str(&serde_json::to_string(&plan).unwrap()).unwrap();
+        assert_eq!(decoded, plan);
+
+        // Elementwise lowering already owns an output buffer for this slot.
+        // Input bindings precede it, but must not silently replace that existing
+        // publication/transfer contract with an input readback.
+        plan.bindings.push(GpuPlanBinding {
+            binding: 1,
+            name: "existing-output".to_owned(),
+            access: GpuBindingAccess::ReadWrite,
+            role: GpuExecutionBindingRole::Output,
+            slot: 1,
+            elements: 5,
+            scalar: GpuPlanScalar::F32,
+            initial_values: None,
+        });
+        plan.physical_outputs = physical_outputs(&plan.outputs, &plan.bindings).unwrap();
+        plan.validate().unwrap();
+        assert_eq!(plan.physical_outputs.len(), 1);
+        assert_eq!(plan.physical_outputs[0].binding, Some(1));
+        assert_eq!(plan.physical_outputs[0].aliases, ["input", "input-alias"]);
+    }
+
+    #[test]
+    fn publication_storage_owns_a_double_buffer_without_a_shader_read() {
+        let mut plan = test_execution_plan(2);
+        plan.states.push(GpuPlanState {
+            slot: 2,
+            recurrence: false,
+            elements: 2,
+            elements_per_instance: 2,
+            initial_values: vec![0.0; 2],
+        });
+        plan.bindings.push(GpuPlanBinding {
+            binding: 1,
+            name: "publication.write".to_owned(),
+            access: GpuBindingAccess::ReadWrite,
+            role: GpuExecutionBindingRole::StateWrite,
+            slot: 2,
+            elements: 2,
+            scalar: GpuPlanScalar::F32,
+            initial_values: None,
+        });
+        plan.validate().unwrap();
+        plan.states[0].recurrence = true;
+        assert!(
+            plan.validate()
+                .unwrap_err()
+                .to_string()
+                .contains("StateRead")
+        );
+        let mut read = plan.bindings[1].clone();
+        read.binding = 2;
+        read.access = GpuBindingAccess::Read;
+        read.role = GpuExecutionBindingRole::StateRead;
+        plan.bindings.push(read);
+        plan.validate().unwrap();
+        plan.states[0].recurrence = false;
+        assert!(
+            plan.validate()
+                .unwrap_err()
+                .to_string()
+                .contains("must not expose")
+        );
     }
 
     #[test]

@@ -5,40 +5,16 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::LazyLock;
 
 use crate::{
-    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
-    BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
-    CompiledMatrixLiteral, ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction,
-    InputPortLayout, InputPortPolicy, MResult, MechError, OperationContractDeclaration,
-    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueCell,
-    compare_application_requirements, hash_str, write_bytecode,
+    ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction, BytecodeProgram,
+    BytecodeRegisterIdentity, BytecodeValidationError, CompiledMatrixLiteral, ComputePlacement,
+    EncodedConstant, MResult, MechError, OperationContractDeclaration, ParsedProgram, Register,
+    ValueCell, compare_application_requirements, hash_str, write_bytecode,
 };
 
-static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Variadic {
-            prefix: vec![InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            }]
-            .into_boxed_slice(),
-            repeated: InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            },
-            min_repetitions: 0,
-        },
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::AlwaysChanged,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    });
+static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    crate::maintained_operation_contract("core/composite-pack", 0, false)
+        .expect("canonical composite declaration is maintained")
+});
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CompiledNodeKind {
@@ -106,7 +82,7 @@ pub struct CompiledBytecode {
     /// Immutable semantic call certificate for each executable instruction,
     /// parallel to `program.instructions`.
     pub instruction_type_bindings: Vec<Option<crate::BoundCall>>,
-    /// Process-local R5 memory plan parallel to `program.instructions`.
+    /// Process-local memory plan parallel to `program.instructions`.
     /// This sidecar is intentionally absent from bytecode-v1.
     pub instruction_memory_plans: Vec<Option<crate::CallMemoryPlan>>,
     /// Canonical schema authority for registers owned by canonical cells.
@@ -626,7 +602,7 @@ impl CompileCtx {
                 ));
             }
         }
-        // The resolved descriptor is the R4 schema authority. Compiler
+        // The resolved descriptor is the semantic schema authority. Compiler
         // constants can still contribute a closed physical schema body while
         // their source call carries a dynamic semantic dimension; once the
         // immutable BoundCall completes the descriptor sidecar, keep the
@@ -927,7 +903,7 @@ impl BytecodeCompilerContext for CompileCtx {
         if let Some(descriptor) = self.register_type_descriptors.get(&register) {
             // Physical constant encoders still report a closed storage body.
             // Once a semantic descriptor exists, that compatibility metadata
-            // cannot replace or contradict the R4 type authority.
+            // cannot replace or contradict the semantic type authority.
             if descriptor.schema().body() != &schema {
                 return Ok(());
             }

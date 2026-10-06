@@ -160,28 +160,7 @@ fn logic_full_write_contract(
     input_count: usize,
     change_detection: ChangeDetectionPolicy,
 ) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            (0..input_count)
-                .map(|_| InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                })
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
+    mech_core::elementwise_operation_contract(input_count, change_detection)
 }
 
 #[cfg(any(feature = "and", feature = "or", feature = "xor"))]

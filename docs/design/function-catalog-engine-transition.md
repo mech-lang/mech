@@ -1,7 +1,6 @@
 # Function catalog execution architecture
 
-Status: the PR3 static-composition transition is complete. Standard catalog
-composition now belongs to `mech-stdlib`; see
+Standard catalog composition belongs to `mech-stdlib`; see
 [Static standard-library composition](static-stdlib-composition.md) for the
 resulting package and feature boundaries.
 
@@ -94,7 +93,7 @@ through child interpreters, module operations, clear operations, and rollback.
 Canonical operation names, concrete runtime factory names and IDs, the frozen
 source surface, and specialization selections remain unchanged.
 
-PR3 completed the composition transition. `mech-engine` has no dependency on a
+`mech-engine` has no dependency on a
 standard machine and no standard-catalog constructor or fallback.
 `mech-stdlib::runtime_catalog()` composes the exact runtime factories selected
 by its feature closure. `mech-stdlib::source_catalog()` composes the same
@@ -109,5 +108,5 @@ and bytecode lowering behind `runtime`, `source`, and `compiler`. A machine's
 operators such as `+` to the canonical name `math/add`, but only a selected
 machine implementation can provide that operation.
 
-`.mecb`-driven derivation of a minimal native application's exact
-`mech-stdlib` feature closure belongs to PR4.
+Native application builds derive the exact `mech-stdlib` feature closure from
+the `.mecb` artifact; see [Native application builds](native-application-builds.md).

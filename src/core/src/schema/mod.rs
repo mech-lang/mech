@@ -7,6 +7,7 @@ mod validation;
 
 pub use self::shape::*;
 pub use self::table::*;
+pub use self::validation::rebase_schema_draft_dimensions;
 
 pub(crate) use self::validation::is_body_keyable as is_schema_body_keyable;
 
@@ -98,6 +99,7 @@ pub enum SchemaBody {
     Bool,
     UnsignedInteger(IntegerWidth),
     SignedInteger(IntegerWidth),
+    IntegerInterval(IntegerInterval),
     FloatingPoint(FloatWidth),
     Complex(FloatWidth),
     Rational64,
@@ -130,6 +132,92 @@ pub enum SchemaBody {
         cardinality: ExtentSpec,
     },
     ReifiedType,
+}
+
+/// A closed, constant interval over one exact integer kind. The lower bound is
+/// inclusive; the upper bound follows the source range operator.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum IntegerInterval {
+    Unsigned {
+        width: IntegerWidth,
+        lower: u128,
+        upper: u128,
+        upper_inclusive: bool,
+    },
+    Signed {
+        width: IntegerWidth,
+        lower: i128,
+        upper: i128,
+        upper_inclusive: bool,
+    },
+}
+
+impl IntegerInterval {
+    pub fn is_valid(self) -> bool {
+        match self {
+            Self::Unsigned {
+                width,
+                lower,
+                upper,
+                upper_inclusive,
+            } => {
+                let max = if width == IntegerWidth::W128 {
+                    u128::MAX
+                } else {
+                    (1_u128 << (width as u16)) - 1
+                };
+                upper <= max && (lower < upper || (upper_inclusive && lower == upper))
+            }
+            Self::Signed {
+                width,
+                lower,
+                upper,
+                upper_inclusive,
+            } => {
+                let (min, max) = if width == IntegerWidth::W128 {
+                    (i128::MIN, i128::MAX)
+                } else {
+                    let half = 1_i128 << ((width as u16) - 1);
+                    (-half, half - 1)
+                };
+                lower >= min
+                    && upper <= max
+                    && (lower < upper || (upper_inclusive && lower == upper))
+            }
+        }
+    }
+
+    pub fn base_body(self) -> SchemaBody {
+        match self {
+            Self::Unsigned { width, .. } => SchemaBody::UnsignedInteger(width),
+            Self::Signed { width, .. } => SchemaBody::SignedInteger(width),
+        }
+    }
+
+    pub fn contains_unsigned(self, value: u128) -> bool {
+        match self {
+            Self::Unsigned {
+                lower,
+                upper,
+                upper_inclusive,
+                ..
+            } => value >= lower && (value < upper || (upper_inclusive && value == upper)),
+            Self::Signed { .. } => false,
+        }
+    }
+
+    pub fn contains_signed(self, value: i128) -> bool {
+        match self {
+            Self::Signed {
+                lower,
+                upper,
+                upper_inclusive,
+                ..
+            } => value >= lower && (value < upper || (upper_inclusive && value == upper)),
+            Self::Unsigned { .. } => false,
+        }
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

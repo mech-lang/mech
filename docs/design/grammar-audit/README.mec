@@ -1,0 +1,61 @@
+Canonical Grammar Data
+===============================================================================
+
+The normative language grammar is docs/design/specification.mec. This directory
+contains its generated dependencies, rule identities, syntax schemas, and current
+conformance inputs. Source history retains the completed parser migration and
+qualification diaries; they are not ongoing update obligations.
+
+Current responsibilities
+-------------------------------------------------------------------------------
+
+- ports.tsv maps specification grammar names to stable RuleIds, syntax node
+  policies, semantic dispositions, and parser reachability. The stable rule-ID
+  registry is generated from this input; audit metadata stays in this table.
+- canonical-dependencies.tsv and grammar-component-boundaries.tsv describe the specification
+  dependency graph. recursive-core.tsv identifies the recursive component.
+- recursive-core-syntax-schema.tsv defines typed syntax structure and accessor contracts.
+- recursive-core-certification.tsv and document-certification.tsv contain executable
+  accepted, rejected, recovery, and typed-view expectations. These are live conformance data and generator inputs.
+- recursive-core-semantic-errors.tsv contains current semantic-error witnesses.
+  Runtime behavior and supported target outcomes belong to their owner tests. Syntax acceptance alone does
+  not imply that every target can activate the resulting artifact.
+- document-rule-dispositions.tsv is generated document-reachability data used by the parser
+  and its certification suite.
+- corrections.tsv and discrepancies.mec preserve stable specification decisions
+  referenced by conformance cases.
+- fixed-integer-intervals.md documents the current fixed-integer interval
+  language, type, publication, and transport contract.
+- acceptance-receipt.json records the selected pre-cleanup source and qualification
+  evidence. It does not qualify later changes automatically.
+
+Source tools consume canonical lossless syntax. The engine owns source semantics
+and artifact construction; runtime owns activation, execution, resources, effects,
+and host interfaces. See docs/design/canonical-source-boundary.mec.
+
+Conformance
+-------------------------------------------------------------------------------
+
+Grammar changes update the specification, implementation mapping, generated
+registries, and behavior cases together. The generation scripts offer --check to
+verify current outputs. Recognition and typed-cast checks complement independent
+semantic and product tests; a clean tree or artifact fingerprint alone is not
+runtime behavior evidence.
+
+Recovery evidence uses canonical syntax kinds, flags, source ranges, token text,
+and normalized diagnostics. Codes, expected/found syntax, labels, fixes, and
+recovery actions are structural contracts. Presentation wording and transient
+snapshot identities are excluded.
+
+Grammar notation
+-------------------------------------------------------------------------------
+
+Definitions use := and end with a semicolon. Sequence uses commas; alternatives
+use |. Prefix ? means optional, * means zero-or-more, + means one-or-more,
+¬ means excluded, and > means lookahead. Parentheses group expressions; the
+existing two-operand square-bracket form denotes separated lists. Terminals
+are quoted and terminal ranges use .. . Grammar names use kebab-case.
+
+The grammar notation does not encode parser cuts, recovery, resource limits,
+feature gates, or complete-consumption policy. Those belong to parser and
+validation contracts.

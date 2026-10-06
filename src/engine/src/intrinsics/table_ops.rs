@@ -4,31 +4,9 @@ use std::borrow::Cow;
 use std::sync::LazyLock;
 
 pub(crate) static PURE_TABLE_JOIN_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-            ]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
+    LazyLock::new(|| {
+        mech_core::maintained_operation_contract("table/join", 2, false)
+            .expect("maintained table join contract")
     });
 
 #[derive(Clone, Copy, Debug)]
@@ -167,7 +145,7 @@ fn sequence_draft_at(
     draft.ok_or_else(|| table_join_error("table row index exceeds its canonical column"))
 }
 
-fn sequence_language_eq_at(
+pub(crate) fn sequence_language_eq_at(
     schema: &SchemaBody,
     lhs: SequenceView<'_>,
     lhs_row: usize,
@@ -969,14 +947,14 @@ mod tests {
         let table = |id| {
             ValueCell::from_schema_data(
                 SchemaBody::Table {
-                    columns: vec![field("id", SchemaBody::UnsignedInteger(IntegerWidth::W64))]
+                    columns: vec![field("id", SchemaBody::UnsignedInteger(IntegerWidth::W8))]
                         .into_boxed_slice(),
                     rows: CardinalitySpec::Dynamic { upper_bound: None },
                 },
                 ValueDataDraft::Table(
                     vec![TableColumnDraft {
                         name: "id".to_owned(),
-                        values: vec![ValueDataDraft::U64(id)].into_boxed_slice(),
+                        values: vec![ValueDataDraft::U8(id)].into_boxed_slice(),
                     }]
                     .into_boxed_slice(),
                 ),
@@ -992,28 +970,31 @@ mod tests {
                 TableJoinFxn::from_invocation(invocation.clone(), JoinMode::Inner).unwrap(),
                 invocation,
             ),
-            ResolvedOperationDescriptor::from_name(
-                "table/inner-join",
-                PURE_TABLE_JOIN_CONTRACT.clone(),
-            )
-            .unwrap(),
-            RuntimeFunctionId::from_name("TableJoinInner"),
+            ResolvedOperationDescriptor::from_name("table/join", PURE_TABLE_JOIN_CONTRACT.clone())
+                .unwrap(),
+            RuntimeFunctionId::from_name("TableJoinFxn::Inner"),
             ExecutionTarget::DirectRuntime,
             ImplementationMemoryClass::CanonicalFinalize,
         )
         .unwrap();
 
-        rhs.replace(&table(1).snapshot().unwrap()).unwrap();
-        specialized.instance().solve_result().unwrap();
+        assert_eq!(
+            TableInnerJoinFxn::declared_operation_contract(),
+            mech_core::maintained_operation_contract("table/join", 2, false).as_ref(),
+        );
+        for (id, expected) in [(1, vec![1]), (2, vec![]), (1, vec![1])] {
+            rhs.replace(&table(id).snapshot().unwrap()).unwrap();
+            specialized.instance().solve_result().unwrap();
 
-        let value = output.snapshot().unwrap();
-        let ValueData::Table(table) = value.data() else {
-            panic!("join output must remain a table")
-        };
-        let mech_core::snapshot::SequenceView::U64(values) = table.column(0).unwrap() else {
-            panic!("join key column must remain packed u64")
-        };
-        assert_eq!(values, &[1]);
+            let value = output.snapshot().unwrap();
+            let ValueData::Table(table) = value.data() else {
+                panic!("join output must remain a table")
+            };
+            let mech_core::snapshot::SequenceView::U8(values) = table.column(0).unwrap() else {
+                panic!("join key column must remain packed u8")
+            };
+            assert_eq!(values, expected);
+        }
     }
 }
 

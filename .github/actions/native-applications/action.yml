@@ -1,0 +1,66 @@
+name: Native application command sets
+description: Run the existing native engine or hosted targets with retained stage diagnostics
+inputs:
+  suite:
+    description: engine or hosted
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Validate command-set identity
+      shell: bash
+      env:
+        SUITE: ${{ inputs.suite }}
+      run: |
+        case "$SUITE" in engine|hosted) ;; *) exit 64 ;; esac
+    - name: Engine literal, scalar, representative, output-seed, and argument targets
+      if: inputs.suite == 'engine'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage engine-scalars --timeout-secs 3600 -- \
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
+          --test native_literal --test native_scalar --test native_representative_families \
+          --test native_output_seed_arities --test native_generated_arguments -- --nocapture
+    - name: Engine generated end-to-end targets
+      if: inputs.suite == 'engine'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage engine-generated --timeout-secs 3600 -- \
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts \
+          --test native_generated_end_to_end -- --nocapture
+    - name: Hosted CLI targets
+      if: inputs.suite == 'hosted'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage hosted-cli --timeout-secs 2700 -- \
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_cli_hosted
+    - name: Hosted console generated case
+      if: inputs.suite == 'hosted'
+      shell: bash
+      env:
+        MECH_NATIVE_GENERATED_CASE: console
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage hosted-console --timeout-secs 2700 -- \
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end
+    - name: CLI build library integration
+      if: inputs.suite == 'hosted'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage cli-build-library --timeout-secs 1500 -- \
+          cargo +nightly-2026-03-03 test -p mech --features build --lib cli::app::tests::build_
+    - name: CLI build integration target
+      if: inputs.suite == 'hosted'
+      shell: bash
+      run: |
+        python3 scripts/run-native-plan-stage.py --stage cli-build-integration --timeout-secs 1500 -- \
+          cargo +nightly-2026-03-03 test -p mech --features build --test mech_build
+    - name: Retain native application diagnostics
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: native-${{ inputs.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          target/native-plan-logs
+          target/bytecode-v1-fixtures/owner-runner/logs
+        if-no-files-found: error
+        retention-days: 14

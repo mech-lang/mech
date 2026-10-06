@@ -1,0 +1,4 @@
+config := {
+  serve: {port: 2000}
+  run: {paths: ["main.mec"]}
+}

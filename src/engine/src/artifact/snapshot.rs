@@ -1,7 +1,7 @@
 //! Lossless projection of finalized snapshot data back into validated drafts.
 //!
 //! Bytecode-v1 and compiler literal folding share this one conversion so every
-//! C2 snapshot family has the same total semantic representation.
+//! canonical snapshot family has the same total semantic representation.
 
 use mech_core::snapshot::{
     EnumDraft, MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedType, ReifiedTypeDraft,
@@ -11,6 +11,9 @@ use mech_core::{SchemaBody, ValueData, ValueDataDraft};
 
 pub(super) fn data_draft(data: &ValueData, schema: &SchemaBody) -> Option<ValueDataDraft> {
     Some(match (data, schema) {
+        (ValueData::Dynamic(_), SchemaBody::Dynamic) => {
+            mech_core::snapshot::canonical_snapshot_data_draft(schema, data).ok()?
+        }
         (ValueData::U8(value), _) => ValueDataDraft::U8(*value),
         (ValueData::U16(value), _) => ValueDataDraft::U16(*value),
         (ValueData::U32(value), _) => ValueDataDraft::U32(*value),

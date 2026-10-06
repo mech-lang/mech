@@ -31,7 +31,7 @@ resident-artifact = [
 ]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
-source = ["runtime", "dep:mech-syntax"]
+source = ["runtime", "artifact-codec", "dep:mech-syntax", "mech-core/range"]
 semantic-compiler = [
   "source",
   "artifact-codec",
@@ -515,7 +515,7 @@ required-features = ["compiler"]
 
 [[test]]
 name = "resident_ekf_artifact_closure"
-required-features = ["compiler", "resident-artifact"]
+required-features = ["semantic-compiler", "resident-artifact"]
 
 [[test]]
 name = "resident_ekf_contract"
@@ -523,8 +523,8 @@ required-features = ["resident-ekf"]
 
 [[test]]
 name = "resident_ekf_program_activation"
-required-features = ["compiler", "resident-artifact"]
+required-features = ["semantic-compiler", "resident-artifact"]
 
 [[test]]
 name = "resident_ekf_program_execution"
-required-features = ["compiler", "resident-artifact"]
+required-features = ["semantic-compiler", "resident-artifact"]

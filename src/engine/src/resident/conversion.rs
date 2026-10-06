@@ -28,42 +28,6 @@ fn displayed_bytes(value: impl core::fmt::Display) -> Result<usize, ResidentKern
     Ok(counter.0)
 }
 
-fn projected_string_value_bytes(
-    value: &mech_core::ValueData,
-) -> Result<usize, ResidentKernelError> {
-    use mech_core::ValueData;
-
-    match value {
-        ValueData::U8(value) => displayed_bytes(value),
-        ValueData::U16(value) => displayed_bytes(value),
-        ValueData::U32(value) => displayed_bytes(value),
-        ValueData::U64(value) => displayed_bytes(value),
-        ValueData::U128(value) => displayed_bytes(value),
-        ValueData::I8(value) => displayed_bytes(value),
-        ValueData::I16(value) => displayed_bytes(value),
-        ValueData::I32(value) => displayed_bytes(value),
-        ValueData::I64(value) => displayed_bytes(value),
-        ValueData::I128(value) => displayed_bytes(value),
-        ValueData::F32(value) => displayed_bytes(value.to_f32()),
-        ValueData::F64(value) => displayed_bytes(value.to_f64()),
-        ValueData::Complex32(value) => displayed_bytes(value.real().to_f32())?
-            .checked_add(displayed_bytes(value.imaginary().to_f32())?)
-            .and_then(|bytes| bytes.checked_add(2))
-            .ok_or(ResidentKernelError::InvalidShape),
-        ValueData::Complex64(value) => displayed_bytes(value.real().to_f64())?
-            .checked_add(displayed_bytes(value.imaginary().to_f64())?)
-            .and_then(|bytes| bytes.checked_add(2))
-            .ok_or(ResidentKernelError::InvalidShape),
-        ValueData::Rational64(value) => displayed_bytes(value.numerator())?
-            .checked_add(displayed_bytes(value.denominator())?)
-            .and_then(|bytes| bytes.checked_add(1))
-            .ok_or(ResidentKernelError::InvalidShape),
-        ValueData::Bool(value) => Ok(if *value { 4 } else { 5 }),
-        ValueData::String(value) => Ok(value.len()),
-        _ => Err(ResidentKernelError::InvalidInput),
-    }
-}
-
 fn projected_display_sequence<T: core::fmt::Display>(
     values: &[T],
 ) -> Result<usize, ResidentKernelError> {
@@ -72,6 +36,12 @@ fn projected_display_sequence<T: core::fmt::Display>(
             .checked_add(displayed_bytes(value)?)
             .ok_or(ResidentKernelError::InvalidShape)
     })
+}
+
+pub(super) fn projected_snapshot_string_payload(
+    value: &mech_core::Value,
+) -> Result<usize, ResidentKernelError> {
+    super::budget::projected_snapshot_string_payload(value)
 }
 
 fn projected_string_payload(input: ResidentValueRef<'_>) -> Result<usize, ResidentKernelError> {
@@ -93,76 +63,7 @@ fn projected_string_payload(input: ResidentValueRef<'_>) -> Result<usize, Reside
                 .checked_add(value.len())
                 .ok_or(ResidentKernelError::InvalidShape)
         }),
-        ResidentValueRef::Snapshot([Some(value)]) => match value.data() {
-            mech_core::ValueData::Matrix(matrix) => match matrix.elements() {
-                SequenceView::U8(values) => projected_display_sequence(values),
-                SequenceView::U16(values) => projected_display_sequence(values),
-                SequenceView::U32(values) => projected_display_sequence(values),
-                SequenceView::U64(values) => projected_display_sequence(values),
-                SequenceView::U128(values) => projected_display_sequence(values),
-                SequenceView::I8(values) => projected_display_sequence(values),
-                SequenceView::I16(values) => projected_display_sequence(values),
-                SequenceView::I32(values) => projected_display_sequence(values),
-                SequenceView::I64(values) => projected_display_sequence(values),
-                SequenceView::I128(values) => projected_display_sequence(values),
-                SequenceView::F32(values) => values.iter().try_fold(0usize, |bytes, value| {
-                    bytes
-                        .checked_add(displayed_bytes(value.to_f32())?)
-                        .ok_or(ResidentKernelError::InvalidShape)
-                }),
-                SequenceView::F64(values) => values.iter().try_fold(0usize, |bytes, value| {
-                    bytes
-                        .checked_add(displayed_bytes(value.to_f64())?)
-                        .ok_or(ResidentKernelError::InvalidShape)
-                }),
-                SequenceView::Complex32(values) => {
-                    values.iter().try_fold(0usize, |bytes, value| {
-                        bytes
-                            .checked_add(projected_string_value_bytes(
-                                &mech_core::ValueData::Complex32(*value),
-                            )?)
-                            .ok_or(ResidentKernelError::InvalidShape)
-                    })
-                }
-                SequenceView::Complex64(values) => {
-                    values.iter().try_fold(0usize, |bytes, value| {
-                        bytes
-                            .checked_add(projected_string_value_bytes(
-                                &mech_core::ValueData::Complex64(*value),
-                            )?)
-                            .ok_or(ResidentKernelError::InvalidShape)
-                    })
-                }
-                SequenceView::Rational64(values) => {
-                    values.iter().try_fold(0usize, |bytes, value| {
-                        bytes
-                            .checked_add(projected_string_value_bytes(
-                                &mech_core::ValueData::Rational64(value.clone()),
-                            )?)
-                            .ok_or(ResidentKernelError::InvalidShape)
-                    })
-                }
-                SequenceView::Bool(values) => values.iter().try_fold(0usize, |bytes, value| {
-                    bytes
-                        .checked_add(if *value { 4 } else { 5 })
-                        .ok_or(ResidentKernelError::InvalidShape)
-                }),
-                SequenceView::String(values) => values.iter().try_fold(0usize, |bytes, value| {
-                    bytes
-                        .checked_add(value.len())
-                        .ok_or(ResidentKernelError::InvalidShape)
-                }),
-                SequenceView::Values(values) => values.iter().try_fold(0usize, |bytes, value| {
-                    bytes
-                        .checked_add(projected_string_value_bytes(value)?)
-                        .ok_or(ResidentKernelError::InvalidShape)
-                }),
-                SequenceView::Id(_) | SequenceView::Index(_) | SequenceView::Unit(_) => {
-                    Err(ResidentKernelError::InvalidInput)
-                }
-            },
-            value => projected_string_value_bytes(value),
-        },
+        ResidentValueRef::Snapshot([Some(value)]) => projected_snapshot_string_payload(value),
         ResidentValueRef::Snapshot(_) => Err(ResidentKernelError::InvalidInput),
     }
 }
@@ -184,6 +85,227 @@ fn logical_input_len(input: ResidentValueRef<'_>) -> Result<usize, ResidentKerne
         ResidentValueRef::Snapshot(_) => Err(ResidentKernelError::InvalidInput),
         input => Ok(input.len()),
     }
+}
+
+fn resolve_live_matrix_conversion_shape(
+    kernel: &BoundResidentKernel,
+    input: ResidentValueRef<'_>,
+    plan: &ResidentConversionPlan,
+) -> Result<(mech_core::ShapeInstance, usize), ResidentKernelError> {
+    let ResidentValueRef::Snapshot([Some(value)]) = input else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let source_schema = value
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    if source_schema.body() != &plan.source {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let SchemaBody::Matrix { dimensions, .. } = source_schema.body() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let [rows, columns] = dimensions.as_ref() else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let rows = value
+        .shape()
+        .resolve_dimension(rows)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = value
+        .shape()
+        .resolve_dimension(columns)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let count = usize::try_from(
+        rows.checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )
+    .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let mech_core::ValueData::Matrix(matrix) = value.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if matrix.elements().len() != count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let target_schema = schemas
+        .get(metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    if target_schema.body() != &plan.target {
+        return Err(ResidentKernelError::InvalidOutput);
+    }
+    let shape = match target_schema.body() {
+        SchemaBody::Matrix { .. } => {
+            mech_core::shape_for_resolved_extents(target_schema, &[rows, columns])
+        }
+        SchemaBody::Option(payload) => {
+            let SchemaBody::Matrix { element, .. } = payload.as_ref() else {
+                return Err(ResidentKernelError::InvalidOutput);
+            };
+            let actual = SchemaBody::Option(Box::new(SchemaBody::Matrix {
+                element: element.clone(),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(rows),
+                    mech_core::DimensionExpr::Constant(columns),
+                ]
+                .into_boxed_slice(),
+            }));
+            mech_core::shape_for_schema_components(
+                target_schema,
+                &[(target_schema.body(), actual)],
+                None,
+            )
+        }
+        _ => return Err(ResidentKernelError::InvalidOutput),
+    }
+    .map_err(|_| ResidentKernelError::InvalidShape)?;
+    Ok((shape, count))
+}
+
+fn preflight_live_matrix_conversion(
+    kernel: &BoundResidentKernel,
+    input: ResidentValueRef<'_>,
+    output: &ResidentValueMut<'_>,
+    output_elements: usize,
+    target_schema: &SchemaBody,
+) -> Result<(), ResidentKernelError> {
+    let ResidentValueRef::Snapshot([Some(value)]) = input else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::Snapshot(values) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    let input_footprint = match value.data() {
+        mech_core::ValueData::Matrix(matrix)
+            if !matches!(
+                matrix.elements(),
+                SequenceView::Values(_) | SequenceView::String(_)
+            ) =>
+        {
+            value
+                .retained_footprint(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?
+        }
+        _ => super::budget::measure_canonical_value_footprint(&mut meter, value, schemas)?,
+    };
+    let current_footprint = values
+        .first()
+        .and_then(|value| value.as_ref())
+        .map(|value| super::budget::measure_canonical_value_footprint(&mut meter, value, schemas))
+        .transpose()?;
+    let output_elements_u64 = super::budget::checked_u64(output_elements)?;
+    let target_element = match target_schema {
+        SchemaBody::Matrix { element, .. } => element.as_ref(),
+        body => body,
+    };
+    let fixed_width = match target_element {
+        SchemaBody::Bool
+        | SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8)
+        | SchemaBody::SignedInteger(mech_core::IntegerWidth::W8) => Some(1),
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W16)
+        | SchemaBody::SignedInteger(mech_core::IntegerWidth::W16) => Some(2),
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W32)
+        | SchemaBody::SignedInteger(mech_core::IntegerWidth::W32)
+        | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => Some(4),
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+        | SchemaBody::SignedInteger(mech_core::IntegerWidth::W64)
+        | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        | SchemaBody::Index
+        | SchemaBody::Id => Some(8),
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W128)
+        | SchemaBody::SignedInteger(mech_core::IntegerWidth::W128)
+        | SchemaBody::Complex(mech_core::FloatWidth::W64)
+        | SchemaBody::Rational64 => Some(16),
+        SchemaBody::Complex(mech_core::FloatWidth::W32) => Some(8),
+        _ => None,
+    };
+    let output_payload = if target_element == &SchemaBody::String {
+        super::budget::checked_u64(projected_string_payload(input)?)?
+    } else if let Some(width) = fixed_width {
+        output_elements_u64
+            .checked_mul(width)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        input_footprint.retained_bytes
+    };
+    let draft_bytes = super::budget::checked_u64(
+        output_elements
+            .checked_mul(core::mem::size_of::<ValueDataDraft>())
+            .and_then(|bytes| bytes.checked_mul(2))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    let current_bytes = current_footprint.map_or(0, |footprint| footprint.retained_bytes);
+    let current_nodes = current_footprint.map_or(0, |footprint| footprint.node_count);
+    // Canonical fixed-width matrices retain one Value wrapper, one Matrix
+    // body, and one packed sequence regardless of their population. String
+    // sequences additionally retain one owned node per element.
+    let candidate_nodes = if fixed_width.is_some() {
+        3
+    } else if target_element == &SchemaBody::String {
+        output_elements_u64
+            .checked_add(3)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        input_footprint.node_count
+    };
+    // Fixed-width canonical primitives compare and finalize once per logical
+    // element. Their retained byte width is storage, not additional
+    // comparison work. Variable-width payloads still charge every retained
+    // byte because equality must inspect that population.
+    let variable_width_payload = fixed_width.is_none();
+    let publication_work = if current_footprint.is_some() {
+        output_elements_u64
+            .checked_add(if variable_width_payload {
+                current_bytes
+            } else {
+                0
+            })
+            .and_then(|work| {
+                work.checked_add(if variable_width_payload {
+                    output_payload
+                } else {
+                    0
+                })
+            })
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
+    let measured = meter.estimate();
+    let cost = super::budget::resident_cost! {
+        comparison_work: measured.comparison_work()
+            .checked_add(publication_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        compute_work: measured.compute_work()
+            .checked_add(output_elements_u64)
+            .and_then(|work| work.checked_add(publication_work))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        output_elements,
+        output_bytes: output_payload,
+        temporary_bytes: input_footprint.retained_bytes
+            .checked_add(draft_bytes)
+            .and_then(|bytes| bytes.checked_add(output_payload))
+            .and_then(|bytes| bytes.checked_add(current_bytes))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        cloned_bytes: input_footprint.retained_bytes,
+        retained_nodes: input_footprint.node_count
+            .checked_add(current_nodes)
+            .and_then(|nodes| nodes.checked_add(candidate_nodes))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        ..super::budget::KernelCostEstimate::default()
+    };
+    super::budget::PreparedKernel::new((), cost)
+        .admit()?
+        .into_plan();
+    Ok(())
 }
 
 fn preflight_string_conversion(
@@ -333,18 +455,41 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         "kind",
         ImplementationMemoryClass::CanonicalFinalize,
         bind_kind_conversion,
+    )?;
+    builder.insert_resident_factory(
+        ["option"],
+        "some",
+        ImplementationMemoryClass::CanonicalFinalize,
+        bind_present_option,
     )
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct ResidentConversionPlan {
     source: SchemaBody,
+    source_layout: mech_core::ResidentShape,
     target: SchemaBody,
     conversion: mech_core::ConversionPlan,
+    wrap_present: bool,
+    dynamic_payload: Option<(mech_core::SchemaId, Box<[u64]>)>,
+    resolve_live_matrix_shape: bool,
 }
 
 fn bind_kind_conversion(
     request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_conversion(request, false)
+}
+
+fn bind_present_option(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_conversion(request, true)
+}
+
+fn bind_conversion(
+    request: &ResidentKernelBindRequest<'_>,
+    wrap_present: bool,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
         return Err(ResidentKernelBindError::UnsupportedContract);
@@ -367,7 +512,11 @@ fn bind_kind_conversion(
         || output_contract.delivery != DeliveryMode::Signal
         || output_contract.construction
             != (OutputConstruction::FullWrite {
-                shape: ShapeRule::SameAsInput { input: 0 },
+                shape: if wrap_present {
+                    ShapeRule::Declared
+                } else {
+                    ShapeRule::SameAsInput { input: 0 }
+                },
             })
         || output_contract.alias != AliasPolicy::NoAlias
         || output_contract.change_detection != ChangeDetectionPolicy::KernelReported
@@ -382,21 +531,59 @@ fn bind_kind_conversion(
         .schemas
         .get(request.output.schema_id)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    if !layout_matches_schema(input.kind, source_schema.body())
-        || !layout_matches_schema(request.output.kind, target_schema.body())
+    let target_is_matrix = match target_schema.body() {
+        SchemaBody::Matrix { dimensions, .. } => dimensions.len() == 2,
+        SchemaBody::Option(payload) if wrap_present => {
+            matches!(payload.as_ref(), SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
+        }
+        _ => false,
+    };
+    let resolve_live_matrix_shape = input.kind == ResidentValueKind::Snapshot
+        && request.output.kind == ResidentValueKind::Snapshot
+        && input.shape == mech_core::ResidentShape::SCALAR
+        && request.output.shape == mech_core::ResidentShape::SCALAR
+        && matches!(source_schema.body(), SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
+        && target_is_matrix;
+    if !resolve_live_matrix_shape
+        && (!layout_matches_schema(input.kind, source_schema.body())
+            || !layout_matches_schema(request.output.kind, target_schema.body()))
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     let source = ResolvedType::from_schema(source_schema, &input.shape_instance)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let target = ResolvedType::from_schema(target_schema, &request.output.shape_instance)
+    let mut target = ResolvedType::from_schema(target_schema, &request.output.shape_instance)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let conversion = plan_explicit_cast(&source, &target)
+    if wrap_present {
+        let mech_core::KindExpr::Option(payload) = target.kind() else {
+            return Err(ResidentKernelBindError::UnsupportedLayout);
+        };
+        target = ResolvedType::new(
+            *payload.clone(),
+            target.dimension_parameters().to_vec().into_boxed_slice(),
+        )
+        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    }
+    // Constructing a Dynamic option boxes the original typed snapshot. It does
+    // not cast to or from Dynamic, which is outside Type System v1 conversions.
+    let dynamic_payload = (wrap_present && matches!(target_schema.body(), SchemaBody::Option(payload) if payload.as_ref() == &SchemaBody::Dynamic)
+        && source_schema.body() != &SchemaBody::Dynamic)
+        .then(|| (input.schema_id, input.shape_instance.parameter_values().to_vec().into_boxed_slice()));
+    let conversion_target = if dynamic_payload.is_some() {
+        &source
+    } else {
+        &target
+    };
+    let conversion = plan_explicit_cast(&source, conversion_target)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let plan = ResidentConversionPlan {
         source: source_schema.body().clone(),
+        source_layout: input.shape,
         target: target_schema.body().clone(),
         conversion,
+        wrap_present,
+        dynamic_payload,
+        resolve_live_matrix_shape,
     };
     Ok(
         BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
@@ -475,6 +662,193 @@ fn converted_elements(
     }
 }
 
+fn present_option_cost(
+    kernel: &BoundResidentKernel,
+    input: ResidentValueRef<'_>,
+    output: &ResidentValueMut<'_>,
+) -> Result<super::budget::KernelCostEstimate, ResidentKernelError> {
+    use super::budget::{
+        KernelCostEstimate, ResidentBudgetMeter, checked_cost_product, checked_cost_sum,
+        checked_u64,
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let mut meter = ResidentBudgetMeter::default();
+    let planned = kernel.retained_state::<ResidentConversionPlan>();
+    let expected = planned
+        .map_or(Some(1), |plan| plan.source_layout.len())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if input.len() != expected {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let length = checked_u64(input.len())?;
+    let (bytes, nodes, work) = match input {
+        ResidentValueRef::Snapshot([Some(value)]) => {
+            let cost = super::budget::charge_canonical_value_footprint(&mut meter, value, schemas)?;
+            (
+                cost.retained_bytes,
+                cost.node_count,
+                cost.encoded_bytes.max(cost.node_count),
+            )
+        }
+        ResidentValueRef::F64(_) | ResidentValueRef::Index(_) => {
+            (checked_cost_product(&[8, length])?, length, length)
+        }
+        ResidentValueRef::Bool(values) if values.iter().all(|value| *value <= 1) => {
+            (length, length, length)
+        }
+        ResidentValueRef::String(values) => {
+            let payload = values.iter().try_fold(0_u64, |total, value| {
+                checked_cost_sum(&[total, checked_u64(value.len())?])
+            })?;
+            (
+                checked_cost_sum(&[
+                    payload,
+                    checked_cost_product(&[length, checked_u64(core::mem::size_of::<String>())?])?,
+                ])?,
+                length,
+                payload,
+            )
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let matrix_drafts =
+        if planned.is_some_and(|plan| matches!(plan.source, SchemaBody::Matrix { .. })) {
+            checked_cost_product(&[
+                checked_u64(logical_input_len(input)?)?,
+                checked_u64(core::mem::size_of::<ValueDataDraft>())?,
+            ])?
+        } else {
+            0
+        };
+    if let ResidentValueMut::Snapshot([Some(previous)]) = output {
+        super::budget::charge_canonical_value_footprint(&mut meter, previous, schemas)?;
+    }
+    let shape_bytes = kernel
+        .retained_state::<ResidentConversionPlan>()
+        .and_then(|plan| plan.dynamic_payload.as_ref())
+        .map_or(Ok(0), |(_, shape)| {
+            checked_cost_product(&[checked_u64(shape.len())?, 8])
+        })?;
+    // Count logical elements even when a canonical matrix packs an entire
+    // primitive sequence into one retained node.
+    let wrappers = planned.map_or(Ok(1), |plan| {
+        let nested = match input {
+            ResidentValueRef::Snapshot([Some(value)]) => {
+                snapshot_presence_count(&plan.conversion.step, value.data())?
+            }
+            _ if matches!(plan.source, SchemaBody::Matrix { .. }) => {
+                matrix_presence_count(&plan.conversion.step, length)?
+            }
+            _ => conversion_presence_depth(&plan.conversion.step),
+        };
+        checked_cost_sum(&[u64::from(plan.wrap_present), nested])
+    })?;
+    let wrapper_bytes = checked_cost_product(&[
+        wrappers,
+        checked_cost_sum(&[
+            checked_u64(core::mem::size_of::<mech_core::ValueData>())?,
+            checked_u64(core::mem::size_of::<mech_core::ValueData>())?,
+        ])?,
+    ])?;
+    let output_elements =
+        if planned.is_some_and(|plan| matches!(plan.target, SchemaBody::Matrix { .. })) {
+            checked_u64(logical_input_len(input)?)?
+        } else {
+            1
+        };
+    let output_bytes = checked_cost_sum(&[
+        bytes,
+        wrapper_bytes,
+        shape_bytes,
+        matrix_drafts,
+        checked_u64(core::mem::size_of::<ValueDataDraft>())?,
+        checked_u64(core::mem::size_of::<ValueDraft>())?,
+        checked_u64(core::mem::size_of::<mech_core::Value>())?,
+    ])?;
+    let measured = meter.estimate();
+    Ok(super::budget::resident_cost! {
+        comparison_work: checked_cost_sum(&[measured.comparison_work(), work, wrappers, 4])?,
+        compute_work: checked_cost_sum(&[measured.compute_work(), work, wrappers, 4])?,
+        output_elements, output_bytes,
+        temporary_bytes: checked_cost_sum(&[measured.temporary_bytes(), checked_cost_product(&[output_bytes, 3])?])?, cloned_bytes: checked_cost_product(&[bytes, 2])?,
+        retained_nodes: checked_cost_sum(&[measured.retained_nodes(), checked_cost_product(&[nodes, 2])?, checked_cost_product(&[wrappers, 4])?, 8])?,
+        ..KernelCostEstimate::default()
+    })
+}
+
+fn preflight_present_option(
+    kernel: &BoundResidentKernel,
+    input: ResidentValueRef<'_>,
+    output: &ResidentValueMut<'_>,
+) -> Result<(), ResidentKernelError> {
+    super::budget::PreparedKernel::new((), present_option_cost(kernel, input, output)?)
+        .admit()?
+        .into_plan();
+    Ok(())
+}
+
+fn conversion_presence_depth(step: &mech_core::ConversionStep) -> u64 {
+    use mech_core::ConversionStep;
+    match step {
+        ConversionStep::OptionPresent(inner) => 1 + conversion_presence_depth(&inner.step),
+        ConversionStep::MatrixElements(inner) | ConversionStep::OptionPayload(inner) => {
+            conversion_presence_depth(&inner.step)
+        }
+        ConversionStep::Identity | ConversionStep::Scalar(_) => 0,
+    }
+}
+
+fn matrix_presence_count(
+    step: &mech_core::ConversionStep,
+    length: u64,
+) -> Result<u64, ResidentKernelError> {
+    use super::budget::{checked_cost_product, checked_cost_sum};
+    use mech_core::ConversionStep;
+    match step {
+        ConversionStep::MatrixElements(inner) => {
+            checked_cost_product(&[length, conversion_presence_depth(&inner.step)])
+        }
+        ConversionStep::OptionPresent(inner) => {
+            checked_cost_sum(&[1, matrix_presence_count(&inner.step, length)?])
+        }
+        ConversionStep::Identity => Ok(0),
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn snapshot_presence_count(
+    step: &mech_core::ConversionStep,
+    source: &mech_core::ValueData,
+) -> Result<u64, ResidentKernelError> {
+    use super::budget::{checked_cost_product, checked_cost_sum, checked_u64};
+    use mech_core::{ConversionStep, ValueData};
+    match step {
+        ConversionStep::OptionPresent(inner) => {
+            checked_cost_sum(&[1, snapshot_presence_count(&inner.step, source)?])
+        }
+        ConversionStep::OptionPayload(inner) => match source {
+            ValueData::Option(Some(value)) => snapshot_presence_count(&inner.step, value),
+            ValueData::Option(None) => Ok(0),
+            _ => Err(ResidentKernelError::InvalidInput),
+        },
+        ConversionStep::MatrixElements(inner) => match source {
+            ValueData::Matrix(matrix) => match matrix.elements() {
+                SequenceView::Values(values) => values.iter().try_fold(0, |count, value| {
+                    checked_cost_sum(&[count, snapshot_presence_count(&inner.step, value)?])
+                }),
+                values => checked_cost_product(&[
+                    checked_u64(values.len())?,
+                    conversion_presence_depth(&inner.step),
+                ]),
+            },
+            _ => Err(ResidentKernelError::InvalidInput),
+        },
+        ConversionStep::Identity | ConversionStep::Scalar(_) => Ok(0),
+    }
+}
+
 fn execute_kind_conversion(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -489,10 +863,76 @@ fn execute_kind_conversion(
     let plan = kernel
         .retained_state::<ResidentConversionPlan>()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    preflight_string_conversion(kernel, input, &output, &plan.target)?;
-    let source = resident_input_draft(input, &plan.source)?;
+    let live_shape = plan
+        .resolve_live_matrix_shape
+        .then(|| resolve_live_matrix_conversion_shape(kernel, input, plan))
+        .transpose()?;
+    if let Some((_, output_elements)) = &live_shape {
+        let live_target = match (&plan.target, plan.wrap_present) {
+            (SchemaBody::Option(payload), true) => payload.as_ref(),
+            (target, false) => target,
+            _ => return Err(ResidentKernelError::InvalidOutput),
+        };
+        preflight_live_matrix_conversion(kernel, input, &output, *output_elements, live_target)?;
+    } else {
+        preflight_string_conversion(kernel, input, &output, &plan.target)?;
+    }
+    if plan.wrap_present || conversion_presence_depth(&plan.conversion.step) != 0 {
+        preflight_present_option(kernel, input, &output)?;
+    }
+    let source = if matches!(output, ResidentValueMut::Snapshot(_))
+        && matches!(plan.source, SchemaBody::Matrix { .. })
+        && !matches!(input, ResidentValueRef::Snapshot(_))
+    {
+        // Reuse the composite boundary's column-major resident to canonical
+        // row-major conversion before embedding the immutable typed payload.
+        let matrix = match input {
+            ResidentValueRef::F64(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    Some(ValueDataDraft::F64(F64Bits::from_f64(*value)))
+                })
+            }
+            ResidentValueRef::Index(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    Some(ValueDataDraft::Index(*value))
+                })
+            }
+            ResidentValueRef::Bool(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    (*value <= 1).then_some(ValueDataDraft::Bool(*value != 0))
+                })
+            }
+            ResidentValueRef::String(values) => {
+                super::composite::canonical_matrix_elements(values, plan.source_layout, |value| {
+                    Some(ValueDataDraft::String(value.clone()))
+                })
+            }
+            ResidentValueRef::Snapshot(_) => unreachable!("snapshot handled below"),
+        }
+        .ok_or(ResidentKernelError::InvalidInput)?;
+        ValueDataDraft::Matrix(matrix)
+    } else {
+        resident_input_draft(input, &plan.source)?
+    };
     let converted = execute_conversion_draft(source, &plan.conversion.step)
         .map_err(|_| ResidentKernelError::Arithmetic)?;
+    let converted = if let Some((schema, shape_values)) = &plan.dynamic_payload {
+        ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+            schema: *schema,
+            shape_values: shape_values.clone(),
+            data: converted,
+        })))
+    } else {
+        converted
+    };
+    let converted = if plan.wrap_present {
+        ValueDataDraft::Option(mech_core::snapshot::OptionDraft {
+            present: true,
+            value: Some(Box::new(converted)),
+        })
+    } else {
+        converted
+    };
     match output {
         ResidentValueMut::Bool(target) => {
             let next = converted_elements(converted, &plan.target)?
@@ -551,8 +991,9 @@ fn execute_kind_conversion(
                 .ok_or(ResidentKernelError::InvalidOutput)?;
             let next = ValueDraft {
                 schema: metadata.schema,
-                shape_values: metadata
-                    .shape
+                shape_values: live_shape
+                    .as_ref()
+                    .map_or(&metadata.shape, |(shape, _)| shape)
                     .parameter_values()
                     .to_vec()
                     .into_boxed_slice(),
@@ -565,7 +1006,7 @@ fn execute_kind_conversion(
             }
             let changed = match target.as_ref() {
                 Some(current) => !current
-                    .language_eq(schemas, &next, schemas)
+                    .snapshot_eq(schemas, &next, schemas)
                     .map_err(|_| ResidentKernelError::InvalidOutput)?,
                 None => true,
             };
@@ -594,6 +1035,339 @@ fn publish_slice<T: PartialEq>(
 mod tests {
     use super::*;
     use mech_core::{DimensionExpr, IntegerWidth, SchemaDraft, SchemaTableBuilder};
+
+    #[test]
+    fn optional_matrix_preflight_counts_each_element_and_wrapper() {
+        let kernel = |length: usize| {
+            let source = SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Bool),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Constant(length as u64),
+                    ]
+                    .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap();
+            let target = SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Option(Box::new(SchemaBody::Bool))),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Constant(length as u64),
+                    ]
+                    .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap();
+            let conversion = plan_explicit_cast(
+                &ResolvedType::from_schema(
+                    &source,
+                    &source.instantiate_shape(Box::new([])).unwrap(),
+                )
+                .unwrap(),
+                &ResolvedType::from_schema(
+                    &target,
+                    &target.instantiate_shape(Box::new([])).unwrap(),
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            let mut builder = SchemaTableBuilder::new();
+            builder.insert(source.clone()).unwrap();
+            let pending = builder.insert(target.clone()).unwrap();
+            let build = builder.finish().unwrap();
+            let id = build.resolve(pending).unwrap();
+            let schemas = build.into_parts().0;
+            let plan = ResidentConversionPlan {
+                source: source.body().clone(),
+                target: target.body().clone(),
+                source_layout: mech_core::ResidentShape {
+                    rows: 1,
+                    columns: length as u32,
+                },
+                conversion,
+                wrap_present: false,
+                dynamic_payload: None,
+                resolve_live_matrix_shape: false,
+            };
+            (
+                BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+                    .with_snapshot_schemas(schemas.clone())
+                    .with_retained_state(Arc::new(plan)),
+                schemas,
+                id,
+            )
+        };
+        for length in [0, 1, 64] {
+            let (kernel, schemas, id) = kernel(length);
+            let input = vec![1; length];
+            let mut output = [None];
+            let cost = present_option_cost(
+                &kernel,
+                ResidentValueRef::Bool(&input),
+                &ResidentValueMut::Snapshot(&mut output),
+            )
+            .unwrap();
+            preflight_present_option(
+                &kernel,
+                ResidentValueRef::Bool(&input),
+                &ResidentValueMut::Snapshot(&mut output),
+            )
+            .unwrap();
+            let actual = ValueDraft {
+                schema: id,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Matrix(
+                    (0..length)
+                        .map(|_| {
+                            ValueDataDraft::Option(mech_core::snapshot::OptionDraft {
+                                present: true,
+                                value: Some(Box::new(ValueDataDraft::Bool(true))),
+                            })
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+            let footprint = actual.retained_footprint(&schemas).unwrap();
+            assert!(cost.temporary_bytes() >= footprint.retained_bytes * 3);
+            assert!(cost.retained_nodes() >= footprint.node_count);
+            let mut snapshot_plan = kernel
+                .retained_state::<ResidentConversionPlan>()
+                .unwrap()
+                .clone();
+            let source_key = SchemaDraft {
+                body: snapshot_plan.source.clone(),
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap()
+            .key();
+            let source = ValueDraft {
+                schema: schemas.find_by_key(source_key).unwrap(),
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::Bool(true); length].into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+            snapshot_plan.source_layout = mech_core::ResidentShape {
+                rows: 1,
+                columns: 1,
+            };
+            let snapshot_kernel = BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+                .with_snapshot_schemas(schemas)
+                .with_retained_state(Arc::new(snapshot_plan));
+            let snapshots = [Some(source)];
+            let cost = present_option_cost(
+                &snapshot_kernel,
+                ResidentValueRef::Snapshot(&snapshots),
+                &ResidentValueMut::Snapshot(&mut output),
+            )
+            .unwrap();
+            assert!(cost.temporary_bytes() >= footprint.retained_bytes * 3);
+            assert!(cost.retained_nodes() >= footprint.node_count);
+        }
+        let length = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS as usize + 1;
+        let (kernel, _, _) = kernel(length);
+        let input = vec![1; length];
+        let mut output = [None];
+        assert_eq!(
+            preflight_present_option(
+                &kernel,
+                ResidentValueRef::Bool(&input),
+                &ResidentValueMut::Snapshot(&mut output)
+            ),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert!(output[0].is_none());
+    }
+
+    #[test]
+    fn present_option_preflights_payload_budget_before_publishing() {
+        let mut builder = SchemaTableBuilder::new();
+        let pending = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Option(Box::new(SchemaBody::String)),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(pending).unwrap();
+        let (schemas, _) = build.into_parts();
+        let previous = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Option(mech_core::snapshot::OptionDraft {
+                present: false,
+                value: None,
+            }),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let mut output = [Some(previous)];
+        let kernel = BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+            .with_snapshot_schemas(schemas);
+        let oversized = ["x".repeat(super::super::budget::MAX_RESIDENT_OUTPUT_BYTES as usize)];
+        assert_eq!(
+            preflight_present_option(
+                &kernel,
+                ResidentValueRef::String(&oversized),
+                &ResidentValueMut::Snapshot(&mut output)
+            ),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert!(matches!(
+            output[0].as_ref().unwrap().data(),
+            mech_core::ValueData::Option(None)
+        ));
+        let valid = ["small".to_owned()];
+        assert_eq!(
+            preflight_present_option(
+                &kernel,
+                ResidentValueRef::String(&valid),
+                &ResidentValueMut::Snapshot(&mut output)
+            ),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn live_matrix_conversion_is_admitted_before_drafting() {
+        let length = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS as usize + 1;
+        let matrix = |element| {
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Constant(length as u64),
+                    ]
+                    .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let source_schema = matrix(SchemaBody::UnsignedInteger(IntegerWidth::W8));
+        let target_schema = matrix(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64));
+        let mut builder = SchemaTableBuilder::new();
+        let source_pending = builder.insert(source_schema).unwrap();
+        let target_pending = builder.insert(target_schema.clone()).unwrap();
+        let build = builder.finish().unwrap();
+        let source_id = build.resolve(source_pending).unwrap();
+        let target_id = build.resolve(target_pending).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: source_id,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(vec![ValueDataDraft::U8(1); length].into_boxed_slice()),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let input = [Some(value)];
+        let mut output = [None];
+        let kernel = BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: target_id,
+                schema_key: schemas.entry(target_id).unwrap().key(),
+                shape: schemas
+                    .get(target_id)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+            .with_snapshot_schemas(schemas);
+        assert_eq!(
+            preflight_live_matrix_conversion(
+                &kernel,
+                ResidentValueRef::Snapshot(&input),
+                &ResidentValueMut::Snapshot(&mut output),
+                length,
+                target_schema.body(),
+            ),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert!(output[0].is_none());
+    }
+
+    #[test]
+    fn live_fixed_width_matrix_conversion_charges_work_per_element() {
+        let length = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS as usize;
+        let matrix = |element| {
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Constant(length as u64),
+                    ]
+                    .into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap()
+        };
+        let source_schema = matrix(SchemaBody::UnsignedInteger(IntegerWidth::W8));
+        let target_schema = matrix(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64));
+        let mut builder = SchemaTableBuilder::new();
+        let source_pending = builder.insert(source_schema).unwrap();
+        let target_pending = builder.insert(target_schema.clone()).unwrap();
+        let build = builder.finish().unwrap();
+        let source_id = build.resolve(source_pending).unwrap();
+        let target_id = build.resolve(target_pending).unwrap();
+        let (schemas, _) = build.into_parts();
+        let value = ValueDraft {
+            schema: source_id,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(vec![ValueDataDraft::U8(1); length].into_boxed_slice()),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let input = [Some(value)];
+        let mut output = [None];
+        let kernel = BoundResidentKernel::new(execute_kind_conversion, Box::new([]))
+            .with_snapshot_output(ResidentSnapshotOutput {
+                schema: target_id,
+                schema_key: schemas.entry(target_id).unwrap().key(),
+                shape: schemas
+                    .get(target_id)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
+                exact_cardinality: None,
+                maximum_cardinality: None,
+            })
+            .with_snapshot_schemas(schemas);
+        assert_eq!(
+            preflight_live_matrix_conversion(
+                &kernel,
+                ResidentValueRef::Snapshot(&input),
+                &ResidentValueMut::Snapshot(&mut output),
+                length,
+                target_schema.body(),
+            ),
+            Ok(())
+        );
+        assert!(output[0].is_none());
+    }
 
     #[test]
     fn snapshot_matrix_string_conversion_plans_logical_elements_before_drafting() {

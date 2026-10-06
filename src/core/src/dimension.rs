@@ -340,10 +340,14 @@ fn visit_parameter(
         _ => {}
     }
     state[ordinal] = 1;
-    occurrence.push(ordinal);
     for dependency in &dependencies[ordinal] {
         visit_parameter(dependency.get() as usize, dependencies, state, occurrence)?;
     }
+    // Independent inferred parameters keep first-occurrence order, but a
+    // bound's dependencies must precede the parameter consuming them. The
+    // explicit prefix below still preserves declaration order and rejects
+    // authored forward references.
+    occurrence.push(ordinal);
     state[ordinal] = 2;
     Ok(())
 }
@@ -591,7 +595,7 @@ mod vector_tests {
     }
 
     #[test]
-    fn all_positive_c0_dimension_vectors_match_exactly() {
+    fn all_positive_dimension_vectors_match_exactly() {
         let parameter = DimensionExpr::Parameter(DimensionParameterId::new(0));
         let vectors = [
             (
@@ -647,7 +651,7 @@ mod vector_tests {
     }
 
     #[test]
-    fn all_negative_c0_dimension_vectors_return_the_frozen_errors() {
+    fn all_negative_dimension_vectors_return_the_frozen_errors() {
         for expression in [
             DimensionExpr::Add(boxed([
                 DimensionExpr::Constant(u64::MAX),

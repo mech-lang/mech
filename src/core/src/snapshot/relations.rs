@@ -30,7 +30,8 @@ impl Value {
         other_schemas: &SchemaTable,
     ) -> Result<bool, SnapshotValueError> {
         let (self_schema, self_schema_bytes) = validated_schema_definition(self, self_schemas)?;
-        let (other_schema, other_schema_bytes) = validated_schema_definition(other, other_schemas)?;
+        let (_other_schema, other_schema_bytes) =
+            validated_schema_definition(other, other_schemas)?;
         if self.schema_key() != other.schema_key() {
             return Ok(false);
         }
@@ -38,10 +39,7 @@ impl Value {
         if self.shape() != other.shape() {
             return Ok(false);
         }
-        Ok(
-            super::encoding::canonical_material(self_schema.body(), self.data())
-                == super::encoding::canonical_material(other_schema.body(), other.data()),
-        )
+        Ok(exact_data_eq(self_schema.body(), self.data(), other.data()))
     }
 
     pub fn language_eq(
@@ -60,11 +58,7 @@ impl Value {
         if self.shape() != other.shape() {
             return Ok(false);
         }
-        Ok(language_data_eq(
-            self_schema.body(),
-            self.data(),
-            other.data(),
-        ))
+        language_data_eq_checked(self_schema.body(), self.data(), other.data())
     }
 
     pub fn key_cmp(
@@ -105,9 +99,36 @@ impl Value {
         candidate: &Value,
         candidate_schemas: &SchemaTable,
     ) -> Result<bool, SnapshotValueError> {
+        self.set_contains_with_optional_budget(self_schemas, candidate, candidate_schemas, None)
+    }
+
+    /// Tests set membership while charging every recursive ordered-key
+    /// comparison against one caller-owned canonicalization allowance.
+    pub fn set_contains_with_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        candidate: &Value,
+        candidate_schemas: &SchemaTable,
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Result<bool, SnapshotValueError> {
+        self.set_contains_with_optional_budget(
+            self_schemas,
+            candidate,
+            candidate_schemas,
+            Some(budget),
+        )
+    }
+
+    fn set_contains_with_optional_budget(
+        &self,
+        self_schemas: &SchemaTable,
+        candidate: &Value,
+        candidate_schemas: &SchemaTable,
+        budget: Option<&SnapshotCanonicalizationBudget>,
+    ) -> Result<bool, SnapshotValueError> {
         let (element, elements, candidate) =
             self.validated_set_candidate(self_schemas, candidate, candidate_schemas)?;
-        Ok(set_key_search(element, elements, &candidate)?.is_ok())
+        Ok(set_key_search_with_budget(element, elements, &candidate, budget)?.is_ok())
     }
 
     pub fn set_elements_after_insert(
@@ -469,11 +490,20 @@ fn set_key_search(
     elements: &[CanonicalKeyValue],
     candidate: &ValueData,
 ) -> Result<core::result::Result<usize, usize>, SnapshotValueError> {
+    set_key_search_with_budget(element, elements, candidate, None)
+}
+
+fn set_key_search_with_budget(
+    element: &SchemaBody,
+    elements: &[CanonicalKeyValue],
+    candidate: &ValueData,
+    budget: Option<&SnapshotCanonicalizationBudget>,
+) -> Result<core::result::Result<usize, usize>, SnapshotValueError> {
     let mut lower = 0usize;
     let mut upper = elements.len();
     while lower < upper {
         let middle = lower + (upper - lower) / 2;
-        match compare_key_data(element, elements[middle].data(), candidate)? {
+        match compare_key_data_with_budget(element, elements[middle].data(), candidate, budget)? {
             Ordering::Less => lower = middle + 1,
             Ordering::Greater => upper = middle,
             Ordering::Equal => return Ok(Ok(middle)),
@@ -769,6 +799,9 @@ pub fn canonical_data_draft_finalization_work_with_budget(
         data: &ValueData,
         budget: &SnapshotCanonicalizationBudget,
     ) -> Result<(), SnapshotValueError> {
+        if let SchemaBody::IntegerInterval(interval) = schema {
+            return visit(&interval.base_body(), data, budget);
+        }
         match (schema, data) {
             (SchemaBody::Option(element), ValueData::Option(value)) => {
                 if let Some(value) = value.as_deref() {
@@ -882,6 +915,9 @@ fn compare_key_data_with_budget(
     right: &ValueData,
     budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<Ordering, SnapshotValueError> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return compare_key_data_with_budget(&interval.base_body(), left, right, budget);
+    }
     if !schema_is_keyable(schema) {
         return Err(SnapshotValueError::SchemaNotKeyableV1);
     }
@@ -1017,7 +1053,13 @@ fn lexicographic(
 /// Applies the canonical language equality rules to two already-validated
 /// payloads under one shared schema.
 pub fn schema_data_language_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
-    language_data_eq(schema, left, right)
+    language_data_eq_checked(schema, left, right).unwrap_or(false)
+}
+
+/// Compares the complete canonical representation of two already-validated
+/// payloads under one shared schema without materializing encoded copies.
+pub fn schema_data_snapshot_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
+    exact_data_eq(schema, left, right)
 }
 
 /// Applies the source language's scalar numeric ordering to two already
@@ -1028,6 +1070,9 @@ pub fn schema_data_partial_cmp(
     left: &ValueData,
     right: &ValueData,
 ) -> Option<Ordering> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return schema_data_partial_cmp(&interval.base_body(), left, right);
+    }
     macro_rules! ordinary {
         ($variant:ident) => {
             if let (ValueData::$variant(left), ValueData::$variant(right)) = (left, right) {
@@ -1036,6 +1081,9 @@ pub fn schema_data_partial_cmp(
         };
     }
     match (schema, left, right) {
+        (SchemaBody::Index, ValueData::Index(left), ValueData::Index(right)) => {
+            left.partial_cmp(right)
+        }
         (SchemaBody::UnsignedInteger(_), _, _) | (SchemaBody::SignedInteger(_), _, _) => {
             ordinary!(U8);
             ordinary!(U16);
@@ -1084,8 +1132,32 @@ pub fn schema_data_partial_cmp(
     }
 }
 
+#[cfg(test)]
 fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
-    match (schema, left, right) {
+    language_data_eq_checked(schema, left, right).unwrap_or(false)
+}
+
+fn language_data_eq_checked(
+    schema: &SchemaBody,
+    left: &ValueData,
+    right: &ValueData,
+) -> Result<bool, SnapshotValueError> {
+    let equal = match (schema, left, right) {
+        (SchemaBody::Dynamic, ValueData::Dynamic(left), ValueData::Dynamic(right)) => {
+            match (left.value(), right.value()) {
+                (None, None) => true,
+                (Some(left), Some(right)) => {
+                    let Some(left_schemas) = left.schemas() else {
+                        return Ok(false);
+                    };
+                    let Some(right_schemas) = right.schemas() else {
+                        return Ok(false);
+                    };
+                    return left.language_eq(&left_schemas, right, &right_schemas);
+                }
+                _ => false,
+            }
+        }
         (
             SchemaBody::FloatingPoint(FloatWidth::W32),
             ValueData::F32(left),
@@ -1115,42 +1187,65 @@ fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) ->
         (SchemaBody::Option(element), ValueData::Option(left), ValueData::Option(right)) => {
             match (left, right) {
                 (None, None) => true,
-                (Some(left), Some(right)) => language_data_eq(element, left, right),
+                (Some(left), Some(right)) => return language_data_eq_checked(element, left, right),
                 _ => false,
             }
         }
         (SchemaBody::Enum { variants, .. }, ValueData::Enum(left), ValueData::Enum(right)) => {
-            left.ordinal == right.ordinal
-                && match (
-                    variants[left.ordinal as usize].payload.as_ref(),
-                    left.payload.as_deref(),
-                    right.payload.as_deref(),
-                ) {
-                    (None, None, None) => true,
-                    (Some(schema), Some(left), Some(right)) => {
-                        language_data_eq(schema, left, right)
-                    }
-                    _ => false,
+            if left.ordinal != right.ordinal {
+                return Ok(false);
+            }
+            match (
+                variants[left.ordinal as usize].payload.as_ref(),
+                left.payload.as_deref(),
+                right.payload.as_deref(),
+            ) {
+                (None, None, None) => true,
+                (Some(schema), Some(left), Some(right)) => {
+                    return language_data_eq_checked(schema, left, right);
                 }
+                _ => false,
+            }
         }
-        (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => elements
-            .iter()
-            .zip(left)
-            .zip(right)
-            .all(|((schema, left), right)| language_data_eq(schema, left, right)),
-        (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => fields
-            .iter()
-            .zip(left.fields())
-            .zip(right.fields())
-            .all(|((field, left), right)| language_data_eq(&field.schema, left, right)),
+        (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => {
+            return elements.iter().zip(left).zip(right).try_fold(
+                true,
+                |equal, ((schema, left), right)| {
+                    if equal {
+                        language_data_eq_checked(schema, left, right)
+                    } else {
+                        Ok(false)
+                    }
+                },
+            );
+        }
+        (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => {
+            return fields
+                .iter()
+                .zip(left.fields())
+                .zip(right.fields())
+                .try_fold(true, |equal, ((field, left), right)| {
+                    if equal {
+                        language_data_eq_checked(&field.schema, left, right)
+                    } else {
+                        Ok(false)
+                    }
+                });
+        }
         (SchemaBody::Matrix { element, .. }, ValueData::Matrix(left), ValueData::Matrix(right)) => {
-            language_sequence_eq(element, &left.elements, &right.elements)
+            return language_sequence_eq_checked(element, &left.elements, &right.elements);
         }
         (SchemaBody::Table { columns, .. }, ValueData::Table(left), ValueData::Table(right)) => {
-            columns
+            return columns
                 .iter()
                 .zip(left.columns.iter().zip(right.columns.iter()))
-                .all(|(column, (left, right))| language_sequence_eq(&column.schema, left, right))
+                .try_fold(true, |equal, (column, (left, right))| {
+                    if equal {
+                        language_sequence_eq_checked(&column.schema, left, right)
+                    } else {
+                        Ok(false)
+                    }
+                });
         }
         (SchemaBody::Set { element, .. }, ValueData::Set(left), ValueData::Set(right)) => {
             left.elements.len() == right.elements.len()
@@ -1166,19 +1261,133 @@ fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) ->
                     })
         }
         (SchemaBody::Map { key, value, .. }, ValueData::Map(left), ValueData::Map(right)) => {
+            if left.entries.len() != right.entries.len() {
+                return Ok(false);
+            }
+            return left.entries.iter().zip(right.entries.iter()).try_fold(
+                true,
+                |equal, (left, right)| {
+                    if !equal
+                        || !matches!(
+                            compare_key_data(key, left.key().data(), right.key().data()),
+                            Ok(Ordering::Equal)
+                        )
+                    {
+                        Ok(false)
+                    } else {
+                        language_data_eq_checked(value, left.value(), right.value())
+                    }
+                },
+            );
+        }
+        _ => exact_leaf_eq(left, right),
+    };
+    Ok(equal)
+}
+
+fn exact_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
+    match (schema, left, right) {
+        (SchemaBody::Dynamic, ValueData::Dynamic(left), ValueData::Dynamic(right)) => {
+            left.canonical == right.canonical
+        }
+        (SchemaBody::Option(element), ValueData::Option(left), ValueData::Option(right)) => {
+            match (left, right) {
+                (None, None) => true,
+                (Some(left), Some(right)) => exact_data_eq(element, left, right),
+                _ => false,
+            }
+        }
+        (SchemaBody::Enum { variants, .. }, ValueData::Enum(left), ValueData::Enum(right)) => {
+            left.ordinal == right.ordinal
+                && match (
+                    variants[left.ordinal as usize].payload.as_ref(),
+                    left.payload.as_deref(),
+                    right.payload.as_deref(),
+                ) {
+                    (None, None, None) => true,
+                    (Some(schema), Some(left), Some(right)) => exact_data_eq(schema, left, right),
+                    _ => false,
+                }
+        }
+        (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => {
+            left.len() == right.len()
+                && elements
+                    .iter()
+                    .zip(left)
+                    .zip(right)
+                    .all(|((schema, left), right)| exact_data_eq(schema, left, right))
+        }
+        (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => {
+            left.fields().len() == right.fields().len()
+                && fields
+                    .iter()
+                    .zip(left.fields())
+                    .zip(right.fields())
+                    .all(|((field, left), right)| exact_data_eq(&field.schema, left, right))
+        }
+        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(left), ValueData::Matrix(right)) => {
+            exact_sequence_eq(element, &left.elements, &right.elements)
+        }
+        (SchemaBody::Table { columns, .. }, ValueData::Table(left), ValueData::Table(right)) => {
+            left.columns.len() == right.columns.len()
+                && columns
+                    .iter()
+                    .zip(left.columns.iter().zip(right.columns.iter()))
+                    .all(|(column, (left, right))| exact_sequence_eq(&column.schema, left, right))
+        }
+        (SchemaBody::Set { element, .. }, ValueData::Set(left), ValueData::Set(right)) => {
+            left.elements.len() == right.elements.len()
+                && left
+                    .elements
+                    .iter()
+                    .zip(right.elements.iter())
+                    .all(|(left, right)| exact_data_eq(element, left.data(), right.data()))
+        }
+        (SchemaBody::Map { key, value, .. }, ValueData::Map(left), ValueData::Map(right)) => {
             left.entries.len() == right.entries.len()
                 && left
                     .entries
                     .iter()
                     .zip(right.entries.iter())
                     .all(|(left, right)| {
-                        matches!(
-                            compare_key_data(key, left.key().data(), right.key().data()),
-                            Ok(Ordering::Equal)
-                        ) && language_data_eq(value, left.value(), right.value())
+                        exact_data_eq(key, left.key().data(), right.key().data())
+                            && exact_data_eq(value, left.value(), right.value())
                     })
         }
         _ => exact_leaf_eq(left, right),
+    }
+}
+
+fn exact_sequence_eq(schema: &SchemaBody, left: &SequenceStorage, right: &SequenceStorage) -> bool {
+    if left.view().len() != right.view().len() {
+        return false;
+    }
+    match (left, right) {
+        (SequenceStorage::Values(left), SequenceStorage::Values(right)) => {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .zip(right.iter())
+                    .all(|(left, right)| exact_data_eq(schema, left, right))
+        }
+        (SequenceStorage::Values(left), right) => {
+            let right = right.view();
+            left.len() == right.len()
+                && left.iter().enumerate().all(|(index, left)| {
+                    right
+                        .value_at(index)
+                        .is_some_and(|right| exact_data_eq(schema, left, &right))
+                })
+        }
+        (left, SequenceStorage::Values(right)) => {
+            let left = left.view();
+            left.len() == right.len()
+                && right.iter().enumerate().all(|(index, right)| {
+                    left.value_at(index)
+                        .is_some_and(|left| exact_data_eq(schema, &left, right))
+                })
+        }
+        _ => sequence_exact_eq(left, right),
     }
 }
 
@@ -1217,12 +1426,12 @@ fn exact_leaf_eq(left: &ValueData, right: &ValueData) -> bool {
     }
 }
 
-fn language_sequence_eq(
+fn language_sequence_eq_checked(
     schema: &SchemaBody,
     left: &SequenceStorage,
     right: &SequenceStorage,
-) -> bool {
-    match (left, right) {
+) -> Result<bool, SnapshotValueError> {
+    let equal = match (left, right) {
         (SequenceStorage::F32(left), SequenceStorage::F32(right)) => left
             .iter()
             .zip(right.iter())
@@ -1243,12 +1452,21 @@ fn language_sequence_eq(
                     && left.imaginary().to_f64() == right.imaginary().to_f64()
             })
         }
-        (SequenceStorage::Values(left), SequenceStorage::Values(right)) => left
-            .iter()
-            .zip(right.iter())
-            .all(|(left, right)| language_data_eq(schema, left, right)),
+        (SequenceStorage::Values(left), SequenceStorage::Values(right)) => {
+            return left
+                .iter()
+                .zip(right.iter())
+                .try_fold(true, |equal, (left, right)| {
+                    if equal {
+                        language_data_eq_checked(schema, left, right)
+                    } else {
+                        Ok(false)
+                    }
+                });
+        }
         _ => sequence_exact_eq(left, right),
-    }
+    };
+    Ok(equal)
 }
 
 fn sequence_exact_eq(left: &SequenceStorage, right: &SequenceStorage) -> bool {
@@ -1292,6 +1510,7 @@ fn sequence_exact_eq(left: &SequenceStorage, right: &SequenceStorage) -> bool {
 
 pub(super) fn schema_is_keyable(schema: &SchemaBody) -> bool {
     match schema {
+        SchemaBody::IntegerInterval(_) => true,
         SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
@@ -1368,6 +1587,7 @@ const fn normalize_f64(bits: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::snapshot::{Complex64Bits, F32Bits, F64Bits, Rational64Value};
 
     #[test]
     fn equal_schema_keys_still_require_equal_canonical_definitions() {
@@ -1377,6 +1597,74 @@ mod tests {
             Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: actual })
                 if actual == key
         ));
+    }
+
+    #[test]
+    fn exact_equality_tracks_float_and_complex_representation() {
+        let positive = ValueData::F32(F32Bits::from_f32(0.0));
+        let negative = ValueData::F32(F32Bits::from_f32(-0.0));
+        let float = SchemaBody::FloatingPoint(FloatWidth::W32);
+        assert!(language_data_eq(&float, &positive, &negative));
+        assert!(!exact_data_eq(&float, &positive, &negative));
+        let nan = ValueData::F32(F32Bits::from_bits(0x7fc0_0001));
+        assert!(!language_data_eq(&float, &nan, &nan));
+        assert!(exact_data_eq(&float, &nan, &nan));
+
+        let positive = ValueData::Complex64(Complex64Bits::new(
+            F64Bits::from_f64(1.0),
+            F64Bits::from_f64(0.0),
+        ));
+        let negative = ValueData::Complex64(Complex64Bits::new(
+            F64Bits::from_f64(1.0),
+            F64Bits::from_f64(-0.0),
+        ));
+        let complex = SchemaBody::Complex(FloatWidth::W64);
+        assert!(language_data_eq(&complex, &positive, &negative));
+        assert!(!exact_data_eq(&complex, &positive, &negative));
+    }
+
+    #[test]
+    fn exact_sequence_equality_is_independent_of_storage_layout() {
+        let schema = SchemaBody::FloatingPoint(FloatWidth::W64);
+        let packed = SequenceStorage::F64(
+            vec![F64Bits::from_f64(1.0), F64Bits::from_f64(-0.0)].into_boxed_slice(),
+        );
+        let unpacked = SequenceStorage::Values(
+            vec![
+                ValueData::F64(F64Bits::from_f64(1.0)),
+                ValueData::F64(F64Bits::from_f64(-0.0)),
+            ]
+            .into_boxed_slice(),
+        );
+        assert!(exact_sequence_eq(&schema, &packed, &unpacked));
+        assert!(exact_sequence_eq(&schema, &unpacked, &packed));
+
+        let positive_zero = SequenceStorage::Values(
+            vec![
+                ValueData::F64(F64Bits::from_f64(1.0)),
+                ValueData::F64(F64Bits::from_f64(0.0)),
+            ]
+            .into_boxed_slice(),
+        );
+        assert!(!exact_sequence_eq(&schema, &packed, &positive_zero));
+        assert!(!exact_sequence_eq(&schema, &positive_zero, &packed));
+    }
+
+    #[test]
+    fn exact_rational_sequence_equality_rejects_packed_prefixes() {
+        let schema = SchemaBody::Rational64;
+        let short = SequenceStorage::Rational64(
+            vec![Rational64Value::new(1, 2).unwrap()].into_boxed_slice(),
+        );
+        let long = SequenceStorage::Rational64(
+            vec![
+                Rational64Value::new(1, 2).unwrap(),
+                Rational64Value::new(2, 3).unwrap(),
+            ]
+            .into_boxed_slice(),
+        );
+        assert!(!exact_sequence_eq(&schema, &short, &long));
+        assert!(!exact_sequence_eq(&schema, &long, &short));
     }
 }
 

@@ -279,7 +279,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             &[],
             &[],
         );
-        let product = compiler.compile_roots(&requests, options)?;
+        let product = compiler.compile_canonical_roots(&requests, options)?;
         let (_, bytecode, instruction_type_bindings, instruction_type_binding_requirements, _) =
             product.into_native_parts();
         (
@@ -349,7 +349,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         },
     };
     let environment = NativeBuildEnvironment {
-        function_catalog: mech_stdlib::native_plan_catalog(),
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
         host_catalog: mech_build::selected_native_host_catalog()?,
         dependency_source,
     };

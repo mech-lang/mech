@@ -288,6 +288,40 @@ class ManagedMemory {
 }
 
 class Device {
+  // Diagnostics for our generated WGSL only; admission/layout never use this
+  // inspection to filter bindings. The execution-plan owner decides visibility.
+  static bindingInventory(manifest) {
+    const wgsl = String(manifest.wgsl || "");
+    const declarations = [...wgsl.matchAll(
+      /@group\(0\)\s+@binding\((\d+)\)\s+var<storage,\s*\w+>\s+(\w+)[^;]*;/g,
+    )];
+    const executable = declarations.reduce(
+      (source, declaration) => source.replace(declaration[0], ""), wgsl,
+    );
+    return manifest.bindings.map(binding => {
+      const variable = declarations.find(match => Number(match[1]) === binding.binding)?.[2];
+      const references = variable ? [...executable.matchAll(
+        new RegExp(`\\b${variable}\\s*\\[[^\\]]+\\]\\s*(=(?!=))?`, "g"),
+      )] : [];
+      const atomicRead = variable && new RegExp(
+        `atomic(?:Load|Add|Sub|Max|Min|And|Or|Xor|Exchange|CompareExchangeWeak)\\s*\\(\\s*&${variable}\\b`,
+      ).test(executable);
+      const atomicWrite = variable && new RegExp(
+        `atomic(?:Store|Add|Sub|Max|Min|And|Or|Xor|Exchange|CompareExchangeWeak)\\s*\\(\\s*&${variable}\\b`,
+      ).test(executable);
+      return {
+        binding: binding.binding,
+        name: binding.name,
+        role: binding.role,
+        access: binding.access,
+        slot: binding.slot,
+        wgslVariable: variable || null,
+        entryPointReads: Boolean(atomicRead || references.some(match => !match[1])),
+        entryPointWrites: Boolean(atomicWrite || references.some(match => match[1])),
+      };
+    });
+  }
+
   static logicalOutputValues(output, physicalValues) {
     const dimensions = (output.sampleDimensions || []).map(Number);
     if (output.physicalLayout !== "column-major" || dimensions.length < 2) {
@@ -361,10 +395,25 @@ class Device {
     if (!/^sha256:[0-9a-f]{64}$/.test(String(manifest.physicalRevision || ""))) {
       throw new Error("GPU execution plan omitted its stable physical revision");
     }
-    const requiredLimits = this.requiredLimits(
-      manifest,
-      adapter.limits,
-    );
+    const diagnostics = {
+      region: manifest.region || "unknown",
+      requiredStorageBindings: manifest.bindings.length,
+      supportedStorageBindings: Number(adapter.limits.maxStorageBuffersPerShaderStage),
+      bindings: this.bindingInventory(manifest),
+    };
+    console.info("[mech-gpu-binding-inventory]", JSON.stringify(diagnostics));
+    if (globalThis.document?.documentElement?.dataset) {
+      const dataset = globalThis.document.documentElement.dataset;
+      dataset.mechGpuBindingInventory = JSON.stringify(diagnostics);
+      dataset.mechGpuRequiredStorageBindings = String(diagnostics.requiredStorageBindings);
+      dataset.mechGpuSupportedStorageBindings = String(diagnostics.supportedStorageBindings);
+    }
+    let requiredLimits;
+    try {
+      requiredLimits = this.requiredLimits(manifest, adapter.limits);
+    } catch (error) {
+      throw new Error(`compute region \`${diagnostics.region}\`: ${error.message}`, { cause: error });
+    }
     const device = await adapter.requestDevice({ requiredLimits });
     try {
       validateSupportedLimits(requiredLimits, device.limits, "device");
@@ -374,8 +423,19 @@ class Device {
       if (errors.length) {
         throw new Error(errors.map((message) => message.message).join("\n"));
       }
+      // Bind only the owner's shader-visible interface. Publication buffers
+      // remain double-buffered in manifest.states without an unused read binding.
+      const bindings = device.createBindGroupLayout({
+        entries: manifest.bindings.map(binding => ({
+          binding: binding.binding,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type: binding.access === "read" ? "read-only-storage" : "storage",
+          },
+        })),
+      });
       const descriptor = {
-        layout: "auto",
+        layout: device.createPipelineLayout({ bindGroupLayouts: [bindings] }),
         compute: { module, entryPoint: "main" },
       };
       const pipeline = typeof device.createComputePipelineAsync === "function"

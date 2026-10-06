@@ -7,13 +7,17 @@ use mech_core::{
     BytecodeInstruction, ModuleManifestConfig, ModuleManifestExportConfig,
     ModuleManifestExportKind, ParsedProgram,
 };
+use mech_engine::{CanonicalSourceFrontend, encode_program_artifact_bytecode_v1};
+
 use mech_native_live_host_fixture::{
-    TEST_LIVE_BASE_URI, TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER,
-    TEST_LIVE_OUTPUT_BASE_URI, TEST_LIVE_OUTPUT_CONTEXT, TEST_LIVE_RECORD_PATH,
+    TEST_LIVE_BASE_URI, TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_OUTPUT_BASE_URI,
+    TEST_LIVE_OUTPUT_CONTEXT, TEST_LIVE_PATH, TEST_LIVE_PROVIDER, TEST_LIVE_RECORD_PATH,
     TEST_LIVE_TUPLE_PATH, TestLiveHostFactory, empty_settings,
 };
-use mech_runtime::{
-    ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder,
+use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder};
+use mech_syntax::document::{
+    AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxKind, SyntaxNode,
+    TextSnapshot,
 };
 
 fn main() {
@@ -25,6 +29,7 @@ fn main() {
     };
     let bytecode = match mode.as_str() {
         "standard" => compile_standard(&source),
+        "structural-match" => compile_structural_match(&source),
         "cli" => compile_source_fixture(cli_builder(), &source),
         "console" | "time" | "timer" | "scene" | "robot-arm" => {
             compile_source_fixture(host_builder(&mode), &source)
@@ -55,6 +60,29 @@ fn main() {
         serde_json::to_vec(&functions).expect("runtime function names must serialize"),
     )
     .expect("failed to write source fixture runtime names");
+}
+
+fn compile_structural_match(source: &str) -> Vec<u8> {
+    fn find(node: SyntaxNode) -> Option<ExpressionSyntax> {
+        if node.kind() == SyntaxKind::Expression {
+            return ExpressionSyntax::cast(node);
+        }
+        node.children().find_map(find)
+    }
+
+    let parsed = mech_syntax::document::parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x535452554354), Revision(1), source).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+    let syntax = find(parsed.syntax()).expect("expression syntax");
+    assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+    let artifact = CanonicalSourceFrontend
+        .compile_expression(&syntax)
+        .expect("structural-match semantics")
+        .compile_artifact()
+        .expect("structural-match artifact");
+    encode_program_artifact_bytecode_v1(&artifact).expect("structural-match bytecode")
 }
 
 fn compile_standard(source: &str) -> Vec<u8> {

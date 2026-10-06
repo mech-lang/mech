@@ -7,17 +7,54 @@ on:
         description: Exact commit or ref to validate
         required: true
         type: string
+      verify_reuse:
+        description: Verify fresh-process reuse after cold owner preparation
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   native-plan:
     name: Native plan
     runs-on: ubuntu-latest
     env:
+      CARGO_BUILD_JOBS: "1"
       CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ inputs.validation_ref }}
+      - name: Record exact native-plan checkout
+        timeout-minutes: 2
+        env:
+          VALIDATION_REF: ${{ inputs.validation_ref }}
+        run: |
+          mkdir -p target/native-plan-logs
+          actual=$(git rev-parse HEAD)
+          expected=$(git rev-parse "$VALIDATION_REF^{commit}")
+          {
+            echo "requested_ref=$VALIDATION_REF"
+            echo "expected_sha=$expected"
+            echo "checkout_sha=$actual"
+          } | tee target/native-plan-logs/00-checkout.log
+          test "$actual" = "$expected"
+      - name: Verify Unix process targeting before native generation
+        timeout-minutes: 3
+        run: |
+          if ! command -v strace >/dev/null; then
+            sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes strace
+          fi
+          python3 -B scripts/tests/test_probe_unix_kill_targeting.py
+          python3 scripts/probe-unix-kill-targeting.py
+      - name: Verify native metadata subprocess contracts
+        timeout-minutes: 2
+        run: python3 -B scripts/tests/test_native_application_graphs.py
+      - name: Verify bounded native CI stage diagnostics
+        timeout-minutes: 2
+        run: python3 -B scripts/tests/test_native_plan_stage.py
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -25,13 +62,109 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Verify registry projects and live shutdown first
-        run: cargo +nightly-2026-03-03 test -p mech-build --all-features --test registry_generated_project
-      - name: Generate every remaining native fixture project
+        timeout-minutes: 20
         run: |
-          cargo +nightly-2026-03-03 test -p mech-build --all-features --test native_host_pruning
-          cargo +nightly-2026-03-03 test -p mech-build --all-features -- \
-            --skip registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch \
-            --skip live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure
-          python3 scripts/check-native-host-catalog.py
-          python3 scripts/check-generated-project-determinism.py
-          python3 scripts/check-native-application-graphs.py
+          echo "stage=registry-live fixture=registry_generated_project profile=all-features"
+          python3 scripts/run-native-plan-stage.py --stage registry-live --timeout-secs 1080 -- \
+            cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test registry_generated_project
+      - name: Verify native owner subprocess wrapper
+        timeout-minutes: 8
+        run: |
+          echo "stage=owner-wrapper-contract fixture=isolated_process cases=hang,parent-death,failed-parent-tree,nonzero,malformed-json"
+          python3 scripts/run-native-plan-stage.py --stage owner-wrapper-contract --timeout-secs 360 -- \
+            cargo +nightly-2026-03-03 test --locked -p mech-build --test isolated_process -- --nocapture
+      - name: Compile native planning contracts without execution
+        timeout-minutes: 20
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage planning-compile --timeout-secs 1080 \
+            --record-test-executable planning \
+            --test-executable-file target/native-plan-logs/planning-executable -- \
+            cargo +nightly-2026-03-03 test --locked --offline -p mech-build --all-features \
+            --test planning --no-run --message-format=json-render-diagnostics
+      - name: Prepare exactly the planning owner profiles
+        timeout-minutes: 35
+        env:
+          MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "900"
+          MECH_NATIVE_HOST_TARGET_TIMEOUT_SECS: "30"
+        run: |
+          echo "stage=planning-owner-preparation profiles=standard,fixed serial=true"
+          # Two 15-minute builds plus host discovery and supervised cleanup fit
+          # inside the 33-minute command and 35-minute Actions deadlines.
+          python3 scripts/run-native-plan-stage.py --stage planning-prepare --timeout-secs 1980 \
+            --test-executable-file target/native-plan-logs/planning-executable -- \
+            --ignored --exact prepare_planning_owner_runners --test-threads=1 --nocapture
+      - name: Verify native build planning contracts
+        timeout-minutes: 15
+        env:
+          MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"
+          MECH_NATIVE_HOST_TARGET_TIMEOUT_SECS: "30"
+          MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS: "540"
+        run: |
+          echo "stage=native-build-planning fixture=planning profile=all-features witness=actor-retirement,artifact-closure"
+          python3 scripts/run-native-plan-stage.py --stage planning-execution --timeout-secs 780 \
+            --test-executable-file target/native-plan-logs/planning-executable -- \
+            --test-threads=1 --nocapture
+      - name: Verify fresh-process owner reuse and planning execution
+        if: inputs.verify_reuse
+        timeout-minutes: 18
+        env:
+          MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"
+          MECH_NATIVE_HOST_TARGET_TIMEOUT_SECS: "30"
+          MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS: "540"
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage planning-reuse-prepare --timeout-secs 120 \
+            --test-executable-file target/native-plan-logs/planning-executable -- \
+            --ignored --exact prepare_planning_owner_runners --test-threads=1 --nocapture
+          python3 scripts/run-native-plan-stage.py --stage planning-reuse-execution --timeout-secs 780 \
+            --test-executable-file target/native-plan-logs/planning-executable -- \
+            --test-threads=1 --nocapture
+      - name: Verify native host pruning
+        timeout-minutes: 10
+        run: |
+          echo "stage=native-host-pruning fixture=native_host_pruning profile=all-features"
+          python3 scripts/run-native-plan-stage.py --stage native-host-pruning --timeout-secs 480 -- \
+            cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test native_host_pruning
+      - name: Verify standard host source planning
+        timeout-minutes: 15
+        run: |
+          echo "stage=standard-host-source-planning fixture=standard_host_source_planning profile=all-features"
+          python3 scripts/run-native-plan-stage.py --stage standard-host-source-planning --timeout-secs 780 -- \
+            cargo +nightly-2026-03-03 test --locked -p mech-build --all-features \
+            --lib \
+            --test standard_host_source_planning
+      - name: Verify native host catalog
+        timeout-minutes: 10
+        run: |
+          echo "stage=native-host-catalog fixture=closed-provider-catalog profiles=standard,full"
+          python3 scripts/run-native-plan-stage.py --stage native-host-catalog --timeout-secs 480 -- \
+            python3 scripts/check-native-host-catalog.py
+      - name: Verify generated project determinism
+        timeout-minutes: 55
+        env:
+          MECH_NATIVE_DETERMINISM_GENERATOR_TIMEOUT_SECS: "1440"
+          MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "900"
+          MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS: "540"
+        run: |
+          echo "stage=generated-project-determinism fixture=all-16 profiles=standard,fixed,full passes=2"
+          python3 scripts/run-native-plan-stage.py --stage generated-project-determinism --timeout-secs 3000 -- \
+            python3 scripts/check-generated-project-determinism.py
+      - name: Verify native application graphs
+        timeout-minutes: 30
+        env:
+          MECH_NATIVE_APPLICATION_GENERATOR_TIMEOUT_SECS: "1320"
+          MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "900"
+          MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS: "540"
+        run: |
+          echo "stage=native-application-graphs fixture=generated-project-matrix profiles=standard,fixed,full"
+          python3 scripts/run-native-plan-stage.py --stage native-application-graphs --timeout-secs 1620 -- \
+            python3 scripts/check-native-application-graphs.py
+      - name: Retain native-plan diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-plan-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/native-plan-logs
+            target/bytecode-v1-fixtures/owner-runner/logs
+          if-no-files-found: error
+          retention-days: 14

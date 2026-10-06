@@ -81,6 +81,9 @@ impl MechRuntime {
         for version in journal.version_puts() {
             version.validate()?;
             version.validate_import_edges()?;
+            if let Some(document) = &version.source_document {
+                self.validate_source_revision(version.module, document)?;
+            }
             if let Some(existing) = self.store.get_module_version(version.id)? {
                 if existing != *version {
                     return Err(module_journal_validation_error(

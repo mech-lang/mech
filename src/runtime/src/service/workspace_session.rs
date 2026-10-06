@@ -419,14 +419,25 @@ mod tests {
 
         assert!(snapshot.diagnostics.is_empty());
         assert!(snapshot.targets.contains_key("main"));
-        assert!(snapshot.sources.values().any(|source| {
+        let retained = snapshot.sources.values().find(|source| {
             source
                 .path
                 .as_ref()
                 .and_then(|path| path.canonicalize().ok())
                 .as_ref()
                 == Some(&main_path)
-        }));
+        });
+        assert!(retained.is_some());
+        let retained = retained.unwrap();
+        assert_eq!(
+            retained
+                .source_document
+                .as_ref()
+                .expect("workspace snapshot retains the module's canonical revision")
+                .source()
+                .to_contiguous_string(),
+            "result := true\n"
+        );
     }
 
     #[cfg(feature = "resident-routing-source")]

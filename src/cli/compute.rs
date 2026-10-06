@@ -54,9 +54,8 @@ pub(crate) fn compile_inline_compute_application(
     source: &str,
     resolver: FileSourceResolver,
 ) -> MResult<CompiledNativeComputeApplication> {
-    let tree = mech_syntax::parse(source.trim())?;
     compile_compute_application(plan, resolver, |compiler| {
-        compiler.compile_mixed_tree(&tree)
+        compiler.compile_mixed_source(source)
     })
 }
 
@@ -66,7 +65,7 @@ pub(crate) fn compile_root_compute_application(
     resolver: FileSourceResolver,
 ) -> MResult<CompiledNativeComputeApplication> {
     compile_compute_application(plan, resolver, |compiler| {
-        compiler.compile_mixed_root(request, cli_module_options())
+        compiler.compile_canonical_mixed_root(request, cli_module_options())
     })
 }
 

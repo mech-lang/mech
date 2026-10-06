@@ -1,4 +1,6 @@
-use super::{EnumVariantSchema, FloatWidth, IntegerWidth, Schema, SchemaBody, SchemaField};
+use super::{
+    EnumVariantSchema, FloatWidth, IntegerInterval, IntegerWidth, Schema, SchemaBody, SchemaField,
+};
 use crate::dimension::{encode_dimension_parameters, encode_normalized_dimension};
 use crate::{DimensionParameter, ExtentEvolution, SchemaKey, extent_evolution};
 use sha2::{Digest, Sha256};
@@ -99,6 +101,35 @@ fn encode_schema_body(body: &SchemaBody) -> Box<[u8]> {
         SchemaBody::SignedInteger(width) => {
             writer.write_u8(0x03);
             writer.write_u16_le(integer_width(*width));
+        }
+        SchemaBody::IntegerInterval(interval) => {
+            writer.write_u8(0x15);
+            match interval {
+                IntegerInterval::Unsigned {
+                    width,
+                    lower,
+                    upper,
+                    upper_inclusive,
+                } => {
+                    writer.write_u8(0);
+                    writer.write_u16_le(integer_width(*width));
+                    writer.write_bytes(&lower.to_le_bytes());
+                    writer.write_bytes(&upper.to_le_bytes());
+                    writer.write_u8(u8::from(*upper_inclusive));
+                }
+                IntegerInterval::Signed {
+                    width,
+                    lower,
+                    upper,
+                    upper_inclusive,
+                } => {
+                    writer.write_u8(1);
+                    writer.write_u16_le(integer_width(*width));
+                    writer.write_bytes(&lower.to_le_bytes());
+                    writer.write_bytes(&upper.to_le_bytes());
+                    writer.write_u8(u8::from(*upper_inclusive));
+                }
+            }
         }
         SchemaBody::FloatingPoint(width) => {
             writer.write_u8(0x04);

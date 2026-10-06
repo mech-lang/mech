@@ -3,6 +3,7 @@
 #[cfg(feature = "no_std")]
 extern crate alloc;
 
+mod browser_document;
 pub mod config;
 pub mod effect;
 mod extension;
@@ -40,6 +41,8 @@ pub mod capability;
 pub mod context;
 #[cfg(feature = "runtime")]
 mod context_events;
+#[cfg(all(feature = "source", feature = "pretty_print"))]
+mod document_render;
 #[cfg(feature = "runtime")]
 pub mod event;
 pub mod host;
@@ -75,6 +78,7 @@ mod turn_record;
 #[cfg(all(feature = "watcher", feature = "source"))]
 mod workspace;
 
+pub use self::browser_document::*;
 pub use self::config::*;
 pub use self::effect::*;
 pub use self::extension::{RuntimeExtensionPanicked, RuntimeStoreCommitIndeterminate};
@@ -94,6 +98,8 @@ pub use self::actor::*;
 pub use self::capability::*;
 #[cfg(feature = "runtime")]
 pub use self::context::*;
+#[cfg(all(feature = "source", feature = "pretty_print"))]
+pub use self::document_render::*;
 #[cfg(feature = "runtime")]
 pub use self::event::*;
 pub use self::host::*;

@@ -17,6 +17,14 @@ struct DocumentSourceBundle {
     root_specifier: String,
     sources: Vec<DocumentSourceBundleEntry>,
     resolutions: Vec<SourceResolutionEntry>,
+    provenance: BTreeMap<String, DocumentSourceProvenance>,
+}
+
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DocumentSourceProvenance {
+    nominal_origin: mech_core::CanonicalNominalPath,
+    nominal_package_id: Option<String>,
 }
 
 #[derive(Clone, Debug, serde::Serialize)]
@@ -34,6 +42,7 @@ struct PendingSourceRequest {
 #[derive(Debug)]
 pub(super) struct ResolvedDocumentBundle {
     pub encoded_bundle: String,
+    pub root_specifier: String,
     pub root_source: String,
 }
 
@@ -81,6 +90,7 @@ pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<ResolvedDoc
     let mut canonical_uri_to_bundle_key = BTreeMap::<String, String>::new();
     let mut sources = BTreeMap::<String, DocumentSourceBundleEntry>::new();
     let mut resolutions = BTreeMap::<(String, String), String>::new();
+    let mut provenance = BTreeMap::new();
 
     while let Some(PendingSourceRequest {
         request,
@@ -112,6 +122,18 @@ pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<ResolvedDoc
             continue;
         }
 
+        if let Some(origin) = resolved.nominal_origin {
+            provenance.insert(
+                target_key.clone(),
+                DocumentSourceProvenance {
+                    nominal_origin: origin,
+                    nominal_package_id: resolved
+                        .nominal_package_id
+                        .as_deref()
+                        .map(crate::nominal_provenance::transport_package_id),
+                },
+            );
+        }
         let source = match resolved.source {
             MechSourceCode::String(source) => source,
             other => {
@@ -156,13 +178,15 @@ pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<ResolvedDoc
         .ok_or_else(|| format_error("document source bundle root was not resolved"))?;
     let encoded = serde_json::to_vec(&DocumentSourceBundle {
         version: 2,
-        root_specifier,
+        root_specifier: root_specifier.clone(),
         sources: sources.into_values().collect(),
         resolutions,
+        provenance,
     })
     .map_err(|error| format_error(format!("failed to encode document source bundle: {error}")))?;
     Ok(ResolvedDocumentBundle {
         encoded_bundle: base64::engine::general_purpose::STANDARD.encode(encoded),
+        root_specifier,
         root_source,
     })
 }

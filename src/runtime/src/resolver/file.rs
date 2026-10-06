@@ -1,15 +1,15 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Read;
 #[cfg(windows)]
 use std::path::Prefix;
 use std::path::{Component, Path, PathBuf};
+#[cfg(feature = "source")]
+use std::sync::{Arc, Mutex};
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::resolver::{ResolvedSource, SourceRequest, SourceResolver};
-#[cfg(feature = "source")]
-use crate::resolver::{SourceIndex, source_request_for_import};
 use crate::{FS_IMPORT, FS_READ, FS_RESOLVE, SharedCapabilityKernel, check_fs_capability};
 
 use super::{
@@ -59,24 +59,61 @@ enum FilesystemSourceSpecifier {
 #[derive(Clone, Debug)]
 pub struct FileSourceResolver {
     roots: Vec<PathBuf>,
+    nominal_origins: HashMap<String, (mech_core::CanonicalNominalPath, Option<String>)>,
     capability_kernel: Option<SharedCapabilityKernel>,
     capability_subject: Option<String>,
+    #[cfg(feature = "source")]
+    source_revisions: Arc<Mutex<HashMap<String, (String, mech_syntax::document::Revision)>>>,
 }
 
 impl FileSourceResolver {
+    /// Register the manifest-derived defining package and module path for one
+    /// canonical source URI. The resolver will attach it before admission.
+    pub fn with_nominal_origin(
+        mut self,
+        canonical_uri: impl Into<String>,
+        origin: mech_core::CanonicalNominalPath,
+    ) -> Self {
+        self.nominal_origins
+            .insert(canonical_uri.into(), (origin, None));
+        self
+    }
+
+    /// Register package-aware provenance supplied by a package resolver.
+    /// `package_id` is a collision discriminator and does not enter NominalKey.
+    pub fn with_nominal_provenance(
+        mut self,
+        canonical_uri: impl Into<String>,
+        origin: mech_core::CanonicalNominalPath,
+        package_id: impl Into<String>,
+    ) -> Self {
+        let package_id = package_id.into();
+        self.nominal_origins.insert(
+            canonical_uri.into(),
+            (origin, (!package_id.is_empty()).then_some(package_id)),
+        );
+        self
+    }
+
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self {
             roots: vec![root.into()],
+            nominal_origins: HashMap::new(),
             capability_kernel: None,
             capability_subject: None,
+            #[cfg(feature = "source")]
+            source_revisions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     pub fn empty() -> Self {
         Self {
             roots: Vec::new(),
+            nominal_origins: HashMap::new(),
             capability_kernel: None,
             capability_subject: None,
+            #[cfg(feature = "source")]
+            source_revisions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -110,11 +147,210 @@ impl FileSourceResolver {
         &self.roots
     }
 
-    fn resolve_path(&self, request: &SourceRequest) -> MResult<Option<PathBuf>> {
+    /// Return the defining package and module before a caller remaps a file
+    /// to another transport URI, as static browser bundles do.
+    pub fn nominal_provenance_for_path(
+        &self,
+        path: &Path,
+    ) -> MResult<Option<(mech_core::CanonicalNominalPath, String)>> {
+        self.manifest_nominal_origin(path)
+    }
+
+    /// Resolve a file's defining package and module from its nearest Cargo
+    /// package manifest. A workspace-only manifest does not define a package.
+    fn manifest_nominal_origin(
+        &self,
+        path: &Path,
+    ) -> MResult<Option<(mech_core::CanonicalNominalPath, String)>> {
+        for directory in path.ancestors().skip(1) {
+            let manifest_path = directory.join("Cargo.toml");
+            if !manifest_path.is_file() {
+                continue;
+            }
+            // A source grant need not include its ancestor manifest. Origin
+            // discovery is optional; nominal declarations will require an
+            // explicit origin at compilation if one cannot be read here.
+            if self.check(FS_READ, &manifest_path).is_err() {
+                return Ok(None);
+            }
+            let manifest_source = std::fs::read_to_string(&manifest_path).map_err(|error| {
+                filesystem_specifier_error(
+                    manifest_path.to_string_lossy().as_ref(),
+                    &format!("cannot read package manifest: {error}"),
+                )
+            })?;
+            let manifest = manifest_source
+                .parse::<toml_edit::DocumentMut>()
+                .map_err(|error| {
+                    filesystem_specifier_error(
+                        manifest_path.to_string_lossy().as_ref(),
+                        &format!("invalid package manifest: {error}"),
+                    )
+                })?;
+            let Some(package_name) = manifest
+                .as_table()
+                .get("package")
+                .and_then(toml_edit::Item::as_table)
+                .and_then(|package| package.get("name"))
+                .and_then(toml_edit::Item::as_str)
+            else {
+                return Ok(None);
+            };
+            let relative = path.strip_prefix(directory).map_err(|error| {
+                filesystem_specifier_error(
+                    path.to_string_lossy().as_ref(),
+                    &format!("source is outside its package: {error}"),
+                )
+            })?;
+            let mut segments = vec![package_name.to_owned()];
+            let module = relative.with_extension("");
+            for component in module.components() {
+                let Component::Normal(segment) = component else {
+                    return Ok(None);
+                };
+                let Some(segment) = segment.to_str() else {
+                    return Ok(None);
+                };
+                segments.push(segment.to_owned());
+            }
+            // Directory imports resolve through `index.mec`; its defining
+            // module is the directory, not a child namespace named `index`.
+            if segments.last().is_some_and(|segment| segment == "index") {
+                segments.pop();
+            }
+            let origin = mech_core::CanonicalNominalPath::new(segments).map_err(|error| {
+                filesystem_specifier_error(
+                    path.to_string_lossy().as_ref(),
+                    &format!("invalid defining package or module: {error:?}"),
+                )
+            })?;
+            let package_id = if let Some(version) = manifest
+                .as_table()
+                .get("package")
+                .and_then(toml_edit::Item::as_table)
+                .and_then(|package| package.get("version"))
+                .and_then(toml_edit::Item::as_str)
+            {
+                format!(
+                    "path+{}#{package_name}@{version}",
+                    path_to_file_uri(directory)?
+                )
+            } else {
+                // An inherited version needs the package graph to supply its
+                // Cargo ID. The manifest remains a unique local discriminator.
+                format!("manifest:{}", path_to_file_uri(&manifest_path)?)
+            };
+            return Ok(Some((origin, package_id)));
+        }
+        Ok(None)
+    }
+
+    fn attach_nominal_provenance(
+        &self,
+        path: &Path,
+        canonical_uri: &str,
+        mut resolved: ResolvedSource,
+    ) -> MResult<ResolvedSource> {
+        if resolved.kind != SourceKind::Mech {
+            return Ok(resolved);
+        }
+        if let Some((origin, package_id)) = self.nominal_origins.get(canonical_uri) {
+            resolved = resolved.with_nominal_origin(origin.clone());
+            if let Some(package_id) = package_id {
+                resolved = resolved.with_nominal_package_id(package_id.clone());
+            }
+        } else if let Some((origin, package_id)) = self.manifest_nominal_origin(path)? {
+            resolved = resolved
+                .with_nominal_origin(origin)
+                .with_nominal_package_id(package_id);
+        }
+        Ok(resolved)
+    }
+
+    /// Resolve a source through the prepared canonical authority only. This
+    /// path never invokes or consults the legacy parser and publishes no
+    /// resolver facts unless strict document admission succeeds.
+    #[cfg(feature = "source")]
+    pub fn resolve_canonical(&self, request: &SourceRequest) -> MResult<Option<ResolvedSource>> {
+        request.validate()?;
+        let Some(path) = self.resolve_filesystem_path(request)? else {
+            return Ok(None);
+        };
+        let kind = SourceKind::from_path(&path);
+        let source = read_runtime_source_file_with_capabilities_and_import_checks(
+            &path,
+            self.capability_kernel.as_ref(),
+            self.capability_subject.as_deref(),
+            request.referrer.is_some(),
+        )?;
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("source")
+            .to_owned();
+        let canonical_uri = path_to_file_uri(&path)?;
+        let resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+        let mut resolved = self.attach_nominal_provenance(&path, &canonical_uri, resolved)?;
+        if resolved.kind == SourceKind::Mech
+            && matches!(&resolved.source, MechSourceCode::String(_))
+        {
+            resolved =
+                self.with_source_revision(resolved, ResolvedSource::admit_canonical_document)?;
+        }
+        Ok(Some(resolved))
+    }
+
+    /// Revision selection and successful admission form one transaction across
+    /// resolver clones. Rejected candidates leave the accepted history untouched.
+    #[cfg(feature = "source")]
+    fn with_source_revision(
+        &self,
+        resolved: ResolvedSource,
+        admit: impl FnOnce(ResolvedSource) -> MResult<ResolvedSource>,
+    ) -> MResult<ResolvedSource> {
+        let canonical_uri = resolved.canonical_uri.clone();
+        let MechSourceCode::String(source) = &resolved.source else {
+            return Err(filesystem_specifier_error(
+                &canonical_uri,
+                "requires textual source",
+            ));
+        };
+        let source = source.clone();
+        let mut revisions = self.source_revisions.lock().map_err(|_| {
+            filesystem_specifier_error(&canonical_uri, "source revision owner is poisoned")
+        })?;
+        let revision = match revisions.get(&canonical_uri) {
+            None => mech_syntax::document::Revision(0),
+            Some((previous_source, revision)) if previous_source == &source => *revision,
+            Some((_, revision)) => revision
+                .0
+                .checked_add(1)
+                .map(mech_syntax::document::Revision)
+                .ok_or_else(|| {
+                    filesystem_specifier_error(
+                        &canonical_uri,
+                        "source revision identity is exhausted",
+                    )
+                })?,
+        };
+        let resolved = resolved
+            .retain_source_document(revision, mech_syntax::document::ParseConfig::default())?;
+        let resolved = admit(resolved)?;
+        revisions.insert(canonical_uri, (source, revision));
+        Ok(resolved)
+    }
+
+    /// Resolve a request to its canonical filesystem path without reading it.
+    ///
+    /// This is the shared filesystem-specifier boundary for consumers that
+    /// need the resolver's `fs://`, `file://`, referrer-relative, extension,
+    /// and directory-index rules before deciding how to load the target.
+    pub fn resolve_filesystem_path(&self, request: &SourceRequest) -> MResult<Option<PathBuf>> {
+        request.validate()?;
         match parse_filesystem_source_specifier(&request.specifier)? {
             FilesystemSourceSpecifier::OtherScheme => Ok(None),
             FilesystemSourceSpecifier::Absolute(specifier) => {
-                for candidate in absolute_path_candidates(&specifier) {
+                for candidate in absolute_source_path_candidates(&specifier) {
                     if candidate.is_file() {
                         return self
                             .authorize_resolved(request, canonicalize_source_path(&candidate)?);
@@ -124,7 +360,7 @@ impl FileSourceResolver {
             }
             FilesystemSourceSpecifier::RootRelative(specifier) => {
                 for root in &self.roots {
-                    for candidate in path_candidates(root, &specifier) {
+                    for candidate in source_path_candidates(root, &specifier) {
                         if candidate.is_file() {
                             return self.authorize_resolved(
                                 request,
@@ -137,7 +373,7 @@ impl FileSourceResolver {
             }
             FilesystemSourceSpecifier::Ordinary(specifier) => {
                 if specifier.is_absolute() {
-                    for candidate in absolute_path_candidates(&specifier) {
+                    for candidate in absolute_source_path_candidates(&specifier) {
                         if candidate.is_file() {
                             return self.authorize_resolved(
                                 request,
@@ -157,7 +393,7 @@ impl FileSourceResolver {
                         };
 
                         if let Some(parent) = parent {
-                            for candidate in path_candidates(parent, &specifier) {
+                            for candidate in source_path_candidates(parent, &specifier) {
                                 if candidate.is_file() {
                                     return self.authorize_resolved(
                                         request,
@@ -170,7 +406,7 @@ impl FileSourceResolver {
                 }
 
                 for root in &self.roots {
-                    for candidate in path_candidates(root, &specifier) {
+                    for candidate in source_path_candidates(root, &specifier) {
                         if candidate.is_file() {
                             return self.authorize_resolved(
                                 request,
@@ -192,7 +428,7 @@ impl FileSourceResolver {
             | FilesystemSourceSpecifier::Absolute(path) => Ok(Some(path)),
             FilesystemSourceSpecifier::RootRelative(path) => {
                 for root in &self.roots {
-                    for candidate in path_candidates(root, &path) {
+                    for candidate in source_path_candidates(root, &path) {
                         if candidate.is_file() {
                             return Ok(Some(canonicalize_source_path(&candidate)?));
                         }
@@ -218,61 +454,40 @@ impl FileSourceResolver {
 
 impl SourceResolver for FileSourceResolver {
     fn resolve(&self, request: &SourceRequest) -> MResult<Option<ResolvedSource>> {
-        request.validate()?;
-
-        let Some(path) = self.resolve_path(request)? else {
-            return Ok(None);
-        };
-
-        let kind = SourceKind::from_path(&path);
-        let source = read_runtime_source_file_with_capabilities_and_import_checks(
-            &path,
-            self.capability_kernel.as_ref(),
-            self.capability_subject.as_deref(),
-            request.referrer.is_some(),
-        )?;
-        let name = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or("source")
-            .to_string();
-
-        let canonical_uri = path_to_file_uri(&path)?;
-        let resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
-
         #[cfg(feature = "source")]
-        let resolved = {
-            let mut resolved = resolved;
-            if resolved.kind == SourceKind::Mech {
-                if let MechSourceCode::String(source_text) = &resolved.source {
-                    let tree = mech_syntax::parser::parse(source_text.trim())?;
-                    let referrer = canonical_uri.clone();
-                    let index = SourceIndex::from_program(&tree);
-                    index.validate_address_targets()?;
-                    let imports = index.all_imports();
-                    let exports = index.all_exports();
-                    let contexts = index.all_contexts();
-                    let address_references = index.all_address_references();
-                    let scopes = index.module_scopes();
-                    let dependencies = imports
-                        .iter()
-                        .map(|import| source_request_for_import(import, Some(&referrer)))
-                        .collect::<Vec<_>>();
+        {
+            return self.resolve_canonical(request);
+        }
 
-                    resolved = resolved
-                        .with_syntax_tree(tree)
-                        .with_imports(imports)
-                        .with_exports(exports)
-                        .with_contexts(contexts)
-                        .with_address_references(address_references)
-                        .with_dependencies(dependencies)
-                        .with_scopes(scopes);
-                }
-            }
-            resolved
-        };
+        #[cfg(not(feature = "source"))]
+        {
+            request.validate()?;
 
-        Ok(Some(resolved))
+            let Some(path) = self.resolve_filesystem_path(request)? else {
+                return Ok(None);
+            };
+
+            let kind = SourceKind::from_path(&path);
+            let source = read_runtime_source_file_with_capabilities_and_import_checks(
+                &path,
+                self.capability_kernel.as_ref(),
+                self.capability_subject.as_deref(),
+                request.referrer.is_some(),
+            )?;
+            let name = path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("source")
+                .to_string();
+
+            let canonical_uri = path_to_file_uri(&path)?;
+            let resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+            Ok(Some(self.attach_nominal_provenance(
+                &path,
+                &canonical_uri,
+                resolved,
+            )?))
+        }
     }
 }
 
@@ -548,7 +763,9 @@ fn hex_value(byte: u8) -> Option<u8> {
     }
 }
 
-fn path_to_file_uri(path: &Path) -> MResult<String> {
+/// Encode a native filesystem path as the canonical `file://` spelling used
+/// by [`SourceRequest`] and [`FileSourceResolver`].
+pub fn path_to_file_uri(path: &Path) -> MResult<String> {
     #[cfg(windows)]
     {
         return windows_path_to_file_uri(path);
@@ -715,18 +932,17 @@ fn hex_char(value: u8) -> char {
     }
 }
 
-fn path_candidates(base: &Path, specifier: &Path) -> Vec<PathBuf> {
-    vec![
-        base.join(specifier),
-        base.join(format!("{}.mec", specifier.to_string_lossy())),
-        base.join(specifier).join("index.mec"),
-    ]
+/// Ordered filesystem candidates shared by source resolution and retained bundle linking.
+pub fn source_path_candidates(base: &Path, specifier: &Path) -> Vec<PathBuf> {
+    absolute_source_path_candidates(&base.join(specifier))
 }
 
-fn absolute_path_candidates(specifier: &Path) -> Vec<PathBuf> {
+fn absolute_source_path_candidates(specifier: &Path) -> Vec<PathBuf> {
+    let mut appended = specifier.as_os_str().to_os_string();
+    appended.push(".mec");
     vec![
         specifier.to_path_buf(),
-        PathBuf::from(format!("{}.mec", specifier.to_string_lossy())),
+        PathBuf::from(appended),
         specifier.join("index.mec"),
     ]
 }
@@ -1050,6 +1266,67 @@ mod tests {
     }
 
     #[test]
+    fn package_manifest_supplies_exact_nominal_source_origin() {
+        let root = temp_root("nominal-package-origin");
+        std::fs::create_dir_all(root.join("src/events")).unwrap();
+        std::fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = 'sample-package'\nversion = '1.0.0'\n",
+        )
+        .unwrap();
+        let source = root.join("src/events/state.mec");
+        std::fs::write(
+            &source,
+            "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n",
+        )
+        .unwrap();
+        let resolved = FileSourceResolver::new(&root)
+            .resolve(&SourceRequest::new(source.to_string_lossy().to_string()))
+            .unwrap()
+            .unwrap();
+        assert!(
+            resolved
+                .nominal_package_id
+                .as_deref()
+                .is_some_and(|id| id.ends_with("#sample-package@1.0.0"))
+        );
+        assert_eq!(
+            resolved.nominal_origin.unwrap().segments(),
+            &["sample-package", "src", "events", "state"]
+        );
+        let explicit = mech_core::CanonicalNominalPath::new(vec![
+            "dependency".to_owned(),
+            "events".to_owned(),
+        ])
+        .unwrap();
+        let resolved = FileSourceResolver::new(&root)
+            .with_nominal_provenance(
+                path_to_file_uri(&source.canonicalize().unwrap()).unwrap(),
+                explicit.clone(),
+                "registry+source#dependency@1.0.0",
+            )
+            .resolve(&SourceRequest::new(source.to_string_lossy().to_string()))
+            .unwrap()
+            .unwrap();
+        assert_eq!(resolved.nominal_origin.as_ref(), Some(&explicit));
+        assert_eq!(
+            resolved.nominal_package_id.as_deref(),
+            Some("registry+source#dependency@1.0.0")
+        );
+        let index = root.join("src/events/index.mec");
+        std::fs::write(&index, "value := 1\n").unwrap();
+        let resolved = FileSourceResolver::new(&root)
+            .resolve(&SourceRequest::new(index.to_string_lossy().to_string()))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            resolved.nominal_origin.unwrap().segments(),
+            &["sample-package", "src", "events"]
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn file_resolver_resolves_mec_file() {
         let root = temp_root("mech-runtime-file-resolver-test");
         drop(std::fs::remove_dir_all(&root));
@@ -1067,6 +1344,108 @@ mod tests {
         assert_eq!(resolved.kind, SourceKind::Mech);
         assert!(resolved.canonical_uri.starts_with("file://"));
         assert!(resolved.is_executable_mech_source());
+        #[cfg(feature = "source")]
+        {
+            let document = resolved
+                .source_document()
+                .expect("file resolver retains the canonical source revision");
+            assert_eq!(document.source().to_contiguous_string(), "x := 1");
+            assert_eq!(
+                document.source().document().0,
+                mech_core::hash_str(&resolved.canonical_uri)
+            );
+        }
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn cloned_file_resolvers_assign_distinct_revisions_to_concurrent_candidates() {
+        let resolver = FileSourceResolver::new(".");
+        let start = Arc::new(std::sync::Barrier::new(8));
+        let workers = (0..8)
+            .map(|value| {
+                let resolver = resolver.clone();
+                let start = start.clone();
+                std::thread::spawn(move || {
+                    let source = format!("value := {value}\n");
+                    let resolved = ResolvedSource::new(
+                        "index.mec",
+                        "file:///concurrent/index.mec",
+                        MechSourceCode::String(source.clone()),
+                    )
+                    .with_kind(SourceKind::Mech);
+                    start.wait();
+                    let resolved = resolver
+                        .with_source_revision(resolved, ResolvedSource::admit_canonical_document)
+                        .unwrap();
+                    let document = resolved.source_document().unwrap();
+                    (
+                        document.source().document(),
+                        document.source().revision(),
+                        source,
+                    )
+                })
+            })
+            .collect::<Vec<_>>();
+        let mut accepted = std::collections::BTreeMap::new();
+        for worker in workers {
+            let (document, revision, text) = worker.join().unwrap();
+            assert!(accepted.insert((document, revision), text).is_none());
+        }
+        assert_eq!(accepted.len(), 8);
+        assert_eq!(
+            accepted
+                .keys()
+                .map(|(_, revision)| revision.0)
+                .collect::<Vec<_>>(),
+            (0..8).collect::<Vec<_>>()
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn canonical_file_replacement_advances_revision_and_rejection_preserves_history() {
+        let root = temp_root("mech-runtime-file-revision-test");
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("index.mec");
+        let resolver = FileSourceResolver::new(&root);
+        let request = SourceRequest::new("index.mec");
+
+        std::fs::write(&path, "value := 1\n").unwrap();
+        let before = resolver.resolve_canonical(&request).unwrap().unwrap();
+        std::fs::write(&path, "value := [\n").unwrap();
+        assert!(resolver.resolve_canonical(&request).is_err());
+        std::fs::write(&path, "value := 2\n").unwrap();
+        let after = resolver.resolve_canonical(&request).unwrap().unwrap();
+
+        let before = before.source_document().unwrap();
+        let after = after.source_document().unwrap();
+        assert_eq!(before.source().document(), after.source().document());
+        assert_eq!(
+            before.source().revision(),
+            mech_syntax::document::Revision(0)
+        );
+        assert_eq!(
+            after.source().revision(),
+            mech_syntax::document::Revision(1)
+        );
+        assert_eq!(before.source().to_contiguous_string(), "value := 1\n");
+        assert_eq!(after.source().to_contiguous_string(), "value := 2\n");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn canonical_file_resolution_rejects_malformed_retained_source() {
+        let root = temp_root("mech-runtime-canonical-file-admission-test");
+        std::fs::create_dir_all(&root).unwrap();
+        let source = "value := [\n";
+        std::fs::write(root.join("index.mec"), source).unwrap();
+        let resolver = FileSourceResolver::new(&root);
+        let request = SourceRequest::new("index.mec");
+
+        assert!(resolver.resolve_canonical(&request).is_err());
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -1517,6 +1896,25 @@ mod capability_tests {
                 .resolve(&SourceRequest::new("outside/secret.mec"))
                 .is_err()
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn source_grant_does_not_require_ancestor_manifest_access() {
+        let root = temp_root("manifest-outside-grant");
+        let allowed = root.join("allowed");
+        std::fs::create_dir_all(&allowed).unwrap();
+        std::fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = \"sample\"\nversion = \"1.0.0\"\n",
+        )
+        .unwrap();
+        std::fs::write(allowed.join("main.mec"), "value := 1\n").unwrap();
+        let resolved = resolver(&root, &allowed)
+            .resolve(&SourceRequest::new("allowed/main.mec"))
+            .unwrap()
+            .unwrap();
+        assert!(resolved.nominal_origin.is_none());
         std::fs::remove_dir_all(root).unwrap();
     }
 

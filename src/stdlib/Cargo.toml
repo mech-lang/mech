@@ -99,7 +99,7 @@ standard_compiler = ["standard_source", "compiler"]
 
 full_runtime = ["runtime", "full_values", "full_operations"]
 full_source = ["full_runtime", "semantic-compiler"]
-full_compiler = ["full_source", "compiler"]
+full_compiler = ["full_source", "compiler", "mech-engine/resident-artifact"]
 
 standard_values = [
   "bool", "string", "f64",
@@ -113,7 +113,7 @@ full_values = [
   "i8", "i16", "i32", "i64", "i128",
   "f32", "f64", "c64", "r64",
   "set", "map", "table", "tuple", "record", "atom", "enum",
-  # The frozen PR2 runtime catalog used the dynamic-shape distribution.
+  # The standard-linked-dynamic-shape catalog contract uses dynamic shapes.
   # Fixed shapes remain available for explicitly selected profiles and are
   # exercised separately by the frozen specialization-contract fixture.
   "row_vectord", "vectord", "matrixd",

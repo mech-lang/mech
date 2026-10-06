@@ -1,9 +1,11 @@
-use mech_core::FencedMechCode;
+use super::{SourceImportAlias, SourceImportDeclaration, SourceImportKind, SourceRequest};
 
-use super::{
-    SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration, SourceImportKind,
-    SourceRequest,
-};
+fn is_source_specifier(specifier: &str) -> bool {
+    specifier.contains("://")
+        || specifier.starts_with("./")
+        || specifier.starts_with("../")
+        || specifier.ends_with(".mec")
+}
 
 pub fn classify_import_specifier(specifier: impl Into<String>) -> SourceImportDeclaration {
     let specifier = specifier.into();
@@ -15,11 +17,7 @@ pub fn classify_import_specifier(specifier: impl Into<String>) -> SourceImportDe
             item: None,
             kind: SourceImportKind::Wildcard,
         }
-    } else if specifier.contains("://")
-        || specifier.starts_with("./")
-        || specifier.starts_with("../")
-        || specifier.ends_with(".mec")
-    {
+    } else if is_source_specifier(&specifier) {
         SourceImportDeclaration {
             specifier,
             alias: None,
@@ -97,11 +95,8 @@ pub fn source_request_for_import(
     request
 }
 
-fn module_import_item_path(item: &mech_core::ModuleImportPath) -> String {
-    item.to_string()
-}
-
-fn classified_module_import(
+#[cfg(feature = "source")]
+pub(super) fn classified_module_import(
     module: &str,
     item: Option<&str>,
     alias: Option<SourceImportAlias>,
@@ -118,63 +113,14 @@ fn classified_module_import(
     declaration
 }
 
-pub(crate) fn module_import_declarations(
-    import: &mech_core::ModuleImport,
-) -> Vec<SourceImportDeclaration> {
-    let module = import.module.to_string();
-
-    match import.kind {
-        mech_core::ModuleImportKind::Module => {
-            vec![classified_module_import(&module, None, None)]
-        }
-
-        mech_core::ModuleImportKind::Glob => {
-            let mut declaration = classify_import_specifier(format!("{module}/*"));
-            declaration.module = Some(module.clone());
-            vec![declaration]
-        }
-
-        mech_core::ModuleImportKind::Item => {
-            let item = import
-                .item
-                .as_ref()
-                .map(module_import_item_path)
-                .unwrap_or_default();
-
-            let alias = import.alias.as_ref().map(|alias| match alias {
-                mech_core::ModuleImportAlias::Value(path) => {
-                    SourceImportAlias::Value(path.to_string())
-                }
-                mech_core::ModuleImportAlias::Context(name) => {
-                    SourceImportAlias::Context(name.to_string())
-                }
-            });
-
-            vec![classified_module_import(&module, Some(&item), alias)]
-        }
-
-        mech_core::ModuleImportKind::Group => import
-            .group_items
-            .as_ref()
-            .map(|items| {
-                items
-                    .iter()
-                    .map(|group_item| {
-                        let item = module_import_item_path(&group_item.item);
-                        classified_module_import(&module, Some(&item), None)
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default(),
-    }
-}
-
 pub fn import_requires_source_dependency(import: &SourceImportDeclaration) -> bool {
     if matches!(import.alias, Some(SourceImportAlias::Context(_))) {
         return false;
     }
 
     matches!(import.kind, SourceImportKind::DependencyOnly)
+        || matches!(import.kind, SourceImportKind::Wildcard)
+            && is_source_specifier(&import.specifier)
 }
 
 pub fn import_may_resolve_source_dependency(import: &SourceImportDeclaration) -> bool {
@@ -189,64 +135,26 @@ pub fn import_dependencies(imports: &[SourceImportDeclaration]) -> Vec<SourceReq
         .collect()
 }
 
-pub fn imports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceImportDeclaration> {
-    code.imports
-        .iter()
-        .map(|import| classify_import_specifier(import.specifier.to_string()))
-        .collect()
-}
-
-pub fn exports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceExportDeclaration> {
-    code.exports
-        .iter()
-        .map(|export| SourceExportDeclaration {
-            name: export.name.to_string(),
-        })
-        .collect()
-}
-
 #[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
-    use mech_syntax::parser;
-
-    fn parse_fenced(source: &str) -> FencedMechCode {
-        let tree = parser::parse(source).unwrap();
-        for section in &tree.body.sections {
-            for element in &section.elements {
-                if let mech_core::SectionElement::FencedMechCode(code) = element {
-                    return code.clone();
-                }
-            }
-        }
-        panic!("expected fenced code block");
-    }
-
-    #[test]
-    fn stdlib_single_imports_are_not_source_imports() {
-        let fenced = parse_fenced("~~~mech\n+> math/sin\n~~~\n");
-        let imports = imports_from_fenced_code(&fenced);
-        assert!(imports.is_empty());
-    }
-
-    #[test]
-    fn stdlib_wildcard_imports_are_not_source_imports() {
-        let fenced = parse_fenced("~~~mech\n+> math/*\n~~~\n");
-        let imports = imports_from_fenced_code(&fenced);
-        assert!(imports.is_empty());
-    }
 
     #[test]
     fn classifies_dependency_only_imports() {
-        let fenced = parse_fenced(
-            "~~~mech\n+> ./dep.mec\n+> ../lib/dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n~~~\n",
-        );
-        let imports = imports_from_fenced_code(&fenced);
-        assert!(
-            imports
-                .iter()
-                .all(|imp| imp.kind == SourceImportKind::DependencyOnly)
-        );
+        for specifier in [
+            "./dep.mec",
+            "../lib/dep.mec",
+            "fs://lib/dep.mec",
+            "file:///tmp/dep.mec",
+            "memory://scratch/dep",
+            "https://example.com/dep.mec",
+        ] {
+            assert_eq!(
+                classify_import_specifier(specifier).kind,
+                SourceImportKind::DependencyOnly,
+                "{specifier}"
+            );
+        }
     }
 
     #[test]
@@ -264,10 +172,19 @@ mod tests {
     }
 
     #[test]
-    fn wildcard_import_does_not_require_source_dependency() {
+    fn compiler_module_wildcard_does_not_require_source_dependency() {
         let import = classify_import_specifier("math/*");
         assert_eq!(import.kind, SourceImportKind::Wildcard);
         assert!(!import_requires_source_dependency(&import));
+    }
+
+    #[test]
+    fn source_wildcard_requires_source_dependency() {
+        for specifier in ["./dep.mec/*", "../lib/dep.mec/*", "file:///tmp/dep.mec/*"] {
+            let import = classify_import_specifier(specifier);
+            assert_eq!(import.kind, SourceImportKind::Wildcard);
+            assert!(import_requires_source_dependency(&import));
+        }
     }
 
     #[test]
@@ -324,16 +241,8 @@ mod tests {
     }
 
     #[test]
-    fn exports_are_extracted() {
-        let fenced = parse_fenced("~~~mech\n<+ area\n~~~\n");
-        let exports = exports_from_fenced_code(&fenced);
-        assert_eq!(exports[0].name, "area");
-    }
-
-    #[test]
     fn all_imports_create_dependency_edges() {
-        let fenced = parse_fenced("~~~mech\n+> math\n+> math/sin\n+> math/*\n+> ./dep.mec\n~~~\n");
-        let imports = imports_from_fenced_code(&fenced);
+        let imports = ["math", "math/sin", "math/*", "./dep.mec"].map(classify_import_specifier);
         let dependencies = import_dependencies(&imports);
         assert_eq!(dependencies.len(), 1);
         assert_eq!(dependencies[0].specifier, "./dep.mec");

@@ -302,7 +302,169 @@ pub(crate) struct PreparedManagedCellBinding {
     previous_shape: Option<ShapeInstance>,
     pub(crate) next_shape: Option<ShapeInstance>,
     next_storage: Option<CellStorageBinding>,
+    // Acquired only at readiness: sibling calls may finish staging first.
+    // This protects the exact validated candidate bytes until commit/drop.
+    interval_read_lease: Option<crate::memory_runtime::RetainedPublicationLease>,
     pub(crate) changed: bool,
+}
+
+impl PreparedManagedCellBinding {
+    pub(crate) fn validate_interval_publication(
+        &mut self,
+        undo: Option<&crate::memory_runtime::PreparedUndoSnapshot>,
+    ) -> MResult<()> {
+        let Some(CellStorageBinding::ManagedHost { storage, .. }) = &self.next_storage else {
+            return Ok(());
+        };
+        let schema = self
+            .cell
+            .binding
+            .schemas
+            .get(self.cell.schema())
+            .expect("cell schema exists");
+        let (interval, matrix) = match schema.body() {
+            SchemaBody::IntegerInterval(interval) => (*interval, false),
+            SchemaBody::Matrix { element, .. } => match element.as_ref() {
+                SchemaBody::IntegerInterval(interval) => (*interval, true),
+                _ => return Ok(()),
+            },
+            _ => return Ok(()),
+        };
+        let storage = storage
+            .as_any()
+            .downcast_ref::<ManagedHostCellStorage>()
+            .ok_or_else(|| {
+                MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "initialized interval candidate has no managed typed storage".into(),
+                })
+            })?;
+        let shape = self
+            .next_shape
+            .as_ref()
+            .expect("prepared binding retains its shape");
+        let extents = crate::ResolvedValueDescriptor::from_schema(schema.clone(), shape.clone())
+            .map_err(MechError::from)?
+            .current_extents()
+            .map_err(MechError::from)?;
+        self.interval_read_lease = storage.owner.validate_publication_region(
+            &storage.realized,
+            storage.object,
+            storage.region,
+            undo,
+            |frame| validate_managed_interval(frame, storage.object, interval, matrix, &extents),
+        )?;
+        Ok(())
+    }
+}
+
+fn validate_managed_interval(
+    frame: &crate::KernelMemoryFrame<'_>,
+    object: crate::PlanObjectKey,
+    interval: crate::IntegerInterval,
+    matrix: bool,
+    extents: &[u64],
+) -> MResult<()> {
+    let expected = extents
+        .iter()
+        .try_fold(1_u64, |count, extent| count.checked_mul(*extent))
+        .ok_or_else(|| {
+            managed_host_shape_error(object, "interval candidate cardinality overflows")
+        })?;
+    #[cfg(any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128"
+    ))]
+    macro_rules! lanes {
+        ($ty:ty, $contains:ident, $wide:ty) => {
+            frame
+                .with_object_value_view::<$ty, _>(object, |view| {
+                    if u64::try_from(view.len()).ok() != Some(expected) {
+                        return Err(managed_host_shape_error(
+                            object,
+                            "interval candidate geometry differs from its shape",
+                        ));
+                    }
+                    // Rectangle coordinates, not allocation order or capacity,
+                    // define the logical matrix elements and diagnostic indices.
+                    if matrix
+                        && extents.len() == 2
+                        && (u64::try_from(view.rows()).ok() != Some(extents[0])
+                            || u64::try_from(view.columns()).ok() != Some(extents[1]))
+                    {
+                        return Err(managed_host_shape_error(
+                            object,
+                            "interval matrix geometry differs from its shape",
+                        ));
+                    }
+                    if view.is_empty() {
+                        return Ok(());
+                    }
+                    for row in 0..view.rows() {
+                        for column in 0..view.columns() {
+                            let value = view.get(row, column).ok_or_else(|| {
+                                managed_host_shape_error(
+                                    object,
+                                    "interval candidate coordinate is out of bounds",
+                                )
+                            })?;
+                            if !interval.$contains(<$wide>::from(value)) {
+                                let path = crate::snapshot::SnapshotPath::root();
+                                let path = if matrix {
+                                    path.child(crate::snapshot::SnapshotPathSegment::MatrixElement(
+                                        (row * view.columns() + column) as u64,
+                                    ))
+                                } else {
+                                    path
+                                };
+                                return Err(snapshot_failure(
+                                    SnapshotValueError::IntegerIntervalViolationV1 { path },
+                                ));
+                            }
+                        }
+                    }
+                    Ok(())
+                })
+                .map_err(MechError::from)?
+        };
+    }
+    // Feature-disabled integer backings still refuse precisely; they do not
+    // manufacture membership evidence for storage they cannot inspect.
+    let _ = (frame, expected, matrix, extents);
+    match interval.base_body() {
+        #[cfg(feature = "u8")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W8) => lanes!(u8, contains_unsigned, u128),
+        #[cfg(feature = "u16")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W16) => lanes!(u16, contains_unsigned, u128),
+        #[cfg(feature = "u32")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W32) => lanes!(u32, contains_unsigned, u128),
+        #[cfg(feature = "u64")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W64) => lanes!(u64, contains_unsigned, u128),
+        #[cfg(feature = "u128")]
+        SchemaBody::UnsignedInteger(IntegerWidth::W128) => lanes!(u128, contains_unsigned, u128),
+        #[cfg(feature = "i8")]
+        SchemaBody::SignedInteger(IntegerWidth::W8) => lanes!(i8, contains_signed, i128),
+        #[cfg(feature = "i16")]
+        SchemaBody::SignedInteger(IntegerWidth::W16) => lanes!(i16, contains_signed, i128),
+        #[cfg(feature = "i32")]
+        SchemaBody::SignedInteger(IntegerWidth::W32) => lanes!(i32, contains_signed, i128),
+        #[cfg(feature = "i64")]
+        SchemaBody::SignedInteger(IntegerWidth::W64) => lanes!(i64, contains_signed, i128),
+        #[cfg(feature = "i128")]
+        SchemaBody::SignedInteger(IntegerWidth::W128) => lanes!(i128, contains_signed, i128),
+        _ => Err(managed_host_shape_error(
+            object,
+            "interval candidate requires an enabled exact integer backing",
+        )),
+    }
 }
 
 pub(crate) struct StagedManagedCellUpdate {
@@ -473,7 +635,7 @@ fn realize_managed_canonical_value(
     let object = owner.plan_object_key(realized.revision(), object_id)?;
     let payload = planned_payload_object(owner, &realized, object)?;
     let value = if value.has_retained_payload_ticket() {
-        // This cell admits its own logical envelope through the R5 plan, but
+        // This cell admits its own logical envelope through the memory plan, but
         // the shared immutable data already owns the one physical payload
         // ticket. Importing it must not mint another full allocation charge.
         realized.record_initialized(payload, footprint.retained_bytes)?;
@@ -1233,6 +1395,7 @@ fn initialize_planned_default(
     frame: &mut crate::KernelMemoryFrame<'_>,
     object: crate::PlanObjectKey,
     slot: crate::PlannedSlotKind,
+    descriptor: &crate::ResolvedValueDescriptor,
 ) -> MResult<()> {
     use crate::{FloatWidth, IntegerWidth, PlannedSlotKind, ScalarMemoryKind};
     macro_rules! fill {
@@ -1240,6 +1403,64 @@ fn initialize_planned_default(
             frame.with_object_init_view::<$type, _>(object, |output| {
                 output.try_fill_column_major(|_| Ok($value))
             })
+        };
+    }
+    let interval = match descriptor.schema().body() {
+        SchemaBody::IntegerInterval(interval) => Some(*interval),
+        SchemaBody::Matrix { element, .. } => match element.as_ref() {
+            SchemaBody::IntegerInterval(interval) => Some(*interval),
+            _ => None,
+        },
+        _ => None,
+    };
+    if let Some(interval) = interval {
+        let seed =
+            initial_data_for_schema(&SchemaBody::IntegerInterval(interval), descriptor.shape())?;
+        return match (slot, seed) {
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W8)),
+                ValueDataDraft::U8(value),
+            ) => fill!(u8, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W16)),
+                ValueDataDraft::U16(value),
+            ) => fill!(u16, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W32)),
+                ValueDataDraft::U32(value),
+            ) => fill!(u32, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W64)),
+                ValueDataDraft::U64(value),
+            ) => fill!(u64, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W128)),
+                ValueDataDraft::U128(value),
+            ) => fill!(u128, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W8)),
+                ValueDataDraft::I8(value),
+            ) => fill!(i8, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W16)),
+                ValueDataDraft::I16(value),
+            ) => fill!(i16, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W32)),
+                ValueDataDraft::I32(value),
+            ) => fill!(i32, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W64)),
+                ValueDataDraft::I64(value),
+            ) => fill!(i64, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W128)),
+                ValueDataDraft::I128(value),
+            ) => fill!(i128, value),
+            _ => Err(managed_host_shape_error(
+                object,
+                "planned interval output has no matching fixed initialization codec",
+            )),
         };
     }
     match slot {
@@ -1387,7 +1608,12 @@ impl ValueCell {
             let _scope =
                 owner.enter_realized_plan_point(&realized, crate::MemoryPlanPoint::new(0))?;
             let mut frame = owner.acquire_call(&realized, &prepared)?;
-            initialize_planned_default(&mut frame, object, output.value.storage.planned_slot())?;
+            initialize_planned_default(
+                &mut frame,
+                object,
+                output.value.storage.planned_slot(),
+                &output.descriptor,
+            )?;
         }
         Self::allocate_planned(
             owner,
@@ -1399,7 +1625,7 @@ impl ValueCell {
         )
     }
 
-    /// Constructs one owned logical cell over an initialized R5 plan object.
+    /// Constructs one owned logical cell over an initialized memory plan object.
     /// This boundary installs storage ownership; it never allocates backing
     /// from a runtime representation alone.
     pub fn allocate_planned(
@@ -1469,7 +1695,7 @@ impl ValueCell {
         crate::ResolvedValueDescriptor::from_schema(schema, shape).map_err(MechError::from)
     }
 
-    /// Measures the currently published semantic value for R5/R6 live
+    /// Measures the currently published semantic value for managed live
     /// footprint resolution. This walks an immutable snapshot without
     /// rebuilding its canonical tree.
     #[cfg(feature = "functions")]
@@ -2482,8 +2708,87 @@ impl ValueCell {
         } else {
             None
         };
-        let allocated =
-            Self::allocate_backing_for_representation_in(owner, representation, dimensions)?;
+        let interval = match descriptor.schema().body() {
+            SchemaBody::IntegerInterval(interval) => Some(*interval),
+            SchemaBody::Matrix { element, .. } => match element.as_ref() {
+                SchemaBody::IntegerInterval(interval) => Some(*interval),
+                _ => None,
+            },
+            _ => None,
+        };
+        let allocated = if let Some(interval) = interval {
+            // Exact primitive and matrix backings are rebound to the interval
+            // schema below. Seed every lane inside the interval before the
+            // required snapshot check.
+            let unsupported = || {
+                MechError::new(
+                    ValueCellOutputConstructionUnsupported {
+                        representation,
+                        reason: "interval output has no matching exact numeric backing".into(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            };
+            #[cfg(any(
+                feature = "u8",
+                feature = "u16",
+                feature = "u32",
+                feature = "u64",
+                feature = "u128",
+                feature = "i8",
+                feature = "i16",
+                feature = "i32",
+                feature = "i64",
+                feature = "i128"
+            ))]
+            macro_rules! seeded_interval_backing {
+                ($value:expr, $scalar:ident, $element:ident) => {
+                    match representation {
+                        FunctionValueRepresentation::$scalar => Self::from_exact_in(owner, $value)?,
+                        #[cfg(feature = "matrix")]
+                        FunctionValueRepresentation::Matrix {
+                            element: FunctionMatrixElement::$element,
+                            storage,
+                        } => default_matrix_cell_in(
+                            owner,
+                            storage,
+                            dimensions.ok_or_else(&unsupported)?,
+                            $value,
+                        )?,
+                        _ => return Err(unsupported()),
+                    }
+                };
+            }
+            match initial_data_for_schema(
+                &SchemaBody::IntegerInterval(interval),
+                descriptor.shape(),
+            )? {
+                #[cfg(feature = "u8")]
+                ValueDataDraft::U8(value) => seeded_interval_backing!(value, U8, U8),
+                #[cfg(feature = "u16")]
+                ValueDataDraft::U16(value) => seeded_interval_backing!(value, U16, U16),
+                #[cfg(feature = "u32")]
+                ValueDataDraft::U32(value) => seeded_interval_backing!(value, U32, U32),
+                #[cfg(feature = "u64")]
+                ValueDataDraft::U64(value) => seeded_interval_backing!(value, U64, U64),
+                #[cfg(feature = "u128")]
+                ValueDataDraft::U128(value) => seeded_interval_backing!(value, U128, U128),
+                #[cfg(feature = "i8")]
+                ValueDataDraft::I8(value) => seeded_interval_backing!(value, I8, I8),
+                #[cfg(feature = "i16")]
+                ValueDataDraft::I16(value) => seeded_interval_backing!(value, I16, I16),
+                #[cfg(feature = "i32")]
+                ValueDataDraft::I32(value) => seeded_interval_backing!(value, I32, I32),
+                #[cfg(feature = "i64")]
+                ValueDataDraft::I64(value) => seeded_interval_backing!(value, I64, I64),
+                #[cfg(feature = "i128")]
+                ValueDataDraft::I128(value) => seeded_interval_backing!(value, I128, I128),
+                _ => return Err(unsupported()),
+            }
+        } else {
+            Self::allocate_backing_for_representation_in(owner, representation, dimensions)?
+        };
         let mut builder = SchemaTableBuilder::new();
         let handle = builder
             .insert(descriptor.schema().clone())
@@ -2676,6 +2981,16 @@ impl ValueCell {
     /// context retained by that value.
     pub fn from_snapshot(value: Value) -> MResult<Self> {
         Self::from_snapshot_in(&MemoryDomain::new().map_err(MechError::from)?, value)
+    }
+
+    /// Reconstruct a detached snapshot with its complete schema table while
+    /// selecting the runtime backing required for reactive aggregate outputs.
+    pub fn from_runtime_snapshot(value: Value) -> MResult<Self> {
+        let schemas = value.schemas().ok_or_else(|| {
+            MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
+        })?;
+        value.validate_against(&schemas).map_err(snapshot_failure)?;
+        Self::from_runtime_value(value, Rc::new((*schemas).clone()))
     }
 
     pub fn from_snapshot_in(owner: &MemoryDomain, value: Value) -> MResult<Self> {
@@ -3231,105 +3546,6 @@ impl ValueCell {
         )
     }
 
-    /// Constructs a matrix whose schema is the already-resolved semantic
-    /// output type. Direct source specializers use this boundary adapter when
-    /// the result retains a compound dimension relation such as a sum of
-    /// concatenated axes. Runtime storage remains selected independently.
-    #[doc(hidden)]
-    pub fn matrix_from_resolved_type_cells(
-        resolved: &ResolvedType,
-        rows: usize,
-        columns: usize,
-        cells: &[Self],
-        schema_sources: &[Self],
-    ) -> MResult<Self> {
-        if rows.saturating_mul(columns) != cells.len() {
-            return Err(MechError::new(
-                ValueCellOutputConstructionUnsupported {
-                    representation: FunctionValueRepresentation::AnyValue,
-                    reason: format!(
-                        "matrix dimensions require {} elements but {} were supplied",
-                        rows.saturating_mul(columns),
-                        cells.len()
-                    ),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
-        let crate::KindExpr::Matrix { dimensions, .. } = resolved.kind() else {
-            return Err(MechError::from(TypeResolutionError::incompatible(
-                "resolved matrix output",
-                TypeConstraintFailure::StructuralMismatch {
-                    expected: "matrix".into(),
-                    actual: resolved.semantic_name(),
-                },
-            )));
-        };
-        let element = if let Some(first) = cells.first() {
-            first.closed_schema_body()?
-        } else if let Some(element) = schema_sources.iter().find_map(|source| {
-            let SchemaBody::Matrix { element, .. } = source.closed_schema_body().ok()? else {
-                return None;
-            };
-            Some(*element)
-        }) {
-            element
-        } else {
-            return Err(MechError::new(
-                ValueCellOutputConstructionUnsupported {
-                    representation: FunctionValueRepresentation::AnyValue,
-                    reason: "an empty resolved matrix requires an element schema template".into(),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        };
-        let mut values = Vec::with_capacity(cells.len());
-        for cell in cells {
-            if cell.closed_schema_body()? != element {
-                return Err(MechError::new(
-                    ValueCellOutputConstructionUnsupported {
-                        representation: cell.representation(),
-                        reason: "matrix elements must share one canonical schema".into(),
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-            values.push(canonical_cell_draft(cell)?);
-        }
-        let draft = crate::SchemaDraft {
-            dimension_parameters: resolved.dimension_parameters().to_vec().into_boxed_slice(),
-            body: SchemaBody::Matrix {
-                element: Box::new(element),
-                dimensions: dimensions.clone(),
-            },
-        };
-        let (schema, shape, schemas) = merged_resolved_matrix_schema(
-            draft,
-            vec![rows as u64, columns as u64].into_boxed_slice(),
-            schema_sources,
-        )?;
-        let value = finalize_draft(
-            schema,
-            &shape,
-            schemas.as_ref(),
-            ValueDataDraft::Matrix(values.into_boxed_slice()),
-        )?;
-        let owner = cells
-            .first()
-            .or_else(|| schema_sources.first())
-            .and_then(ValueCell::memory_domain)
-            .ok_or_else(|| {
-                MechError::from(crate::MemoryRuntimeError::CandidateValidationFailed {
-                    object: None,
-                    reason: "resolved matrix output has no owning memory session".into(),
-                })
-            })?;
-        Self::from_runtime_value_in(&owner, value, schemas)
-    }
-
     /// Constructs one homogeneous matrix directly from canonical drafts while
     /// retaining the solver's resolved dimension expressions. Source matrix
     /// constructors use this path so a dense input is never expanded into one
@@ -3416,20 +3632,6 @@ impl ValueCell {
             unreachable!("validated tuple schema retains tuple data")
         };
         child_cells(schemas.into_vec(), values.into_vec()).map(Some)
-    }
-
-    /// Returns tuple child cells while retaining identities captured during
-    /// canonical tuple assembly. Source destructuring uses this narrow path
-    /// to keep reactive topology; ordinary value inspection remains detached.
-    #[doc(hidden)]
-    pub fn reactive_tuple_elements(&self) -> MResult<Option<Vec<Self>>> {
-        let SchemaBody::Tuple(_) = self.closed_schema_body()? else {
-            return Ok(None);
-        };
-        match &self.binding.compiler_children {
-            Some(children) => Ok(Some(children.to_vec())),
-            None => self.tuple_elements(),
-        }
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -3731,7 +3933,7 @@ impl ValueCell {
             let realized = owner.realize_owned_value_plan(plan)?;
             let plan = realized
                 .owned_value_plan()
-                .expect("owned realization retains its R5 plan");
+                .expect("owned realization retains its memory plan");
             let object = owner.plan_object_key(realized.revision(), object_id)?;
             let prepared = owner.prepare_owned_initialization(
                 &realized,
@@ -3797,6 +3999,13 @@ impl ValueCell {
 
     pub(crate) fn schema_table(&self) -> Rc<SchemaTable> {
         self.binding.schemas.clone()
+    }
+
+    /// Retains this cell's schema context without copying its value payload.
+    /// Consumers resolving reified schema keys can use the shared table even
+    /// when the cell's payload has not been admitted for a snapshot.
+    pub fn retained_schema_table(&self) -> Rc<SchemaTable> {
+        self.schema_table()
     }
 
     #[cfg(feature = "functions")]
@@ -3901,7 +4110,7 @@ impl ValueCell {
         }
     }
 
-    /// Constructs an external-call argument snapshot through the R5
+    /// Constructs an external-call argument snapshot through the planned
     /// marshalling authority. Existing immutable canonical roots are shared;
     /// fixed managed storage debits draft and finalization allocations from
     /// the call's prepared scratch before materializing them.
@@ -3949,11 +4158,6 @@ impl ValueCell {
                 schema: value.schema(),
             })
         })?;
-        let extents =
-            crate::ResolvedValueDescriptor::from_schema(source_schema, value.shape().clone())
-                .map_err(MechError::from)?
-                .current_extents()
-                .map_err(MechError::from)?;
         let target_schema = self
             .binding
             .schemas
@@ -3963,7 +4167,18 @@ impl ValueCell {
                     schema: self.binding.schema,
                 })
             })?;
-        let target_shape = crate::shape_for_resolved_extents(target_schema, &extents)?;
+        let target_shape = if source_schema.key() == target_schema.key() {
+            // Identical schemas own the same complete parameter vector. Keep
+            // nested tuple/record/option witnesses and turn-varying extents.
+            value.shape().clone()
+        } else {
+            let extents =
+                crate::ResolvedValueDescriptor::from_schema(source_schema, value.shape().clone())
+                    .map_err(MechError::from)?
+                    .current_extents()
+                    .map_err(MechError::from)?;
+            crate::shape_for_resolved_extents(target_schema, &extents)?
+        };
         value
             .rebind(
                 self.binding.schema,
@@ -4102,7 +4317,7 @@ impl ValueCell {
     }
 
     /// Materializes a replacement only in the unpublished region selected
-    /// by this value's R5 transaction. Callers can collect several candidates
+    /// by this value's managed memory transaction. Callers can collect several candidates
     /// before obtaining a single publication gate.
     pub(crate) fn stage_managed_replacement(
         &self,
@@ -4327,7 +4542,7 @@ impl ValueCell {
                 .ok_or_else(|| {
                     managed_host_shape_error(
                         managed.object,
-                        "published call output has no retained R5 storage authority",
+                        "published call output has no retained planned storage authority",
                     )
                 })?;
             Some((call.output_storage[output].clone(), call.target.clone()))
@@ -4347,7 +4562,7 @@ impl ValueCell {
         } else {
             return Err(managed_host_shape_error(
                 managed.object,
-                "whole-cell growth requires retained R5 storage authority",
+                "whole-cell growth requires retained planned storage authority",
             ));
         };
         let elements = descriptor
@@ -4538,6 +4753,7 @@ impl ValueCell {
             previous_shape: Some(published.shape.clone()),
             next_shape: Some(next_shape),
             next_storage: Some(next_storage),
+            interval_read_lease: None,
             changed,
         })
     }
@@ -5095,6 +5311,30 @@ impl ValueCell {
         )
     }
 
+    pub(crate) fn rebuild_data_draft_with_shape_with_construction(
+        &self,
+        data: ValueDataDraft,
+        shape: &ShapeInstance,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        let shape_values = admitted_copy_slice(shape.parameter_values(), construction)?;
+        let shape = schema
+            .instantiate_shape(shape_values)
+            .map_err(MechError::from)?;
+        finalize_draft_with_construction(
+            self.binding.schema,
+            &shape,
+            self.binding.schemas.as_ref(),
+            data,
+            construction,
+        )
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn try_ref<T: 'static>(&self) -> MResult<Ref<T>> {
         let storage = self.binding.storage()?;
@@ -5124,6 +5364,61 @@ fn initial_data_for_descriptor(
 fn initial_data_for_schema(schema: &SchemaBody, shape: &ShapeInstance) -> MResult<ValueDataDraft> {
     use crate::snapshot::{Complex32Bits, Complex64Bits, F32Bits, F64Bits};
     Ok(match schema {
+        SchemaBody::IntegerInterval(interval) => {
+            use crate::{IntegerInterval, IntegerWidth};
+            match interval {
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W8,
+                    lower,
+                    ..
+                } => ValueDataDraft::U8(*lower as u8),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W16,
+                    lower,
+                    ..
+                } => ValueDataDraft::U16(*lower as u16),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W32,
+                    lower,
+                    ..
+                } => ValueDataDraft::U32(*lower as u32),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W64,
+                    lower,
+                    ..
+                } => ValueDataDraft::U64(*lower as u64),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W128,
+                    lower,
+                    ..
+                } => ValueDataDraft::U128(*lower),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W8,
+                    lower,
+                    ..
+                } => ValueDataDraft::I8(*lower as i8),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W16,
+                    lower,
+                    ..
+                } => ValueDataDraft::I16(*lower as i16),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W32,
+                    lower,
+                    ..
+                } => ValueDataDraft::I32(*lower as i32),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W64,
+                    lower,
+                    ..
+                } => ValueDataDraft::I64(*lower as i64),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W128,
+                    lower,
+                    ..
+                } => ValueDataDraft::I128(*lower),
+            }
+        }
         SchemaBody::Dynamic => ValueDataDraft::Dynamic(None),
         SchemaBody::Bool => ValueDataDraft::Bool(false),
         SchemaBody::UnsignedInteger(crate::IntegerWidth::W8) => ValueDataDraft::U8(0),
@@ -6026,7 +6321,8 @@ impl MechErrorKind for ValueCellOutputConstructionUnsupported {
     }
 }
 
-fn shape_change_allowed(
+#[doc(hidden)]
+pub fn shape_change_allowed(
     schema: &crate::Schema,
     current: &ShapeInstance,
     next: &ShapeInstance,
@@ -7223,6 +7519,7 @@ impl canonical_cell_sealed::Sealed for Value {
 
 fn representation_for_schema(schema: &SchemaBody) -> FunctionValueRepresentation {
     match schema {
+        SchemaBody::IntegerInterval(interval) => representation_for_schema(&interval.base_body()),
         SchemaBody::Dynamic => FunctionValueRepresentation::AnyValue,
         SchemaBody::UnsignedInteger(IntegerWidth::W8) => FunctionValueRepresentation::U8,
         SchemaBody::UnsignedInteger(IntegerWidth::W16) => FunctionValueRepresentation::U16,
@@ -7376,6 +7673,7 @@ pub(crate) fn close_schema_body(body: &SchemaBody, shape: &ShapeInstance) -> MRe
     }
 
     Ok(match body {
+        SchemaBody::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
         SchemaBody::Dynamic => SchemaBody::Dynamic,
         SchemaBody::Bool => SchemaBody::Bool,
         SchemaBody::UnsignedInteger(width) => SchemaBody::UnsignedInteger(*width),
@@ -7642,6 +7940,69 @@ mod tests {
     #[cfg(all(feature = "f64", feature = "matrix"))]
     use crate::{DimensionLifetime, DimensionParameterId, DimensionParameterOrigin};
     use crate::{DimensionParameterDeclaration, SchemaDraft, SchemaTableBuilder};
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn exact_interval_output_starts_at_the_admitted_lower_endpoint() {
+        let interval = SchemaBody::IntegerInterval(crate::IntegerInterval::Unsigned {
+            width: crate::IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        });
+        let source = ValueCell::from_schema_data(interval, ValueDataDraft::U8(2)).unwrap();
+        let resolved = source.resolved_type().unwrap();
+        assert!(resolved.satisfies(crate::BuiltinKindPredicate::Equatable));
+        assert!(resolved.satisfies(crate::BuiltinKindPredicate::Keyable));
+        let output = ValueCell::allocate_for_descriptor(
+            &source.resolved_descriptor().unwrap(),
+            FunctionValueRepresentation::U8,
+        )
+        .unwrap();
+        assert_eq!(
+            output.snapshot().unwrap().canonical_data_draft().unwrap(),
+            ValueDataDraft::U8(1)
+        );
+    }
+
+    #[cfg(all(feature = "u8", feature = "matrixd"))]
+    #[test]
+    fn exact_interval_matrix_output_seeds_every_lane_inside_the_interval() {
+        let interval = crate::IntegerInterval::Unsigned {
+            width: crate::IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        };
+        let schema = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::IntegerInterval(interval)),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        };
+        let source = ValueCell::from_schema_data(
+            schema,
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U8(2), ValueDataDraft::U8(3)].into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let output = ValueCell::allocate_for_descriptor(
+            &source.resolved_descriptor().unwrap(),
+            FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::U8,
+                storage: FunctionMatrixStoragePattern::Exact(FunctionMatrixRepresentation::MatrixD),
+            },
+        )
+        .unwrap();
+        assert_eq!(output.schema(), source.schema());
+        assert_eq!(*output.shape(), *source.shape());
+        assert_eq!(
+            output.snapshot().unwrap().canonical_data_draft().unwrap(),
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(1)].into_boxed_slice(),
+            )
+        );
+    }
 
     struct TestSchema {
         id: SchemaId,

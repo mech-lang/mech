@@ -257,7 +257,7 @@ mod tests {
         let (implementation, invocation, _) = parts(input, output.clone());
         let bound = plan.bound_call.clone();
         let admitted = SpecializedFunction::new((implementation, invocation), bound, plan)
-            .expect("a sufficient finite R5 marshalling budget must admit the call");
+            .expect("a sufficient finite marshalling budget must admit the call");
         let mut services = RecordingServices {
             calls: 0,
             result: ValueCell::from_exact("accepted".to_owned())

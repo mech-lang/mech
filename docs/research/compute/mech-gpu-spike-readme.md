@@ -43,7 +43,7 @@ region from the same `.mec` document as the ordinary application graph, and
 prepares one resident session. A send to `gpu://<instance>/kernel/turn` is an
 at-most-once after-commit effect; successful dispatch telemetry returns through
 normal runtime ingress. The checked-in `gpu-particles` application runs the
-unannotated projection through D4's resident external route and uses this GPU
+unannotated projection through the resident external route and uses this GPU
 path with real timer and console hosts.
 
 The one-shot native call is a correctness path that creates and reads back a

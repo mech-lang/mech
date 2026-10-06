@@ -1,7 +1,8 @@
 use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BindingId,
-    BoundResidentKernel, ChangeDetectionPolicy, ConstantStoreBuilder, DeclaredOperationContract,
+    BoundResidentKernel, ChangeDetectionPolicy, ConstantId, ConstantStoreBuilder,
+    DeclaredOperationContract,
     DeliveryMode, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
     DimensionParameterId, DimensionParameterOrigin, ExecutionResourceRequest, ExternalInteraction,
     FloatWidth, InputId, LayoutGeneration, NodeId,
@@ -19,7 +20,8 @@ use mech_engine::__resident::{
 };
 use mech_engine::{
     ApplicationRequirementTable, ArtifactSource, BindingDeclaration, InitializerReference,
-    InputDeclaration, NodeDeclaration, OperationReference, OutputDeclaration, ProducerReference,
+    ExecutableNodeBody, InputDeclaration, NodeDeclaration, OperationNodeBody, OperationReference,
+    OutputDeclaration, ProducerReference,
     ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
     decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
 };
@@ -72,56 +74,105 @@ fn main() {
             .count(),
         2,
     );
-    let position = artifact.outputs().first().expect("positions output").source;
-    let velocity = artifact
+    let state_slots = artifact
         .slots()
         .iter()
-        .find(|slot| slot.role == SlotRole::State && slot.slot != position)
-        .expect("velocity state")
-        .slot;
+        .filter(|slot| slot.role == SlotRole::State)
+        .map(|slot| slot.slot)
+        .collect::<Vec<_>>();
+    let state_commits = state_slots
+        .iter()
+        .copied()
+        .map(|slot| {
+            let writers = state_writers(&artifact, slot);
+            let [writer] = writers.as_slice() else {
+                panic!("state slot {slot:?} must have one canonical commit")
+            };
+            let node = artifact.nodes()[writer.get() as usize]
+                .as_operation()
+                .expect("state commit operation");
+            assert_eq!(node.operation.canonical_name(), "core/assign");
+            let sources = node_inputs(&artifact, &node);
+            let [source] = sources.as_slice() else {
+                panic!("state commit must have one source")
+            };
+            (slot, *writer, *source)
+        })
+        .collect::<Vec<_>>();
+    let velocity_commit = state_commits
+        .iter()
+        .copied()
+        .find(|(_, _, source)| {
+            source_operation(&artifact, *source).is_some_and(|operation| {
+                operation.operation.module_path.as_ref() == ["core", "assign", "indexed-rows"]
+            })
+        })
+        .expect("velocity state commit");
+    let position_commit = state_commits
+        .iter()
+        .copied()
+        .find(|commit| *commit != velocity_commit)
+        .expect("position state commit");
+    let (position, position_writer, position_source) = position_commit;
+    let (velocity, velocity_writer, velocity_source) = velocity_commit;
     let position_writers = state_writers(&artifact, position);
-    let velocity_writers = state_writers(&artifact, velocity);
     assert_eq!(position_writers.len(), 1);
+    assert_eq!(position_writers[0], position_writer);
+    assert_eq!(state_writers(&artifact, velocity), [velocity_writer]);
+    let velocity_writers = artifact
+        .nodes()
+        .iter()
+        .filter_map(|node| {
+            node.as_operation()
+                .filter(|operation| {
+                    operation.operation.module_path.as_ref()
+                        == ["core", "assign", "indexed-rows"]
+                })
+                .map(|operation| operation.node)
+        })
+        .collect::<Vec<_>>();
     assert_eq!(velocity_writers.len(), 2);
-    assert_rmw_region(
-        &artifact,
-        position,
-        position_writers[0],
-        RegionPolicy::WholeValue,
-    );
+    let mut bases = Vec::new();
     for writer in &velocity_writers {
-        assert_rmw_region(
+        bases.push(assert_rmw_region(
             &artifact,
-            velocity,
             *writer,
             RegionPolicy::IndexedAxis { axis: 0 },
-        );
+        ));
     }
     assert!(velocity_writers[0].get() < velocity_writers[1].get());
+    assert_eq!(bases[0], ArtifactSource::Slot(velocity));
+    assert_eq!(bases[1], ArtifactSource::Slot(node_output_slot(&artifact, velocity_writers[0])));
+    assert_eq!(
+        velocity_source,
+        ArtifactSource::Slot(node_output_slot(&artifact, velocity_writers[1]))
+    );
     assert_eq!(
         artifact.slots()[velocity.get() as usize].producer,
         ProducerReference::NodeOutput {
-            node: velocity_writers[1],
+            node: velocity_writer,
             output_ordinal: 0,
         }
     );
     assert_eq!(
         artifact.slots()[position.get() as usize].producer,
         ProducerReference::NodeOutput {
-            node: position_writers[0],
+            node: position_writer,
             output_ordinal: 0,
         }
     );
-    let x_writer = &artifact.nodes()[position_writers[0].get() as usize];
+    let position_operation = source_operation(&artifact, position_source)
+        .expect("position state commit must consume a derived operation");
+    assert_eq!(position_operation.operation.canonical_name(), "math/add");
+    let position_inputs = node_inputs(
+        &artifact,
+        &artifact.nodes()[position_operation.node.get() as usize],
+    );
+    assert_eq!(position_inputs[0], ArtifactSource::Slot(position));
     assert!(
-        node_inputs(&artifact, x_writer)
+        position_inputs
             .iter()
-            .any(|source| source_reads_state_after(
-                &artifact,
-                *source,
-                velocity,
-                velocity_writers[1]
-            ))
+            .any(|source| source_depends_on_node(&artifact, *source, velocity_writers[1]))
     );
 
     let mut activation_nodes = BTreeSet::new();
@@ -151,6 +202,7 @@ fn main() {
         }
     }
     for node in artifact.nodes() {
+        let node = node.as_operation().expect("n-body witness operation");
         let ResolvedOperationContract::Declared(contract) = artifact
             .contracts()
             .get(node.contract)
@@ -167,8 +219,8 @@ fn main() {
                 activation_nodes.contains(&node.node),
                 "Build node reached the resident turn graph: {:?} {:?} slots={:?}",
                 node.operation,
-                node_inputs(&artifact, node),
-                node_inputs(&artifact, node)
+                node_inputs(&artifact, &node),
+                node_inputs(&artifact, &node)
                     .iter()
                     .filter_map(|source| match source {
                         ArtifactSource::Slot(slot) => Some(&artifact.slots()[slot.get() as usize]),
@@ -206,7 +258,30 @@ fn main() {
         source_instance.plan.program_revision,
         decoded_instance.plan.program_revision
     );
-    assert_eq!(source_instance.plan.slots, decoded_instance.plan.slots);
+    assert_eq!(
+        source_instance.plan.slots.len(),
+        decoded_instance.plan.slots.len()
+    );
+    for (source, decoded) in source_instance
+        .plan
+        .slots
+        .iter()
+        .zip(&decoded_instance.plan.slots)
+    {
+        // Compiler-proven shape hints are planning sidecars, not wire data.
+        // A decoded activation may therefore lack this provenance flag even
+        // when the resolved shape and region are identical. The trajectory
+        // comparison below still verifies source/decoded behavior per turn.
+        if source.activation_fixed_shape != decoded.activation_fixed_shape {
+            assert!(artifact.slot_shape_hint(source.artifact_id).is_some());
+            assert!(source.activation_fixed_shape && !decoded.activation_fixed_shape);
+        }
+        let mut source = source.clone();
+        let mut decoded = decoded.clone();
+        source.activation_fixed_shape = false;
+        decoded.activation_fixed_shape = false;
+        assert_eq!(source, decoded);
+    }
     assert_eq!(
         source_instance.plan.activation_nodes,
         decoded_instance.plan.activation_nodes
@@ -225,7 +300,7 @@ fn main() {
             .plan
             .slots
             .iter()
-            .filter(|slot| slot.storage == ResidentStorageClass::State)
+            .filter(|slot| slot.role == SlotRole::State)
             .count(),
         2,
     );
@@ -238,10 +313,10 @@ fn main() {
         .expect("copied positions snapshot");
     assert_eq!(copied.schema(), artifact.outputs()[0].schema);
     let probe = source_instance.structural_probe();
-    assert_eq!(source_instance.state.candidate_bytes(), 480);
-    assert_eq!(source_instance.state.dual_payload_bytes(), 960);
-    assert_eq!(probe.candidate_seed_bytes, 480);
-    assert_eq!(probe.candidate_materialized_bytes, 480);
+    assert_eq!(source_instance.state.candidate_bytes(), 720);
+    assert_eq!(source_instance.state.dual_payload_bytes(), 1_440);
+    assert_eq!(probe.candidate_seed_bytes, 0);
+    assert_eq!(probe.candidate_materialized_bytes, 720);
     assert_eq!(probe.published_buffer_copy_bytes, 0);
     assert_eq!(probe.publication_store_count, 1);
     let initial_x = resident_f64_slot(&source_instance, position);
@@ -260,7 +335,7 @@ fn main() {
         let decoded_summary = decoded_instance.turn(&[]).expect("decoded n-body turn");
         raw.advance();
         assert_eq!(source_summary.state_hash, decoded_summary.state_hash);
-        assert_eq!(source_summary.touched_slots, 2);
+        assert_eq!(source_summary.touched_slots, 3);
         assert_eq!(source_summary.after_epoch, decoded_summary.after_epoch);
         assert_eq!(
             resident_state(&source_instance),
@@ -653,8 +728,8 @@ fn assert_explicit_state_migration(
 }
 
 fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
-    assert_eq!(artifact.nodes().len(), 1);
-    let node = &artifact.nodes()[0];
+    let node = artifact.nodes()[0].as_operation().unwrap();
+    assert_eq!(node.operation.canonical_name(), "math/add");
     let ResolvedOperationContract::Declared(mut contract) = artifact
         .contracts()
         .get(node.contract)
@@ -667,14 +742,32 @@ fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
         base_input: 1,
         regions: RegionPolicy::WholeValue,
     };
+    contract.outputs[0].access = AccessMode::ReadWrite;
     contract.outputs[0].alias = AliasPolicy::MayAlias { input: 1 };
-    let mut contracts = OperationContractTableBuilder::new();
-    let handle = contracts
-        .insert(ResolvedOperationContract::Declared(contract))
-        .unwrap();
-    let contracts = contracts.finish().unwrap();
-    let contract = contracts.resolve(handle).unwrap();
-    let contracts = contracts.into_parts().0;
+    let mut contract_builder = OperationContractTableBuilder::new();
+    let contract_handles = artifact
+        .nodes()
+        .iter()
+        .map(|declaration| {
+            let operation = declaration.as_operation().expect("ordinary witness operation");
+            let contract = if operation.node == node.node {
+                ResolvedOperationContract::Declared(contract.clone())
+            } else {
+                artifact
+                    .contracts()
+                    .get(operation.contract)
+                    .expect("operation contract")
+                    .clone()
+            };
+            contract_builder.insert(contract).unwrap()
+        })
+        .collect::<Vec<_>>();
+    let contract_build = contract_builder.finish().unwrap();
+    let contract_ids = contract_handles
+        .into_iter()
+        .map(|handle| contract_build.resolve(handle).unwrap())
+        .collect::<Vec<_>>();
+    let contracts = contract_build.into_parts().0;
     let mut bindings = artifact.bindings().to_vec();
     bindings.swap(0, 1);
     for (ordinal, binding) in bindings[..2].iter_mut().enumerate() {
@@ -694,7 +787,12 @@ fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
     };
     *id = BindingId::new(2);
     let mut nodes = artifact.nodes().to_vec();
-    nodes[0].contract = contract;
+    for (declaration, contract) in nodes.iter_mut().zip(contract_ids) {
+        let ExecutableNodeBody::Operation(operation) = &mut declaration.body else {
+            panic!("ordinary witness operation")
+        };
+        operation.contract = contract;
+    }
     ProgramArtifactDraft {
         schemas: artifact.schemas().clone(),
         constants: artifact.constants().clone(),
@@ -848,12 +946,14 @@ fn assert_activation_fact_reconfiguration(
         .into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
-            operation: OperationReference {
-                module_path: vec!["core".to_owned()].into_boxed_slice(),
-                operation_name: "assign".to_owned(),
-            },
-            contract,
-            requirement: None,
+            body: ExecutableNodeBody::Operation(OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["core".to_owned()].into_boxed_slice(),
+                    operation_name: "assign".to_owned(),
+                },
+                contract,
+                requirement: None,
+            }),
             input_bindings: 0..1,
             output_bindings: 1..2,
         }]
@@ -972,7 +1072,7 @@ fn assert_activation_fact_reconfiguration(
 
     let ResolvedOperationContract::Declared(mut observation_contract) = artifact
         .contracts()
-        .get(artifact.nodes()[0].contract)
+        .get(artifact.nodes()[0].as_operation().unwrap().contract)
         .unwrap()
         .clone()
     else {
@@ -997,7 +1097,7 @@ fn assert_activation_fact_reconfiguration(
 
     let ResolvedOperationContract::Declared(assign_contract) = artifact
         .contracts()
-        .get(artifact.nodes()[0].contract)
+        .get(artifact.nodes()[0].as_operation().unwrap().contract)
         .unwrap()
         .clone()
     else {
@@ -1067,7 +1167,10 @@ fn assert_activation_fact_reconfiguration(
 
     let zero_input = zero_input_state_artifact(&artifact);
     let mut wrong_arity_node = zero_input.nodes()[0].clone();
-    wrong_arity_node.operation = OperationReference {
+    let ExecutableNodeBody::Operation(operation) = &mut wrong_arity_node.body else {
+        panic!("ordinary witness operation")
+    };
+    operation.operation = OperationReference {
         module_path: vec!["core".to_owned()].into_boxed_slice(),
         operation_name: "assign".to_owned(),
     };
@@ -1148,9 +1251,12 @@ fn replace_single_contract(
     let (contracts, _) = build.into_parts();
     let mut nodes = artifact.nodes().to_vec();
     assert_eq!(nodes.len(), 1);
-    nodes[0].contract = contract;
+    let ExecutableNodeBody::Operation(operation) = &mut nodes[0].body else {
+        panic!("ordinary witness operation")
+    };
+    operation.contract = contract;
     let requirements = if external {
-        nodes[0].requirement = Some(ApplicationRequirementId::new(0));
+        operation.requirement = Some(ApplicationRequirementId::new(0));
         ApplicationRequirementTable::from_canonical_entries(vec![ApplicationRequirement::Resource(
             ExecutionResourceRequest {
                 base_uri: "test-resource://contract/probe".to_owned(),
@@ -1296,12 +1402,14 @@ fn wrong_dimension_artifact(
         .into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
-            operation: OperationReference {
-                module_path: vec!["math".to_owned()].into_boxed_slice(),
-                operation_name: "sub".to_owned(),
-            },
-            contract,
-            requirement: None,
+            body: ExecutableNodeBody::Operation(OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["math".to_owned()].into_boxed_slice(),
+                    operation_name: "sub".to_owned(),
+                },
+                contract,
+                requirement: None,
+            }),
             input_bindings: 0..2,
             output_bindings: 2..3,
         }]
@@ -1404,12 +1512,14 @@ fn canonical_bool_assign_artifact(
         .into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
-            operation: OperationReference {
-                module_path: vec!["core".to_owned()].into_boxed_slice(),
-                operation_name: "assign".to_owned(),
-            },
-            contract,
-            requirement: None,
+            body: ExecutableNodeBody::Operation(OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["core".to_owned()].into_boxed_slice(),
+                    operation_name: "assign".to_owned(),
+                },
+                contract,
+                requirement: None,
+            }),
             input_bindings: 0..1,
             output_bindings: 1..2,
         }]
@@ -1485,12 +1595,14 @@ fn zero_input_state_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
         slots: vec![state].into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
-            operation: OperationReference {
-                module_path: vec!["test".to_owned()].into_boxed_slice(),
-                operation_name: "zero-input-state".to_owned(),
-            },
-            contract,
-            requirement: None,
+            body: ExecutableNodeBody::Operation(OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["test".to_owned()].into_boxed_slice(),
+                    operation_name: "zero-input-state".to_owned(),
+                },
+                contract,
+                requirement: None,
+            }),
             input_bindings: 0..0,
             output_bindings: 0..1,
         }]
@@ -1609,8 +1721,13 @@ fn dirty_propagation_artifact(
     root_policy: ChangeDetectionPolicy,
     root_operation: &str,
 ) -> ProgramArtifact {
-    let original_state = template.outputs()[0].source;
-    let schema = template.outputs()[0].schema;
+    let (constant, schema) = (0..template.constants().len())
+        .find_map(|raw| {
+            let constant = ConstantId::new(raw as u32);
+            let value = template.constants().get(constant)?;
+            matches!(value.data(), ValueData::F64(_)).then_some((constant, value.schema()))
+        })
+        .expect("n-body template scalar f64 constant");
     let mut contracts = OperationContractTableBuilder::new();
     let root_contract = contracts
         .insert(copy_contract(schema, root_policy))
@@ -1624,14 +1741,23 @@ fn dirty_propagation_artifact(
     let (contracts, _) = build.into_parts();
     let scratch = mech_core::CellSlotId::new(0);
     let state = mech_core::CellSlotId::new(1);
-    let mut state_declaration = template.slots()[original_state.get() as usize].clone();
-    state_declaration.slot = state;
-    state_declaration.producer = ProducerReference::NodeOutput {
-        node: NodeId::new(1),
-        output_ordinal: 0,
+    let state_declaration = SlotDeclaration {
+        slot: state,
+        schema,
+        role: SlotRole::State,
+        producer: ProducerReference::NodeOutput {
+            node: NodeId::new(1),
+            output_ordinal: 0,
+        },
+        initializer: Some(InitializerReference::Constant(constant)),
     };
-    let mut output = template.outputs()[0].clone();
-    output.source = state;
+    let output = OutputDeclaration {
+        output: OutputId::new(0),
+        name: "value".to_owned(),
+        interactive_binding: None,
+        source: state,
+        schema,
+    };
     ProgramArtifactDraft {
         schemas: template.schemas().clone(),
         constants: template.constants().clone(),
@@ -1655,23 +1781,27 @@ fn dirty_propagation_artifact(
         nodes: vec![
             NodeDeclaration {
                 node: NodeId::new(0),
-                operation: OperationReference {
-                    module_path: vec!["test".to_owned()].into_boxed_slice(),
-                    operation_name: root_operation.to_owned(),
-                },
-                contract: root_contract,
-                requirement: None,
+                body: ExecutableNodeBody::Operation(OperationNodeBody {
+                    operation: OperationReference {
+                        module_path: vec!["test".to_owned()].into_boxed_slice(),
+                        operation_name: root_operation.to_owned(),
+                    },
+                    contract: root_contract,
+                    requirement: None,
+                }),
                 input_bindings: 0..1,
                 output_bindings: 1..2,
             },
             NodeDeclaration {
                 node: NodeId::new(1),
-                operation: OperationReference {
-                    module_path: vec!["test".to_owned()].into_boxed_slice(),
-                    operation_name: "state-copy".to_owned(),
-                },
-                contract: state_contract,
-                requirement: None,
+                body: ExecutableNodeBody::Operation(OperationNodeBody {
+                    operation: OperationReference {
+                        module_path: vec!["test".to_owned()].into_boxed_slice(),
+                        operation_name: "state-copy".to_owned(),
+                    },
+                    contract: state_contract,
+                    requirement: None,
+                }),
                 input_bindings: 2..3,
                 output_bindings: 3..4,
             },
@@ -1806,7 +1936,7 @@ fn state_slot_with_initial(artifact: &ProgramArtifact, first: f64) -> mech_core:
         .slots()
         .iter()
         .find_map(|slot| {
-            let mech_engine::InitializerReference::Constant(constant) = slot.initializer?;
+            let mech_engine::InitializerReference::Constant(constant) = slot.initializer? else { return None; };
             let value = artifact.constants().get(constant)?;
             let ValueData::Matrix(matrix) = value.data() else {
                 return None;
@@ -1986,9 +2116,7 @@ fn reorder_artifact(artifact: &ProgramArtifact, order: &[usize]) -> ProgramArtif
         }
         nodes.push(mech_engine::NodeDeclaration {
             node,
-            operation: original.operation.clone(),
-            contract: original.contract,
-            requirement: original.requirement,
+            body: original.body.clone(),
             input_bindings: input_start..input_end,
             output_bindings: output_start..bindings.len() as u32,
         });
@@ -2033,9 +2161,12 @@ fn resident_state(instance: &mech_engine::__resident::ReactiveInstance) -> Vec<u
         .plan
         .slots
         .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
+        .filter(|slot| slot.role == SlotRole::State)
         .flat_map(
-            |slot| match instance.state_borrow(slot.artifact_id).unwrap() {
+            |slot| match instance
+                .state_borrow(slot.artifact_id)
+                .unwrap_or_else(|| panic!("state-backed plan slot is unavailable: {slot:?}"))
+            {
                 ResidentValueBorrow::F64 { values, .. } => values
                     .iter()
                     .map(|value| value.to_bits())
@@ -2203,6 +2334,36 @@ fn node_inputs<'a>(
         .collect()
 }
 
+fn source_operation<'a>(
+    artifact: &'a ProgramArtifact,
+    source: ArtifactSource,
+) -> Option<mech_engine::OperationNodeView<'a>> {
+    let ArtifactSource::Slot(slot) = source else {
+        return None;
+    };
+    let ProducerReference::NodeOutput { node, .. } = artifact.slots()[slot.get() as usize].producer
+    else {
+        return None;
+    };
+    artifact.nodes()[node.get() as usize].as_operation()
+}
+
+fn node_output_slot(
+    artifact: &ProgramArtifact,
+    node: mech_core::NodeId,
+) -> mech_core::CellSlotId {
+    let declaration = &artifact.nodes()[node.get() as usize];
+    let [binding] = &artifact.bindings()
+        [declaration.output_bindings.start as usize..declaration.output_bindings.end as usize]
+    else {
+        panic!("node {node:?} must have one output")
+    };
+    let BindingDeclaration::Output { target, .. } = binding else {
+        unreachable!("output range contains input")
+    };
+    *target
+}
+
 fn state_writers(
     artifact: &ProgramArtifact,
     target: mech_core::CellSlotId,
@@ -2223,11 +2384,10 @@ fn state_writers(
 
 fn assert_rmw_region(
     artifact: &ProgramArtifact,
-    target: mech_core::CellSlotId,
     writer: mech_core::NodeId,
     expected_region: RegionPolicy,
-) {
-    let node = &artifact.nodes()[writer.get() as usize];
+) -> ArtifactSource {
+    let node = artifact.nodes()[writer.get() as usize].as_operation().unwrap();
     let ResolvedOperationContract::Declared(contract) = artifact
         .contracts()
         .get(node.contract)
@@ -2245,33 +2405,28 @@ fn assert_rmw_region(
     };
     assert_eq!(regions, expected_region);
     assert_eq!(output.alias, AliasPolicy::MayAlias { input: base_input });
-    assert!(matches!(
-        node_inputs(artifact, node)[base_input as usize],
-        ArtifactSource::Slot(slot) if slot == target
-    ));
+    node_inputs(artifact, &node)[base_input as usize]
 }
 
-fn source_reads_state_after(
+fn source_depends_on_node(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
-    state: mech_core::CellSlotId,
-    predecessor: mech_core::NodeId,
+    target: mech_core::NodeId,
 ) -> bool {
     let ArtifactSource::Slot(slot) = source else {
         return false;
     };
-    if slot == state {
-        return true;
-    }
     if artifact.slots()[slot.get() as usize].role == SlotRole::State {
         return false;
     }
-    let ProducerReference::NodeOutput { node, .. } = artifact.slots()[slot.get() as usize].producer
-    else {
-        return false;
-    };
-    node.get() > predecessor.get()
-        && node_inputs(artifact, &artifact.nodes()[node.get() as usize])
-            .iter()
-            .any(|source| source_reads_state_after(artifact, *source, state, predecessor))
+    match artifact.slots()[slot.get() as usize].producer {
+        ProducerReference::NodeOutput { node, .. } => {
+            node == target
+                || node_inputs(artifact, &artifact.nodes()[node.get() as usize])
+                    .iter()
+                    .any(|source| source_depends_on_node(artifact, *source, target))
+        }
+        ProducerReference::Output { source, .. } => source_depends_on_node(artifact, source, target),
+        _ => false,
+    }
 }

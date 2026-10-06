@@ -1061,7 +1061,7 @@ fn failed_shadow_checks_do_not_mutate_cells() {
 }
 
 #[test]
-fn r2c_types_are_derived_only_and_do_not_add_serialization() {
+fn memory_requirement_types_are_derived_only_and_do_not_add_serialization() {
     let source = include_str!("../src/memory_contract/operation_requirement.rs");
     assert!(!source.contains("Serialize"));
     assert!(!source.contains("Deserialize"));

@@ -2,10 +2,49 @@ name: CI
 
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      expected_revision:
+        description: Exact 40-character workflow revision to execute
+        required: true
+        type: string
+      representative_paths:
+        description: JSON array of simulated changed paths; jobs execute the real workflow revision
+        required: true
+        type: string
 
 concurrency:
-  group: ci-pr-${{ github.event.pull_request.number }}
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
+
+# This verifier belongs to the workflow revision, not the repository revision
+# selected below. Historical validation refs therefore remain auditable even
+# when their checked-out tree predates the checkout-identity contract.
+env:
+  RECORD_CHECKOUT_IDENTITY: |
+    case "$VALIDATION_KIND" in
+      integration-merge|exact-ref) ;;
+      *) echo "unsupported validation kind: $VALIDATION_KIND" >&2; exit 64 ;;
+    esac
+    test -n "$REQUESTED_REF"
+
+    actual_sha=$(git rev-parse HEAD)
+    test -n "$CHECKOUT_SHA"
+    test "$actual_sha" = "$CHECKOUT_SHA"
+
+    if [[ "$REQUESTED_REF" =~ ^[0-9a-fA-F]{40}$ || "$REQUESTED_REF" =~ ^[0-9a-fA-F]{64}$ ]]
+    then
+      requested_sha=$(printf '%s' "$REQUESTED_REF" | tr '[:upper:]' '[:lower:]')
+      test "$actual_sha" = "$requested_sha"
+    fi
+
+    {
+      echo "validation_kind=$VALIDATION_KIND"
+      echo "requested_ref=$REQUESTED_REF"
+      echo "checkout_ref=$CHECKOUT_REF"
+      echo "checkout_sha=$CHECKOUT_SHA"
+      echo "actual_sha=$actual_sha"
+    } | tee -a "$GITHUB_STEP_SUMMARY"
 
 jobs:
   impact:
@@ -19,29 +58,56 @@ jobs:
       standard_canaries_required: ${{ steps.classify.outputs.standard_canaries_required }}
       windows_canary_required: ${{ steps.classify.outputs.windows_canary_required }}
       browser_canary_required: ${{ steps.classify.outputs.browser_canary_required }}
+      browser_applications_required: ${{ steps.classify.outputs.browser_applications_required }}
       cross_cutting_standard_suite_required: ${{ steps.classify.outputs.cross_cutting_standard_suite_required }}
       full_validation_required: ${{ steps.classify.outputs.full_validation_required }}
+      contract_families: ${{ steps.classify.outputs.contract_families }}
+      dependent_contracts_required: ${{ steps.classify.outputs.dependent_contracts_required }}
+      native_validation_required: ${{ steps.classify.outputs.native_validation_required }}
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Select the smallest safe validation set
         id: classify
+        shell: bash
         env:
           PR_LABELS: ${{ toJSON(github.event.pull_request.labels) }}
-        run: >-
-          python3 scripts/ci-impact.py
-          --base "${{ github.event.pull_request.base.sha }}"
-          --head "${{ github.event.pull_request.head.sha }}"
-          --labels "$PR_LABELS"
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_REVISION: ${{ inputs.expected_revision }}
+          REPRESENTATIVE_PATHS: ${{ inputs.representative_paths }}
+        run: |
+          set -euo pipefail
+          if test "$GITHUB_EVENT_NAME" = pull_request
+          then
+            python3 scripts/ci-impact.py --base "$PR_BASE" --head "$GITHUB_SHA" \
+              --labels "$PR_LABELS" | tee /tmp/ci-impact.json
+          elif test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          then
+            python3 scripts/ci-impact.py --representative-paths "$REPRESENTATIVE_PATHS" \
+              --expected-revision "$EXPECTED_REVISION" | tee /tmp/ci-impact.json
+          else
+            exit 1
+          fi
+          cat /tmp/ci-impact.json >> "$GITHUB_STEP_SUMMARY"
 
   early-native-plan:
     name: Early native plan
     needs: impact
-    if: needs.impact.outputs.full_validation_required == 'true'
+    if: needs.impact.outputs.native_validation_required == 'true'
     uses: ./.github/workflows/ci-native-plan.yml
     with:
-      validation_ref: ${{ github.event.pull_request.head.sha }}
+      validation_ref: ${{ github.sha }}
 
   static-architecture:
     name: Static architecture contracts
@@ -54,10 +120,18 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
         with:
-          # Static architecture contracts validate the exact PR head.
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install formatting and contract tools
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
@@ -75,7 +149,9 @@ jobs:
           cargo +nightly-2026-03-03 fmt --all -- --check
           python3 -B -m unittest \
             tests.ci.test_ci_impact \
-            tests.ci.test_ci_full_contract
+            tests.ci.test_ci_full_contract \
+            tests.browser.harness.test_chrome_session \
+            tests.browser.harness.test_completion_server
           python3 scripts/check-production-resident-routing.py
           python3 scripts/check-warning-policy.py
           python3 scripts/check-interactive-architecture.py
@@ -85,12 +161,11 @@ jobs:
           python3 scripts/check-value-execution-boundary.py
           python3 scripts/check-value-system-contract.py
           python3 scripts/check-no-retired-value-system.py
-          python3 scripts/check-r1-compatibility-closure.py
-          python3 scripts/check-r2-type-memory-boundary.py
-          python3 scripts/check-r3-type-system.py
-          python3 scripts/check-r4-type-cutover.py
-          python3 scripts/check-r5-memory-planner.py
-          python3 scripts/check-r6-memory-runtime.py
+          python3 scripts/check-type-memory-boundary.py
+          python3 scripts/check-type-system.py
+          python3 scripts/check-semantic-type-authority.py
+          python3 scripts/check-memory-planner.py
+          python3 scripts/check-memory-runtime.py
           python3 scripts/check-bytecode-v1-format.py
 
   static-mutations:
@@ -105,9 +180,18 @@ jobs:
         shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install mutation contract tools
         run: |
           if ! command -v rg >/dev/null 2>&1
@@ -126,12 +210,12 @@ jobs:
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_check_no_retired_value_system.py \
-            scripts/tests/test_check_r1_compatibility_closure.py \
-            scripts/tests/test_check_r2_type_memory_boundary.py \
-            scripts/tests/test_check_r3_type_system.py \
-            scripts/tests/test_check_r4_type_cutover.py \
-            scripts/tests/test_check_r5_memory_planner.py \
-            scripts/tests/test_check_r6_memory_runtime.py \
+            scripts/tests/test_rust_source.py \
+            scripts/tests/test_check_type_memory_boundary.py \
+            scripts/tests/test_check_type_system.py \
+            scripts/tests/test_check_semantic_type_authority.py \
+            scripts/tests/test_check_memory_planner.py \
+            scripts/tests/test_check_memory_runtime.py \
             scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_value_execution_boundary.py \
             scripts/tests/test_warning_policy.py
@@ -147,9 +231,18 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install distribution contract tools
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal
@@ -189,6 +282,49 @@ jobs:
           test "$MUTATIONS_RESULT" = success
           test "$DISTRIBUTION_RESULT" = success
 
+  full-source-profile:
+    name: Full source profile
+    needs: impact
+    if: needs.impact.outputs.standard_canaries_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_TARGET_DIR: target/full-source-profile
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch the isolated source profile dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+      - name: Verify the independent Full source consumer
+        run: |
+          python3 scripts/run-native-plan-stage.py \
+            --stage full-source-profile --timeout-secs 540 \
+            --log-dir target/full-source-profile-logs -- \
+            cargo +nightly-2026-03-03 run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+      - name: Retain source profile failure diagnostics
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-source-profile-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/full-source-profile-logs
+          if-no-files-found: warn
+          retention-days: 7
+
   standard-linux:
     name: Standard Linux
     needs: impact
@@ -202,6 +338,17 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Build and exercise the lean standard distribution
@@ -249,6 +396,18 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch the locked dependency graph
@@ -261,18 +420,49 @@ jobs:
     needs: impact
     if: needs.impact.outputs.windows_canary_required == 'true'
     runs-on: windows-latest
-    timeout-minutes: 45
+    # A cold optimized WASM + native product build already took 44m13s.
+    # Leave cold-build headroom; unchanged Rust compilations are reused below.
+    timeout-minutes: 75
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: "0"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_VERSION: mech-standard-windows-v1
+      SCCACHE_IGNORE_SERVER_IO_ERROR: "1"
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
           rustup target add wasm32-unknown-unknown
+      - name: Install compiler cache
+        uses: Mozilla-Actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        with:
+          version: v0.16.0
+      - name: Restore Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: standard-windows-product-v1
+          cache-on-failure: "true"
+          cache-workspace-crates: "false"
+        # Dependency artifacts avoid repeated downloads/builds. sccache also
+        # reuses unchanged workspace compilations by their compiler inputs,
+        # even when a fresh checkout gives the source files new timestamps.
+        # The product build below always regenerates and embeds this head's WASM.
       - name: Install wasm-pack v0.15.0
         shell: pwsh
         run: |
@@ -298,14 +488,31 @@ jobs:
     needs: impact
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Browser builds and lifecycle checks need headroom on cold runners.
+    # Cache compilation separately and leave room for all browser suites.
+    timeout-minutes: 45
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: "0"
       CARGO_PROFILE_TEST_DEBUG: "0"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_VERSION: mech-browser-standard-v1
+      SCCACHE_IGNORE_SERVER_IO_ERROR: "1"
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust, WASM, and wasm-pack
         env:
           WASM_PACK_VERSION: v0.15.0
@@ -318,6 +525,18 @@ jobs:
             -o /tmp/wasm-pack.tar.gz
           tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
           sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
+      - name: Install compiler cache
+        uses: Mozilla-Actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        with:
+          version: v0.16.0
+      - name: Restore Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: browser-standard-product-v1
+          cache-on-failure: "true"
+          cache-workspace-crates: "false"
+        # Reuse compiler inputs, not a previously embedded server or WASM package.
+        # The build and every browser assertion still run on the current checkout.
       - name: Build standard WASM and the standard server
         run: |
           python3 scripts/build-wasm.py --profile browser
@@ -326,6 +545,29 @@ jobs:
           cargo build --locked --bin mech
       - name: Verify resident rendering without browser errors
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
+      - name: Smoke test rich served documents before full validation
+        run: MECH_BIN=target/debug/mech bash scripts/smoke-served-rich-document-browser.sh
+
+      - name: Check browser document lifecycle sequences
+        run: python3 -B scripts/smoke-browser-document-lifecycle.py --mech-bin target/debug/mech
+
+      - name: Upload standard browser failure diagnostics
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-standard-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/served-rich-document.*/progress.log
+            target/served-rich-document.*/**/server.log
+            target/served-rich-document.*/**/format.log
+            target/served-rich-document.*/**/chrome.dom
+            target/served-rich-document.*/**/chrome.stderr
+            target/served-rich-document.*/**/chrome.png
+            target/browser-document-lifecycle/*.log
+            target/browser-document-lifecycle/*.json
+            target/browser-document-lifecycle/*.html
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Remove generated browser package
         if: always()
@@ -344,6 +586,17 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Verify N-body physics against independent references
@@ -354,12 +607,12 @@ jobs:
             public_nbody_viewer_integrates_mutual_gravity_residently \
             --lib
 
-  browser-compute-canary:
-    name: Browser compute canary
+  browser-compute-build:
+    name: Browser compute build
     needs: impact
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 25
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -367,6 +620,17 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust, WASM, and wasm-pack
         env:
           WASM_PACK_VERSION: v0.15.0
@@ -379,24 +643,133 @@ jobs:
             -o /tmp/wasm-pack.tar.gz
           tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
           sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
+      - name: Install Node for browser-package source admission
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
       - name: Build mixed compute WASM and refresh the server
         run: |
+          node --test scripts/tests/static-project.test.mjs
           node scripts/test-browser-compute-lifecycle.mjs
           python3 scripts/build-wasm.py --profile browser-compute-canary
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
+          python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
+          mkdir -p target/browser-compute-provenance
+          git rev-parse HEAD > target/browser-compute-provenance/revision
+          git rev-parse 'HEAD^{tree}' > target/browser-compute-provenance/tree
+          sha256sum Cargo.lock > target/browser-compute-provenance/lock.sha256
+          printf '%s\n' 'mech:dev:compute_backends_native;wasm:browser-compute-canary:wasm32-unknown-unknown' > target/browser-compute-provenance/profile
+          rustc -vV > target/browser-compute-provenance/toolchain
+          sha256sum target/debug/mech > target/browser-compute-provenance/products.sha256
+          find src/wasm/pkg -type f -print0 | sort -z | xargs -0 sha256sum >> target/browser-compute-provenance/products.sha256
+          tar -czf /tmp/browser-compute-canary.tar.gz target/debug/mech src/wasm/pkg target/browser-compute-provenance
+      - name: Upload the shared compute browser build
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-compute-canary-build
+          path: /tmp/browser-compute-canary.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  browser-compute-smoke:
+    name: Browser compute smoke
+    needs:
+      - impact
+      - browser-compute-build
+    if: needs.impact.outputs.browser_canary_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Download the shared compute browser build
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-compute-canary-build
+          path: /tmp/browser-compute-canary
+      - name: Restore the shared compute browser build
+        run: |
+          tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+          test "$(cat target/browser-compute-provenance/revision)" = "$GITHUB_SHA"
+          test "$(cat target/browser-compute-provenance/tree)" = "$(git rev-parse 'HEAD^{tree}')"
+          test "$(cat target/browser-compute-provenance/profile)" = 'mech:dev:compute_backends_native;wasm:browser-compute-canary:wasm32-unknown-unknown'
+          sha256sum --check target/browser-compute-provenance/lock.sha256
+          sha256sum --check target/browser-compute-provenance/products.sha256
+      - name: Install Node for static compute package admission
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+      - name: Verify emitted static CPU and WebGPU bundles under a non-root prefix
+        run: >-
+          python3 scripts/smoke-canonical-compute-browser.py
+          --static-bundle --mech-bin target/debug/mech
+          --wasm-pkg src/wasm/pkg --software-adapter
+      - name: Verify canonical document bundle activation and replacement
+        run: python3 scripts/smoke-canonical-document-bundle-browser.py --served-compute
       - name: Verify report-only particle WebGPU execution
         run: >-
           MECH_BIN=target/debug/mech
           python3 scripts/smoke-gpu-particles-browser.py
           --backend gpu --particle-count 16384 --software-adapter
-      - name: Verify scalar and WebGPU EKF rendering against one numeric oracle
+
+  browser-ekf-cpu:
+    name: Browser EKF scalar
+    needs:
+      - impact
+      - browser-compute-build
+    if: needs.impact.outputs.browser_applications_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Download the shared compute browser build
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-compute-canary-build
+          path: /tmp/browser-compute-canary
+      - name: Restore the shared compute browser build
+        run: |
+          tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+          test "$(cat target/browser-compute-provenance/revision)" = "$GITHUB_SHA"
+          test "$(cat target/browser-compute-provenance/tree)" = "$(git rev-parse 'HEAD^{tree}')"
+          test "$(cat target/browser-compute-provenance/profile)" = 'mech:dev:compute_backends_native;wasm:browser-compute-canary:wasm32-unknown-unknown'
+          sha256sum --check target/browser-compute-provenance/lock.sha256
+          sha256sum --check target/browser-compute-provenance/products.sha256
+      - name: Verify scalar EKF rendering
         run: |
           MECH_BIN=target/debug/mech \
             MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
             MECH_EKF_FILTER_COUNT=1 \
             MECH_EKF_RESULT_FILE=/tmp/ekf-cpu-single.json \
+            bash scripts/smoke-served-resident-ekf-browser.sh
+          MECH_BIN=target/debug/mech \
+            MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
+            MECH_EKF_FILTER_COUNT=1 \
+            MECH_EKF_CONTINUITY_EDIT=false \
+            MECH_EKF_RESULT_FILE=/tmp/ekf-cpu-single-no-edit.json \
             bash scripts/smoke-served-resident-ekf-browser.sh
           MECH_BIN=target/debug/mech \
             MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
@@ -407,104 +780,154 @@ jobs:
             MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
             MECH_EKF_RESULT_FILE=/tmp/ekf-cpu.json \
             bash scripts/smoke-served-resident-ekf-browser.sh
+      - name: Upload scalar EKF evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ekf-cpu-results
+          path: /tmp/ekf-cpu*.json
+          if-no-files-found: error
+          retention-days: 1
+      - name: Retain scalar EKF failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ekf-cpu-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/served-resident-ekf-browser.*
+          if-no-files-found: ignore
+          retention-days: 7
+
+  browser-ekf-wgpu:
+    name: Browser EKF WebGPU
+    needs:
+      - impact
+      - browser-compute-build
+    if: needs.impact.outputs.browser_applications_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Download the shared compute browser build
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-compute-canary-build
+          path: /tmp/browser-compute-canary
+      - name: Restore the shared compute browser build
+        run: |
+          tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+          test "$(cat target/browser-compute-provenance/revision)" = "$GITHUB_SHA"
+          test "$(cat target/browser-compute-provenance/tree)" = "$(git rev-parse 'HEAD^{tree}')"
+          test "$(cat target/browser-compute-provenance/profile)" = 'mech:dev:compute_backends_native;wasm:browser-compute-canary:wasm32-unknown-unknown'
+          sha256sum --check target/browser-compute-provenance/lock.sha256
+          sha256sum --check target/browser-compute-provenance/products.sha256
+      - name: Verify WebGPU EKF rendering
+        run: |
           MECH_BIN=target/debug/mech \
             MECH_EKF_COMPUTE_BACKEND=wgpu \
             MECH_EKF_CONTINUITY_EDIT=false \
+            MECH_EKF_TERMINAL_SUBMIT_PROBE=false \
             MECH_EKF_RESULT_FILE=/tmp/ekf-wgpu-no-edit.json \
             bash scripts/smoke-served-resident-ekf-browser.sh
           MECH_BIN=target/debug/mech \
             MECH_EKF_COMPUTE_BACKEND=wgpu \
             MECH_EKF_RESULT_FILE=/tmp/ekf-wgpu.json \
             bash scripts/smoke-served-resident-ekf-browser.sh
-          python3 - <<'PY'
-          import json
-          import math
-
-          with open("/tmp/ekf-cpu-single.json") as source:
-              cpu_single = json.load(source)
-          with open("/tmp/ekf-cpu-no-edit.json") as source:
-              cpu_no_edit = json.load(source)
-          with open("/tmp/ekf-cpu.json") as source:
-              cpu = json.load(source)
-          with open("/tmp/ekf-wgpu.json") as source:
-              wgpu = json.load(source)
-          with open("/tmp/ekf-wgpu-no-edit.json") as source:
-              wgpu_no_edit = json.load(source)
-          # Each smoke independently proves that its asynchronous live robot
-          # remains bounded and trackable. The continuity oracle is the first
-          # completed filter turn after the edit boundary and is compared to
-          # an independent no-edit run on the same backend; unlike a later
-          # display frame, it is anchored to compute progress.
-          if (
-              cpu_single["backend"] != "cpu-scalar"
-              or cpu_no_edit["backend"] != "cpu-scalar"
-              or cpu["backend"] != "cpu-scalar"
-              or wgpu_no_edit["backend"] != "wgpu"
-              or wgpu["backend"] != "wgpu"
-          ):
-              raise SystemExit("an EKF checkpoint reported the wrong compute backend")
-          if cpu["updates"] != wgpu["updates"]:
-              raise SystemExit("scalar and WebGPU checkpoints used different completed turns")
-          if len(cpu["output"]) != 15 or len(wgpu["output"]) != 15:
-              raise SystemExit("the EKF checkpoint must contain state, covariance, and prediction")
-          if any(len(result["continuity_output"]) != 15 for result in (
-              cpu_single, cpu_no_edit, cpu, wgpu_no_edit, wgpu,
-          )):
-              raise SystemExit("the EKF continuity checkpoint must contain one complete lane")
-          relative_tolerance = 5e-5
-          absolute_tolerance = 1e-6
-          continuity_failures = []
-          continuity_oracles = (
-              ("CPU-1000 edited", cpu_no_edit["continuity_output"], cpu["continuity_output"]),
-              ("CPU-1", cpu_no_edit["continuity_output"], cpu_single["continuity_output"]),
-              (
-                  "WebGPU-1000 edited",
-                  wgpu_no_edit["continuity_output"],
-                  wgpu["continuity_output"],
-              ),
-          )
-          for label, reference, observed in continuity_oracles:
-              for index, (left, right) in enumerate(zip(reference, observed)):
-                  error = abs(left - right)
-                  tolerance = absolute_tolerance + relative_tolerance * max(abs(left), abs(right))
-                  if not math.isfinite(error) or error > tolerance:
-                      continuity_failures.append(
-                          (label, index, left, right, error, tolerance)
-                      )
-          if continuity_failures:
-              label, index, left, right, error, tolerance = max(
-                  continuity_failures, key=lambda item: item[4] / item[5]
-              )
-              raise SystemExit(
-                  f"{label} EKF restarted or diverged after compatible REPL replacement at "
-                  f"component {index}: no_edit={left}, observed={right}, "
-                  f"error={error}, tolerance={tolerance}"
-              )
-          # Backend parity is a separate numerical property from same-backend
-          # no-edit/edit continuity. Shader and scalar evaluation order can
-          # differ slightly while representing the same f32 trajectory.
-          parity_relative_tolerance = relative_tolerance
-          for index, (left, right) in enumerate(zip(
-              cpu_no_edit["continuity_output"],
-              wgpu_no_edit["continuity_output"],
-          )):
-              error = abs(left - right)
-              tolerance = absolute_tolerance + parity_relative_tolerance * max(abs(left), abs(right))
-              if not math.isfinite(error) or error > tolerance:
-                  raise SystemExit(
-                      f"CPU/WebGPU turn-121 parity failed at component {index}: "
-                      f"cpu={left}, wgpu={right}, error={error}, tolerance={tolerance}"
-                  )
-          print("EKF_WEBGPU_PARITY", json.dumps({
-              "cpu_no_edit": cpu_no_edit,
-              "cpu": cpu,
-              "wgpu_no_edit": wgpu_no_edit,
-              "wgpu": wgpu,
-          }, sort_keys=True))
-          PY
-      - name: Remove generated browser package
+      - name: Upload WebGPU EKF evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ekf-wgpu-results
+          path: /tmp/ekf-wgpu*.json
+          if-no-files-found: error
+          retention-days: 1
+      - name: Retain WebGPU EKF failure diagnostics
         if: always()
-        run: rm -rf src/wasm/pkg
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ekf-wgpu-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/served-resident-ekf-browser.*
+          if-no-files-found: ignore
+          retention-days: 7
+
+  browser-ekf-parity:
+    name: Browser EKF parity
+    needs:
+      - impact
+      - browser-ekf-cpu
+      - browser-ekf-wgpu
+    if: needs.impact.outputs.browser_applications_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Download scalar and WebGPU EKF evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: browser-ekf-*-results
+          path: /tmp/browser-ekf-results
+          merge-multiple: true
+      - name: Verify scalar continuity and WebGPU parity
+        run: python3 scripts/check-ekf-browser-results.py /tmp/browser-ekf-results
+
+  browser-compute-canary:
+    name: Browser compute canary
+    needs:
+      - impact
+      - browser-compute-build
+      - browser-compute-smoke
+      - browser-ekf-cpu
+      - browser-ekf-wgpu
+      - browser-ekf-parity
+    if: always() && needs.impact.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every selected compute browser suite
+        env:
+          REQUIRED: ${{ needs.impact.outputs.browser_canary_required }}
+          APPLICATIONS_REQUIRED: ${{ needs.impact.outputs.browser_applications_required }}
+          BUILD_RESULT: ${{ needs.browser-compute-build.result }}
+          SMOKE_RESULT: ${{ needs.browser-compute-smoke.result }}
+          CPU_RESULT: ${{ needs.browser-ekf-cpu.result }}
+          WGPU_RESULT: ${{ needs.browser-ekf-wgpu.result }}
+          PARITY_RESULT: ${{ needs.browser-ekf-parity.result }}
+        run: |
+          if test "$REQUIRED" = true
+          then
+            test "$BUILD_RESULT" = success
+            test "$SMOKE_RESULT" = success
+          else
+            test "$BUILD_RESULT" = skipped
+            test "$SMOKE_RESULT" = skipped
+          fi
+          case "$APPLICATIONS_REQUIRED" in
+            true) expected=success ;;
+            false) expected=skipped ;;
+            *) exit 1 ;;
+          esac
+          test "$CPU_RESULT" = "$expected"
+          test "$WGPU_RESULT" = "$expected"
+          test "$PARITY_RESULT" = "$expected"
 
   browser-canary:
     name: Browser canary
@@ -513,7 +936,7 @@ jobs:
       - browser-standard-canary
       - browser-nbody-reference
       - browser-compute-canary
-    if: always()
+    if: always() && needs.impact.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -532,11 +955,11 @@ jobs:
           else
             test "$STANDARD_RESULT" = skipped
             test "$NBODY_RESULT" = skipped
-            test "$COMPUTE_RESULT" = skipped
+            test "$COMPUTE_RESULT" = success
           fi
 
   full-validation:
-    name: Requested full validation
+    name: Selected dependent contracts
     needs:
       - impact
       - static-contracts
@@ -546,28 +969,31 @@ jobs:
       - browser-canary
     if: >-
       ${{
-        always() &&
-        needs.impact.outputs.full_validation_required == 'true' &&
+        !cancelled() &&
+        needs.impact.outputs.dependent_contracts_required == 'true' &&
         (needs.static-contracts.result == 'success' ||
           (needs.impact.outputs.docs_only == 'true' && needs.static-contracts.result == 'skipped')) &&
         (needs.standard-linux.result == 'success' ||
           (needs.impact.outputs.docs_only == 'true' && needs.standard-linux.result == 'skipped')) &&
         (needs.standard-windows.result == 'success' ||
-          (needs.impact.outputs.docs_only == 'true' && needs.standard-windows.result == 'skipped')) &&
+          (needs.impact.outputs.windows_canary_required != 'true' && needs.standard-windows.result == 'skipped')) &&
         (needs.changed-owner-tests.result == 'success' || needs.changed-owner-tests.result == 'skipped') &&
         (needs.browser-canary.result == 'success' || needs.browser-canary.result == 'skipped')
       }}
     uses: ./.github/workflows/ci-full.yml
     with:
       release_channel: stable
-      validation_ref: ${{ github.event.pull_request.head.sha }}
+      contract_families: ${{ needs.impact.outputs.contract_families }}
+      validation_ref: ${{ github.sha }}
       native_plan_in_caller: true
+      rich_browser_smoke_in_caller: ${{ needs.impact.outputs.browser_canary_required == 'true' }}
 
   pr-gate:
     name: PR gate
-    if: always()
+    if: always() && needs.impact.result != 'cancelled'
     needs:
       - impact
+      - full-source-profile
       - static-contracts
       - standard-linux
       - changed-owner-tests
@@ -581,36 +1007,57 @@ jobs:
       - name: Require exactly the selected validation set
         env:
           DOCS_ONLY: ${{ needs.impact.outputs.docs_only }}
-          FULL_REQUIRED: ${{ needs.impact.outputs.full_validation_required }}
+          CONTRACTS_REQUIRED: ${{ needs.impact.outputs.dependent_contracts_required }}
+          NATIVE_REQUIRED: ${{ needs.impact.outputs.native_validation_required }}
           IMPACT_RESULT: ${{ needs.impact.result }}
+          SOURCE_REQUIRED: ${{ needs.impact.outputs.standard_canaries_required }}
+          SOURCE_RESULT: ${{ needs.full-source-profile.result }}
           STATIC_RESULT: ${{ needs.static-contracts.result }}
           LINUX_RESULT: ${{ needs.standard-linux.result }}
+          OWNERS_REQUIRED: ${{ needs.impact.outputs.owner_shards != '[]' }}
           OWNER_RESULT: ${{ needs.changed-owner-tests.result }}
+          WINDOWS_REQUIRED: ${{ needs.impact.outputs.windows_canary_required }}
           WINDOWS_RESULT: ${{ needs.standard-windows.result }}
           BROWSER_RESULT: ${{ needs.browser-canary.result }}
           FULL_RESULT: ${{ needs.full-validation.result }}
           NATIVE_PLAN_RESULT: ${{ needs.early-native-plan.result }}
         run: |
           test "$IMPACT_RESULT" = success
+          case "$SOURCE_REQUIRED" in
+            true) test "$SOURCE_RESULT" = success ;;
+            false) test "$SOURCE_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
           if test "$DOCS_ONLY" = true
           then
             test "$STATIC_RESULT" = skipped
             test "$LINUX_RESULT" = skipped
             test "$OWNER_RESULT" = skipped
             test "$WINDOWS_RESULT" = skipped
-            test "$BROWSER_RESULT" = skipped
+            # The always-running aggregate verifies that browser suites skipped.
+            test "$BROWSER_RESULT" = success
           else
             test "$STATIC_RESULT" = success
             test "$LINUX_RESULT" = success
-            test "$WINDOWS_RESULT" = success
-            test "$OWNER_RESULT" = success -o "$OWNER_RESULT" = skipped
-            test "$BROWSER_RESULT" = success -o "$BROWSER_RESULT" = skipped
+            test "$BROWSER_RESULT" = success
           fi
-          if test "$FULL_REQUIRED" = true
-          then
-            test "$FULL_RESULT" = success
-            test "$NATIVE_PLAN_RESULT" = success
-          else
-            test "$FULL_RESULT" = skipped
-            test "$NATIVE_PLAN_RESULT" = skipped
-          fi
+          case "$OWNERS_REQUIRED" in
+            true) test "$OWNER_RESULT" = success ;;
+            false) test "$OWNER_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
+          case "$WINDOWS_REQUIRED" in
+            true) test "$WINDOWS_RESULT" = success ;;
+            false) test "$WINDOWS_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
+          case "$CONTRACTS_REQUIRED" in
+            true) test "$FULL_RESULT" = success ;;
+            false) test "$FULL_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
+          case "$NATIVE_REQUIRED" in
+            true) test "$NATIVE_PLAN_RESULT" = success ;;
+            false) test "$NATIVE_PLAN_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac

@@ -1,5 +1,43 @@
 use super::*;
 
+#[test]
+fn default_document_shim_embeds_decodable_standalone_payload() {
+    let source = "answer := 41\nanswer\n";
+    let document = canonical_document(Path::new("document.mec"), source).unwrap();
+    let encoded = mech_runtime::BrowserDocumentPayload::new("document.mec", source)
+        .unwrap()
+        .encode()
+        .unwrap();
+    let slots = document_controller_slots(
+        include_str!("../../../../include/index.html"),
+        Some("controller"),
+        "",
+        "pkg/mech_wasm.js",
+        "",
+        &encoded,
+    )
+    .unwrap();
+    let html = crate::canonical_presentation::render_canonical_html(
+        &document.document(),
+        "".into(),
+        include_str!("../../../../include/index.html").to_string(),
+        &slots,
+    )
+    .unwrap()
+    .html;
+    let embedded = html
+        .split_once("data-mech-document-code>")
+        .unwrap()
+        .1
+        .split_once("</script>")
+        .unwrap()
+        .0
+        .trim();
+    let payload = mech_runtime::BrowserDocumentPayload::decode(embedded).unwrap();
+    assert_eq!(payload.source(), source);
+    assert!(!html.contains("{{CODE}}"));
+}
+
 fn temp_root(label: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
         "mech-format-collection-{label}-{}",
@@ -225,9 +263,10 @@ fn raw_format_preserves_include_directives_without_expanding() {
     let source = read_format_source(&root.join("main.mec")).unwrap();
     let formatted = match source {
         MechSourceCode::String(text) => {
-            let tree = parser::parse(text.trim()).unwrap();
-            let mut formatter = Formatter::new();
-            formatter.format(&tree)
+            let document = canonical_document(&root.join("main.mec"), &text).unwrap();
+            CanonicalDocumentRenderer
+                .format_pretty_text(&document.document())
+                .unwrap()
         }
         other => panic!("expected string source, got {other:?}"),
     };
@@ -244,6 +283,21 @@ fn raw_format_preserves_include_directives_without_expanding() {
         "formatted output was {formatted}"
     );
     std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn raw_format_normalizes_canonical_source_spacing() {
+    let document = canonical_document(
+        Path::new("document.mec"),
+        "answer  :=  40 +  2\nmessage:= \"a   b\"\n",
+    )
+    .unwrap();
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document.document())
+        .unwrap();
+    assert!(formatted.contains("answer := 40 + 2"), "{formatted}");
+    assert!(formatted.contains("message := \"a   b\""), "{formatted}");
+    assert_ne!(formatted, document.source().to_contiguous_string());
 }
 
 #[cfg(unix)]

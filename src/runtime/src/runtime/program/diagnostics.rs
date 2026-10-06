@@ -1,3 +1,4 @@
+use mech_core::ResidentKernelError;
 #[cfg(feature = "resident-routing-source")]
 use mech_engine::resident::ResidentExecutionError;
 use mech_engine::{ProgramArtifact, resident::ResidentActivationError};
@@ -16,10 +17,12 @@ pub(crate) fn activation_failure(error: ResidentActivationError) -> mech_core::M
     use ResidentActivationError::*;
 
     let class = match &error {
-        LegacyOpaque { .. }
+        UnsupportedControlLayout { .. }
+        | LegacyOpaque { .. }
         | UnsupportedInteraction { .. }
         | UnsupportedDelivery { .. }
         | UnsupportedValue { .. }
+        | InitializerUnavailableAtActivation { .. }
         | TurnDimension { .. }
         | UnresolvedShape { .. }
         | UnsupportedConstruction { .. }
@@ -39,7 +42,9 @@ pub(crate) fn activation_failure(error: ResidentActivationError) -> mech_core::M
         | StaticSelectorResolutionLimit { .. }
         | KernelBind { .. }
         | ActivationKernel { .. }
+        | ActivationKernelExecution { .. }
         | ActiveCandidate
+        | OutputUnavailable { .. }
         | IncompatibleState { .. }
         | InvalidStateMigration
         | PlanGenerationExhausted
@@ -52,8 +57,26 @@ pub(crate) fn activation_failure_for_artifact(
     artifact: &ProgramArtifact,
     error: ResidentActivationError,
 ) -> mech_core::MechError {
+    if let ResidentActivationError::ActivationKernelExecution {
+        node,
+        error:
+            ResidentKernelError::ProviderStatus {
+                operation,
+                status,
+                code,
+            },
+    } = &error
+    {
+        return route_failure(
+            ResidentRouteFailureClass::ActivationFailure,
+            format!(
+                "dynamic kernel `{operation}` returned {status} (status {code}) during resident activation at {node:?}"
+            ),
+        );
+    }
     let operation_node = match &error {
-        ResidentActivationError::LegacyOpaque { node }
+        ResidentActivationError::UnsupportedControlLayout { node }
+        | ResidentActivationError::LegacyOpaque { node }
         | ResidentActivationError::MissingResidentFactory { node }
         | ResidentActivationError::UnsupportedConstruction { node }
         | ResidentActivationError::KernelBind { node, .. } => Some(*node),
@@ -64,9 +87,27 @@ pub(crate) fn activation_failure_for_artifact(
             return route_failure(
                 ResidentRouteFailureClass::SemanticUnsupported,
                 format!(
-                    "resident activation failed at {node:?} ({}/{}): {error:?}",
-                    declaration.operation.module_path.join("/"),
-                    declaration.operation.operation_name,
+                    "resident activation failed at {node:?} ({}): {error:?}",
+                    match &declaration.body {
+                        mech_engine::ExecutableNodeBody::Operation(operation) =>
+                            operation.operation.canonical_name(),
+                        mech_engine::ExecutableNodeBody::Match(_) => "Typed match".to_owned(),
+                        mech_engine::ExecutableNodeBody::Activation(_) => {
+                            "Activation scope".to_owned()
+                        }
+                        mech_engine::ExecutableNodeBody::Comprehension(control) => match control
+                            .kind
+                        {
+                            mech_engine::ComprehensionKind::Matrix =>
+                                "Matrix comprehension".to_owned(),
+                            mech_engine::ComprehensionKind::MatrixPreserveShape =>
+                                "Shape-preserving matrix comprehension".to_owned(),
+                            mech_engine::ComprehensionKind::Set => "Set comprehension".to_owned(),
+                        },
+                        mech_engine::ExecutableNodeBody::Fsm(control) => {
+                            format!("FSM {}", control.machine)
+                        }
+                    },
                 ),
             );
         }

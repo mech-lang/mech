@@ -514,6 +514,33 @@ pub struct FunctionSpecializerEntry {
 }
 
 impl FunctionSpecializerEntry {
+    fn operation_contract_for_output_shape(
+        &self,
+        input_count: usize,
+        output_is_matrix: bool,
+    ) -> Option<&OperationContractDeclaration> {
+        let mut candidates = self
+            .operation_contracts
+            .iter()
+            .filter(|contract| {
+                contract.inputs.resolve(input_count).is_ok() && contract.outputs.len() == 1
+            })
+            .collect::<Vec<_>>();
+        candidates.sort_by_key(|contract| {
+            let output = contract.outputs.first();
+            let matrix_specific = output_is_matrix
+                && output.is_some_and(|output| {
+                    output.change_detection != crate::ChangeDetectionPolicy::ExactScalar
+                });
+            let scalar_specific = !output_is_matrix
+                && output.is_some_and(|output| {
+                    output.change_detection == crate::ChangeDetectionPolicy::ExactScalar
+                });
+            (matrix_specific, scalar_specific)
+        });
+        candidates.last().copied()
+    }
+
     pub fn resolved_operation(
         &self,
         input_count: usize,
@@ -583,6 +610,9 @@ pub struct FunctionTypeOverload {
 pub struct FunctionTypeDeclaration {
     pub overloads: Box<[FunctionTypeOverload]>,
     pub template: Option<SourceSchemeTemplate>,
+    /// Semantic input names shared by all fixed-arity overloads. Absence means
+    /// callers must use positional arguments, never guessed parameter names.
+    pub parameter_names: Option<Box<[String]>>,
 }
 
 impl FunctionTypeDeclaration {
@@ -611,6 +641,7 @@ impl FunctionTypeDeclaration {
         Self {
             overloads,
             template: None,
+            parameter_names: None,
         }
     }
 
@@ -618,6 +649,7 @@ impl FunctionTypeDeclaration {
         Self {
             overloads: Box::new([]),
             template: Some(template),
+            parameter_names: None,
         }
     }
 
@@ -670,6 +702,13 @@ pub fn maintained_source_type_declaration(
         .with_compiler_loc());
     };
     let mut declaration = FunctionTypeDeclaration::from_schemes(schemes);
+    if matches!(
+        canonical_name,
+        "math/add" | "math/sub" | "math/mul" | "math/div" | "math/mod" | "math/pow"
+    ) {
+        declaration.parameter_names = Some(vec!["left".into(), "right".into()].into_boxed_slice());
+    }
+    validate_type_declaration(canonical_name, &declaration)?;
     let output_rule = match canonical_name {
         "matrix/transpose" => Some(ResolvedOutputSchemaRule::TransposeOfInput(0)),
         "set/cartesian-product" => Some(ResolvedOutputSchemaRule::DynamicSetCartesianProduct),
@@ -903,6 +942,42 @@ impl FunctionCatalog {
             .get(&(String::from(module), String::from(item)))
     }
 
+    /// Returns the source type declaration registered for one canonical
+    /// operation name. Product source frontends use this catalog authority so
+    /// module-only operations receive the same type selection as the runtime.
+    pub fn source_type_declaration(
+        &self,
+        canonical_name: &str,
+    ) -> Option<&FunctionTypeDeclaration> {
+        let export = self
+            .all_exports
+            .iter()
+            .find(|export| export.canonical_name == canonical_name)?;
+        let entry = self.specializer(export.operation)?;
+        match &entry.type_authority {
+            SourceTypeAuthority::Schemes(declaration) => Some(declaration),
+            SourceTypeAuthority::SyntaxDirectedIntrinsic => None,
+        }
+    }
+
+    /// Returns the semantic contract selected for a canonical source call.
+    /// Type inference has already established whether its output is scalar or
+    /// matrix-shaped; this completes catalog selection without planning an old
+    /// interpreter tree.
+    pub fn source_operation_contract(
+        &self,
+        canonical_name: &str,
+        input_count: usize,
+        output_is_matrix: bool,
+    ) -> Option<&OperationContractDeclaration> {
+        let export = self
+            .all_exports
+            .iter()
+            .find(|export| export.canonical_name == canonical_name)?;
+        self.specializer(export.operation)?
+            .operation_contract_for_output_shape(input_count, output_is_matrix)
+    }
+
     /// Returns the exports for one exact module in ascending module/item order.
     pub fn module_exports(
         &self,
@@ -950,6 +1025,14 @@ impl FunctionCatalog {
 
     pub fn resident_factory_count(&self) -> usize {
         self.resident_factories.len()
+    }
+
+    /// Inspect the selected resident profile for qualification. Entries are
+    /// metadata only; enumerating them does not bind or execute custom code.
+    pub fn resident_factories(
+        &self,
+    ) -> impl ExactSizeIterator<Item = (&ResidentOperationKey, &ResidentKernelFactoryEntry)> {
+        self.resident_factories.iter()
     }
 }
 
@@ -1397,6 +1480,19 @@ impl FunctionCatalogBuilder {
         }
     }
 
+    /// Extend an immutable catalog while retaining every existing binding and
+    /// linkage. Building the result applies the ordinary collision checks.
+    pub fn from_catalog(catalog: &FunctionCatalog) -> Self {
+        Self {
+            runtime_factories: catalog.runtime_factories.clone(),
+            specializers: catalog.specializers.clone(),
+            intrinsic_specializers: catalog.intrinsic_specializers.clone(),
+            resident_factories: catalog.resident_factories.clone(),
+            exports_by_module_item: catalog.exports_by_module_item.clone(),
+            exports_by_operation: catalog.exports_by_operation.clone(),
+        }
+    }
+
     pub fn contains_runtime_factory(&self, id: RuntimeFunctionId) -> bool {
         self.runtime_factories.contains_key(&id)
     }
@@ -1692,15 +1788,37 @@ impl FunctionCatalogBuilder {
         contract: OperationContractDeclaration,
         specializer: Arc<dyn CanonicalFunctionSpecializer>,
     ) -> MResult<OperationId> {
+        self.insert_canonical_specializer_with_contracts(
+            canonical_name,
+            type_declaration,
+            vec![contract],
+            specializer,
+        )
+    }
+
+    pub fn insert_canonical_specializer_with_contracts(
+        &mut self,
+        canonical_name: impl Into<String>,
+        type_declaration: FunctionTypeDeclaration,
+        contracts: Vec<OperationContractDeclaration>,
+        specializer: Arc<dyn CanonicalFunctionSpecializer>,
+    ) -> MResult<OperationId> {
         let canonical_name = canonical_name.into();
         let operation = OperationId::from_name(&canonical_name);
+        let first = contracts.first().cloned().ok_or_else(|| {
+            MechError::new(
+                FunctionCatalogInvalidTypeDeclaration {
+                    canonical_name: canonical_name.clone(),
+                    reason: "a canonical specializer must declare at least one operation contract"
+                        .into(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
         self.insert_specializer_entry(FunctionSpecializerEntry {
-            operation: crate::ResolvedOperationDescriptor::new(
-                operation,
-                canonical_name,
-                contract.clone(),
-            )?,
-            operation_contracts: vec![contract].into_boxed_slice(),
+            operation: crate::ResolvedOperationDescriptor::new(operation, canonical_name, first)?,
+            operation_contracts: contracts.into_boxed_slice(),
             type_authority: SourceTypeAuthority::Schemes(type_declaration),
             specializer,
         })
@@ -2122,6 +2240,16 @@ fn validate_type_declaration(
             "a declaration cannot combine fixed overloads with a source scheme template",
         ));
     }
+    if let Some(names) = &declaration.parameter_names {
+        let unique = names.iter().collect::<BTreeSet<_>>();
+        if declaration.template.is_some() || unique.len() != names.len() || names.iter().any(|name| name.is_empty())
+            || declaration.overloads.iter().any(|overload| {
+                !matches!(overload.scheme.inputs(), InputKindScheme::Fixed(inputs) if inputs.len() == names.len())
+                    || overload.input_layout.iter().any(|input| *input != SourceInputKind::Value)
+            }) {
+            return Err(invalid_type_declaration(canonical_name, "parameter names require unique nonempty names and equal fixed value arity"));
+        }
+    }
     let mut ids = BTreeSet::new();
     for (index, overload) in declaration.overloads.iter().enumerate() {
         if !ids.insert(overload.id) {
@@ -2305,80 +2433,6 @@ fn is_cargo_feature_name(name: &str) -> bool {
         .next()
         .is_some_and(|byte| byte.is_ascii_alphabetic() || byte == b'_')
         && bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
-}
-
-/// Returns a lexicographically canonical feature set for declarative native
-/// factory families. The public linkage validator deliberately still rejects
-/// non-canonical input; this helper lets a declaration family state the union
-/// of its feature sources without duplicating sort-order or de-duplication
-/// logic at every call site.
-#[doc(hidden)]
-pub struct CanonicalNativeCargoFeatures<const N: usize> {
-    values: [&'static str; N],
-    len: usize,
-}
-
-impl<const N: usize> CanonicalNativeCargoFeatures<N> {
-    /// Returns the sorted, duplicate-free Cargo feature set.
-    #[doc(hidden)]
-    pub fn as_slice(&'static self) -> &'static [&'static str] {
-        &self.values[..self.len]
-    }
-}
-
-#[doc(hidden)]
-pub const fn canonical_native_cargo_features<const N: usize>(
-    mut features: [&'static str; N],
-) -> CanonicalNativeCargoFeatures<N> {
-    let mut index = 1;
-    while index < N {
-        let mut cursor = index;
-        while cursor > 0 && native_cargo_feature_compare(features[cursor], features[cursor - 1]) < 0
-        {
-            let previous = features[cursor - 1];
-            features[cursor - 1] = features[cursor];
-            features[cursor] = previous;
-            cursor -= 1;
-        }
-        index += 1;
-    }
-    let mut len = 0;
-    let mut source = 0;
-    while source < N {
-        if source == 0 || native_cargo_feature_compare(features[source - 1], features[source]) != 0
-        {
-            features[len] = features[source];
-            len += 1;
-        }
-        source += 1;
-    }
-
-    CanonicalNativeCargoFeatures {
-        values: features,
-        len,
-    }
-}
-
-const fn native_cargo_feature_compare(left: &str, right: &str) -> i8 {
-    let left_bytes = left.as_bytes();
-    let right_bytes = right.as_bytes();
-    let mut index = 0;
-    while index < left_bytes.len() && index < right_bytes.len() {
-        if left_bytes[index] < right_bytes[index] {
-            return -1;
-        }
-        if left_bytes[index] > right_bytes[index] {
-            return 1;
-        }
-        index += 1;
-    }
-    if left_bytes.len() < right_bytes.len() {
-        -1
-    } else if left_bytes.len() > right_bytes.len() {
-        1
-    } else {
-        0
-    }
 }
 
 /// Declares one runtime factory together with its exact native-build linkage.

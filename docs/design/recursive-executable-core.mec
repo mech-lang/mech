@@ -1,0 +1,256 @@
+Recursive Executable-Core Contract
+===============================================================================
+
+The recursive grammar component provides clean lossless recognition, bounded
+local recovery, typed access, and engine-owned semantic compilation. Its generated
+dependency graph defines the strongly connected component.
+
+The authoritative member inventory is
+`docs/design/grammar-audit/recursive-core.tsv`. The generated count is
+authoritative; no manual 33-rule, 83-rule, family-total, or handwritten member
+assumption defines this phase.
+
+The authoritative representation inventory is
+`docs/design/grammar-audit/recursive-core-syntax-schema.tsv`. It freezes module
+ownership and concrete tree emission for the same 80 rules: 71 unconditional
+nodes, seven conditional precedence nodes, and two transparent aliases. It
+reserves 73 new append-only syntax kinds and reuses five existing kinds.
+
+1. Grammar and audit authority
+-------------------------------------------------------------------------------
+
+The exact `ebnf:canonical` fence in `docs/design/specification.mec` is the
+normative grammar graph. The deterministic
+`docs/design/grammar-audit/canonical-dependencies.tsv` report is generated from
+that grammar and records its direct child and reverse parent edges.
+
+`docs/design/grammar-audit/ports.tsv` records the canonical rule inventory and
+rule-level syntax, source-semantic, activation, node-policy, phase, and audit
+disposition evidence. It is audit metadata and the deterministic RuleId
+registry input, not parser or runtime dispatch. Its `certified` semantic status is distinct from the
+milestone-level behavior-demonstration gate. Its separate `grammar-scope`
+keeps all 80 executable grammar rows at `candidate` until the completion record reports
+every required behavior as demonstrated. The recursive-core component is the
+exact executable grammar candidate set:
+it starts at `expression`, follows the generated canonical dependencies, and
+contains one complete strongly connected component.
+
+`recursive-core.tsv` defines membership and dependencies.
+`recursive-core-syntax-schema.tsv` defines module ownership and concrete tree
+emission. The schema does not replace or duplicate the dependency graph.
+
+The dependency extractor does not inspect retiring Rust parser calls. An
+independent repository test normalizes implementation-level descriptive
+primitives and the grammar meta-parser's whitespace-only terminal in memory,
+parses the complete grammar with the canonical grammar root, and requires the
+typed grammar syntax to reproduce every generated edge.
+
+2. Canonical authority only
+-------------------------------------------------------------------------------
+
+All executable grammar production code uses the canonical event-based parser and the
+canonical specification. The executable recognition recognizer does not call, wrap,
+translate, or extend a Nom parser.
+
+`ParseString` and `ParseResult` do not appear in canonical recursive-core code.
+Nom parser functions are not test or production dependencies of canonical
+parser, typed-syntax, validation, certification, or source-semantic modules.
+
+The dependency extractor does not inspect old Rust parser calls. The canonical
+grammar graph is the only dependency authority.
+
+3. Atomic activation candidate
+-------------------------------------------------------------------------------
+
+The grammar registry validation candidate assigns every generated member to executable grammar only after the
+complete rule-level closure:
+
+```text
+parses
+recovers
+exposes typed syntax
+implements its specified semantic behavior
+passes canonical conformance
+passes ambiguity tests
+passes resource-limit tests
+```
+
+Conformance checks connect the registry to its current syntax and semantic
+witnesses. Registry metadata does not replace behavior on a supported target.
+
+4. Module design
+-------------------------------------------------------------------------------
+
+typed executable grammar freezes this exact ownership division:
+
+```text
+kinds             11
+literals           1
+variables          2
+subscripts         6
+structures        23
+calls               4
+patterns            7
+comprehensions      4
+fsm                 7
+precedence         13
+expressions          2
+                   --
+total               80
+```
+
+The planned parser layout is:
+
+```text
+parser/canonical/recursive_core/
+  mod.rs
+  kinds.rs
+  literals.rs
+  variables.rs
+  subscripts.rs
+  structures.rs
+  calls.rs
+  patterns.rs
+  comprehensions.rs
+  fsm.rs
+  precedence.rs
+  expressions.rs
+```
+
+The typed syntax layout mirrors it under:
+
+```text
+ast/recursive_core/
+```
+
+Executable typed forms enter through the engine-owned source frontend defined
+by `docs/design/canonical-source-boundary.mec`. No recursive-core
+parallel syntax-to-value tree is added to the syntax crate.
+
+The implementation uses ordinary mutually recursive Rust functions. It does
+not introduce a parser generator, boxed parser closures, a Nom-like combinator
+framework, or one monolithic `recursive_core.rs` module.
+
+executable recognition created the parser directory above and implemented the complete clean
+recognizer. recovery added bounded local recovery, typed syntax added the typed syntax surface,
+source semantics owns engine source-semantic completion, and conformance closed the certification
+implementation. grammar registry validation stages all 80 recursive rules as one atomic registry
+candidate; qualification and activation wait for the source semantics behavior gate.
+Canonical document-root completion remains the document syntax milestone; product cutover
+and removal are reserved for canonical source integration.
+
+`MATCH-001` records the canonical expression-match whitespace rule. The
+optional suffix owns that whitespace only when the following question mark
+matches.
+
+5. Complete-form selection
+-------------------------------------------------------------------------------
+
+Shared initial punctuation does not choose a construct. Candidates remain
+transactional and nondiagnostic. A construct owns recovery only after its
+complete distinctive signature has won.
+
+The required distinctions include:
+
+```text
+(1)               parenthetical expression
+(1, 2)            tuple
+
+[1 2]             matrix
+[x | x <- xs]     matrix comprehension
+
+{a: b}            record
+{1: b}            map
+{a: b, 1: c}      map after the complete record candidate fails cleanly
+{a, b}            set
+{a | a <- xs}     set comprehension
+{}                 empty set
+{:}                empty map
+
+foo                variable
+foo(x)             function call
+foo[1]             slice
+
+:some              atom
+:some(value)       tuple structure
+```
+
+6. Precedence syntax
+-------------------------------------------------------------------------------
+
+`l1` through `l7` remain canonical rules. A level with no operator adds no
+unconditional wrapper node. A level with one or more operators creates one
+chain node. The expression grammar operator nodes remain authoritative.
+
+The planned chain nodes are:
+
+```text
+LogicExpression
+ComparisonExpression
+AdditiveExpression
+MultiplicativeExpression
+PowerExpression
+TableExpression
+SetExpression
+```
+
+`formula` and `pattern-array-item` are transparent aliases. The five reused
+kinds are `Expression`, `KindAnnotation`, `AdditiveExpression`,
+`ParentheticalExpression`, and `VariableDefine`; every other node-valued
+schema row uses one of the 73 new append-only kinds reserved by typed executable grammar.
+
+7. Recovery ownership
+-------------------------------------------------------------------------------
+
+A recognized operator owns a missing right-hand side. An owned delimiter form
+owns a missing closer. Speculative alternatives emit no diagnostics.
+
+Unexpected physical source remains under `ERROR`. Absent required syntax
+becomes `MISSING`. Every recovery loop must consume physical source, insert
+once, return, or exhaust a hard resource limit.
+
+The recovery implementation distinguishes absence from unexpected source before it
+chooses a recovery action. Delimiter scans balance nested parentheses,
+brackets, and braces, ignore delimiters inside quoted source, stop before the
+owner or ancestor closer, and charge a cumulative recovery-byte budget.
+Diagnostic codes, canonical rule IDs, anchors, and recovery actions are stable
+across repeated parses. All 80 direct rules retain their configured partial
+node, or the configured child for a transparent rule, on committed failure.
+
+recovery qualification follow-up (2026-09-12): the nine review findings and the
+variable-range dispatch regression each have a named test in
+`src/syntax/tests/canonical_rules/canonical_executable_review_regressions.rs`. Review IDs are
+recorded beside their tests. Evidence includes direct/shared paths, selected
+owners, later children, physical delimiters, missing/error structure, diagnostic
+fields and anchors, and exact source reconstruction. The resource suite adds
+13,203 parses across 26 fixtures: every fuel/event budget from 16 through 256,
+plus nesting, diagnostic-count, and recovery-byte limits. Both formerly unfinished resource tests hang on historical parent
+`0f846c680` (each stopped after five seconds); both now finish. Numeric and
+recursive parents retain resource failures, and finalized error envelopes
+cannot lose source through later lookahead. Descendants still require restacking
+and qualification at their resulting heads.
+
+8. Matrix presentation
+-------------------------------------------------------------------------------
+
+There is one semantic `Matrix` and one lossless `Matrix` syntax node. Delimiter
+and layout presentation remain in concrete tokens. There is no `InlineMatrix`
+semantic variant, no `Matrix2d` semantic variant, no detached presentation
+metadata, and no formatter heuristic.
+
+Opening and closing delimiter styles are independently preserved. Any later
+normalization is an explicit syntax transformation rather than inferred
+semantic reconstruction.
+
+9. Root boundary
+-------------------------------------------------------------------------------
+
+executable grammar itself added no public parser root. document syntax extends the current canonical
+root surface to:
+
+```text
+Canonical + Grammar
+Canonical + Document
+```
+
+This is the complete current parser-root API.

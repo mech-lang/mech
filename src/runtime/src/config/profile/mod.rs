@@ -1,27 +1,23 @@
 #[cfg(feature = "source")]
 mod analyze;
 #[cfg(feature = "source")]
-mod compile;
+mod canonical;
 mod error;
 mod eval;
-#[cfg(feature = "source")]
-mod extract;
 #[cfg(feature = "source")]
 mod ir;
 mod lower;
 
 #[cfg(feature = "source")]
 use self::analyze::ConfigAnalyzer;
-#[cfg(feature = "source")]
-use self::compile::ConfigCompiler;
 pub use self::error::InvalidConfigField;
+#[cfg(feature = "source")]
+pub use self::error::InvalidConfigSyntax;
 #[cfg(feature = "source")]
 use self::error::*;
 #[cfg(feature = "source")]
 use self::eval::ConfigEvaluator;
 pub use self::eval::ConfigValue;
-#[cfg(feature = "source")]
-use self::extract::{ConfigExtractor, ExtractedConfigProgram};
 #[cfg(feature = "source")]
 use self::ir::{ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProgram};
 #[cfg(feature = "source")]
@@ -33,7 +29,7 @@ pub use self::lower::{
 };
 
 #[cfg(feature = "source")]
-use mech_core::MResult;
+use mech_core::{GenericError, MResult, MechError};
 
 pub const DEFAULT_CONFIG_FILENAME: &str = "mech.mcfg";
 
@@ -64,10 +60,50 @@ pub fn parse_config_document(
     source: &str,
     options: ConfigProfileOptions,
 ) -> MResult<MechConfigDocument> {
-    let program = mech_syntax::parser::parse(source)?;
-    let extracted = ConfigExtractor::new(options.clone()).extract(&program)?;
-    let ir = ConfigCompiler::new().compile(&extracted)?;
+    use std::sync::Arc;
+
+    use mech_syntax::document::{ParseConfig, Revision};
+
+    let source_name = source_name.into();
+    let document = crate::resolver::SourceDocument::parse_resolved(
+        &source_name,
+        Revision(0),
+        Arc::<str>::from(source),
+        ParseConfig::default(),
+    )
+    .map_err(|error| {
+        MechError::new(
+            GenericError {
+                msg: format!("unable to retain configuration source: {error}"),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    compile_config_document(source_name, &document, options)
+}
+
+/// Compile retained canonical configuration through the existing restricted IR,
+/// analyzer, evaluator and field lowering. No source parse or general evaluator
+/// is introduced at this boundary.
+#[cfg(feature = "source")]
+pub fn compile_config_document(
+    source_name: impl Into<String>,
+    source: &crate::resolver::SourceDocument,
+    options: ConfigProfileOptions,
+) -> MResult<MechConfigDocument> {
+    let source_name = source_name.into();
+    if !source.is_strictly_clean() {
+        return Err(mech_core::MechError::new(
+            InvalidConfigSyntax {
+                source_name,
+                source: source.clone(),
+            },
+            None,
+        ));
+    }
+    let ir = canonical::compile(&source.document(), &options)?;
     ConfigAnalyzer::new().analyze(&ir)?;
     let value = ConfigEvaluator::new(options).evaluate(&ir)?;
-    ConfigLowerer::new().lower(source_name.into(), value)
+    ConfigLowerer::new().lower(source_name, value)
 }

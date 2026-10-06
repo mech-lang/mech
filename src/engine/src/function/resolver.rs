@@ -8,12 +8,11 @@ use alloc::{
     vec::Vec,
 };
 use mech_core::{
-    ConversionPlan, ConversionStep, FunctionCatalog, FunctionDefinition,
-    FunctionOperationUnavailable, FunctionSpecializerEntry, FunctionTypeDeclaration,
-    FunctionTypeOverload, MResult, MechError, OperationId, ResolvedCall, SourceInputKind,
-    SourceTypeAuthority, SpecializationInput, SpecializationInvocation, SpecializedFunction,
-    TypeConstraintFailure, TypeConstraintOrigin, TypeOverloadCandidate, TypeResolutionError,
-    UserFunctionTable, exact_type_equal, hash_str, resolve_type_overloads,
+    ConversionPlan, ConversionStep, FunctionCatalog, FunctionOperationUnavailable,
+    FunctionSpecializerEntry, FunctionTypeDeclaration, FunctionTypeOverload, MResult, MechError,
+    OperationId, ResolvedCall, SourceInputKind, SourceTypeAuthority, SpecializationInput,
+    SpecializationInvocation, SpecializedFunction, TypeConstraintFailure, TypeConstraintOrigin,
+    TypeOverloadCandidate, TypeResolutionError, exact_type_equal, hash_str, resolve_type_overloads,
 };
 #[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::string::String;
@@ -52,11 +51,9 @@ pub struct FunctionResolver<'a> {
     catalog: &'a FunctionCatalog,
     environment: &'a FunctionEnvironment,
     extensions: &'a FunctionExtensions,
-    user_functions: &'a UserFunctionTable,
 }
 
 pub enum ResolvedNamedFunction<'a> {
-    User(&'a FunctionDefinition),
     Catalog(&'a FunctionSpecializerEntry),
     Extension(&'a FunctionExtensionEntry),
 }
@@ -66,21 +63,15 @@ impl<'a> FunctionResolver<'a> {
         catalog: &'a FunctionCatalog,
         environment: &'a FunctionEnvironment,
         extensions: &'a FunctionExtensions,
-        user_functions: &'a UserFunctionTable,
     ) -> Self {
         Self {
             catalog,
             environment,
             extensions,
-            user_functions,
         }
     }
 
     pub fn resolve_named(&self, name: &str) -> MResult<ResolvedNamedFunction<'a>> {
-        if let Some(definition) = self.user_functions.resolve_name(name) {
-            return Ok(ResolvedNamedFunction::User(definition));
-        }
-
         match self.environment.resolve_name(name) {
             Some(FunctionBinding::CatalogOperation(operation)) => self
                 .catalog
@@ -113,36 +104,6 @@ impl<'a> FunctionResolver<'a> {
         invocation: &SpecializationInvocation,
     ) -> MResult<SpecializedFunction> {
         self.specialize_operation_named(operation, None, invocation)
-    }
-
-    /// Answers whether one named catalog operation accepts this invocation by
-    /// semantic scheme alone. Physical runtime representations and factories
-    /// are deliberately not consulted here.
-    #[cfg(all(
-        feature = "source",
-        feature = "functions",
-        feature = "string_concat",
-        feature = "math_add"
-    ))]
-    pub(crate) fn operation_semantically_accepts(
-        &self,
-        operation: OperationId,
-        canonical_name: &str,
-        invocation: &SpecializationInvocation,
-    ) -> MResult<bool> {
-        let Some(entry) = self.catalog.operation_specializer(operation) else {
-            return Ok(false);
-        };
-        self.environment
-            .require_operation_enabled(operation, Some(canonical_name))?;
-        let SourceTypeAuthority::Schemes(declaration) = &entry.type_authority else {
-            return Ok(false);
-        };
-        match resolve_declared_call(entry, declaration, invocation) {
-            Ok(_) => Ok(true),
-            Err(error) if error.kind_name() == "TypeIncompatibility" => Ok(false),
-            Err(error) => Err(error),
-        }
     }
 
     pub(crate) fn specialize_operation_named(
@@ -515,10 +476,9 @@ mod tests {
     #[cfg(feature = "semantic-compiler")]
     use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
     use mech_core::{
-        CanonicalFunctionSpecializer, ExecutionTarget, FunctionCatalogBuilder, FunctionDefine,
-        FunctionExport, FunctionExposure, FunctionInvocation, MechFunctionImpl, RuntimeFunctionId,
+        CanonicalFunctionSpecializer, ExecutionTarget, FunctionCatalogBuilder, FunctionExport,
+        FunctionExposure, FunctionInvocation, MechFunctionImpl, RuntimeFunctionId,
         SpecializationContext, SpecializationInvocation, SpecializedFunction, ValueCell,
-        internal_pattern_value_identifier,
     };
     use std::sync::Arc;
 
@@ -604,38 +564,6 @@ mod tests {
         builder.build().unwrap()
     }
 
-    fn empty_user_function(name: &str) -> FunctionDefinition {
-        FunctionDefinition::new(
-            hash_str(name),
-            String::from(name),
-            FunctionDefine {
-                name: internal_pattern_value_identifier(name),
-                input: Vec::new(),
-                output: Vec::new(),
-                statements: Vec::new(),
-                match_arms: Vec::new(),
-            },
-        )
-    }
-
-    #[test]
-    fn user_definition_wins_over_the_current_environment_binding() {
-        let catalog = test_catalog();
-        let environment = FunctionEnvironment::from_catalog_defaults(&catalog).unwrap();
-        let extensions = FunctionExtensions::default();
-        let mut user_functions = UserFunctionTable::default();
-        let user = empty_user_function("math/add");
-        user_functions.insert_or_replace(user).unwrap();
-        let resolver = FunctionResolver::new(&catalog, &environment, &extensions, &user_functions);
-
-        match resolver.resolve_named("math/add").unwrap() {
-            ResolvedNamedFunction::User(definition) => {
-                assert_eq!(definition.name, "math/add");
-            }
-            _ => panic!("user definition must have highest named-call precedence"),
-        }
-    }
-
     #[test]
     fn named_binding_can_select_catalog_or_extension_entries() {
         let catalog = test_catalog();
@@ -652,8 +580,7 @@ mod tests {
         environment
             .bind_extension(extension_name, "host-add", extension)
             .unwrap();
-        let users = UserFunctionTable::default();
-        let resolver = FunctionResolver::new(&catalog, &environment, &extensions, &users);
+        let resolver = FunctionResolver::new(&catalog, &environment, &extensions);
 
         assert!(matches!(
             resolver.resolve_named("math/add").unwrap(),
@@ -666,7 +593,7 @@ mod tests {
     }
 
     #[test]
-    fn syntax_operation_ignores_same_named_user_and_extension_bindings() {
+    fn syntax_operation_ignores_same_named_extension_binding() {
         let catalog = test_catalog();
         let mut environment = FunctionEnvironment::from_catalog_defaults(&catalog).unwrap();
         let mut extensions = FunctionExtensions::default();
@@ -681,15 +608,11 @@ mod tests {
         environment
             .bind_extension(extension_name, "math/add", extension)
             .unwrap();
-        let mut users = UserFunctionTable::default();
-        users
-            .insert_or_replace(empty_user_function("math/add"))
-            .unwrap();
-        let resolver = FunctionResolver::new(&catalog, &environment, &extensions, &users);
+        let resolver = FunctionResolver::new(&catalog, &environment, &extensions);
 
         assert!(matches!(
             resolver.resolve_named("math/add").unwrap(),
-            ResolvedNamedFunction::User(_),
+            ResolvedNamedFunction::Extension(_),
         ));
         assert_eq!(
             resolver
@@ -737,8 +660,7 @@ mod tests {
         let catalog = builder.build().unwrap();
         let environment = FunctionEnvironment::from_catalog_defaults(&catalog).unwrap();
         let extensions = FunctionExtensions::default();
-        let users = UserFunctionTable::default();
-        let resolver = FunctionResolver::new(&catalog, &environment, &extensions, &users);
+        let resolver = FunctionResolver::new(&catalog, &environment, &extensions);
 
         let error = match resolver
             .specialize_operation(operation, &SpecializationInvocation::new(Box::new([])))
@@ -754,8 +676,7 @@ mod tests {
         let catalog = test_catalog();
         let environment = FunctionEnvironment::from_catalog_defaults(&catalog).unwrap();
         let extensions = FunctionExtensions::default();
-        let users = UserFunctionTable::default();
-        let resolver = FunctionResolver::new(&catalog, &environment, &extensions, &users);
+        let resolver = FunctionResolver::new(&catalog, &environment, &extensions);
 
         let error = match resolver.resolve_named("missing") {
             Ok(_) => panic!("missing function unexpectedly resolved"),

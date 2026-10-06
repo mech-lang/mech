@@ -7,12 +7,25 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rust_source import rust_code
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ENGINE_LIB = Path("src/engine/src/lib.rs")
+CORE_LIB = Path("src/core/src/lib.rs")
 PROGRAM_MOD = Path("src/engine/src/program/mod.rs")
 PLANNING_MODULE = Path("src/engine/src/program/compiler_planning.rs")
 REMOVED_INSTANCE = Path("src/engine/src/program/instance.rs")
+REMOVED_WORKSPACE_PATHS = (
+    Path("src/engine/src/interpreter"),
+    Path("src/engine/src/expressions"),
+    Path("src/engine/src/literals.rs"),
+    Path("src/engine/src/structures.rs"),
+    Path("src/core/src/nodes.rs"),
+    Path("src/core/src/document_presentation.rs"),
+    Path("src/engine/src/program/document_outputs.rs"),
+)
 
 GLOBAL_REMOVED = (
     "MechProgram",
@@ -20,6 +33,9 @@ GLOBAL_REMOVED = (
     "MechProgramEnvironment",
     "ProgramSolveOutcome",
     "run_profiled_string",
+    "Interpreter",
+    "InterpreterRef",
+    "CompilerPlanningProgram",
 )
 SHIPPING_ROOTS = (
     Path("src/runtime/src/runtime/program"),
@@ -41,27 +57,14 @@ TEST_MODULE = re.compile(
     r"#\[cfg\([^\]]*\btest\b[^\]]*\)\]\s*(?:pub(?:\([^)]*\))?\s+)?mod\s+[A-Za-z0-9_]+\s*\{",
     re.MULTILINE,
 )
-
-# These are exact provider/value conversion adapters already governed by the
-# value-system boundary. The quarantine checker deliberately grants no parent
-# directory or filename-pattern exception.
-APPROVED_LEGACY_VALUE_ADAPTERS = {
-    Path("src/runtime/src/runtime/program/compiler.rs"),
-    # The resident compatibility adapter is compiled only by runtime tests.
-    Path("src/runtime/src/runtime/program/external/value_adapter_tests.rs"),
-    Path("src/runtime/src/runtime/program/value.rs"),
-    Path("hosts/browser/src/config.rs"),
-    Path("hosts/browser/src/provider.rs"),
-    Path("hosts/console/src/provider.rs"),
-    Path("hosts/gpu/src/compute_provider.rs"),
-    Path("hosts/robot-arm/src/provider.rs"),
-    Path("hosts/scene/src/provider.rs"),
-    Path("hosts/scene/src/schema.rs"),
-    Path("hosts/terminal/src/provider.rs"),
-    Path("hosts/time/src/lib.rs"),
-    Path("hosts/time/src/provider.rs"),
-    Path("hosts/timer/src/provider.rs"),
+RETIRED_NAMESPACES = {
+    "mech_engine": {"interpreter", "expressions", "literals", "structures"},
+    "mech_core": {"nodes"},
 }
+QUALIFIED_NAMESPACE = re.compile(r"\b(?P<owner>mech_engine|mech_core)\s*::\s*")
+RUST_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+PRECEDING_PATH_MEMBER = re.compile(r"(?P<member>[A-Za-z_][A-Za-z0-9_]*)\s*::\s*$")
+USE_GROUP_BRACE = re.compile(r"[{}]")
 
 
 def rust_sources(root: Path) -> list[Path]:
@@ -75,6 +78,89 @@ def rust_sources(root: Path) -> list[Path]:
 
 def line_number(source: str, offset: int) -> int:
     return source.count("\n", 0, offset) + 1
+
+
+def normalize_raw_identifiers(source: str) -> str:
+    """A raw identifier names the same namespace; keep its source offsets."""
+    return re.sub(r"\br#(?=[A-Za-z_][A-Za-z0-9_]*)", "  ", source)
+
+
+def retired_root_members(source: str, start: int, owner: str) -> list[tuple[int, str]]:
+    """Inspect only root members of a qualified path or grouped Rust use tree."""
+    while start < len(source) and source[start].isspace():
+        start += 1
+    identifier = RUST_IDENTIFIER.match(source, start)
+    if identifier is not None:
+        module = identifier.group()
+        if module in RETIRED_NAMESPACES[owner]:
+            return [(start, module)]
+        if module == "self":
+            separator = re.match(r"\s*::\s*", source[identifier.end():])
+            if separator is not None:
+                return retired_root_members(source, identifier.end() + separator.end(), owner)
+        return []
+    if start >= len(source) or source[start] != "{":
+        return []
+    members: list[tuple[int, str]] = []
+    depth = 1
+    member_start = start + 1
+    for delimiter in re.finditer(r"[{},]", source[start + 1:]):
+        offset = start + 1 + delimiter.start()
+        if delimiter.group() == "{":
+            depth += 1
+        elif delimiter.group() == "}":
+            depth -= 1
+            if depth == 0:
+                members.extend(retired_root_members(source, member_start, owner))
+                break
+        elif depth == 1:
+            members.extend(retired_root_members(source, member_start, owner))
+            member_start = offset + 1
+    return members
+
+
+def qualified_use_groups(source: str) -> list[tuple[int, int]]:
+    """Find named use-tree groups, whose children are not external crate roots."""
+    groups: list[tuple[int, int]] = []
+    for use in re.finditer(r"\buse\b[^;]*;", source):
+        openings: list[tuple[int, bool]] = []
+        for brace in USE_GROUP_BRACE.finditer(source, use.start(), use.end()):
+            if brace.group() == "{":
+                named = PRECEDING_PATH_MEMBER.search(source, use.start(), brace.start())
+                openings.append((brace.start(), named is not None))
+            elif openings:
+                opening, named = openings.pop()
+                if named:
+                    groups.append((opening, brace.start()))
+    return groups
+
+
+def check_retired_namespaces(root: Path) -> list[str]:
+    failures: list[str] = []
+    for relative in rust_sources(root):
+        source = normalize_raw_identifiers(
+            rust_code((root / relative).read_text(encoding="utf-8"))
+        )
+        local_groups = qualified_use_groups(source)
+        found: set[tuple[int, str]] = set()
+        for qualified in QUALIFIED_NAMESPACE.finditer(source):
+            preceding = PRECEDING_PATH_MEMBER.search(source, 0, qualified.start())
+            # `use ::mech_engine` starts an absolute path, whereas
+            # `project::mech_engine` names an unrelated local module.
+            if preceding is not None and preceding.group("member") not in {
+                "use", "as", "return", "break", "yield",
+            }:
+                continue
+            if any(opening < qualified.start() < closing for opening, closing in local_groups):
+                continue
+            owner = qualified.group("owner")
+            for offset, module in retired_root_members(source, qualified.end(), owner):
+                found.add((offset, f"{owner}::{module}"))
+        for offset, namespace in sorted(found):
+            failures.append(
+                f"{relative}:{line_number(source, offset)}: retired {namespace} namespace"
+            )
+    return failures
 
 
 def rust_without_test_modules(source: str) -> str:
@@ -115,18 +201,20 @@ def rust_without_test_modules(source: str) -> str:
 def check_module_boundary(root: Path) -> list[str]:
     failures: list[str] = []
     engine_lib = (root / ENGINE_LIB).read_text(encoding="utf-8")
-    if re.search(r"(?m)^\s*pub\s+mod\s+interpreter\s*;", engine_lib):
-        failures.append(f"{ENGINE_LIB}: interpreter module is public")
-    if not re.search(
-        r'#\[cfg\(feature = "semantic-compiler"\)\]\s*mod\s+interpreter\s*;',
-        engine_lib,
-    ):
-        failures.append(f"{ENGINE_LIB}: interpreter is not semantic-compiler-only")
-    if not re.search(
-        r'#\[cfg\(feature = "semantic-compiler"\)\]\s*pub\(crate\)\s+use\s+interpreter::',
-        engine_lib,
-    ):
-        failures.append(f"{ENGINE_LIB}: interpreter symbols are not crate-private")
+    for module in ("interpreter", "expressions", "literals", "structures"):
+        if re.search(rf"\bmod\s+{module}\s*;|\b{module}::", engine_lib):
+            failures.append(f"{ENGINE_LIB}: retired {module} module remains reachable")
+    core_lib = root / CORE_LIB
+    if core_lib.exists():
+        core_source = core_lib.read_text(encoding="utf-8")
+        if re.search(r"\bmod\s+nodes\s*;|\bnodes::", core_source):
+            failures.append(f"{CORE_LIB}: retired source-tree module/export remains reachable")
+        if re.search(r"\b(?:struct|impl)\s+IndexedString\b", core_source):
+            failures.append(f"{CORE_LIB}: retired IndexedString AST formatting helper remains")
+    for relative in REMOVED_WORKSPACE_PATHS:
+        path = root / relative
+        if path.is_file() or (path.is_dir() and any(child.is_file() for child in path.rglob("*"))):
+            failures.append(f"{relative}: retired AST workspace remains")
     planning = root / PLANNING_MODULE
     if not planning.exists():
         failures.append(f"{PLANNING_MODULE}: compiler-planning module is missing")
@@ -138,11 +226,6 @@ def check_module_boundary(root: Path) -> list[str]:
         failures.append(f"{PROGRAM_MOD}: compiler_planning is not semantic-compiler-only")
     if (root / REMOVED_INSTANCE).exists():
         failures.append(f"{REMOVED_INSTANCE}: obsolete mutable program instance remains")
-    interpreter_source = (root / "src/engine/src/interpreter/mod.rs").read_text(
-        encoding="utf-8"
-    )
-    if re.search(r"(?m)^pub\s+type\s+InterpreterRef\b", interpreter_source):
-        failures.append("src/engine/src/interpreter/mod.rs: InterpreterRef remains public")
     return failures
 
 
@@ -151,6 +234,20 @@ def check_removed_surface(root: Path) -> list[str]:
     for relative in rust_sources(root):
         source = (root / relative).read_text(encoding="utf-8")
         searchable = source
+        # SourceScope::Interpreter is the maintained source namespace identity,
+        # not the removed engine executor. Preserve this exact transport label
+        # without admitting a declaration or import of the old executor type.
+        searchable = re.sub(
+            r"\bSourceScope\s*::\s*Interpreter\b",
+            lambda match: re.sub(r"[^\r\n]", " ", match.group()),
+            searchable,
+        )
+        if relative == Path("src/runtime/src/resolver/index.rs"):
+            searchable = re.sub(
+                r"\bInterpreter\s*\(\s*SourceInterpreterId\s*\)",
+                lambda match: re.sub(r"[^\r\n]", " ", match.group()),
+                searchable,
+            )
         if relative == Path("src/engine/src/artifact/encoding.rs"):
             searchable = searchable.replace('b"mech-program-v1\\0"', "")
         for token in GLOBAL_REMOVED:
@@ -190,23 +287,13 @@ def check_shipping_reachability(root: Path) -> list[str]:
                 failures.append(
                     f"{relative}:{line_number(source, match.start())}: shipping {name} reachability"
                 )
-        legacy_restricted = (
-            relative.is_relative_to(Path("src/runtime/src/runtime/program"))
-            or relative.is_relative_to(Path("src/engine/src/resident"))
-            or relative.is_relative_to(Path("hosts"))
-        )
-        if (
-            legacy_restricted
-            and "LegacyValue" in source
-            and relative not in APPROVED_LEGACY_VALUE_ADAPTERS
-        ):
-            failures.append(f"{relative}: LegacyValue is outside an exact approved adapter")
     return failures
 
 
 def run(root: Path = ROOT) -> list[str]:
     return (
         check_module_boundary(root)
+        + check_retired_namespaces(root)
         + check_removed_surface(root)
         + check_shipping_reachability(root)
     )

@@ -18,7 +18,6 @@ use serde::{
     de::{DeserializeOwned, DeserializeSeed, Error as _, IgnoredAny, SeqAccess, Visitor},
 };
 
-use super::snapshot::data_draft;
 use super::{
     ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
     ComputeRegionDeclaration, InitializerReference, InputDeclaration,
@@ -30,6 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
+const WIRE_GRAPH_REVISION: u32 = 13;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -47,6 +47,10 @@ pub struct ArtifactDecodeLimits {
     pub max_operations: usize,
     pub max_contracts: usize,
     pub max_compute_regions: usize,
+    pub max_control_arms: usize,
+    pub max_control_blocks: usize,
+    pub max_control_operations: usize,
+    pub max_control_operands: usize,
     pub max_constant_canonicalization_work: u64,
 }
 
@@ -67,6 +71,10 @@ impl Default for ArtifactDecodeLimits {
             max_operations: 1_000_000,
             max_contracts: 100_000,
             max_compute_regions: 100_000,
+            max_control_arms: super::MAX_CONTROL_ARMS,
+            max_control_blocks: super::MAX_CONTROL_BLOCKS,
+            max_control_operations: super::MAX_CONTROL_OPERATIONS,
+            max_control_operands: super::MAX_CONTROL_OPERANDS,
             max_constant_canonicalization_work: DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK,
         }
     }
@@ -150,7 +158,7 @@ struct WireSlot {
     slot: u32,
     schema: u32,
     role: u8,
-    initializer: Option<u32>,
+    initializer: Option<WireSource>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -163,9 +171,7 @@ enum WireProducer {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct WireNode {
     node: u32,
-    operation: u32,
-    contract: u32,
-    requirement: Option<u32>,
+    body: WireNodeBody,
     input_start: u32,
     input_end: u32,
     output_start: u32,
@@ -173,7 +179,199 @@ struct WireNode {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireNodeBody {
+    Operation {
+        operation: u32,
+        contract: u32,
+        requirement: Option<u32>,
+    },
+    Comprehension(WireComprehensionDeclaration),
+    Match(WireMatchDeclaration),
+    Activation(WireMatchDeclaration),
+    Fsm {
+        machine: String,
+        arguments: Box<[(Option<String>, u16)]>,
+        stages: Box<[WireFsmStage]>,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireMatchDeclaration {
+    scrutinee: u16,
+    partial: bool,
+    captures: Box<[(u16, u32, bool)]>,
+    arms: Box<[WireMatchArm]>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireFsmStage {
+    kind: u8,
+    value: WireFsmValue,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireFsmValue {
+    Input(u16),
+    Tuple(Box<[WireFsmValue]>),
+    Array(Box<[WireFsmValue]>),
+    AtomStruct {
+        name: String,
+        items: Box<[WireFsmValue]>,
+    },
+    TupleStruct {
+        name: String,
+        items: Box<[WireFsmValue]>,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+enum WireComprehensionValue {
+    Constant(u32),
+    Input(u16),
+    Local(u32),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireCollectionPattern {
+    Wildcard,
+    Bind {
+        local: u32,
+        schema: u32,
+    },
+    Equal(WireComprehensionValue),
+    Enum {
+        ordinal: u32,
+        payload: Option<Box<WireCollectionPattern>>,
+    },
+    Tuple(Box<[WireCollectionPattern]>),
+    Array {
+        prefix: Box<[WireCollectionPattern]>,
+        rest: Option<Box<WireCollectionPattern>>,
+        suffix: Box<[WireCollectionPattern]>,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireComprehensionStep {
+    Generator {
+        source: WireComprehensionValue,
+        pattern: WireCollectionPattern,
+    },
+    Filter(WireComprehensionValue),
+    Operation {
+        local: u32,
+        body: WireControlOperationBody,
+        inputs: Box<[WireComprehensionValue]>,
+        schema: u32,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireComprehensionDeclaration {
+    id: u32,
+    kind: u8,
+    steps: Box<[WireComprehensionStep]>,
+    yield_value: WireComprehensionValue,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireMatchArm {
+    pattern: WirePattern,
+    guard: Option<WireControlBlock>,
+    body: WireControlBlock,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum WirePattern {
+    Literal(u32),
+    Wildcard,
+    Bind,
+    Structural(WireStructuralMatchPattern),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum WireMatchPatternValue {
+    Literal(u32),
+    Binding(u32),
+    Input(u16),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum WireStructuralMatchPattern {
+    Wildcard,
+    Bind {
+        local: u32,
+        schema: u32,
+    },
+    Equal(WireMatchPatternValue),
+    Enum {
+        ordinal: u32,
+        payload: Option<Box<WireStructuralMatchPattern>>,
+    },
+    Tuple(Box<[WireStructuralMatchPattern]>),
+    Array {
+        prefix: Box<[WireStructuralMatchPattern]>,
+        rest: Option<Box<WireStructuralMatchPattern>>,
+        suffix: Box<[WireStructuralMatchPattern]>,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+enum WireControlParameterSource {
+    Scrutinee,
+    PatternBinding(u32),
+    Capture(u16),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireControlBlock {
+    id: u32,
+    parameters: Box<[(WireControlParameterSource, u32)]>,
+    operations: Box<[WireControlOperation]>,
+    yield_value: WireControlValue,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireControlOperation {
+    node: u32,
+    body: WireControlOperationBody,
+    inputs: Box<[WireControlValue]>,
+    schema: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireControlOperationBody {
+    Operation { operation: u32, contract: u32 },
+    Match(WireMatchDeclaration),
+    Comprehension(WireComprehensionDeclaration),
+    Recur(u8),
+
+    Suspend,
+    Publish,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireControlValue {
+    Constant(u32),
+    Parameter { block: u32, ordinal: u16 },
+    Local { block: u32, node: u32 },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct WireGraph {
+    revision: u32,
     requirements: Box<[WireRequirement]>,
     nodes: Box<[WireNode]>,
 }
@@ -294,7 +492,8 @@ pub fn encode_program_artifact_sections(
                 SlotRole::Output => 4,
             },
             initializer: slot.initializer.map(|initializer| match initializer {
-                InitializerReference::Constant(constant) => constant.get(),
+                InitializerReference::Constant(constant) => WireSource::Constant(constant.get()),
+                InitializerReference::Activation(slot) => WireSource::Slot(slot.get()),
             }),
         })
         .collect::<Vec<_>>();
@@ -334,6 +533,7 @@ pub fn encode_program_artifact_sections(
         slots: encode(&slots)?,
         producers: encode(&producers)?,
         nodes: encode(&WireGraph {
+            revision: WIRE_GRAPH_REVISION,
             requirements: artifact
                 .requirements()
                 .iter()
@@ -345,9 +545,7 @@ pub fn encode_program_artifact_sections(
                 .iter()
                 .map(|node| WireNode {
                     node: node.node.get(),
-                    operation: operation_ids[&node.operation],
-                    contract: node.contract.get(),
-                    requirement: node.requirement.map(ApplicationRequirementId::get),
+                    body: wire_node_body(&node.body, &operation_ids),
                     input_start: node.input_bindings.start,
                     input_end: node.input_bindings.end,
                     output_start: node.output_bindings.start,
@@ -504,7 +702,14 @@ fn decode_program_artifact_sections_owned(
             tag: 0,
         });
     }
+    preflight_control_graph(&sections.nodes, &limits)?;
     let graph: WireGraph = serde_json::from_slice(&sections.nodes)?;
+    if graph.revision != WIRE_GRAPH_REVISION {
+        return Err(ArtifactBytecodeError::InvalidWireTag {
+            section: "graph revision",
+            tag: graph.revision.min(255) as u8,
+        });
+    }
     if graph.nodes.len() > limits.max_nodes {
         return Err(ArtifactBytecodeError::SectionItemLimit {
             section: "nodes",
@@ -598,9 +803,14 @@ fn decode_program_artifact_sections_owned(
                             source: source_from_wire(source),
                         },
                     },
-                    initializer: slot
-                        .initializer
-                        .map(|constant| InitializerReference::Constant(ConstantId::new(constant))),
+                    initializer: slot.initializer.map(|source| match source {
+                        WireSource::Constant(constant) => {
+                            InitializerReference::Constant(ConstantId::new(constant))
+                        }
+                        WireSource::Slot(slot) => {
+                            InitializerReference::Activation(CellSlotId(slot))
+                        }
+                    }),
                 })
             })
             .collect::<Result<Vec<_>, ArtifactBytecodeError>>()?
@@ -610,9 +820,7 @@ fn decode_program_artifact_sections_owned(
             .map(|node| {
                 Ok(NodeDeclaration {
                     node: NodeId(node.node),
-                    operation: operation(node.operation)?,
-                    contract: OperationContractId::new(node.contract),
-                    requirement: node.requirement.map(ApplicationRequirementId::new),
+                    body: node_body_from_wire(node.body, &operation)?,
                     input_bindings: node.input_start..node.input_end,
                     output_bindings: node.output_start..node.output_end,
                 })
@@ -732,7 +940,7 @@ fn validate_operation_table(
 ) -> Result<(), ArtifactBytecodeError> {
     let mut canonical = nodes
         .iter()
-        .map(|node| node.operation)
+        .flat_map(|node| wire_operation_ids(&node.body))
         .chain(constraints.iter().map(|constraint| constraint.operation))
         .map(|id| {
             operations
@@ -875,19 +1083,7 @@ impl<'de> Visitor<'de> for CountSequence {
 fn operation_table(
     artifact: &ProgramArtifact,
 ) -> (Vec<WireOperation>, BTreeMap<OperationReference, u32>) {
-    let mut references = artifact
-        .nodes()
-        .iter()
-        .map(|node| node.operation.clone())
-        .chain(
-            artifact
-                .constraints()
-                .iter()
-                .map(|constraint| constraint.operation.clone()),
-        )
-        .collect::<Vec<_>>();
-    references.sort();
-    references.dedup();
+    let references = artifact.operation_references();
     let ids = references
         .iter()
         .enumerate()
@@ -1156,7 +1352,7 @@ fn finalize_constants(
 }
 
 fn value_draft(
-    constant: ConstantId,
+    _constant: ConstantId,
     value: &Value,
     schemas: &SchemaTable,
 ) -> Result<ValueDraft, ArtifactBytecodeError> {
@@ -1170,9 +1366,11 @@ fn value_draft(
     Ok(ValueDraft {
         schema: value.schema(),
         shape_values: value.shape().parameter_values().to_vec().into_boxed_slice(),
-        data: data_draft(value.data(), schema.body()).ok_or(ArtifactBytecodeError::Artifact(
-            ArtifactBuildError::UnknownConstant { constant },
-        ))?,
+        data: mech_core::snapshot::canonical_snapshot_data_draft_in(
+            schema.body(),
+            value.data(),
+            schemas,
+        )?,
     })
 }
 
@@ -1215,6 +1413,113 @@ mod tests {
                 SnapshotValueError::CanonicalizationWorkLimitExceededV1 { limit: found }
             ) if found == limit
         ));
+    }
+
+    #[test]
+    fn dynamic_constant_projection_rebinds_foreign_nominal_schema_ids() {
+        use mech_core::snapshot::CompositeSnapshotConstructor;
+        use std::sync::Arc;
+        let atom = |name: &str| {
+            SchemaBody::Atom(mech_core::NominalKey::from_path(
+                mech_core::NominalKind::Atom,
+                &mech_core::CanonicalNominalPath::new(vec![name.to_owned()]).unwrap(),
+            ))
+        };
+        let tuple = SchemaBody::Tuple(vec![SchemaBody::Dynamic].into_boxed_slice());
+        let arena = |bodies: Vec<SchemaBody>| {
+            let mut builder = SchemaTableBuilder::new();
+            for body in bodies {
+                builder
+                    .insert(
+                        SchemaDraft {
+                            body,
+                            dimension_parameters: Box::new([]),
+                        }
+                        .finalize()
+                        .unwrap(),
+                    )
+                    .unwrap();
+            }
+            Arc::new(builder.finish().unwrap().into_parts().0)
+        };
+        let target = arena(vec![
+            atom("ready"),
+            atom("other"),
+            atom("third"),
+            tuple.clone(),
+        ]);
+        let outer = |child: Value, schemas: &Arc<SchemaTable>| {
+            let child_id = schemas.find_by_key(child.schema_key()).unwrap();
+            let tuple_schema = SchemaDraft {
+                body: tuple.clone(),
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap();
+            let id = schemas.find_by_key(tuple_schema.key()).unwrap();
+            CompositeSnapshotConstructor::bind(
+                id,
+                schemas
+                    .get(id)
+                    .unwrap()
+                    .instantiate_shape(Box::new([]))
+                    .unwrap(),
+                &[(child_id, child.shape().clone())],
+                Arc::clone(schemas),
+            )
+            .unwrap()
+            .construct(vec![child].into_boxed_slice(), None)
+            .unwrap()
+        };
+        let mut shifted = 0;
+        for name in ["ready", "other", "third"] {
+            let (foreign, id) = schema_table(atom(name));
+            let child = draft(id, ValueDataDraft::Atom)
+                .finalize(&SnapshotValidationContext::new(&foreign))
+                .unwrap();
+            if target.find_by_key(child.schema_key()).unwrap() != child.schema() {
+                shifted += 1;
+            }
+            let foreign = arena(vec![atom(name), tuple.clone()]);
+            let foreign_id = foreign.find_by_key(child.schema_key()).unwrap();
+            let nested_child = child.rebind(foreign_id, child.shape(), &foreign).unwrap();
+            for original in [
+                outer(child, &target),
+                outer(outer(nested_child, &foreign), &target),
+            ] {
+                let expected = original.canonical_snapshot_bytes(&target).unwrap();
+                let missing = arena(vec![tuple.clone()]);
+                assert!(
+                    mech_core::snapshot::canonical_snapshot_data_draft_in(
+                        &tuple,
+                        original.data(),
+                        &missing,
+                    )
+                    .is_err(),
+                    "missing dynamic schema keys must fail closed"
+                );
+                let mut builder = ConstantStoreBuilder::new(&target);
+                builder.insert(original).unwrap();
+                let constants = builder.finish().unwrap().into_parts().0;
+                let bytes = encode(&constant_drafts(&constants, &target).unwrap()).unwrap();
+                let drafts = decode_vec("constants", &bytes, 1).unwrap();
+                let decoded =
+                    finalize_constants(drafts, &target, DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK)
+                        .unwrap();
+                assert_eq!(
+                    decoded
+                        .get(ConstantId::new(0))
+                        .unwrap()
+                        .canonical_snapshot_bytes(&target)
+                        .unwrap(),
+                    expected
+                );
+            }
+        }
+        assert!(
+            shifted >= 2,
+            "exercise compatible nominal ordinals from different arenas"
+        );
     }
 
     #[test]
@@ -1288,6 +1593,955 @@ mod tests {
             )
             .unwrap_err(),
             5,
+        );
+    }
+}
+
+fn wire_control_value(value: super::ControlValue) -> WireControlValue {
+    match value {
+        super::ControlValue::Constant(id) => WireControlValue::Constant(id.get()),
+        super::ControlValue::Parameter { block, ordinal } => WireControlValue::Parameter {
+            block: block.0,
+            ordinal,
+        },
+        super::ControlValue::Local { block, node } => WireControlValue::Local {
+            block: block.0,
+            node,
+        },
+    }
+}
+
+fn control_value_from_wire(value: WireControlValue) -> super::ControlValue {
+    match value {
+        WireControlValue::Constant(id) => super::ControlValue::Constant(ConstantId::new(id)),
+        WireControlValue::Parameter { block, ordinal } => super::ControlValue::Parameter {
+            block: super::ControlBlockId(block),
+            ordinal,
+        },
+        WireControlValue::Local { block, node } => super::ControlValue::Local {
+            block: super::ControlBlockId(block),
+            node,
+        },
+    }
+}
+
+fn wire_control_block(
+    block: &super::ControlBlock,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireControlBlock {
+    WireControlBlock {
+        id: block.id.0,
+        parameters: block
+            .parameters
+            .iter()
+            .map(|parameter| {
+                (
+                    match parameter.source {
+                        super::ControlParameterSource::Scrutinee => {
+                            WireControlParameterSource::Scrutinee
+                        }
+                        super::ControlParameterSource::PatternBinding(local) => {
+                            WireControlParameterSource::PatternBinding(local)
+                        }
+                        super::ControlParameterSource::Capture(index) => {
+                            WireControlParameterSource::Capture(index)
+                        }
+                    },
+                    parameter.schema.get(),
+                )
+            })
+            .collect(),
+        operations: block
+            .operations
+            .iter()
+            .map(|operation| WireControlOperation {
+                node: operation.node,
+                body: wire_control_operation_body(&operation.body, operations),
+                schema: operation.schema.get(),
+                inputs: operation
+                    .inputs
+                    .iter()
+                    .copied()
+                    .map(wire_control_value)
+                    .collect(),
+            })
+            .collect(),
+        yield_value: wire_control_value(block.yield_value),
+    }
+}
+
+fn wire_control_operation_body(
+    body: &super::ControlOperationBody,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireControlOperationBody {
+    match body {
+        super::ControlOperationBody::Operation {
+            operation,
+            contract,
+        } => WireControlOperationBody::Operation {
+            operation: operations[operation],
+            contract: contract.get(),
+        },
+        super::ControlOperationBody::Match(control) => {
+            WireControlOperationBody::Match(wire_match(control, operations))
+        }
+        super::ControlOperationBody::Comprehension(control) => {
+            WireControlOperationBody::Comprehension(wire_comprehension(control, operations))
+        }
+        super::ControlOperationBody::Recur(ancestor) => WireControlOperationBody::Recur(*ancestor),
+
+        super::ControlOperationBody::Suspend => WireControlOperationBody::Suspend,
+        super::ControlOperationBody::Publish => WireControlOperationBody::Publish,
+    }
+}
+
+fn wire_comprehension(
+    control: &super::ComprehensionDeclaration,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireComprehensionDeclaration {
+    WireComprehensionDeclaration {
+        id: control.id.0,
+        kind: match control.kind {
+            super::ComprehensionKind::Matrix => 0,
+            super::ComprehensionKind::Set => 1,
+            super::ComprehensionKind::MatrixPreserveShape => 2,
+        },
+        steps: control
+            .steps
+            .iter()
+            .map(|step| match step {
+                super::ComprehensionStep::Generator { source, pattern } => {
+                    WireComprehensionStep::Generator {
+                        source: wire_comprehension_value(*source),
+                        pattern: wire_collection_pattern(pattern),
+                    }
+                }
+                super::ComprehensionStep::Filter(value) => {
+                    WireComprehensionStep::Filter(wire_comprehension_value(*value))
+                }
+                super::ComprehensionStep::Operation(operation) => {
+                    WireComprehensionStep::Operation {
+                        local: operation.local,
+                        body: wire_control_operation_body(&operation.body, operations),
+                        inputs: operation
+                            .inputs
+                            .iter()
+                            .copied()
+                            .map(wire_comprehension_value)
+                            .collect(),
+                        schema: operation.schema.get(),
+                    }
+                }
+            })
+            .collect(),
+        yield_value: wire_comprehension_value(control.yield_value),
+    }
+}
+
+fn wire_comprehension_value(value: super::ComprehensionValue) -> WireComprehensionValue {
+    match value {
+        super::ComprehensionValue::Constant(id) => WireComprehensionValue::Constant(id.get()),
+        super::ComprehensionValue::Input(ordinal) => WireComprehensionValue::Input(ordinal),
+        super::ComprehensionValue::Local(local) => WireComprehensionValue::Local(local),
+    }
+}
+fn comprehension_value_from_wire(value: WireComprehensionValue) -> super::ComprehensionValue {
+    match value {
+        WireComprehensionValue::Constant(id) => {
+            super::ComprehensionValue::Constant(ConstantId::new(id))
+        }
+        WireComprehensionValue::Input(ordinal) => super::ComprehensionValue::Input(ordinal),
+        WireComprehensionValue::Local(local) => super::ComprehensionValue::Local(local),
+    }
+}
+fn wire_collection_pattern(pattern: &super::CollectionPattern) -> WireCollectionPattern {
+    match pattern {
+        super::CollectionPattern::Wildcard => WireCollectionPattern::Wildcard,
+        super::CollectionPattern::Bind { local, schema } => WireCollectionPattern::Bind {
+            local: *local,
+            schema: schema.get(),
+        },
+        super::CollectionPattern::Equal(value) => {
+            WireCollectionPattern::Equal(wire_comprehension_value(*value))
+        }
+        super::CollectionPattern::Enum { ordinal, payload } => WireCollectionPattern::Enum {
+            ordinal: *ordinal,
+            payload: payload
+                .as_deref()
+                .map(wire_collection_pattern)
+                .map(Box::new),
+        },
+        super::CollectionPattern::Tuple(items) => {
+            WireCollectionPattern::Tuple(items.iter().map(wire_collection_pattern).collect())
+        }
+        super::CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => WireCollectionPattern::Array {
+            prefix: prefix.iter().map(wire_collection_pattern).collect(),
+            rest: rest
+                .as_ref()
+                .map(|rest| Box::new(wire_collection_pattern(rest))),
+            suffix: suffix.iter().map(wire_collection_pattern).collect(),
+        },
+    }
+}
+fn collection_pattern_from_wire(pattern: WireCollectionPattern) -> super::CollectionPattern {
+    match pattern {
+        WireCollectionPattern::Wildcard => super::CollectionPattern::Wildcard,
+        WireCollectionPattern::Bind { local, schema } => super::CollectionPattern::Bind {
+            local,
+            schema: SchemaId::new(schema),
+        },
+        WireCollectionPattern::Equal(value) => {
+            super::CollectionPattern::Equal(comprehension_value_from_wire(value))
+        }
+        WireCollectionPattern::Enum { ordinal, payload } => super::CollectionPattern::Enum {
+            ordinal,
+            payload: payload.map(|payload| Box::new(collection_pattern_from_wire(*payload))),
+        },
+        WireCollectionPattern::Tuple(items) => super::CollectionPattern::Tuple(
+            items
+                .into_iter()
+                .map(collection_pattern_from_wire)
+                .collect(),
+        ),
+        WireCollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => super::CollectionPattern::Array {
+            prefix: prefix
+                .into_iter()
+                .map(collection_pattern_from_wire)
+                .collect(),
+            rest: rest.map(|rest| Box::new(collection_pattern_from_wire(*rest))),
+            suffix: suffix
+                .into_iter()
+                .map(collection_pattern_from_wire)
+                .collect(),
+        },
+    }
+}
+
+fn wire_structural_match_pattern(
+    pattern: &super::CollectionPattern<SchemaId, super::MatchPatternValue>,
+) -> WireStructuralMatchPattern {
+    match pattern {
+        super::CollectionPattern::Wildcard => WireStructuralMatchPattern::Wildcard,
+        super::CollectionPattern::Bind { local, schema } => WireStructuralMatchPattern::Bind {
+            local: *local,
+            schema: schema.get(),
+        },
+        super::CollectionPattern::Equal(super::MatchPatternValue::Literal(constant)) => {
+            WireStructuralMatchPattern::Equal(WireMatchPatternValue::Literal(constant.get()))
+        }
+        super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local)) => {
+            WireStructuralMatchPattern::Equal(WireMatchPatternValue::Binding(*local))
+        }
+        super::CollectionPattern::Equal(super::MatchPatternValue::Input(input)) => {
+            WireStructuralMatchPattern::Equal(WireMatchPatternValue::Input(*input))
+        }
+        super::CollectionPattern::Enum { ordinal, payload } => WireStructuralMatchPattern::Enum {
+            ordinal: *ordinal,
+            payload: payload
+                .as_deref()
+                .map(wire_structural_match_pattern)
+                .map(Box::new),
+        },
+        super::CollectionPattern::Tuple(items) => WireStructuralMatchPattern::Tuple(
+            items.iter().map(wire_structural_match_pattern).collect(),
+        ),
+        super::CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => WireStructuralMatchPattern::Array {
+            prefix: prefix.iter().map(wire_structural_match_pattern).collect(),
+            rest: rest
+                .as_deref()
+                .map(wire_structural_match_pattern)
+                .map(Box::new),
+            suffix: suffix.iter().map(wire_structural_match_pattern).collect(),
+        },
+    }
+}
+
+fn structural_match_pattern_from_wire(
+    pattern: WireStructuralMatchPattern,
+) -> super::CollectionPattern<SchemaId, super::MatchPatternValue> {
+    match pattern {
+        WireStructuralMatchPattern::Wildcard => super::CollectionPattern::Wildcard,
+        WireStructuralMatchPattern::Bind { local, schema } => super::CollectionPattern::Bind {
+            local,
+            schema: SchemaId::new(schema),
+        },
+        WireStructuralMatchPattern::Equal(WireMatchPatternValue::Literal(constant)) => {
+            super::CollectionPattern::Equal(super::MatchPatternValue::Literal(ConstantId::new(
+                constant,
+            )))
+        }
+        WireStructuralMatchPattern::Equal(WireMatchPatternValue::Binding(local)) => {
+            super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local))
+        }
+        WireStructuralMatchPattern::Equal(WireMatchPatternValue::Input(input)) => {
+            super::CollectionPattern::Equal(super::MatchPatternValue::Input(input))
+        }
+        WireStructuralMatchPattern::Enum { ordinal, payload } => super::CollectionPattern::Enum {
+            ordinal,
+            payload: payload.map(|payload| Box::new(structural_match_pattern_from_wire(*payload))),
+        },
+        WireStructuralMatchPattern::Tuple(items) => super::CollectionPattern::Tuple(
+            items
+                .into_iter()
+                .map(structural_match_pattern_from_wire)
+                .collect(),
+        ),
+        WireStructuralMatchPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => super::CollectionPattern::Array {
+            prefix: prefix
+                .into_iter()
+                .map(structural_match_pattern_from_wire)
+                .collect(),
+            rest: rest.map(|rest| Box::new(structural_match_pattern_from_wire(*rest))),
+            suffix: suffix
+                .into_iter()
+                .map(structural_match_pattern_from_wire)
+                .collect(),
+        },
+    }
+}
+
+fn wire_node_body(
+    body: &super::ExecutableNodeBody,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireNodeBody {
+    match body {
+        super::ExecutableNodeBody::Operation(operation) => WireNodeBody::Operation {
+            operation: operations[&operation.operation],
+            contract: operation.contract.get(),
+            requirement: operation.requirement.map(ApplicationRequirementId::get),
+        },
+        super::ExecutableNodeBody::Comprehension(control) => {
+            WireNodeBody::Comprehension(wire_comprehension(control, operations))
+        }
+        super::ExecutableNodeBody::Match(control) => {
+            WireNodeBody::Match(wire_match(control, operations))
+        }
+        super::ExecutableNodeBody::Activation(control) => {
+            WireNodeBody::Activation(wire_match(control, operations))
+        }
+        super::ExecutableNodeBody::Fsm(control) => WireNodeBody::Fsm {
+            machine: control.machine.clone(),
+            arguments: control
+                .arguments
+                .iter()
+                .map(|argument| (argument.name.clone(), argument.input))
+                .collect(),
+            stages: control
+                .stages
+                .iter()
+                .map(|stage| WireFsmStage {
+                    kind: match stage.kind {
+                        super::FsmStageKind::State => 0,
+                        super::FsmStageKind::Async => 1,
+                        super::FsmStageKind::Output => 2,
+                    },
+                    value: wire_fsm_value(&stage.value),
+                })
+                .collect(),
+        },
+    }
+}
+
+fn wire_match(
+    control: &super::MatchDeclaration,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireMatchDeclaration {
+    WireMatchDeclaration {
+        scrutinee: control.scrutinee,
+        partial: control.partial,
+        captures: control
+            .captures
+            .iter()
+            .map(|capture| {
+                (
+                    capture.input,
+                    capture.schema.get(),
+                    capture.freeze_on_suspend,
+                )
+            })
+            .collect(),
+        arms: control
+            .arms
+            .iter()
+            .map(|arm| WireMatchArm {
+                pattern: match &arm.pattern {
+                    super::MatchPattern::Literal(constant) => WirePattern::Literal(constant.get()),
+                    super::MatchPattern::Wildcard => WirePattern::Wildcard,
+                    super::MatchPattern::Bind => WirePattern::Bind,
+                    super::MatchPattern::Structural(pattern) => {
+                        WirePattern::Structural(wire_structural_match_pattern(pattern))
+                    }
+                },
+                guard: arm
+                    .guard
+                    .as_ref()
+                    .map(|block| wire_control_block(block, operations)),
+                body: wire_control_block(&arm.body, operations),
+            })
+            .collect(),
+    }
+}
+
+fn wire_fsm_value(value: &super::FsmValue) -> WireFsmValue {
+    match value {
+        super::FsmValue::Input(input) => WireFsmValue::Input(*input),
+        super::FsmValue::Tuple(items) => {
+            WireFsmValue::Tuple(items.iter().map(wire_fsm_value).collect())
+        }
+        super::FsmValue::Array(items) => {
+            WireFsmValue::Array(items.iter().map(wire_fsm_value).collect())
+        }
+        super::FsmValue::AtomStruct { name, items } => WireFsmValue::AtomStruct {
+            name: name.clone(),
+            items: items.iter().map(wire_fsm_value).collect(),
+        },
+        super::FsmValue::TupleStruct { name, items } => WireFsmValue::TupleStruct {
+            name: name.clone(),
+            items: items.iter().map(wire_fsm_value).collect(),
+        },
+    }
+}
+
+fn fsm_value_from_wire(value: WireFsmValue) -> super::FsmValue {
+    match value {
+        WireFsmValue::Input(input) => super::FsmValue::Input(input),
+        WireFsmValue::Tuple(items) => {
+            super::FsmValue::Tuple(items.into_iter().map(fsm_value_from_wire).collect())
+        }
+        WireFsmValue::Array(items) => {
+            super::FsmValue::Array(items.into_iter().map(fsm_value_from_wire).collect())
+        }
+        WireFsmValue::AtomStruct { name, items } => super::FsmValue::AtomStruct {
+            name,
+            items: items.into_iter().map(fsm_value_from_wire).collect(),
+        },
+        WireFsmValue::TupleStruct { name, items } => super::FsmValue::TupleStruct {
+            name,
+            items: items.into_iter().map(fsm_value_from_wire).collect(),
+        },
+    }
+}
+
+fn control_block_from_wire(
+    block: WireControlBlock,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::ControlBlock, ArtifactBytecodeError> {
+    Ok(super::ControlBlock {
+        id: super::ControlBlockId(block.id),
+        parameters: block
+            .parameters
+            .into_iter()
+            .map(|(source, schema)| super::ControlParameter {
+                source: match source {
+                    WireControlParameterSource::Scrutinee => {
+                        super::ControlParameterSource::Scrutinee
+                    }
+                    WireControlParameterSource::PatternBinding(local) => {
+                        super::ControlParameterSource::PatternBinding(local)
+                    }
+                    WireControlParameterSource::Capture(index) => {
+                        super::ControlParameterSource::Capture(index)
+                    }
+                },
+                schema: SchemaId::new(schema),
+            })
+            .collect(),
+        operations: block
+            .operations
+            .into_iter()
+            .map(|node| {
+                Ok(super::ControlOperation {
+                    node: node.node,
+                    body: control_operation_body_from_wire(node.body, operation)?,
+                    schema: SchemaId::new(node.schema),
+                    inputs: node
+                        .inputs
+                        .into_iter()
+                        .map(control_value_from_wire)
+                        .collect(),
+                })
+            })
+            .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
+        yield_value: control_value_from_wire(block.yield_value),
+    })
+}
+
+fn control_operation_body_from_wire(
+    body: WireControlOperationBody,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::ControlOperationBody, ArtifactBytecodeError> {
+    Ok(match body {
+        WireControlOperationBody::Operation {
+            operation: reference,
+            contract,
+        } => super::ControlOperationBody::Operation {
+            operation: operation(reference)?,
+            contract: OperationContractId::new(contract),
+        },
+        WireControlOperationBody::Match(control) => {
+            super::ControlOperationBody::Match(match_from_wire(control, operation)?)
+        }
+        WireControlOperationBody::Comprehension(control) => {
+            super::ControlOperationBody::Comprehension(comprehension_from_wire(control, operation)?)
+        }
+        WireControlOperationBody::Recur(ancestor) => super::ControlOperationBody::Recur(ancestor),
+
+        WireControlOperationBody::Suspend => super::ControlOperationBody::Suspend,
+        WireControlOperationBody::Publish => super::ControlOperationBody::Publish,
+    })
+}
+
+fn comprehension_from_wire(
+    control: WireComprehensionDeclaration,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::ComprehensionDeclaration, ArtifactBytecodeError> {
+    Ok(super::ComprehensionDeclaration {
+        id: super::ControlBlockId(control.id),
+        kind: match control.kind {
+            0 => super::ComprehensionKind::Matrix,
+            1 => super::ComprehensionKind::Set,
+            2 => super::ComprehensionKind::MatrixPreserveShape,
+            tag => {
+                return Err(ArtifactBytecodeError::InvalidWireTag {
+                    section: "comprehension kind",
+                    tag,
+                });
+            }
+        },
+        steps: control
+            .steps
+            .into_iter()
+            .map(|step| {
+                Ok(match step {
+                    WireComprehensionStep::Generator { source, pattern } => {
+                        super::ComprehensionStep::Generator {
+                            source: comprehension_value_from_wire(source),
+                            pattern: collection_pattern_from_wire(pattern),
+                        }
+                    }
+                    WireComprehensionStep::Filter(value) => {
+                        super::ComprehensionStep::Filter(comprehension_value_from_wire(value))
+                    }
+                    WireComprehensionStep::Operation {
+                        local,
+                        body,
+                        inputs,
+                        schema,
+                    } => super::ComprehensionStep::Operation(super::ComprehensionOperation {
+                        local,
+                        body: control_operation_body_from_wire(body, operation)?,
+                        inputs: inputs
+                            .into_iter()
+                            .map(comprehension_value_from_wire)
+                            .collect(),
+                        schema: SchemaId::new(schema),
+                    }),
+                })
+            })
+            .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
+        yield_value: comprehension_value_from_wire(control.yield_value),
+    })
+}
+
+fn node_body_from_wire(
+    body: WireNodeBody,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::ExecutableNodeBody, ArtifactBytecodeError> {
+    Ok(match body {
+        WireNodeBody::Operation {
+            operation: id,
+            contract,
+            requirement,
+        } => super::ExecutableNodeBody::Operation(super::OperationNodeBody {
+            operation: operation(id)?,
+            contract: OperationContractId::new(contract),
+            requirement: requirement.map(ApplicationRequirementId::new),
+        }),
+        WireNodeBody::Comprehension(control) => {
+            super::ExecutableNodeBody::Comprehension(comprehension_from_wire(control, operation)?)
+        }
+        WireNodeBody::Match(control) => {
+            super::ExecutableNodeBody::Match(match_from_wire(control, operation)?)
+        }
+        WireNodeBody::Activation(control) => {
+            super::ExecutableNodeBody::Activation(match_from_wire(control, operation)?)
+        }
+        WireNodeBody::Fsm {
+            machine,
+            arguments,
+            stages,
+        } => super::ExecutableNodeBody::Fsm(super::FsmDeclaration {
+            machine,
+            arguments: arguments
+                .into_iter()
+                .map(|(name, input)| super::FsmArgument { name, input })
+                .collect(),
+            stages: stages
+                .into_iter()
+                .map(|stage| {
+                    Ok(super::FsmStage {
+                        kind: match stage.kind {
+                            0 => super::FsmStageKind::State,
+                            1 => super::FsmStageKind::Async,
+                            2 => super::FsmStageKind::Output,
+                            tag => {
+                                return Err(ArtifactBytecodeError::InvalidWireTag {
+                                    section: "FSM stage kind",
+                                    tag,
+                                });
+                            }
+                        },
+                        value: fsm_value_from_wire(stage.value),
+                    })
+                })
+                .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
+        }),
+    })
+}
+
+fn match_from_wire(
+    control: WireMatchDeclaration,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::MatchDeclaration, ArtifactBytecodeError> {
+    let WireMatchDeclaration {
+        scrutinee,
+        partial,
+        captures,
+        arms,
+    } = control;
+    Ok(super::MatchDeclaration {
+        scrutinee,
+        partial,
+        captures: captures
+            .into_iter()
+            .map(|(input, schema, freeze_on_suspend)| super::ControlCapture {
+                input,
+                schema: SchemaId::new(schema),
+                freeze_on_suspend,
+            })
+            .collect(),
+        arms: arms
+            .into_iter()
+            .map(|arm| {
+                Ok(super::ControlMatchArm {
+                    pattern: match arm.pattern {
+                        WirePattern::Literal(constant) => {
+                            super::MatchPattern::Literal(ConstantId::new(constant))
+                        }
+                        WirePattern::Wildcard => super::MatchPattern::Wildcard,
+                        WirePattern::Bind => super::MatchPattern::Bind,
+                        WirePattern::Structural(pattern) => super::MatchPattern::Structural(
+                            structural_match_pattern_from_wire(pattern),
+                        ),
+                    },
+                    guard: arm
+                        .guard
+                        .map(|block| control_block_from_wire(block, operation))
+                        .transpose()?,
+                    body: control_block_from_wire(arm.body, operation)?,
+                })
+            })
+            .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
+    })
+}
+
+fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {
+    match body {
+        WireNodeBody::Operation { operation, .. } => vec![*operation],
+        WireNodeBody::Comprehension(control) => wire_comprehension_operation_ids(control),
+        WireNodeBody::Match(control) => wire_match_operation_ids(control),
+        WireNodeBody::Activation(control) => wire_match_operation_ids(control),
+        WireNodeBody::Fsm { .. } => Vec::new(),
+    }
+}
+
+fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> {
+    match body {
+        WireControlOperationBody::Operation { operation, .. } => vec![*operation],
+        WireControlOperationBody::Match(control) => wire_match_operation_ids(control),
+        WireControlOperationBody::Comprehension(control) => {
+            wire_comprehension_operation_ids(control)
+        }
+        WireControlOperationBody::Recur(_)
+        | WireControlOperationBody::Suspend
+        | WireControlOperationBody::Publish => Vec::new(),
+    }
+}
+
+fn wire_comprehension_operation_ids(control: &WireComprehensionDeclaration) -> Vec<u32> {
+    control
+        .steps
+        .iter()
+        .flat_map(|step| match step {
+            WireComprehensionStep::Operation { body, .. } => wire_control_body_operation_ids(body),
+            _ => Vec::new(),
+        })
+        .collect()
+}
+
+fn wire_match_operation_ids(control: &WireMatchDeclaration) -> Vec<u32> {
+    control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+        .flat_map(|block| {
+            block
+                .operations
+                .iter()
+                .flat_map(|operation| wire_control_body_operation_ids(&operation.body))
+        })
+        .collect()
+}
+
+/// First pass visits tokens without constructing graph arrays. The typed decode
+/// can allocate only after aggregate control counts and nesting are admitted.
+fn preflight_control_graph(
+    bytes: &[u8],
+    limits: &ArtifactDecodeLimits,
+) -> Result<(), ArtifactBytecodeError> {
+    // A structured FSM value adds an enum object, a struct object, and an
+    // items array at each admitted semantic layer. The remaining allowance
+    // covers the graph, node, FSM body, stage, and leaf containers.
+    const MAX_CONTROL_GRAPH_WIRE_DEPTH: usize = super::fsm::MAX_FSM_VALUE_DEPTH * 3 + 16;
+
+    #[derive(Clone, Copy)]
+    enum Field {
+        Other,
+        Nodes,
+        Requirements,
+        Arms,
+        Blocks,
+        Operations,
+        Operands,
+        Generator,
+        Pattern,
+        PatternChildren,
+        SingleOperand,
+    }
+    struct Counts {
+        nodes: usize,
+        requirements: usize,
+        arms: usize,
+        blocks: usize,
+        operations: usize,
+        operands: usize,
+    }
+    struct Scan<'a> {
+        counts: &'a mut Counts,
+        limits: &'a ArtifactDecodeLimits,
+        field: Field,
+        depth: usize,
+        control_depth: usize,
+    }
+    impl Scan<'_> {
+        fn charge<E: serde::de::Error>(&mut self) -> Result<(), E> {
+            let (count, limit) = match self.field {
+                Field::Other | Field::Generator | Field::PatternChildren => return Ok(()),
+                Field::Nodes => (&mut self.counts.nodes, self.limits.max_nodes),
+                Field::Requirements => {
+                    (&mut self.counts.requirements, self.limits.max_requirements)
+                }
+                Field::Arms => (&mut self.counts.arms, self.limits.max_control_arms),
+                Field::Blocks => (&mut self.counts.blocks, self.limits.max_control_blocks),
+                Field::Operations => (
+                    &mut self.counts.operations,
+                    self.limits.max_control_operations,
+                ),
+                Field::Operands | Field::Pattern | Field::SingleOperand => {
+                    (&mut self.counts.operands, self.limits.max_control_operands)
+                }
+            };
+            *count = count
+                .checked_add(1)
+                .ok_or_else(|| E::custom("control count overflow"))?;
+            if *count > limit {
+                return Err(E::custom("control graph item limit"));
+            }
+            Ok(())
+        }
+    }
+    impl<'de> DeserializeSeed<'de> for Scan<'_> {
+        type Value = ();
+        fn deserialize<D: serde::Deserializer<'de>>(
+            mut self,
+            deserializer: D,
+        ) -> Result<(), D::Error> {
+            // Keep the complete declared control depth below serde_json's own
+            // recursion bound while admitting every valid FSM value depth.
+            if self.depth > MAX_CONTROL_GRAPH_WIRE_DEPTH
+                || self.control_depth > super::MAX_CONTROL_DEPTH
+            {
+                return Err(D::Error::custom("control graph nesting limit"));
+            }
+            if matches!(self.field, Field::SingleOperand) {
+                self.charge::<D::Error>()?;
+            }
+            deserializer.deserialize_any(self)
+        }
+    }
+    impl<'de> Visitor<'de> for Scan<'_> {
+        type Value = ();
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("bounded control graph")
+        }
+        fn visit_bool<E: serde::de::Error>(self, _: bool) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_i64<E: serde::de::Error>(self, _: i64) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_u64<E: serde::de::Error>(self, _: u64) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_f64<E: serde::de::Error>(self, _: f64) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_str<E: serde::de::Error>(mut self, _: &str) -> Result<(), E> {
+            if matches!(self.field, Field::Pattern) {
+                self.charge::<E>()?;
+            }
+            Ok(())
+        }
+        fn visit_unit<E: serde::de::Error>(self) -> Result<(), E> {
+            Ok(())
+        }
+        fn visit_seq<A: SeqAccess<'de>>(mut self, mut seq: A) -> Result<(), A::Error> {
+            while seq
+                .next_element_seed(Scan {
+                    counts: self.counts,
+                    limits: self.limits,
+                    field: if matches!(self.field, Field::PatternChildren) {
+                        Field::Pattern
+                    } else {
+                        Field::Other
+                    },
+                    depth: self.depth + 1,
+                    control_depth: self.control_depth,
+                })?
+                .is_some()
+            {
+                self.charge::<A::Error>()?;
+            }
+            Ok(())
+        }
+        fn visit_map<A: serde::de::MapAccess<'de>>(mut self, mut map: A) -> Result<(), A::Error> {
+            if matches!(self.field, Field::Pattern) {
+                self.charge::<A::Error>()?;
+            }
+            while let Some(key) = map.next_key::<String>()? {
+                if key == "id" {
+                    Scan {
+                        counts: self.counts,
+                        limits: self.limits,
+                        field: Field::Blocks,
+                        depth: self.depth,
+                        control_depth: self.control_depth,
+                    }
+                    .charge::<A::Error>()?;
+                }
+                let field = match key.as_str() {
+                    "nodes" => Field::Nodes,
+                    "requirements" => Field::Requirements,
+                    "arms" => Field::Arms,
+                    "operations" | "steps" | "stages" => Field::Operations,
+                    "inputs" | "parameters" | "captures" | "arguments" => Field::Operands,
+                    "Generator" => Field::Generator,
+                    "pattern" if matches!(self.field, Field::Generator) => Field::Pattern,
+                    "Structural" => Field::Pattern,
+                    "rest" => Field::Pattern,
+                    "value" => Field::Pattern,
+                    "Tuple" | "Array" | "items" | "prefix" | "suffix" => Field::PatternChildren,
+                    "Filter" => Field::SingleOperand,
+                    _ => Field::Other,
+                };
+                map.next_value_seed(Scan {
+                    counts: self.counts,
+                    limits: self.limits,
+                    field,
+                    depth: self.depth + 1,
+                    control_depth: self.control_depth
+                        + usize::from(matches!(key.as_str(), "Match" | "Comprehension")),
+                })?;
+            }
+            Ok(())
+        }
+    }
+    let mut counts = Counts {
+        nodes: 0,
+        requirements: 0,
+        arms: 0,
+        blocks: 0,
+        operations: 0,
+        operands: 0,
+    };
+    let mut decoder = serde_json::Deserializer::from_slice(bytes);
+    Scan {
+        counts: &mut counts,
+        limits,
+        field: Field::Other,
+        depth: 0,
+        control_depth: 0,
+    }
+    .deserialize(&mut decoder)?;
+    decoder.end()?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod control_preflight_tests {
+    use super::{ArtifactDecodeLimits, WireComprehensionStep, preflight_control_graph};
+
+    #[test]
+    fn unknown_fields_cannot_hide_generator_patterns_from_admission() {
+        // An ignored ID must not change the context of the following pattern.
+        let bytes = br#"{"Generator":{"id":0,"source":{"Input":0},"pattern":{"Tuple":["Wildcard","Wildcard"]}}}"#;
+        let limits = ArtifactDecodeLimits {
+            max_control_operands: 2,
+            ..ArtifactDecodeLimits::default()
+        };
+        assert!(preflight_control_graph(bytes, &limits).is_err());
+        assert!(preflight_control_graph(bytes, &ArtifactDecodeLimits::default()).is_ok());
+        assert!(serde_json::from_slice::<WireComprehensionStep>(bytes).is_err());
+    }
+
+    #[test]
+    fn nested_comprehension_tags_are_bounded_before_typed_allocation() {
+        let nested = |depth| {
+            let mut value = "0".to_owned();
+            for _ in 0..depth {
+                value = format!(r#"{{"Comprehension":{value}}}"#);
+            }
+            value
+        };
+        assert!(
+            preflight_control_graph(
+                nested(super::super::MAX_CONTROL_DEPTH).as_bytes(),
+                &ArtifactDecodeLimits::default(),
+            )
+            .is_ok()
+        );
+        assert!(
+            preflight_control_graph(
+                nested(super::super::MAX_CONTROL_DEPTH + 1).as_bytes(),
+                &ArtifactDecodeLimits::default(),
+            )
+            .is_err()
         );
     }
 }

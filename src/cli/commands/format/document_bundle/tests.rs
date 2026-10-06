@@ -78,6 +78,30 @@ fn standalone_bundle_records_every_dependency_resolution() {
     std::fs::remove_dir_all(root).unwrap();
 }
 
+#[test]
+fn standalone_bundle_carries_opaque_nominal_provenance() {
+    let root = temp_root("nominal-provenance");
+    std::fs::write(
+        root.join("Cargo.toml"),
+        "[package]\nname = \"format-fixture\"\nversion = \"0.1.0\"\n",
+    )
+    .unwrap();
+    std::fs::write(root.join("main.mec"), "<event> := :idle | :busy\n").unwrap();
+    let bundle = decode_bundle(&root.join("main.mec"));
+    assert_eq!(
+        bundle["provenance"]["bundle/000000.mec"]["nominalOrigin"]["segments"],
+        serde_json::json!(["format-fixture", "main"]),
+    );
+    assert!(
+        bundle["provenance"]["bundle/000000.mec"]["nominalPackageId"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
+    assert!(!bundle.to_string().contains("path+file:"));
+    std::fs::remove_dir_all(root).unwrap();
+}
+
 #[cfg(unix)]
 #[test]
 fn standalone_bundle_deduplicates_canonical_source_bodies() {

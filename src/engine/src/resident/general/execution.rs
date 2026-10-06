@@ -1,8 +1,31 @@
-//! Allocation-free candidate execution for the schema-driven resident plan.
+//! Candidate execution for the schema-driven resident plan.
 
+#[path = "comprehension_execution.rs"]
+pub(super) mod comprehension_execution;
+
+pub(super) use comprehension_execution::StructuralProjectionTable;
+
+fn peak_structural_clone_depth(arms: &[super::ActivatedMatchArm]) -> u64 {
+    arms.iter()
+        .filter_map(|arm| match &arm.pattern {
+            super::ActivatedMatchPattern::Structural { clone_depth, .. } => Some(*clone_depth),
+            _ => None,
+        })
+        .max()
+        .unwrap_or(0)
+}
+
+pub(super) fn structural_projection_schema_context(
+    schemas: &mech_core::SchemaTable,
+) -> Result<(mech_core::SchemaTable, StructuralProjectionTable), mech_core::SemanticModelError> {
+    comprehension_execution::structural_projection_schema_context(schemas)
+}
+
+use crate::resident::budget;
 use core::ops::Range;
 use core::sync::atomic::Ordering;
 
+use mech_core::snapshot::ValueFootprint;
 use mech_core::{
     ApplicationRequirementId, CellSlotId, ChangeDetectionPolicy, ExternalInteraction,
     InstanceEpoch, IntegrityConstraintId, MResult, MechError, MechErrorKind, NodeId,
@@ -11,17 +34,31 @@ use mech_core::{
 };
 
 use super::{
-    ActivatedExternalNode, ActivatedNodeIndex, ActivatedTurnStep, F64_STATE_ARENA_BASE,
-    F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance, ResidentActivationError,
-    ResidentEffectIntent, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
-    ResidentReadLocation, ResidentRegion, ResidentStorageClass, ResidentValueBorrow, SlotRole,
-    StateArena, StateVersion, TypedResidentArena,
+    ActivatedExternalNode, ActivatedMatchNode, ActivatedNodeIndex, ActivatedTurnStep,
+    F64_STATE_ARENA_BASE, F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance,
+    ResidentActivationError, ResidentEffectIntent, ResidentExternalPublicationAuthority,
+    ResidentIntegrityMode, ResidentReadLocation, ResidentRegion, ResidentStorageClass,
+    ResidentValueBorrow, SlotRole, StateArena, StateVersion, TypedResidentArena,
+    output_materialization_depends_on_match,
 };
+
+// This is a host-stack safety ceiling, not the language's recursion budget.
+// Every call is independently admitted through the cumulative resident work
+// and frame-memory budget below. Keeping the emergency ceiling modest ensures
+// an adversarial call cannot reach the Rust stack limit before admission can
+// report a recoverable turn failure.
+const MAX_RESIDENT_RECURSION_DEPTH: usize = 24;
 
 #[derive(Clone, Copy, Debug)]
 pub struct CapturedSignalInput<'a> {
     pub slot: SlotIndex,
     pub value: ResidentValueRef<'a>,
+}
+
+#[derive(Default)]
+struct ControlBlockLiveFootprint {
+    retained_prefix: usize,
+    footprint: ValueFootprint,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -104,6 +141,9 @@ pub struct ResidentStructuralProbe {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResidentExecutionError {
+    PlanningStepLimit {
+        limit: usize,
+    },
     MemoryRuntime {
         error: mech_core::MemoryRuntimeError,
     },
@@ -198,18 +238,63 @@ impl PreparedResidentTurn<'_> {
     /// initial return value in the same fail-closed transaction.
     #[doc(hidden)]
     pub fn copied_output(&self, output: usize) -> Result<Value, ResidentActivationError> {
-        self.instance
+        let instance = self
+            .instance
             .as_deref()
-            .expect("live prepared resident turn")
-            .copied_output_at(output, self.working_epoch)
+            .expect("live prepared resident turn");
+        if output >= instance.plan.outputs.len() {
+            return Err(ResidentActivationError::UnknownOutput { output });
+        }
+        if !instance
+            .workspace
+            .candidate_output_ready
+            .get(output)
+            .copied()
+            .unwrap_or(false)
+        {
+            return Err(ResidentActivationError::OutputUnavailable { output });
+        }
+        instance.copied_output_at(output, self.working_epoch)
     }
 
     #[doc(hidden)]
     pub fn output_borrow(&self, output: usize) -> Option<ResidentValueBorrow<'_>> {
-        self.instance
+        let instance = self
+            .instance
             .as_deref()
-            .expect("live prepared resident turn")
-            .output_borrow_at(output, self.working_epoch)
+            .expect("live prepared resident turn");
+        if !instance
+            .workspace
+            .candidate_output_ready
+            .get(output)
+            .copied()
+            .unwrap_or(false)
+        {
+            return None;
+        }
+        instance.output_borrow_at(output, self.working_epoch)
+    }
+
+    /// Reports whether publishing this candidate will leave an FSM wakeup
+    /// queued. Loaders use this to snapshot only the terminal initial value
+    /// before any externally visible publication.
+    #[doc(hidden)]
+    pub fn will_have_ready_continuation(&self) -> bool {
+        let instance = self
+            .instance
+            .as_deref()
+            .expect("live prepared resident turn");
+        instance
+            .workspace
+            .continuation_candidates
+            .iter()
+            .any(Option::is_some)
+            || instance.ready_continuations.iter().any(|continuation| {
+                !bit_is_set(
+                    &instance.workspace.completed_continuations,
+                    continuation.get() as usize,
+                )
+            })
     }
 
     /// Publishes an ordinary pure resident turn.
@@ -256,6 +341,7 @@ impl PreparedResidentTurn<'_> {
 
     fn publish_inner(&mut self) -> ResidentTurnSummary {
         let instance = self.instance.take().expect("live prepared resident turn");
+        instance.publish_continuation_candidates();
         instance
             .published_epoch
             .store(self.working_epoch.get(), Ordering::Release);
@@ -287,11 +373,13 @@ impl ReactiveInstance {
                 continue;
             };
             let artifact_node = node.artifact_node;
-            let call = self.plan.memory_plan.call_for_node(artifact_node).ok_or(
-                ResidentActivationError::InvalidDependency {
+            let call = self
+                .plan
+                .memory_plan
+                .call_for_node(node.memory_node)
+                .ok_or(ResidentActivationError::InvalidDependency {
                     node: artifact_node,
-                },
-            )?;
+                })?;
             if super::live::has_invariant_memory_facts(call) {
                 self.with_kernel_turn_plan(
                     ActivatedNodeIndex(index as u32),
@@ -314,20 +402,37 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
     ) -> Result<T, ResidentExecutionError> {
+        self.with_kernel_turn_plan_and_live_demand(
+            node_index,
+            before_epoch,
+            working_epoch,
+            0,
+            0,
+            execute,
+        )
+    }
+
+    fn with_kernel_turn_plan_and_live_demand<T>(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        live_bytes: u64,
+        live_nodes: u64,
+        execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
+    ) -> Result<T, ResidentExecutionError> {
         let index = node_index.get() as usize;
-        if let Some(cached) = self.workspace.fixed_turn_plans[index].clone() {
+        if live_bytes == 0
+            && live_nodes == 0
+            && let Some(cached) = self.workspace.fixed_turn_plans[index].clone()
+        {
             // Reuse the certified base plan, not a materialization permit.
             // The kernel still admits its concrete work and scratch demand.
             return super::super::budget::with_resident_turn_plan(cached, || execute(self));
         }
-        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
-            &nodes[index]
-        } else {
-            let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
-                unreachable!("external steps are staged by the dispatcher")
-            };
-            node
-        };
+        let node = self.plan.steps[index]
+            .memory_site()
+            .expect("executable memory call");
         let artifact_node = node.artifact_node;
         let fail = || ResidentExecutionError::Kernel {
             node: artifact_node,
@@ -348,7 +453,7 @@ impl ReactiveInstance {
         let call = self
             .plan
             .memory_plan
-            .call_for_node(artifact_node)
+            .call_for_node(node.memory_node)
             .ok_or_else(fail)?;
         let base = match node.construction {
             OutputConstruction::ReadModifyWrite { base_input, .. } => Some(base_input as usize),
@@ -407,18 +512,29 @@ impl ReactiveInstance {
         let inputs = (0..call.inputs.len())
             .map(|ordinal| {
                 let location = if Some(ordinal) == base {
-                    output_location
+                    node.rmw_base.unwrap_or(output_location)
                 } else {
                     *reads.next().ok_or_else(fail)?
                 };
                 self.read_location(location, working_epoch).ok_or_else(fail)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let facts = super::live::facts(call, artifact_node, &inputs, current, &self.plan.schemas)
-            .map_err(|_| fail())?;
+        let mut facts =
+            super::live::facts(call, node.memory_node, &inputs, current, &self.plan.schemas)
+                .map_err(|_| fail())?;
+        facts.additional_demand.turn_peak_bytes = facts
+            .additional_demand
+            .turn_peak_bytes
+            .checked_add(live_bytes)
+            .ok_or_else(fail)?;
+        facts.additional_demand.retained_nodes = facts
+            .additional_demand
+            .retained_nodes
+            .checked_add(live_nodes)
+            .ok_or_else(fail)?;
         let turn_plan = crate::memory_planner::plan_current_resident_turn(
             &self.plan.memory_plan,
-            artifact_node,
+            node.memory_node,
             &facts,
         )
         .map_err(|_| ResidentExecutionError::Kernel {
@@ -431,7 +547,8 @@ impl ReactiveInstance {
                 error: ResidentKernelError::InvalidShape,
             });
         }
-        let cacheable = super::live::has_invariant_memory_facts(call);
+        let cacheable =
+            live_bytes == 0 && live_nodes == 0 && super::live::has_invariant_memory_facts(call);
         let has_canonical_input = inputs
             .iter()
             .any(|input| input.kind() == ResidentValueKind::Snapshot);
@@ -495,6 +612,7 @@ impl ReactiveInstance {
     /// every non-migrated projection describes the installed state epoch.
     pub fn refresh_output_projections(
         &mut self,
+        artifact: &crate::ProgramArtifact,
         targets: &std::collections::BTreeSet<CellSlotId>,
     ) -> Result<(), ResidentExecutionError> {
         if targets.is_empty() {
@@ -519,7 +637,70 @@ impl ReactiveInstance {
             }
         }
 
+        if artifact.revision() != self.plan.program_revision {
+            return Err(ResidentExecutionError::InvalidOutputMaterialization {
+                slot: *targets.first().expect("nonempty targets checked"),
+            });
+        }
         let epoch = self.published_epoch();
+        // A canonical state writer copies its final candidate into the retained
+        // cell. During projection refresh that candidate means the published
+        // state value: recomputing it would execute the transition a second time.
+        // Derive this relation from the accepted artifact's identity operation,
+        // not from source names or an independent evaluation graph.
+        let mut published_candidates = std::collections::BTreeMap::new();
+        for state in artifact
+            .slots()
+            .iter()
+            .filter(|slot| slot.role == SlotRole::State)
+        {
+            let crate::ProducerReference::NodeOutput { node, .. } = state.producer else {
+                continue;
+            };
+            let Some(writer) = artifact.nodes()[node.get() as usize].as_operation() else {
+                continue;
+            };
+            if writer.operation.module_path.as_ref() != ["core"]
+                || writer.operation.operation_name != "assign"
+            {
+                continue;
+            }
+            let [
+                crate::BindingDeclaration::Input {
+                    source: crate::ArtifactSource::Slot(source),
+                    ..
+                },
+            ] = &artifact.bindings()
+                [writer.input_bindings.start as usize..writer.input_bindings.end as usize]
+            else {
+                continue;
+            };
+            let source_slot = &artifact.slots()[source.get() as usize];
+            let crate::ProducerReference::NodeOutput { node: producer, .. } = source_slot.producer
+            else {
+                continue;
+            };
+            if source_slot.role != SlotRole::Derived
+                || self.plan.slots[source.get() as usize].storage != ResidentStorageClass::Scratch
+            {
+                continue;
+            }
+            if let Some(previous) = published_candidates.insert(producer, state.slot) {
+                let previous_region = self.plan.slots[previous.get() as usize].region;
+                let region = self.plan.slots[state.slot.get() as usize].region;
+                if !rmw_outputs_equal(
+                    &self.state.buffers[self.state.published_buffer(previous, epoch)],
+                    previous_region,
+                    &self.state.buffers[self.state.published_buffer(state.slot, epoch)],
+                    region,
+                    &self.plan.schemas,
+                ) {
+                    return Err(ResidentExecutionError::InvalidOutputMaterialization {
+                        slot: state.slot,
+                    });
+                }
+            }
+        }
         self.refresh_f64_state_arenas(epoch);
         let execution_order = self.plan.execution_node_order.to_vec();
         let mut probe = ResidentStructuralProbe::default();
@@ -530,7 +711,24 @@ impl ReactiveInstance {
                     if node.write.storage == ResidentStorageClass::Scratch
             );
             if execute {
-                self.execute_kernel(node_index, epoch, epoch, &mut probe)?;
+                let ActivatedTurnStep::Kernel(node) = &self.plan.steps[node_index.get() as usize]
+                else {
+                    unreachable!("projection refresh selects only kernels");
+                };
+                if let Some(source) = published_candidates.get(&node.artifact_node) {
+                    let source_region = self.plan.slots[source.get() as usize].region;
+                    let source_buffer = self.state.published_buffer(*source, epoch);
+                    self.workspace
+                        .scratch
+                        .copy_region_from(
+                            node.write.region,
+                            &self.state.buffers[source_buffer],
+                            source_region,
+                        )
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                } else {
+                    self.execute_kernel(node_index, epoch, epoch, &mut probe)?;
+                }
             }
         }
 
@@ -552,13 +750,16 @@ impl ReactiveInstance {
                             source,
                         )
                     }
-                    ResidentReadLocation::Input(source) => self.state.stage_projection_from_arena(
-                        target,
-                        target_region,
-                        epoch,
-                        &self.workspace.input,
-                        source,
-                    ),
+                    ResidentReadLocation::Input(source)
+                    | ResidentReadLocation::LexicalInput(source) => {
+                        self.state.stage_projection_from_arena(
+                            target,
+                            target_region,
+                            epoch,
+                            &self.workspace.input,
+                            source,
+                        )
+                    }
                     ResidentReadLocation::Scratch(source) => {
                         self.state.stage_projection_from_arena(
                             target,
@@ -651,6 +852,51 @@ impl ReactiveInstance {
         self.prepare_installed_turn(before_epoch, working_epoch)
     }
 
+    /// Prepares the initial publication turn while leaving every activation
+    /// scope dormant. Ordinary roots still run so mixed programs publish their
+    /// non-activation results at load time.
+    pub fn prepare_initial_turn(
+        &mut self,
+        inputs: &[CapturedSignalInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Resumes the continuation selected from an already accepted pure turn.
+    /// No activation scope receives a new trigger during this internal drain.
+    pub fn prepare_continuation_turn(
+        &mut self,
+        inputs: &[CapturedSignalInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
     pub fn prepare_turn_values(
         &mut self,
         inputs: &[CapturedValueInput<'_>],
@@ -667,6 +913,73 @@ impl ReactiveInstance {
             self.next_epoch = Some(working_epoch);
             return Err(error);
         }
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Value-backed form of [`Self::prepare_initial_turn`].
+    pub fn prepare_initial_turn_values(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Resumes the continuation selected from an already accepted host turn.
+    /// No activation scope receives a new trigger during this internal drain.
+    pub fn prepare_continuation_turn_values(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Prepares a host-driven turn while scheduling only activation scopes
+    /// whose retained artifact input appeared as a trigger in this batch.
+    /// Ordinary resident roots retain their established turn behavior.
+    pub fn prepare_turn_values_with_activation_triggers(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+        trigger_inputs: &[mech_core::CellSlotId],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.select_activation_roots(trigger_inputs);
         self.prepare_installed_turn(before_epoch, working_epoch)
     }
 
@@ -743,6 +1056,9 @@ impl ReactiveInstance {
         if self.plan.has_external_steps() {
             return Err(ResidentExecutionError::ExternalSummaryRequired);
         }
+        if !self.plan.has_only_kernel_steps() {
+            return self.prepare_turn(inputs)?.publish().map(|_| ());
+        }
         if self.candidate_active {
             return Err(ResidentExecutionError::ActiveCandidate);
         }
@@ -789,7 +1105,12 @@ impl ReactiveInstance {
             .enumerate()
             .filter_map(|(index, step)| match step {
                 ActivatedTurnStep::Kernel(node) => Some((index, node)),
-                ActivatedTurnStep::External(_) => None,
+                ActivatedTurnStep::External(_)
+                | ActivatedTurnStep::Match(_)
+                | ActivatedTurnStep::Recur(_)
+                | ActivatedTurnStep::Suspend(_)
+                | ActivatedTurnStep::Publish(_)
+                | ActivatedTurnStep::Comprehension(_) => None,
             })
             .filter(|(_, node)| {
                 node.write.storage == ResidentStorageClass::State
@@ -833,7 +1154,7 @@ impl ReactiveInstance {
         // their epoch/execution evidence so a failed turn cannot consume the
         // next turn's exact candidate headroom.
         self.state.abort_payloads(working_epoch);
-        for index in 0..self.plan.steps.len() {
+        for index in 0..self.plan.topology.linear_node_order.len() {
             if !bit_is_set(&self.workspace.executed_bits, index) {
                 continue;
             }
@@ -844,6 +1165,17 @@ impl ReactiveInstance {
                     None,
                 ),
                 ActivatedTurnStep::External(node) => (None, Some(node.captured_payload)),
+                ActivatedTurnStep::Match(node) => (Some(node.write.region), None),
+                ActivatedTurnStep::Recur(node) => (Some(node.write.region), None),
+                ActivatedTurnStep::Suspend(_) => (None, None),
+                ActivatedTurnStep::Publish(publication) => {
+                    let region = match &self.plan.steps[publication.target.get() as usize] {
+                        ActivatedTurnStep::Match(control) => Some(control.write.region),
+                        _ => None,
+                    };
+                    (region, None)
+                }
+                ActivatedTurnStep::Comprehension(node) => (Some(node.write.region), None),
             };
             if let Some(region) = scratch {
                 self.workspace.scratch.discard_payload_write(region);
@@ -852,10 +1184,34 @@ impl ReactiveInstance {
                 self.workspace.effect_payloads.discard_payload_write(region);
             }
         }
+        for (index, step) in self.plan.steps.iter().enumerate() {
+            if bit_is_set(&self.workspace.continuation_publications, index)
+                && let ActivatedTurnStep::Match(control) = step
+            {
+                self.workspace
+                    .scratch
+                    .discard_payload_write(control.write.region);
+            }
+        }
+        for step in &self.plan.steps {
+            if let ActivatedTurnStep::Kernel(node) = step
+                && let Some(previous) = node.rmw_previous
+            {
+                self.workspace.rmw_previous.discard_payload_write(previous);
+            }
+        }
         self.state.abort(working_epoch);
         self.workspace.initialized_output_bits.fill(0);
         self.workspace.all_outputs_initialized = false;
         self.workspace.effect_intents.clear();
+        self.workspace.continuation_candidates.fill(None);
+        self.workspace.completed_continuations.fill(0);
+        self.workspace.continuation_publications.fill(0);
+        self.workspace.continuation_capture_frames.clear();
+        self.workspace.active_resume_state = None;
+        self.workspace
+            .candidate_output_ready
+            .clone_from(&self.output_ready);
         self.next_epoch = Some(working_epoch);
         self.candidate_active = false;
         self.candidate_epoch = None;
@@ -1000,11 +1356,47 @@ impl ReactiveInstance {
     }
 
     fn begin_scheduler_workspace(&mut self) {
+        if self.ready_continuations.is_empty() {
+            self.completed_continuation_roots.fill(0);
+        }
         self.workspace.executed_bits.fill(0);
+        self.workspace.suppressed_activation_bits.fill(0);
         self.workspace.touched_slots.clear();
         self.workspace.changed_slots.clear();
         self.workspace.effect_intents.clear();
+        self.workspace.continuation_candidates.fill(None);
+        self.workspace.completed_continuations.fill(0);
+        self.workspace.continuation_publications.fill(0);
+        self.workspace.continuation_capture_frames.clear();
+        self.workspace.active_resume_state = None;
+        self.workspace
+            .candidate_output_ready
+            .clone_from(&self.output_ready);
         self.seed_dirty_bits();
+    }
+
+    fn publish_continuation_candidates(&mut self) {
+        for index in 0..self.plan.steps.len() {
+            let node = ActivatedNodeIndex(index as u32);
+            if bit_is_set(&self.workspace.continuation_publications, index) {
+                set_bit(&mut self.published_continuations, index);
+            }
+            if bit_is_set(&self.workspace.completed_continuations, index) {
+                self.continuations[index] = None;
+                self.ready_continuations.retain(|ready| *ready != node);
+                set_bit(&mut self.completed_continuation_roots, index);
+            }
+            if let Some(value) = self.workspace.continuation_candidates[index].take() {
+                self.continuations[index] = Some(value);
+                self.ready_continuations.retain(|ready| *ready != node);
+                self.ready_continuations.push_back(node);
+                clear_bit(&mut self.completed_continuation_roots, index);
+            }
+        }
+        self.output_ready
+            .clone_from(&self.workspace.candidate_output_ready);
+        self.workspace.completed_continuations.fill(0);
+        self.workspace.continuation_publications.fill(0);
     }
 
     fn seed_dirty_bits(&mut self) {
@@ -1022,6 +1414,131 @@ impl ReactiveInstance {
                 &mut self.workspace.dirty_bits,
                 &self.plan.topology.mandatory_candidate_mask,
             );
+        }
+    }
+
+    fn select_activation_roots(&mut self, trigger_inputs: &[mech_core::CellSlotId]) {
+        for (node, _, sampled, updates) in &self.plan.activation_turn_inputs {
+            clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            set_bit(
+                &mut self.workspace.suppressed_activation_bits,
+                node.get() as usize,
+            );
+            for sampled_node in sampled.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    sampled_node.get() as usize,
+                );
+            }
+            for update in updates.iter() {
+                if *update != *node
+                    && !sampled.contains(update)
+                    && bit_is_set(&self.plan.topology.turn_root_mask, update.get() as usize)
+                {
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        update.get() as usize,
+                    );
+                    continue;
+                }
+                clear_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    update.get() as usize,
+                );
+            }
+        }
+        for (node, inputs, sampled, updates) in &self.plan.activation_turn_inputs {
+            // An input-free scope has no host fact that can name its trigger.
+            // Every explicit turn therefore admits it; initial publication uses
+            // the dedicated preparation path above to keep it dormant.
+            let active =
+                inputs.is_empty() || inputs.iter().any(|input| trigger_inputs.contains(input));
+            if active {
+                set_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+                clear_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    node.get() as usize,
+                );
+                for sampled_node in sampled.iter() {
+                    set_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        sampled_node.get() as usize,
+                    );
+                }
+                for update in updates.iter() {
+                    set_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        update.get() as usize,
+                    );
+                }
+            }
+        }
+    }
+
+    fn clear_activation_roots(&mut self) {
+        for (node, _, sampled, updates) in &self.plan.activation_turn_inputs {
+            clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            set_bit(
+                &mut self.workspace.suppressed_activation_bits,
+                node.get() as usize,
+            );
+            for sampled_node in sampled.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    sampled_node.get() as usize,
+                );
+            }
+            for update in updates.iter() {
+                if *update != *node
+                    && !sampled.contains(update)
+                    && bit_is_set(&self.plan.topology.turn_root_mask, update.get() as usize)
+                {
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        update.get() as usize,
+                    );
+                    continue;
+                }
+                clear_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    update.get() as usize,
+                );
+            }
+        }
+        let Some(ready) = self.ready_continuations.front().copied() else {
+            return;
+        };
+        set_bit(&mut self.workspace.dirty_bits, ready.get() as usize);
+        clear_bit(
+            &mut self.workspace.suppressed_activation_bits,
+            ready.get() as usize,
+        );
+        for (_, _, _, updates) in &self.plan.activation_turn_inputs {
+            // Reopen an activation-owned cone only when the selected
+            // continuation itself belongs to that activation. Mere downstream
+            // convergence with an ordinary continuation must stay suppressed.
+            if !updates.contains(&ready) {
+                continue;
+            }
+            for update in updates.iter().copied().filter(|update| {
+                *update == ready
+                    || bit_is_set(
+                        &self.plan.topology.same_turn_dependency_masks[ready.get() as usize],
+                        update.get() as usize,
+                    )
+            }) {
+                set_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                clear_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    update.get() as usize,
+                );
+            }
         }
     }
 
@@ -1074,7 +1591,7 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<(), ResidentExecutionError> {
-        if !self.plan.has_external_steps() {
+        if self.plan.has_only_kernel_steps() {
             return self.execute_pure_candidate(before_epoch, working_epoch, probe);
         }
         if self.plan.topology.word_len() == 1 {
@@ -1090,6 +1607,7 @@ impl ReactiveInstance {
                 self.workspace.executed_bits[0] = executed;
                 if changed {
                     dirty |= entry.downstream;
+                    dirty &= !self.workspace.suppressed_activation_bits[0];
                 }
             }
             self.workspace.dirty_bits[0] = dirty;
@@ -1113,6 +1631,14 @@ impl ReactiveInstance {
                         &mut self.workspace.dirty_bits,
                         &self.plan.topology.same_turn_downstream_masks[index],
                     );
+                    for (dirty, suppressed) in self
+                        .workspace
+                        .dirty_bits
+                        .iter_mut()
+                        .zip(&self.workspace.suppressed_activation_bits)
+                    {
+                        *dirty &= !suppressed;
+                    }
                 }
             }
             if !self.workspace.all_outputs_initialized
@@ -1184,6 +1710,56 @@ impl ReactiveInstance {
         self.validate_constraints(working_epoch)
     }
 
+    fn unpublished_continuation(&self, index: usize) -> bool {
+        matches!(
+            self.plan.steps.get(index),
+            Some(ActivatedTurnStep::Match(control))
+                if control.continuation
+                    && !bit_is_set(&self.workspace.continuation_publications, index)
+                    && !bit_is_set(&self.published_continuations, index)
+                    && (!bit_is_set(&self.workspace.initialized_output_bits, index)
+                        || self.workspace.continuation_candidates[index].is_some()
+                        || (self.continuations[index].is_some()
+                            && !bit_is_set(&self.workspace.completed_continuations, index)))
+        )
+    }
+
+    fn match_depends_on_unpublished_continuation(
+        &self,
+        current_index: usize,
+        matched: &ActivatedMatchNode,
+    ) -> bool {
+        self.plan.steps.iter().enumerate().any(|(index, step)| {
+            if index == current_index || !self.unpublished_continuation(index) {
+                return false;
+            }
+            let ActivatedTurnStep::Match(unpublished) = step else {
+                return false;
+            };
+            std::iter::once(matched.scrutinee)
+                .chain(matched.capture_sources.iter().copied())
+                .any(|source| {
+                    super::read_location_depends_on_match(
+                        &self.plan,
+                        source,
+                        index,
+                        unpublished.write.region,
+                    )
+                })
+        })
+    }
+
+    fn step_depends_on_unpublished_continuation(&self, current_index: usize) -> bool {
+        self.plan.steps.iter().enumerate().any(|(index, _)| {
+            index != current_index
+                && self.unpublished_continuation(index)
+                && bit_is_set(
+                    &self.plan.topology.same_turn_dependency_masks[index],
+                    current_index,
+                )
+        })
+    }
+
     fn materialize_outputs(
         &mut self,
         before_epoch: InstanceEpoch,
@@ -1192,6 +1768,27 @@ impl ReactiveInstance {
     ) -> Result<(), ResidentExecutionError> {
         for index in 0..self.plan.output_materializations.len() {
             let materialization = self.plan.output_materializations[index];
+            if materialization.producer.is_some_and(|producer| {
+                bit_is_set(
+                    &self.workspace.suppressed_activation_bits,
+                    producer.get() as usize,
+                )
+            }) {
+                continue;
+            }
+            let suspended = self.plan.steps.iter().enumerate().any(|(step, node)| {
+                self.unpublished_continuation(step)
+                    && matches!(node, ActivatedTurnStep::Match(control)
+                    if output_materialization_depends_on_match(
+                        &self.plan,
+                        materialization,
+                        step,
+                        control.write.region,
+                    ))
+            });
+            if suspended {
+                continue;
+            }
             let target = materialization.target;
             let target_region = self.plan.slots[target.get() as usize].region;
             match materialization.source {
@@ -1209,18 +1806,26 @@ impl ReactiveInstance {
                     })?;
                     self.state.tag(target, candidate, working_epoch);
                 }
-                ResidentReadLocation::Input(source) => {
+                ResidentReadLocation::Input(source)
+                | ResidentReadLocation::LexicalInput(source) => {
                     let candidate = self.state.candidate_buffer(target, before_epoch);
-                    copy_input(
-                        &mut self.state.buffers[candidate],
-                        target_region,
-                        self.workspace.input.read(source),
-                    )
-                    .map_err(|error| {
-                        error.at(ResidentExecutionError::InvalidOutputMaterialization {
-                            slot: target,
-                        })
-                    })?;
+                    let value = if matches!(
+                        materialization.source,
+                        ResidentReadLocation::LexicalInput(_)
+                    ) {
+                        lexical_capture(&self.workspace.continuation_capture_frames, source)
+                            .map(super::OwnedResidentValue::as_ref)
+                            .unwrap_or_else(|| self.workspace.input.read(source))
+                    } else {
+                        self.workspace.input.read(source)
+                    };
+                    copy_input(&mut self.state.buffers[candidate], target_region, value).map_err(
+                        |error| {
+                            error.at(ResidentExecutionError::InvalidOutputMaterialization {
+                                slot: target,
+                            })
+                        },
+                    )?;
                     self.state.tag(target, candidate, working_epoch);
                 }
                 ResidentReadLocation::Scratch(source) => {
@@ -1260,6 +1865,17 @@ impl ReactiveInstance {
                     self.workspace.changed_slots.push(slot);
                 }
             }
+            let physical_target = self.plan.slots[target.get() as usize].physical_index;
+            for (output, ready) in self
+                .plan
+                .outputs
+                .iter()
+                .zip(self.workspace.candidate_output_ready.iter_mut())
+            {
+                if output.slot == physical_target {
+                    *ready = true;
+                }
+            }
         }
         Ok(())
     }
@@ -1280,6 +1896,42 @@ impl ReactiveInstance {
             return Ok(());
         }
         for constraint in &self.plan.constraints {
+            if constraint.producer.is_some_and(|producer| {
+                bit_is_set(
+                    &self.workspace.suppressed_activation_bits,
+                    producer.get() as usize,
+                )
+            }) {
+                continue;
+            }
+            let unpublished = self.plan.steps.iter().enumerate().any(|(index, step)| {
+                if !self.unpublished_continuation(index) {
+                    return false;
+                }
+                let ActivatedTurnStep::Match(control) = step else {
+                    return false;
+                };
+                let source = match constraint.predicate {
+                    ResidentReadLocation::State { slot, .. } => self
+                        .plan
+                        .output_materializations
+                        .iter()
+                        .find(|materialization| materialization.target == slot)
+                        .map_or(constraint.predicate, |materialization| {
+                            materialization.source
+                        }),
+                    source => source,
+                };
+                super::read_location_depends_on_match(
+                    &self.plan,
+                    source,
+                    index,
+                    control.write.region,
+                )
+            });
+            if unpublished {
+                continue;
+            }
             let predicate = match constraint.predicate {
                 ResidentReadLocation::State { slot, region }
                     if staged_outputs.is_some_and(|outputs| outputs.contains(&slot)) =>
@@ -1347,6 +1999,7 @@ impl ReactiveInstance {
                 &mut ignored_probe,
             );
         }
+        budget::charge_planning_step()?;
         if node.write.storage != ResidentStorageClass::State {
             return Err(ResidentExecutionError::InvalidWrite {
                 node: node.artifact_node,
@@ -1386,6 +2039,7 @@ impl ReactiveInstance {
                 locations: &self.plan.reads[node.reads.start as usize..node.reads.end as usize],
                 activation: &self.activation,
                 input: &self.workspace.input,
+                captures: &self.workspace.continuation_capture_frames,
                 state,
                 scratch: &self.workspace.scratch,
                 epoch: working_epoch,
@@ -1408,6 +2062,7 @@ impl ReactiveInstance {
                     locations: &self.plan.reads[node.reads.start as usize..node.reads.end as usize],
                     activation: &self.activation,
                     input: &self.workspace.input,
+                    captures: &self.workspace.continuation_capture_frames,
                     scratch: &self.workspace.scratch,
                 };
                 node.kernel.execute(&inputs, output)
@@ -1429,13 +2084,427 @@ impl ReactiveInstance {
     }
 
     #[inline(always)]
-    fn execute_step(
+    pub(super) fn execute_activation_control(
+        &mut self,
+        index: ActivatedNodeIndex,
+    ) -> Result<(), ResidentExecutionError> {
+        let mut probe = ResidentStructuralProbe::default();
+        self.execute_step(index, InstanceEpoch::ZERO, InstanceEpoch::ZERO, &mut probe)?;
+        Ok(())
+    }
+
+    pub(super) fn execute_step(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
+        self.execute_step_with_live_demand(node_index, before_epoch, working_epoch, probe, 0, 0)
+    }
+
+    fn live_continuation_footprint(
+        &self,
+        meter: &mut budget::ResidentBudgetMeter,
+    ) -> Option<(u64, u64)> {
+        fn account(
+            value: &super::OwnedResidentValue,
+            schemas: &mech_core::SchemaTable,
+            meter: &mut budget::ResidentBudgetMeter,
+            bytes: &mut u64,
+            nodes: &mut u64,
+        ) -> Option<()> {
+            let footprint = resident_frame_value_footprint(value.as_ref(), schemas, meter)?;
+            *bytes = bytes.checked_add(footprint.0)?;
+            *nodes = nodes.checked_add(footprint.1)?;
+            Some(())
+        }
+        let mut bytes = 0_u64;
+        let mut nodes = 0_u64;
+        for continuation in self.continuations.iter().flatten() {
+            let footprint =
+                resident_continuation_footprint(continuation, &self.plan.schemas, meter)?;
+            bytes = bytes.checked_add(footprint.0)?;
+            nodes = nodes.checked_add(footprint.1)?;
+        }
+        for continuation in self.workspace.continuation_candidates.iter().flatten() {
+            let footprint =
+                resident_continuation_footprint(continuation, &self.plan.schemas, meter)?;
+            bytes = bytes.checked_add(footprint.0)?;
+            nodes = nodes.checked_add(footprint.1)?;
+        }
+        if let Some(state) = self.workspace.active_resume_state.as_ref() {
+            account(state, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
+        }
+        for frame in &self.workspace.continuation_capture_frames {
+            for (_, value) in frame.iter() {
+                account(value, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
+            }
+        }
+        Some((bytes, nodes))
+    }
+
+    pub(super) fn execute_step_with_live_demand(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        if self.step_depends_on_unpublished_continuation(node_index.get() as usize) {
+            // A dirty root can also be downstream of a suspended FSM through
+            // another live input. Do not let any such kernel consume the
+            // unpublished match region, especially when it writes state.
+            return Ok(false);
+        }
+        if !matches!(
+            self.plan.steps[node_index.get() as usize],
+            ActivatedTurnStep::Kernel(_)
+        ) {
+            budget::charge_planning_step()?;
+        }
+        if matches!(
+            self.plan.steps[node_index.get() as usize],
+            ActivatedTurnStep::Comprehension(_)
+        ) {
+            if live_bytes == 0 && live_nodes == 0 {
+                return self.execute_comprehension(node_index, before_epoch, working_epoch, probe);
+            }
+            return self.execute_comprehension_with_live_demand(
+                node_index,
+                before_epoch,
+                working_epoch,
+                probe,
+                live_bytes,
+                live_nodes,
+            );
+        }
+        if matches!(
+            self.plan.steps[node_index.get() as usize],
+            ActivatedTurnStep::Match(_)
+        ) {
+            let ActivatedTurnStep::Match(matched) = &self.plan.steps[node_index.get() as usize]
+            else {
+                unreachable!()
+            };
+            if matched.continuation
+                && self.continuations[node_index.get() as usize].is_none()
+                && !self.ready_continuations.is_empty()
+                && bit_is_set(
+                    &self.completed_continuation_roots,
+                    node_index.get() as usize,
+                )
+            {
+                // A continuation drain belongs to the host turn that created
+                // the queue. Roots that already completed in that drain stay
+                // complete until the next ordinary host turn begins.
+                return Ok(false);
+            }
+            if matched.continuation
+                && self.continuations[node_index.get() as usize].is_none()
+                && self
+                    .match_depends_on_unpublished_continuation(node_index.get() as usize, matched)
+            {
+                // A fresh continuation must not persist scratch defaults from
+                // an upstream FSM that has not published yet. Its real result
+                // will dirty this match when the upstream continuation resumes.
+                return Ok(false);
+            }
+            if matched.continuation
+                && self.continuations[node_index.get() as usize].is_some()
+                && self.ready_continuations.front().copied() != Some(node_index)
+            {
+                // One drain resumes only the selected continuation. Other
+                // ready roots keep their state and lexical captures intact.
+                return Ok(false);
+            }
+            let node = matched.artifact_node;
+            let resuming = self.ready_continuations.front().copied() == Some(node_index)
+                && self.continuations[node_index.get() as usize].is_some();
+            let continuation = matched.continuation;
+            let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+            facts.additional_demand.turn_peak_bytes = live_bytes;
+            facts.additional_demand.retained_nodes = live_nodes;
+            let turn_plan = crate::memory_planner::plan_current_resident_turn(
+                &self.plan.memory_plan,
+                matched.budget_node,
+                &facts,
+            )
+            .map_err(|_| ResidentExecutionError::Kernel {
+                node,
+                error: ResidentKernelError::InvalidShape,
+            })?;
+            if !turn_plan.budget_violations.is_empty() {
+                return Err(ResidentExecutionError::Kernel {
+                    node,
+                    error: ResidentKernelError::InvalidShape,
+                });
+            }
+            let turn_plan = std::sync::Arc::new(turn_plan);
+            let (continuation_bytes, continuation_nodes, continuation_work) =
+                budget::with_resident_turn_plan(turn_plan.clone(), || {
+                    let mut meter = budget::ResidentBudgetMeter::default();
+                    let (bytes, nodes) = if continuation {
+                        self.live_continuation_footprint(&mut meter).ok_or(
+                            ResidentExecutionError::Kernel {
+                                node,
+                                error: ResidentKernelError::InvalidShape,
+                            },
+                        )?
+                    } else {
+                        (0, 0)
+                    };
+                    Ok::<_, ResidentExecutionError>((bytes, nodes, meter.estimate().compute_work()))
+                })?;
+            let body_live_bytes = live_bytes.checked_add(continuation_bytes).ok_or(
+                ResidentExecutionError::Kernel {
+                    node,
+                    error: ResidentKernelError::InvalidShape,
+                },
+            )?;
+            let body_live_nodes = live_nodes.checked_add(continuation_nodes).ok_or(
+                ResidentExecutionError::Kernel {
+                    node,
+                    error: ResidentKernelError::InvalidShape,
+                },
+            )?;
+            if resuming {
+                self.workspace
+                    .continuation_capture_frames
+                    .try_reserve(1)
+                    .map_err(|_| ResidentExecutionError::Kernel {
+                        node,
+                        error: ResidentKernelError::InvalidShape,
+                    })?;
+                let saved = self.continuations[node_index.get() as usize]
+                    .take()
+                    .expect("selected continuation remains available");
+                self.workspace.active_resume_state = Some(saved.state);
+                self.workspace
+                    .continuation_capture_frames
+                    .push(saved.captures);
+            }
+            let result = budget::with_resident_turn_plan(turn_plan, || {
+                let result = budget::with_control_work_budget(|| {
+                    self.execute_match_expression(
+                        node_index,
+                        before_epoch,
+                        working_epoch,
+                        probe,
+                        body_live_bytes,
+                        body_live_nodes,
+                        continuation_work,
+                    )
+                });
+                let ActivatedTurnStep::Match(control) = &self.plan.steps[node_index.get() as usize]
+                else {
+                    unreachable!()
+                };
+                // The selected yield has been copied into its enclosing result.
+                // No block-local payload survives success, failure or a later abort.
+                for region in &control.locals {
+                    self.workspace.scratch.discard_payload_write(*region);
+                }
+                result
+            });
+            if resuming {
+                let captures = self
+                    .workspace
+                    .continuation_capture_frames
+                    .pop()
+                    .expect("selected continuation capture frame remains present");
+                let state = self
+                    .workspace
+                    .active_resume_state
+                    .take()
+                    .expect("selected continuation state remains present");
+                self.continuations[node_index.get() as usize] =
+                    Some(super::ResidentContinuation { state, captures });
+            }
+            return result;
+        }
+        if let ActivatedTurnStep::Recur(call) = self.plan.steps[node_index.get() as usize] {
+            return self.execute_recursive_call(
+                node_index,
+                call,
+                before_epoch,
+                working_epoch,
+                probe,
+                live_bytes,
+                live_nodes,
+            );
+        }
+        if let ActivatedTurnStep::Suspend(suspension) = self.plan.steps[node_index.get() as usize] {
+            let target = suspension.target.get() as usize;
+            let capture_sources = match &self.plan.steps[target] {
+                ActivatedTurnStep::Match(control) => control.capture_sources.clone(),
+                _ => {
+                    return Err(ResidentExecutionError::Kernel {
+                        node: suspension.artifact_node,
+                        error: ResidentKernelError::InvalidInput,
+                    });
+                }
+            };
+            let fail = |error| ResidentExecutionError::Kernel {
+                node: suspension.artifact_node,
+                error,
+            };
+            let mut capture_meter = budget::ResidentBudgetMeter::default();
+            let (capture_bytes, capture_nodes) = core::iter::once(suspension.argument)
+                .chain(
+                    capture_sources
+                        .iter()
+                        .copied()
+                        .filter(|source| !matches!(source, ResidentReadLocation::Input(_))),
+                )
+                .try_fold((0_u64, 0_u64), |(bytes, nodes), source| {
+                    let value = self.read_location(source, working_epoch)?;
+                    let footprint = resident_frame_value_footprint(
+                        value,
+                        &self.plan.schemas,
+                        &mut capture_meter,
+                    )?;
+                    Some((
+                        bytes.checked_add(footprint.0)?,
+                        nodes.checked_add(footprint.1)?,
+                    ))
+                })
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_bytes = live_bytes
+                .checked_add(capture_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let retained_nodes = live_nodes
+                .checked_add(capture_nodes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let capture_work = capture_meter
+                .estimate()
+                .compute_work()
+                .checked_add(capture_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            (|| -> Result<(), ResidentKernelError> {
+                budget::PreparedKernel::new(
+                    (),
+                    budget::resident_cost! {
+                        compute_work: capture_work,
+                        temporary_bytes: peak_bytes,
+                        cloned_bytes: capture_bytes,
+                        retained_nodes,
+                        ..budget::KernelCostEstimate::default()
+                    },
+                )
+                .admit_control()?
+                .into_plan();
+                Ok(())
+            })()
+            .map_err(fail)?;
+            let state = self
+                .read_location(suspension.argument, working_epoch)
+                .map(owned_resident_value)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+            let captures = capture_sources
+                .iter()
+                .copied()
+                .filter(|source| !matches!(source, ResidentReadLocation::Input(_)))
+                .map(|source| {
+                    self.read_location(source, working_epoch)
+                        .map(|value| (source, owned_resident_value(value)))
+                        .ok_or(ResidentExecutionError::Kernel {
+                            node: suspension.artifact_node,
+                            error: ResidentKernelError::InvalidInput,
+                        })
+                })
+                .collect::<Result<Box<[_]>, _>>()?;
+            self.workspace.continuation_candidates[target] =
+                Some(super::ResidentContinuation { state, captures });
+            clear_bit(&mut self.workspace.completed_continuations, target);
+            return Ok(false);
+        }
+        if let ActivatedTurnStep::Publish(publication) = self.plan.steps[node_index.get() as usize]
+        {
+            let fail = |error| ResidentExecutionError::Kernel {
+                node: publication.artifact_node,
+                error,
+            };
+            let target = publication.target.get() as usize;
+            let write = match &self.plan.steps[target] {
+                ActivatedTurnStep::Match(control)
+                    if control.write.storage == ResidentStorageClass::Scratch =>
+                {
+                    control.write
+                }
+                _ => return Err(fail(ResidentKernelError::InvalidInput)),
+            };
+            let mut publication_meter = budget::ResidentBudgetMeter::default();
+            let (bytes, nodes) = self
+                .read_location(publication.value, working_epoch)
+                .and_then(|value| {
+                    resident_frame_value_footprint(
+                        value,
+                        &self.plan.schemas,
+                        &mut publication_meter,
+                    )
+                })
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+            let (replaced_bytes, replaced_nodes) = resident_frame_value_footprint(
+                self.workspace.scratch.read(write.region),
+                &self.plan.schemas,
+                &mut publication_meter,
+            )
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let cloned_bytes = bytes
+                .checked_mul(2)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let retained_nodes = nodes
+                .checked_mul(2)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_bytes = live_bytes
+                .checked_add(cloned_bytes)
+                .and_then(|bytes| bytes.checked_add(replaced_bytes))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let retained_nodes = live_nodes
+                .checked_add(retained_nodes)
+                .and_then(|nodes| nodes.checked_add(replaced_nodes))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let publication_work = publication_meter
+                .estimate()
+                .compute_work()
+                .checked_add(cloned_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            (|| -> Result<(), ResidentKernelError> {
+                budget::PreparedKernel::new(
+                    (),
+                    budget::resident_cost! {
+                        compute_work: publication_work,
+                        temporary_bytes: peak_bytes,
+                        cloned_bytes,
+                        retained_nodes,
+                        ..budget::KernelCostEstimate::default()
+                    },
+                )
+                .admit_control()?
+                .into_plan();
+                Ok(())
+            })()
+            .map_err(fail)?;
+            let value = self
+                .read_location(publication.value, working_epoch)
+                .map(owned_resident_value)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+            let unchanged =
+                resident_values_equal(self.workspace.scratch.read(write.region), value.as_ref());
+            copy_input(&mut self.workspace.scratch, write.region, value.as_ref()).map_err(
+                |error| {
+                    error.at(ResidentExecutionError::Kernel {
+                        node: publication.artifact_node,
+                        error: ResidentKernelError::InvalidOutput,
+                    })
+                },
+            )?;
+            set_bit(&mut self.workspace.continuation_publications, target);
+            return Ok(!unchanged);
+        }
         if matches!(
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::External(_)
@@ -1443,7 +2512,1385 @@ impl ReactiveInstance {
             self.stage_external(node_index, working_epoch)?;
             return Ok(false);
         }
-        self.execute_kernel(node_index, before_epoch, working_epoch, probe)
+        self.execute_kernel_with_live_demand(
+            node_index,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+        )
+    }
+
+    fn execute_match_expression(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        body_live_bytes: u64,
+        body_live_nodes: u64,
+        continuation_work: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let resume_state = self.workspace.active_resume_state.take();
+        let result = self.execute_match_expression_with_state(
+            node_index,
+            before_epoch,
+            working_epoch,
+            probe,
+            body_live_bytes,
+            body_live_nodes,
+            continuation_work,
+            resume_state.as_ref(),
+        );
+        self.workspace.active_resume_state = resume_state;
+        result
+    }
+
+    fn execute_match_expression_with_state(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        body_live_bytes: u64,
+        body_live_nodes: u64,
+        continuation_work: u64,
+        resume_state: Option<&super::OwnedResidentValue>,
+    ) -> Result<bool, ResidentExecutionError> {
+        let index = node_index.get() as usize;
+        let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
+            unreachable!()
+        };
+        let node = matched.artifact_node;
+        let budget_node = matched.budget_node;
+        let write = matched.write;
+        let continuation = matched.continuation;
+        let arm_count = matched.arms.len();
+        let fail = || ResidentExecutionError::Kernel {
+            node,
+            error: ResidentKernelError::InvalidInput,
+        };
+        let kernel_fail = |error| ResidentExecutionError::Kernel { node, error };
+        let recursive_scrutinee = self
+            .workspace
+            .recursive_scrutinees
+            .iter()
+            .rev()
+            .find_map(|frame| (frame.target == node_index).then_some(frame.argument));
+        let scrutinee_source = recursive_scrutinee.unwrap_or(matched.scrutinee);
+        let continuation_scrutinee = if recursive_scrutinee.is_none()
+            && matched.continuation
+            && self.ready_continuations.front().copied() == Some(node_index)
+        {
+            resume_state
+        } else {
+            None
+        };
+        let scrutinee_schema = matched.scrutinee_schema;
+        let scrutinee_shape_values = matched.scrutinee_shape_values.clone();
+        let structural_work = matched.arms.iter().try_fold(0u64, |total, arm| {
+            let super::ActivatedMatchPattern::Structural { work, .. } = &arm.pattern else {
+                return Some(total);
+            };
+            total.checked_add(*work)
+        });
+        // Arms are attempted in order and release their descent copies before
+        // the next arm. Only the deepest arm's copies can coexist.
+        let structural_clone_multiplicity = peak_structural_clone_depth(&matched.arms);
+        let structural_dynamic_target_depth = matched
+            .arms
+            .iter()
+            .try_fold(0u64, |depth, arm| -> Result<u64, ResidentKernelError> {
+                let super::ActivatedMatchPattern::Structural { pattern, .. } = &arm.pattern else {
+                    return Ok(depth);
+                };
+                Ok(
+                    depth.max(comprehension_execution::pattern_dynamic_target_depth(
+                        pattern,
+                        &self.plan.schemas,
+                    )?),
+                )
+            })
+            .map_err(kernel_fail)?;
+        let structural_binding_count = matched.arms.iter().try_fold(0u64, |total, arm| {
+            let super::ActivatedMatchPattern::Structural { binding_count, .. } = &arm.pattern
+            else {
+                return Some(total);
+            };
+            total.checked_add(*binding_count)
+        });
+        let structural_equality_count = matched.arms.iter().try_fold(0u64, |total, arm| {
+            let super::ActivatedMatchPattern::Structural { equality_count, .. } = &arm.pattern
+            else {
+                return Some(total);
+            };
+            total.checked_add(*equality_count)
+        });
+        let structural_snapshot_finalization_count =
+            matched.arms.iter().try_fold(0u64, |total, arm| {
+                let super::ActivatedMatchPattern::Structural {
+                    snapshot_finalization_count,
+                    ..
+                } = &arm.pattern
+                else {
+                    return Some(total);
+                };
+                total.checked_add(*snapshot_finalization_count)
+            });
+        let mut structural_scrutinee = None;
+        // This scope outlives every selected guard and body step. Repeated
+        // measurements of managed locals must consume cumulative control work.
+        let mut local_meter = budget::ResidentBudgetMeter::default();
+        for arm_index in 0..arm_count {
+            let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
+                unreachable!()
+            };
+            let arm = &matched.arms[arm_index];
+            let pattern = arm.pattern.clone();
+            let binding_regions = arm.binding_regions.clone();
+            let guard_regions = arm.guard_regions.clone();
+            let guard = arm.guard.clone();
+            let body = arm.body.clone();
+            let pattern_matches = match pattern {
+                super::ActivatedMatchPattern::Literal(literal) => {
+                    let scrutinee = continuation_scrutinee
+                        .as_ref()
+                        .map(|value| value.as_ref())
+                        .or_else(|| self.read_location(scrutinee_source, working_epoch))
+                        .ok_or_else(fail)?;
+                    match (
+                        scrutinee,
+                        self.read_location(literal, working_epoch)
+                            .ok_or_else(fail)?,
+                    ) {
+                        (
+                            ResidentValueRef::Bool([left @ (0 | 1)]),
+                            ResidentValueRef::Bool([right @ (0 | 1)]),
+                        ) => left == right,
+                        (ResidentValueRef::Index([left]), ResidentValueRef::Index([right])) => {
+                            left == right
+                        }
+                        (ResidentValueRef::F64([left]), ResidentValueRef::F64([right])) => {
+                            left == right
+                        }
+                        (
+                            ResidentValueRef::Snapshot([Some(left)]),
+                            ResidentValueRef::Snapshot([Some(right)]),
+                        ) => {
+                            let left_schema = left
+                                .validate_against(&self.plan.schemas)
+                                .map_err(|_| fail())?;
+                            let right_schema = right
+                                .validate_against(&self.plan.schemas)
+                                .map_err(|_| fail())?;
+                            if !crate::is_control_scalar_schema(left_schema)
+                                || left_schema != right_schema
+                            {
+                                return Err(fail());
+                            }
+                            left.language_eq(&self.plan.schemas, right, &self.plan.schemas)
+                                .map_err(|_| fail())?
+                        }
+                        _ => return Err(fail()),
+                    }
+                }
+                super::ActivatedMatchPattern::Wildcard | super::ActivatedMatchPattern::Bind => true,
+                super::ActivatedMatchPattern::Structural { pattern, .. } => {
+                    if structural_scrutinee.is_none() {
+                        let work = structural_work
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let clone_multiplicity = structural_clone_multiplicity;
+                        let dynamic_target_depth = structural_dynamic_target_depth;
+                        let equality_count = structural_equality_count
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let binding_count = structural_binding_count
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let snapshot_finalization_count = structural_snapshot_finalization_count
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let scrutinee = continuation_scrutinee
+                            .as_ref()
+                            .map(|value| value.as_ref())
+                            .or_else(|| self.read_location(scrutinee_source, working_epoch))
+                            .ok_or_else(fail)?;
+                        let shape_values = match scrutinee {
+                            ResidentValueRef::Snapshot([Some(value)]) => {
+                                value.shape().parameter_values().to_vec().into_boxed_slice()
+                            }
+                            _ => scrutinee_shape_values.clone(),
+                        };
+                        let structural_array = matches!(
+                            self.plan
+                                .schemas
+                                .get(scrutinee_schema)
+                                .ok_or_else(fail)?
+                                .body(),
+                            mech_core::SchemaBody::Matrix { .. }
+                        );
+                        let canonical_finalization_work =
+                            comprehension_execution::admit_pattern_item_materialization(
+                                scrutinee,
+                                scrutinee_source.region(),
+                                scrutinee_schema,
+                                structural_array,
+                                work,
+                                binding_count,
+                                equality_count,
+                                snapshot_finalization_count,
+                                clone_multiplicity,
+                                dynamic_target_depth,
+                                &self.plan.schemas,
+                            )
+                            .map_err(kernel_fail)?;
+                        let item = comprehension_execution::resident_pattern_item(
+                            scrutinee,
+                            scrutinee_source.region(),
+                            scrutinee_schema,
+                            &shape_values,
+                            &self.plan.schemas,
+                            structural_array,
+                        )
+                        .ok_or_else(fail)?;
+                        structural_scrutinee =
+                            Some((item, shape_values, canonical_finalization_work));
+                    }
+                    let (item, source_shape_values, canonical_finalization_work) =
+                        structural_scrutinee.as_ref().ok_or_else(fail)?;
+                    let matched = self.match_structural_pattern_item(
+                        node,
+                        &pattern,
+                        item,
+                        source_shape_values,
+                        *canonical_finalization_work,
+                        working_epoch,
+                    )?;
+                    matched
+                }
+            };
+            if !pattern_matches {
+                for region in &binding_regions {
+                    self.workspace.scratch.discard_payload_write(*region);
+                }
+                continue;
+            }
+            if let Some(guard) = guard {
+                let mut guard_live = ControlBlockLiveFootprint::default();
+                for step in guard.steps.iter() {
+                    self.execute_control_step_with_live_demand(
+                        node,
+                        &guard,
+                        step,
+                        &mut guard_live,
+                        &mut local_meter,
+                        (before_epoch, working_epoch),
+                        probe,
+                        (body_live_bytes, body_live_nodes),
+                    )?;
+                }
+                let guard_matches = match self.read_location(guard.yield_value, working_epoch) {
+                    Some(ResidentValueRef::Bool([1])) => true,
+                    Some(ResidentValueRef::Bool([0])) => false,
+                    _ => return Err(fail()),
+                };
+                for region in &guard_regions {
+                    self.workspace.scratch.discard_payload_write(*region);
+                }
+                if !guard_matches {
+                    for region in &binding_regions {
+                        self.workspace.scratch.discard_payload_write(*region);
+                    }
+                    continue;
+                }
+            }
+            let mut body_live = ControlBlockLiveFootprint::default();
+            for step in body.steps.iter() {
+                // Branch switches always initialize their selected locals; no
+                // sibling output participates in scheduling or initialization.
+                self.execute_control_step_with_live_demand(
+                    node,
+                    &body,
+                    step,
+                    &mut body_live,
+                    &mut local_meter,
+                    (before_epoch, working_epoch),
+                    probe,
+                    (body_live_bytes, body_live_nodes),
+                )?;
+            }
+            if continuation && self.workspace.continuation_candidates[index].is_some() {
+                let published = bit_is_set(&self.workspace.continuation_publications, index);
+                if published {
+                    set_bit(&mut self.workspace.initialized_output_bits, index);
+                }
+                return Ok(published);
+            }
+            if continuation {
+                set_bit(&mut self.workspace.completed_continuations, index);
+            }
+            let captured_yield = continuation_capture(
+                &self.workspace.continuation_capture_frames,
+                body.yield_value,
+            );
+            if let Some(captured) = captured_yield {
+                let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+                facts.additional_demand.turn_peak_bytes = body_live_bytes;
+                facts.additional_demand.retained_nodes = body_live_nodes;
+                facts.additional_demand.work.compute = continuation_work;
+                let publication_plan = crate::memory_planner::plan_current_resident_turn(
+                    &self.plan.memory_plan,
+                    budget_node,
+                    &facts,
+                )
+                .map_err(|_| kernel_fail(ResidentKernelError::InvalidShape))?;
+                if !publication_plan.budget_violations.is_empty() {
+                    return Err(kernel_fail(ResidentKernelError::InvalidShape));
+                }
+                return budget::with_resident_turn_plan(publication_plan, || {
+                    let target = if write.storage == ResidentStorageClass::Constant {
+                        &mut self.activation
+                    } else {
+                        &mut self.workspace.scratch
+                    };
+                    let unchanged =
+                        resident_values_equal(target.read(write.region), captured.as_ref());
+                    copy_input(target, write.region, captured.as_ref())
+                        .map_err(|error| error.at(fail()))?;
+                    let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
+                    set_bit(&mut self.workspace.initialized_output_bits, index);
+                    Ok(!initialized || !unchanged)
+                });
+            }
+            // The selected body's bindings and earlier results remain live
+            // through publication, including locals the final yield does not
+            // use. Replan the wrapper with those payloads before cloning the
+            // yield into its output.
+            let publication_locals = self
+                .resident_local_footprint(
+                    body.locals.iter().copied(),
+                    &self.plan.schemas,
+                    &mut local_meter,
+                )
+                .map_err(kernel_fail)?;
+            let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+            facts.additional_demand.turn_peak_bytes = body_live_bytes
+                .checked_add(publication_locals.retained_bytes)
+                .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+            facts.additional_demand.retained_nodes = body_live_nodes
+                .checked_add(publication_locals.node_count)
+                .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+            facts.additional_demand.work.compute = continuation_work;
+            let publication_plan = crate::memory_planner::plan_current_resident_turn(
+                &self.plan.memory_plan,
+                budget_node,
+                &facts,
+            )
+            .map_err(|_| kernel_fail(ResidentKernelError::InvalidShape))?;
+            if !publication_plan.budget_violations.is_empty() {
+                return Err(kernel_fail(ResidentKernelError::InvalidShape));
+            }
+            return budget::with_resident_turn_plan(publication_plan, || {
+                let converts_to_snapshot = write.region.kind == ResidentValueKind::Snapshot
+                    && body.yield_value.region().kind != ResidentValueKind::Snapshot;
+                let converted = if converts_to_snapshot {
+                    let target = if write.storage == ResidentStorageClass::Constant {
+                        &self.activation
+                    } else {
+                        &self.workspace.scratch
+                    };
+                    let prior = match target.read(write.region) {
+                        ResidentValueRef::Snapshot([Some(value)]) => Some(value),
+                        ResidentValueRef::Snapshot([None]) => None,
+                        _ => return Err(fail()),
+                    };
+                    let (prior_snapshot_nodes, prior_footprint_work) =
+                        match_conversion_prior_footprint(prior, &self.plan.schemas)
+                            .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
+                    let scope = target
+                        .prepare_payload_write(write.region)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    let source = self
+                        .read_location(body.yield_value, working_epoch)
+                        .ok_or_else(fail)?;
+                    let cost =
+                        crate::resident::numeric::resident_value_snapshot_materialization_cost(
+                            &self.plan.schemas,
+                            body.yield_layout.schema_id,
+                            &body.yield_layout.shape_instance,
+                            source,
+                        )
+                        .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
+                    (|| -> Result<(), ResidentKernelError> {
+                        budget::PreparedKernel::new(
+                            (),
+                            budget::resident_cost! {
+                                comparison_work: cost.comparison_work
+                                    .checked_add(prior_footprint_work.comparison_work())
+                                    .ok_or(ResidentKernelError::InvalidShape)?,
+                                compute_work: cost.compute_work
+                                    .checked_add(prior_footprint_work.compute_work())
+                                    .ok_or(ResidentKernelError::InvalidShape)?,
+                                output_elements: cost.output_elements,
+                                output_bytes: cost.persistent_bytes,
+                                temporary_bytes: cost.temporary_bytes,
+                                cloned_bytes: cost.cloned_bytes,
+                                retained_nodes: match_conversion_peak_retained_nodes(
+                                    prior_snapshot_nodes,
+                                    cost.retained_nodes,
+                                )?,
+                                ..budget::KernelCostEstimate::default()
+                            },
+                        )
+                        .admit_control()?
+                        .into_plan();
+                        Ok(())
+                    })()
+                    .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
+                    if let Some(scope) = &scope {
+                        scope
+                            .admit_snapshot_materialization(
+                                cost.persistent_bytes,
+                                cost.temporary_bytes,
+                            )
+                            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                        scope.start();
+                    }
+                    let converted = budget::with_payload_admission(
+                        scope.as_ref().map(|scope| scope.admission()),
+                        || {
+                            crate::resident::numeric::resident_value_to_snapshot(
+                                &self.plan.schemas,
+                                body.yield_layout.schema_id,
+                                &body.yield_layout.shape_instance,
+                                body.yield_layout.shape,
+                                source,
+                            )
+                        },
+                    );
+                    let value = match converted {
+                        Ok(value) => value,
+                        Err(error) => {
+                            let target = if write.storage == ResidentStorageClass::Constant {
+                                &mut self.activation
+                            } else {
+                                &mut self.workspace.scratch
+                            };
+                            target
+                                .abort_payload_write(write.region, scope)
+                                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                            return Err(ResidentExecutionError::Kernel { node, error });
+                        }
+                    };
+                    if value.schema() != self.plan.slots[write.slot.get() as usize].schema {
+                        let target = if write.storage == ResidentStorageClass::Constant {
+                            &mut self.activation
+                        } else {
+                            &mut self.workspace.scratch
+                        };
+                        target
+                            .abort_payload_write(write.region, scope)
+                            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                        return Err(ResidentExecutionError::Kernel {
+                            node,
+                            error: ResidentKernelError::InvalidOutput,
+                        });
+                    }
+                    Some((value, scope))
+                } else {
+                    None
+                };
+                let (unchanged, copied) = if let Some((next, scope)) = converted {
+                    let target = if write.storage == ResidentStorageClass::Constant {
+                        &mut self.activation
+                    } else {
+                        &mut self.workspace.scratch
+                    };
+                    let ResidentValueRef::Snapshot([current]) = target.read(write.region) else {
+                        unreachable!("snapshot conversion target was checked")
+                    };
+                    let unchanged = current.as_ref().map_or(Ok(false), |current| {
+                        current.snapshot_eq(&self.plan.schemas, &next, &self.plan.schemas)
+                    });
+                    let unchanged = match unchanged {
+                        Ok(unchanged) => unchanged,
+                        Err(_) => {
+                            target
+                                .abort_payload_write(write.region, scope)
+                                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                            return Err(ResidentExecutionError::Kernel {
+                                node,
+                                error: ResidentKernelError::InvalidOutput,
+                            });
+                        }
+                    };
+                    if let Some(prepared) = scope.as_ref() {
+                        if let Err(error) = prepared.admit_value(&next) {
+                            target
+                                .abort_payload_write(write.region, scope)
+                                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                            return Err(ResidentExecutionError::MemoryRuntime { error });
+                        }
+                    }
+                    let ResidentValueMut::Snapshot([target_value]) = target.write(write.region)
+                    else {
+                        unreachable!("snapshot conversion target was checked")
+                    };
+                    *target_value = Some(next);
+                    target
+                        .finish_payload_write(write.region, scope)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    (unchanged, Ok(()))
+                } else if write.storage == ResidentStorageClass::Constant {
+                    match body.yield_value {
+                        ResidentReadLocation::Constant(region) => (
+                            regions_equal(&self.activation, write.region, &self.activation, region),
+                            self.activation
+                                .copy_region_within(write.region, region)
+                                .map_err(ResidentCopyError::Memory),
+                        ),
+                        ResidentReadLocation::Scratch(region) => (
+                            regions_equal(
+                                &self.activation,
+                                write.region,
+                                &self.workspace.scratch,
+                                region,
+                            ),
+                            self.activation
+                                .copy_region_from(write.region, &self.workspace.scratch, region)
+                                .map_err(ResidentCopyError::Memory),
+                        ),
+                        _ => return Err(fail()),
+                    }
+                } else {
+                    let unchanged = match body.yield_value {
+                        ResidentReadLocation::Constant(region) => regions_equal(
+                            &self.workspace.scratch,
+                            write.region,
+                            &self.activation,
+                            region,
+                        ),
+                        ResidentReadLocation::Input(region) => regions_equal(
+                            &self.workspace.scratch,
+                            write.region,
+                            &self.workspace.input,
+                            region,
+                        ),
+                        ResidentReadLocation::LexicalInput(region) => {
+                            let value = lexical_capture(
+                                &self.workspace.continuation_capture_frames,
+                                region,
+                            )
+                            .map(super::OwnedResidentValue::as_ref)
+                            .unwrap_or_else(|| self.workspace.input.read(region));
+                            resident_values_equal(self.workspace.scratch.read(write.region), value)
+                        }
+                        ResidentReadLocation::State { slot, region } => {
+                            let buffer = self.state.select_buffer(slot, working_epoch);
+                            regions_equal(
+                                &self.workspace.scratch,
+                                write.region,
+                                &self.state.buffers[buffer],
+                                region,
+                            )
+                        }
+                        ResidentReadLocation::Scratch(region) => regions_equal(
+                            &self.workspace.scratch,
+                            write.region,
+                            &self.workspace.scratch,
+                            region,
+                        ),
+                    };
+                    // Publish the selected value through the same managed copy path used
+                    // for ordinary resident state. Composite construction remains in its
+                    // existing bound kernel; no sibling branch is evaluated here.
+                    let copied = match body.yield_value {
+                        ResidentReadLocation::Constant(region) => self
+                            .workspace
+                            .scratch
+                            .copy_region_from(write.region, &self.activation, region)
+                            .map_err(ResidentCopyError::Memory),
+                        ResidentReadLocation::Input(region) => self
+                            .workspace
+                            .scratch
+                            .copy_region_from(write.region, &self.workspace.input, region)
+                            .map_err(ResidentCopyError::Memory),
+                        ResidentReadLocation::LexicalInput(region) => {
+                            let value = lexical_capture(
+                                &self.workspace.continuation_capture_frames,
+                                region,
+                            )
+                            .map(super::OwnedResidentValue::as_ref)
+                            .unwrap_or_else(|| self.workspace.input.read(region));
+                            copy_input(&mut self.workspace.scratch, write.region, value)
+                        }
+                        ResidentReadLocation::State { slot, region } => {
+                            let buffer = self.state.select_buffer(slot, working_epoch);
+                            self.workspace
+                                .scratch
+                                .copy_region_from(write.region, &self.state.buffers[buffer], region)
+                                .map_err(ResidentCopyError::Memory)
+                        }
+                        ResidentReadLocation::Scratch(region) => self
+                            .workspace
+                            .scratch
+                            .copy_region_within(write.region, region)
+                            .map_err(ResidentCopyError::Memory),
+                    };
+                    (unchanged, copied)
+                };
+                copied.map_err(|error| error.at(fail()))?;
+                let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
+                set_bit(&mut self.workspace.initialized_output_bits, index);
+                Ok(!initialized || !unchanged)
+            });
+        }
+        Err(fail())
+    }
+
+    fn execute_control_step_with_live_demand(
+        &mut self,
+        owner: NodeId,
+        block: &super::ActivatedControlBlock,
+        step: &super::ActivatedControlStep,
+        block_live: &mut ControlBlockLiveFootprint,
+        meter: &mut budget::ResidentBudgetMeter,
+        epochs: (InstanceEpoch, InstanceEpoch),
+        probe: &mut ResidentStructuralProbe,
+        live: (u64, u64),
+    ) -> Result<bool, ResidentExecutionError> {
+        let (before_epoch, working_epoch) = epochs;
+        let (live_bytes, live_nodes) = live;
+        let fail = |error| ResidentExecutionError::Kernel { node: owner, error };
+        let retained = usize::try_from(step.retained_local_count)
+            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        let nested_match = matches!(
+            self.plan.steps[step.node.get() as usize],
+            ActivatedTurnStep::Match(_)
+        );
+        // Nested matches count their prior output while executing, but may
+        // replace it. Keep that slot out of the persistent prefix and measure
+        // its new value only when the following step needs it.
+        let stable_end = if nested_match {
+            retained
+                .checked_sub(1)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?
+        } else {
+            retained
+        };
+        let added = block
+            .locals
+            .get(block_live.retained_prefix..stable_end)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        block_live.footprint = block_live
+            .footprint
+            .checked_add(
+                self.resident_local_footprint(added.iter().copied(), &self.plan.schemas, meter)
+                    .map_err(fail)?,
+            )
+            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        block_live.retained_prefix = stable_end;
+        let mut locals = block_live.footprint;
+        if nested_match {
+            let prior_output = *block
+                .locals
+                .get(stable_end)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            locals = locals
+                .checked_add(
+                    self.resident_local_footprint([prior_output], &self.plan.schemas, meter)
+                        .map_err(fail)?,
+                )
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        }
+        let mut excluded = ValueFootprint::zero();
+        for index in step.excluded_locals.iter().copied() {
+            let index =
+                usize::try_from(index).map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+            if index >= retained {
+                return Err(fail(ResidentKernelError::InvalidShape));
+            }
+            let region = *block
+                .locals
+                .get(index)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            excluded = excluded
+                .checked_add(
+                    self.resident_local_footprint([region], &self.plan.schemas, meter)
+                        .map_err(fail)?,
+                )
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        }
+        locals = ValueFootprint {
+            encoded_bytes: locals
+                .encoded_bytes
+                .checked_sub(excluded.encoded_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+            retained_bytes: locals
+                .retained_bytes
+                .checked_sub(excluded.retained_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+            node_count: locals
+                .node_count
+                .checked_sub(excluded.node_count)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+        };
+        let live_bytes = live_bytes
+            .checked_add(locals.retained_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let live_nodes = live_nodes
+            .checked_add(locals.node_count)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        self.execute_step_with_live_demand(
+            step.node,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+        )
+    }
+
+    fn execute_recursive_call(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        call: super::ActivatedRecursiveCall,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: call.artifact_node,
+            error,
+        };
+        let depth = self.workspace.recursive_scrutinees.len();
+        if depth >= MAX_RESIDENT_RECURSION_DEPTH
+            || call.write.storage != ResidentStorageClass::Scratch
+        {
+            return Err(fail(ResidentKernelError::InvalidShape));
+        }
+        let (regions, returned, region_inventory_bytes) = {
+            let ActivatedTurnStep::Match(root) = &self.plan.steps[call.target.get() as usize]
+            else {
+                return Err(fail(ResidentKernelError::InvalidInput));
+            };
+            let count = root
+                .locals
+                .len()
+                .checked_add(usize::from(
+                    root.write.storage == ResidentStorageClass::Scratch,
+                ))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let region_inventory_bytes = u64::try_from(count)
+                .ok()
+                .and_then(|count| count.checked_mul(core::mem::size_of::<ResidentRegion>() as u64))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            (|| -> Result<(), ResidentKernelError> {
+                budget::PreparedKernel::new(
+                    (),
+                    recursive_inventory_cost(live_bytes, live_nodes, region_inventory_bytes)?,
+                )
+                .admit_control()?
+                .into_plan();
+                Ok(())
+            })()
+            .map_err(fail)?;
+            let mut regions = Vec::with_capacity(count);
+            regions.extend_from_slice(&root.locals);
+            if root.write.storage == ResidentStorageClass::Scratch {
+                // Recursive arms share the target output slot. Its value from
+                // the preceding turn must survive the inner invocation.
+                regions.push(root.write.region);
+            }
+            regions.sort_unstable_by_key(|region| (region.kind as u8, region.offset, region.len));
+            regions.dedup();
+            (regions, root.write, region_inventory_bytes)
+        };
+
+        let mut frame_meter = budget::ResidentBudgetMeter::default();
+        let (value_bytes, value_nodes) = regions
+            .iter()
+            .try_fold((0u64, 0u64), |(bytes, nodes), region| {
+                let value = resident_frame_value_footprint(
+                    self.workspace.scratch.read(*region),
+                    &self.plan.schemas,
+                    &mut frame_meter,
+                )
+                .ok_or(ResidentKernelError::InvalidShape)?;
+                Ok::<_, ResidentKernelError>((
+                    bytes
+                        .checked_add(value.0)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    nodes
+                        .checked_add(value.1)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                ))
+            })
+            .map_err(fail)?;
+        let measured_frame_work = frame_meter.estimate().compute_work();
+        let frame_bytes = region_inventory_bytes
+            .checked_add(value_bytes)
+            .and_then(|bytes| {
+                bytes.checked_add((2 * core::mem::size_of::<super::RecursiveFrame>()) as u64)
+            })
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let frame_nodes = value_nodes
+            .checked_add(2)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let frame_copy_work = frame_bytes
+            .checked_mul(2)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        (|| -> Result<(), ResidentKernelError> {
+            let peak_bytes = live_bytes
+                .checked_add(frame_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let peak_nodes = live_nodes
+                .checked_add(frame_nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    compute_work: measured_frame_work
+                        .checked_add(frame_copy_work)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    temporary_bytes: peak_bytes,
+                    cloned_bytes: frame_copy_work,
+                    retained_nodes: peak_nodes,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()?
+            .into_plan();
+            Ok(())
+        })()
+        .map_err(fail)?;
+
+        let child_live_bytes = live_bytes
+            .checked_add(frame_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let child_live_nodes = live_nodes
+            .checked_add(frame_nodes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let budget_node = match &self.plan.steps[call.target.get() as usize] {
+            ActivatedTurnStep::Match(target) => target.budget_node,
+            _ => unreachable!("recursive target was checked above"),
+        };
+        let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+        facts.additional_demand.turn_peak_bytes = child_live_bytes;
+        facts.additional_demand.retained_nodes = child_live_nodes;
+        let child_plan = crate::memory_planner::plan_current_resident_turn(
+            &self.plan.memory_plan,
+            budget_node,
+            &facts,
+        )
+        .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        if !child_plan.budget_violations.is_empty() {
+            return Err(fail(ResidentKernelError::InvalidShape));
+        }
+
+        let frame = regions
+            .iter()
+            .map(|region| {
+                (
+                    *region,
+                    owned_resident_value(self.workspace.scratch.read(*region)),
+                )
+            })
+            .collect::<Vec<_>>();
+        let target_index = call.target.get() as usize;
+        let target_initialized = bit_is_set(&self.workspace.initialized_output_bits, target_index);
+        self.workspace
+            .recursive_scrutinees
+            .push(super::RecursiveFrame {
+                target: call.target,
+                argument: call.argument,
+            });
+        let invoked = budget::with_resident_turn_plan(child_plan, || {
+            self.execute_match_expression(
+                call.target,
+                before_epoch,
+                working_epoch,
+                probe,
+                child_live_bytes,
+                child_live_nodes,
+                0,
+            )
+        });
+        self.workspace.recursive_scrutinees.pop();
+        if target_initialized {
+            set_bit(&mut self.workspace.initialized_output_bits, target_index);
+        } else {
+            clear_bit(&mut self.workspace.initialized_output_bits, target_index);
+        }
+
+        if self.workspace.continuation_candidates[call.target.get() as usize].is_some() {
+            for (region, value) in &frame {
+                copy_input(&mut self.workspace.scratch, *region, value.as_ref())
+                    .map_err(|error| error.at(fail(ResidentKernelError::InvalidOutput)))?;
+            }
+            invoked?;
+            return Ok(bit_is_set(
+                &self.workspace.continuation_publications,
+                call.target.get() as usize,
+            ));
+        }
+
+        let result = invoked.and_then(|changed| {
+            let mut child_meter = budget::ResidentBudgetMeter::default();
+            let child_locals = match &self.plan.steps[call.target.get() as usize] {
+                ActivatedTurnStep::Match(target) => self
+                    .resident_local_footprint(
+                        target.locals.iter().copied(),
+                        &self.plan.schemas,
+                        &mut child_meter,
+                    )
+                    .map_err(fail)?,
+                _ => unreachable!("recursive target was checked above"),
+            };
+            let location = match returned.storage {
+                ResidentStorageClass::Constant => ResidentReadLocation::Constant(returned.region),
+                ResidentStorageClass::Input => ResidentReadLocation::Input(returned.region),
+                ResidentStorageClass::State => ResidentReadLocation::State {
+                    slot: returned.slot,
+                    region: returned.region,
+                },
+                ResidentStorageClass::Scratch => ResidentReadLocation::Scratch(returned.region),
+            };
+            let value = self
+                .read_location(location, working_epoch)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+            let mut result_meter = budget::ResidentBudgetMeter::default();
+            let (result_bytes, result_nodes) =
+                resident_frame_value_footprint(value, &self.plan.schemas, &mut result_meter)
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let measured_result_work = result_meter.estimate().compute_work();
+            let result_copy_work = result_bytes
+                .checked_mul(2)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_bytes = live_bytes
+                .checked_add(frame_copy_work)
+                .and_then(|bytes| bytes.checked_add(child_locals.retained_bytes))
+                .and_then(|bytes| bytes.checked_add(result_copy_work))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_nodes = live_nodes
+                .checked_add(
+                    frame_nodes
+                        .checked_mul(2)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                )
+                .and_then(|nodes| nodes.checked_add(child_locals.node_count))
+                .and_then(|nodes| nodes.checked_add(result_nodes.checked_mul(2)?))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            (|| -> Result<(), ResidentKernelError> {
+                budget::PreparedKernel::new(
+                    (),
+                    budget::resident_cost! {
+                        compute_work: child_meter
+                            .estimate()
+                            .compute_work()
+                            .checked_add(measured_result_work)
+                            .and_then(|work| work.checked_add(result_copy_work))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        temporary_bytes: peak_bytes,
+                        cloned_bytes: result_copy_work,
+                        retained_nodes: peak_nodes,
+                        ..budget::KernelCostEstimate::default()
+                    },
+                )
+                .admit_control()?
+                .into_plan();
+                Ok(())
+            })()
+            .map_err(fail)?;
+            Ok((changed, owned_resident_value(value)))
+        });
+
+        for (region, value) in &frame {
+            copy_input(&mut self.workspace.scratch, *region, value.as_ref())
+                .map_err(|error| error.at(fail(ResidentKernelError::InvalidOutput)))?;
+        }
+        let (changed, result) = result?;
+        copy_input(
+            &mut self.workspace.scratch,
+            call.write.region,
+            result.as_ref(),
+        )
+        .map_err(|error| error.at(fail(ResidentKernelError::InvalidOutput)))?;
+        set_bit(
+            &mut self.workspace.initialized_output_bits,
+            node_index.get() as usize,
+        );
+        Ok(changed)
+    }
+
+    fn match_structural_pattern_item(
+        &mut self,
+        node: NodeId,
+        pattern: &crate::CollectionPattern<
+            super::ActivatedPatternBinding,
+            super::ActivatedPatternValue,
+        >,
+        item: &comprehension_execution::PatternItem,
+        source_shape_values: &[u64],
+        canonical_finalization_work: u64,
+        working: InstanceEpoch,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel { node, error };
+        match pattern {
+            crate::CollectionPattern::Wildcard => Ok(true),
+            crate::CollectionPattern::Bind {
+                schema: binding, ..
+            } => self.bind_match_pattern_item(
+                node,
+                *binding,
+                item.clone(),
+                source_shape_values,
+                canonical_finalization_work,
+            ),
+            crate::CollectionPattern::Equal(peer) => {
+                let peer_value = self
+                    .read_location(peer.location, working)
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+                item.language_equals(
+                    peer_value,
+                    peer.location.region(),
+                    peer.schema,
+                    source_shape_values,
+                    canonical_finalization_work,
+                    &self.plan.schemas,
+                    &self.plan.structural_projections,
+                )
+                .map_err(fail)?
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
+            }
+            crate::CollectionPattern::Enum { ordinal, payload } => {
+                let Some((actual, value_payload)) =
+                    item.enum_variant(&self.plan.schemas).map_err(fail)?
+                else {
+                    return Ok(false);
+                };
+                if actual != *ordinal {
+                    return Ok(false);
+                }
+                match (payload.as_deref(), value_payload.as_ref()) {
+                    (None, None) => Ok(true),
+                    (Some(pattern), Some(child)) => self.match_structural_pattern_item(
+                        node,
+                        pattern,
+                        child,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    ),
+                    _ => Ok(false),
+                }
+            }
+            crate::CollectionPattern::Tuple(items) => {
+                if item.structural_len(true) != Some(items.len()) {
+                    return Ok(false);
+                }
+                for (index, pattern) in items.iter().enumerate() {
+                    let Some(child) =
+                        item.child(index, &self.plan.schemas, &self.plan.structural_projections)
+                    else {
+                        return Ok(false);
+                    };
+                    if !self.match_structural_pattern_item(
+                        node,
+                        pattern,
+                        &child,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                let Some(count) = item.structural_len(false) else {
+                    return Ok(false);
+                };
+                let required = prefix
+                    .len()
+                    .checked_add(suffix.len())
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                if count < required || (rest.is_none() && count != required) {
+                    return Ok(false);
+                }
+                for (index, pattern) in prefix.iter().enumerate() {
+                    let Some(child) =
+                        item.child(index, &self.plan.schemas, &self.plan.structural_projections)
+                    else {
+                        return Ok(false);
+                    };
+                    if !self.match_structural_pattern_item(
+                        node,
+                        pattern,
+                        &child,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                if let Some(rest) = rest {
+                    let Some(middle) = item.middle(
+                        prefix.len(),
+                        suffix.len(),
+                        &self.plan.schemas,
+                        &self.plan.structural_projections,
+                    ) else {
+                        return Ok(false);
+                    };
+                    if !self.match_structural_pattern_item(
+                        node,
+                        rest,
+                        &middle,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                for (index, pattern) in suffix.iter().enumerate() {
+                    let Some(child) = item.child(
+                        count - suffix.len() + index,
+                        &self.plan.schemas,
+                        &self.plan.structural_projections,
+                    ) else {
+                        return Ok(false);
+                    };
+                    if !self.match_structural_pattern_item(
+                        node,
+                        pattern,
+                        &child,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+        }
+    }
+
+    fn bind_match_pattern_item(
+        &mut self,
+        node: NodeId,
+        binding: super::ActivatedPatternBinding,
+        item: comprehension_execution::PatternItem,
+        source_shape_values: &[u64],
+        binding_finalization_work: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel { node, error };
+        fn dense_values<T: Default>(values: Vec<T>, region: ResidentRegion) -> Option<Vec<T>> {
+            if values.len() != region.len {
+                return None;
+            }
+            let mut dense = (0..values.len()).map(|_| T::default()).collect::<Vec<_>>();
+            for (ordinal, value) in values.into_iter().enumerate() {
+                let offset = comprehension_execution::dense_collection_offset(region, ordinal)?;
+                *dense.get_mut(offset)? = value;
+            }
+            Some(dense)
+        }
+        let Some(comprehension_execution::PatternBindingItem {
+            shape_values,
+            data,
+            schemas: source_schemas,
+            schema_index: source_schema_index,
+            ..
+        }) = item
+            .into_binding(
+                binding.schema,
+                source_shape_values,
+                &self.plan.schemas,
+                &self.plan.structural_projections,
+            )
+            .map_err(fail)?
+        else {
+            return Ok(false);
+        };
+        match (data, binding.region.kind) {
+            (mech_core::ValueDataDraft::Matrix(values), ResidentValueKind::Bool) => {
+                let values = values
+                    .into_vec()
+                    .into_iter()
+                    .map(|value| match value {
+                        mech_core::ValueDataDraft::Bool(value) => Some(u8::from(value)),
+                        _ => None,
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .and_then(|values| dense_values(values, binding.region))
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+                let ResidentValueMut::Bool(target) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                target.copy_from_slice(&values);
+            }
+            (mech_core::ValueDataDraft::Matrix(values), ResidentValueKind::Index) => {
+                let values = values
+                    .into_vec()
+                    .into_iter()
+                    .map(|value| match value {
+                        mech_core::ValueDataDraft::Index(value) => Some(value),
+                        _ => None,
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .and_then(|values| dense_values(values, binding.region))
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+                let ResidentValueMut::Index(target) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                target.copy_from_slice(&values);
+            }
+            (mech_core::ValueDataDraft::Matrix(values), ResidentValueKind::F64) => {
+                let values = values
+                    .into_vec()
+                    .into_iter()
+                    .map(|value| match value {
+                        mech_core::ValueDataDraft::F64(value) => Some(value.to_f64()),
+                        _ => None,
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .and_then(|values| dense_values(values, binding.region))
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+                let ResidentValueMut::F64(target) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                target.copy_from_slice(&values);
+            }
+            (mech_core::ValueDataDraft::Matrix(values), ResidentValueKind::String) => {
+                let values = values
+                    .into_vec()
+                    .into_iter()
+                    .map(|value| match value {
+                        mech_core::ValueDataDraft::String(value) => Some(value),
+                        _ => None,
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .and_then(|values| dense_values(values, binding.region))
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+                let scope = self
+                    .workspace
+                    .scratch
+                    .prepare_payload_write(binding.region)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                if let Some(scope) = &scope {
+                    scope
+                        .admit_copy(ResidentValueRef::String(&values), 0)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    scope.start();
+                }
+                let ResidentValueMut::String(target) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                for (target, value) in target.iter_mut().zip(values) {
+                    *target = value;
+                }
+                self.workspace
+                    .scratch
+                    .finish_payload_write(binding.region, scope)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+            }
+            (mech_core::ValueDataDraft::Bool(value), ResidentValueKind::Bool) => {
+                let ResidentValueMut::Bool([target]) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = u8::from(value);
+            }
+            (mech_core::ValueDataDraft::Index(value), ResidentValueKind::Index) => {
+                let ResidentValueMut::Index([target]) =
+                    self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = value;
+            }
+            (mech_core::ValueDataDraft::F64(value), ResidentValueKind::F64) => {
+                let ResidentValueMut::F64([target]) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = value.to_f64();
+            }
+            (mech_core::ValueDataDraft::String(value), ResidentValueKind::String) => {
+                let scope = self
+                    .workspace
+                    .scratch
+                    .prepare_payload_write(binding.region)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                if let Some(scope) = &scope {
+                    scope
+                        .admit_copy(ResidentValueRef::String(core::slice::from_ref(&value)), 0)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    scope.start();
+                }
+                let ResidentValueMut::String([target]) =
+                    self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = value;
+                self.workspace
+                    .scratch
+                    .finish_payload_write(binding.region, scope)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+            }
+            (data, ResidentValueKind::Snapshot) => {
+                let canonical_budget = mech_core::snapshot::SnapshotCanonicalizationBudget::new(
+                    binding_finalization_work,
+                );
+                let next = comprehension_execution::finalize_pattern_binding(
+                    binding.schema,
+                    &shape_values,
+                    data,
+                    source_schemas,
+                    source_schema_index,
+                    &self.plan.schemas,
+                    &canonical_budget,
+                )
+                .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
+                let scope = self
+                    .workspace
+                    .scratch
+                    .prepare_payload_write(binding.region)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                if let Some(scope) = &scope {
+                    scope
+                        .admit_value(&next)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    scope.start();
+                }
+                let ResidentValueMut::Snapshot([target]) =
+                    self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = Some(next);
+                self.workspace
+                    .scratch
+                    .finish_payload_write(binding.region, scope)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+            }
+            _ => return Err(fail(ResidentKernelError::InvalidOutput)),
+        }
+        Ok(true)
     }
 
     fn stage_external(
@@ -1459,6 +3906,19 @@ impl ReactiveInstance {
         let ordinal = node.effect_ordinal;
         let source = node.payload;
         let captured = node.captured_payload;
+        let suspended = self.plan.steps.iter().enumerate().any(|(index, step)| {
+            self.unpublished_continuation(index)
+                && matches!(step, ActivatedTurnStep::Match(control)
+                if super::read_location_depends_on_match(
+                    &self.plan,
+                    source,
+                    index,
+                    control.write.region,
+                ))
+        });
+        if suspended {
+            return Ok(());
+        }
         if self.workspace.effect_intents.len() == self.workspace.effect_intents.capacity() {
             return Err(ResidentExecutionError::EffectIntentCapacity);
         }
@@ -1482,6 +3942,15 @@ impl ReactiveInstance {
         captured: ResidentRegion,
         working_epoch: InstanceEpoch,
     ) -> Result<(), ResidentCopyError> {
+        if let Some(value) =
+            continuation_capture(&self.workspace.continuation_capture_frames, source)
+        {
+            return copy_input(
+                &mut self.workspace.effect_payloads,
+                captured,
+                value.as_ref(),
+            );
+        }
         match source {
             ResidentReadLocation::Constant(region) => copy_input(
                 &mut self.workspace.effect_payloads,
@@ -1493,6 +3962,12 @@ impl ReactiveInstance {
                 captured,
                 self.workspace.input.read(region),
             ),
+            ResidentReadLocation::LexicalInput(region) => {
+                let value = lexical_capture(&self.workspace.continuation_capture_frames, region)
+                    .map(super::OwnedResidentValue::as_ref)
+                    .unwrap_or_else(|| self.workspace.input.read(region));
+                copy_input(&mut self.workspace.effect_payloads, captured, value)
+            }
             ResidentReadLocation::State { slot, region } => {
                 let buffer = self.state.select_buffer(slot, working_epoch);
                 copy_input(
@@ -1523,6 +3998,26 @@ impl ReactiveInstance {
     }
 
     #[inline(always)]
+    fn execute_kernel_with_live_demand(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        self.with_kernel_turn_plan_and_live_demand(
+            node_index,
+            before_epoch,
+            working_epoch,
+            live_bytes,
+            live_nodes,
+            |this| this.execute_kernel_planned(node_index, before_epoch, working_epoch, probe),
+        )
+    }
+
+    #[inline(always)]
     fn execute_kernel_planned(
         &mut self,
         node_index: ActivatedNodeIndex,
@@ -1530,6 +4025,7 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
+        budget::charge_planning_step()?;
         let index = node_index.get() as usize;
         let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
             &nodes[index]
@@ -1546,6 +4042,63 @@ impl ReactiveInstance {
                 } else {
                     None
                 };
+                if let Some(previous) = node.rmw_previous {
+                    self.workspace
+                        .rmw_previous
+                        .copy_region_from(previous, &self.workspace.scratch, node.write.region)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                }
+                if let Some(base) = node.rmw_base {
+                    let destination = node.write.region;
+                    let result = if let Some(value) =
+                        continuation_capture(&self.workspace.continuation_capture_frames, base)
+                    {
+                        copy_input(&mut self.workspace.scratch, destination, value.as_ref())
+                    } else {
+                        match base {
+                            ResidentReadLocation::Constant(region) => self
+                                .workspace
+                                .scratch
+                                .copy_region_from(destination, &self.activation, region)
+                                .map_err(ResidentCopyError::Memory),
+                            ResidentReadLocation::Input(region) => self
+                                .workspace
+                                .scratch
+                                .copy_region_from(destination, &self.workspace.input, region)
+                                .map_err(ResidentCopyError::Memory),
+                            ResidentReadLocation::LexicalInput(region) => {
+                                let value = lexical_capture(
+                                    &self.workspace.continuation_capture_frames,
+                                    region,
+                                )
+                                .map(super::OwnedResidentValue::as_ref)
+                                .unwrap_or_else(|| self.workspace.input.read(region));
+                                copy_input(&mut self.workspace.scratch, destination, value)
+                            }
+                            ResidentReadLocation::State { slot, region } => {
+                                let buffer = self.state.select_buffer(slot, working_epoch);
+                                self.workspace
+                                    .scratch
+                                    .copy_region_from(
+                                        destination,
+                                        &self.state.buffers[buffer],
+                                        region,
+                                    )
+                                    .map_err(ResidentCopyError::Memory)
+                            }
+                            ResidentReadLocation::Scratch(region) => self
+                                .workspace
+                                .scratch
+                                .copy_region_within(destination, region)
+                                .map_err(ResidentCopyError::Memory),
+                        }
+                    };
+                    result.map_err(|error| {
+                        error.at(ResidentExecutionError::InvalidWrite {
+                            node: node.artifact_node,
+                        })
+                    })?;
+                }
                 let kernel_changed = if node.scratch_prefix_reads
                     && node.kernel.has_direct_f64_output()
                 {
@@ -1572,6 +4125,7 @@ impl ReactiveInstance {
                                 [node.reads.start as usize..node.reads.end as usize],
                             activation: &self.activation,
                             input: &self.workspace.input,
+                            captures: &self.workspace.continuation_capture_frames,
                             state: &self.state,
                             scratch,
                             epoch: working_epoch,
@@ -1602,6 +4156,7 @@ impl ReactiveInstance {
                                 [node.reads.start as usize..node.reads.end as usize],
                             activation: &self.activation,
                             input: &self.workspace.input,
+                            captures: &self.workspace.continuation_capture_frames,
                             state: &self.state,
                             scratch,
                             epoch: working_epoch,
@@ -1615,6 +4170,7 @@ impl ReactiveInstance {
                             [node.reads.start as usize..node.reads.end as usize],
                         activation: &self.activation,
                         input: &self.workspace.input,
+                        captures: &self.workspace.continuation_capture_frames,
                         state: &self.state,
                         scratch,
                         epoch: working_epoch,
@@ -1626,16 +4182,38 @@ impl ReactiveInstance {
                     error,
                 })?;
                 let policy_changed = match node.change_detection {
-                    ChangeDetectionPolicy::KernelReported => kernel_changed,
+                    ChangeDetectionPolicy::KernelReported => {
+                        if let Some(previous) = node.rmw_previous {
+                            !rmw_outputs_equal(
+                                &self.workspace.rmw_previous,
+                                previous,
+                                &self.workspace.scratch,
+                                node.write.region,
+                                &self.plan.schemas,
+                            )
+                        } else {
+                            kernel_changed
+                        }
+                    }
                     ChangeDetectionPolicy::ExactScalar => {
-                        before_scalar
-                            != scalar_token(self.workspace.scratch.read(node.write.region))
+                        match (
+                            before_scalar,
+                            scalar_token(self.workspace.scratch.read(node.write.region)),
+                        ) {
+                            (Some(before), Some(after)) => before != after,
+                            // Non-scalar snapshots have no fixed scalar token;
+                            // their maintained kernel compares the typed value.
+                            _ => kernel_changed,
+                        }
                     }
                     ChangeDetectionPolicy::AlwaysChanged => true,
                     ChangeDetectionPolicy::SemanticHash => unreachable!(
                         "semantic-hash resident outputs are rejected during activation"
                     ),
                 };
+                if let Some(previous) = node.rmw_previous {
+                    self.workspace.rmw_previous.discard_payload_write(previous);
+                }
                 if self.workspace.all_outputs_initialized {
                     Ok(policy_changed)
                 } else {
@@ -1688,6 +4266,7 @@ impl ReactiveInstance {
                             [node.reads.start as usize..node.reads.end as usize],
                         activation: &self.activation,
                         input: &self.workspace.input,
+                        captures: &self.workspace.continuation_capture_frames,
                         state,
                         scratch: &self.workspace.scratch,
                         epoch: working_epoch,
@@ -1716,6 +4295,7 @@ impl ReactiveInstance {
                                 [node.reads.start as usize..node.reads.end as usize],
                             activation: &self.activation,
                             input: &self.workspace.input,
+                            captures: &self.workspace.continuation_capture_frames,
                             scratch: &self.workspace.scratch,
                         };
                         node.kernel.execute(&inputs, output)
@@ -1765,9 +4345,16 @@ impl ReactiveInstance {
         location: ResidentReadLocation,
         epoch: InstanceEpoch,
     ) -> Option<ResidentValueRef<'_>> {
+        if let Some(value) =
+            continuation_capture(&self.workspace.continuation_capture_frames, location)
+        {
+            return Some(value.as_ref());
+        }
         match location {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
-            ResidentReadLocation::Input(region) => Some(self.workspace.input.read(region)),
+            ResidentReadLocation::Input(region) | ResidentReadLocation::LexicalInput(region) => {
+                Some(self.workspace.input.read(region))
+            }
             ResidentReadLocation::State { slot, region } => {
                 let buffer = self.state.select_buffer(slot, epoch);
                 Some(self.state.buffers[buffer].read(region))
@@ -1787,6 +4374,46 @@ impl ReactiveInstance {
             }
         }
     }
+}
+
+fn match_conversion_peak_retained_nodes(
+    prior_snapshot_nodes: u64,
+    candidate_nodes: u64,
+) -> Result<u64, ResidentKernelError> {
+    prior_snapshot_nodes
+        .checked_add(candidate_nodes)
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
+fn recursive_inventory_cost(
+    live_bytes: u64,
+    live_nodes: u64,
+    inventory_bytes: u64,
+) -> Result<budget::KernelCostEstimate, ResidentKernelError> {
+    Ok(budget::resident_cost! {
+        // Inventory copying, sorting, and deduplication run while the
+        // enclosing arm's dynamically measured locals remain resident.
+        compute_work: inventory_bytes,
+        temporary_bytes: live_bytes
+            .checked_add(inventory_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_nodes: live_nodes,
+        ..budget::KernelCostEstimate::default()
+    })
+}
+
+fn match_conversion_prior_footprint(
+    prior: Option<&Value>,
+    schemas: &mech_core::SchemaTable,
+) -> Result<(u64, budget::KernelCostEstimate), ResidentKernelError> {
+    let mut meter = budget::ResidentBudgetMeter::default();
+    let nodes = match prior {
+        Some(prior) => {
+            budget::measure_canonical_value_footprint(&mut meter, prior, schemas)?.node_count
+        }
+        None => 0,
+    };
+    Ok((nodes, meter.estimate()))
 }
 
 impl StateArena {
@@ -2389,10 +5016,48 @@ impl ResidentKernelInputs for F64NonStateNodeInputs<'_> {
     }
 }
 
+type ResidentCaptureFrames = [Box<[(ResidentReadLocation, super::OwnedResidentValue)]>];
+
+fn continuation_capture<'a>(
+    frames: &'a ResidentCaptureFrames,
+    location: ResidentReadLocation,
+) -> Option<&'a super::OwnedResidentValue> {
+    frames
+        .iter()
+        .rev()
+        .flat_map(|frame| frame.iter())
+        .find_map(|(source, value)| (*source == location).then_some(value))
+}
+
+fn continuation_capture_f64<'a>(
+    frames: &'a ResidentCaptureFrames,
+    location: ResidentReadLocation,
+) -> Option<&'a [f64]> {
+    let super::OwnedResidentValue::F64(values) = continuation_capture(frames, location)? else {
+        return None;
+    };
+    Some(values)
+}
+
+fn lexical_capture<'a>(
+    frames: &'a ResidentCaptureFrames,
+    region: ResidentRegion,
+) -> Option<&'a super::OwnedResidentValue> {
+    continuation_capture(frames, ResidentReadLocation::LexicalInput(region))
+}
+
+fn lexical_capture_f64<'a>(
+    frames: &'a ResidentCaptureFrames,
+    region: ResidentRegion,
+) -> Option<&'a [f64]> {
+    continuation_capture_f64(frames, ResidentReadLocation::LexicalInput(region))
+}
+
 struct ScratchNodeInputs<'a> {
     locations: &'a [ResidentReadLocation],
     activation: &'a TypedResidentArena,
     input: &'a TypedResidentArena,
+    captures: &'a ResidentCaptureFrames,
     state: &'a StateArena,
     scratch: ScratchArenaReadAccess<'a>,
     epoch: InstanceEpoch,
@@ -2401,9 +5066,16 @@ struct ScratchNodeInputs<'a> {
 impl ScratchNodeInputs<'_> {
     #[inline(always)]
     fn f64_at(&self, index: usize) -> Option<&[f64]> {
-        match *self.locations.get(index)? {
+        let location = *self.locations.get(index)?;
+        if let Some(value) = continuation_capture_f64(self.captures, location) {
+            return Some(value);
+        }
+        match location {
             ResidentReadLocation::Constant(region) => self.activation.read_f64(region),
             ResidentReadLocation::Input(region) => self.input.read_f64(region),
+            ResidentReadLocation::LexicalInput(region) => {
+                lexical_capture_f64(self.captures, region).or_else(|| self.input.read_f64(region))
+            }
             ResidentReadLocation::State { slot, region } => {
                 self.state.read_f64(slot, region, self.epoch)
             }
@@ -2418,9 +5090,16 @@ impl ResidentKernelInputs for ScratchNodeInputs<'_> {
     }
 
     fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
-        match *self.locations.get(index)? {
+        let location = *self.locations.get(index)?;
+        if let Some(value) = continuation_capture(self.captures, location) {
+            return Some(value.as_ref());
+        }
+        match location {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
             ResidentReadLocation::Input(region) => Some(self.input.read(region)),
+            ResidentReadLocation::LexicalInput(region) => lexical_capture(self.captures, region)
+                .map(super::OwnedResidentValue::as_ref)
+                .or_else(|| Some(self.input.read(region))),
             ResidentReadLocation::State { slot, region } => {
                 self.state.read(slot, region, self.epoch)
             }
@@ -2458,6 +5137,7 @@ struct GeneralScratchNodeInputs<'a> {
     locations: &'a [ResidentReadLocation],
     activation: &'a TypedResidentArena,
     input: &'a TypedResidentArena,
+    captures: &'a ResidentCaptureFrames,
     state: &'a StateArena,
     scratch: ArenaReadAccess<'a>,
     epoch: InstanceEpoch,
@@ -2469,9 +5149,16 @@ impl ResidentKernelInputs for GeneralScratchNodeInputs<'_> {
     }
 
     fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
-        match *self.locations.get(index)? {
+        let location = *self.locations.get(index)?;
+        if let Some(value) = continuation_capture(self.captures, location) {
+            return Some(value.as_ref());
+        }
+        match location {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
             ResidentReadLocation::Input(region) => Some(self.input.read(region)),
+            ResidentReadLocation::LexicalInput(region) => lexical_capture(self.captures, region)
+                .map(super::OwnedResidentValue::as_ref)
+                .or_else(|| Some(self.input.read(region))),
             ResidentReadLocation::State { slot, region } => {
                 self.state.read(slot, region, self.epoch)
             }
@@ -2480,9 +5167,16 @@ impl ResidentKernelInputs for GeneralScratchNodeInputs<'_> {
     }
 
     fn f64(&self, index: usize) -> Option<&[f64]> {
-        match *self.locations.get(index)? {
+        let location = *self.locations.get(index)?;
+        if let Some(value) = continuation_capture_f64(self.captures, location) {
+            return Some(value);
+        }
+        match location {
             ResidentReadLocation::Constant(region) => self.activation.read_f64(region),
             ResidentReadLocation::Input(region) => self.input.read_f64(region),
+            ResidentReadLocation::LexicalInput(region) => {
+                lexical_capture_f64(self.captures, region).or_else(|| self.input.read_f64(region))
+            }
             ResidentReadLocation::State { slot, region } => {
                 self.state.read_f64(slot, region, self.epoch)
             }
@@ -2495,6 +5189,7 @@ struct StateNodeInputsWithoutState<'a> {
     locations: &'a [ResidentReadLocation],
     activation: &'a TypedResidentArena,
     input: &'a TypedResidentArena,
+    captures: &'a ResidentCaptureFrames,
     scratch: &'a TypedResidentArena,
 }
 
@@ -2504,18 +5199,32 @@ impl ResidentKernelInputs for StateNodeInputsWithoutState<'_> {
     }
 
     fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
-        match *self.locations.get(index)? {
+        let location = *self.locations.get(index)?;
+        if let Some(value) = continuation_capture(self.captures, location) {
+            return Some(value.as_ref());
+        }
+        match location {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
             ResidentReadLocation::Input(region) => Some(self.input.read(region)),
+            ResidentReadLocation::LexicalInput(region) => lexical_capture(self.captures, region)
+                .map(super::OwnedResidentValue::as_ref)
+                .or_else(|| Some(self.input.read(region))),
             ResidentReadLocation::Scratch(region) => Some(self.scratch.read(region)),
             ResidentReadLocation::State { .. } => None,
         }
     }
 
     fn f64(&self, index: usize) -> Option<&[f64]> {
-        match *self.locations.get(index)? {
+        let location = *self.locations.get(index)?;
+        if let Some(value) = continuation_capture_f64(self.captures, location) {
+            return Some(value);
+        }
+        match location {
             ResidentReadLocation::Constant(region) => self.activation.read_f64(region),
             ResidentReadLocation::Input(region) => self.input.read_f64(region),
+            ResidentReadLocation::LexicalInput(region) => {
+                lexical_capture_f64(self.captures, region).or_else(|| self.input.read_f64(region))
+            }
             ResidentReadLocation::Scratch(region) => self.scratch.read_f64(region),
             ResidentReadLocation::State { .. } => None,
         }
@@ -2526,6 +5235,7 @@ struct StateNodeInputs<'a> {
     locations: &'a [ResidentReadLocation],
     activation: &'a TypedResidentArena,
     input: &'a TypedResidentArena,
+    captures: &'a ResidentCaptureFrames,
     state: StateReadAccess<'a>,
     scratch: &'a TypedResidentArena,
     epoch: InstanceEpoch,
@@ -2537,9 +5247,16 @@ impl ResidentKernelInputs for StateNodeInputs<'_> {
     }
 
     fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
-        match *self.locations.get(index)? {
+        let location = *self.locations.get(index)?;
+        if let Some(value) = continuation_capture(self.captures, location) {
+            return Some(value.as_ref());
+        }
+        match location {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
             ResidentReadLocation::Input(region) => Some(self.input.read(region)),
+            ResidentReadLocation::LexicalInput(region) => lexical_capture(self.captures, region)
+                .map(super::OwnedResidentValue::as_ref)
+                .or_else(|| Some(self.input.read(region))),
             ResidentReadLocation::State { slot, region } => {
                 self.state.read(slot, region, self.epoch)
             }
@@ -2548,9 +5265,16 @@ impl ResidentKernelInputs for StateNodeInputs<'_> {
     }
 
     fn f64(&self, index: usize) -> Option<&[f64]> {
-        match *self.locations.get(index)? {
+        let location = *self.locations.get(index)?;
+        if let Some(value) = continuation_capture_f64(self.captures, location) {
+            return Some(value);
+        }
+        match location {
             ResidentReadLocation::Constant(region) => self.activation.read_f64(region),
             ResidentReadLocation::Input(region) => self.input.read_f64(region),
+            ResidentReadLocation::LexicalInput(region) => {
+                lexical_capture_f64(self.captures, region).or_else(|| self.input.read_f64(region))
+            }
             ResidentReadLocation::State { slot, region } => {
                 self.state.read_f64(slot, region, self.epoch)
             }
@@ -2611,6 +5335,111 @@ fn copy_input(
         .finish_payload_write(region, scope)
         .map_err(ResidentCopyError::Memory)?;
     result.map_err(|_| ResidentCopyError::Layout)
+}
+
+fn owned_resident_value(value: ResidentValueRef<'_>) -> super::OwnedResidentValue {
+    match value {
+        ResidentValueRef::Bool(values) => {
+            super::OwnedResidentValue::Bool(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::Index(values) => {
+            super::OwnedResidentValue::Index(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::F64(values) => {
+            super::OwnedResidentValue::F64(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::String(values) => {
+            super::OwnedResidentValue::String(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::Snapshot(values) => {
+            super::OwnedResidentValue::Snapshot(values.to_vec().into_boxed_slice())
+        }
+    }
+}
+
+fn resident_continuation_footprint(
+    continuation: &super::ResidentContinuation,
+    schemas: &mech_core::SchemaTable,
+    meter: &mut budget::ResidentBudgetMeter,
+) -> Option<(u64, u64)> {
+    core::iter::once(&continuation.state)
+        .chain(continuation.captures.iter().map(|(_, value)| value))
+        .try_fold((0_u64, 0_u64), |(bytes, nodes), value| {
+            let footprint = resident_frame_value_footprint(value.as_ref(), schemas, meter)?;
+            Some((
+                bytes.checked_add(footprint.0)?,
+                nodes.checked_add(footprint.1)?,
+            ))
+        })
+}
+
+fn resident_frame_value_footprint(
+    value: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+    meter: &mut budget::ResidentBudgetMeter,
+) -> Option<(u64, u64)> {
+    // The frame Vec owns one entry and one boxed slice per local. Include an
+    // allocator allowance per box so many small scalar locals cannot evade
+    // the byte ceiling. The entry contains the enum and its slice header.
+    const ALLOCATION_OVERHEAD: u64 = 16;
+    let entry = u64::try_from(core::mem::size_of::<(
+        ResidentRegion,
+        super::OwnedResidentValue,
+    )>())
+    .ok()?
+    .checked_add(ALLOCATION_OVERHEAD)?;
+    let fixed = |len: usize, element: usize| {
+        u64::try_from(len)
+            .ok()?
+            .checked_mul(u64::try_from(element).ok()?)
+    };
+    let (payload_bytes, payload_nodes) = match value {
+        ResidentValueRef::Bool(values) => (fixed(values.len(), core::mem::size_of::<u8>())?, 0),
+        ResidentValueRef::Index(values) => (fixed(values.len(), core::mem::size_of::<u64>())?, 0),
+        ResidentValueRef::F64(values) => (fixed(values.len(), core::mem::size_of::<f64>())?, 0),
+        ResidentValueRef::String(values) => {
+            meter
+                .charge_compute_work(u64::try_from(values.len()).ok()?)
+                .ok()?;
+            values.iter().try_fold(
+                (fixed(values.len(), core::mem::size_of::<String>())?, 0u64),
+                |(bytes, nodes), value| {
+                    Some((
+                        bytes
+                            .checked_add(u64::try_from(value.len()).ok()?)?
+                            .checked_add(ALLOCATION_OVERHEAD)?,
+                        nodes.checked_add(1)?,
+                    ))
+                },
+            )?
+        }
+        ResidentValueRef::Snapshot(values) => {
+            meter
+                .charge_compute_work(u64::try_from(values.len()).ok()?)
+                .ok()?;
+            values.iter().try_fold(
+                (
+                    fixed(values.len(), core::mem::size_of::<Option<Value>>())?,
+                    0u64,
+                ),
+                |(bytes, nodes), value| {
+                    let Some(value) = value else {
+                        return Some((bytes, nodes));
+                    };
+                    let footprint =
+                        budget::measure_canonical_value_footprint(meter, value, schemas).ok()?;
+                    Some((
+                        bytes.checked_add(footprint.retained_bytes)?,
+                        nodes.checked_add(footprint.node_count)?,
+                    ))
+                },
+            )?
+        }
+    };
+    Some((
+        entry.checked_add(payload_bytes)?,
+        payload_nodes.checked_add(1)?,
+    ))
 }
 
 fn copy_input_unchecked(
@@ -2675,15 +5504,98 @@ fn regions_equal(
     }
 }
 
-fn scalar_token(value: ResidentValueRef<'_>) -> Option<u64> {
-    match value {
-        ResidentValueRef::Bool([value]) => Some(u64::from(*value)),
-        ResidentValueRef::Index([value]) => Some(*value),
-        ResidentValueRef::F64([value]) => Some(value.to_bits()),
-        ResidentValueRef::String([value]) => Some(hash_string(value)),
-        ResidentValueRef::Snapshot(_) => None,
-        _ => None,
+fn resident_values_equal(left: ResidentValueRef<'_>, right: ResidentValueRef<'_>) -> bool {
+    match (left, right) {
+        (ResidentValueRef::Bool(left), ResidentValueRef::Bool(right)) => left == right,
+        (ResidentValueRef::Index(left), ResidentValueRef::Index(right)) => left == right,
+        (ResidentValueRef::F64(left), ResidentValueRef::F64(right)) => left
+            .iter()
+            .zip(right)
+            .all(|(left, right)| left.to_bits() == right.to_bits()),
+        (ResidentValueRef::String(left), ResidentValueRef::String(right)) => left == right,
+        (ResidentValueRef::Snapshot(_), ResidentValueRef::Snapshot(_)) => false,
+        _ => false,
     }
+}
+
+fn rmw_outputs_equal(
+    left: &TypedResidentArena,
+    left_region: ResidentRegion,
+    right: &TypedResidentArena,
+    right_region: ResidentRegion,
+    schemas: &mech_core::SchemaTable,
+) -> bool {
+    if let (ResidentValueRef::Snapshot(left), ResidentValueRef::Snapshot(right)) =
+        (left.read(left_region), right.read(right_region))
+    {
+        return left.len() == right.len()
+            && left
+                .iter()
+                .zip(right)
+                .all(|(left, right)| match (left, right) {
+                    (None, None) => true,
+                    (Some(left), Some(right)) => {
+                        left.schema() == right.schema()
+                            && left.shape() == right.shape()
+                            && schemas.get(left.schema()).is_some_and(|schema| {
+                                mech_core::snapshot::schema_data_snapshot_eq(
+                                    schema.body(),
+                                    left.data(),
+                                    right.data(),
+                                )
+                            })
+                    }
+                    _ => false,
+                });
+    }
+    regions_equal(left, left_region, right, right_region)
+}
+
+fn scalar_token(value: ResidentValueRef<'_>) -> Option<(u8, u128, u128)> {
+    use mech_core::ValueData;
+    let data = match value {
+        ResidentValueRef::Bool([value]) => return Some((0, u128::from(*value), 0)),
+        ResidentValueRef::Index([value]) => return Some((1, u128::from(*value), 0)),
+        ResidentValueRef::F64([value]) => return Some((2, u128::from(value.to_bits()), 0)),
+        ResidentValueRef::String([value]) => return Some((3, u128::from(hash_string(value)), 0)),
+        ResidentValueRef::Snapshot([Some(value)]) => value.data(),
+        _ => return None,
+    };
+    // Preserve all scalar bits: narrowing i128/u128 or hashing a snapshot
+    // would make distinct values indistinguishable to ExactScalar propagation.
+    Some(match data {
+        ValueData::U8(value) => (4, u128::from(*value), 0),
+        ValueData::U16(value) => (5, u128::from(*value), 0),
+        ValueData::U32(value) => (6, u128::from(*value), 0),
+        ValueData::U64(value) => (7, u128::from(*value), 0),
+        ValueData::U128(value) => (8, *value, 0),
+        ValueData::I8(value) => (9, *value as u128, 0),
+        ValueData::I16(value) => (10, *value as u128, 0),
+        ValueData::I32(value) => (11, *value as u128, 0),
+        ValueData::I64(value) => (12, *value as u128, 0),
+        ValueData::I128(value) => (13, *value as u128, 0),
+        ValueData::F32(value) => (14, u128::from(value.bits()), 0),
+        ValueData::F64(value) => (15, u128::from(value.bits()), 0),
+        ValueData::Complex32(value) => (
+            16,
+            u128::from(value.real().bits()),
+            u128::from(value.imaginary().bits()),
+        ),
+        ValueData::Complex64(value) => (
+            17,
+            u128::from(value.real().bits()),
+            u128::from(value.imaginary().bits()),
+        ),
+        ValueData::Rational64(value) => (
+            18,
+            value.numerator() as u128,
+            u128::from(value.denominator()),
+        ),
+        ValueData::Bool(value) => (19, u128::from(*value), 0),
+        ValueData::Id(value) => (20, u128::from(*value), 0),
+        ValueData::Index(value) => (21, u128::from(*value), 0),
+        _ => return None,
+    })
 }
 
 fn region_bytes(region: ResidentRegion) -> usize {
@@ -2697,11 +5609,17 @@ fn region_bytes(region: ResidentRegion) -> usize {
 }
 
 fn bit_is_set(words: &[u64], bit: usize) -> bool {
-    words[bit / 64] & (1_u64 << (bit % 64)) != 0
+    words
+        .get(bit / 64)
+        .is_some_and(|word| word & (1_u64 << (bit % 64)) != 0)
 }
 
 fn set_bit(words: &mut [u64], bit: usize) {
     words[bit / 64] |= 1_u64 << (bit % 64);
+}
+
+fn clear_bit(words: &mut [u64], bit: usize) {
+    words[bit / 64] &= !(1_u64 << (bit % 64));
 }
 
 fn or_bits(target: &mut [u64], source: &[u64]) {
@@ -2770,8 +5688,755 @@ fn hash_string(value: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::resident::general::comprehension::ActivatedCollectionStep;
     use crate::resident::general::{ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
+
+    #[test]
+    fn recursive_frame_cost_includes_entries_and_snapshot_nodes() {
+        let snapshot = mech_core::ValueCell::from_exact(true)
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        let schemas = snapshot.schemas().unwrap();
+        let mut meter = budget::ResidentBudgetMeter::default();
+        let (scalar_bytes, scalar_nodes) =
+            resident_frame_value_footprint(ResidentValueRef::Bool(&[1]), &schemas, &mut meter)
+                .unwrap();
+        assert!(
+            scalar_bytes
+                > core::mem::size_of::<(ResidentRegion, super::super::OwnedResidentValue)>() as u64
+        );
+        assert_eq!(scalar_nodes, 1);
+        let (snapshot_bytes, snapshot_nodes) = resident_frame_value_footprint(
+            ResidentValueRef::Snapshot(&[Some(snapshot.clone())]),
+            &schemas,
+            &mut meter,
+        )
+        .unwrap();
+        let footprint = snapshot.retained_footprint(&schemas).unwrap();
+        assert!(snapshot_bytes > footprint.retained_bytes);
+        assert_eq!(snapshot_nodes, footprint.node_count + 1);
+        assert!(meter.estimate().compute_work() > 0);
+    }
+
+    #[cfg(feature = "source")]
+    fn source_instance(source: &str) -> ReactiveInstance {
+        source_instance_with_budget(source, None)
+    }
+
+    #[cfg(feature = "source")]
+    fn source_instance_with_budget(
+        source: &str,
+        budget: Option<mech_core::ManagedMemoryBudget>,
+    ) -> ReactiveInstance {
+        use mech_syntax::document::{
+            AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
+        };
+        fn expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
+            ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(expression))
+        }
+        let parsed = mech_syntax::document::parse_canonical_document(
+            TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean());
+        let syntax = expression(parsed.syntax()).unwrap();
+        assert_eq!(syntax.syntax().range(), parsed.source.full_range());
+        let artifact = crate::CanonicalSourceFrontend
+            .compile_expression(&syntax)
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let mut catalog = mech_core::FunctionCatalogBuilder::new();
+        crate::install_intrinsic_resident(&mut catalog).unwrap();
+        crate::resident::activate_with_options(
+            mech_core::ReactiveInstanceId::new(822, 1),
+            &artifact,
+            &catalog.build().unwrap(),
+            &crate::resident::ActivationFacts::default(),
+            crate::resident::ResidentActivationOptions {
+                memory_budget: budget,
+                ..Default::default()
+            },
+        )
+        .unwrap()
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn control_locals_retain_distinct_certified_turn_call_plans() {
+        let instance =
+            source_instance("flag<bool> ? | true => signal<f64> + 1 | false => signal<f64> * 2");
+        let mut locals = 0;
+        for (index, step) in instance.plan.steps.iter().enumerate() {
+            let ActivatedTurnStep::Kernel(kernel) = step else {
+                continue;
+            };
+            locals += 1;
+            assert_ne!(kernel.memory_node, kernel.artifact_node);
+            let turn = instance.workspace.fixed_turn_plans[index].as_ref().unwrap();
+            assert_eq!(turn.node, kernel.memory_node);
+            let call = turn
+                .call
+                .as_ref()
+                .expect("a local operation cannot use an empty enclosing-node plan");
+            assert_eq!(call.inputs.len(), 2);
+            assert_eq!(call.outputs.len(), 1);
+        }
+        assert_eq!(locals, 2);
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_operation_plan_counts_live_enclosing_arena() {
+        let mut instance = source_instance("[(x + 1) | x <- signal<[f64]:1,1>]");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Kernel(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("the comprehension contains one nested arithmetic operation");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        assert!(matches!(
+            instance.with_kernel_turn_plan_and_live_demand(
+                operation,
+                before,
+                working,
+                mech_core::RESIDENT_MAX_BYTES,
+                1,
+                |_| Ok(()),
+            ),
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_parameterized_operation_locals_use_turn_shaped_snapshot_storage() {
+        let instance =
+            source_instance("[[z | z <- rest] + rest | [head | rest] <- signal<[[f64]:1,3]:1,2>]");
+        assert!(instance.plan.steps.iter().any(|step| {
+            matches!(
+                step,
+                ActivatedTurnStep::Kernel(kernel)
+                    if kernel.write.region.kind == ResidentValueKind::Snapshot
+            )
+        }));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_steps_retain_unconsumed_managed_local_demand() {
+        let instance = source_instance(
+            "[number + 1 | [head | rest] <- signal<[[f64]:1,3]:1,2>, number <- [1]]",
+        );
+        let retained = instance.plan.steps.iter().find_map(|step| {
+            let ActivatedTurnStep::Comprehension(control) = step else {
+                return None;
+            };
+            control.steps.iter().find_map(|step| {
+                let ActivatedCollectionStep::Operation {
+                    retained_local_count,
+                    excluded_locals,
+                    ..
+                } = step
+                else {
+                    return None;
+                };
+                Some((
+                    control
+                        .locals
+                        .get(..*retained_local_count as usize)
+                        .expect("validated retained-local prefix"),
+                    excluded_locals.as_ref(),
+                ))
+            })
+        });
+        let (retained, excluded) = retained.expect("ordinary operation inside the comprehension");
+        assert!(
+            retained
+                .iter()
+                .enumerate()
+                .any(|(index, local)| local.kind == ResidentValueKind::Snapshot
+                    && !excluded.contains(&(index as u32))),
+            "the unconsumed rest binding remains live across the arithmetic step"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_child_omits_live_captured_rest_input() {
+        let instance =
+            source_instance("[[z + 1 | z <- rest] | [head | rest] <- signal<[[f64]:1,3]:1,2>]");
+        let (capture, child_reads) = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| {
+                let ActivatedTurnStep::Comprehension(control) = step else {
+                    return None;
+                };
+                let capture = instance.plan.reads
+                    [control.reads.start as usize..control.reads.end as usize]
+                    .iter()
+                    .copied()
+                    .find(|location| {
+                        matches!(location, ResidentReadLocation::Scratch(region)
+                            if region.kind == ResidentValueKind::Snapshot)
+                    })?;
+                let child = control.steps.iter().find_map(|step| {
+                    let ActivatedCollectionStep::Operation { node, .. } = step else {
+                        return None;
+                    };
+                    instance.plan.steps[node.get() as usize].memory_site()
+                })?;
+                Some((capture, child.reads))
+            })
+            .expect("nested comprehension captures the outer rest binding");
+        assert!(
+            !instance.plan.reads[child_reads.start as usize..child_reads.end as usize]
+                .contains(&capture),
+            "the child call plan cannot account for its wrapper's live capture"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn selected_structural_arm_steps_retain_unconsumed_binding_demand() {
+        let instance = source_instance("[1 2 3] ? | [head | rest] => head + 1 | * => 0");
+        let control = instance.plan.steps.iter().find_map(|step| {
+            let ActivatedTurnStep::Match(control) = step else {
+                return None;
+            };
+            control
+                .arms
+                .iter()
+                .find(|arm| !arm.binding_regions.is_empty())
+                .map(|arm| (control, arm))
+        });
+        let (_, arm) = control.expect("structural match arm");
+        let (binding_index, binding) = arm
+            .binding_regions
+            .iter()
+            .copied()
+            .enumerate()
+            .find(|(_, binding)| binding.kind == ResidentValueKind::Snapshot)
+            .expect("managed rest binding");
+        assert_eq!(binding.kind, ResidentValueKind::Snapshot);
+        assert_eq!(arm.body.locals[binding_index], binding);
+        assert!(arm.body.steps.iter().all(|step| {
+            step.retained_local_count > binding_index as u32
+                && !step.excluded_locals.contains(&(binding_index as u32))
+        }));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn match_publication_counts_unused_managed_binding() {
+        let mut instance =
+            source_instance("(\"retained\", true) ? | (unused, true) => \"yield\" | * => \"\"");
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("match operation");
+        let ActivatedTurnStep::Match(control) = &instance.plan.steps[operation.get() as usize]
+        else {
+            unreachable!()
+        };
+        let budget_node = control.budget_node;
+        assert!(control.arms[0].body.steps.is_empty());
+        assert!(
+            control.arms[0]
+                .body
+                .locals
+                .iter()
+                .any(|local| local.kind == ResidentValueKind::String)
+        );
+        // Find the largest enclosing demand admitted by the original wrapper.
+        // The selected binding pushes final publication beyond that limit.
+        let admitted = |bytes| {
+            let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+            facts.additional_demand.turn_peak_bytes = bytes;
+            crate::memory_planner::plan_current_resident_turn(
+                &instance.plan.memory_plan,
+                budget_node,
+                &facts,
+            )
+            .is_ok_and(|plan| plan.budget_violations.is_empty())
+        };
+        assert!(admitted(0));
+        let mut low = 0;
+        let mut high = mech_core::RESIDENT_MAX_BYTES;
+        while low < high {
+            let middle = low + (high - low + 1) / 2;
+            if admitted(middle) {
+                low = middle;
+            } else {
+                high = middle - 1;
+            }
+        }
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        let result = instance.execute_match_expression(
+            operation,
+            before,
+            working,
+            &mut ResidentStructuralProbe::default(),
+            low,
+            0,
+            0,
+        );
+        assert!(matches!(
+            result,
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_match_operations_retain_managed_inputs_and_prior_output() {
+        let instance = source_instance("[(item ? | * => item) | item <- signal<[string]:1,1>]");
+        let (control, operation) = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| {
+                let ActivatedTurnStep::Comprehension(control) = step else {
+                    return None;
+                };
+                control.steps.iter().find_map(|operation| {
+                    let ActivatedCollectionStep::Operation { node, .. } = operation else {
+                        return None;
+                    };
+                    matches!(
+                        instance.plan.steps[node.get() as usize],
+                        ActivatedTurnStep::Match(_)
+                    )
+                    .then_some((control.as_ref(), operation))
+                })
+            })
+            .expect("nested match operation");
+        let ActivatedCollectionStep::Operation {
+            retained_local_count,
+            excluded_locals,
+            ..
+        } = operation
+        else {
+            unreachable!()
+        };
+        assert_eq!(*retained_local_count as usize, control.locals.len());
+        assert!(excluded_locals.is_empty());
+        assert!(
+            control.locals.iter().all(|local| matches!(
+                local.kind,
+                ResidentValueKind::String | ResidentValueKind::Snapshot
+            )),
+            "the match scrutinee and previous output are both managed locals"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_match_plan_counts_live_enclosing_arena() {
+        let mut instance =
+            source_instance("[(item ? | 1 => 10 | * => 20) | item <- signal<[f64]:1,1>]");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("the comprehension contains one nested match operation");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        let result = instance.execute_step_with_live_demand(
+            operation,
+            before,
+            working,
+            &mut ResidentStructuralProbe::default(),
+            mech_core::RESIDENT_MAX_BYTES + 1,
+            0,
+        );
+        assert!(
+            matches!(
+                result,
+                Err(ResidentExecutionError::Kernel {
+                    error: ResidentKernelError::InvalidShape,
+                    ..
+                })
+            ),
+            "{result:?}"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_selected_match_steps_count_live_enclosing_arena() {
+        let mut instance = source_instance("true ? | true => signal<f64> + 1 | false => signal");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("match operation");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        let result = instance.execute_match_expression(
+            operation,
+            before,
+            working,
+            &mut ResidentStructuralProbe::default(),
+            mech_core::RESIDENT_MAX_BYTES,
+            0,
+            0,
+        );
+        assert!(matches!(
+            result,
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_plan_counts_live_enclosing_arena() {
+        let mut instance =
+            source_instance("[[z | z <- [1 2], z <= item] | item <- signal<[f64]:1,1>]");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Comprehension(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("the outer comprehension contains one nested comprehension");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        assert!(matches!(
+            instance.execute_step_with_live_demand(
+                operation,
+                before,
+                working,
+                &mut ResidentStructuralProbe::default(),
+                mech_core::RESIDENT_MAX_BYTES,
+                1,
+            ),
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn match_payload_locals_are_released_after_commit_failure_and_abort() {
+        for source in [
+            "(values<[f64]:1,2>, flag<bool> ? | true => ((signal<f64>, true), 1) | false => ((signal, false), values[index<f64>]))",
+            "(values<[f64]:1,2>, flag<bool> ? | true => (signal<f64> ? | * => ((signal, true), 1)) | false => (signal ? | * => ((signal, false), values[index<f64>])))",
+        ] {
+            for managed in [false, true] {
+                let mut instance = source_instance_with_budget(
+                    source,
+                    managed.then(|| mech_core::ManagedMemoryBudget::new(1024 * 1024)),
+                );
+                let slots = instance
+                    .plan
+                    .inputs
+                    .iter()
+                    .map(|input| input.slot)
+                    .collect::<Vec<_>>();
+                let inputs = |flag, index| {
+                    [
+                        CapturedSignalInput {
+                            slot: slots[0],
+                            value: ResidentValueRef::F64(&[1.0, 2.0]),
+                        },
+                        CapturedSignalInput {
+                            slot: slots[1],
+                            value: ResidentValueRef::Bool(flag),
+                        },
+                        CapturedSignalInput {
+                            slot: slots[2],
+                            value: ResidentValueRef::F64(&[7.0]),
+                        },
+                        CapturedSignalInput {
+                            slot: slots[3],
+                            value: ResidentValueRef::F64(index),
+                        },
+                    ]
+                };
+                let released = |instance: &ReactiveInstance| {
+                    let mut payloads = 0;
+                    for step in &instance.plan.steps {
+                        let ActivatedTurnStep::Match(control) = step else {
+                            continue;
+                        };
+                        for region in &control.locals {
+                            if let ResidentValueRef::Snapshot(values) =
+                                instance.workspace.scratch.read(*region)
+                            {
+                                payloads += 1;
+                                assert!(
+                                    values.iter().all(Option::is_none),
+                                    "match local retained a payload"
+                                );
+                            }
+                        }
+                    }
+                    assert!(
+                        payloads >= 4,
+                        "both arms must construct managed local payloads"
+                    );
+                };
+                instance.turn(&inputs(&[1], &[3.0])).unwrap();
+                released(&instance);
+                let epoch = instance.published_epoch();
+                let output = instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap();
+                assert!(instance.turn(&inputs(&[0], &[3.0])).is_err());
+                released(&instance);
+                assert_eq!(instance.published_epoch(), epoch);
+                instance
+                    .prepare_turn(&inputs(&[0], &[2.0]))
+                    .unwrap()
+                    .abort();
+                released(&instance);
+                assert_eq!(instance.published_epoch(), epoch);
+                assert_eq!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    output
+                );
+                instance.turn(&inputs(&[0], &[2.0])).unwrap();
+                released(&instance);
+            }
+        }
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn structural_arm_clone_admission_uses_peak_depth() {
+        let instance = source_instance(
+            "(\"payload\", true) ? | (text, false) => 0 | (text, true) => 1 | * => 2",
+        );
+        let arms = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedTurnStep::Match(matched) => Some(matched.arms.as_ref()),
+                _ => None,
+            })
+            .expect("structural match step");
+        let depths = arms
+            .iter()
+            .filter_map(|arm| match &arm.pattern {
+                super::super::ActivatedMatchPattern::Structural { clone_depth, .. } => {
+                    Some(*clone_depth)
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(depths.len(), 2);
+        assert!(depths.iter().all(|depth| *depth > 0));
+        assert_eq!(
+            peak_structural_clone_depth(arms),
+            *depths.iter().max().unwrap()
+        );
+        assert!(peak_structural_clone_depth(arms) < depths.iter().sum());
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn rejected_structural_arm_releases_its_payload_bindings_before_fallthrough() {
+        let mut instance = source_instance(
+            "(\"payload\", 2) ? | (first, 0) => first | (second, *) => second | * => \"\"",
+        );
+        let node_index = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .and_then(|index| u32::try_from(index).ok())
+            .map(ActivatedNodeIndex)
+            .expect("structural match step");
+        let (rejected, selected) = {
+            let ActivatedTurnStep::Match(control) = &instance.plan.steps[node_index.get() as usize]
+            else {
+                unreachable!()
+            };
+            assert_eq!(control.arms[0].binding_regions.len(), 1);
+            assert_eq!(control.arms[1].binding_regions.len(), 1);
+            (
+                control.arms[0].binding_regions[0],
+                control.arms[1].binding_regions[0],
+            )
+        };
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        instance
+            .execute_match_expression(
+                node_index,
+                before,
+                working,
+                &mut ResidentStructuralProbe::default(),
+                0,
+                0,
+                0,
+            )
+            .unwrap();
+
+        assert!(matches!(
+            instance.workspace.scratch.read(rejected),
+            ResidentValueRef::String([value]) if value.is_empty()
+        ));
+        assert!(matches!(
+            instance.workspace.scratch.read(selected),
+            ResidentValueRef::String([value]) if value == "payload"
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn selected_match_calls_share_a_budget_that_resets_each_turn() {
+        fn metered(
+            kernel: &mech_core::BoundResidentKernel,
+            inputs: &dyn ResidentKernelInputs,
+            output: ResidentValueMut<'_>,
+        ) -> Result<bool, ResidentKernelError> {
+            // A cheap executor with a declared workload exercises real control
+            // admission without allocating a maximum-sized numerical fixture.
+            budget::ResidentBudgetMeter::default().charge_compute_work(kernel.parameters()[0])?;
+            let ResidentValueMut::F64(output) = output else {
+                unreachable!()
+            };
+            output[0] = inputs.f64(0).unwrap()[0] + 1.0;
+            Ok(true)
+        }
+        for source in [
+            "flag<bool> ? | true => math/neg(signal<f64>) + 1 | false => signal",
+            "flag<bool> ? | true => (signal<f64> ? | item => math/neg(item)) + 1 | false => signal",
+        ] {
+            let mut instance = source_instance(source);
+            let slots = instance
+                .plan
+                .inputs
+                .iter()
+                .map(|input| input.slot)
+                .collect::<Vec<_>>();
+            let inputs = |flag| {
+                [
+                    CapturedSignalInput {
+                        slot: slots[0],
+                        value: ResidentValueRef::Bool(flag),
+                    },
+                    CapturedSignalInput {
+                        slot: slots[1],
+                        value: ResidentValueRef::F64(&[7.0]),
+                    },
+                ]
+            };
+            let install = |instance: &mut ReactiveInstance, work| {
+                let mut calls = 0;
+                for step in &mut instance.plan.steps {
+                    if let ActivatedTurnStep::Kernel(kernel) = step {
+                        kernel.kernel =
+                            mech_core::BoundResidentKernel::new(metered, Box::new([work]));
+                        calls += 1;
+                    }
+                }
+                assert_eq!(calls, 2);
+            };
+            install(&mut instance, mech_core::RESIDENT_MAX_COMPUTE_WORK / 2 + 1);
+            instance.turn(&inputs(&[0])).unwrap();
+            let epoch = instance.published_epoch();
+            assert!(matches!(
+                instance.turn(&inputs(&[1])),
+                Err(ResidentExecutionError::Kernel {
+                    error: ResidentKernelError::InvalidShape,
+                    ..
+                })
+            ));
+            assert_eq!(instance.published_epoch(), epoch);
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(7.0))
+            );
+            // The selected control body itself contributes eight units of
+            // compute work before the two installed calls. Split the
+            // remaining allowance exactly so the fixture tests accumulation
+            // and per-turn reset instead of accidentally exceeding the limit.
+            const CONTROL_BODY_COMPUTE_WORK: u64 = 8;
+            install(
+                &mut instance,
+                (mech_core::RESIDENT_MAX_COMPUTE_WORK - CONTROL_BODY_COMPUTE_WORK) / 2,
+            );
+            for _ in 0..2 {
+                instance.turn(&inputs(&[1])).unwrap();
+                assert_eq!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(9.0))
+                );
+            }
+        }
+    }
 
     fn state_arena() -> StateArena {
         let sizes = ResidentArenaSizes {
@@ -2921,5 +6586,80 @@ mod tests {
         assert!(state.same_at(slot, candidate, InstanceEpoch::ZERO));
         state.abort(working);
         assert_eq!(scalar(&state, 0, 0), 10.0);
+    }
+
+    #[test]
+    fn match_conversion_peak_counts_prior_and_candidate_snapshot_nodes()
+    -> Result<(), ResidentKernelError> {
+        let prior = 32_770;
+        let candidate = 32_770;
+        let peak = match_conversion_peak_retained_nodes(prior, candidate).unwrap();
+        assert_eq!(peak, 65_540);
+        assert_eq!(
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    retained_nodes: peak,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()
+            .map(|permit| permit.into_plan()),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(
+            match_conversion_peak_retained_nodes(u64::MAX, 1),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn recursive_inventory_cost_includes_live_local_demand() {
+        let cost = recursive_inventory_cost(1_024, 17, 96).unwrap();
+        assert_eq!(cost.compute_work(), 96);
+        assert_eq!(cost.temporary_bytes(), 1_120);
+        assert_eq!(cost.retained_nodes(), 17);
+        assert_eq!(
+            recursive_inventory_cost(u64::MAX, 0, 1),
+            Err(ResidentKernelError::InvalidShape)
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn match_conversion_prior_footprint_charges_the_complete_borrowed_traversal()
+    -> Result<(), ResidentKernelError> {
+        let mut instance =
+            source_instance("true ? | true => signal<[string]:1,2> | false => [\"\" \"\"]");
+        let slot = instance.plan.inputs[0].slot;
+        let prior = ["p".repeat(25 * 1024), "q".repeat(25 * 1024)];
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&prior),
+            }])
+            .unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let (nodes, work) =
+            match_conversion_prior_footprint(Some(&output), &instance.plan.schemas).unwrap();
+        assert!(nodes >= 5);
+        assert!(work.comparison_work() >= 50 * 1024);
+
+        let candidate_work = 20 * 1024;
+        assert_eq!(
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    comparison_work: work.comparison_work() + candidate_work,
+                    compute_work: work.compute_work() + candidate_work,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()
+            .map(|permit| permit.into_plan()),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        Ok(())
     }
 }

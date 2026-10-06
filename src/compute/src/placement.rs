@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(feature = "runtime-values")]
 use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, CellSlotId, ComputePlacement, DeliveryMode, ExternalInteraction, FloatWidth,
@@ -97,15 +98,19 @@ pub fn plan_compute_artifact(
         .nodes()
         .iter()
         .map(|node| {
-            let operation = display_operation(&node.operation);
-            let (target, reason) = if turn_nodes.contains(&node.node) {
-                classify_node(artifact, node, &slot_dimensions)
-            } else {
-                (
-                    ComputeExecutionTarget::Structural,
-                    "initialization only; captured in the typed artifact".to_owned(),
-                )
-            };
+            let operation = node.as_operation().map_or_else(
+                || "Match".to_owned(),
+                |node| display_operation(node.operation),
+            );
+            let (target, reason) =
+                if node.as_operation().is_none() || turn_nodes.contains(&node.node) {
+                    classify_node(artifact, node, &slot_dimensions)
+                } else {
+                    (
+                        ComputeExecutionTarget::Structural,
+                        "initialization only; captured in the typed artifact".to_owned(),
+                    )
+                };
             NodePlacement {
                 node: node.node,
                 operation,
@@ -400,6 +405,12 @@ fn classify_node(
     node: &mech_engine::NodeDeclaration,
     slot_dimensions: &BTreeMap<CellSlotId, Box<[u64]>>,
 ) -> (ComputeExecutionTarget, String) {
+    let Some(node) = node.as_operation() else {
+        return (
+            ComputeExecutionTarget::Cpu,
+            "Typed match control requires resident execution".to_owned(),
+        );
+    };
     if node.operation.module_path.as_ref() == ["core"]
         && node.operation.operation_name == "composite-pack"
     {
@@ -419,7 +430,7 @@ fn classify_node(
     if state_output {
         if node.operation.module_path.as_ref() == ["core"]
             && node.operation.operation_name == "assign"
-            && contract_supported(artifact, node, true)
+            && contract_supported(artifact, &node, true)
         {
             return (
                 ComputeExecutionTarget::Gpu,
@@ -440,7 +451,7 @@ fn classify_node(
     }
     let host_proven_concatenation =
         matches!(lowered_operation, Some(ElementwiseLowering::Concatenate(_)));
-    if !host_proven_concatenation && !contract_supported(artifact, node, false) {
+    if !host_proven_concatenation && !contract_supported(artifact, &node, false) {
         return (
             ComputeExecutionTarget::Cpu,
             "operation contract does not prove pure full-write execution".to_owned(),
@@ -463,17 +474,27 @@ fn classify_node(
             BindingDeclaration::Input {
                 source: ArtifactSource::Constant(constant),
                 ..
-            } => match artifact
-                .constants()
-                .get(*constant)
-                .map(|value| value.data())
-            {
-                Some(mech_core::ValueData::F32(_)) => true,
-                Some(mech_core::ValueData::Matrix(matrix)) => {
-                    matches!(matrix.elements(), SequenceView::F32(_))
+            } => {
+                #[cfg(feature = "runtime-values")]
+                {
+                    match artifact
+                        .constants()
+                        .get(*constant)
+                        .map(|value| value.data())
+                    {
+                        Some(mech_core::ValueData::F32(_)) => true,
+                        Some(mech_core::ValueData::Matrix(matrix)) => {
+                            matches!(matrix.elements(), SequenceView::F32(_))
+                        }
+                        _ => false,
+                    }
                 }
-                _ => false,
-            },
+                #[cfg(not(feature = "runtime-values"))]
+                {
+                    let _ = constant;
+                    false
+                }
+            }
             BindingDeclaration::Output { target, .. } => schema_elements(
                 artifact,
                 artifact.slots()[target.get() as usize].schema,
@@ -498,6 +519,9 @@ fn contract_supported(
     node: &mech_engine::NodeDeclaration,
     state: bool,
 ) -> bool {
+    let Some(node) = node.as_operation() else {
+        return false;
+    };
     let Some(ResolvedOperationContract::Declared(contract)) =
         artifact.contracts().get(node.contract)
     else {
@@ -586,7 +610,9 @@ fn physical_output_sources(artifact: &ProgramArtifact, slot: CellSlotId) -> Vec<
         | ProducerReference::Input(_) => return vec![slot],
         ProducerReference::NodeOutput { node, .. } => node,
     };
-    let producer = &artifact.nodes()[node.get() as usize];
+    let Some(producer) = artifact.nodes()[node.get() as usize].as_operation() else {
+        return vec![slot];
+    };
     if producer.operation.module_path.as_ref() != ["core"]
         || producer.operation.operation_name != "composite-pack"
     {

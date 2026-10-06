@@ -13,7 +13,7 @@ from ci_owners import DEFAULT_OWNER_CONFIG, REPOSITORY_ROOT, load_owners
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--owners", required=True, help="comma-separated owner names")
+    parser.add_argument("--owners", default="", help="comma-separated owner names")
     parser.add_argument("--config", type=Path, default=DEFAULT_OWNER_CONFIG)
     return parser.parse_args()
 

@@ -1,0 +1,377 @@
+#!/usr/bin/env python3
+"""Exercise document occurrence and console transitions through the shipped controller."""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import tempfile
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from tests.browser.harness import ChromeSession, free_port, wait_for_http
+
+
+OUTPUT_ASSERTIONS = """
+  const checkOutput = (node, address, value) => {
+    if (!node || document.getElementById(address) !== node || node.textContent.trim() !== value) {
+      throw new Error(`Original placeholder: ${node?.textContent}, expected ${value}`);
+    }
+    if (!node.classList.contains('mech-clickable') || node.getAttribute('role') !== 'button' || node.tabIndex !== 0 || node.hasAttribute('aria-disabled')) {
+      throw new Error('Published output is not selectable');
+    }
+  };
+  const checkUnavailable = (node, address) => {
+    if (document.getElementById(address) !== node || node.childNodes.length !== 0 || node.hasAttribute('data-mech-source')) {
+      throw new Error(`Unavailable placeholder retains content: ${node.textContent}`);
+    }
+    if (node.dataset.mechValueAvailable !== 'false' || node.classList.contains('mech-clickable') || node.hasAttribute('role') || node.hasAttribute('tabindex') || node.getAttribute('aria-disabled') !== 'true') {
+      throw new Error('Unavailable placeholder remains selectable');
+    }
+    const selectionState = () => JSON.stringify([
+      ...document.querySelectorAll('[data-mech-repl-popup], .mech-repl-transcript, [data-mech-errors-panel]'),
+    ].map(element => element.outerHTML));
+    const before = selectionState();
+    node.click();
+    for (const key of ['Enter', ' ']) {
+      node.dispatchEvent(new KeyboardEvent('keydown', {key, bubbles:true, cancelable:true}));
+    }
+    if (selectionState() !== before) throw new Error('Unavailable output handled a selection');
+  };
+  const checkSelection = (node, address, value) => {
+    checkOutput(node, address, value);
+    // Use the closed-console inspector to observe selection of the restored node.
+    const root = document.querySelector('.mech-root');
+    const consoleOpen = root.dataset.mechConsoleOpen;
+    root.dataset.mechConsoleOpen = 'false';
+    node.click();
+    const popup = document.querySelector('[data-mech-repl-popup]');
+    if (!popup || popup.querySelector('.mech-output-value')?.textContent.trim() !== value || popup.classList.contains('mech-inline-popup--error')) {
+      throw new Error('Restored output selection did not inspect the current value');
+    }
+    popup.querySelector('.mech-inline-popup__close').click();
+    root.dataset.mechConsoleOpen = consoleOpen;
+  };
+"""
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--mech-bin", default="target/debug/mech")
+    parser.add_argument("--artifacts", default="target/browser-document-lifecycle")
+    args = parser.parse_args()
+    binary = Path(args.mech_bin).resolve()
+    artifacts = Path(args.artifacts).resolve()
+    artifacts.mkdir(parents=True, exist_ok=True)
+    results = []
+    with tempfile.TemporaryDirectory(prefix="document-source-", dir=artifacts) as directory:
+        source_dir = Path(directory)
+        (source_dir / "fence.mec").write_text("~~~mech\n11\n~~~\n")
+        (source_dir / "inline.mec").write_text("anchor := 0\n\nVisible {11}.\n")
+        (source_dir / "title.mec").write_text("Document\n========\nsection: {1}\n========\n\nVisible {1}.\n")
+        (source_dir / "figure.mec").write_text("anchor := 0\n\n| ![one {11}](one.png) | ![two {22}](two.png) |\n\nNeighbor {33}.\n")
+        overlap = source_dir / "overlap.mec"
+        overlap.write_text("1. First\n---------\nFirst {11} with [BOOK] and [^note].\n\n1. Second\n----------\nSecond {22}.\n\n[^note]: A footnote.\n\n[BOOK]: A reference.\n")
+        overlap_shim = source_dir / "overlap-shim.html"
+        overlap_shim.write_text((ROOT / "include/index.html").read_text().replace(
+            "{{WASM_MODULE_URL}}", "/_mech/pkg/mech_wasm.js",
+        ).replace(
+            "{{CONTENTS}}",
+            "<aside data-mech-copy>{{SECTION1}}</aside><div data-mech-primary>{{CONTENT}}{{FOOTNOTES}}{{CITED}}</div><aside data-mech-copy>{{CONTENTS}}{{CONTENT}}{{FOOTNOTES}}{{CITED}}</aside>",
+        ))
+        subprocess.run([
+            str(binary), "--no-config", "format", str(overlap), "--html",
+            "--shim", str(overlap_shim), "--out", str(source_dir / "overlap/index.html"),
+        ], cwd=source_dir, check=True, stdout=subprocess.DEVNULL)
+        emitted = (source_dir / "overlap/index.html").read_text()
+        before_primary, primary_and_after = emitted.split("<div data-mech-primary>", 1)
+        primary, after_primary = primary_and_after.split("<aside data-mech-copy>", 1)
+        assert primary.count("data-mech-output-address=") == 2
+        assert "data-mech-output-address=" not in before_primary.split("<aside data-mech-copy>", 1)[1]
+        assert "data-mech-output-address=" not in after_primary.split("</article>", 1)[0]
+        static_cases = []
+        literal = "<div data-mech-document-controller='document' data-mech-document-status='loading'>"
+        for index, (controller, status) in enumerate([
+            ("data-mech-document-controller", "data-mech-document-status='loading'"),
+            ("data-mech-document-controller='document'", 'data-mech-document-status="loading"'),
+            ('data-mech-document-controller="document"', "data-mech-document-status = loading"),
+            ("data-mech-document-controller = document", "DATA-MECH-DOCUMENT-STATUS\n=\t'loading'"),
+            ("DATA-MECH-DOCUMENT-CONTROLLER\n=\t'document'", "data-mech-document-status='loading'"),
+        ]):
+            shim = source_dir / f"static-{index}-shim.html"
+            shim.write_text(
+                f"<!doctype html><html {controller}\n{status} data-mech-document-controller-extra='keep'>"
+                "<head><title>Static ownership</title></head><body>"
+                f"<script>globalThis.shimLiteral = {json.dumps(literal)};</script>"
+                f"<!-- {literal} --><textarea id='literal'>{literal}</textarea>"
+                "<aside data-mech-copy>{{SECTION1}}</aside><nav>{{TOC}}</nav>"
+                "<main data-mech-primary>{{CONTENT}}{{FOOTNOTES}}{{CITED}}</main>"
+                "<aside data-mech-copy>{{CONTENTS}}{{CONTENT}}{{FOOTNOTES}}{{CITED}}</aside>"
+                "</body></html>"
+            )
+            page = source_dir / f"static-{index}.html"
+            subprocess.run([
+                str(binary), "--no-config", "format", str(overlap), "--html",
+                "--shim", str(shim), "--out", str(page),
+            ], cwd=source_dir, check=True, stdout=subprocess.DEVNULL)
+            static_cases.append(page.name)
+        (source_dir / "documentation.mec").write_text("answer := 1\nanswer")
+        original = "first := 1\nsecond := 2\nsecond\n\nVisible {second}.\n"
+        (source_dir / "console.mec").write_text(original)
+        port = free_port()
+        with (artifacts / "server.log").open("wb") as server_log:
+            server = subprocess.Popen([str(binary), "--no-config", "serve", "--address", "127.0.0.1", "--port", str(port), str(source_dir)], stdout=server_log, stderr=subprocess.STDOUT)
+            browser = None
+            try:
+                url = f"http://127.0.0.1:{port}"
+                wait_for_http(url + "/fence.mec", server)
+                browser = ChromeSession(None, artifacts / "chrome-profile", artifacts / "chrome.log", flags=["--disable-gpu"]).start()
+                for page in static_cases:
+                    browser.navigate(url + "/" + page)
+                    browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "static custom shim readiness")
+                    state = browser.evaluate_json("""(() => {
+                      const root = document.documentElement;
+                      const primary = document.querySelector('[data-mech-primary]');
+                      const links = [...document.querySelectorAll('.toc a')];
+                      const targets = links.map(link => document.getElementById(decodeURIComponent(link.hash.slice(1))));
+                      const anchors = ['footnote-note', 'reference-BOOK', ...targets.map(node => node?.id)];
+                      if (root.hasAttribute('data-mech-document-controller') || root.getAttribute('data-mech-document-controller-extra') !== 'keep' || root.getAttribute('data-mech-document-status') !== 'ready') throw new Error('Static shim attributes are malformed or incomplete');
+                      if (links.length !== 2 || new Set(targets).size !== 2 || targets.some(node => !node || !primary.contains(node))) throw new Error('Static TOC does not reach distinct primary headings');
+                      for (const anchor of anchors) {
+                        if ([...document.querySelectorAll('[id]')].filter(node => node.id === anchor).length !== 1) throw new Error('Static document anchor is duplicated');
+                      }
+                      if ([...document.querySelectorAll('[data-mech-copy]')].some(node => node.querySelector('[id]'))) throw new Error('Passive static copy owns navigation');
+                      if (document.querySelector('[data-mech-output-address]') || globalThis.MechDocumentController) throw new Error('Static shim contains live output/controller');
+                      if (globalThis.shimLiteral !== document.querySelector('#literal').value || !globalThis.shimLiteral.includes("data-mech-document-controller='document'")) throw new Error('Literal shim content was rewritten');
+                      return {ready:true, controllerRemoved:true, prefixedAttributePreserved:true, distinctPrimaryTargets:true, backmatterTargetsUnique:true, literalsPreserved:true};
+                    })()""")
+                    assert all(state.values()), state
+                results.append({"contract": "static-shim-attributes-and-navigation", "htmlSpellings": len(static_cases), "domVerified": True})
+                browser.navigate(url + "/fence.mec")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "fence document readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const controller = globalThis.MechDocumentController;
+                  const original = document.querySelector('.mech-block-output[id]');
+                  const address = original?.id;
+                  checkOutput(original, address, '11');
+                  controller.applyEdit(7, 7, '{output: false}');
+                  checkUnavailable(original, address);
+                  const body = controller.source().indexOf('11');
+                  controller.applyEdit(body, body + 2, '22');
+                  checkUnavailable(original, address);
+                  const accepted = controller.source();
+                  let rejected = false;
+                  try { controller.applyEdit(body, body + 2, '['); } catch (_) { rejected = true; }
+                  if (!rejected || controller.source() !== accepted) throw new Error('Malformed suppressed edit changed accepted source');
+                  checkUnavailable(original, address);
+                  controller.applyEdit(0, 0, 'Prose before the fence.\\n\\n');
+                  const end = controller.source().length;
+                  controller.applyEdit(end, end, '\\nProse after the fence.\\n');
+                  checkUnavailable(original, address);
+                  const suppressor = controller.source().indexOf('{output: false}');
+                  controller.applyEdit(suppressor, suppressor + 15, '');
+                  checkSelection(original, address, '22');
+                  const fenceStart = controller.source().indexOf('~~~mech');
+                  controller.applyEdit(fenceStart + 7, fenceStart + 7, '{output: false}');
+                  checkUnavailable(original, address);
+                  controller.applyEdit(0, controller.source().length, '');
+                  checkUnavailable(original, address);
+                  controller.applyEdit(0, 0, '~~~mech\\n33\\n~~~\\n\\n~~~mech\\n33\\n~~~\\n');
+                  checkUnavailable(original, address);
+                  return {contract:'suppression-edit-restoration', address, originalNodeRetained:document.getElementById(address) === original, malformedEditRejected:rejected, restoredValue:'22', unavailableOutputCleared:true, unavailableSelectionDisabled:true, restoredSelectionAvailable:true, unrelatedDuplicateRejected:true};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "fence.dom.html")
+                browser.navigate(url + "/inline.mec")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "inline document readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const controller = globalThis.MechDocumentController;
+                  const original = document.querySelector('.mech-inline-mech-code[id]');
+                  const address = original?.id;
+                  checkOutput(original, address, '11');
+                  const start = controller.source().indexOf('{11}');
+                  controller.applyEdit(start, start + 4, '');
+                  checkUnavailable(original, address);
+                  const accepted = controller.source();
+                  let rejected = false;
+                  try { controller.applyEdit(start, start, '{[}'); } catch (_) { rejected = true; }
+                  if (!rejected || controller.source() !== accepted) throw new Error('Malformed inline edit changed accepted source');
+                  checkUnavailable(original, address);
+                  controller.applyEdit(start, start, '{11}');
+                  checkSelection(original, address, '11');
+                  controller.applyEdit(start, start + 4, '');
+                  checkUnavailable(original, address);
+                  controller.applyEdit(start, start, '{33} and {33}');
+                  checkUnavailable(original, address);
+                  return {contract:'inline-deletion-restoration', address, originalNodeRetained:document.getElementById(address) === original, malformedEditRejected:rejected, unavailableOutputCleared:true, unavailableSelectionDisabled:true, restoredSelectionAvailable:true, unrelatedDuplicateRejected:true};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "inline.dom.html")
+                browser.navigate(url + "/title.mec")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "title document readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const controller = globalThis.MechDocumentController;
+                  const original = document.querySelector('.hero-kicker .mech-inline-mech-code[id]');
+                  const address = original?.id;
+                  const body = [...document.querySelectorAll('.mech-inline-mech-code[id]')].find(node => node !== original);
+                  const bodyAddress = body?.id;
+                  const initial = controller.source();
+                  for (const replace of [false, true]) {
+                    controller.replaceSource(initial);
+                    checkOutput(original, address, '1');
+                    for (const value of ['{2}', '{3}', 'literal', '{4}']) {
+                      const source = controller.source();
+                      const start = source.lastIndexOf('========');
+                      const addition = `section: ${value}\\n`;
+                      if (replace) controller.replaceSource(source.slice(0, start) + addition + source.slice(start));
+                      else controller.applyEdit(start, start, addition);
+                      if (value === 'literal') checkUnavailable(original, address);
+                      else checkSelection(original, address, value.slice(1, -1));
+                      checkOutput(body, bodyAddress, '1');
+                      const accepted = controller.source();
+                      let rejected = false;
+                      try { controller.applyEdit(0, 0, '[\\n'); } catch (_) { rejected = true; }
+                      if (!rejected || controller.source() !== accepted) throw new Error('Malformed title edit changed accepted source');
+                    }
+                    for (const [value, expected] of [['{4}', null], ['literal', '3'], ['{3}', '2'], ['{2}', '1']]) {
+                      const source = controller.source();
+                      const removal = `section: ${value}\\n`;
+                      const start = source.indexOf(removal);
+                      if (replace) controller.replaceSource(source.replace(removal, ''));
+                      else controller.applyEdit(start, start + removal.length, '');
+                      if (expected === null) checkUnavailable(original, address);
+                      else checkSelection(original, address, expected);
+                      checkOutput(body, bodyAddress, '1');
+                    }
+                  }
+                  return {contract:'title-slot-winner-transfer', address, originalNodeRetained:document.getElementById(address) === original, applyEdit:true, replaceSource:true, restoration:true, bodyOutputPreserved:true};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "title.dom.html")
+                browser.navigate(url + "/figure.mec")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "figure document readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const controller = globalThis.MechDocumentController;
+                  const panels = [...document.querySelectorAll('.mech-subfigure-caption .mech-inline-mech-code[id]')];
+                  const summary = document.querySelector('.mech-figure-table-caption');
+                  if (panels.length !== 2 || !summary || summary.querySelector('[id], [data-mech-output-address], [data-mech-source]')) throw new Error('Figure summary duplicated a live mount');
+                  const mounts = [...document.querySelectorAll('.mech-inline-mech-code[id]')];
+                  const neighbor = mounts.find(node => !panels.includes(node));
+                  if (mounts.length !== 3 || new Set(mounts.map(node => node.id)).size !== 3) throw new Error('Duplicate caption/neighbor identities');
+                  const addresses = panels.map(node => node.id);
+                  checkSelection(panels[0], addresses[0], '11');
+                  checkSelection(panels[1], addresses[1], '22');
+                  checkSelection(neighbor, neighbor.id, '33');
+                  const start = controller.source().indexOf('{11}') + 1;
+                  controller.applyEdit(start, start + 2, '44');
+                  checkSelection(panels[0], addresses[0], '44');
+                  checkSelection(panels[1], addresses[1], '22');
+                  checkSelection(neighbor, neighbor.id, '33');
+                  controller.replaceSource(controller.source().replace('{44}', '{55}'));
+                  checkSelection(panels[0], addresses[0], '55');
+                  checkSelection(panels[1], addresses[1], '22');
+                  checkSelection(neighbor, neighbor.id, '33');
+                  return {contract:'figure-caption-summary-ownership', liveMounts:mounts.length, distinctMounts:true, initialValues:['11','22','33'], editedValue:'44', replacementValue:'55', originalNodesRetained:true, neighboringValuesPreserved:true, selection:true, summaryNonLive:true};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "figure.dom.html")
+                browser.navigate(url + "/overlap/index.html")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "overlapping shim readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const controller = globalThis.MechDocumentController;
+                  const mounts = Array.from(document.querySelectorAll('[data-mech-output-address]'));
+                  const primary = document.querySelector('[data-mech-primary]');
+                  if (mounts.length !== 2 || new Set(mounts.map(node => node.id)).size !== 2 || (primary && mounts.some(node => !primary.contains(node)))) throw new Error('Overlapping shim duplicates or relocates live output mounts');
+                  const copies = Array.from(document.querySelectorAll('[data-mech-copy]'));
+                  if (copies.some(node => node.querySelector('[data-mech-output-address]'))) throw new Error('Shim copy owns a live mount');
+                  if (copies.some(node => node.querySelector('[id]'))) throw new Error('Shim copy owns a document anchor');
+                  const links = [...document.querySelectorAll('.toc a')];
+                  const targets = links.map(link => document.getElementById(decodeURIComponent(link.hash.slice(1))));
+                  if (links.length !== 2 || new Set(targets).size !== 2 || targets.some(node => !node || !primary.contains(node))) throw new Error('TOC does not reach distinct primary headings');
+                  for (const anchor of ['footnote-note', 'reference-BOOK', ...targets.map(node => node.id)]) {
+                    if ([...document.querySelectorAll('[id]')].filter(node => node.id === anchor).length !== 1) throw new Error('Document anchor is duplicated');
+                  }
+                  const addresses = mounts.map(node => node.id);
+                  checkSelection(mounts[0], addresses[0], '11');
+                  checkSelection(mounts[1], addresses[1], '22');
+                  const start = controller.source().indexOf('{11}') + 1;
+                  controller.applyEdit(start, start + 2, '44');
+                  checkSelection(mounts[0], addresses[0], '44');
+                  checkSelection(mounts[1], addresses[1], '22');
+                  controller.replaceSource(controller.source().replace('{22}', '{55}'));
+                  checkSelection(mounts[0], addresses[0], '44');
+                  checkSelection(mounts[1], addresses[1], '55');
+                  return {contract:'overlapping-shim-output-ownership', liveMounts:2, distinctMounts:true, selection:true, edit:true, replacement:true, copiesNonLive:true, neighboringValuesPreserved:true, primaryNavigation:true, distinctHeadingTargets:true, backmatterTargetsUnique:true};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "overlap.dom.html")
+                browser.navigate(url + "/documentation.mec")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "documentation document readiness")
+                result = browser.evaluate_json("(async () => {" + OUTPUT_ASSERTIONS + """
+                  const nativeFetch = globalThis.fetch;
+                  globalThis.fetch = (input, init) => String(input).includes('/browser-lifecycle/main/docs/fence.mec')
+                    ? Promise.resolve(new Response('Result {answer + 1}.\\n\\n~~~mech\\nanswer + 2\\n~~~', {status:200}))
+                    : nativeFetch(input, init);
+                  try {
+                    await globalThis.MechDocumentController.invoke(':docs browser-lifecycle/fence');
+                    const row = document.querySelector('[data-mech-documentation-topic="browser-lifecycle/fence"]');
+                    const inline = row?.querySelector('.mech-inline-mech-code[id]');
+                    const fence = row?.querySelector('.mech-block-output[id]');
+                    checkSelection(inline, inline?.id, '2');
+                    checkSelection(fence, fence?.id, '3');
+                    return {contract:'documentation-fence-without-final-newline', inlineValue:'2', fenceValue:'3', liveSelection:true};
+                  } finally {
+                    globalThis.fetch = nativeFetch;
+                  }
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "documentation.dom.html")
+                browser.navigate(url + "/console.mec")
+                browser.wait_for("document.documentElement?.dataset.mechDocumentStatus === 'ready'", "console document readiness")
+                result = browser.evaluate_json("""(async () => {
+                  const controller = globalThis.MechDocumentController;
+                  const initial = controller.source();
+                  const address = document.querySelector('.mech-inline-mech-code[id]')?.id;
+                  const states = [];
+                  const check = (phase, first, extra) => {
+                    const source = controller.source();
+                    const output = document.querySelector('[data-mech-output-panel] .mech-document-output-html')?.textContent.trim();
+                    const inline = document.getElementById(address)?.textContent.trim();
+                    if (output !== '2' || inline !== '2' || source.includes('first := 1') !== first || source.includes('extra := 99') !== extra) throw new Error(`${phase}: ${JSON.stringify({source, output, inline})}`);
+                    states.push({phase, source, output, inline});
+                  };
+                  check('initial', true, false);
+                  await controller.invoke('extra := 99'); check('submit', true, true);
+                  await controller.invoke(':clear first'); check('clear document definition', false, true);
+                  const accepted = controller.source();
+                  await controller.invoke(':clear second');
+                  if (controller.source() !== accepted) throw new Error('Rejected dependent clear changed source');
+                  check('rejected clear', false, true);
+                  await controller.invoke(':reset'); check('reset', true, false);
+                  if (controller.source() !== initial) throw new Error('Reset did not restore exact original source');
+                  await controller.invoke('extra := 99');
+                  await controller.invoke(':clear extra'); check('clear console definition', true, false);
+                  await controller.invoke('extra := 99'); check('continued usability', true, true);
+                  return {contract:'console-document-reset', address, states};
+                })()""")
+                results.append(result)
+                browser.write_dom(artifacts / "console.dom.html")
+                (artifacts / "results.json").write_text(json.dumps(results, indent=2) + "\n")
+                print(f"browser document lifecycle: {len(results)} operation sequences passed")
+            finally:
+                if browser is not None:
+                    browser.close()
+                if server.poll() is None:
+                    server.send_signal(signal.SIGINT)
+                    try:
+                        server.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        server.terminate()
+                        server.wait(timeout=10)
+
+
+if __name__ == "__main__":
+    main()

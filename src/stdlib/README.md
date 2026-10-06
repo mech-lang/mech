@@ -34,7 +34,7 @@ The layer features are:
 The complete profiles are `full_runtime`, `full_source`, and
 `full_compiler`.
 
-The frozen PR2 runtime artifact is the `standard-linked-dynamic-shape`
+The frozen standard runtime catalog uses the `standard-linked-dynamic-shape`
 distribution. Standard profiles therefore include the dynamic shapes
 `row_vectord`, `vectord`, and `matrixd`, while fixed shapes remain individually
 selectable and covered by specialization fixtures. Enabling every fixed shape

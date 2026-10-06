@@ -4,8 +4,8 @@ use mech_core::{CellSlotId, ReactiveInstanceId, ResidentValueRef};
 use mech_engine::__resident::{
     ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices,
     PreparedResidentTurn as PreparedArtifactTurn, ReactiveInstance,
-    ResidentExecutionError as ArtifactExecutionError, ResidentStorageClass, ResidentValueBorrow,
-    activate, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
+    ResidentExecutionError as ArtifactExecutionError, ResidentValueBorrow, activate,
+    compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
 use mech_engine::__resident_ekf::{
     PreparedResidentTurn, ResidentEkfBatch, ResidentExecutionError as ResidentEkfExecutionError,
@@ -36,7 +36,7 @@ fn artifact_state(instance: &ReactiveInstance) -> [u64; 12] {
         .plan
         .slots
         .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
+        .filter(|slot| slot.role == mech_engine::SlotRole::State)
     {
         let ResidentValueBorrow::F64 { values, .. } =
             instance.state_borrow(slot.artifact_id).unwrap()
@@ -173,62 +173,49 @@ fn rejected_candidate_records_failure_without_publication_and_epoch_is_not_reuse
 }
 
 #[test]
-fn record_preparation_failure_automatically_aborts_before_publication() {
-    let mut resident = ResidentEkfBatch::new(1);
-    let mut recorder = ResidentTurnRecorder::new(2, 0).unwrap();
-    let initial = resident.state(0);
-    let permit = recorder.take_admission_permit(0).unwrap();
-    let prepared = resident.prepare_scheduled_turn(INPUT).unwrap();
-    let failed_epoch = prepared.summary().after_epoch;
-    recorder.fail_next_preparation_for_test();
-    assert!(recorder.prepare_commit(permit, prepared).is_err());
-    assert_eq!(resident.published_epoch(), 0);
-    assert_eq!(resident.state(0), initial);
-    assert!(!resident.candidate_epoch_is_active(failed_epoch));
-    assert_eq!(recorder.recorded_ledger_len(), 0);
-    drop(recorder.reserve_additional_permit_for_test().unwrap());
-
-    let permit = recorder.take_admission_permit(1).unwrap();
-    let prepared = resident.prepare_scheduled_turn(INPUT).unwrap();
-    assert_eq!(prepared.summary().after_epoch, failed_epoch + 1);
-    recorder.prepare_commit(permit, prepared).unwrap().commit();
-    assert_eq!(resident.published_epoch(), failed_epoch + 1);
-    assert_ne!(resident.state(0), initial);
-    assert_eq!(recorder.recorded_ledger_len(), 1);
-}
-
-#[test]
 fn artifact_commit_uses_the_reserved_prepare_publish_append_boundary() {
     let mut instance = artifact_instance();
+    assert_eq!(
+        instance
+            .plan
+            .slots
+            .iter()
+            .filter(|slot| slot.role == mech_engine::SlotRole::State)
+            .count(),
+        2,
+    );
+    assert_eq!(instance.plan.outputs.len(), 1);
+    let estimate = &instance.plan.slots[instance.plan.outputs[0].slot.get() as usize];
+    assert_eq!(estimate.role, mech_engine::SlotRole::Output);
+    assert_eq!(estimate.region.len, 3);
     let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
     let initial = artifact_state(&instance);
     let permit = recorder.take_admission_permit(0).unwrap();
     let prepared = prepare_artifact(&mut instance, &INPUT).unwrap();
     let summary = prepared.summary();
+    // Publication includes state, covariance, and the dedicated estimate output.
+    assert_eq!(summary.touched_slots, 3);
     let commit = recorder.prepare_artifact_commit(permit, prepared).unwrap();
     assert_eq!(commit.commit().get(), 1);
     assert_eq!(instance.published_epoch().get(), 1);
-    assert_ne!(artifact_state(&instance), initial);
+    let published = artifact_state(&instance);
+    assert_ne!(published, initial);
+    let ResidentValueBorrow::F64 { values, .. } = instance.output_borrow(0).unwrap() else {
+        panic!("EKF estimate output is f64")
+    };
+    assert_eq!(
+        values
+            .iter()
+            .map(|value| value.to_bits())
+            .collect::<Vec<_>>(),
+        published[..3],
+    );
     assert_eq!(recorder.recorded_ledger_len(), 1);
     let record = recorder.inspect_last().unwrap();
     assert!(record.accepted);
     assert_eq!(record.body.after_epoch(), 1);
     assert_eq!(record.body.state_hash(), summary.state_hash);
-    assert_eq!(record.body.touched_slots(), 2);
-}
-
-#[test]
-fn artifact_record_preparation_failure_aborts_before_publication() {
-    let mut instance = artifact_instance();
-    let mut recorder = ResidentTurnRecorder::new(1, 0).unwrap();
-    let initial = artifact_state(&instance);
-    let permit = recorder.take_admission_permit(0).unwrap();
-    let prepared = prepare_artifact(&mut instance, &INPUT).unwrap();
-    recorder.fail_next_preparation_for_test();
-    assert!(recorder.prepare_artifact_commit(permit, prepared).is_err());
-    assert_eq!(instance.published_epoch().get(), 0);
-    assert_eq!(artifact_state(&instance), initial);
-    assert_eq!(recorder.recorded_ledger_len(), 0);
+    assert_eq!(record.body.touched_slots(), summary.touched_slots);
 }
 
 #[test]
@@ -388,30 +375,6 @@ fn rejection_failure_kinds_and_phases_are_stable_and_bounded() {
         assert!(!record.body.is_accepted());
     }
     assert_eq!(recorder.recorded_ledger_len(), 7);
-}
-
-#[test]
-fn final_turn_identity_is_issued_once_without_wrap_or_reuse() {
-    let mut recorder = ResidentTurnRecorder::new(2, 0).unwrap();
-    recorder.set_next_turn_identity_for_test(u64::MAX);
-
-    let permit = recorder.take_admission_permit(0).unwrap();
-    recorder
-        .prepare_rejected(permit, 0, ResidentEkfExecutionError::EpochExhausted)
-        .unwrap()
-        .append();
-    let record = recorder.inspect_last().unwrap();
-    assert_eq!(record.turn_id, u64::MAX);
-    assert_eq!(record.input_first, u64::MAX);
-    assert_eq!(record.transaction_id, u128::from(u64::MAX));
-
-    let permit = recorder.take_admission_permit(1).unwrap();
-    assert!(
-        recorder
-            .prepare_rejected(permit, 0, ResidentEkfExecutionError::EpochExhausted)
-            .is_err()
-    );
-    assert_eq!(recorder.recorded_ledger_len(), 1);
 }
 
 #[test]

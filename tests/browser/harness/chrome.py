@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import html
+import http.server
 import json
 import os
 from pathlib import Path
 import queue
+import re
 import secrets
 import shutil
 import signal
@@ -24,6 +27,120 @@ from typing import Any
 
 class BrowserFailure(AssertionError):
     """A browser scenario or its infrastructure failed."""
+
+
+class BrowserCompletionServer:
+    """Receive explicit completion beacons without polling a busy renderer."""
+
+    def __init__(self) -> None:
+        self.token = secrets.token_urlsafe(18)
+        self.messages: queue.Queue[tuple[str, bytes]] = queue.Queue()
+        self.last_progress: tuple[str, bytes, float] | None = None
+        messages = self.messages
+        prefix = f"/{self.token}/"
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
+                length = int(self.headers.get("Content-Length", "0"))
+                body = self.rfile.read(length) if length else b""
+                path = urllib.parse.urlparse(self.path).path
+                if path.startswith(prefix):
+                    messages.put((urllib.parse.unquote(path[len(prefix):]), body))
+                    self.send_response(204)
+                else:
+                    self.send_response(404)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+
+            def log_message(self, _format: str, *_args: object) -> None:
+                pass
+
+        self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+
+    @property
+    def base_url(self) -> str:
+        host, port = self.server.server_address[:2]
+        return f"http://{host}:{port}/{self.token}"
+
+    def wait_for(
+        self,
+        expected: str,
+        *,
+        timeout: float = 30,
+        progress: tuple[str, ...] = (),
+        max_timeout: float | None = None,
+    ) -> bytes:
+        """Wait for completion while explicit progress renews the idle budget."""
+        started = time.monotonic()
+        idle_deadline = started + timeout
+        max_deadline = started + max_timeout if max_timeout is not None else None
+        last_progress: tuple[str, bytes, float] | None = None
+        self.last_progress = None
+        while True:
+            deadline = idle_deadline
+            if max_deadline is not None:
+                deadline = min(deadline, max_deadline)
+            if time.monotonic() >= deadline:
+                break
+            try:
+                message, body = self.messages.get(
+                    timeout=max(0.01, deadline - time.monotonic())
+                )
+            except queue.Empty:
+                break
+            if message == expected:
+                return body
+            if message in progress:
+                observed_at = time.monotonic()
+                last_progress = (message, body, observed_at)
+                self.last_progress = last_progress
+                idle_deadline = observed_at + timeout
+        elapsed = time.monotonic() - started
+        deadline_kind = (
+            "absolute"
+            if max_deadline is not None and max_deadline <= idle_deadline
+            else "idle"
+        )
+        if last_progress is None:
+            progress_detail = "no progress beacon was received"
+        else:
+            message, body, observed_at = last_progress
+            summary = body.decode("utf-8", errors="replace")
+            if len(summary) > 2_000:
+                summary = summary[:2_000] + "..."
+            progress_detail = (
+                f"last progress {message!r} at +{observed_at - started:.3f}s: "
+                f"{summary}"
+            )
+        raise BrowserFailure(
+            f"timed out waiting for browser completion beacon {expected!r} after "
+            f"{elapsed:.3f}s ({deadline_kind} deadline); {progress_detail}"
+        )
+
+    def close(self) -> None:
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+
+    def __enter__(self) -> "BrowserCompletionServer":
+        return self
+
+    def __exit__(self, _type: object, _value: object, _traceback: object) -> None:
+        self.close()
+
+
+def write_dataset_snapshot(path: str | os.PathLike[str], dataset: dict[str, Any]) -> None:
+    """Write a deterministic HTML shell containing a captured DOMStringMap."""
+
+    attributes = []
+    for name, value in sorted(dataset.items()):
+        attribute = "data-" + re.sub(
+            r"[A-Z]", lambda match: "-" + match.group(0).lower(), name
+        )
+        attributes.append(f'{attribute}="{html.escape(str(value), quote=True)}"')
+    Path(path).write_text(f"<html {' '.join(attributes)}><head></head><body></body></html>\n")
 
 
 def free_port() -> int:
@@ -276,7 +393,7 @@ class ChromeSession:
         log: str | os.PathLike[str],
         *,
         flags: list[str] | tuple[str, ...] = (),
-        startup_timeout: float = 30,
+        startup_timeout: float = 60,
         window_size: tuple[int, int] | None = None,
     ) -> None:
         self.browser = find_browser(browser)
@@ -297,6 +414,20 @@ class ChromeSession:
             # Callers cannot own a session until start returns, so partial
             # startup remains this object's responsibility.
             self.close()
+            # A failed start has no caller-owned session from which to collect
+            # artifacts. Keep Chrome's diagnostic output in the CI log too.
+            try:
+                with self.log.open("rb") as log:
+                    log.seek(0, os.SEEK_END)
+                    log.seek(max(0, log.tell() - 16_000))
+                    stderr = log.read().decode("utf-8", errors="replace")
+            except OSError as error:
+                stderr = f"unable to read browser stderr: {error}"
+            print(
+                f"Browser startup failed: {self.browser}\n"
+                f"Browser stderr ({self.log}, last 16000 bytes):\n{stderr or '<empty>'}",
+                file=sys.stderr,
+            )
             raise
 
     def _start(self) -> "ChromeSession":
@@ -323,8 +454,11 @@ class ChromeSession:
             start_new_session=True,
         )
         endpoint = f"http://127.0.0.1:{debug_port}/json/version"
+        # A listening socket can precede a responsive browser UI thread.
+        # Match ChromeDriver's startup allowance without extending page tests.
         deadline = time.monotonic() + self.startup_timeout
         websocket_url = None
+        last_error = None
         while time.monotonic() < deadline:
             if self.process.poll() is not None:
                 raise BrowserFailure(f"browser exited with status {self.process.returncode}")
@@ -334,10 +468,14 @@ class ChromeSession:
                 websocket_url = version.get("webSocketDebuggerUrl")
                 if isinstance(websocket_url, str):
                     break
-            except OSError:
+            except OSError as error:
+                last_error = error
                 time.sleep(0.1)
         if not isinstance(websocket_url, str):
-            raise BrowserFailure("browser debugging endpoint did not become ready")
+            raise BrowserFailure(
+                f"browser debugging endpoint did not become ready at {endpoint} "
+                f"within {self.startup_timeout:g}s; last connection error: {last_error}"
+            )
         self.devtools = DevTools(self.process, websocket_url)
         target = self.devtools.call("Target.createTarget", {"url": "about:blank"})["targetId"]
         self.session_id = self.devtools.call(
@@ -402,7 +540,12 @@ class ChromeSession:
         last = None
         while time.monotonic() < deadline:
             try:
-                last = self.evaluate(expression)
+                # A busy page cannot answer Runtime.evaluate until its current
+                # task yields. Let that in-flight probe use the scenario's
+                # remaining budget instead of failing at the transport's
+                # shorter default timeout.
+                remaining = max(0.01, deadline - time.monotonic())
+                last = self.evaluate(expression, timeout=remaining)
             except NavigationContextPending:
                 last = None
             if last:

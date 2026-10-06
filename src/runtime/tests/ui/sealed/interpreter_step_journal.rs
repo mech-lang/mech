@@ -1,6 +1,6 @@
-use mech_engine::Interpreter;
+use mech_core::ReactivePlan;
 
 fn main() {
-  let mut interpreter = Interpreter::new(1, 100);
-  drop(interpreter.step_with_reactive_turn_journal());
+    let mut plan = ReactivePlan::new();
+    drop(plan.advance_reactive_turn_with_journal());
 }

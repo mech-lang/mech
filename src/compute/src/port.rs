@@ -419,7 +419,8 @@ pub fn build_compute_region_interface(
     let nodes = region
         .map(|region| region.nodes.iter().copied().collect::<BTreeSet<_>>())
         .unwrap_or_else(|| turn_required_nodes(artifact));
-    let input_slots = artifact
+    let mut diagnostics = Vec::new();
+    let mut input_slots = artifact
         .bindings()
         .iter()
         .filter_map(|binding| match binding {
@@ -431,6 +432,26 @@ pub fn build_compute_region_interface(
             _ => None,
         })
         .collect::<BTreeSet<_>>();
+    let mut output_sources = Vec::new();
+    for output in artifact.outputs() {
+        expand_output_source(
+            artifact,
+            output.name.clone(),
+            ArtifactSource::Slot(output.source),
+            &mut output_sources,
+            &mut diagnostics,
+        );
+    }
+    let declared_inputs = artifact
+        .inputs()
+        .iter()
+        .map(|input| input.slot)
+        .collect::<BTreeSet<_>>();
+    input_slots.extend(
+        output_sources
+            .iter()
+            .filter_map(|(_, slot)| declared_inputs.contains(slot).then_some(*slot)),
+    );
     let state_slots = artifact
         .slots()
         .iter()
@@ -442,17 +463,18 @@ pub fn build_compute_region_interface(
         .map(|slot| slot.slot)
         .collect::<BTreeSet<_>>();
 
-    let mut diagnostics = Vec::new();
     let mut next_id = 0_u32;
     let inputs = artifact
         .inputs()
         .iter()
         .filter(|input| input_slots.contains(&input.slot))
         .filter_map(|input| {
+            let name = mech_engine::decode_source_input_name(&input.name)
+                .unwrap_or_else(|| input.name.clone());
             let port = port_from_schema(
                 artifact,
                 ComputePortId::new(next_id),
-                input.name.clone().into_boxed_str(),
+                name.into_boxed_str(),
                 input.slot,
                 artifact.slots()[input.slot.get() as usize].schema,
                 slot_dimensions.get(&input.slot).map(Box::as_ref),
@@ -486,20 +508,12 @@ pub fn build_compute_region_interface(
             })
         })
         .collect::<Vec<_>>();
-    let mut output_sources = Vec::new();
-    for output in artifact.outputs() {
-        expand_output_source(
-            artifact,
-            output.name.clone(),
-            ArtifactSource::Slot(output.source),
-            &mut output_sources,
-            &mut diagnostics,
-        );
-    }
     let outputs = output_sources
         .into_iter()
         .filter(|(_, slot)| {
-            state_slots.contains(slot) || slot_produced_by_nodes(artifact, *slot, &nodes)
+            input_slots.contains(slot)
+                || state_slots.contains(slot)
+                || slot_produced_by_nodes(artifact, *slot, &nodes)
         })
         .filter_map(|(name, slot)| {
             let schema = artifact.slots()[slot.get() as usize].schema;
@@ -558,6 +572,10 @@ fn expand_output_source(
             operation: None,
             detail: format!("output `{name}` references a missing producer"),
         });
+        return;
+    };
+    let Some(producer) = producer.as_operation() else {
+        outputs.push((name, slot));
         return;
     };
     if producer.operation.module_path.as_ref() != ["core"]

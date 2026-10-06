@@ -142,10 +142,10 @@ if not outputs:
 
 y_output = None
 for block in walk(tree.root):
-    if "mech-fenced-mech-block" not in classes(block):
+    if block.tag != "figure" or "mech-code-block" not in classes(block):
         continue
     code = next(
-        (node for node in walk(block) if "mech-code-block" in classes(node)),
+        (node for node in walk(block) if node.tag == "code"),
         None,
     )
     output = next(

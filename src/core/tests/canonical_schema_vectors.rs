@@ -223,7 +223,7 @@ fn semantic_error_name(error: &SemanticModelError) -> &'static str {
 }
 
 #[test]
-fn every_positive_c0_value_vector_matches_schema_key_and_shape_bytes() {
+fn every_positive_value_vector_matches_schema_key_and_shape_bytes() {
     let vectors = vectors();
     let vectors = required(&vectors, "value_vectors")
         .as_array()
@@ -268,7 +268,7 @@ fn every_positive_c0_value_vector_matches_schema_key_and_shape_bytes() {
 }
 
 #[test]
-fn every_invalid_c0_schema_vector_returns_its_frozen_error() {
+fn every_invalid_schema_vector_returns_its_frozen_error() {
     let vectors = vectors();
     let vectors = required(&vectors, "invalid_schema_vectors")
         .as_array()

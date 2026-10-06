@@ -71,3 +71,37 @@ config_error_kind!(
     "ConfigEffectfulFunctionNotAllowed",
     "Effectful functions are not allowed in Mech config"
 );
+
+/// A rejected finite configuration retains the exact canonical diagnostic owner.
+/// Callers can inspect anchors, fixes, source identity, and the raw text without
+/// parsing again or translating locations through another representation.
+#[cfg(feature = "source")]
+#[derive(Clone, Debug)]
+pub struct InvalidConfigSyntax {
+    pub source_name: String,
+    pub source: crate::resolver::SourceDocument,
+}
+
+#[cfg(feature = "source")]
+impl MechErrorKind for InvalidConfigSyntax {
+    fn name(&self) -> &str {
+        "InvalidConfigSyntax"
+    }
+
+    fn message(&self) -> String {
+        let mut message = format!(
+            "{}: configuration requires a complete canonical source document",
+            self.source_name,
+        );
+        let snapshot = self.source.snapshot();
+        for diagnostic in snapshot.diagnostics.iter() {
+            message.push('\n');
+            message.push_str(&mech_syntax::document::render_plain(
+                diagnostic,
+                &snapshot.source,
+                &snapshot.nodes,
+            ));
+        }
+        message
+    }
+}

@@ -1,28 +1,25 @@
 use mech_core::{
-  with_reactive_journal_participant,
-  NoMechExecutionServices,
+    NoMechExecutionServices, Plan, ReactiveTurnState, with_reactive_journal_participant,
 };
-use mech_engine::Interpreter;
 
 fn main() {
-  let mut interpreter = Interpreter::new(1, 100);
-  let mut services = NoMechExecutionServices;
-  drop(with_reactive_journal_participant(
-    |mut participant| {
-      drop(interpreter.step_reactive_turn_participating(
-        0,
-        1,
-        &mut participant,
-        &mut services,
-      ));
-      participant.commit();
-      drop(interpreter.step_reactive_turn_participating(
-        0,
-        1,
-        &mut participant,
-        &mut services,
-      ));
-      Ok(())
-    },
-  ));
+    let plan = Plan::new();
+    let mut state = ReactiveTurnState::default();
+    let mut services = NoMechExecutionServices;
+    drop(with_reactive_journal_participant(|mut participant| {
+        drop(plan.advance_reactive_turn_participating(
+            &mut state,
+            &[],
+            &mut participant,
+            &mut services,
+        ));
+        participant.commit();
+        drop(plan.advance_reactive_turn_participating(
+            &mut state,
+            &[],
+            &mut participant,
+            &mut services,
+        ));
+        Ok(())
+    }));
 }

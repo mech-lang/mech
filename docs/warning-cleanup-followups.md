@@ -6,36 +6,35 @@ history and the design archive, not in this active handoff. The canonical
 runtime value boundary is `Value` plus `ValueCell`; function-local visibility is
 stored directly as `CanonicalVariableDefinition::root_visible`.
 
-## R1 — Canonical contract and compatibility closure
+## declared operation contracts — Canonical contract and compatibility closure
 
-R1 is closed by the permanent `scripts/check-r1-compatibility-closure.py`
-contract and the same-head Full CI merge gate. Executable artifacts require
+The artifact owner and public product tests require declared semantics. Executable artifacts require
 declared semantics; resident lookup uses canonical operation identities; the
 resource-write command is bound once to effect identity and idempotency before
 provider preparation; assignment and set validators are explicit declaration
 data; and the exact root `no_std` profile is an owned CI product.
 
 Matrix Boolean NOT is scalar-only. The unavailable math operations removed by
-R1 are absent from implementation, features, catalogs, documentation, and
+declared operation contracts are absent from implementation, features, catalogs, documentation, and
 public API. Bytecode-v1, canonical encoding v1, stable operation IDs, native
 linkage names, dynamic-module ABI v1, and program artifact versioning remain
 intentional compatibility contracts.
 
-## R2/R6 — Type–memory boundary and memory runtime
+## type-memory compatibility/the managed memory runtime — Type–memory boundary and memory runtime
 
 ### Storage and allocation abstraction
 
 - Locations: `src/core/src/{types,cell_binding}.rs` and resident arena/storage
   implementations in `src/engine/src/resident/`.
-- R2 owns the semantic boundary between type information and storage choice.
-  R6 replaces allocation backing behind `ValueCell` without changing canonical
+- type-memory compatibility owns the semantic boundary between type information and storage choice.
+  the managed memory runtime replaces allocation backing behind `ValueCell` without changing canonical
   value semantics.
 
 ### Public physical identity or pointer exposure
 
 - Location: public `Ref<T>` pointer/address methods in
   `src/core/src/types/mod.rs` and their execution consumers.
-- R2 decides which stable logical identities are public contracts. R6 removes
+- type-memory compatibility decides which stable logical identities are public contracts. the managed memory runtime removes
   physical-address authority from public reasoning and confines any necessary
   unsafe access to implementation-owned storage boundaries.
 
@@ -44,7 +43,7 @@ intentional compatibility contracts.
 - Locations: `ResidentExternalPublicationAuthority` in
   `src/engine/src/resident/general/mod.rs` and its sole runtime implementation
   in `src/runtime/src/runtime/program/external/coordinator.rs`.
-- R2 defines an explicit, non-forgeable publication capability. R6 replaces the
+- type-memory compatibility defines an explicit, non-forgeable publication capability. the managed memory runtime replaces the
   current cross-crate unsafe marker without broadening publication authority.
 
 ### Memory accounting and transaction storage
@@ -53,11 +52,11 @@ intentional compatibility contracts.
   and cell backing.
 - Current state: the memory limit is advisory and transaction rollback retains
   snapshot-oriented storage.
-- R2 defines the accounting and ownership contract; R6 integrates allocation
-  accounting and replaces transaction storage behind canonical cells. R5's
+- type-memory compatibility defines the accounting and ownership contract; the managed memory runtime integrates allocation
+  accounting and replaces transaction storage behind canonical cells. memory planning's
   planner must consume, not redefine, that contract.
 
-## R7 — Release qualification
+## release qualification — Release qualification
 
 ### Truthful feature and distribution surface
 
@@ -69,7 +68,7 @@ intentional compatibility contracts.
 ### Documentation and packaging reconciliation
 
 - Align reference documentation, examples, package contents, release metadata,
-  and the root package version with the product surface qualified by R1–R6.
+  and the root package version with the product surface qualified by declared operation contracts–the managed memory runtime.
 - The root package remains `0.3.6` until this phase qualifies `0.4.0`.
 
 ### Release-facing platform support

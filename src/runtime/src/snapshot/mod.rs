@@ -48,6 +48,44 @@ impl RuntimeValueSnapshot {
         self.value.data().kind()
     }
 
+    /// Returns the maintained interactive type label. Matrices retain their
+    /// element schema and resolved extents, and integer intervals retain exact
+    /// bounds. Other scalar category labels remain unchanged.
+    pub fn format_repl_kind(&self) -> String {
+        let Some(schemas) = self.value.schemas() else {
+            return self.kind().to_string();
+        };
+        let Some(schema) = schemas.get(self.value.schema()) else {
+            return self.kind().to_string();
+        };
+        match schema.body() {
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } => {
+                let extents = dimensions
+                    .iter()
+                    .map(|dimension| {
+                        self.value
+                            .shape()
+                            .resolve_dimension(dimension)
+                            .map(|extent| extent.to_string())
+                    })
+                    .collect::<Result<Vec<_>, _>>();
+                match extents {
+                    Ok(extents) => format!(
+                        "[{}]:{}",
+                        format_repl_element_kind(element),
+                        extents.join(",")
+                    ),
+                    Err(_) => self.kind().to_string(),
+                }
+            }
+            SchemaBody::IntegerInterval(_) => format_repl_element_kind(schema.body()),
+            _ => self.kind().to_string(),
+        }
+    }
+
     pub const fn schema(&self) -> SchemaId {
         self.value.schema()
     }
@@ -104,6 +142,32 @@ impl RuntimeValueSnapshot {
 
     pub fn into_value(self) -> Value {
         self.value
+    }
+}
+
+fn format_repl_element_kind(schema: &SchemaBody) -> String {
+    match schema {
+        SchemaBody::IntegerInterval(mech_core::IntegerInterval::Unsigned {
+            width,
+            lower,
+            upper,
+            upper_inclusive,
+        }) => format!(
+            "u{}:{lower}..{}{upper}",
+            *width as u16,
+            if *upper_inclusive { "=" } else { "" }
+        ),
+        SchemaBody::IntegerInterval(mech_core::IntegerInterval::Signed {
+            width,
+            lower,
+            upper,
+            upper_inclusive,
+        }) => format!(
+            "i{}:{lower}..{}{upper}",
+            *width as u16,
+            if *upper_inclusive { "=" } else { "" }
+        ),
+        _ => mech_core::semantic_schema_body_name(schema),
     }
 }
 

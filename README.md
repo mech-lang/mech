@@ -97,20 +97,11 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 
 ## Project Roadmap
 
-The current published package is `v0.3.6`; the active development target is
-`v0.4.0`. The canonical value-system cutover, R1 contract closure, and R2 type-memory
-boundary are complete. R3 Type System v1 and the R4 authority cutover are also
-complete. Semantic inference, built-in predicates, conversion planning, overload
-resolution, semantic descriptors, and deterministic physical memory plans are
-authoritative. The active v0.4 phase is R6:
-
-- R3 Type inference, predicates, and conversions — complete
-- R4 Type-system storage cutover — complete
-- R5 Memory planner — complete
-- R6 Memory runtime cutover — in progress
-- R7 Release qualification
-
-The package version remains `v0.3.6` until R7 qualifies the release.
+The current published package is `v0.3.6`; the development target is `v0.4.0`.
+Declared operation contracts, semantic type inference and binding, deterministic
+memory planning, and managed publication define the current implementation.
+Release qualification verifies the advertised packages, platforms, and preserved
+compatibility contracts before a version change.
 
 A Brief Roadmap:
 
@@ -121,7 +112,7 @@ A Brief Roadmap:
 - ☐ v0.5 - computation types, effect types, coeffect types, and refinement types
 
 For more details, read the [ROADMAP](https://docs.mech-lang.org/design/ROADMAP.html)
-and the checked-in [v0.4 endgame plan](docs/design/v0.4-endgame.md).
+and the [current architecture contracts](docs/design/canonical-source-boundary.mec).
 
 ## Notice
 

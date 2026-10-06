@@ -274,6 +274,7 @@ impl RuntimeBuilder {
             host_interfaces,
             self.module_manifests,
             program_config,
+            self.config.limits.max_source_bytes,
         ))
     }
 

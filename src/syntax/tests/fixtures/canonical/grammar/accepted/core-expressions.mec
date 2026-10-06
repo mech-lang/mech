@@ -1,0 +1,12 @@
+definition := name;
+terminal := "a";
+choice := "a" | "b";
+sequence := name, "b";
+repeat-zero := *name;
+repeat-one := +name;
+optional := ?name;
+peek := >name;
+not := ¬name;
+list := [name, ","];
+range := "a".."z";
+group := (name | "b");

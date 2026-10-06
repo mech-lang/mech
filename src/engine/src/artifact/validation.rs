@@ -13,6 +13,7 @@ use super::{
 };
 
 pub(super) fn validate(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError> {
+    super::control::validate_control_counts(draft)?;
     validate_dense_identities(draft)?;
     validate_contract_table(draft)?;
     validate_interfaces(draft)?;
@@ -40,7 +41,7 @@ fn canonical_name(value: &str) -> bool {
         && !value.contains(['\0', '/', '\\'])
 }
 
-fn validate_operation(operation: &OperationReference) -> Result<(), ArtifactBuildError> {
+pub(super) fn validate_operation(operation: &OperationReference) -> Result<(), ArtifactBuildError> {
     if operation.module_path.is_empty()
         || !canonical_name(&operation.operation_name)
         || operation
@@ -283,11 +284,7 @@ fn validate_slots(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError
         match (slot.role, slot.producer, slot.initializer) {
             (SlotRole::Input, ProducerReference::Input(_), None)
             | (SlotRole::State, ProducerReference::NodeOutput { .. }, None)
-            | (
-                SlotRole::State,
-                ProducerReference::NodeOutput { .. },
-                Some(InitializerReference::Constant(_)),
-            )
+            | (SlotRole::State, ProducerReference::NodeOutput { .. }, Some(_))
             | (SlotRole::Derived, ProducerReference::NodeOutput { .. }, None)
             | (SlotRole::Output, ProducerReference::Output { .. }, None)
             | (
@@ -296,6 +293,18 @@ fn validate_slots(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError
                 Some(InitializerReference::Constant(_)),
             ) => {}
             _ => return Err(ArtifactBuildError::InvalidSlotRole { slot: slot.slot }),
+        }
+        if let Some(InitializerReference::Activation(source)) = slot.initializer {
+            let source = draft
+                .slots
+                .get(source.get() as usize)
+                .filter(|source_slot| source_slot.slot == source)
+                .ok_or(ArtifactBuildError::UnknownSlot { slot: source })?;
+            if source.schema != slot.schema
+                || !matches!(source.role, SlotRole::Input | SlotRole::Derived)
+            {
+                return Err(ArtifactBuildError::InvalidSlotRole { slot: slot.slot });
+            }
         }
         if let Some(InitializerReference::Constant(constant)) = slot.initializer {
             require_constant(draft, constant)?;
@@ -390,7 +399,6 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
     let mut bound_producers = BTreeSet::new();
     let mut state_writers = BTreeMap::<CellSlotId, Vec<(NodeId, u16)>>::new();
     for node in &draft.nodes {
-        validate_operation(&node.operation)?;
         let inputs = checked_range(&node.input_bindings, draft.bindings.len(), node.node)?;
         let outputs = checked_range(&node.output_bindings, draft.bindings.len(), node.node)?;
         if inputs.start != cursor || inputs.end != outputs.start {
@@ -398,26 +406,114 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
         }
         cursor = outputs.end;
 
-        let contract = require_contract(draft, node.contract)?;
-        validate_node_requirement(draft, node, contract)?;
-        validate_signal_bindings(contract)?;
-        let (expected_inputs, expected_outputs) = contract_port_counts(contract);
-        if inputs.len() != expected_inputs {
-            return Err(OperationContractError::PortCountMismatch {
-                direction: PortDirection::Input,
-                expected: expected_inputs as u64,
-                actual: inputs.len() as u64,
+        let (input_schemas, output_schemas, operation_contract) = match &node.body {
+            super::ExecutableNodeBody::Operation(operation) => {
+                validate_operation(&operation.operation)?;
+                let contract = require_contract(draft, operation.contract)?;
+                validate_node_requirement(draft, node.node, operation, contract)?;
+                validate_signal_bindings(contract)?;
+                let (expected_inputs, expected_outputs) = contract_port_counts(contract);
+                for (direction, expected, actual) in [
+                    (PortDirection::Input, expected_inputs, inputs.len()),
+                    (PortDirection::Output, expected_outputs, outputs.len()),
+                ] {
+                    if expected != actual {
+                        return Err(OperationContractError::PortCountMismatch {
+                            direction,
+                            expected: expected as u64,
+                            actual: actual as u64,
+                        }
+                        .into());
+                    }
+                }
+                (
+                    (0..expected_inputs)
+                        .map(|ordinal| contract_input_schema(contract, ordinal).unwrap())
+                        .collect::<Vec<_>>(),
+                    (0..expected_outputs)
+                        .map(|ordinal| contract_output_schema(contract, ordinal).unwrap())
+                        .collect::<Vec<_>>(),
+                    Some(operation.contract),
+                )
             }
-            .into());
-        }
-        if outputs.len() != expected_outputs {
-            return Err(OperationContractError::PortCountMismatch {
-                direction: PortDirection::Output,
-                expected: expected_outputs as u64,
-                actual: outputs.len() as u64,
+            super::ExecutableNodeBody::Match(_)
+            | super::ExecutableNodeBody::Activation(_)
+            | super::ExecutableNodeBody::Comprehension(_)
+            | super::ExecutableNodeBody::Fsm(_) => {
+                let input_schemas = draft.bindings[inputs.clone()]
+                    .iter()
+                    .map(|binding| match binding {
+                        BindingDeclaration::Input { source, .. } => source_schema(draft, *source),
+                        _ => Err(ArtifactBuildError::BindingDirectionMismatch {
+                            binding: binding.id(),
+                        }),
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let [BindingDeclaration::Output { target, .. }] = &draft.bindings[outputs.clone()]
+                else {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "control requires exactly one output",
+                    });
+                };
+                let output = require_slot(draft, *target)?;
+                if output.role != SlotRole::Derived {
+                    if let super::ExecutableNodeBody::Activation(control) = &node.body {
+                        if output.role == SlotRole::State
+                            && activation_trigger_states(draft, node, control.scrutinee)?
+                                .contains(target)
+                        {
+                            return Err(ArtifactBuildError::InvalidControl {
+                                node: node.node,
+                                reason: "activation cannot write its own trigger state",
+                            });
+                        }
+                    }
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: node.node,
+                        reason: "control output must be an owned derived slot",
+                    });
+                }
+                match &node.body {
+                    super::ExecutableNodeBody::Match(control) => super::control::validate_match(
+                        draft,
+                        node.node,
+                        control,
+                        &input_schemas,
+                        output.schema,
+                    )?,
+                    super::ExecutableNodeBody::Activation(control) => {
+                        if control.scrutinee != 0 || control.partial {
+                            return Err(ArtifactBuildError::InvalidControl {
+                                node: node.node,
+                                reason: "activation requires input zero as an exhaustive trigger",
+                            });
+                        }
+                        super::control::validate_activation(
+                            draft,
+                            node.node,
+                            control,
+                            &input_schemas,
+                            output.schema,
+                        )?
+                    }
+                    super::ExecutableNodeBody::Comprehension(control) => {
+                        super::comprehension::validate_comprehension(
+                            draft,
+                            node.node,
+                            control,
+                            &input_schemas,
+                            output.schema,
+                        )?
+                    }
+                    super::ExecutableNodeBody::Fsm(control) => {
+                        super::fsm::validate_fsm(node.node, control, &input_schemas)?
+                    }
+                    _ => unreachable!(),
+                }
+                (input_schemas, vec![output.schema], None)
             }
-            .into());
-        }
+        };
 
         for (ordinal, binding) in draft.bindings[inputs.clone()].iter().enumerate() {
             validate_binding_identity(binding, node.node, ordinal)?;
@@ -427,12 +523,11 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                 });
             };
             validate_source(draft, *source)?;
-            let expected = contract_input_schema(contract, ordinal)
-                .expect("contract input count was validated");
+            let expected = input_schemas[ordinal];
             let actual = source_schema(draft, *source)?;
             if actual != expected {
                 return Err(ArtifactBuildError::ContractInputSchemaMismatch {
-                    contract: node.contract,
+                    contract: operation_contract.expect("control schema was validated"),
                     port: ordinal as u16,
                     expected,
                     actual,
@@ -447,11 +542,10 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                 });
             };
             let slot = require_slot(draft, *target)?;
-            let expected = contract_output_schema(contract, ordinal)
-                .expect("contract output count was validated");
+            let expected = output_schemas[ordinal];
             if slot.schema != expected {
                 return Err(ArtifactBuildError::ContractOutputSchemaMismatch {
-                    contract: node.contract,
+                    contract: operation_contract.expect("control schema was validated"),
                     port: ordinal as u16,
                     expected,
                     actual: slot.schema,
@@ -484,6 +578,7 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
             .unwrap_or(NodeId(0));
         return Err(ArtifactBuildError::BindingRangeMismatch { node });
     }
+    validate_activation_trigger_writes(draft, &state_writers)?;
     for slot in &draft.slots {
         if slot.role == SlotRole::State {
             let writers = state_writers
@@ -505,9 +600,173 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
     Ok(())
 }
 
+fn source_activation_dependency(
+    draft: &ProgramArtifactDraft,
+    source: ArtifactSource,
+    activations: &BTreeSet<NodeId>,
+) -> Result<Option<NodeId>, ArtifactBuildError> {
+    let mut pending = vec![source];
+    let mut visited_slots = BTreeSet::new();
+    let mut visited_nodes = BTreeSet::new();
+    while let Some(source) = pending.pop() {
+        let ArtifactSource::Slot(slot_id) = source else {
+            continue;
+        };
+        if !visited_slots.insert(slot_id) {
+            continue;
+        }
+        let slot = require_slot(draft, slot_id)?;
+        if slot.role == SlotRole::State {
+            continue;
+        }
+        let node = match slot.producer {
+            ProducerReference::Output { source, .. } => {
+                pending.push(source);
+                continue;
+            }
+            ProducerReference::NodeOutput { node, .. } => node,
+            ProducerReference::Input(_) => continue,
+        };
+        if activations.contains(&node) {
+            return Ok(Some(node));
+        }
+        if !visited_nodes.insert(node) {
+            continue;
+        }
+        let declaration = require_node(draft, node)?;
+        let inputs = checked_range(
+            &declaration.input_bindings,
+            draft.bindings.len(),
+            declaration.node,
+        )?;
+        pending.extend(draft.bindings[inputs].iter().filter_map(|binding| {
+            let BindingDeclaration::Input { source, .. } = binding else {
+                return None;
+            };
+            Some(*source)
+        }));
+    }
+    Ok(None)
+}
+
+fn source_state_dependencies(
+    draft: &ProgramArtifactDraft,
+    source: ArtifactSource,
+) -> Result<BTreeSet<CellSlotId>, ArtifactBuildError> {
+    let mut states = BTreeSet::new();
+    let mut pending = vec![source];
+    let mut visited_slots = BTreeSet::new();
+    let mut visited_nodes = BTreeSet::new();
+    while let Some(source) = pending.pop() {
+        let ArtifactSource::Slot(slot_id) = source else {
+            continue;
+        };
+        if !visited_slots.insert(slot_id) {
+            continue;
+        }
+        let slot = require_slot(draft, slot_id)?;
+        if slot.role == SlotRole::State {
+            states.insert(slot_id);
+            continue;
+        }
+        let node = match slot.producer {
+            ProducerReference::Output { source, .. } => {
+                pending.push(source);
+                continue;
+            }
+            ProducerReference::NodeOutput { node, .. } => node,
+            ProducerReference::Input(_) => continue,
+        };
+        if !visited_nodes.insert(node) {
+            continue;
+        }
+        let declaration = require_node(draft, node)?;
+        let inputs = checked_range(
+            &declaration.input_bindings,
+            draft.bindings.len(),
+            declaration.node,
+        )?;
+        pending.extend(draft.bindings[inputs].iter().filter_map(|binding| {
+            let BindingDeclaration::Input { source, .. } = binding else {
+                return None;
+            };
+            Some(*source)
+        }));
+    }
+    Ok(states)
+}
+
+fn validate_activation_trigger_writes(
+    draft: &ProgramArtifactDraft,
+    state_writers: &BTreeMap<CellSlotId, Vec<(NodeId, u16)>>,
+) -> Result<(), ArtifactBuildError> {
+    let mut activations_by_trigger = BTreeMap::<CellSlotId, BTreeSet<NodeId>>::new();
+    for activation in &draft.nodes {
+        let super::ExecutableNodeBody::Activation(control) = &activation.body else {
+            continue;
+        };
+        for trigger in activation_trigger_states(draft, activation, control.scrutinee)? {
+            activations_by_trigger
+                .entry(trigger)
+                .or_default()
+                .insert(activation.node);
+        }
+    }
+    for (trigger, activations) in activations_by_trigger {
+        for (writer, _) in state_writers.get(&trigger).into_iter().flatten() {
+            if activations.contains(writer) {
+                return Err(ArtifactBuildError::InvalidControl {
+                    node: *writer,
+                    reason: "activation cannot write its own trigger state",
+                });
+            }
+            let declaration = require_node(draft, *writer)?;
+            let writer_inputs = checked_range(
+                &declaration.input_bindings,
+                draft.bindings.len(),
+                declaration.node,
+            )?;
+            for binding in &draft.bindings[writer_inputs] {
+                let BindingDeclaration::Input { source, .. } = binding else {
+                    continue;
+                };
+                if let Some(activation) =
+                    source_activation_dependency(draft, *source, &activations)?
+                {
+                    return Err(ArtifactBuildError::InvalidControl {
+                        node: activation,
+                        reason: "activation cannot write its own trigger state",
+                    });
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn activation_trigger_states(
+    draft: &ProgramArtifactDraft,
+    activation: &super::NodeDeclaration,
+    scrutinee: u16,
+) -> Result<BTreeSet<CellSlotId>, ArtifactBuildError> {
+    let inputs = checked_range(
+        &activation.input_bindings,
+        draft.bindings.len(),
+        activation.node,
+    )?;
+    let Some(BindingDeclaration::Input {
+        source: trigger, ..
+    }) = draft.bindings.get(inputs.start + usize::from(scrutinee))
+    else {
+        return Ok(BTreeSet::new());
+    };
+    source_state_dependencies(draft, *trigger)
+}
+
 fn validate_node_requirement(
     draft: &ProgramArtifactDraft,
-    node: &super::NodeDeclaration,
+    node_id: NodeId,
+    node: &super::OperationNodeBody,
     contract: &ResolvedOperationContract,
 ) -> Result<(), ArtifactBuildError> {
     let requirement = match node.requirement {
@@ -526,7 +785,7 @@ fn validate_node_requirement(
     match (&contract.interaction, requirement) {
         (ExternalInteraction::Pure, None) => Ok(()),
         (ExternalInteraction::Pure, Some(_)) => {
-            Err(ArtifactBuildError::UnexpectedApplicationRequirement { node: node.node })
+            Err(ArtifactBuildError::UnexpectedApplicationRequirement { node: node_id })
         }
         (ExternalInteraction::Observation(_), Some(ApplicationRequirement::Resource(request)))
             if request.intent == ResourceIntent::Read
@@ -558,8 +817,8 @@ fn validate_node_requirement(
             | ExternalInteraction::Effect(_)
             | ExternalInteraction::TransactionalExternal(_),
             None,
-        ) => Err(ArtifactBuildError::MissingApplicationRequirement { node: node.node }),
-        _ => Err(ArtifactBuildError::ApplicationRequirementInteractionMismatch { node: node.node }),
+        ) => Err(ArtifactBuildError::MissingApplicationRequirement { node: node_id }),
+        _ => Err(ArtifactBuildError::ApplicationRequirementInteractionMismatch { node: node_id }),
     }
 }
 
@@ -591,7 +850,14 @@ fn validate_state_writer_chain(
     let mut form = None;
     for &(node_id, output_ordinal) in writers {
         let node = require_node(draft, node_id)?;
-        let ResolvedOperationContract::Declared(contract) = require_contract(draft, node.contract)?
+        let super::ExecutableNodeBody::Operation(operation) = &node.body else {
+            return Err(ArtifactBuildError::InvalidStateWriterChain {
+                slot: slot_id,
+                reason: "control blocks cannot write state",
+            });
+        };
+        let ResolvedOperationContract::Declared(contract) =
+            require_contract(draft, operation.contract)?
         else {
             return Err(ArtifactBuildError::InvalidStateWriterChain {
                 slot: slot_id,

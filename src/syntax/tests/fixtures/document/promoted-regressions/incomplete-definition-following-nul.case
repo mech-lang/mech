@@ -1,0 +1,5 @@
+Minimized incremental-equivalence regression
+initial: "x := 1= 19+x := \n\u0000\u0000\u0000"
+edit: delete bytes 2..12
+final: "x  := \n\u0000\u0000\u0000"
+expected: the following NUL line is part of definition recovery

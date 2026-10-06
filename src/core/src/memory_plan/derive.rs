@@ -369,7 +369,7 @@ pub struct ValueLayoutPlanningRequest<'a> {
     pub target: &'a TargetMemoryProfile,
 }
 
-/// The single-value form of the existing R5 layout and publication plan,
+/// The single-value form of the existing memory layout and publication plan,
 /// used by owned-value ingress before a program call has been bound.
 /// Object IDs are local to this plan, just as for a standalone call.
 #[derive(Clone, Debug)]
@@ -1620,7 +1620,10 @@ fn derive_scratch_allocations(
             let [rows, columns] = coefficients.value.axes.as_ref() else {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
             };
-            if rows.current != columns.current {
+            if rows.current != columns.current
+                && rows.evolution == ExtentEvolution::Fixed
+                && columns.evolution == ExtentEvolution::Fixed
+            {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
             }
             let [solution] = outputs else {
@@ -1898,7 +1901,10 @@ fn apply_implementation_demand(
             let [rows, columns] = coefficients.value.axes.as_ref() else {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
             };
-            if rows.current != columns.current {
+            if rows.current != columns.current
+                && rows.evolution == ExtentEvolution::Fixed
+                && columns.evolution == ExtentEvolution::Fixed
+            {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
             }
             let rhs_columns = rhs.value.axes.get(1).map_or(1, |axis| axis.current);

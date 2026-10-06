@@ -200,6 +200,13 @@ impl MechStore for RuntimeStoreBoundary {
         store_extension!("get_module_version", || self.inner.get_module_version(id))
     }
 
+    #[cfg(feature = "source")]
+    fn module_source_documents(&self, module: ModuleId) -> MResult<Vec<crate::SourceDocument>> {
+        store_extension!("module_source_documents", || self
+            .inner
+            .module_source_documents(module))
+    }
+
     fn set_active_module_version(
         &mut self,
         module: ModuleId,

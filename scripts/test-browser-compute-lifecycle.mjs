@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import vm from "node:vm";
 
 globalThis.GPUMapMode = { READ: 1 };
 globalThis.GPUBufferUsage = { COPY_DST: 1, MAP_READ: 2 };
@@ -234,6 +236,133 @@ const creationManifest = {
   physicalRevision: `sha256:${"a".repeat(64)}`,
   wgsl: "@compute @workgroup_size(1) fn main() {}",
 };
+const inventoryManifest = {
+  ...creationManifest,
+  region: "ekf-batch",
+  bindings: [
+    { binding: 0, name: "control", role: "input", access: "read", slot: 2, elements: 1 },
+    { binding: 1, name: "state.3.read", role: "state-read", access: "read", slot: 3, elements: 1 },
+    { binding: 2, name: "state.3.write", role: "state-write", access: "read-write", slot: 3, elements: 1 },
+    { binding: 3, name: "integrity-fault", role: "integrity-fault", access: "read-write", slot: 0, elements: 2 },
+  ],
+  wgsl: `
+    @group(0) @binding(0) var<storage, read> input_2: array<f32>;
+    @group(0) @binding(1) var<storage, read> state_read_3: array<f32>;
+    @group(0) @binding(2) var<storage, read_write> state_write_3: array<f32>;
+    @group(0) @binding(3) var<storage, read_write> integrity_fault: array<atomic<u32>>;
+    fn record_integrity_fault() { atomicAdd(&integrity_fault[0], 1u); }
+    @compute @workgroup_size(1) fn main() {
+      state_write_3[0] = input_2[0]; record_integrity_fault();
+    }`,
+};
+const inventory = Device.bindingInventory(inventoryManifest);
+assert.deepEqual(inventory.map(binding => [binding.entryPointReads, binding.entryPointWrites]),
+  [[true, false], [false, false], [false, true], [true, true]]);
+assert.deepEqual(inventory[1], {
+  binding: 1, name: "state.3.read", role: "state-read", access: "read", slot: 3,
+  wgslVariable: "state_read_3", entryPointReads: false, entryPointWrites: false,
+});
+let rejectedDeviceRequests = 0;
+await assert.rejects(() => Device.create(inventoryManifest, {
+  limits: { ...supported, maxStorageBuffersPerShaderStage: 3 },
+  async requestDevice() { rejectedDeviceRequests += 1; },
+}), /compute region `ekf-batch`: Mech requires 4 for maxStorageBuffersPerShaderStage, but this adapter supports 3/);
+assert.equal(rejectedDeviceRequests, 0, "a capability mismatch must fail before requesting a device");
+
+// Exercise the production fallback function without starting the DOM host.
+const documentSource = readFileSync(new URL("../include/document.js", import.meta.url), "utf8");
+const pointerHostSource = documentSource.slice(
+  documentSource.indexOf("function initializePointerHostInput()"),
+  documentSource.indexOf("function initializeLayout()"),
+);
+const pointerRoot = {
+  dataset: {},
+  getBoundingClientRect: () => ({ left: 10, top: 20, width: 200, height: 100 }),
+};
+const pointerWindow = {};
+const pointerListeners = new Map();
+const pointerSamples = [];
+let pointerDriverRunning = false;
+const pointerController = {
+  hasPointerInput: () => pointerDriverRunning,
+  pointerInput(...sample) {
+    assert.equal(pointerDriverRunning, true, "a configured inactive pointer driver must never receive an event");
+    pointerSamples.push(sample);
+  },
+};
+const pointerState = {
+  root: pointerRoot,
+  runtimeLifecycle: "ready",
+  document: pointerController,
+  pointerHostTimestamp: null,
+  pointerHostPressed: false,
+};
+const pointerContext = vm.createContext({
+  state: pointerState,
+  window: pointerWindow,
+  servedPointerHostConfig: () => ({ provider: "pointer" }),
+  addRuntimeMutationEventListener(target, name, listener) {
+    pointerListeners.set(`${target === pointerRoot ? "root" : "window"}:${name}`, listener);
+  },
+});
+const initializePointerHost = vm.runInContext(`${pointerHostSource}\ninitializePointerHostInput;`, pointerContext);
+initializePointerHost();
+const pointerEvent = { button: 0, clientX: 110, clientY: 45, timeStamp: 1000 };
+pointerListeners.get("root:pointermove")(pointerEvent);
+pointerListeners.get("root:pointerdown")(pointerEvent);
+assert.deepEqual(pointerSamples, [], "configuration alone must not activate pointer ingress");
+pointerDriverRunning = true;
+pointerListeners.get("root:pointermove")(pointerEvent);
+pointerListeners.get("root:pointerdown")({ ...pointerEvent, timeStamp: 1016 });
+assert.deepEqual(pointerSamples, [[0, 0.5, false, 0], [0, 0.5, true, 0.016]]);
+// Source replacement can remove the last live read without changing host config
+// or the long-lived DOM listeners. Read accepted-driver liveness on each event.
+pointerDriverRunning = false;
+pointerListeners.get("root:pointermove")({ ...pointerEvent, timeStamp: 1100 });
+pointerListeners.get("window:pointerup")({ ...pointerEvent, timeStamp: 1101 });
+assert.equal(pointerSamples.length, 2);
+pointerDriverRunning = true;
+pointerListeners.get("root:pointermove")({ ...pointerEvent, timeStamp: 1200 });
+assert.deepEqual(pointerSamples[2], [0, 0.5, false, 0], "reactivation must not retain inactive button/timestamp state");
+pointerState.runtimeLifecycle = "stopped";
+pointerListeners.get("root:pointermove")({ ...pointerEvent, timeStamp: 1300 });
+assert.equal(pointerSamples.length, 3);
+pointerState.runtimeLifecycle = "ready";
+pointerState.document = { pointerInput() { throw new Error("old package must not submit without liveness API"); } };
+pointerListeners.get("root:pointermove")({ ...pointerEvent, timeStamp: 1400 });
+assert.equal(pointerSamples.length, 3);
+const fallbackSource = documentSource.slice(
+  documentSource.indexOf("async function createDocumentComputeBridgeWithFallback("),
+  documentSource.indexOf("async function main()"),
+);
+const bridgeError = new Error("compute region `ekf-batch`: Mech requires 12 for maxStorageBuffersPerShaderStage, but this adapter supports 10");
+const fallbackDataset = {};
+const fallbackContext = vm.createContext({
+  Error,
+  state: {},
+  document: { documentElement: { dataset: fallbackDataset } },
+  window: {},
+  DocumentComputeBridge: { async create() { throw bridgeError; } },
+  servedComputeHostConfig: () => ({ settings: { backend: "auto" } }),
+  setComputeBridgeLifecycle() {},
+});
+const createBridge = vm.runInContext(`${fallbackSource}\ncreateDocumentComputeBridgeWithFallback;`, fallbackContext);
+let fallbackAttempts = 0;
+const explicitController = {
+  computeManifest: () => ({ requestedBackend: "wgpu" }),
+  computeBackend: () => "wgpu",
+  fallbackComputeToCpu() { fallbackAttempts += 1; },
+};
+await assert.rejects(() => createBridge(explicitController, null, () => true, () => {}), error => error === bridgeError);
+assert.equal(fallbackAttempts, 0, "an explicit WebGPU source request must not attempt CPU fallback");
+assert.equal(fallbackDataset.mechGpuBridgeError, bridgeError.message);
+await assert.rejects(() => createBridge({
+  ...explicitController,
+  computeManifest: () => ({ requestedBackend: "auto" }),
+  fallbackComputeToCpu() { throw new Error("WebGPU is unavailable in this browser"); },
+}, null, () => true, () => {}), error =>
+  error.cause === bridgeError && error.message.startsWith(bridgeError.message) &&
+  error.message.includes("CPU fallback also failed"));
 let requestedLimits = null;
 let deviceDestroyed = 0;
 let bufferRealizations = 0;
@@ -339,6 +468,152 @@ const acceptedResult = await acceptedDevice.finish(completedSubmission([2, 4]));
 assert.equal(acceptedResult.outputs.length, 2);
 assert.equal(acceptedDevice.metrics.gpuToCpuReadbackBytes, 68);
 assert.equal(acceptedDevice.metrics.gpuToCpuOutputBytes, 120);
+
+// Exercise the shared physical-binding contract, not a shadow publication
+// initialized by a compute dispatch. This mock models buffers and queue copies;
+// actual numerical/device qualification remains in the Rust backend suites.
+const inputPublicationManifest = {
+  physicalRevision: "sha256:input-publication-plan",
+  bindings: [
+    { binding: 0, name: "sample", role: "input", access: "read", slot: 1,
+      elements: 5, memoryObject: 10, initialValues: new Float32Array([1, 2, 3, 4, 5]) },
+    { binding: 1, role: "state-read", access: "read", slot: 2, elements: 5, memoryObject: 12 },
+    { binding: 2, role: "state-write", access: "read-write", slot: 2, elements: 5, memoryObject: 13 },
+    { binding: 3, role: "integrity-fault", access: "read-write", slot: 0,
+      elements: 2, memoryObject: 11, initialValues: new Uint32Array([0, 0xffffffff]) },
+  ],
+  states: [{ slot: 2, elements: 5, memoryObjects: [12, 13],
+    initialValues: new Float32Array([100, 200, 300, 400, 500]) }],
+  outputs: ["live-input", "live-input-alias", "committed"].map(name => ({
+    name, sampleDimensions: [], physicalLayout: "row-major",
+  })),
+  physicalOutputs: [
+    { id: 0, slot: 1, binding: 0, aliases: ["live-input", "live-input-alias"],
+      sampleElements: 1, readbackDeviceObject: 20, readbackHostObject: 21 },
+    { id: 1, slot: 2, aliases: ["committed"], sampleElements: 1,
+      readbackDeviceObject: 22, readbackHostObject: 23 },
+  ],
+  memoryAllocations: [
+    ...[10, 12, 13].map(object => ({ object, capacityBytes: "20", space: "device" })),
+    { object: 11, capacityBytes: "8", space: "device" },
+    ...[20, 22].map(object => ({ object, capacityBytes: "4", space: "device" })),
+    ...[21, 23].map(object => ({ object, capacityBytes: "4", space: "host" })),
+    { object: 24, capacityBytes: "8", space: "device" },
+    { object: 25, capacityBytes: "8", space: "host" },
+  ],
+  integrityReadbackObjects: [24, 25],
+  constraints: [{ code: 1, name: "positive-input!" }],
+  dispatchElements: 5,
+  workgroupSize: 64,
+};
+let inputPublicationDispatches = 0;
+const inputPublicationGpu = {
+  lost: new Promise(() => {}),
+  createBuffer({ size }) {
+    return {
+      size, bytes: new ArrayBuffer(size),
+      async mapAsync() {},
+      getMappedRange(offset = 0, length = size - offset) {
+        return this.bytes.slice(offset, offset + length);
+      },
+      unmap() {}, destroy() {},
+    };
+  },
+  createBindGroup({ entries }) { return { entries }; },
+  createCommandEncoder() {
+    const operations = [];
+    let group;
+    return {
+      beginComputePass() {
+        return {
+          setPipeline() {}, setBindGroup(_index, next) { group = next; },
+          dispatchWorkgroups() {
+            operations.push(() => {
+              inputPublicationDispatches += 1;
+              const buffer = binding => group.entries.find(entry => entry.binding === binding).resource.buffer;
+              const input = new Float32Array(buffer(0).bytes);
+              const previous = new Float32Array(buffer(1).bytes);
+              new Float32Array(buffer(2).bytes).set(previous.map((value, lane) => value + input[lane]));
+              const failed = input.findIndex(value => value <= 0);
+              if (failed !== -1) new Uint32Array(buffer(3).bytes).set([1, (failed << 8) | 1]);
+            });
+          },
+          end() {},
+        };
+      },
+      copyBufferToBuffer(source, sourceOffset, destination, destinationOffset, bytes) {
+        operations.push(() => new Uint8Array(destination.bytes, destinationOffset, bytes)
+          .set(new Uint8Array(source.bytes, sourceOffset, bytes)));
+      },
+      finish() { return operations; },
+    };
+  },
+  queue: {
+    writeBuffer(buffer, offset, values) {
+      new Uint8Array(buffer.bytes, offset, values.byteLength)
+        .set(new Uint8Array(values.buffer, values.byteOffset, values.byteLength));
+    },
+    submit(commands) { commands.flat().forEach(operation => operation()); },
+    async onSubmittedWorkDone() {},
+  },
+  destroy() {},
+};
+const inputPublicationResource = new Device(inputPublicationManifest,
+  inputPublicationGpu, { getBindGroupLayout() { return {}; } },
+  ["live-input", "live-input-alias", "committed"]);
+inputPublicationResource.publishMetrics = () => {};
+const inputPhysical = inputPublicationManifest.physicalOutputs[0];
+const publishedInput = () => Array.from(new Float32Array(
+  inputPublicationResource.outputBuffer(0, inputPhysical).bytes,
+));
+assert.equal(inputPublicationResource.stateBuffers.has(1), false,
+  "a direct input must not allocate a zero-filled publication shadow");
+assert.equal(inputPublicationResource.outputBuffer(0, inputPhysical),
+  inputPublicationResource.inputBindings.get("sample").buffer);
+assert.equal(inputPublicationResource.outputBuffer(1, inputPhysical),
+  inputPublicationResource.outputBuffer(0, inputPhysical));
+assert.deepEqual(publishedInput(), [1, 2, 3, 4, 5]);
+assert.equal(inputPublicationDispatches, 0, "preparation must not dispatch a hidden turn");
+const completionsForInputPublication = [];
+const inputPublicationSession = new Session({ generation: 25, resource: inputPublicationResource,
+  controller: { completeComputeCommand(payload) { completionsForInputPublication.push(payload); } } });
+const publicationCommand = (token, values = []) => ({
+  dispatch: true, acknowledgementRequired: true, dispatchToken: token,
+  requestedOutputs: ["live-input", "live-input-alias", "committed"],
+  inputs: values.length ? [{ name: "sample", values: new Float32Array(values) }] : [],
+});
+inputPublicationResource.applyInputs({ inputs: [{ name: "sample", values: new Float32Array([7, 11, 13, 17, 19]) }] });
+assert.deepEqual(publishedInput(), [7, 11, 13, 17, 19]);
+assert.equal(inputPublicationDispatches, 0, "an input update must not advance recurrence");
+inputPublicationSession.submit(publicationCommand("25:1"));
+await inputPublicationSession.completion;
+assert.equal(inputPublicationSession.activeBuffer, 1);
+assert.deepEqual(completionsForInputPublication[0].outputs.map(output =>
+  [output.name, Array.from(output.values)]),
+[["live-input", [7]], ["live-input-alias", [7]], ["committed", [107]]]);
+const committedInputState = () => Array.from(new Float32Array(
+  inputPublicationResource.stateBuffers.get(2)[inputPublicationSession.activeBuffer].bytes,
+));
+assert.deepEqual(committedInputState(), [107, 211, 313, 417, 519]);
+inputPublicationSession.submit(publicationCommand("25:2", [23, 29, -31, 37, 41]));
+await inputPublicationSession.completion;
+assert.equal(completionsForInputPublication[1].status, "integrity-rejected");
+assert.deepEqual(completionsForInputPublication[1].integrity,
+  { constraint: "positive-input!", instance: 2 });
+assert.equal(inputPublicationSession.activeBuffer, 1);
+assert.deepEqual(committedInputState(), [107, 211, 313, 417, 519]);
+assert.deepEqual(publishedInput(), [23, 29, -31, 37, 41],
+  "rejected computation must not roll back an already supplied input");
+inputPublicationSession.submit(publicationCommand("25:3", [43, 47, 53, 59, 61]));
+await inputPublicationSession.completion;
+assert.equal(completionsForInputPublication[2].status, "completed");
+assert.equal(inputPublicationSession.activeBuffer, 0);
+assert.deepEqual(committedInputState(), [150, 258, 366, 476, 580]);
+assert.deepEqual(publishedInput(), [43, 47, 53, 59, 61]);
+assert.equal(inputPublicationDispatches, 3);
+assert.equal(inputPublicationResource.memory.record(10).inFlight, 0);
+inputPublicationSession.retire();
+await inputPublicationResource.disposeCompletion;
 
 const reportOnly = Object.create(Device.prototype);
 reportOnly.readbackPlan = [];

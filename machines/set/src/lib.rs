@@ -67,8 +67,10 @@ use std::sync::LazyLock;
     feature = "symmetric_difference",
     feature = "union"
 ))]
-static PURE_SET_BINARY_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| pure_full_write_contract(2, ChangeDetectionPolicy::AlwaysChanged));
+static PURE_SET_BINARY_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    mech_core::maintained_operation_contract("set/union", 2, false)
+        .expect("maintained binary set contract")
+});
 #[cfg(feature = "powerset")]
 static PURE_SET_UNARY_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_full_write_contract(1, ChangeDetectionPolicy::AlwaysChanged));
@@ -93,13 +95,10 @@ static PURE_SET_SIZE_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_full_write_contract(1, ChangeDetectionPolicy::ExactScalar));
 
 #[cfg(any(
-    feature = "cartesian_product",
-    feature = "difference",
     feature = "disjoint",
     feature = "element_of",
     feature = "equals",
     feature = "insert",
-    feature = "intersection",
     feature = "not_element_of",
     feature = "not_equals",
     feature = "powerset",
@@ -109,8 +108,6 @@ static PURE_SET_SIZE_CONTRACT: LazyLock<OperationContractDeclaration> =
     all(feature = "size", feature = "u64"),
     feature = "subset",
     feature = "superset",
-    feature = "symmetric_difference",
-    feature = "union",
 ))]
 fn pure_full_write_contract(
     input_count: usize,

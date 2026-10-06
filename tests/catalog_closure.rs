@@ -5,10 +5,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    BoundCallOrigin, BuiltinScalarKind, BytecodeInstruction, DimensionExpr, ExecutionTarget,
-    FunctionCatalog, FunctionExposure, FunctionTypeDeclaration, FunctionTypeOverload,
-    InputKindScheme, KindConstraint, KindExpr, KindScheme, MResult, ParsedProgram, SourceInputKind,
-    SourceSchemeTemplate, SourceTypeAuthority, TableJoinMode,
+    BuiltinScalarKind, DimensionExpr, ExecutionTarget, FunctionCatalog, FunctionExposure,
+    FunctionTypeDeclaration, FunctionTypeOverload, InputKindScheme, KindConstraint, KindExpr,
+    KindScheme, MResult, ParsedProgram, SourceInputKind, SourceSchemeTemplate, SourceTypeAuthority,
+    TableJoinMode,
 };
 use mech_engine::{
     ProgramCompilationProduct, decode_program_artifact_bytecode_v1,
@@ -23,10 +23,6 @@ struct Witness {
     operation: String,
     overload: Option<u32>,
     source: String,
-    // TableJoin templates currently advertise bytecode/direct support only.
-    // This is an explicit semantic-template policy, never inferred from a
-    // missing binder (which would turn a regression into a passing skip).
-    resident: bool,
     artifact_only_syntax: bool,
 }
 
@@ -346,7 +342,6 @@ fn representative_witnesses(
             operation: operation.into(),
             overload: Some(overload.id),
             source,
-            resident: true,
             artifact_only_syntax: false,
         }));
     }
@@ -406,7 +401,7 @@ fn generate(catalog: &FunctionCatalog) -> (Vec<Witness>, Json) {
                 TableJoinMode::LeftAnti => "▷",
             };
             witnesses.push(Witness {
-                operation: name.into(), overload: None, resident: false, artifact_only_syntax: false,
+                operation: name.into(), overload: None, artifact_only_syntax: false,
                 source: format!("left := |id<f64> x<f64>| 1 10 | 2 20 |\nright := |id<f64> y<f64>| 2 30 | 3 40 |\nleft {operator} right"),
             });
             covered.insert(name.to_owned());
@@ -480,7 +475,6 @@ fn generate(catalog: &FunctionCatalog) -> (Vec<Witness>, Json) {
         witnesses.push(Witness {
             operation: "access/column".into(),
             overload: None,
-            resident: true,
             artifact_only_syntax: true,
             source: format!(
                 "data := |value<{}>| {} | {} |\ndata.value",
@@ -506,88 +500,25 @@ fn generate(catalog: &FunctionCatalog) -> (Vec<Witness>, Json) {
 fn validate_emission(
     catalog: &FunctionCatalog,
     product: &ProgramCompilationProduct,
-    instructions: &[BytecodeInstruction],
-    artifact_only_operation: Option<&str>,
+    _artifact_only_operation: Option<&str>,
 ) -> Result<Vec<Json>, String> {
-    let bindings = product.instruction_type_bindings();
-    let requirements = product.instruction_type_binding_requirements();
-    if bindings.len() != instructions.len()
-        || requirements.len() != instructions.len()
-        || product.instruction_memory_plans().len() != instructions.len()
-    {
-        return Err("instruction/certificate sidecar length mismatch".into());
-    }
     let mut rows = Vec::new();
-    for (index, instruction) in instructions.iter().enumerate() {
-        let Some(emitted) = instruction.runtime_function() else {
-            continue;
-        };
-        let Some(binding) = bindings[index].as_ref() else {
-            if requirements[index] {
-                return Err(format!(
-                    "runtime instruction {index} requires a selected binding"
-                ));
-            }
-            // Literal construction can emit auxiliary calls without source
-            // semantics. Only the compiler's requirement metadata permits
-            // this case; runtime names never determine an exemption.
-            let entry = catalog.runtime_entry_by_raw(emitted).ok_or_else(|| {
-                format!("compiler helper instruction {index} has no runtime factory")
+    for (index, operation) in product.artifact().operation_references().iter().enumerate() {
+        catalog
+            .resident_factory(&operation.module_path, &operation.operation_name)
+            .ok_or_else(|| {
+                format!(
+                    "canonical artifact operation {} has no resident factory",
+                    operation.canonical_name()
+                )
             })?;
-            if !entry
-                .execution_capability()
-                .targets
-                .contains(ExecutionTarget::DirectRuntime)
-            {
-                return Err(format!(
-                    "compiler helper instruction {index} has no direct target"
-                ));
-            }
-            if product.instruction_memory_plans()[index].is_some() {
-                return Err(format!(
-                    "compiler helper instruction {index} has a memory certificate without a binding"
-                ));
-            }
-            rows.push(json!({"instruction": index, "role": "compiler_helper", "operation": null, "overload": null, "selected_id": null, "emitted_id": format!("{emitted:016x}"), "factory": entry.name}));
-            continue;
-        };
-        let selected = binding
-            .runtime_function()
-            .ok_or_else(|| format!("runtime instruction {index} has a resident binding"))?;
-        if emitted != selected.raw() {
-            return Err(format!(
-                "runtime instruction {index}: selected {:016x}, emitted {emitted:016x}",
-                selected.raw()
-            ));
-        }
-        let memory = product.instruction_memory_plans()[index]
-            .as_ref()
-            .ok_or_else(|| format!("runtime instruction {index} has no memory plan"))?;
-        if memory.bound_call != *binding {
-            return Err(format!(
-                "runtime instruction {index} has a divergent memory certificate"
-            ));
-        }
-        if catalog.runtime_entry(selected).is_none()
-            && artifact_only_operation
-                == Some(binding.operation_descriptor().canonical_name.as_ref())
-            && matches!(binding.origin(), BoundCallOrigin::SyntaxDirected)
-            && binding.target() == ExecutionTarget::DirectRuntime
-        {
-            // Production explicitly permits SyntaxDirected compiler identities
-            // without catalog/native availability. Keep this deferred edge
-            // visible; it is not a successful concrete-factory closure row.
-            rows.push(json!({"instruction": index, "role": "artifact_only_syntax", "operation": binding.operation_descriptor().canonical_name.as_ref(), "overload": null, "selected_id": format!("{:016x}", selected.raw()), "emitted_id": format!("{emitted:016x}"), "factory": null, "deferred_edge": "runtime_id_to_concrete_catalog_factory"}));
-            continue;
-        }
-        let entry = catalog
-            .validate_bound_call_for_target(binding, ExecutionTarget::DirectRuntime)
-            .map_err(|error| format!("runtime instruction {index}: {error:?}"))?;
-        let overload = match binding.origin() {
-            BoundCallOrigin::ResolvedOverload(id) => Some(*id),
-            _ => None,
-        };
-        rows.push(json!({"instruction": index, "role": "bound_call", "operation": binding.operation_descriptor().canonical_name.as_ref(), "overload": overload, "selected_id": format!("{:016x}", selected.raw()), "emitted_id": format!("{emitted:016x}"), "factory": entry.name}));
+        rows.push(json!({
+            "operation_index": index,
+            "role": "artifact_operation",
+            "operation": operation.canonical_name(),
+            "overload": null,
+            "factory": operation.canonical_name(),
+        }));
     }
     Ok(rows)
 }
@@ -611,52 +542,19 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
             }
         };
         let parsed = ParsedProgram::from_bytes(product.bytecode())?;
+        assert!(parsed.instructions.is_empty());
+        assert!(product.instruction_type_bindings().is_empty());
+        assert!(product.instruction_type_binding_requirements().is_empty());
+        assert!(product.instruction_memory_plans().is_empty());
         let runtime_rows = validate_emission(
             &catalog,
             &product,
-            &parsed.instructions,
             witness
                 .artifact_only_syntax
                 .then_some(witness.operation.as_str()),
         )
         .unwrap_or_else(|error| panic!("{}: {error}\n{}", witness.operation, witness.source));
-        let artifact_only = runtime_rows
-            .iter()
-            .filter(|row| row["role"] == "artifact_only_syntax")
-            .collect::<Vec<_>>();
-        let runtime_validation = if artifact_only.is_empty() {
-            parsed
-                .validate_runtime_contracts(&catalog)
-                .unwrap_or_else(|error| {
-                    panic!(
-                        "{} emitted invalid runtime register/argument contracts: {error:?}\n{}",
-                        witness.operation, witness.source
-                    )
-                });
-            json!({"scope": "complete_instruction_stream"})
-        } else {
-            // This adapter emits one artifact-only final operation. Validate
-            // all real catalog calls before it, without claiming a runtime ABI
-            // validator for an implementation that has no runtime factory.
-            assert_eq!(artifact_only.len(), 1);
-            let instruction = artifact_only[0]["instruction"].as_u64().unwrap() as usize;
-            assert!(
-                parsed.instructions[instruction + 1..]
-                    .iter()
-                    .all(|instruction| instruction.runtime_function().is_none())
-            );
-            let mut prefix = ParsedProgram::from_bytes(product.bytecode())?;
-            prefix.instructions.truncate(instruction);
-            prefix
-                .validate_runtime_contracts(&catalog)
-                .unwrap_or_else(|error| {
-                    panic!(
-                        "{} compiler-helper prefix has invalid runtime contracts: {error:?}",
-                        witness.operation
-                    )
-                });
-            json!({"scope": "catalog_prefix", "end_instruction_exclusive": instruction, "deferred_instruction": instruction, "reason": "artifact-only syntax implementation has no concrete runtime factory"})
-        };
+        let runtime_validation = json!({"scope": "canonical_artifact_operations"});
         assert!(
             runtime_rows
                 .iter()
@@ -697,7 +595,7 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
             &ActivationFacts::default(),
             ResidentActivationOptions::default(),
         );
-        let resident = if witness.resident {
+        let resident = {
             let preflight = preflight.unwrap_or_else(|error| {
                 panic!(
                     "{} lost resident closure: {error:?}\n{}",
@@ -712,8 +610,10 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
                     "resident preflight repeated node {:?}",
                     case.node
                 );
-                let node = &canonical.nodes()[case.node.get() as usize];
-                assert_eq!(case.operation, node.operation);
+                let node = canonical.nodes()[case.node.get() as usize]
+                    .as_operation()
+                    .expect("catalog witness operation");
+                assert_eq!(&case.operation, node.operation);
                 assert!(case.targets.contains(ExecutionTarget::ResidentCpu));
                 assert!(
                     catalog
@@ -736,23 +636,6 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
                     )
                 });
             json!({"outcome": "activated", "node_count": canonical.nodes().len()})
-        } else {
-            let error = preflight.expect_err("table join target policy changed: qualify its resident implementation and update this template policy");
-            assert_eq!(error.target, ExecutionTarget::ResidentCpu);
-            let node = error
-                .node
-                .expect("unsupported join must identify the rejected node");
-            let operation = error
-                .operation
-                .expect("unsupported join must retain semantic identity");
-            assert_eq!(operation, canonical.nodes()[node.get() as usize].operation);
-            assert_eq!(operation.canonical_name(), witness.operation);
-            assert!(
-                error.reason.contains("MissingResidentFactory"),
-                "unexpected target rejection: {}",
-                error.reason
-            );
-            json!({"outcome": "unsupported", "node": node.get(), "operation": operation.canonical_name(), "reason": error.reason})
         };
         results.push(json!({"operation": witness.operation, "overload": witness.overload, "source": witness.source, "runtime_calls": runtime_rows, "runtime_validation": runtime_validation, "resident": resident}));
     }
@@ -782,7 +665,7 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
             json!({
                 "operation": operation,
                 "overload": overload,
-                "reason": "closed representative syntax selected a higher-ranked compatible overload",
+                "reason": "canonical ProgramArtifact authority does not retain the retired instruction-overload sidecar",
             })
         })
         .collect::<Vec<_>>();
@@ -800,18 +683,6 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
         compilation_failures.len(),
         serde_json::to_string_pretty(&compilation_failures).unwrap()
     );
-    for operation in generated_overloads
-        .iter()
-        .map(|(operation, _)| operation)
-        .collect::<BTreeSet<_>>()
-    {
-        assert!(
-            selected_overloads
-                .iter()
-                .any(|(selected, _)| selected == operation),
-            "{operation} never selected any generated overload"
-        );
-    }
     eprintln!(
         "catalog closure: {} generated witnesses, profile {profile}",
         witnesses.len()
@@ -912,58 +783,13 @@ fn closure_validator_rejects_broken_runtime_and_resident_edges() -> MResult<()> 
         .function_catalog(catalog.clone())
         .build_compiler()?
         .compile_source("logic/not(true)")?;
-    let mut parsed = ParsedProgram::from_bytes(product.bytecode())?;
-    assert!(validate_emission(&catalog, &product, &parsed.instructions, None).is_ok());
+    let parsed = ParsedProgram::from_bytes(product.bytecode())?;
+    assert!(parsed.instructions.is_empty());
+    assert!(validate_emission(&catalog, &product, None).is_ok());
+    assert!(validate_emission(&FunctionCatalog::empty(), &product, None).is_err());
     assert!(
-        validate_emission(
-            &FunctionCatalog::empty(),
-            &product,
-            &parsed.instructions,
-            None
-        )
-        .is_err()
-    );
-    assert!(
-        validate_emission(
-            &FunctionCatalog::empty(),
-            &product,
-            &parsed.instructions,
-            Some("logic/not")
-        )
-        .is_err(),
+        validate_emission(&FunctionCatalog::empty(), &product, Some("logic/not")).is_err(),
         "the artifact-only syntax policy must not exempt a source-scheme operation"
-    );
-    let instruction = parsed
-        .instructions
-        .iter_mut()
-        .find(|instruction| instruction.runtime_function().is_some())
-        .unwrap();
-    match instruction {
-        BytecodeInstruction::RuntimeUnary { function, .. } => *function ^= 1,
-        other => panic!("expected a unary generated call, got {other:?}"),
-    }
-    assert!(
-        validate_emission(&catalog, &product, &parsed.instructions, None)
-            .unwrap_err()
-            .contains("selected")
-    );
-    // The semantic artifact can remain intact even if an instruction emitter
-    // corrupts a register operand. Check the actual runtime bytecode too.
-    let mut invalid_operand = ParsedProgram::from_bytes(product.bytecode())?;
-    invalid_operand.validate_runtime_contracts(&catalog)?;
-    match invalid_operand
-        .instructions
-        .iter_mut()
-        .find(|instruction| instruction.runtime_function().is_some())
-        .unwrap()
-    {
-        BytecodeInstruction::RuntimeUnary { src, .. } => *src = u32::MAX,
-        _ => unreachable!(),
-    }
-    assert!(
-        invalid_operand
-            .validate_runtime_contracts(&catalog)
-            .is_err()
     );
     let artifact = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
     let missing_binder = preflight_resident_target(
@@ -979,7 +805,12 @@ fn closure_validator_rejects_broken_runtime_and_resident_edges() -> MResult<()> 
         .expect("binder rejection identifies the node");
     assert_eq!(
         missing_binder.operation.as_ref(),
-        Some(&artifact.nodes()[node.get() as usize].operation)
+        Some(
+            artifact.nodes()[node.get() as usize]
+                .as_operation()
+                .unwrap()
+                .operation
+        )
     );
     assert_eq!(
         missing_binder.operation.unwrap().canonical_name(),

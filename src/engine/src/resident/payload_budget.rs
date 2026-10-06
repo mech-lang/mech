@@ -1,5 +1,5 @@
 //! Configured-budget ownership for the payloads of the existing typed lanes.
-//! Fixed lane storage is already owned by the realized R5 arenas. These owners
+//! Fixed lane storage is already owned by the realized memory arenas. These owners
 //! retain only additional mutable payload capacity; canonical data transfers
 //! its admission to the shared immutable root before publication.
 
@@ -276,6 +276,25 @@ impl ResidentPayloadScope {
         Ok(())
     }
 
+    pub(crate) fn admit_snapshot_materialization(
+        &self,
+        persistent_bytes: u64,
+        temporary_bytes: u64,
+    ) -> MemoryRuntimeResult<()> {
+        if self.inner.region.kind != ResidentValueKind::Snapshot {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "snapshot materialization requires a Snapshot target".into(),
+            });
+        }
+        let claim_metadata = mech_core::Value::memory_budget_claim_metadata_bytes();
+        self.inner.admit_peak(
+            persistent_bytes,
+            persistent_bytes.saturating_sub(claim_metadata),
+        )?;
+        self.admit_auxiliary(temporary_bytes)
+    }
+
     pub(crate) fn admit_copy(
         &self,
         value: ResidentValueRef<'_>,
@@ -383,7 +402,7 @@ impl ResidentPayloadScope {
                             },
                         )?;
                         // Existing per-call admission pays first. Only the
-                        // portion actually consumed from the R5 envelope
+                        // portion actually consumed from the admitted memory envelope
                         // leaves the resident owner with this immutable root.
                         let return_to_prepaid =
                             borrowed.saturating_sub(consumed.saturating_sub(existing));
@@ -646,7 +665,7 @@ mod tests {
         assert_eq!(
             budget.used_bytes(),
             baseline + claim,
-            "the R5 payload envelope is transferred; only immutable import metadata is new"
+            "the admitted payload envelope is transferred; only immutable import metadata is new"
         );
         drop(owner);
         assert_eq!(budget.used_bytes(), admitted);

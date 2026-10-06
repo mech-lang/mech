@@ -26,7 +26,7 @@ use mech_core::{
     TransferPlan, evaluate_aggregate_memory_budget,
 };
 
-/// Existing GPU execution plan paired with the process-local, non-wire R5
+/// Existing GPU execution plan paired with the process-local, non-wire memory
 /// allocation plan used to admit every backing before device creation.
 #[derive(Clone, Debug)]
 pub struct PlannedGpuExecution {
@@ -62,7 +62,7 @@ pub struct GpuBackingMemoryPlan {
 
 /// Process-local realization of the subordinate GPU backing plan. It keeps
 /// logical plan objects separate from backend buffers while making every
-/// buffer registration and submission pin pass through the R6 domain.
+/// buffer registration and submission pin pass through the managed memory domain.
 pub struct ManagedGpuMemory {
     domain: MemoryDomain,
     realized: RealizedMemoryPlan,
@@ -353,6 +353,8 @@ impl ManagedGpuMemory {
 
     /// Copies a completed backend mapping into its planned host transfer
     /// region before exposing a call-scoped borrowed view to the decoder.
+    /// The outstanding submission hold owns the transfer interval; acquisition
+    /// must reuse that authority while the mapping is still pinned.
     pub fn with_staged_host_transfer<R>(
         &self,
         object: MemoryObjectId,
@@ -374,7 +376,6 @@ impl ManagedGpuMemory {
                 },
             ));
         }
-        let _scope = self.domain.enter_plan_point(MemoryPlanPoint::new(0))?;
         let mut frame = self
             .domain
             .acquire_call(&self.realized, &self.host_transfer_writes[index].1)?;
@@ -1287,6 +1288,7 @@ mod tests {
         let mut execution = test_execution_plan(2);
         execution.states.push(crate::GpuPlanState {
             slot: 2,
+            recurrence: true,
             elements: 2,
             elements_per_instance: 2,
             initial_values: vec![1.0, 2.0],
@@ -1325,6 +1327,93 @@ mod tests {
                 .writable_device_objects()
                 .iter()
                 .any(|(object, _)| *object == current || *object == next)
+        );
+
+        // Publication storage has no recurrence read, but still stages writes
+        // into the same alternating allocation identities.
+        let mut publication = planned.execution.clone();
+        publication.states[0].recurrence = false;
+        publication
+            .bindings
+            .retain(|binding| binding.role != crate::GpuExecutionBindingRole::StateRead);
+        let publication = PlannedGpuExecution::from_execution(publication, limits(1024)).unwrap();
+        assert_eq!(publication.memory.allocations, planned.memory.allocations);
+        assert_eq!(
+            publication.state_objects(mech_core::CellSlotId::new(2)),
+            Some([current, next])
+        );
+        assert_eq!(
+            publication.writable_state_objects(0),
+            Some(&[(next, 8)][..])
+        );
+        assert_eq!(
+            publication.writable_state_objects(1),
+            Some(&[(current, 8)][..])
+        );
+        assert_eq!(
+            publication.memory.demand.storage_bindings,
+            planned.memory.demand.storage_bindings - 1
+        );
+    }
+
+    #[test]
+    fn readback_staging_reuses_the_submission_transfer_scope() {
+        let mut execution = test_execution_plan(2);
+        execution.bindings.push(crate::GpuPlanBinding {
+            binding: 1,
+            name: "output".to_owned(),
+            access: crate::GpuBindingAccess::ReadWrite,
+            role: crate::GpuExecutionBindingRole::Output,
+            slot: 2,
+            elements: 2,
+            scalar: crate::GpuPlanScalar::F32,
+            initial_values: None,
+        });
+        execution.outputs.push(crate::GpuPlanOutput {
+            name: "output".to_owned(),
+            slot: 2,
+            physical_output: 0,
+            elements: 2,
+            elements_per_instance: 2,
+            dimensions: vec![2],
+            sample_dimensions: vec![2],
+            physical_layout: crate::GpuPlanLayout::RowMajor,
+        });
+        execution
+            .physical_outputs
+            .push(crate::GpuPhysicalOutputPlan {
+                id: 0,
+                slot: 2,
+                binding: Some(1),
+                sample_elements: 2,
+                aliases: vec!["output".to_owned()],
+            });
+        let planned = PlannedGpuExecution::from_execution(execution, limits(1024)).unwrap();
+        let memory = planned.managed_memory().unwrap();
+        let object = planned
+            .readback_object(mech_core::CellSlotId::new(2))
+            .unwrap();
+        let bytes = [1_u8, 2, 3, 4, 5, 6, 7, 8];
+        assert!(
+            memory
+                .with_staged_host_transfer(object, &bytes, |_| ())
+                .is_err()
+        );
+        let hold = memory.begin_submission(&[], &[object]).unwrap();
+        assert_eq!(memory.ledger().in_flight_transfer_bytes, 8);
+        assert_eq!(
+            memory
+                .with_staged_host_transfer(object, &bytes, |value| value.to_vec())
+                .unwrap(),
+            bytes
+        );
+        assert_eq!(memory.ledger().in_flight_transfer_bytes, 8);
+        hold.complete().unwrap();
+        assert_eq!(memory.ledger().in_flight_transfer_bytes, 0);
+        assert!(
+            memory
+                .with_staged_host_transfer(object, &bytes, |_| ())
+                .is_err()
         );
     }
 

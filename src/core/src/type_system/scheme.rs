@@ -312,6 +312,62 @@ pub fn promoted_binary_elementwise() -> Result<Vec<KindScheme>, SemanticModelErr
     Ok(schemes)
 }
 
+fn exact_elementwise_comparison(element: KindExpr) -> Result<Vec<KindScheme>, SemanticModelError> {
+    let boolean = BuiltinScalarKind::Bool.kind_expr();
+    let mut schemes = vec![make(
+        0,
+        2,
+        vec![
+            matrix(element.clone(), dim(0), dim(1)),
+            matrix(element.clone(), dim(0), dim(1)),
+        ],
+        vec![matrix(boolean.clone(), dim(0), dim(1))],
+        Vec::new(),
+    )?];
+    for reversed in [false, true] {
+        let shaped = matrix(element.clone(), dim(0), dim(1));
+        let operands = |other: KindExpr| {
+            if reversed {
+                vec![other, shaped.clone()]
+            } else {
+                vec![shaped.clone(), other]
+            }
+        };
+        schemes.push(make(
+            0,
+            2,
+            operands(element.clone()),
+            vec![matrix(boolean.clone(), dim(0), dim(1))],
+            Vec::new(),
+        )?);
+        for column in [true, false] {
+            let broadcast = if column {
+                matrix(element.clone(), dim(2), DimensionExpr::Constant(1))
+            } else {
+                matrix(element.clone(), DimensionExpr::Constant(1), dim(2))
+            };
+            schemes.push(make(
+                0,
+                3,
+                operands(broadcast),
+                vec![matrix(boolean.clone(), dim(0), dim(1))],
+                vec![KindConstraint::DimensionCompatible(
+                    dim(if column { 0 } else { 1 }),
+                    dim(2),
+                )],
+            )?);
+        }
+    }
+    schemes.extend(compatible_binary_matrices(
+        0,
+        element.clone(),
+        element,
+        boolean,
+        Vec::new(),
+    )?);
+    Ok(schemes)
+}
+
 pub fn comparison_exact() -> Result<Vec<KindScheme>, SemanticModelError> {
     let boolean = BuiltinScalarKind::Bool.kind_expr();
     let mut schemes = vec![make(
@@ -342,52 +398,12 @@ pub fn comparison_exact() -> Result<Vec<KindScheme>, SemanticModelError> {
             predicate: BuiltinKindPredicate::Number,
         }],
     )?);
-    for element in [BuiltinScalarKind::Bool, BuiltinScalarKind::String] {
-        let element = element.kind_expr();
-        schemes.push(make(
-            0,
-            2,
-            vec![
-                matrix(element.clone(), dim(0), dim(1)),
-                matrix(element.clone(), dim(0), dim(1)),
-            ],
-            vec![matrix(boolean.clone(), dim(0), dim(1))],
-            Vec::new(),
-        )?);
-        for reversed in [false, true] {
-            let shaped = matrix(element.clone(), dim(0), dim(1));
-            let operands = |other: KindExpr| {
-                if reversed {
-                    vec![other, shaped.clone()]
-                } else {
-                    vec![shaped.clone(), other]
-                }
-            };
-            schemes.push(make(
-                0,
-                2,
-                operands(element.clone()),
-                vec![matrix(boolean.clone(), dim(0), dim(1))],
-                Vec::new(),
-            )?);
-            for column in [true, false] {
-                let broadcast = if column {
-                    matrix(element.clone(), dim(2), DimensionExpr::Constant(1))
-                } else {
-                    matrix(element.clone(), DimensionExpr::Constant(1), dim(2))
-                };
-                schemes.push(make(
-                    0,
-                    3,
-                    operands(broadcast),
-                    vec![matrix(boolean.clone(), dim(0), dim(1))],
-                    vec![KindConstraint::DimensionCompatible(
-                        dim(if column { 0 } else { 1 }),
-                        dim(2),
-                    )],
-                )?);
-            }
-        }
+    for element in [
+        BuiltinScalarKind::Bool.kind_expr(),
+        BuiltinScalarKind::String.kind_expr(),
+        KindExpr::Index,
+    ] {
+        schemes.extend(exact_elementwise_comparison(element)?);
     }
     schemes.extend(compatible_binary_matrices(
         1,
@@ -399,15 +415,6 @@ pub fn comparison_exact() -> Result<Vec<KindScheme>, SemanticModelError> {
             predicate: BuiltinKindPredicate::Number,
         }],
     )?);
-    for element in [BuiltinScalarKind::Bool, BuiltinScalarKind::String] {
-        schemes.extend(compatible_binary_matrices(
-            0,
-            element.kind_expr(),
-            element.kind_expr(),
-            boolean.clone(),
-            Vec::new(),
-        )?);
-    }
     Ok(schemes)
 }
 
@@ -485,6 +492,9 @@ fn comparison_promoted_for_predicate(
             vec![output].into_boxed_slice(),
             constraints.into_boxed_slice(),
         )?);
+    }
+    if predicate == BuiltinKindPredicate::Ordered {
+        result.extend(exact_elementwise_comparison(KindExpr::Index)?);
     }
     Ok(result)
 }
@@ -1073,15 +1083,17 @@ pub fn string_binary() -> Result<KindScheme, SemanticModelError> {
 
 fn absolute_value() -> Result<Vec<KindScheme>, SemanticModelError> {
     let mut schemes = predicate_unary_same(BuiltinKindPredicate::Real)?;
-    let complex = BuiltinScalarKind::C64.kind_expr();
-    schemes.push(exact_unary(complex.clone(), complex.clone())?);
-    schemes.push(make(
-        0,
-        2,
-        vec![matrix(complex.clone(), dim(0), dim(1))],
-        vec![matrix(complex, dim(0), dim(1))],
-        Vec::new(),
-    )?);
+    for complex in [BuiltinScalarKind::C32, BuiltinScalarKind::C64] {
+        let complex = complex.kind_expr();
+        schemes.push(exact_unary(complex.clone(), complex.clone())?);
+        schemes.push(make(
+            0,
+            2,
+            vec![matrix(complex.clone(), dim(0), dim(1))],
+            vec![matrix(complex, dim(0), dim(1))],
+            Vec::new(),
+        )?);
+    }
     Ok(schemes)
 }
 
@@ -1207,7 +1219,9 @@ fn instantiate_table_join_scheme(
         });
     }
 
-    let optional = |kind: &KindExpr| match kind {
+    // The template fields below are kind parameters; inspect the resolved
+    // input field before wrapping so an existing optional is not nested.
+    let optional = |kind: &KindExpr, input: &KindExpr| match input {
         KindExpr::Option(_) => kind.clone(),
         _ => KindExpr::Option(Box::new(kind.clone())),
     };
@@ -1216,14 +1230,15 @@ fn instantiate_table_join_scheme(
     let left_only = matches!(mode, TableJoinMode::LeftSemi | TableJoinMode::LeftAnti);
     let mut output_fields = left_fields
         .iter()
-        .map(|field| crate::KindField {
+        .enumerate()
+        .map(|(index, field)| crate::KindField {
             name: field.name.clone(),
             kind: if left_outer
                 && !right_fields
                     .iter()
                     .any(|candidate| candidate.name == field.name)
             {
-                optional(&field.kind)
+                optional(&field.kind, &left_columns[index].kind)
             } else {
                 field.kind.clone()
             },
@@ -1233,15 +1248,16 @@ fn instantiate_table_join_scheme(
         output_fields.extend(
             right_fields
                 .iter()
-                .filter(|field| {
+                .enumerate()
+                .filter(|(_, field)| {
                     !left_fields
                         .iter()
                         .any(|candidate| candidate.name == field.name)
                 })
-                .map(|field| crate::KindField {
+                .map(|(index, field)| crate::KindField {
                     name: field.name.clone(),
                     kind: if right_outer {
-                        optional(&field.kind)
+                        optional(&field.kind, &right_columns[index].kind)
                     } else {
                         field.kind.clone()
                     },
@@ -1300,6 +1316,9 @@ pub fn numeric_binary_for_predicate(
 
 pub fn maintained_source_scheme_template(name: &str) -> Option<SourceSchemeTemplate> {
     match name {
+        "compare/lt" | "compare/lte" | "compare/gt" | "compare/gte" => {
+            Some(SourceSchemeTemplate::OrderedComparison)
+        }
         "matrix/horzcat" => Some(SourceSchemeTemplate::HorizontalConcatenation),
         "matrix/vertcat" => Some(SourceSchemeTemplate::VerticalConcatenation),
         "set/define" => Some(SourceSchemeTemplate::SetDefinition),
@@ -1319,6 +1338,36 @@ pub fn instantiate_source_scheme_template(
     template: SourceSchemeTemplate,
     inputs: &[ResolvedType],
 ) -> Result<Vec<KindScheme>, SemanticModelError> {
+    if template == SourceSchemeTemplate::OrderedComparison {
+        // Preserve the existing numeric, Index and String declarations. Only
+        // an identical valid interval pair adds its exact resident-capable
+        // scalar/elementwise family; Ordered alone must not widen admission of
+        // unrelated scalar or broadcast layouts.
+        let mut schemes = maintained_source_schemes("compare/lt")?
+            .expect("ordering has maintained source schemes");
+        let leaf = |input: &ResolvedType| match input.kind() {
+            KindExpr::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2 => element.as_ref().clone(),
+            kind => kind.clone(),
+        };
+        if let [left, right] = inputs {
+            let element = leaf(left);
+            if let KindExpr::IntegerInterval(interval) = &element
+                && interval.is_valid()
+                && leaf(right) == element
+            {
+                schemes.push(exact_binary(
+                    element.clone(),
+                    element.clone(),
+                    BuiltinScalarKind::Bool.kind_expr(),
+                )?);
+                schemes.extend(exact_elementwise_comparison(element)?);
+            }
+        }
+        return Ok(schemes);
+    }
     let scheme = match template {
         SourceSchemeTemplate::HorizontalConcatenation => {
             instantiate_concatenation_scheme(inputs, true)?
@@ -1342,8 +1391,54 @@ pub fn instantiate_source_scheme_template(
             )?
         }
         SourceSchemeTemplate::TableJoin(mode) => instantiate_table_join_scheme(inputs, mode)?,
+        SourceSchemeTemplate::OrderedComparison => {
+            unreachable!("ordering returns its scheme family above")
+        }
     };
     Ok(vec![scheme])
+}
+
+/// Maintained mathematical operation families. This single registry supplies
+/// both source type schemes and portable operation-contract selection.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MaintainedMathOperation {
+    PromotedBinary,
+    Power,
+    Modulus,
+    Negate,
+    AbsoluteValue,
+    FloatingBinary,
+    FloatingUnary,
+}
+
+impl MaintainedMathOperation {
+    pub const fn input_count(self) -> usize {
+        match self {
+            Self::Negate | Self::AbsoluteValue | Self::FloatingUnary => 1,
+            Self::PromotedBinary | Self::Power | Self::Modulus | Self::FloatingBinary => 2,
+        }
+    }
+}
+
+pub fn maintained_math_operation(name: &str) -> Option<MaintainedMathOperation> {
+    use MaintainedMathOperation::*;
+    Some(match name {
+        "math/add" | "math/sub" | "math/mul" | "math/div" => PromotedBinary,
+        "math/pow" => Power,
+        "math/mod" => Modulus,
+        "math/neg" => Negate,
+        "math/abs" => AbsoluteValue,
+        "math/atan2" | "math/copysign" | "math/fdim" | "math/fmod" | "math/nextafter"
+        | "math/remainder" | "math/bessel/jn" | "math/bessel/yn" => FloatingBinary,
+        "math/acos" | "math/acosh" | "math/acot" | "math/acsc" | "math/asec" | "math/asin"
+        | "math/asinh" | "math/atan" | "math/atanh" | "math/bessel/j0" | "math/bessel/j1"
+        | "math/bessel/y0" | "math/bessel/y1" | "math/cbrt" | "math/ceil" | "math/cos"
+        | "math/cosh" | "math/cot" | "math/csc" | "math/erf" | "math/erfc" | "math/floor"
+        | "math/lgamma" | "math/log" | "math/log10" | "math/log1p" | "math/log2" | "math/rint"
+        | "math/round" | "math/roundeven" | "math/sec" | "math/sin" | "math/sinh" | "math/sqrt"
+        | "math/tan" | "math/tanh" | "math/tgamma" | "math/trunc" => FloatingUnary,
+        _ => return None,
+    })
 }
 
 /// Returns the explicit storage-blind schemes for one maintained source name.
@@ -1352,6 +1447,35 @@ pub fn instantiate_source_scheme_template(
 pub fn maintained_source_schemes(
     name: &str,
 ) -> Result<Option<Vec<KindScheme>>, SemanticModelError> {
+    if let Some(operation) = maintained_math_operation(name) {
+        use MaintainedMathOperation::*;
+        let schemes = match operation {
+            PromotedBinary => promoted_binary_elementwise()?,
+            Power => {
+                let mut schemes = promoted_binary_elementwise()?;
+                // Rational power retains its integral exponent instead of
+                // promoting that input to the base's rational kind.
+                schemes.push(exact_binary(
+                    BuiltinScalarKind::R64.kind_expr(),
+                    BuiltinScalarKind::I32.kind_expr(),
+                    BuiltinScalarKind::R64.kind_expr(),
+                )?);
+                schemes
+            }
+            Modulus => {
+                let mut schemes = numeric_binary_for_predicate(BuiltinKindPredicate::Integer)?;
+                schemes.extend(numeric_binary_for_predicate(
+                    BuiltinKindPredicate::FloatingPoint,
+                )?);
+                schemes
+            }
+            Negate => predicate_unary_same(BuiltinKindPredicate::Negatable)?,
+            AbsoluteValue => absolute_value()?,
+            FloatingBinary => numeric_binary_for_predicate(BuiltinKindPredicate::FloatingPoint)?,
+            FloatingUnary => predicate_unary_same(BuiltinKindPredicate::FloatingPoint)?,
+        };
+        return Ok(Some(schemes));
+    }
     let schemes = match name {
         name if name.contains("-assign") => {
             let arity = if name.ends_with("/range-all") || name.ends_with("/range") {
@@ -1360,34 +1484,6 @@ pub fn maintained_source_schemes(
                 2
             };
             exact_assignment(arity)?
-        }
-        "math/add" | "math/sub" | "math/mul" | "math/div" => promoted_binary_elementwise()?,
-        "math/pow" => {
-            let mut schemes = promoted_binary_elementwise()?;
-            // Rational power has an integral exponent; promoting that input
-            // to the base's kind would erase the operation's exact signature.
-            schemes.push(exact_binary(
-                BuiltinScalarKind::R64.kind_expr(),
-                BuiltinScalarKind::I32.kind_expr(),
-                BuiltinScalarKind::R64.kind_expr(),
-            )?);
-            schemes
-        }
-        "math/mod" => {
-            let mut values = numeric_binary_for_predicate(BuiltinKindPredicate::Integer)?;
-            values.extend(numeric_binary_for_predicate(
-                BuiltinKindPredicate::FloatingPoint,
-            )?);
-            values
-        }
-        "math/neg" => predicate_unary_same(BuiltinKindPredicate::Negatable)?,
-        "math/abs" => absolute_value()?,
-        "math/atan2" | "math/copysign" | "math/fdim" | "math/fmod" | "math/nextafter"
-        | "math/remainder" | "math/bessel/jn" | "math/bessel/yn" => {
-            numeric_binary_for_predicate(BuiltinKindPredicate::FloatingPoint)?
-        }
-        name if name.starts_with("math/") => {
-            predicate_unary_same(BuiltinKindPredicate::FloatingPoint)?
         }
         "compare/seq" | "compare/sneq" => strict_comparison_exact()?,
         "compare/eq" | "compare/neq" => {

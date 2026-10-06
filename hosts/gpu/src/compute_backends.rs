@@ -252,8 +252,13 @@ impl ComputeSession for FixedScalarSession {
         &mut self,
         selection: &ComputeOutputSelection,
     ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
-        fixed_output_snapshot(&self.program, selection, self.session.state())
-            .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
+        fixed_output_snapshot(
+            &self.program,
+            selection,
+            self.session.state(),
+            Some(self.session.input_values()),
+        )
+        .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
     }
 }
 
@@ -435,8 +440,13 @@ impl ComputeSession for FixedSimdSession {
         &mut self,
         selection: &ComputeOutputSelection,
     ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
-        fixed_output_snapshot(&self.program, selection, self.session.state())
-            .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
+        fixed_output_snapshot(
+            &self.program,
+            selection,
+            self.session.state(),
+            Some(self.session.input_values()),
+        )
+        .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
     }
 }
 
@@ -485,8 +495,13 @@ impl ComputeSession for FixedJitSession {
         &mut self,
         selection: &ComputeOutputSelection,
     ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
-        fixed_output_snapshot(&self.program, selection, self.session.state())
-            .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
+        fixed_output_snapshot(
+            &self.program,
+            selection,
+            self.session.state(),
+            Some(self.session.input_values()),
+        )
+        .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
     }
 }
 
@@ -765,7 +780,7 @@ impl ComputeSession for FixedWgpuSession {
         };
         let state = state
             .map_err(|error| execution_error(&self.backend, "read outputs", error.to_string()))?;
-        fixed_output_snapshot(&self.program, &snapshot_selection, &state)
+        fixed_output_snapshot(&self.program, &snapshot_selection, &state, None)
             .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
     }
 }
@@ -863,14 +878,21 @@ fn initializer_inputs(
                     format!("input `{}` has no initializer", port.name),
                 )
             })?;
-            let value = port.normalize_value(value.clone()).map_err(|error| {
-                backend_error(
-                    backend,
-                    "create session",
-                    format!("input `{}` initializer is invalid: {error}", port.name),
-                )
-            })?;
-            Ok((port.name.to_string(), compute_values(value)))
+            let update = program
+                .normalize_input_update(ComputeInputUpdate {
+                    port: port.id,
+                    value: value.clone(),
+                })
+                .map_err(|error| {
+                    backend_error(
+                        backend,
+                        "create session",
+                        format!("input `{}` initializer is invalid: {error}", port.name),
+                    )
+                })?;
+            let values = compute_input_values(program, port, update.value)
+                .map_err(|detail| backend_error(backend, "create session", detail))?;
+            Ok((port.name.to_string(), values))
         })
         .collect()
 }
@@ -890,7 +912,9 @@ fn normalized_update_inputs(
                 .interface()
                 .input(update.port)
                 .expect("normalized update names a declared input");
-            Ok((port.name.to_string(), compute_values(update.value)))
+            let values = compute_input_values(program, port, update.value)
+                .map_err(|detail| execution_error(backend, "update inputs", detail))?;
+            Ok((port.name.to_string(), values))
         })
         .collect()
 }
@@ -900,6 +924,42 @@ fn compute_values(value: ComputeValue) -> Vec<f32> {
         ComputeValue::ScalarF32(value) => vec![value],
         ComputeValue::TensorF32 { values, .. } => values.to_vec(),
     }
+}
+
+fn compute_input_values(
+    program: &ComputeProgram,
+    port: &ComputePort,
+    value: ComputeValue,
+) -> Result<Vec<f32>, String> {
+    let values = compute_values(value);
+    if program.fixed_shape_storage().is_none() || port.dimensions.len() != 2 {
+        return Ok(values);
+    }
+    // Interface admission canonicalizes to row-major. The fixed-shape kernel
+    // consumes lane-contiguous column-major values, for initializers and updates
+    // alike. This is a layout projection, never an execution or a state write.
+    let rows =
+        usize::try_from(port.dimensions[0]).map_err(|_| "input rows overflow usize".to_owned())?;
+    let columns = usize::try_from(port.dimensions[1])
+        .map_err(|_| "input columns overflow usize".to_owned())?;
+    let elements = rows
+        .checked_mul(columns)
+        .ok_or_else(|| "input dimensions overflow usize".to_owned())?;
+    if elements == 0 || values.len() % elements != 0 {
+        return Err(format!(
+            "input `{}` has an invalid fixed-shape extent",
+            port.name
+        ));
+    }
+    let mut physical = Vec::with_capacity(values.len());
+    for lane in values.chunks_exact(elements) {
+        for column in 0..columns {
+            for row in 0..rows {
+                physical.push(lane[row * columns + column]);
+            }
+        }
+    }
+    Ok(physical)
 }
 
 fn output_snapshot(
@@ -949,6 +1009,7 @@ fn fixed_output_snapshot(
     program: &FixedShapeKernel,
     selection: &ComputeOutputSelection,
     state: &BTreeMap<mech_core::CellSlotId, Vec<f32>>,
+    current_inputs: Option<&BTreeMap<mech_core::CellSlotId, Vec<f32>>>,
 ) -> Result<ComputeOutputSnapshot, String> {
     let selected = |port: &ComputePort| match selection {
         ComputeOutputSelection::All => true,
@@ -967,8 +1028,9 @@ fn fixed_output_snapshot(
         .iter()
         .filter(|port| selected(port))
         .map(|port| {
-            let physical = state
-                .get(&port.slot)
+            let physical = current_inputs
+                .and_then(|inputs| inputs.get(&port.slot))
+                .or_else(|| state.get(&port.slot))
                 .ok_or_else(|| format!("backend did not publish output `{}`", port.name))?;
             let instances = if sample_instance.is_some() {
                 1

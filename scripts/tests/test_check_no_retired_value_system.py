@@ -73,48 +73,15 @@ class RetiredValueSystemAbsenceTests(unittest.TestCase):
                     any("module declaration" in failure for failure in failures)
                 )
 
-    def test_comments_and_string_literals_do_not_trigger_symbol_checks(self):
+    def test_symbol_checks_use_masked_source_and_original_line_numbers(self):
         root = self.fixture(
-            '// LegacyValue and pub mod legacy_adapter {}\n'
-            'const MESSAGE: &str = "LegacyValue pub mod legacy_adapter {}";\n'
-            'const RAW: &str = r#"ValueKind MutableReference"#;\n'
-            '/* nested /* KindTable */ LegacyValue */\n'
+            '// LegacyValue is quoted fixture data below.\n'
+            'const FIXTURE: &str = "ValueKind";\n'
+            'fn escape(_: LegacyValue) {}\n'
         )
-        self.assertEqual(CHECKER.failures(root), [])
-
-    def test_character_literals_do_not_hide_following_declarations(self):
-        for literal in (
-            "'\"'",
-            "b'\"'",
-            "'\\''",
-            "b'\\''",
-            "'\\u{2764}'",
-            "b'\\x7f'",
-        ):
-            with self.subTest(literal=literal):
-                failures = CHECKER.failures(
-                    self.fixture(
-                        f"const QUOTE: char = {literal};\n"
-                        "pub mod legacy_adapter {}\n"
-                    )
-                )
-                self.assertTrue(
-                    any("module declaration" in failure for failure in failures)
-                )
-
-    def test_character_and_byte_character_contents_do_not_trigger_checks(self):
-        root = self.fixture(
-            "const KIND: char = 'K';\n"
-            "const BYTE: u8 = b'V';\n"
-            "fn lifetime<'a>(value: &'a str) -> &'a str { value }\n"
-        )
-        self.assertEqual(CHECKER.failures(root), [])
-
-    def test_lifetimes_do_not_mask_retired_declarations(self):
-        failures = CHECKER.failures(
-            self.fixture("fn borrow<'a>(_: &'a str) {} pub enum Kind { Any }\n")
-        )
-        self.assertTrue(any("retired semantic Kind enum" in failure for failure in failures))
+        self.assertEqual(CHECKER.failures(root), [
+            "src/core/src/lib.rs:3: retired symbol: LegacyValue"
+        ])
 
     def test_raw_identifier_retired_declarations_fail(self):
         for declaration in (

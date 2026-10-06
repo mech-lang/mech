@@ -73,7 +73,12 @@ fn registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch() {
     let target_dir = build_copied_project(&original.root, temporary.path(), &workspace);
     let executable = target_dir.join("debug/registry_component_literal");
     let output = Command::new(&executable).arg("--once").output().unwrap();
-    assert!(output.status.success());
+    assert!(
+        output.status.success(),
+        "literal --once project failed: stdout={} stderr={}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr),
+    );
     assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "42");
     let output = Command::new(executable)
         .arg("--unexpected")
@@ -107,7 +112,7 @@ fn live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure() {
         offline: true,
     };
     let builder = NativeApplicationBuilder::new(NativeBuildEnvironment {
-        function_catalog: mech_stdlib::native_plan_catalog(),
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
         host_catalog: synthetic_live_host_catalog(),
         dependency_source: NativeDependencySource::Registry {
             version: MECH_COMPONENT_VERSION.to_owned(),
