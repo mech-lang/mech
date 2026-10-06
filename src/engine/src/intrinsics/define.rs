@@ -1,10 +1,7 @@
 use crate::intrinsics::*;
 use std::marker::PhantomData;
 
-#[cfg(all(
-    feature = "variable_define",
-    any(feature = "semantic-compiler", feature = "source")
-))]
+#[cfg(all(feature = "variable_define", feature = "semantic-compiler"))]
 pub(crate) static PURE_VARIABLE_DEFINITION_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
 > = std::sync::LazyLock::new(|| OperationContractDeclaration {
@@ -149,10 +146,7 @@ impl MechFunctionCompiler for CanonicalVariableDefinition {
     }
 }
 
-#[cfg(all(
-    feature = "variable_define",
-    any(feature = "semantic-compiler", feature = "source")
-))]
+#[cfg(all(feature = "variable_define", feature = "semantic-compiler"))]
 pub(crate) fn canonical_variable_definition_runtime_name(
     representation: FunctionValueRepresentation,
 ) -> MResult<String> {

@@ -7,7 +7,7 @@ dense `N × 3` matrix is published to the SVG scene after each accepted turn.
 Run it natively with:
 
 ```text
-mech run examples/resident-n-body --resident --runtime-info --max-live-turns 120
+mech run examples/resident-n-body --runtime-info --max-live-turns 120
 ```
 
 Or serve the directory to run the same source through `WasmProject` in a

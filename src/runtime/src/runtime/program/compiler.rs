@@ -89,7 +89,7 @@ fn canonical_document_dependency_hash(document: &SourceDocument) -> MResult<u64>
     let source = document.source().to_contiguous_string();
     let nominal = !canonical_frontend(document)
         .declared_enum_names(&document.document())
-        .map_err(|error| canonical_compilation_error(error.to_string()))?
+        .map_err(|error| canonical_source_error(error, Some(document.source())))?
         .is_empty();
     Ok(if nominal {
         canonical_dependency_identity_hash(
@@ -125,6 +125,28 @@ fn canonical_compilation_error(reason: impl Into<String>) -> MechError {
         None,
     )
     .with_compiler_loc()
+}
+
+/// Preserve semantic identity even when a presentation source is unavailable.
+fn canonical_source_error(
+    error: mech_engine::SourceSemanticError,
+    source: Option<&mech_syntax::document::TextSnapshot>,
+) -> MechError {
+    let anchor = error.anchor;
+    let range = source
+        .filter(|source| {
+            source.document() == anchor.document && source.revision() == anchor.revision
+        })
+        .and_then(|source| {
+            let locations = source.source_locations(&[anchor.range.start, anchor.range.end])?;
+            Some(mech_core::SourceRange {
+                start: locations[0],
+                end: locations[1],
+            })
+        });
+    let mut error = MechError::new(error, None).with_compiler_loc();
+    error.program_range = range;
+    error
 }
 
 fn with_canonical_planning_step_limit<T>(
@@ -754,7 +776,7 @@ impl<'a> ProgramCompilerView<'a> {
                 &BTreeSet::new(),
                 resolved_source_modules,
             )
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         self.validate_canonical_planning_candidate(&program, &planned_reads)?;
         for (name, request) in resource_reads {
             if program
@@ -765,7 +787,7 @@ impl<'a> ProgramCompilerView<'a> {
             {
                 program = program
                     .bind_resource_input(&name, request)
-                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                    .map_err(|error| canonical_source_error(error, Some(document.source())))?;
             }
         }
         Ok(program)
@@ -830,11 +852,11 @@ impl<'a> ProgramCompilerView<'a> {
                 published,
                 &BTreeSet::new(),
             )
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         if initialization {
             program = program
                 .retain_static_outputs(published)
-                .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         }
         let referenced = program.referenced_input_names();
         let mut constants = Vec::new();
@@ -856,7 +878,7 @@ impl<'a> ProgramCompilerView<'a> {
         }
         program = program
             .bind_input_constants(&constants)
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         self.validate_canonical_planning_step_limit(&program)?;
         if !initialization {
             self.validate_canonical_planning_candidate(&program, &context.values)?;
@@ -883,7 +905,7 @@ impl<'a> ProgramCompilerView<'a> {
                 }
                 program = program
                     .bind_resource_input(name, request.clone())
-                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                    .map_err(|error| canonical_source_error(error, Some(document.source())))?;
             }
         }
         Ok(program)
@@ -974,7 +996,7 @@ impl<'a> ProgramCompilerView<'a> {
         let planning = program
             .clone()
             .bind_input_constants(&bindings)
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            .map_err(|error| canonical_source_error(error, None))?;
         // Explicit live ports can have their defaults evaluated by the
         // separate initializer projection. Do not fabricate a planning value
         // for a still-open input merely to execute an unrelated pure graph.
@@ -1070,7 +1092,7 @@ impl<'a> ProgramCompilerView<'a> {
             BTreeMap::new(),
             resource_writes,
         )
-        .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         self.validate_canonical_planning_candidate(&program, &planned_reads)?;
         for (name, request) in resource_reads {
             if program
@@ -1081,7 +1103,7 @@ impl<'a> ProgramCompilerView<'a> {
             {
                 program = program
                     .bind_resource_input(&name, request)
-                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                    .map_err(|error| canonical_source_error(error, Some(document.source())))?;
             }
         }
         program
@@ -1360,7 +1382,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut program = CanonicalSourceFrontend
             .with_imported_enum_qualifiers(context.enum_qualifiers()?)
             .compile_ordered_documents_with_catalog(&documents, Arc::clone(&self.function_catalog))
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            .map_err(|error| canonical_source_error(error, None))?;
         for (ordinal, imports) in import_uses {
             use mech_syntax::document::AstNode;
             let document = resolved[ordinal].source_document().unwrap().document();
@@ -1392,7 +1414,7 @@ impl<'a> ProgramCompilerView<'a> {
             {
                 program = program
                     .bind_resource_input(&name, request)
-                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                    .map_err(|error| canonical_source_error(error, None))?;
             }
         }
         let artifact = program.compile_artifact_with_external_contracts(
@@ -1472,12 +1494,12 @@ impl<'a> ProgramCompilerView<'a> {
                 &published_bindings,
                 &modules,
             )
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         let mut compute = prepared.compute;
         if !retained_outputs.is_empty() {
             compute = compute
                 .project_compute_output_paths(&retained_outputs)
-                .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         }
         let bindings = compute
             .program()
@@ -1492,7 +1514,7 @@ impl<'a> ProgramCompilerView<'a> {
             .collect::<Vec<_>>();
         compute = compute
             .bind_input_constants(&bindings)
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         self.validate_canonical_planning_candidate(&compute, &planned_reads)?;
         for (name, request) in reads {
             if compute
@@ -1503,7 +1525,7 @@ impl<'a> ProgramCompilerView<'a> {
             {
                 compute = compute
                     .bind_resource_input(&name, request)
-                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                    .map_err(|error| canonical_source_error(error, Some(document.source())))?;
             }
         }
         let artifact = compute.compile_artifact_with_external_contracts(
@@ -1600,7 +1622,7 @@ impl<'a> ProgramCompilerView<'a> {
                 })
                 .collect(),
         )
-        .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         let compilation = CanonicalDocumentCompilation {
             index: index.root.clone(),
             scope: SourceScope::Program,
@@ -1617,7 +1639,7 @@ impl<'a> ProgramCompilerView<'a> {
                     .map(|binding| (binding.input, binding.value.to_value()))
                     .collect::<Vec<_>>(),
             )
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         self.validate_canonical_planning_candidate(&program, &planned_reads)?;
         if planning_dependency {
             let bindings = program
@@ -1633,7 +1655,7 @@ impl<'a> ProgramCompilerView<'a> {
                 .collect::<Vec<_>>();
             program = program
                 .bind_input_constants(&bindings)
-                .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         } else {
             for (name, request) in reads {
                 if program
@@ -1644,7 +1666,7 @@ impl<'a> ProgramCompilerView<'a> {
                 {
                     program = program
                         .bind_resource_input(&name, request)
-                        .map_err(|error| canonical_compilation_error(error.to_string()))?;
+                        .map_err(|error| canonical_source_error(error, Some(document.source())))?;
                 }
             }
         }
@@ -2115,7 +2137,7 @@ impl<'a> ProgramCompilerView<'a> {
                 &published_compute_bindings,
                 &modules,
             )
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            .map_err(|error| canonical_source_error(error, Some(document.source())))?;
         if !retained_outputs.is_empty() {
             programs.compute = programs
                 .compute
@@ -2137,7 +2159,7 @@ impl<'a> ProgramCompilerView<'a> {
                 .collect::<Vec<_>>();
             program
                 .bind_input_constants(&values)
-                .map_err(|error| canonical_compilation_error(error.to_string()))
+                .map_err(|error| canonical_source_error(error, Some(document.source())))
         };
         programs.compute = bind_imports(programs.compute)?;
         programs.compute_initializers = bind_imports(programs.compute_initializers)?;

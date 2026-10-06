@@ -614,6 +614,15 @@ impl core::fmt::Display for SourceSemanticError {
 
 impl std::error::Error for SourceSemanticError {}
 
+impl mech_core::MechErrorKind for SourceSemanticError {
+    fn name(&self) -> &str {
+        self.code
+    }
+    fn message(&self) -> String {
+        self.message.clone()
+    }
+}
+
 /// Engine entry point for canonical typed source.
 #[derive(Clone, Debug, Default)]
 pub struct CanonicalSourceFrontend {
