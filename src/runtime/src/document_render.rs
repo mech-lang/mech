@@ -1145,6 +1145,25 @@ fn render_title_front_matter_html(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    let checkpoint = output.len();
+    match render_title_front_matter_html_inner(title, owner, lookup, output) {
+        Err(error) if lookup.mode == RenderMode::Source => {
+            output.truncate(checkpoint);
+            if let Some(front) = title.front_matter() {
+                render_recovered_source_html(front.syntax(), &error, output)?;
+            }
+            Ok(())
+        }
+        result => result,
+    }
+}
+
+fn render_title_front_matter_html_inner(
+    title: &TitleSyntax,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
     if let Some(front_matter) = title.front_matter() {
         output.push_str("<dl class='mech-title-front-matter'>");
         let mut pending_key = None::<String>;
@@ -1204,15 +1223,24 @@ fn render_document_node_html(
     match render_document_node_html_inner(value, owner, lookup, output) {
         Err(error) if lookup.mode == RenderMode::Source => {
             output.truncate(checkpoint);
-            output.push_str("<pre class='mech-recovered-source' data-mech-source title='");
-            output.push_str(&escape_attribute(&error.message));
-            output.push_str("'><code>");
-            push_source(value, value.range(), output, true)?;
-            output.push_str("</code></pre>");
+            render_recovered_source_html(value, &error, output)?;
             Ok(())
         }
         result => result,
     }
+}
+
+fn render_recovered_source_html(
+    node: &SyntaxNode,
+    error: &CanonicalDocumentRenderError,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
+    output.push_str("<pre class='mech-recovered-source' data-mech-source title='");
+    output.push_str(&escape_attribute(&error.message));
+    output.push_str("'><code>");
+    push_source(node, node.range(), output, true)?;
+    output.push_str("</code></pre>");
+    Ok(())
 }
 
 fn render_document_node_html_inner(

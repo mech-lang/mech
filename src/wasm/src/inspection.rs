@@ -559,4 +559,15 @@ mod editor_render_tests {
         assert!(html.contains("mech-recovered-source"), "{html}");
         assert!(html.contains("Section One"), "{html}");
     }
+
+    #[test]
+    fn editor_preview_recovers_deep_errors_after_a_document_title() {
+        let source = "Calculation\n===========\n\nanswer := [1 @ [2\n\n1. Section One\n---\n\nThis is the first section.\n";
+        let editor = WasmSyntaxEditor::new(716, source);
+        let document = DocumentSyntax::cast(editor.session.snapshot().syntax()).unwrap();
+        let html = mech_runtime::CanonicalDocumentRenderer
+            .format_html(&document)
+            .unwrap();
+        assert!(html.contains("mech-subtitle") && html.contains("This is the first section."));
+    }
 }
