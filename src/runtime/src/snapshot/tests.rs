@@ -247,3 +247,157 @@ fn runtime_value_snapshot_repl_kind_preserves_exact_interval_identity() {
     .unwrap();
     assert_eq!(base.format_repl_kind(), "u128");
 }
+
+#[cfg(feature = "pretty_print")]
+mod html_projection {
+    use super::*;
+    use mech_core::{
+        SchemaField,
+        snapshot::{NamedValueDraft, TableColumnDraft},
+    };
+
+    fn float(value: f64) -> ValueDataDraft {
+        ValueDataDraft::F64(F64Bits::from_f64(value))
+    }
+
+    fn field(name: &str, schema: SchemaBody) -> SchemaField {
+        SchemaField {
+            name: name.into(),
+            schema,
+        }
+    }
+
+    fn record_schema() -> SchemaBody {
+        SchemaBody::Record(
+            vec![
+                field("x", SchemaBody::FloatingPoint(FloatWidth::W64)),
+                field("y", SchemaBody::FloatingPoint(FloatWidth::W64)),
+            ]
+            .into_boxed_slice(),
+        )
+    }
+
+    fn record(x: f64, y: f64) -> ValueDataDraft {
+        // Supply fields in reverse order to exercise certified schema ordering.
+        ValueDataDraft::Record(
+            vec![
+                NamedValueDraft {
+                    name: "y".into(),
+                    value: float(y),
+                },
+                NamedValueDraft {
+                    name: "x".into(),
+                    value: float(x),
+                },
+            ]
+            .into_boxed_slice(),
+        )
+    }
+
+    #[test]
+    fn records_preserve_names_and_numeric_values() {
+        let value =
+            RuntimeValueSnapshot::from_value(canonical(record_schema(), record(1.0, 2.0))).unwrap();
+        assert_eq!(
+            value.format_html(),
+            "<table class='mech-record'><tbody><tr><th scope='row'>x</th><td><span class='mech-value'>1</span></td></tr><tr><th scope='row'>y</th><td><span class='mech-value'>2</span></td></tr></tbody></table>"
+        );
+        assert_eq!(value.format_repl_html(2), value.format_html());
+        assert_eq!(
+            value.format_repl_html(1),
+            "<pre class='mech-value-preview mech-value-elided'>{1, …}</pre>"
+        );
+    }
+
+    #[test]
+    fn tables_preserve_row_column_order_nested_records_and_escape_text() {
+        let schema = SchemaBody::Table {
+            columns: vec![
+                field("reading", SchemaBody::FloatingPoint(FloatWidth::W64)),
+                field("label<&>", SchemaBody::String),
+                field("point", record_schema()),
+            ]
+            .into_boxed_slice(),
+            rows: DimensionExpr::Constant(2).into(),
+        };
+        let draft = ValueDataDraft::Table(
+            vec![
+                TableColumnDraft {
+                    name: "reading".into(),
+                    values: vec![float(1.25), float(-2.5)].into_boxed_slice(),
+                },
+                TableColumnDraft {
+                    name: "label<&>".into(),
+                    values: vec![
+                        ValueDataDraft::String("<img src=x onerror=alert(1)>&\"".into()),
+                        ValueDataDraft::String("second".into()),
+                    ]
+                    .into_boxed_slice(),
+                },
+                TableColumnDraft {
+                    name: "point".into(),
+                    values: vec![record(1.0, 2.0), record(3.0, 4.0)].into_boxed_slice(),
+                },
+            ]
+            .into_boxed_slice(),
+        );
+        let snapshot = RuntimeValueSnapshot::from_value(canonical(schema, draft)).unwrap();
+        let html = snapshot.format_repl_html(500);
+        assert!(html.starts_with("<table class='mech-table'><thead><tr><th scope='col'>reading</th><th scope='col'>label&lt;&amp;&gt;</th><th scope='col'>point</th></tr></thead><tbody>"), "{html}");
+        assert!(
+            html.contains("<tbody><tr><td><span class='mech-value'>1.25</span></td>"),
+            "{html}"
+        );
+        assert!(
+            html.contains("</tr><tr><td><span class='mech-value'>-2.5</span></td>"),
+            "{html}"
+        );
+        assert_eq!(html.matches("<table class='mech-record'>").count(), 2);
+        assert!(
+            html.contains("&lt;img src=x onerror=alert(1)&gt;&amp;"),
+            "{html}"
+        );
+        assert!(html.contains("&quot;"), "{html}");
+        assert!(!html.contains("<img"));
+        assert!(!html.contains("F64Bits"));
+        assert!(
+            snapshot
+                .format_repl_html(2)
+                .starts_with("<pre class='mech-value-preview mech-value-elided'>")
+        );
+    }
+
+    #[test]
+    fn matrices_preserve_rows_columns_and_exact_scalar_html() {
+        let value = RuntimeValueSnapshot::from_value(canonical(
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)]
+                    .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(
+                [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+                    .into_iter()
+                    .map(float)
+                    .collect(),
+            ),
+        ))
+        .unwrap();
+        let html = value.format_html();
+        assert_eq!(html.matches("<tr>").count(), 2);
+        assert_eq!(html.matches("<td>").count(), 6);
+        assert!(
+            html.contains("3</span></td></tr><tr><td><span class='mech-value'>4"),
+            "{html}"
+        );
+        let exact = RuntimeValueSnapshot::from_value(canonical(
+            SchemaBody::UnsignedInteger(IntegerWidth::W128),
+            ValueDataDraft::U128(u128::MAX),
+        ))
+        .unwrap();
+        assert_eq!(
+            exact.format_html(),
+            format!("<span class='mech-value'>{}</span>", u128::MAX)
+        );
+    }
+}

@@ -33,8 +33,18 @@ fn scalar_text(value: &Value) -> Option<String> {
     }
 }
 fn describe(value: &Value) -> Json {
-    json!({"schema":value.schemas().and_then(|schemas|schemas.get(value.schema()).map(|schema|format!("{:?}",schema.body()))),"shape":format!("{:?}",value.shape()),
-        "value":format!("{:?}",value.data()),"scalar_text":scalar_text(value),"transport":"exact Rust value text; no JavaScript Number conversion"})
+    let mut result = json!({"schema":value.schemas().and_then(|schemas|schemas.get(value.schema()).map(|schema|format!("{:?}",schema.body()))),"shape":format!("{:?}",value.shape()),
+        "value":format!("{:?}",value.data()),"scalar_text":scalar_text(value),"transport":"exact Rust value text; no JavaScript Number conversion"});
+    match mech_runtime::RuntimeValueSnapshot::try_from(value) {
+        Ok(snapshot) => {
+            let limit = mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT;
+            result["html"] = json!(snapshot.format_repl_html(limit));
+            result["text"] = json!(snapshot.format_repl_inline(limit));
+            result["kind"] = json!(snapshot.format_repl_kind());
+        }
+        Err(error) => result["format_error"] = json!(error.display_message()),
+    }
+    result
 }
 
 /// Parse, check, construct, activate and execute through real public interfaces.
@@ -345,5 +355,19 @@ mod tests {
             result["diagnostics"][0]["range"]
         );
         assert!(result["product_diagnostic"]["presentation_range"].is_string());
+    }
+
+    #[test]
+    fn inspection_exports_canonical_record_html() {
+        let result = inspect("point := {x: 1, y: 2}\npoint\n");
+        assert_eq!(result["stages"]["execution"], "completed", "{result}");
+        let value = &result["values"][0];
+        let html = value["html"].as_str().expect("canonical HTML projection");
+        assert!(html.contains("<table class='mech-record'>"), "{html}");
+        assert!(html.contains("<th scope='row'>x</th>"), "{html}");
+        assert!(html.contains("<th scope='row'>y</th>"), "{html}");
+        assert!(value["text"].is_string());
+        assert_eq!(value["kind"], "record");
+        assert!(value["value"].is_string());
     }
 }

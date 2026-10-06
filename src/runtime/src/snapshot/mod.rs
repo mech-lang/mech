@@ -13,6 +13,9 @@ use crate::CapabilityId;
 #[path = "tests.rs"]
 mod tests;
 
+#[cfg(feature = "pretty_print")]
+mod html;
+
 /// An owned immutable canonical runtime value.
 #[derive(Clone)]
 pub struct RuntimeValueSnapshot {
@@ -115,10 +118,7 @@ impl RuntimeValueSnapshot {
     /// render a popup from one captured snapshot.
     #[cfg(feature = "pretty_print")]
     pub fn format_html(&self) -> String {
-        format!(
-            "<span class='mech-value'>{}</span>",
-            escape_html(&self.format_canonical_inline())
-        )
+        html::format_value(&self.value)
     }
 
     /// Returns the rich browser projection governed by the same aggregate
@@ -132,7 +132,7 @@ impl RuntimeValueSnapshot {
                 escape_html(&bounded)
             )
         } else {
-            format!("<span class='mech-value'>{}</span>", escape_html(&bounded))
+            self.format_html()
         }
     }
 
