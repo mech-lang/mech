@@ -361,6 +361,12 @@ impl WasmSyntaxEditor {
     pub fn snapshot(&self) -> Result<JsValue, JsValue> {
         encode(&snapshot(self.session.snapshot()))
     }
+    /// Format the retained document syntax for a passive editor preview.
+    #[wasm_bindgen(js_name = renderHtml)]
+    pub fn render_html(&self) -> Result<String, JsValue> {
+        render_editor_document(self.session.snapshot())
+            .map_err(|message| JsValue::from_str(&message))
+    }
     /// Ranges are UTF-8 bytes. Empty ranges insert; empty replacement deletes.
     pub fn replace(&mut self, start: u32, end: u32, replacement: &str) -> Result<JsValue, JsValue> {
         if start > end {
@@ -438,5 +444,53 @@ impl WasmSyntaxEditor {
             operation_ms,
             snapshot: snapshot(current),
         })
+    }
+}
+
+fn render_editor_document(snapshot: &SyntaxSnapshot) -> Result<String, String> {
+    let document = DocumentSyntax::cast(snapshot.syntax())
+        .ok_or_else(|| "editor snapshot requires canonical document syntax".to_owned())?;
+    mech_runtime::CanonicalDocumentRenderer
+        .format_html(&document)
+        .map_err(|error| error.to_string())
+}
+
+#[cfg(test)]
+mod editor_render_tests {
+    use super::*;
+
+    #[test]
+    fn editor_preview_formats_retained_document_structure() {
+        let editor = WasmSyntaxEditor::new(
+            710,
+            "Calculation\n===========\n\nA **bold** result.\n\n```mech\nanswer := 6 * 7\nanswer\n```\n",
+        );
+        let html = render_editor_document(editor.session.snapshot()).unwrap();
+        assert!(html.contains("Calculation"));
+        assert!(html.contains("<strong"));
+        assert!(html.contains("mech-code"));
+        assert!(!html.contains("```"));
+    }
+
+    #[test]
+    fn editor_preview_uses_current_revision_and_escapes_source_text() {
+        let mut editor = WasmSyntaxEditor::new(711, "Before\n======\n\nA paragraph.\n");
+        editor
+            .session
+            .try_apply_edits(&[TextEdit::replace(
+                TextRange::new(TextSize(0), TextSize(6)),
+                "After!",
+            )])
+            .unwrap();
+        let html = render_editor_document(editor.session.snapshot()).unwrap();
+        assert!(html.contains("After!"));
+        assert!(!html.contains("Before"));
+        let editor = WasmSyntaxEditor::new(
+            712,
+            "Text\n====\n\n```text\n<img src=x onerror=alert(1)>\n```\n",
+        );
+        let html = render_editor_document(editor.session.snapshot()).unwrap();
+        assert!(html.contains("&lt;img"));
+        assert!(!html.contains("<img src=x"));
     }
 }
