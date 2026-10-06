@@ -1,0 +1,16 @@
+{
+  "pull_request": "https://github.com/mech-lang/mech/pull/829",
+  "state": "CLOSED",
+  "closed_at": "2026-10-06T15:46:07Z",
+  "absorbed_head": "9ae5c00e0184fe341d2ff2bdc590ede712009d2f",
+  "deleted_remote_branch": "codex/r-stack-proof-demo",
+  "deletion_guard": "refs/heads/codex/r-stack-proof-demo must equal absorbed_head",
+  "remote_ref_verification": "git ls-remote --heads origin codex/r-stack-proof-demo returned no ref",
+  "preserved_branch": "codex/v04-audit-demonstrations",
+  "preserved_checkout": "/Users/cim310/.codex/worktrees/v04-audit/mech",
+  "proofs": {
+    "native": "audit/v04/evidence/trust-native.json",
+    "browser": "audit/v04/evidence/trust-browser.json",
+    "absorption": "audit/v04/evidence/pr829-absorption.json"
+  }
+}
