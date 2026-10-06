@@ -430,14 +430,17 @@ pub fn render_pretty(diagnostic: &Diagnostic, source: &TextSnapshot, nodes: &Nod
         let _ = writeln!(output, "  = help: {}", fix.title);
         for edit in &fix.edits {
             if let Some(location) = source.source_location(edit.delete.start) {
-                let _ = writeln!(
-                    output,
-                    "    at {}:{}: replace {} source bytes with {:?}",
-                    location.row,
-                    location.col,
-                    edit.delete.len().0,
-                    edit.insert
-                );
+                let action = if edit.delete.is_empty() {
+                    format!("insert {:?}", edit.insert)
+                } else {
+                    let selected = source.text(edit.delete).unwrap_or_default();
+                    if edit.insert.is_empty() {
+                        format!("remove {selected:?}")
+                    } else {
+                        format!("replace {selected:?} with {:?}", edit.insert)
+                    }
+                };
+                let _ = writeln!(output, "    at {}:{}: {action}", location.row, location.col);
             }
         }
     }

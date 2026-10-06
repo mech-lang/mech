@@ -106,7 +106,7 @@ fn structured_diagnostic_serializes_and_renders() {
     assert!(pretty.contains("^ `+` requires a right operand"));
     assert!(pretty.contains("= expected: expression"));
     assert!(pretty.contains("= help: Insert an expression"));
-    assert!(pretty.contains("at 1:9: replace 0 source bytes with \" _\""));
+    assert!(pretty.contains("at 1:9: insert \" _\""));
 
     let normalized = normalize_diagnostics(&store, Revision(2), &index);
     assert_eq!(normalized.len(), 1);
