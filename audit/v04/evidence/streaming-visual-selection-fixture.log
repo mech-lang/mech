@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/private/tmp/mech-v04-audit-20261006/audit/v04/check_streaming_visual.py", line 34, in <module>
+    diagnostic=browser.evaluate("""(() => {
+      const $=id=>document.getElementById(id);$('source').value='x := [1 +, 2]\\ny := 3\\n';
+    ...<5 lines>...
+      return {status:'passed',selection:[area.selectionStart,area.selectionEnd],selected,diagnostic:JSON.parse($('detail').textContent),artifact:window.streamingArtifact};
+    })()""")
+  File "/private/tmp/mech-v04-audit-20261006/tests/browser/harness/chrome.py", line 519, in evaluate
+    raise BrowserFailure(f"browser expression failed: {result['exceptionDetails']!r}")
+browser.harness.chrome.BrowserFailure: browser expression failed: {'exceptionId': 1, 'text': 'Uncaught', 'lineNumber': 5, 'columnNumber': 37, 'scriptId': '11', 'stackTrace': {'callFrames': [{'functionName': '', 'scriptId': '11', 'url': '', 'lineNumber': 5, 'columnNumber': 43}, {'functionName': '', 'scriptId': '11', 'url': '', 'lineNumber': 8, 'columnNumber': 10}]}, 'exception': {'type': 'object', 'subtype': 'error', 'className': 'Error', 'description': 'Error: diagnostic selection must include malformed operator\n    at <anonymous>:6:44\n    at <anonymous>:9:11', 'objectId': '5249298904007593676.2.2'}}

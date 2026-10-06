@@ -1,0 +1,11 @@
+warning: manifest has no documentation, homepage or repository
+  |
+  = note: see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata for more info
+   Packaging mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+error: failed to prepare local package for uploading
+
+Caused by:
+  no matching package named `mech-engine` found
+  location searched: crates.io index
+  required by package `mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)`
+  As a reminder, you're using offline mode (--offline) which can sometimes cause surprising resolution failures, if this error is too confusing you may wish to retry without `--offline`.

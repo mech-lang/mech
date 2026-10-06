@@ -1,0 +1,22 @@
+
+running 17 tests
+test existing_builtin_ordinals_are_unchanged ... ok
+test builtin_kind_expression_is_named_by_the_registry ... ok
+test c32_and_c64_are_distinct ... ok
+test equal_types_intersect_conflicting_predicate_evidence ... ok
+test negatable_rejects_unsigned ... ok
+test invalid_integer_intervals_do_not_construct_resolved_types ... ok
+test nested_schema_keyability_becomes_predicate_evidence ... ok
+test number_contains_every_numeric_scalar ... ok
+test number_rejects_bool_and_string ... ok
+test integer_interval_predicates_agree_for_direct_and_schema_derived_types ... ok
+test ordered_rejects_complex ... ok
+test range_endpoint_accepts_index_integer_and_float ... ok
+test scalar_predicate_membership_matches_the_closed_table ... ok
+test schema_and_direct_kind_predicates_agree_for_structural_products ... ok
+test schema_scalar_round_trip_uses_one_registry ... ok
+test mixed_interval_type_origins_preserve_binary_constraint_evidence ... ok
+test integer_interval_predicates_survive_structural_and_generic_constraints ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

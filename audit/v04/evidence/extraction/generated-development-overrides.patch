@@ -1,0 +1,13 @@
+--- registry/Cargo.toml
++++ development/Cargo.toml
+@@ -14,3 +14,10 @@
+ mech_core = { package = "mech-core", version = "=0.3.5", default-features = false, features = ["f64", "program"] }
+ mech_engine = { package = "mech-engine", version = "=0.3.5", default-features = false, features = ["f64", "runtime"] }
+ mech_runtime = { package = "mech-runtime", version = "=0.3.5", default-features = false, features = ["f64", "resident-routing", "runtime", "string"] }
++
++[patch.crates-io]
++mech-core = { path = "../mech/src/core" }
++mech-engine = { path = "../mech/src/engine" }
++mech-runtime = { path = "../mech/src/runtime" }
++mech-syntax = { path = "../mech/src/syntax" }
++mech-bytecode = { path = "../mech/src/bytecode" }

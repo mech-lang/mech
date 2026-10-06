@@ -1,0 +1,16 @@
+    Blocking waiting for file lock on build directory
+    Checking mech-core v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/core)
+    Checking mech-bytecode v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/bytecode)
+    Checking mech-syntax v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/syntax)
+    Checking mech-set v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/set)
+    Checking mech-compare v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/compare)
+    Checking mech-combinatorics v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/combinatorics)
+    Checking mech-math v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/math)
+    Checking mech-stats v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/stats)
+    Checking mech-range v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/range)
+    Checking mech-logic v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/logic)
+    Checking mech-matrix v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/matrix)
+    Checking mech-string v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/string)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/engine)
+    Checking mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+    Finished `dev` profile [unoptimized] target(s) in 4m 24s

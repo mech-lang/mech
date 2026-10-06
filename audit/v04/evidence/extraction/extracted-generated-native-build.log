@@ -1,0 +1,12 @@
+warning: patch `mech-bytecode v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/bytecode)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+     Locking 147 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+    Blocking waiting for file lock on artifact directory
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/engine)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/runtime)
+   Compiling extracted-scalar-add v0.0.0 (/private/tmp/mech-v04-extraction/generated-registry-development)
+    Finished `dev` profile [unoptimized] target(s) in 44.68s

@@ -1,0 +1,173 @@
+   Compiling unicode-ident v1.0.24
+   Compiling smallvec v1.15.2
+   Compiling num-traits v0.2.19
+   Compiling proc-macro2 v1.0.107
+   Compiling parking_lot_core v0.9.12
+   Compiling quote v1.0.47
+   Compiling syn v2.0.119
+   Compiling syn v3.0.3
+   Compiling serde_json v1.0.151
+   Compiling num-integer v0.1.46
+   Compiling approx v0.5.1
+   Compiling num-complex v0.4.6
+   Compiling serde_derive v1.0.229
+   Compiling parking_lot v0.12.5
+   Compiling wide v0.7.33
+   Compiling synstructure v0.13.2
+   Compiling simba v0.9.1
+   Compiling zerofrom-derive v0.1.7
+   Compiling yoke-derive v0.8.2
+   Compiling zerofrom v0.1.8
+   Compiling zerovec-derive v0.11.3
+   Compiling yoke v0.8.3
+   Compiling displaydoc v0.2.6
+   Compiling zerovec v0.11.6
+   Compiling serde v1.0.229
+   Compiling tinystr v0.8.3
+   Compiling nalgebra-macros v0.3.0
+   Compiling tokio-macros v2.7.1
+   Compiling num-rational v0.4.2
+   Compiling bincode v2.0.1
+   Compiling icu_locale_core v2.2.0
+   Compiling tokio v1.53.1
+   Compiling nalgebra v0.34.2
+   Compiling potential_utf v0.1.5
+   Compiling zerotrie v0.2.4
+   Compiling icu_collections v2.2.0
+   Compiling icu_provider v2.2.0
+   Compiling icu_properties v2.2.0
+   Compiling icu_normalizer v2.2.0
+   Compiling idna_adapter v1.2.2
+   Compiling idna v1.1.0
+   Compiling tokio-util v0.7.19
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+   Compiling url v2.5.8
+   Compiling h2 v0.4.15
+   Compiling thiserror-impl v1.0.69
+   Compiling nix v0.31.3
+   Compiling thiserror v1.0.69
+   Compiling grapheme_macro v2.0.0
+   Compiling arrayvec v0.7.8
+   Compiling tower v0.5.3
+   Compiling hyper v1.11.0
+   Compiling hyper-util v0.1.20
+   Compiling tungstenite v0.21.0
+   Compiling vte v0.15.0
+   Compiling derive_more-impl v2.1.1
+   Compiling grapheme v1.3.0
+   Compiling tokio-rustls v0.26.4
+   Compiling h2 v0.3.27
+   Compiling pin-project-internal v1.1.13
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+   Compiling pin-project v1.1.13
+   Compiling hyper-rustls v0.27.9
+   Compiling hyper v0.14.32
+   Compiling mech v0.3.6 (/private/tmp/mech-v04-audit-20261006)
+   Compiling derive_more v2.1.1
+   Compiling vt100 v0.16.2
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/bytecode)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/matrix)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/stats)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/compare)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/math)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/set)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/logic)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/range)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/string)
+   Compiling tokio-tungstenite v0.21.0
+   Compiling async-compression v0.4.42
+   Compiling tower-http v0.6.11
+   Compiling serde_urlencoded v0.7.1
+   Compiling include_dir_macros v0.7.4
+   Compiling include_dir v0.7.4
+   Compiling indicatif v0.18.6
+   Compiling warp v0.3.7
+   Compiling chrono v0.4.45
+   Compiling reqwest v0.13.4
+   Compiling crossterm v0.29.0
+   Compiling ctrlc v3.5.2
+error[E0432]: unresolved imports `mech_core::MechCode`, `mech_core::Program`, `mech_core::SectionElement`, `mech_core::Statement`
+ --> examples/r_stack_trust_proof.rs:5:43
+  |
+5 |     FunctionCatalog, ManagedMemoryBudget, MechCode, NoMechExecutionServices, Program,
+  |                                           ^^^^^^^^ no `MechCode` in the root ^^^^^^^ no `Program` in the root
+6 |     ReactiveInstanceId, SectionElement, Statement,
+  |                         ^^^^^^^^^^^^^^  ^^^^^^^^^ no `Statement` in the root
+  |                         |
+  |                         no `SectionElement` in the root
+  |
+  = help: consider importing one of these variants instead:
+          mech_syntax::document::CanonicalDocumentNode::MechCode
+          mech_syntax::document::SyntaxKind::MechCode
+  = help: consider importing one of these variants instead:
+          mech::MechSourceCode::Program
+          mech::MemoryLifetime::Program
+          mech::SourceDocumentOutputKind::Program
+          mech_core::MechSourceCode::Program
+          mech_core::MemoryLifetime::Program
+          mech_engine::MechSourceCode::Program
+          mech_engine::MemoryLifetime::Program
+          mech_engine::SourceDocumentOutputKind::Program
+  = help: consider importing one of these variants instead:
+          mech_syntax::document::CanonicalDocumentNode::SectionElement
+          mech_syntax::document::SyntaxKind::SectionElement
+  = help: consider importing one of these variants instead:
+          mech_syntax::document::CanonicalDocumentNode::Statement
+          mech_syntax::document::FsmBodyTransitionSyntax::Statement
+          mech_syntax::document::SyntaxKind::Statement
+help: a similar name exists in the module
+  |
+5 -     FunctionCatalog, ManagedMemoryBudget, MechCode, NoMechExecutionServices, Program,
+5 +     FunctionCatalog, ManagedMemoryBudget, MechCode, NoMechExecutionServices, program,
+  |
+
+error[E0432]: unresolved import `mech_engine::program::CompilerPlanningProgram`
+  --> examples/r_stack_trust_proof.rs:12:52
+   |
+12 | use mech_engine::program::{CompilerPlanningConfig, CompilerPlanningProgram};
+   |                                                    ^^^^^^^^^^^^^^^^^^^^^^^ no `CompilerPlanningProgram` in `program`
+   |
+help: a similar name exists in the module
+   |
+12 - use mech_engine::program::{CompilerPlanningConfig, CompilerPlanningProgram};
+12 + use mech_engine::program::{CompilerPlanningConfig, CompilerPlanningConfig};
+   |
+
+error[E0433]: cannot find `parser` in `mech_syntax`
+  --> examples/r_stack_trust_proof.rs:58:29
+   |
+58 |     let tree = mech_syntax::parser::parse(SOURCE).map_err(debug_error)?;
+   |                             ^^^^^^ could not find `parser` in `mech_syntax`
+
+error[E0433]: cannot find `parser` in `mech_syntax`
+   --> examples/r_stack_trust_proof.rs:421:37
+    |
+421 |     let syntax_error = mech_syntax::parser::parse("~x := [1.0; 2.0").unwrap_err();
+    |                                     ^^^^^^ could not find `parser` in `mech_syntax`
+
+error[E0433]: cannot find `parser` in `mech_syntax`
+   --> examples/r_stack_trust_proof.rs:427:38
+    |
+427 |     let bad_type_tree = mech_syntax::parser::parse("~x := 1.0\nnext := x * \"two\"\nx = next\nx")
+    |                                      ^^^^^^ could not find `parser` in `mech_syntax`
+
+error[E0433]: cannot find `parser` in `mech_syntax`
+   --> examples/r_stack_trust_proof.rs:538:29
+    |
+538 |     let tree = mech_syntax::parser::parse(source).map_err(debug_error)?;
+    |                             ^^^^^^ could not find `parser` in `mech_syntax`
+
+error[E0609]: no field `operation` on type `&NodeDeclaration`
+   --> examples/r_stack_trust_proof.rs:392:26
+    |
+392 |         .map(|node| node.operation.canonical_name())
+    |                          ^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `node`, `body`, `input_bindings`, `output_bindings`
+
+Some errors have detailed explanations: E0432, E0433, E0609.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `mech` (example "r-stack-trust-proof") due to 7 previous errors

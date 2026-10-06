@@ -1,0 +1,23 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "check",
+    "--offline",
+    "--manifest-path",
+    "../external/stdlib/Cargo.toml",
+    "--lib",
+    "--no-default-features",
+    "--features",
+    "standard_compiler"
+  ],
+  "cwd": "/private/tmp/mech-v04-extraction/mech",
+  "exit_code": 0,
+  "elapsed_seconds": 19.90741777420044,
+  "environment": {
+    "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "evidence_level": "static-trace",
+  "claim": "ProgramCompiler stringifies typed SourceSemanticError, dropping anchor before returned MechError creation",
+  "outcome": "failed-contract",
+  "reproduction": "Compile 10\u27e8u8:1..10\u27e9 through CanonicalSourceFrontend and ProgramCompiler; compare returned typed source identity. Source excerpts below preserve original information-loss path.",
+  "excerpts": [
+    {
+      "path": "src/engine/src/source_semantics/frontend.rs",
+      "start": 603,
+      "end": 615,
+      "source": "pub struct SourceSemanticError {\n    pub code: &'static str,\n    pub message: String,\n    pub anchor: SourceSemanticAnchor,\n}\n\nimpl core::fmt::Display for SourceSemanticError {\n    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {\n        write!(formatter, \"{}: {}\", self.code, self.message)\n    }\n}\n\nimpl std::error::Error for SourceSemanticError {}"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "start": 120,
+      "end": 128,
+      "source": "fn canonical_compilation_error(reason: impl Into<String>) -> MechError {\n    MechError::new(\n        CanonicalProgramCompilationError {\n            reason: reason.into(),\n        },\n        None,\n    )\n    .with_compiler_loc()\n}"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "start": 1056,
+      "end": 1074,
+      "source": "        }\n        let (input_schemas, resource_reads, resource_writes, planned_reads) =\n            self.canonical_document_resources(&index.root, &document.document())?;\n        let compile = if interactive {\n            CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources\n        } else {\n            CanonicalSourceFrontend::compile_document_with_catalog_and_resources\n        };\n        let frontend = canonical_frontend(document);\n        let mut program = compile(\n            &frontend,\n            &document.document(),\n            Arc::clone(&self.function_catalog),\n            input_schemas,\n            BTreeMap::new(),\n            resource_writes,\n        )\n        .map_err(|error| canonical_compilation_error(error.to_string()))?;\n        self.validate_canonical_planning_candidate(&program, &planned_reads)?;"
+    }
+  ]
+}

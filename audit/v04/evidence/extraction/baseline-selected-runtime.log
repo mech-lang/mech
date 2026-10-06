@@ -1,0 +1,2 @@
+error: cannot create the lock file /private/tmp/mech-v04-audit-20261006/tests/fixtures/bytecode-runtime-consumer/Cargo.lock because --locked was passed to prevent this
+help: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.

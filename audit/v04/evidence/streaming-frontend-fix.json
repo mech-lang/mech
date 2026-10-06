@@ -1,0 +1,18 @@
+{
+  "id": "streaming-js-index-conversion",
+  "origin": "audit-added browser frontend",
+  "classification": "integration defect",
+  "claim": "Every stream suffix publication updates the browser mirror using exact array indices",
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "original_result": "BigInt usize export compared by strict equality with Number array length rejected the first publication",
+  "original_evidence": "evidence/streaming-browser-original-failure.json",
+  "fix": "Check nonnegative safe integer conversion and roundtrip equality for suffix indices before array operations; convert tree depth for display indentation",
+  "affected_files": [
+    "site/streaming-checks.js",
+    "site/streaming.js"
+  ],
+  "acceptance": "Browser API corpus and interactive editing checks pass against the identified WASM artifact",
+  "outcome": "verified",
+  "command": "python3 audit/v04/check-streaming-browser.py",
+  "final_result": "evidence/streaming-browser-result.json"
+}

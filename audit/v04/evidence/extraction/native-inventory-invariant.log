@@ -1,0 +1,51 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/compare)
+error: unused macro definition: `gte_scalar_lhs_op`
+ --> /private/tmp/mech-v04-audit-20261006/machines/compare/src/gte.rs:5:14
+  |
+5 | macro_rules! gte_scalar_lhs_op {
+  |              ^^^^^^^^^^^^^^^^^
+  |
+  = note: `-D unused-macros` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_macros)]`
+
+error: unused macro definition: `gte_scalar_rhs_op`
+  --> /private/tmp/mech-v04-audit-20261006/machines/compare/src/gte.rs:25:14
+   |
+25 | macro_rules! gte_scalar_rhs_op {
+   |              ^^^^^^^^^^^^^^^^^
+
+error: unused macro definition: `gte_vec_op`
+  --> /private/tmp/mech-v04-audit-20261006/machines/compare/src/gte.rs:45:14
+   |
+45 | macro_rules! gte_vec_op {
+   |              ^^^^^^^^^^
+
+error: unused macro definition: `gte_mat_vec_op`
+  --> /private/tmp/mech-v04-audit-20261006/machines/compare/src/gte.rs:75:14
+   |
+75 | macro_rules! gte_mat_vec_op {
+   |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `gte_vec_mat_op`
+   --> /private/tmp/mech-v04-audit-20261006/machines/compare/src/gte.rs:100:14
+    |
+100 | macro_rules! gte_vec_mat_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `gte_mat_row_op`
+   --> /private/tmp/mech-v04-audit-20261006/machines/compare/src/gte.rs:125:14
+    |
+125 | macro_rules! gte_mat_row_op {
+    |              ^^^^^^^^^^^^^^
+
+error: unused macro definition: `gte_row_mat_op`
+   --> /private/tmp/mech-v04-audit-20261006/machines/compare/src/gte.rs:150:14
+    |
+150 | macro_rules! gte_row_mat_op {
+    |              ^^^^^^^^^^^^^^
+
+error: could not compile `mech-compare` (lib) due to 7 previous errors
+warning: build failed, waiting for other jobs to finish...

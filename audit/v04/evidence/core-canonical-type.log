@@ -1,0 +1,8 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+    Finished `test` profile [unoptimized] target(s) in 0.33s
+     Running tests/canonical_type_contract.rs (/private/tmp/mech-v04-target-architecture/debug/deps/canonical_type_contract-1000d3427c9402d8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

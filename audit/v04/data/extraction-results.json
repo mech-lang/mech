@@ -1,0 +1,823 @@
+[
+  {
+    "id": "extracted-selected-runtime",
+    "claim": "Selected resident execution",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "run",
+      "--offline",
+      "--locked",
+      "--manifest-path",
+      "tests/fixtures/bytecode-runtime-consumer/Cargo.toml",
+      "--",
+      "tests/architecture/bytecode-v1/scalar-add-f64.mecb"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "run",
+      "--offline",
+      "--locked",
+      "--manifest-path",
+      "tests/fixtures/bytecode-runtime-consumer/Cargo.toml",
+      "--",
+      "tests/architecture/bytecode-v1/scalar-add-f64.mecb"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Resident bytecode consumer returns F64(3.0)",
+    "actual": "See exact retained log",
+    "evidence_level": "execution",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-selected-runtime.log",
+    "result_sha256": "3d00112ec46591d53a3fe6ed0a4c01e3b6b93571b12c766158536f1b7edb0249",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize.",
+    "applied_source_revisions": [
+      "extraction-manifests.patch"
+    ]
+  },
+  {
+    "id": "extracted-native-and-kernel-probe",
+    "claim": "External math kernel",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "run",
+      "--offline",
+      "--manifest-path",
+      "../native-probe/Cargo.toml",
+      "--",
+      "/private/tmp/mech-v04-extraction/mech",
+      "/private/tmp/mech-v04-extraction/generated-registry-with-kernel"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "run",
+      "--offline",
+      "--manifest-path",
+      "../native-probe/Cargo.toml",
+      "--",
+      "/private/tmp/mech-v04-extraction/mech",
+      "/private/tmp/mech-v04-extraction/generated-registry-with-kernel"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "AddSS<f64> returns 3 then 7 on the same instance after changing input 1 to 5",
+    "actual": "See exact retained log",
+    "evidence_level": "independent-result-comparison",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-native-and-kernel-probe.log",
+    "result_sha256": "403ece5f4aae03b7910cffe44ac31f482653c32b24037311670db66873b1cd1f",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-rehomed-selected-identity",
+    "claim": "Retained integration catalog identity",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "env",
+      "MECH_EXPECT_RUNTIME_FACTORY_COUNT=3",
+      "MECH_EXPECT_RUNTIME_SURFACE_DIGEST=a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d",
+      "MECH_EXPECT_SOURCE_SPECIALIZER_COUNT=0",
+      "MECH_EXPECT_INTRINSIC_COUNT=0",
+      "MECH_EXPECT_PRELUDE_COUNT=0",
+      "MECH_EXPECT_MODULE_EXPORT_COUNT=0",
+      "MECH_EXPECT_TOTAL_EXPORT_COUNT=0",
+      "/private/tmp/mech-v04-target-extraction/extracted/debug/deps/profile_contracts-1a0c687a313078d0",
+      "distribution_size_report_catalog_counts",
+      "--exact",
+      "--nocapture"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "env",
+      "MECH_EXPECT_RUNTIME_FACTORY_COUNT=3",
+      "MECH_EXPECT_RUNTIME_SURFACE_DIGEST=a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d",
+      "MECH_EXPECT_SOURCE_SPECIALIZER_COUNT=0",
+      "MECH_EXPECT_INTRINSIC_COUNT=0",
+      "MECH_EXPECT_PRELUDE_COUNT=0",
+      "MECH_EXPECT_MODULE_EXPORT_COUNT=0",
+      "MECH_EXPECT_TOTAL_EXPORT_COUNT=0",
+      "/private/tmp/mech-v04-target-extraction/extracted/debug/deps/profile_contracts-1a0c687a313078d0",
+      "distribution_size_report_catalog_counts",
+      "--exact",
+      "--nocapture"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "3 factories, no source/exports, frozen selected digest",
+    "actual": "See exact retained log",
+    "evidence_level": "independent-result-comparison",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-rehomed-selected-identity.log",
+    "result_sha256": "286d4bf0432c675db3d6557ea2b22f15b17a8ef8de29bb0514af60a52ca0e085",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-standard-runtime",
+    "claim": "Standard runtime",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "standard_runtime"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "standard_runtime"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Library compiles with standard_runtime",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-standard-runtime.log",
+    "result_sha256": "953673ec57bd7211e5c47679d75f31c7476bebce8703b6995af77b530fbdf439",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-standard-source-final",
+    "claim": "Standard source repaired",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "standard_source"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "standard_source"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Library compiles with standard_source and excludes bytecode/compiler layers",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-standard-source-final.log",
+    "result_sha256": "0afe3b377c61b9e66a710760c14d304aa40fb8af06503059a5f33360e5e1a9cc",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-standard-compiler",
+    "claim": "Standard compiler",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "standard_compiler"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "standard_compiler"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Library compiles with standard_compiler",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-standard-compiler.log",
+    "result_sha256": "ec09e7e5da0f6eac0756c3b94a35f1a1543124d12b50b63254e56ae6ee23a2c9",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-full-runtime",
+    "claim": "Full runtime",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "full_runtime"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "full_runtime"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Library compiles with full_runtime",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-full-runtime.log",
+    "result_sha256": "f4267a53b52d80356338d0dbaf93dbe3476b840926b05f4cde0b2af3069ae858",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-full-source",
+    "claim": "Full source initial matrix",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "full_source"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "full_source"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Library compiles with full_source; final stabilized rerun recorded separately",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-full-source.log",
+    "result_sha256": "73b8ab91cf40acbe5b05369572d355b12810e8b500f9e0ba00f997f74feb1fff",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-full-source-final",
+    "claim": "Full source final tree",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--locked",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "full_source"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--locked",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "full_source"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Current library compiles with full_source",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-full-source-final.log",
+    "result_sha256": "80326572d5e04bae1861a7c4465635a5caa2d881e5309b9a089da3fd9a051823",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-full-compiler",
+    "claim": "Full compiler",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "full_compiler"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "full_compiler"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Library compiles with full_compiler",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-full-compiler.log",
+    "result_sha256": "671a729389adedb39722b9f72c050aaf56e51ca1d82dc6a56031a95c655ec981",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-wasm-browser-core-resolved",
+    "claim": "WASM document core",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "-p",
+      "mech-wasm",
+      "--no-default-features",
+      "--features",
+      "browser_project_core",
+      "--target",
+      "wasm32-unknown-unknown"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "-p",
+      "mech-wasm",
+      "--no-default-features",
+      "--features",
+      "browser_project_core",
+      "--target",
+      "wasm32-unknown-unknown"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "browser_project_core compiles for wasm32-unknown-unknown",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-wasm-browser-core-resolved.log",
+    "result_sha256": "abaf5f54ca847d86c9f6b95b17a07402f87c164afb00751e7d64c9e3de9f6cbf",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-wasm-compute-resolved",
+    "claim": "WASM compute",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--locked",
+      "-p",
+      "mech-wasm",
+      "--no-default-features",
+      "--features",
+      "browser_compute_canary",
+      "--target",
+      "wasm32-unknown-unknown"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--locked",
+      "-p",
+      "mech-wasm",
+      "--no-default-features",
+      "--features",
+      "browser_compute_canary",
+      "--target",
+      "wasm32-unknown-unknown"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "browser_compute_canary compiles for wasm32-unknown-unknown",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-wasm-compute-resolved.log",
+    "result_sha256": "fb320a98d94f0e160cb0ae2be137ecf8605d40119990ffbb2f60c1638174354f",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-native-compute",
+    "claim": "Native compute product closure",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--locked",
+      "-p",
+      "mech",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "standard_compiler,compute_backends_native"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--offline",
+      "--locked",
+      "-p",
+      "mech",
+      "--lib",
+      "--no-default-features",
+      "--features",
+      "standard_compiler,compute_backends_native"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Root library standard_compiler,compute_backends_native compiles",
+    "actual": "See exact retained log",
+    "evidence_level": "compilation",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-native-compute.log",
+    "result_sha256": "5c75e7ea5bb8ec99640c1bd47c66f5952c77c8f33d30fcfba67cbed29e0573bb",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "extracted-generated-native-execution",
+    "claim": "Generated native product",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "/private/tmp/mech-v04-target-extraction/extracted/debug/extracted-scalar-add",
+      "--once"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "/private/tmp/mech-v04-target-extraction/extracted/debug/extracted-scalar-add",
+      "--once"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Generated resident application outputs 3 with --once",
+    "actual": "See exact retained log",
+    "evidence_level": "independent-result-comparison",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/extracted-generated-native-execution.log",
+    "result_sha256": "1121cfccd5913f0a63fec40a6ffd44ea64f9dc135c66634ba001d10bcf4302a2",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "external-stdlib-package-list-final",
+    "claim": "External crate input inventory",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "package",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--allow-dirty",
+      "--list"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "package",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--allow-dirty",
+      "--list"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Cargo enumerates external package inputs",
+    "actual": "See exact retained log",
+    "evidence_level": "packaging-inventory",
+    "outcome": "passed",
+    "exit_code": 0,
+    "result_location": "audit/v04/evidence/extraction/external-stdlib-package-list-final.log",
+    "result_sha256": "4ca6d50a94e0d9e35cad4aa71fd82efcdd5b7d8add33d818cc1553670033df9a",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  },
+  {
+    "id": "external-stdlib-package",
+    "claim": "External registry package",
+    "contract": "docs/design/static-stdlib-composition.md; maintained profile fixtures and manifests",
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "configuration": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "package",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--allow-dirty",
+      "--no-verify"
+    ],
+    "environment": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "input": "Deterministic fixtures and literal F64 inputs; no random seed",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "package",
+      "--offline",
+      "--manifest-path",
+      "../external/stdlib/Cargo.toml",
+      "--allow-dirty",
+      "--no-verify"
+    ],
+    "cwd": "/private/tmp/mech-v04-extraction/mech",
+    "expected": "Package can be prepared using pinned registry SDK metadata",
+    "actual": "See exact retained log",
+    "evidence_level": "packaging",
+    "outcome": "blocked",
+    "exit_code": 101,
+    "result_location": "audit/v04/evidence/extraction/external-stdlib-package.log",
+    "result_sha256": "ec7803549053c816c0a361c55166feb42d8978c14037561c1dd3f4a22e0a3470",
+    "experiment_revision_history": [
+      "source-only-cfg-fix.patch",
+      "source-profile-feature-fix.patch",
+      "extraction-manifests.patch",
+      "rehome-tests.py"
+    ],
+    "source_snapshot_precision": "Baseline commit and experiment revision history are retained. Per-command tree hashes were not captured during the matrix; final tree counts were independently reproduced with --finalize."
+  }
+]

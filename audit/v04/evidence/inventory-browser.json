@@ -1,0 +1,1744 @@
+{
+  "status": "passed",
+  "metadata": {
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+    "source_modifications": {
+      "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+      "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+      "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+      "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+      "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+      "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+      "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+      "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+      "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+      "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+      "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+      "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+      "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+    },
+    "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+    "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+    "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+    "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+    "target": "wasm32-unknown-unknown",
+    "profile": "release",
+    "wasm_opt": false,
+    "expected_exports": [
+      "WasmSyntaxStream",
+      "WasmSyntaxEditor",
+      "WasmDocument",
+      "WasmMixedComputeProject",
+      "TypePublicationSession",
+      "inspectMechTypes",
+      "I64PublicationSession",
+      "inventorySource"
+    ],
+    "artifacts": {
+      "pkg/mech_wasm.js": {
+        "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+        "bytes": 92075
+      },
+      "pkg/mech_wasm_bg.wasm": {
+        "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+        "bytes": 208709347
+      }
+    },
+    "environment": {
+      "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+      "wasm_pack": "wasm-pack 0.15.0"
+    },
+    "limits": [
+      "Artifact source identity comprises the baseline commit and listed modifications.",
+      "Browser device and execution outcomes are recorded separately."
+    ],
+    "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+    "loaded_wasm_bytes": 208709347,
+    "source_sha256": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+    "fixture_sha256": "d21f8d438c44c588f0440d2a7346c380215729190f392b5c7448dbbaaca17a89",
+    "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36"
+  },
+  "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+  "fixture": {
+    "source": "inventory.mec",
+    "initial_stock": 100,
+    "capacity": 1000000,
+    "initial_turn": [
+      0,
+      0
+    ],
+    "cases": [
+      {
+        "arrivals": 20,
+        "demand": 15,
+        "expected_stock": 105,
+        "expected_outcome": "accepted"
+      },
+      {
+        "arrivals": 0,
+        "demand": 110,
+        "expected_stock": 105,
+        "expected_outcome": "rejected"
+      },
+      {
+        "arrivals": 10,
+        "demand": 25,
+        "expected_stock": 90,
+        "expected_outcome": "accepted"
+      },
+      {
+        "arrivals": 0,
+        "demand": 90,
+        "expected_stock": 0,
+        "expected_outcome": "accepted"
+      },
+      {
+        "arrivals": 5,
+        "demand": 0,
+        "expected_stock": 5,
+        "expected_outcome": "accepted"
+      },
+      {
+        "arrivals": -1,
+        "demand": 0,
+        "expected_stock": 5,
+        "expected_outcome": "rejected"
+      },
+      {
+        "arrivals": 0,
+        "demand": -1,
+        "expected_stock": 5,
+        "expected_outcome": "rejected"
+      },
+      {
+        "arrivals": 1000000,
+        "demand": 0,
+        "expected_stock": 5,
+        "expected_outcome": "rejected"
+      },
+      {
+        "arrivals": 10,
+        "demand": 3,
+        "expected_stock": 12,
+        "expected_outcome": "accepted"
+      }
+    ]
+  },
+  "records": [
+    {
+      "inputs": {
+        "arrivals": 20,
+        "demand": 15
+      },
+      "check": {
+        "candidate": "105",
+        "expected_stock": "105",
+        "actual_stock": "105",
+        "expected_outcome": "accepted",
+        "passed": true,
+        "rejected_publication_unchanged": null,
+        "literal_fixture_passed": true
+      },
+      "receipt": {
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(2)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "105",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(105))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4731103623968751437"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(1)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "100",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(100))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "12867755705414490004"
+        },
+        "input_json": "{\n  \"arrivals\": \"20\",\n  \"demand\": \"15\"\n}",
+        "outcome": "accepted",
+        "phase": "publication"
+      }
+    },
+    {
+      "inputs": {
+        "arrivals": 0,
+        "demand": 110
+      },
+      "check": {
+        "candidate": "-5",
+        "expected_stock": "105",
+        "actual_stock": "105",
+        "expected_outcome": "rejected",
+        "passed": true,
+        "rejected_publication_unchanged": true,
+        "literal_fixture_passed": true
+      },
+      "receipt": {
+        "accepted_state_unchanged": true,
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(2)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "105",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(105))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4731103623968751437"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(2)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "105",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(105))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4731103623968751437"
+        },
+        "input_json": "{\n  \"arrivals\": \"0\",\n  \"demand\": \"110\"\n}",
+        "message": "Integrity { constraint: IntegrityConstraintId(2) }",
+        "outcome": "rejected",
+        "phase": "execution_or_publication"
+      }
+    },
+    {
+      "inputs": {
+        "arrivals": 10,
+        "demand": 25
+      },
+      "check": {
+        "candidate": "90",
+        "expected_stock": "90",
+        "actual_stock": "90",
+        "expected_outcome": "accepted",
+        "passed": true,
+        "rejected_publication_unchanged": null,
+        "literal_fixture_passed": true
+      },
+      "receipt": {
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(3)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "90",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(90))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "10501763539444001462"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(2)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "105",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(105))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4731103623968751437"
+        },
+        "input_json": "{\n  \"arrivals\": \"10\",\n  \"demand\": \"25\"\n}",
+        "outcome": "accepted",
+        "phase": "publication"
+      }
+    },
+    {
+      "inputs": {
+        "arrivals": 0,
+        "demand": 90
+      },
+      "check": {
+        "candidate": "0",
+        "expected_stock": "0",
+        "actual_stock": "0",
+        "expected_outcome": "accepted",
+        "passed": true,
+        "rejected_publication_unchanged": null,
+        "literal_fixture_passed": true
+      },
+      "receipt": {
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(4)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "0",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(0))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "13514051035131198309"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(3)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "90",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(90))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "10501763539444001462"
+        },
+        "input_json": "{\n  \"arrivals\": \"0\",\n  \"demand\": \"90\"\n}",
+        "outcome": "accepted",
+        "phase": "publication"
+      }
+    },
+    {
+      "inputs": {
+        "arrivals": 5,
+        "demand": 0
+      },
+      "check": {
+        "candidate": "5",
+        "expected_stock": "5",
+        "actual_stock": "5",
+        "expected_outcome": "accepted",
+        "passed": true,
+        "rejected_publication_unchanged": null,
+        "literal_fixture_passed": true
+      },
+      "receipt": {
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(5)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "5",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(5))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4793486603118821489"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(4)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "0",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(0))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "13514051035131198309"
+        },
+        "input_json": "{\n  \"arrivals\": \"5\",\n  \"demand\": \"0\"\n}",
+        "outcome": "accepted",
+        "phase": "publication"
+      }
+    },
+    {
+      "inputs": {
+        "arrivals": -1,
+        "demand": 0
+      },
+      "check": {
+        "candidate": "4",
+        "expected_stock": "5",
+        "actual_stock": "5",
+        "expected_outcome": "rejected",
+        "passed": true,
+        "rejected_publication_unchanged": true,
+        "literal_fixture_passed": true
+      },
+      "receipt": {
+        "accepted_state_unchanged": true,
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(5)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "5",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(5))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4793486603118821489"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(5)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "5",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(5))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4793486603118821489"
+        },
+        "input_json": "{\n  \"arrivals\": \"-1\",\n  \"demand\": \"0\"\n}",
+        "message": "Integrity { constraint: IntegrityConstraintId(0) }",
+        "outcome": "rejected",
+        "phase": "execution_or_publication"
+      }
+    },
+    {
+      "inputs": {
+        "arrivals": 0,
+        "demand": -1
+      },
+      "check": {
+        "candidate": "6",
+        "expected_stock": "5",
+        "actual_stock": "5",
+        "expected_outcome": "rejected",
+        "passed": true,
+        "rejected_publication_unchanged": true,
+        "literal_fixture_passed": true
+      },
+      "receipt": {
+        "accepted_state_unchanged": true,
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(5)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "5",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(5))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4793486603118821489"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(5)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "5",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(5))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4793486603118821489"
+        },
+        "input_json": "{\n  \"arrivals\": \"0\",\n  \"demand\": \"-1\"\n}",
+        "message": "Integrity { constraint: IntegrityConstraintId(1) }",
+        "outcome": "rejected",
+        "phase": "execution_or_publication"
+      }
+    },
+    {
+      "inputs": {
+        "arrivals": 1000000,
+        "demand": 0
+      },
+      "check": {
+        "candidate": "1000005",
+        "expected_stock": "5",
+        "actual_stock": "5",
+        "expected_outcome": "rejected",
+        "passed": true,
+        "rejected_publication_unchanged": true,
+        "literal_fixture_passed": true
+      },
+      "receipt": {
+        "accepted_state_unchanged": true,
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(5)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "5",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(5))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4793486603118821489"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(5)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "5",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(5))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4793486603118821489"
+        },
+        "input_json": "{\n  \"arrivals\": \"1000000\",\n  \"demand\": \"0\"\n}",
+        "message": "Integrity { constraint: IntegrityConstraintId(3) }",
+        "outcome": "rejected",
+        "phase": "execution_or_publication"
+      }
+    },
+    {
+      "inputs": {
+        "arrivals": 10,
+        "demand": 3
+      },
+      "check": {
+        "candidate": "12",
+        "expected_stock": "12",
+        "actual_stock": "12",
+        "expected_outcome": "accepted",
+        "passed": true,
+        "rejected_publication_unchanged": null,
+        "literal_fixture_passed": true
+      },
+      "receipt": {
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(6)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "12",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(12))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "16404658927954749386"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(5)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "5",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(5))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4793486603118821489"
+        },
+        "input_json": "{\n  \"arrivals\": \"10\",\n  \"demand\": \"3\"\n}",
+        "outcome": "accepted",
+        "phase": "publication"
+      }
+    }
+  ],
+  "input_admission": [
+    {
+      "accepted_state_unchanged": true,
+      "after": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 5608,
+        "epoch": "InstanceEpoch(6)",
+        "inputs": [
+          "arrivals",
+          "demand"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "scalar_text": "12",
+            "schema": "SignedInteger(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "value": "Ok(I64(12))"
+          }
+        ],
+        "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+        "state_hash": "16404658927954749386"
+      },
+      "before": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 5608,
+        "epoch": "InstanceEpoch(6)",
+        "inputs": [
+          "arrivals",
+          "demand"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "scalar_text": "12",
+            "schema": "SignedInteger(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "value": "Ok(I64(12))"
+          }
+        ],
+        "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+        "state_hash": "16404658927954749386"
+      },
+      "input_json": "{\"arrivals\":\"0\"}",
+      "message": "Input names differ from this session's compiled ports",
+      "outcome": "rejected",
+      "phase": "external_input_admission"
+    },
+    {
+      "accepted_state_unchanged": true,
+      "after": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 5608,
+        "epoch": "InstanceEpoch(6)",
+        "inputs": [
+          "arrivals",
+          "demand"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "scalar_text": "12",
+            "schema": "SignedInteger(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "value": "Ok(I64(12))"
+          }
+        ],
+        "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+        "state_hash": "16404658927954749386"
+      },
+      "before": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 5608,
+        "epoch": "InstanceEpoch(6)",
+        "inputs": [
+          "arrivals",
+          "demand"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "scalar_text": "12",
+            "schema": "SignedInteger(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "value": "Ok(I64(12))"
+          }
+        ],
+        "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+        "state_hash": "16404658927954749386"
+      },
+      "input_json": "{\"arrivals\":\"0\",\"demand\":\"9223372036854775808\"}",
+      "message": "demand: number too large to fit in target type",
+      "outcome": "rejected",
+      "phase": "external_input_admission"
+    },
+    {
+      "accepted_state_unchanged": true,
+      "after": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 5608,
+        "epoch": "InstanceEpoch(6)",
+        "inputs": [
+          "arrivals",
+          "demand"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "scalar_text": "12",
+            "schema": "SignedInteger(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "value": "Ok(I64(12))"
+          }
+        ],
+        "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+        "state_hash": "16404658927954749386"
+      },
+      "before": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 5608,
+        "epoch": "InstanceEpoch(6)",
+        "inputs": [
+          "arrivals",
+          "demand"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "scalar_text": "12",
+            "schema": "SignedInteger(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "value": "Ok(I64(12))"
+          }
+        ],
+        "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+        "state_hash": "16404658927954749386"
+      },
+      "input_json": "{\"arrivals\":\"0\",\"demand\":1}",
+      "message": "invalid type: integer `1`, expected a string at line 1 column 26",
+      "outcome": "rejected",
+      "phase": "external_input_admission"
+    }
+  ],
+  "generic_source": [
+    {
+      "after": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 2566,
+        "epoch": "InstanceEpoch(1)",
+        "inputs": [
+          "change"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "scalar_text": "10",
+            "schema": "SignedInteger(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "value": "Ok(I64(10))"
+          }
+        ],
+        "source": "~total\u27e8i64\u27e9 := 7\ntotal = total + change\ntotal\n",
+        "state_hash": "3375456196403837726"
+      },
+      "before": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 2566,
+        "epoch": "InstanceEpoch(0)",
+        "inputs": [
+          "change"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "error": "InvalidSnapshotRepresentation"
+          }
+        ],
+        "source": "~total\u27e8i64\u27e9 := 7\ntotal = total + change\ntotal\n",
+        "state_hash": "5965971900481477948"
+      },
+      "input_json": "{\n  \"change\": \"3\"\n}",
+      "outcome": "accepted",
+      "phase": "publication"
+    },
+    {
+      "after": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 2566,
+        "epoch": "InstanceEpoch(2)",
+        "inputs": [
+          "change"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "scalar_text": "6",
+            "schema": "SignedInteger(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "value": "Ok(I64(6))"
+          }
+        ],
+        "source": "~total\u27e8i64\u27e9 := 7\ntotal = total + change\ntotal\n",
+        "state_hash": "16970617991687696890"
+      },
+      "before": {
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "bytecode_bytes": 2566,
+        "epoch": "InstanceEpoch(1)",
+        "inputs": [
+          "change"
+        ],
+        "instance_scope": "this session object",
+        "outputs": [
+          {
+            "scalar_text": "10",
+            "schema": "SignedInteger(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "value": "Ok(I64(10))"
+          }
+        ],
+        "source": "~total\u27e8i64\u27e9 := 7\ntotal = total + change\ntotal\n",
+        "state_hash": "3375456196403837726"
+      },
+      "input_json": "{\n  \"change\": \"-4\"\n}",
+      "outcome": "accepted",
+      "phase": "publication"
+    }
+  ],
+  "restarts": [
+    "100",
+    "100",
+    "100"
+  ],
+  "scope": "WASM-hosted resident CPU; one activated object for the nine-turn inventory sequence",
+  "native_source_sha256": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+  "native_source_equal": true,
+  "native_output_equal": true,
+  "ui": {
+    "status": "passed",
+    "history": [
+      {
+        "arrivals": "20",
+        "demand": "15",
+        "check": {
+          "candidate": "105",
+          "expected_stock": "105",
+          "actual_stock": "105",
+          "expected_outcome": "accepted",
+          "passed": true,
+          "rejected_publication_unchanged": null
+        },
+        "receipt": {
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(2)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "105",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(105))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4731103623968751437"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "100",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(100))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "12867755705414490004"
+          },
+          "input_json": "{\n  \"arrivals\": \"20\",\n  \"demand\": \"15\"\n}",
+          "outcome": "accepted",
+          "phase": "publication"
+        }
+      },
+      {
+        "arrivals": "0",
+        "demand": "110",
+        "check": {
+          "candidate": "-5",
+          "expected_stock": "105",
+          "actual_stock": "105",
+          "expected_outcome": "rejected",
+          "passed": true,
+          "rejected_publication_unchanged": true
+        },
+        "receipt": {
+          "accepted_state_unchanged": true,
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(2)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "105",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(105))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4731103623968751437"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(2)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "105",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(105))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4731103623968751437"
+          },
+          "input_json": "{\n  \"arrivals\": \"0\",\n  \"demand\": \"110\"\n}",
+          "message": "Integrity { constraint: IntegrityConstraintId(2) }",
+          "outcome": "rejected",
+          "phase": "execution_or_publication"
+        }
+      },
+      {
+        "arrivals": "10",
+        "demand": "25",
+        "check": {
+          "candidate": "90",
+          "expected_stock": "90",
+          "actual_stock": "90",
+          "expected_outcome": "accepted",
+          "passed": true,
+          "rejected_publication_unchanged": null
+        },
+        "receipt": {
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(3)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "90",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(90))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "10501763539444001462"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(2)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "105",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(105))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4731103623968751437"
+          },
+          "input_json": "{\n  \"arrivals\": \"10\",\n  \"demand\": \"25\"\n}",
+          "outcome": "accepted",
+          "phase": "publication"
+        }
+      },
+      {
+        "arrivals": "0",
+        "demand": "90",
+        "check": {
+          "candidate": "0",
+          "expected_stock": "0",
+          "actual_stock": "0",
+          "expected_outcome": "accepted",
+          "passed": true,
+          "rejected_publication_unchanged": null
+        },
+        "receipt": {
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(4)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "0",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(0))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "13514051035131198309"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(3)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "90",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(90))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "10501763539444001462"
+          },
+          "input_json": "{\n  \"arrivals\": \"0\",\n  \"demand\": \"90\"\n}",
+          "outcome": "accepted",
+          "phase": "publication"
+        }
+      },
+      {
+        "arrivals": "5",
+        "demand": "0",
+        "check": {
+          "candidate": "5",
+          "expected_stock": "5",
+          "actual_stock": "5",
+          "expected_outcome": "accepted",
+          "passed": true,
+          "rejected_publication_unchanged": null
+        },
+        "receipt": {
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(5)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "5",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(5))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4793486603118821489"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(4)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "0",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(0))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "13514051035131198309"
+          },
+          "input_json": "{\n  \"arrivals\": \"5\",\n  \"demand\": \"0\"\n}",
+          "outcome": "accepted",
+          "phase": "publication"
+        }
+      },
+      {
+        "arrivals": "-1",
+        "demand": "0",
+        "check": {
+          "candidate": "4",
+          "expected_stock": "5",
+          "actual_stock": "5",
+          "expected_outcome": "rejected",
+          "passed": true,
+          "rejected_publication_unchanged": true
+        },
+        "receipt": {
+          "accepted_state_unchanged": true,
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(5)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "5",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(5))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4793486603118821489"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(5)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "5",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(5))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4793486603118821489"
+          },
+          "input_json": "{\n  \"arrivals\": \"-1\",\n  \"demand\": \"0\"\n}",
+          "message": "Integrity { constraint: IntegrityConstraintId(0) }",
+          "outcome": "rejected",
+          "phase": "execution_or_publication"
+        }
+      },
+      {
+        "arrivals": "0",
+        "demand": "-1",
+        "check": {
+          "candidate": "6",
+          "expected_stock": "5",
+          "actual_stock": "5",
+          "expected_outcome": "rejected",
+          "passed": true,
+          "rejected_publication_unchanged": true
+        },
+        "receipt": {
+          "accepted_state_unchanged": true,
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(5)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "5",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(5))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4793486603118821489"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(5)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "5",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(5))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4793486603118821489"
+          },
+          "input_json": "{\n  \"arrivals\": \"0\",\n  \"demand\": \"-1\"\n}",
+          "message": "Integrity { constraint: IntegrityConstraintId(1) }",
+          "outcome": "rejected",
+          "phase": "execution_or_publication"
+        }
+      },
+      {
+        "arrivals": "1000000",
+        "demand": "0",
+        "check": {
+          "candidate": "1000005",
+          "expected_stock": "5",
+          "actual_stock": "5",
+          "expected_outcome": "rejected",
+          "passed": true,
+          "rejected_publication_unchanged": true
+        },
+        "receipt": {
+          "accepted_state_unchanged": true,
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(5)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "5",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(5))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4793486603118821489"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(5)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "5",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(5))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4793486603118821489"
+          },
+          "input_json": "{\n  \"arrivals\": \"1000000\",\n  \"demand\": \"0\"\n}",
+          "message": "Integrity { constraint: IntegrityConstraintId(3) }",
+          "outcome": "rejected",
+          "phase": "execution_or_publication"
+        }
+      },
+      {
+        "arrivals": "10",
+        "demand": "3",
+        "check": {
+          "candidate": "12",
+          "expected_stock": "12",
+          "actual_stock": "12",
+          "expected_outcome": "accepted",
+          "passed": true,
+          "rejected_publication_unchanged": null
+        },
+        "receipt": {
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(6)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "12",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(12))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "16404658927954749386"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(5)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "5",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(5))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "4793486603118821489"
+          },
+          "input_json": "{\n  \"arrivals\": \"10\",\n  \"demand\": \"3\"\n}",
+          "outcome": "accepted",
+          "phase": "publication"
+        }
+      },
+      {
+        "arrivals": "8",
+        "demand": "3",
+        "check": {
+          "candidate": "17",
+          "expected_stock": "17",
+          "actual_stock": "17",
+          "expected_outcome": "accepted",
+          "passed": true,
+          "rejected_publication_unchanged": null
+        },
+        "receipt": {
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(7)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "17",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(17))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "3109686094757959223"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(6)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "12",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(12))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "16404658927954749386"
+          },
+          "input_json": "{\n  \"arrivals\": \"8\",\n  \"demand\": \"3\"\n}",
+          "outcome": "accepted",
+          "phase": "publication"
+        }
+      },
+      {
+        "arrivals": "0",
+        "demand": "18",
+        "check": {
+          "candidate": "-1",
+          "expected_stock": "17",
+          "actual_stock": "17",
+          "expected_outcome": "rejected",
+          "passed": true,
+          "rejected_publication_unchanged": true
+        },
+        "receipt": {
+          "accepted_state_unchanged": true,
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(7)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "17",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(17))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "3109686094757959223"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(7)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "17",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(17))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "3109686094757959223"
+          },
+          "input_json": "{\n  \"arrivals\": \"0\",\n  \"demand\": \"18\"\n}",
+          "message": "Integrity { constraint: IntegrityConstraintId(2) }",
+          "outcome": "rejected",
+          "phase": "execution_or_publication"
+        }
+      },
+      {
+        "arrivals": "2",
+        "demand": "4",
+        "check": {
+          "candidate": "15",
+          "expected_stock": "15",
+          "actual_stock": "15",
+          "expected_outcome": "accepted",
+          "passed": true,
+          "rejected_publication_unchanged": null
+        },
+        "receipt": {
+          "after": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(8)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "15",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(15))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "9798597598144867957"
+          },
+          "before": {
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "bytecode_bytes": 5608,
+            "epoch": "InstanceEpoch(7)",
+            "inputs": [
+              "arrivals",
+              "demand"
+            ],
+            "instance_scope": "this session object",
+            "outputs": [
+              {
+                "scalar_text": "17",
+                "schema": "SignedInteger(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "value": "Ok(I64(17))"
+              }
+            ],
+            "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+            "state_hash": "3109686094757959223"
+          },
+          "input_json": "{\n  \"arrivals\": \"2\",\n  \"demand\": \"4\"\n}",
+          "outcome": "accepted",
+          "phase": "publication"
+        }
+      }
+    ],
+    "stock": "15",
+    "residual": "0",
+    "selected_receipt": {
+      "arrivals": "20",
+      "demand": "15",
+      "check": {
+        "candidate": "105",
+        "expected_stock": "105",
+        "actual_stock": "105",
+        "expected_outcome": "accepted",
+        "passed": true,
+        "rejected_publication_unchanged": null
+      },
+      "receipt": {
+        "after": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(2)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "105",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(105))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "4731103623968751437"
+        },
+        "before": {
+          "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+          "bytecode_bytes": 5608,
+          "epoch": "InstanceEpoch(1)",
+          "inputs": [
+            "arrivals",
+            "demand"
+          ],
+          "instance_scope": "this session object",
+          "outputs": [
+            {
+              "scalar_text": "100",
+              "schema": "SignedInteger(W64)",
+              "shape": "ShapeInstance { parameter_values: [] }",
+              "value": "Ok(I64(100))"
+            }
+          ],
+          "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+          "state_hash": "12867755705414490004"
+        },
+        "input_json": "{\n  \"arrivals\": \"20\",\n  \"demand\": \"15\"\n}",
+        "outcome": "accepted",
+        "phase": "publication"
+      }
+    },
+    "scope": "Browser session 2; 12 attempted turns after initialization. Every displayed receipt belongs to this activated object.",
+    "restart": "passed"
+  },
+  "id": "E-INVENTORY-BROWSER",
+  "claim": "Retained inventory with changing external inputs, source invariants, transactional rejection and recovery",
+  "contract": "Canonical source + bytecode-v1 + ReactiveInstance prepare/publish + integrity constraints",
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "source_state": "baseline plus source modifications hashed in the attached artifact identity",
+  "evidence_level": "browser-execution",
+  "outcome": "passed",
+  "artifact_identity": {
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+    "source_modifications": {
+      "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+      "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+      "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+      "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+      "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+      "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+      "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+      "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+      "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+      "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+      "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+      "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+      "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+    },
+    "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+    "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+    "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+    "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+    "target": "wasm32-unknown-unknown",
+    "profile": "release",
+    "wasm_opt": false,
+    "expected_exports": [
+      "WasmSyntaxStream",
+      "WasmSyntaxEditor",
+      "WasmDocument",
+      "WasmMixedComputeProject",
+      "TypePublicationSession",
+      "inspectMechTypes",
+      "I64PublicationSession",
+      "inventorySource"
+    ],
+    "artifacts": {
+      "pkg/mech_wasm.js": {
+        "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+        "bytes": 92075
+      },
+      "pkg/mech_wasm_bg.wasm": {
+        "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+        "bytes": 208709347
+      }
+    },
+    "environment": {
+      "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+      "wasm_pack": "wasm-pack 0.15.0"
+    },
+    "limits": [
+      "Artifact source identity comprises the baseline commit and listed modifications.",
+      "Browser device and execution outcomes are recorded separately."
+    ],
+    "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+    "loaded_wasm_bytes": 208709347,
+    "source_sha256": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+    "fixture_sha256": "d21f8d438c44c588f0440d2a7346c380215729190f392b5c7448dbbaaca17a89",
+    "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36"
+  },
+  "command": "python3 audit/v04/check_inventory_browser.py"
+}

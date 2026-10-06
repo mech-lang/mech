@@ -1,0 +1,10 @@
+warning: manifest has no documentation, homepage or repository
+  |
+  = note: see https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata for more info
+Cargo.lock
+Cargo.toml
+Cargo.toml.orig
+LICENSE
+README.md
+src/catalog.rs
+src/lib.rs

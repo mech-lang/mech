@@ -1,0 +1,25 @@
+{
+  "command": [
+    "env",
+    "MECH_EXPECT_RUNTIME_FACTORY_COUNT=3",
+    "MECH_EXPECT_RUNTIME_SURFACE_DIGEST=a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d",
+    "MECH_EXPECT_SOURCE_SPECIALIZER_COUNT=0",
+    "MECH_EXPECT_INTRINSIC_COUNT=0",
+    "MECH_EXPECT_PRELUDE_COUNT=0",
+    "MECH_EXPECT_MODULE_EXPORT_COUNT=0",
+    "MECH_EXPECT_TOTAL_EXPORT_COUNT=0",
+    "/private/tmp/mech-v04-target-extraction/extracted/debug/deps/profile_contracts-1a0c687a313078d0",
+    "distribution_size_report_catalog_counts",
+    "--exact",
+    "--nocapture"
+  ],
+  "cwd": "/private/tmp/mech-v04-extraction/mech",
+  "exit_code": 0,
+  "elapsed_seconds": 0.036936283111572266,
+  "environment": {
+    "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  }
+}

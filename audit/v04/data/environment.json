@@ -1,0 +1,46 @@
+{
+  "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+  "python": "3.14.7 (main, Aug  5 2026, 10:29:49) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "commands": {
+    "rustc -Vv": {
+      "exit_code": 0,
+      "stdout": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0\n",
+      "stderr": ""
+    },
+    "cargo -V": {
+      "exit_code": 0,
+      "stdout": "cargo 1.96.0-nightly (f298b8c82 2026-02-24)\n",
+      "stderr": ""
+    },
+    "rustup target list --installed": {
+      "exit_code": 0,
+      "stdout": "aarch64-apple-darwin\nwasm32-unknown-unknown\nx86_64-apple-darwin\nx86_64-pc-windows-gnu\n",
+      "stderr": ""
+    },
+    "wasm-pack --version": {
+      "exit_code": 0,
+      "stdout": "wasm-pack 0.15.0\n",
+      "stderr": ""
+    },
+    "git --version": {
+      "exit_code": 0,
+      "stdout": "git version 2.39.3 (Apple Git-146)\n",
+      "stderr": ""
+    },
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --version": {
+      "exit_code": 0,
+      "stdout": "Google Chrome 154.0.8037.98 \n",
+      "stderr": ""
+    },
+    "sysctl -n machdep.cpu.brand_string": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "sysctl: sysctl fmt -1 1024 1: Operation not permitted\n"
+    },
+    "system_profiler SPDisplaysDataType": {
+      "exit_code": 0,
+      "stdout": "Graphics/Displays:\n\n    Apple M3:\n\n      Chipset Model: Apple M3\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 10\n      Vendor: Apple (0x106b)\n      Metal: Supported\n\n",
+      "stderr": ""
+    }
+  }
+}

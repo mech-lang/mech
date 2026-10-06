@@ -1,0 +1,436 @@
+diff --git a/private/tmp/pr829-proof-original.rs b/examples/r_stack_trust_proof.rs
+index cdb300ba0..618c7dfba 100644
+--- a/private/tmp/pr829-proof-original.rs
++++ b/examples/r_stack_trust_proof.rs
+@@ -1,16 +1,17 @@
+ use std::collections::BTreeMap;
+ use std::fmt::Debug;
+ 
+-use mech_core::{
+-    FunctionCatalog, ManagedMemoryBudget, MechCode, NoMechExecutionServices, Program,
+-    ReactiveInstanceId, SectionElement, Statement,
+-};
++use mech_core::{FunctionCatalog, ManagedMemoryBudget, ReactiveInstanceId};
+ use mech_engine::__resident::{
+     ActivationFacts, ReactiveInstance, ResidentActivationOptions, ResidentExecutionError,
+-    ResidentStorageClass, ResidentValueBorrow, activate, activate_with_options,
++    ResidentValueBorrow, activate, activate_with_options,
+ };
+-use mech_engine::program::{CompilerPlanningConfig, CompilerPlanningProgram};
++use mech_engine::{CanonicalSourceFrontend, encode_program_artifact_bytecode_v1};
+ use mech_engine::{ProgramArtifact, ProgramArtifactDraft, decode_program_artifact_bytecode_v1};
++use mech_syntax::document::{
++    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, SyntaxNode, SyntaxSnapshot,
++    TextSnapshot, parse_canonical_document,
++};
+ 
+ const SOURCE: &str = include_str!("r-stack-proof/trust-program.mec");
+ const PERTURBED_SOURCE: &str = include_str!("r-stack-proof/perturbed-program.mec");
+@@ -21,6 +22,13 @@ const EXPECTED_COMMITTED_OUTPUTS: [f64; 7] = [5.0, 13.0, 29.0, 61.0, 125.0, 253.
+ const EXPECTED_PERTURBED_OUTPUTS: [f64; 3] = [7.0, 25.0, 79.0];
+ const EXPECTED_REJECTED_CANDIDATE: f64 = 1021.0;
+ const APPROVED_OPERATIONS: [&str; 4] = ["math/mul", "math/add", "compare/lt", "core/assign"];
++const EXPECTED_NODE_OPERATIONS: [&str; 5] = [
++    "core/assign",
++    "math/mul",
++    "math/add",
++    "compare/lt",
++    "core/assign",
++];
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+ enum Dump {
+@@ -42,11 +50,9 @@ fn main() {
+ fn run() -> Result<(), String> {
+     let dump = requested_dump()?;
+ 
+-    heading("AUDIT-GRADE R-STACK PROOF");
++    heading("R-STACK EXECUTION PROOF");
+     println!("Claim under test : ordinary Mech composition reaches protected resident execution");
+-    println!(
+-        "Non-claim        : primitive arithmetic is not native code (it is, as disclosed below)"
+-    );
++    println!("Primitive owner  : native engine resident arithmetic, comparison and assignment");
+     println!("Failure policy   : any mismatch or missing protection exits non-zero");
+ 
+     heading("1 / THE COMPLETE MECH PROGRAM");
+@@ -55,11 +61,15 @@ fn run() -> Result<(), String> {
+     }
+     println!("\nHuman-checkable recurrence: x(next) = x * 2 + 3; only candidates < 1000 commit.");
+ 
+-    let tree = mech_syntax::parser::parse(SOURCE).map_err(debug_error)?;
++    let tree = parse_clean(SOURCE)?;
++    require(
++        tree.syntax().text().map_err(debug_error)? == SOURCE,
++        "canonical tree must preserve complete source",
++    )?;
+     let parse = summarize_parse(&tree);
+     heading("2 / REAL PARSER OUTPUT");
+-    println!("sections       : {}", tree.body.sections.len());
+-    println!("Mech code items: {}", parse.total);
++    println!("source bytes   : {}", SOURCE.len());
++    println!("syntax nodes   : {}", parse.total);
+     for (kind, count) in &parse.kinds {
+         println!("  {kind:<22} {count:>2}");
+     }
+@@ -71,35 +81,23 @@ fn run() -> Result<(), String> {
+     }
+ 
+     let catalog = mech_stdlib::source_catalog();
+-    let mut compiler = CompilerPlanningProgram::with_function_catalog(
+-        CompilerPlanningConfig::default(),
+-        catalog.clone(),
+-    );
+-    let output = compiler
+-        .plan_tree_with_services(&tree, &mut NoMechExecutionServices)
+-        .map_err(debug_error)?
+-        .ok_or("source produced no output")?;
+-    compiler.publish_compiler_root_output(output);
+-    let product = compiler.compile_program_product().map_err(debug_error)?;
+-
+-    let planned_instruction_count = product.instruction_type_bindings().len();
+-    let required_bindings = product
+-        .instruction_type_binding_requirements()
+-        .iter()
+-        .filter(|required| **required)
+-        .count();
+-    let present_bindings = product
+-        .instruction_type_bindings()
++    let document = DocumentSyntax::cast(tree.syntax()).ok_or("canonical document view missing")?;
++    let program = CanonicalSourceFrontend
++        .compile_document_with_catalog(&document, catalog.clone())
++        .map_err(debug_error)?;
++    let planned_instruction_count = program.program().nodes.len();
++    let required_bindings = program.contracts().len();
++    let present_bindings = program
++        .contracts()
+         .iter()
+         .filter(|binding| binding.is_some())
+         .count();
+-    let present_memory_plans = product
+-        .instruction_memory_plans()
+-        .iter()
+-        .filter(|plan| plan.is_some())
+-        .count();
+-
+-    let (source_artifact, bytecode) = product.into_parts();
++    require(
++        present_bindings == required_bindings,
++        "every ordinary proof node must have a semantic contract",
++    )?;
++    let source_artifact = program.compile_artifact().map_err(debug_error)?;
++    let bytecode = encode_program_artifact_bytecode_v1(&source_artifact).map_err(debug_error)?;
+     let decoded_artifact = decode_program_artifact_bytecode_v1(&bytecode).map_err(debug_error)?;
+     require(
+         source_artifact.revision() == decoded_artifact.revision(),
+@@ -109,14 +107,30 @@ fn run() -> Result<(), String> {
+     let actual_operations = source_artifact
+         .nodes()
+         .iter()
+-        .map(|node| node.operation.canonical_name())
++        .map(|node| {
++            node.as_operation()
++                .expect("proof requires ordinary operation nodes")
++                .operation
++                .canonical_name()
++        })
+         .collect::<Vec<_>>();
+     require(
+-        actual_operations == APPROVED_OPERATIONS,
++        actual_operations == EXPECTED_NODE_OPERATIONS,
+         &format!(
+-            "artifact operation allowlist mismatch: expected {APPROVED_OPERATIONS:?}, got {actual_operations:?}"
++            "artifact operation allowlist mismatch: expected {EXPECTED_NODE_OPERATIONS:?}, got {actual_operations:?}"
+         ),
+     )?;
++    let actual_identities = actual_operations
++        .iter()
++        .map(String::as_str)
++        .collect::<std::collections::BTreeSet<_>>();
++    let approved_identities = APPROVED_OPERATIONS
++        .into_iter()
++        .collect::<std::collections::BTreeSet<_>>();
++    require(
++        actual_identities == approved_identities,
++        "artifact changed the approved primitive identities",
++    )?;
+     require(
+         actual_operations.iter().all(|name| !name.contains("ekf")),
+         "artifact contains a hidden EKF operation",
+@@ -130,9 +144,9 @@ fn run() -> Result<(), String> {
+     println!("artifact revision : {}", revision_hex(&source_artifact));
+     println!("bytecode-v1 bytes : {}", bytecode.len());
+     println!("round trip        : PASS — decoded revision is identical");
+-    println!("planned instr.    : {planned_instruction_count}");
+-    println!("typed bindings    : {present_bindings} present / {required_bindings} required");
+-    println!("memory plans      : {present_memory_plans} attached");
++    println!("semantic nodes    : {planned_instruction_count}");
++    println!("semantic contracts: {present_bindings} present / {required_bindings} required");
++    println!("memory planning   : resident activation (section 5)");
+     println!(
+         "schemas/constants : {} / {}",
+         source_artifact.schemas().len(),
+@@ -151,14 +165,19 @@ fn run() -> Result<(), String> {
+     println!("\nnode  operation       boundary");
+     for node in source_artifact.nodes() {
+         println!(
+-            "{:>4}  {:<15} native primitive selected from the standard catalog",
++            "{:>4}  {:<15} native engine resident primitive",
+             node.node.get(),
+-            node.operation.canonical_name()
++            node.as_operation()
++                .expect("proof requires ordinary operation nodes")
++                .operation
++                .canonical_name()
+         );
+     }
+-    println!("\nallowlist        : PASS — exactly {APPROVED_OPERATIONS:?}");
++    println!(
++        "\nallowlist        : PASS — primitive identities {APPROVED_OPERATIONS:?}; node sequence {EXPECTED_NODE_OPERATIONS:?}"
++    );
+     println!("hidden ekf/*     : NONE");
+-    println!("algorithm kernel : NONE — recurrence exists only as the four-node Mech graph above");
++    println!("recurrence       : the displayed Mech graph above");
+     if matches!(dump, Dump::Artifact | Dump::All) {
+         println!("\n--- FULL SOURCE PROGRAM ARTIFACT (Debug) ---\n{source_artifact:#?}");
+         println!("\n--- FULL DECODED PROGRAM ARTIFACT (Debug) ---\n{decoded_artifact:#?}");
+@@ -193,13 +212,18 @@ fn run() -> Result<(), String> {
+         "activated plan lost the artifact revision",
+     )?;
+     require(
+-        output_f64(&source_instance)? == 1.0 && state_f64(&source_instance)? == 1.0,
+-        "activated state did not start from the source initializer 1.0",
++        state_f64(&source_instance)? == 1.0 && state_f64(&decoded_instance)? == 1.0,
++        "source and decoded state must start from source initializer 1.0",
+     )?;
+ 
+     heading("4 / ACTIVATED RESIDENT PLAN");
+     println!("artifact match  : PASS");
+-    println!("initial x/output: 1 / 1");
++    println!("initial state  : 1 (source and decoded artifacts)");
++    println!(
++        "before first turn: epoch={} output={}; output comparisons begin after accepted publication",
++        source_instance.published_epoch().get(),
++        output_f64(&source_instance)?
++    );
+     println!(
+         "plan generation: {}",
+         source_instance.plan.plan_generation.get()
+@@ -389,11 +413,16 @@ fn run() -> Result<(), String> {
+     let perturbed_operations = perturbed_artifact
+         .nodes()
+         .iter()
+-        .map(|node| node.operation.canonical_name())
++        .map(|node| {
++            node.as_operation()
++                .expect("proof requires ordinary operation nodes")
++                .operation
++                .canonical_name()
++        })
+         .collect::<Vec<_>>();
+     require(
+-        perturbed_operations == APPROVED_OPERATIONS,
+-        "perturbed artifact changed the four-operation shape",
++        perturbed_operations == EXPECTED_NODE_OPERATIONS,
++        "perturbed artifact changed the exact node operation sequence",
+     )?;
+     let mut perturbed_instance = activate(
+         ReactiveInstanceId::new(3, 0),
+@@ -410,29 +439,27 @@ fn run() -> Result<(), String> {
+         )?;
+     }
+     println!("artifact revision: PASS — changed from the original");
+-    println!("operation shape : PASS — still exactly {APPROVED_OPERATIONS:?}");
++    println!("operation shape : PASS — exact node sequence {EXPECTED_NODE_OPERATIONS:?}");
+     println!("resident outputs: PASS — 7, 25, 79");
+     println!(
+         "control meaning : changing only visible Mech constants changed the compiled artifact and behavior"
+     );
+ 
+-    heading("8 / PROTECTIONS — REJECTION MUST LEAVE NO SCAR");
++    heading("8 / REJECTION AND ACCEPTED-STATE CHECKS");
+ 
+-    let syntax_error = mech_syntax::parser::parse("~x := [1.0; 2.0").unwrap_err();
++    let syntax_error = parse_clean("~x := [1.0; 2.0").unwrap_err();
+     println!(
+         "[PASS] malformed source rejected\n       {}",
+         compact_debug(&syntax_error)
+     );
+ 
+-    let bad_type_tree = mech_syntax::parser::parse("~x := 1.0\nnext := x * \"two\"\nx = next\nx")
+-        .map_err(debug_error)?;
+-    let mut bad_type_compiler = CompilerPlanningProgram::with_function_catalog(
+-        CompilerPlanningConfig::default(),
+-        catalog.clone(),
+-    );
+-    let type_error = bad_type_compiler
+-        .plan_tree_with_services(&bad_type_tree, &mut NoMechExecutionServices)
+-        .expect_err("numeric/string multiplication must fail semantic typing");
++    let bad_type_tree = parse_clean("~x := 1.0\nnext := x * \"two\"\nx = next\nx")?;
++    let bad_document =
++        DocumentSyntax::cast(bad_type_tree.syntax()).ok_or("canonical document view missing")?;
++    let type_error = CanonicalSourceFrontend
++        .compile_document_with_catalog(&bad_document, catalog.clone())
++        .err()
++        .ok_or("numeric/string multiplication must fail semantic typing")?;
+     println!(
+         "[PASS] incompatible source rejected by semantic typing\n       {}",
+         compact_debug(&type_error)
+@@ -509,11 +536,11 @@ fn run() -> Result<(), String> {
+         compact_debug(&source_integrity_error),
+     );
+ 
+-    heading("WHAT THIS PROVES — AND WHAT IT DOES NOT");
++    heading("VERIFIED EXECUTION SCOPE");
+     println!(
+-        "PROVED  parser -> typed plan -> artifact -> bytecode -> decoder -> activation -> memory -> turns"
++        "PROVED  retained parser -> semantic contracts -> artifact -> bytecode -> decoder -> activation -> memory -> turns"
+     );
+-    println!("PROVED  the algorithm is a visible Mech graph, not an ekf/* Rust operation");
++    println!("PROVED  the recurrence is compiled from the visible Mech graph");
+     println!("PROVED  seven literal expected values match both artifact routes exactly");
+     println!(
+         "PROVED  a source-only constant change changes artifact identity and resident outputs"
+@@ -521,10 +548,8 @@ fn run() -> Result<(), String> {
+     println!(
+         "PROVED  malformed/type-invalid/tampered/truncated/under-budget/unsafe cases are contained"
+     );
+-    println!(
+-        "NOT     that Rust disappears: the four disclosed standard primitives are native implementations"
+-    );
+-    println!("NOT     an independent implementation of arbitrary EKF mathematics");
++    println!("BOUNDARY  the resident engine executes the four primitive operations in native code");
++    println!("SCOPE     the finite recurrence and its listed admission/publication checks");
+ 
+     heading("VERDICT");
+     println!("ALL CLAIMED CHECKS PASSED");
+@@ -535,21 +560,13 @@ fn compile_visible_source(
+     source: &str,
+     catalog: &std::sync::Arc<FunctionCatalog>,
+ ) -> Result<ProgramArtifact, String> {
+-    let tree = mech_syntax::parser::parse(source).map_err(debug_error)?;
+-    let mut compiler = CompilerPlanningProgram::with_function_catalog(
+-        CompilerPlanningConfig::default(),
+-        catalog.clone(),
+-    );
+-    let output = compiler
+-        .plan_tree_with_services(&tree, &mut NoMechExecutionServices)
++    let tree = parse_clean(source)?;
++    let document = DocumentSyntax::cast(tree.syntax()).ok_or("canonical document view missing")?;
++    CanonicalSourceFrontend
++        .compile_document_with_catalog(&document, catalog.clone())
+         .map_err(debug_error)?
+-        .ok_or("perturbed source produced no output")?;
+-    compiler.publish_compiler_root_output(output);
+-    Ok(compiler
+-        .compile_program_product()
+-        .map_err(debug_error)?
+-        .into_parts()
+-        .0)
++        .compile_artifact()
++        .map_err(debug_error)
+ }
+ 
+ #[derive(Clone, Copy, Debug, PartialEq)]
+@@ -569,7 +586,7 @@ fn state_f64(instance: &ReactiveInstance) -> Result<f64, String> {
+         .plan
+         .slots
+         .iter()
+-        .filter(|slot| slot.storage == ResidentStorageClass::State)
++        .filter(|slot| slot.role == mech_engine::SlotRole::State)
+         .collect::<Vec<_>>();
+     require(slots.len() == 1, "expected exactly one resident state slot")?;
+     match instance
+@@ -616,56 +633,39 @@ fn tampered_artifact(
+     .finalize()
+ }
+ 
++fn parse_clean(source: &str) -> Result<SyntaxSnapshot, String> {
++    let parsed = parse_canonical_document(
++        TextSnapshot::new(DocumentId(0x829), Revision(0), source).map_err(debug_error)?,
++        ParseConfig::default(),
++    );
++    if !parsed.is_strictly_clean() {
++        return Err(format!("{:?}", parsed.diagnostics));
++    }
++    Ok(parsed)
++}
++
+ struct ParseSummary {
+     total: usize,
+-    kinds: BTreeMap<&'static str, usize>,
++    kinds: BTreeMap<String, usize>,
+ }
+ 
+-fn summarize_parse(program: &Program) -> ParseSummary {
+-    let mut total = 0;
+-    let mut kinds = BTreeMap::new();
+-    for section in &program.body.sections {
+-        for element in &section.elements {
+-            let SectionElement::MechCode(code) = element else {
+-                continue;
+-            };
+-            for (item, _) in code {
+-                total += 1;
+-                let kind = match item {
+-                    MechCode::Statement(statement) => statement_kind(statement),
+-                    MechCode::ActivationScope(_) => "activation scope",
+-                    MechCode::Expression(_) => "expression",
+-                    MechCode::FsmImplementation(_) => "FSM implementation",
+-                    MechCode::FsmSpecification(_) => "FSM specification",
+-                    MechCode::FunctionDefine(_) => "function definition",
+-                    MechCode::Import(_) => "module import",
+-                    MechCode::Comment(_) => "comment",
+-                    MechCode::Error(_, _) => "recovery error",
+-                };
+-                *kinds.entry(kind).or_insert(0) += 1;
+-            }
++fn summarize_parse(snapshot: &SyntaxSnapshot) -> ParseSummary {
++    fn visit(node: SyntaxNode, summary: &mut ParseSummary) {
++        summary.total += 1;
++        *summary
++            .kinds
++            .entry(format!("{:?}", node.kind()))
++            .or_insert(0) += 1;
++        for child in node.children() {
++            visit(child, summary);
+         }
+     }
+-    ParseSummary { total, kinds }
+-}
+-
+-fn statement_kind(statement: &Statement) -> &'static str {
+-    match statement {
+-        Statement::ImportDeclaration(_) => "import declaration",
+-        Statement::ExportDeclaration(_) => "export declaration",
+-        Statement::ContextDeclaration(_) => "context declaration",
+-        Statement::EnumDefine(_) => "enum definition",
+-        Statement::FsmDeclare(_) => "FSM declaration",
+-        Statement::KindDefine(_) => "kind definition",
+-        Statement::OpAssign(_) => "operator assignment",
+-        Statement::VariableAssign(_) => "state assignment",
+-        Statement::VariableDefine(_) => "variable definition",
+-        Statement::ContextSend(_) => "context send",
+-        Statement::InvariantDefine(_) => "integrity constraint",
+-        Statement::TupleDestructure(_) => "tuple destructure",
+-        Statement::SplitTable => "split table",
+-        Statement::FlattenTable => "flatten table",
+-    }
++    let mut summary = ParseSummary {
++        total: 0,
++        kinds: BTreeMap::new(),
++    };
++    visit(snapshot.syntax(), &mut summary);
++    summary
+ }
+ 
+ fn requested_dump() -> Result<Dump, String> {
+@@ -712,7 +712,7 @@ fn compact_debug(value: &impl Debug) -> String {
+     let text = format!("{value:?}").replace('\n', " ");
+     let mut compact = text.split_whitespace().collect::<Vec<_>>().join(" ");
+     if compact.len() > 280 {
+-        compact.truncate(277);
++        compact = compact.chars().take(277).collect();
+         compact.push_str("...");
+     }
+     compact

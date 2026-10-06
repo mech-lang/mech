@@ -1,0 +1,5 @@
+{
+  "status": "failed",
+  "error": "Error: events: predecessor length mismatch",
+  "stack": "Error: events: predecessor length mismatch\n    at assert (http://127.0.0.1:63331/streaming-checks.js:4:64)\n    at applyPublication (http://127.0.0.1:63331/streaming-checks.js:12:5)\n    at consume (http://127.0.0.1:63331/streaming-checks.js:36:56)\n    at drain (http://127.0.0.1:63331/streaming-checks.js:38:7)\n    at streamAt (http://127.0.0.1:63331/streaming-checks.js:44:5)\n    at runStreamingChecks (http://127.0.0.1:63331/streaming-checks.js:65:22)\n    at http://127.0.0.1:63331/streaming-check.html:8:24"
+}

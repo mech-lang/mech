@@ -1,0 +1,28 @@
+     Locking 148 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding sha2 v0.10.9 (available: v0.11.0)
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+    Blocking waiting for file lock on artifact directory
+   Compiling indexmap v2.14.2
+   Compiling serde_core v1.0.229
+   Compiling unicode-width v0.2.2
+   Compiling bytecount v0.6.9
+   Compiling fnv v1.0.7
+   Compiling colored v3.1.1
+   Compiling mech-stdlib-integration v0.0.0 (/private/tmp/mech-v04-extraction/mech/tests/stdlib-integration)
+   Compiling papergrid v0.17.0
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/core)
+   Compiling tabled v0.20.0
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/engine)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/syntax)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/math)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+    Finished `test` profile [unoptimized] target(s) in 7m 46s
+     Running tests/profile_contracts.rs (/private/tmp/mech-v04-target-extraction/extracted/debug/deps/profile_contracts-1a0c687a313078d0)
+
+running 1 test
+test distribution_size_report_catalog_counts ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

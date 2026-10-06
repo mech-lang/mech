@@ -1,0 +1,25 @@
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/combinatorics)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/math)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+   Compiling mech-wasm v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/wasm)
+    Finished `test` profile [unoptimized] target(s) in 1m 42s
+     Running unittests src/lib.rs (/private/tmp/mech-v04-target-architecture/debug/deps/mech_wasm-0d1e687f37dffc75)
+
+running 2 tests
+test i64_publication::tests::source_and_port_names_determine_computation ... ok
+test i64_publication::tests::retained_inventory_obeys_source_constraints_and_recovers ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 107 filtered out; finished in 3.29s
+
+     Running tests/bytecode_v1.rs (/private/tmp/mech-v04-target-architecture/debug/deps/bytecode_v1-bf51dec35ca103cf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/function_system_source_contract.rs (/private/tmp/mech-v04-target-architecture/debug/deps/function_system_source_contract-c1277c577e5116c1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

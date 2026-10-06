@@ -1,0 +1,661 @@
+--- a/mech/Cargo.toml
++++ b/mech/Cargo.toml
+@@ -422,7 +422,7 @@
+ # The root bytecode integration corpus deliberately exercises explicit u8/u64
+ # table annotations even though the shipping standard distribution selects a
+ # smaller value surface. Keep that additional closure test-owned.
+-mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false, features = ["u8", "u64"] }
++mech-stdlib = { version = "0.3.5", path = "../external/stdlib", default-features = false, features = ["u8", "u64"] }
+ 
+ [target.'cfg(windows)'.dev-dependencies]
+ windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
+@@ -432,7 +432,7 @@
+ mech-core        = { version = "0.3.5", path = "src/core", default-features = false }
+ mech-syntax      = { version = "0.3.5", path = "src/syntax", default-features = false }
+ mech-engine = { version = "0.3.5", path = "src/engine", default-features = false }
+-mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false }
++mech-stdlib = { version = "0.3.5", path = "../external/stdlib", default-features = false }
+ mech-runtime = { version = "0.3.5", path = "src/runtime", default-features = false, optional = true }
+ mech-build = { version = "0.3.5", path = "src/build", default-features = false, optional = true }
+ mech-browser = { version = "0.3.5", path = "hosts/browser", default-features = false, optional = true }
+@@ -479,7 +479,6 @@
+   "src/core",
+   "src/syntax",
+   "src/engine",
+-  "src/stdlib",
+   "src/runtime",
+   "src/wasm",
+   "hosts/browser",
+@@ -501,12 +500,12 @@
+ LegalCopyright = "Copyright © 2026"
+ 
+ [patch.crates-io]
+-mech-combinatorics = { path = "machines/combinatorics" }
+-mech-compare = { path = "machines/compare" }
+-mech-logic = { path = "machines/logic" }
+-mech-math = { path = "machines/math" }
+-mech-matrix = { path = "machines/matrix" }
+-mech-range = { path = "machines/range" }
+-mech-set = { path = "machines/set" }
+-mech-stats = { path = "machines/stats" }
+-mech-string = { path = "machines/string" }
++mech-combinatorics = { path = "../external/machines/combinatorics" }
++mech-compare = { path = "../external/machines/compare" }
++mech-logic = { path = "../external/machines/logic" }
++mech-math = { path = "../external/machines/math" }
++mech-matrix = { path = "../external/machines/matrix" }
++mech-range = { path = "../external/machines/range" }
++mech-set = { path = "../external/machines/set" }
++mech-stats = { path = "../external/machines/stats" }
++mech-string = { path = "../external/machines/string" }
+--- a/mech/hosts/gpu/Cargo.toml
++++ b/mech/hosts/gpu/Cargo.toml
+@@ -72,6 +72,6 @@
+ [dev-dependencies]
+ mech-core = { version = "0.3.5", path = "../../src/core", default-features = false, features = ["f32", "matrixd"] }
+ mech-engine = { version = "0.3.5", path = "../../src/engine", default-features = false, features = ["full_compiler"] }
+-mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }
++mech-stdlib = { version = "0.3.5", path = "../../../external/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }
+ mech-syntax = { version = "0.3.5", path = "../../src/syntax", default-features = false, features = ["full"] }
+ mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["full_compiler", "resident-routing-source", "compute"] }
+--- a/mech/hosts/scene/Cargo.toml
++++ b/mech/hosts/scene/Cargo.toml
+@@ -27,4 +27,4 @@
+ 
+ [dev-dependencies]
+ mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["resident-routing-source", "source_default"] }
+-mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }
++mech-stdlib = { version = "0.3.5", path = "../../../external/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }
+--- a/mech/src/build/Cargo.toml
++++ b/mech/src/build/Cargo.toml
+@@ -48,7 +48,7 @@
+ [dev-dependencies]
+ mech-native-live-host-fixture = { version = "0.3.5", path = "../../tests/fixtures/native-live-host" }
+ mech-runtime = { version = "0.3.5", path = "../runtime", default-features = false, features = ["compiler_default", "resident-routing-source"] }
+-mech-stdlib = { version = "0.3.5", path = "../stdlib", default-features = false, features = ["native-plan", "full_compiler"] }
++mech-stdlib = { version = "0.3.5", path = "../../../external/stdlib", default-features = false, features = ["native-plan", "full_compiler"] }
+ tempfile = "3"
+ 
+ [target.'cfg(windows)'.dev-dependencies]
+--- a/mech/src/runtime/Cargo.toml
++++ b/mech/src/runtime/Cargo.toml
+@@ -207,7 +207,7 @@
+ criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
+ mech-terminal = { path = "../../hosts/terminal", features = ["provider"] }
+ mech-native-live-host-fixture = { path = "../../tests/fixtures/native-live-host" }
+-mech-stdlib = { path = "../stdlib", default-features = false, features = ["full_compiler"] }
++mech-stdlib = { path = "../../../external/stdlib", default-features = false, features = ["full_compiler"] }
+ serde_json = "1.0.150"
+ sha2 = "0.10"
+ trybuild = "1.0.118"
+--- a/mech/src/wasm/Cargo.toml
++++ b/mech/src/wasm/Cargo.toml
+@@ -324,7 +324,7 @@
+ mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false}
+ mech-engine = { version = "0.3.5", path = "../engine", default-features = false}
+ mech-runtime = { path = "../runtime", default-features = false }
+-mech-stdlib = { version = "0.3.5", path = "../stdlib", default-features = false }
++mech-stdlib = { version = "0.3.5", path = "../../../external/stdlib", default-features = false }
+ mech-browser = { path = "../../hosts/browser", default-features = false, optional = true }
+ mech-time = { version = "0.3.5", path = "../../hosts/time", default-features = false, optional = true }
+ mech-console = { version = "0.3.5", path = "../../hosts/console", default-features = false, optional = true }
+--- a/mech/tests/fixtures/bytecode-compiler-producer/Cargo.toml
++++ b/mech/tests/fixtures/bytecode-compiler-producer/Cargo.toml
+@@ -11,7 +11,7 @@
+   features = ["compiler", "resident-routing-source"],
+ }
+ mech-stdlib = {
+-  path = "../../../src/stdlib",
++  path = "../../../../external/stdlib",
+   default-features = false,
+   features = ["full_compiler"],
+ }
+@@ -22,15 +22,15 @@
+ mech-syntax = { path = "../../../src/syntax" }
+ mech-engine = { path = "../../../src/engine" }
+ mech-runtime = { path = "../../../src/runtime" }
+-mech-stdlib = { path = "../../../src/stdlib" }
+-mech-combinatorics = { path = "../../../machines/combinatorics" }
+-mech-compare = { path = "../../../machines/compare" }
+-mech-logic = { path = "../../../machines/logic" }
+-mech-math = { path = "../../../machines/math" }
+-mech-matrix = { path = "../../../machines/matrix" }
+-mech-range = { path = "../../../machines/range" }
+-mech-set = { path = "../../../machines/set" }
+-mech-stats = { path = "../../../machines/stats" }
+-mech-string = { path = "../../../machines/string" }
++mech-stdlib = { path = "../../../../external/stdlib" }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics" }
++mech-compare = { path = "../../../../external/machines/compare" }
++mech-logic = { path = "../../../../external/machines/logic" }
++mech-math = { path = "../../../../external/machines/math" }
++mech-matrix = { path = "../../../../external/machines/matrix" }
++mech-range = { path = "../../../../external/machines/range" }
++mech-set = { path = "../../../../external/machines/set" }
++mech-stats = { path = "../../../../external/machines/stats" }
++mech-string = { path = "../../../../external/machines/string" }
+ 
+ [workspace]
+--- a/mech/tests/fixtures/bytecode-runtime-consumer/Cargo.toml
++++ b/mech/tests/fixtures/bytecode-runtime-consumer/Cargo.toml
+@@ -11,7 +11,7 @@
+   features = ["resident-routing", "f64"],
+ }
+ mech-stdlib = {
+-  path = "../../../src/stdlib",
++  path = "../../../../external/stdlib",
+   default-features = false,
+   features = ["runtime", "f64", "math_add"],
+ }
+@@ -21,13 +21,13 @@
+ mech-syntax = { path = "../../../src/syntax" }
+ mech-engine = { path = "../../../src/engine" }
+ mech-runtime = { path = "../../../src/runtime" }
+-mech-stdlib = { path = "../../../src/stdlib" }
+-mech-combinatorics = { path = "../../../machines/combinatorics" }
+-mech-compare = { path = "../../../machines/compare" }
+-mech-math = { path = "../../../machines/math" }
+-mech-matrix = { path = "../../../machines/matrix" }
+-mech-range = { path = "../../../machines/range" }
+-mech-set = { path = "../../../machines/set" }
+-mech-stats = { path = "../../../machines/stats" }
++mech-stdlib = { path = "../../../../external/stdlib" }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics" }
++mech-compare = { path = "../../../../external/machines/compare" }
++mech-math = { path = "../../../../external/machines/math" }
++mech-matrix = { path = "../../../../external/machines/matrix" }
++mech-range = { path = "../../../../external/machines/range" }
++mech-set = { path = "../../../../external/machines/set" }
++mech-stats = { path = "../../../../external/machines/stats" }
+ 
+ [workspace]
+--- a/mech/tests/fixtures/bytecode-v1-fixed-generator/Cargo.toml
++++ b/mech/tests/fixtures/bytecode-v1-fixed-generator/Cargo.toml
+@@ -17,7 +17,7 @@
+ }
+ serde_json = "1"
+ mech-stdlib = {
+-  path = "../../../src/stdlib",
++  path = "../../../../external/stdlib",
+   default-features = false,
+   features = [
+     "bool",
+@@ -39,15 +39,15 @@
+ mech-syntax = { path = "../../../src/syntax" }
+ mech-engine = { path = "../../../src/engine" }
+ mech-runtime = { path = "../../../src/runtime" }
+-mech-stdlib = { path = "../../../src/stdlib" }
+-mech-combinatorics = { path = "../../../machines/combinatorics" }
+-mech-compare = { path = "../../../machines/compare" }
+-mech-logic = { path = "../../../machines/logic" }
+-mech-math = { path = "../../../machines/math" }
+-mech-matrix = { path = "../../../machines/matrix" }
+-mech-range = { path = "../../../machines/range" }
+-mech-set = { path = "../../../machines/set" }
+-mech-stats = { path = "../../../machines/stats" }
+-mech-string = { path = "../../../machines/string" }
++mech-stdlib = { path = "../../../../external/stdlib" }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics" }
++mech-compare = { path = "../../../../external/machines/compare" }
++mech-logic = { path = "../../../../external/machines/logic" }
++mech-math = { path = "../../../../external/machines/math" }
++mech-matrix = { path = "../../../../external/machines/matrix" }
++mech-range = { path = "../../../../external/machines/range" }
++mech-set = { path = "../../../../external/machines/set" }
++mech-stats = { path = "../../../../external/machines/stats" }
++mech-string = { path = "../../../../external/machines/string" }
+ 
+ [workspace]
+--- a/mech/tests/fixtures/bytecode-v1-source-generator/Cargo.toml
++++ b/mech/tests/fixtures/bytecode-v1-source-generator/Cargo.toml
+@@ -32,7 +32,7 @@
+   features = ["resident-routing-source", "runtime_default", "serde"],
+ }
+ mech-stdlib = {
+-  path = "../../../src/stdlib",
++  path = "../../../../external/stdlib",
+   default-features = false,
+   features = ["native-plan", "full_compiler"],
+ }
+@@ -45,7 +45,7 @@
+ mech-syntax = { path = "../../../src/syntax" }
+ mech-engine = { path = "../../../src/engine" }
+ mech-runtime = { path = "../../../src/runtime" }
+-mech-stdlib = { path = "../../../src/stdlib" }
++mech-stdlib = { path = "../../../../external/stdlib" }
+ mech-terminal = { path = "../../../hosts/terminal" }
+ mech-console = { path = "../../../hosts/console" }
+ mech-time = { path = "../../../hosts/time" }
+@@ -53,14 +53,14 @@
+ mech-scene = { path = "../../../hosts/scene" }
+ mech-robot-arm = { path = "../../../hosts/robot-arm" }
+ mech-native-live-host-fixture = { path = "../native-live-host" }
+-mech-combinatorics = { path = "../../../machines/combinatorics" }
+-mech-compare = { path = "../../../machines/compare" }
+-mech-logic = { path = "../../../machines/logic" }
+-mech-math = { path = "../../../machines/math" }
+-mech-matrix = { path = "../../../machines/matrix" }
+-mech-range = { path = "../../../machines/range" }
+-mech-set = { path = "../../../machines/set" }
+-mech-stats = { path = "../../../machines/stats" }
+-mech-string = { path = "../../../machines/string" }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics" }
++mech-compare = { path = "../../../../external/machines/compare" }
++mech-logic = { path = "../../../../external/machines/logic" }
++mech-math = { path = "../../../../external/machines/math" }
++mech-matrix = { path = "../../../../external/machines/matrix" }
++mech-range = { path = "../../../../external/machines/range" }
++mech-set = { path = "../../../../external/machines/set" }
++mech-stats = { path = "../../../../external/machines/stats" }
++mech-string = { path = "../../../../external/machines/string" }
+ 
+ [workspace]
+--- a/mech/tests/fixtures/full-bytecode-runtime/Cargo.toml
++++ b/mech/tests/fixtures/full-bytecode-runtime/Cargo.toml
+@@ -11,7 +11,7 @@
+   features = ["full_runtime", "resident-routing"],
+ }
+ mech-stdlib = {
+-  path = "../../../src/stdlib",
++  path = "../../../../external/stdlib",
+   default-features = false,
+   features = ["full_runtime"],
+ }
+@@ -21,15 +21,15 @@
+ mech-syntax = { path = "../../../src/syntax" }
+ mech-engine = { path = "../../../src/engine" }
+ mech-runtime = { path = "../../../src/runtime" }
+-mech-stdlib = { path = "../../../src/stdlib" }
+-mech-combinatorics = { path = "../../../machines/combinatorics" }
+-mech-compare = { path = "../../../machines/compare" }
+-mech-logic = { path = "../../../machines/logic" }
+-mech-math = { path = "../../../machines/math" }
+-mech-matrix = { path = "../../../machines/matrix" }
+-mech-range = { path = "../../../machines/range" }
+-mech-set = { path = "../../../machines/set" }
+-mech-stats = { path = "../../../machines/stats" }
+-mech-string = { path = "../../../machines/string" }
++mech-stdlib = { path = "../../../../external/stdlib" }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics" }
++mech-compare = { path = "../../../../external/machines/compare" }
++mech-logic = { path = "../../../../external/machines/logic" }
++mech-math = { path = "../../../../external/machines/math" }
++mech-matrix = { path = "../../../../external/machines/matrix" }
++mech-range = { path = "../../../../external/machines/range" }
++mech-set = { path = "../../../../external/machines/set" }
++mech-stats = { path = "../../../../external/machines/stats" }
++mech-string = { path = "../../../../external/machines/string" }
+ 
+ [workspace]
+--- a/mech/tests/fixtures/full-source-runtime/Cargo.toml
++++ b/mech/tests/fixtures/full-source-runtime/Cargo.toml
+@@ -15,7 +15,7 @@
+   features = ["full_source", "resident-routing-source"],
+ }
+ mech-stdlib = {
+-  path = "../../../src/stdlib",
++  path = "../../../../external/stdlib",
+   default-features = false,
+   features = ["full_source"],
+ }
+@@ -27,16 +27,16 @@
+ mech-syntax = { path = "../../../src/syntax" }
+ mech-engine = { path = "../../../src/engine" }
+ mech-runtime = { path = "../../../src/runtime" }
+-mech-stdlib = { path = "../../../src/stdlib" }
+-mech-combinatorics = { path = "../../../machines/combinatorics" }
+-mech-compare = { path = "../../../machines/compare" }
+-mech-logic = { path = "../../../machines/logic" }
+-mech-math = { path = "../../../machines/math" }
+-mech-matrix = { path = "../../../machines/matrix" }
+-mech-range = { path = "../../../machines/range" }
+-mech-set = { path = "../../../machines/set" }
+-mech-stats = { path = "../../../machines/stats" }
+-mech-string = { path = "../../../machines/string" }
++mech-stdlib = { path = "../../../../external/stdlib" }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics" }
++mech-compare = { path = "../../../../external/machines/compare" }
++mech-logic = { path = "../../../../external/machines/logic" }
++mech-math = { path = "../../../../external/machines/math" }
++mech-matrix = { path = "../../../../external/machines/matrix" }
++mech-range = { path = "../../../../external/machines/range" }
++mech-set = { path = "../../../../external/machines/set" }
++mech-stats = { path = "../../../../external/machines/stats" }
++mech-string = { path = "../../../../external/machines/string" }
+ 
+ [workspace]
+ 
+--- a/mech/tests/fixtures/native-build-owner-runner/Cargo.toml
++++ b/mech/tests/fixtures/native-build-owner-runner/Cargo.toml
+@@ -47,13 +47,13 @@
+   features = ["native-plan", "program", "serde"],
+ }
+ mech-engine = { path = "../../../src/engine", default-features = false, optional = true }
+-mech-math = { path = "../../../machines/math", default-features = false, optional = true }
++mech-math = { path = "../../../../external/machines/math", default-features = false, optional = true }
+ mech-runtime = {
+   path = "../../../src/runtime",
+   default-features = false,
+   features = ["runtime", "serde", "string"],
+ }
+-mech-stdlib = { path = "../../../src/stdlib", default-features = false, optional = true }
++mech-stdlib = { path = "../../../../external/stdlib", default-features = false, optional = true }
+ serde = { version = "1", features = ["derive"] }
+ serde_json = "1"
+ 
+@@ -63,21 +63,21 @@
+ mech-syntax = { path = "../../../src/syntax" }
+ mech-engine = { path = "../../../src/engine" }
+ mech-runtime = { path = "../../../src/runtime" }
+-mech-stdlib = { path = "../../../src/stdlib" }
++mech-stdlib = { path = "../../../../external/stdlib" }
+ mech-terminal = { path = "../../../hosts/terminal" }
+ mech-console = { path = "../../../hosts/console" }
+ mech-robot-arm = { path = "../../../hosts/robot-arm" }
+ mech-scene = { path = "../../../hosts/scene" }
+ mech-time = { path = "../../../hosts/time" }
+ mech-timer = { path = "../../../hosts/timer" }
+-mech-combinatorics = { path = "../../../machines/combinatorics" }
+-mech-compare = { path = "../../../machines/compare" }
+-mech-logic = { path = "../../../machines/logic" }
+-mech-math = { path = "../../../machines/math" }
+-mech-matrix = { path = "../../../machines/matrix" }
+-mech-range = { path = "../../../machines/range" }
+-mech-set = { path = "../../../machines/set" }
+-mech-stats = { path = "../../../machines/stats" }
+-mech-string = { path = "../../../machines/string" }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics" }
++mech-compare = { path = "../../../../external/machines/compare" }
++mech-logic = { path = "../../../../external/machines/logic" }
++mech-math = { path = "../../../../external/machines/math" }
++mech-matrix = { path = "../../../../external/machines/matrix" }
++mech-range = { path = "../../../../external/machines/range" }
++mech-set = { path = "../../../../external/machines/set" }
++mech-stats = { path = "../../../../external/machines/stats" }
++mech-string = { path = "../../../../external/machines/string" }
+ 
+ [workspace]
+--- a/mech/tests/fixtures/native-linkage/Cargo.toml
++++ b/mech/tests/fixtures/native-linkage/Cargo.toml
+@@ -337,18 +337,18 @@
+ ]
+ 
+ [dependencies]
+-mech-combinatorics = { path = "../../../machines/combinatorics", default-features = false, optional = true }
+-mech-compare = { path = "../../../machines/compare", default-features = false, optional = true }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics", default-features = false, optional = true }
++mech-compare = { path = "../../../../external/machines/compare", default-features = false, optional = true }
+ mech-core = { path = "../../../src/core", default-features = false, optional = true }
+ mech-engine = { path = "../../../src/engine", default-features = false, optional = true }
+-mech-logic = { path = "../../../machines/logic", default-features = false, optional = true }
+-mech-math = { path = "../../../machines/math", default-features = false, optional = true }
+-mech-matrix = { path = "../../../machines/matrix", default-features = false, optional = true }
+-mech-range = { path = "../../../machines/range", default-features = false, optional = true }
+-mech-set = { path = "../../../machines/set", default-features = false, optional = true }
+-mech-stats = { path = "../../../machines/stats", default-features = false, optional = true }
+-mech-stdlib = { path = "../../../src/stdlib", default-features = false, optional = true }
+-mech-string = { path = "../../../machines/string", default-features = false, optional = true }
++mech-logic = { path = "../../../../external/machines/logic", default-features = false, optional = true }
++mech-math = { path = "../../../../external/machines/math", default-features = false, optional = true }
++mech-matrix = { path = "../../../../external/machines/matrix", default-features = false, optional = true }
++mech-range = { path = "../../../../external/machines/range", default-features = false, optional = true }
++mech-set = { path = "../../../../external/machines/set", default-features = false, optional = true }
++mech-stats = { path = "../../../../external/machines/stats", default-features = false, optional = true }
++mech-stdlib = { path = "../../../../external/stdlib", default-features = false, optional = true }
++mech-string = { path = "../../../../external/machines/string", default-features = false, optional = true }
+ serde = { version = "1", features = ["derive"], optional = true }
+ serde_json = { version = "1", optional = true }
+ 
+@@ -356,15 +356,15 @@
+ mech-core = { path = "../../../src/core" }
+ mech-syntax = { path = "../../../src/syntax" }
+ mech-engine = { path = "../../../src/engine" }
+-mech-stdlib = { path = "../../../src/stdlib" }
+-mech-math = { path = "../../../machines/math" }
+-mech-compare = { path = "../../../machines/compare" }
+-mech-logic = { path = "../../../machines/logic" }
+-mech-range = { path = "../../../machines/range" }
+-mech-matrix = { path = "../../../machines/matrix" }
+-mech-set = { path = "../../../machines/set" }
+-mech-string = { path = "../../../machines/string" }
+-mech-stats = { path = "../../../machines/stats" }
+-mech-combinatorics = { path = "../../../machines/combinatorics" }
++mech-stdlib = { path = "../../../../external/stdlib" }
++mech-math = { path = "../../../../external/machines/math" }
++mech-compare = { path = "../../../../external/machines/compare" }
++mech-logic = { path = "../../../../external/machines/logic" }
++mech-range = { path = "../../../../external/machines/range" }
++mech-matrix = { path = "../../../../external/machines/matrix" }
++mech-set = { path = "../../../../external/machines/set" }
++mech-string = { path = "../../../../external/machines/string" }
++mech-stats = { path = "../../../../external/machines/stats" }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics" }
+ 
+ [workspace]
+--- a/mech/tests/fixtures/resident-nbody-conformance/Cargo.toml
++++ b/mech/tests/fixtures/resident-nbody-conformance/Cargo.toml
+@@ -8,7 +8,7 @@
+ mech-core = { path = "../../../src/core", default-features = false, features = ["program", "std"] }
+ mech-engine = { path = "../../../src/engine", default-features = false, features = ["resident-artifact"] }
+ mech-runtime = { path = "../../../src/runtime", default-features = false, features = ["source_default", "resident-routing-source"] }
+-mech-stdlib = { path = "../../../src/stdlib", default-features = false, features = ["full_compiler"] }
++mech-stdlib = { path = "../../../../external/stdlib", default-features = false, features = ["full_compiler"] }
+ sha2 = "0.10"
+ 
+ [patch.crates-io]
+@@ -16,15 +16,15 @@
+ mech-core = { path = "../../../src/core" }
+ mech-engine = { path = "../../../src/engine" }
+ mech-syntax = { path = "../../../src/syntax" }
+-mech-stdlib = { path = "../../../src/stdlib" }
+-mech-combinatorics = { path = "../../../machines/combinatorics" }
+-mech-compare = { path = "../../../machines/compare" }
+-mech-logic = { path = "../../../machines/logic" }
+-mech-math = { path = "../../../machines/math" }
+-mech-matrix = { path = "../../../machines/matrix" }
+-mech-range = { path = "../../../machines/range" }
+-mech-set = { path = "../../../machines/set" }
+-mech-stats = { path = "../../../machines/stats" }
+-mech-string = { path = "../../../machines/string" }
++mech-stdlib = { path = "../../../../external/stdlib" }
++mech-combinatorics = { path = "../../../../external/machines/combinatorics" }
++mech-compare = { path = "../../../../external/machines/compare" }
++mech-logic = { path = "../../../../external/machines/logic" }
++mech-math = { path = "../../../../external/machines/math" }
++mech-matrix = { path = "../../../../external/machines/matrix" }
++mech-range = { path = "../../../../external/machines/range" }
++mech-set = { path = "../../../../external/machines/set" }
++mech-stats = { path = "../../../../external/machines/stats" }
++mech-string = { path = "../../../../external/machines/string" }
+ 
+ [workspace]
+--- a/external/machines/combinatorics/Cargo.toml
++++ b/external/machines/combinatorics/Cargo.toml
+@@ -87,8 +87,8 @@
+ matrixd = ["matrix",  "mech-core/matrixd"]
+ 
+ [dependencies]
+-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false, optional = true }
+-mech-abi = { path = "../../src/abi", version = "0.3.5", optional = true }
++mech-core = { path = "../../../mech/src/core", version = "0.3.5", default-features = false, optional = true }
++mech-abi = { path = "../../../mech/src/abi", version = "0.3.5", optional = true }
+ 
+ paste = { version = "1.0.15", optional = true }
+ nalgebra = {version="0.34.1", optional = true}
+@@ -101,14 +101,14 @@
+ optional = true
+ 
+ [dev-dependencies]
+-mech-engine = { path = "../../src/engine", default-features = false, features = [
++mech-engine = { path = "../../../mech/src/engine", default-features = false, features = [
+   "compiler", "f64", "matrixd", "row_vectord", "variables", "formulas",
+ ] }
+ 
+ [patch.crates-io]
+-mech-bytecode = { path = "../../src/bytecode" }
+-mech-core = { path = "../../src/core" }
+-mech-engine = { path = "../../src/engine" }
+-mech-syntax = { path = "../../src/syntax" }
++mech-bytecode = { path = "../../../mech/src/bytecode" }
++mech-core = { path = "../../../mech/src/core" }
++mech-engine = { path = "../../../mech/src/engine" }
++mech-syntax = { path = "../../../mech/src/syntax" }
+ 
+ [workspace]
+--- a/external/machines/compare/Cargo.toml
++++ b/external/machines/compare/Cargo.toml
+@@ -108,7 +108,7 @@
+ matrixd = ["matrix",  "mech-core/matrixd"]
+ 
+ [dependencies]
+-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false }
++mech-core = { path = "../../../mech/src/core", version = "0.3.5", default-features = false }
+ 
+ paste = "1.0.15"
+ nalgebra = {version="0.34.1", optional = true}
+--- a/external/machines/logic/Cargo.toml
++++ b/external/machines/logic/Cargo.toml
+@@ -67,7 +67,7 @@
+ matrixd = ["matrix",  "mech-core/matrixd"]
+ 
+ [dependencies]
+-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false }
++mech-core = { path = "../../../mech/src/core", version = "0.3.5", default-features = false }
+ 
+ paste = "1.0.15"
+ nalgebra = {version="0.34.1", optional = true}
+--- a/external/machines/math/Cargo.toml
++++ b/external/machines/math/Cargo.toml
+@@ -192,8 +192,8 @@
+ matrixd = ["matrix",  "mech-core/matrixd"]
+ 
+ [dependencies]
+-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false, optional = true }
+-mech-abi = { path = "../../src/abi", version = "0.3.5", optional = true }
++mech-core = { path = "../../../mech/src/core", version = "0.3.5", default-features = false, optional = true }
++mech-abi = { path = "../../../mech/src/abi", version = "0.3.5", optional = true }
+ 
+ libm = {version = "0.2.15", optional = true}
+ simba = {version = "0.9.0", optional = true}
+--- a/external/machines/matrix/Cargo.toml
++++ b/external/machines/matrix/Cargo.toml
+@@ -95,7 +95,7 @@
+ matrixd = ["matrix",  "mech-core/matrixd"]
+ 
+ [dependencies]
+-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false }
++mech-core = { path = "../../../mech/src/core", version = "0.3.5", default-features = false }
+ 
+ simba = {version = "0.9.0", optional = true}
+ paste = "1.0.15"
+@@ -108,14 +108,14 @@
+ optional = true
+ 
+ [dev-dependencies]
+-mech-engine = { path = "../../src/engine", default-features = false, features = [
++mech-engine = { path = "../../../mech/src/engine", default-features = false, features = [
+   "compiler", "f64", "matrixd", "vectord", "variable_define", "formulas",
+   "math_mul", "matrix_matmul", "matrix_solve",
+ ] }
+ mech-math = { path = "../math", default-features = false, features = [
+   "compiler", "source", "f64", "matrixd", "vectord", "mul",
+ ] }
+-mech-runtime = { path = "../../src/runtime", default-features = false, features = [
++mech-runtime = { path = "../../../mech/src/runtime", default-features = false, features = [
+   "compiler", "f64", "matrixd", "vectord", "variables", "formulas",
+ ] }
+ 
+@@ -125,9 +125,9 @@
+ required-features = ["compiler", "f64", "matrixd", "vectord", "matmul", "solve"]
+ 
+ [patch.crates-io]
+-mech-bytecode = { path = "../../src/bytecode" }
+-mech-core = { path = "../../src/core" }
+-mech-engine = { path = "../../src/engine" }
+-mech-syntax = { path = "../../src/syntax" }
++mech-bytecode = { path = "../../../mech/src/bytecode" }
++mech-core = { path = "../../../mech/src/core" }
++mech-engine = { path = "../../../mech/src/engine" }
++mech-syntax = { path = "../../../mech/src/syntax" }
+ 
+ [workspace]
+--- a/external/machines/range/Cargo.toml
++++ b/external/machines/range/Cargo.toml
+@@ -78,7 +78,7 @@
+ matrixd = ["matrix",  "mech-core/matrixd"]
+ 
+ [dependencies]
+-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false }
++mech-core = { path = "../../../mech/src/core", version = "0.3.5", default-features = false }
+ 
+ paste = "1.0.15"
+ nalgebra = {version="0.34.1", optional = true}
+--- a/external/machines/set/Cargo.toml
++++ b/external/machines/set/Cargo.toml
+@@ -141,7 +141,7 @@
+ matrixd = ["matrix",  "mech-core/matrixd"]
+ 
+ [dependencies]
+-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false }
++mech-core = { path = "../../../mech/src/core", version = "0.3.5", default-features = false }
+ 
+ paste = "1.0.15"
+ indexmap = "2.13.0"
+--- a/external/machines/stats/Cargo.toml
++++ b/external/machines/stats/Cargo.toml
+@@ -86,7 +86,7 @@
+ matrixd = ["matrix",  "mech-core/matrixd"]
+ 
+ [dependencies]
+-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false }
++mech-core = { path = "../../../mech/src/core", version = "0.3.5", default-features = false }
+ 
+ paste = "1.0.15"
+ nalgebra = {version="0.34.1", optional = true}
+--- a/external/machines/string/Cargo.toml
++++ b/external/machines/string/Cargo.toml
+@@ -63,7 +63,7 @@
+ matrixd = ["matrix",  "mech-core/matrixd"]
+ 
+ [dependencies]
+-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false }
++mech-core = { path = "../../../mech/src/core", version = "0.3.5", default-features = false }
+ 
+ paste = "1.0.15"
+ nalgebra = {version="0.34.1", optional = true}
+--- a/external/stdlib/Cargo.toml
++++ b/external/stdlib/Cargo.toml
+@@ -345,8 +345,8 @@
+ matrixd = ["mech-core/matrixd", "mech-engine/matrixd", "mech-math?/matrixd", "mech-compare?/matrixd", "mech-logic?/matrixd", "mech-range?/matrixd", "mech-matrix?/matrixd", "mech-set?/matrixd", "mech-string?/matrixd", "mech-stats?/matrixd", "mech-combinatorics?/matrixd"]
+ 
+ [dependencies]
+-mech-core = { version = "0.3.5", path = "../core", default-features = false }
+-mech-engine = { version = "0.3.5", path = "../engine", default-features = false, features = ["functions"] }
++mech-core = { version = "0.3.5", path = "../../mech/src/core", default-features = false }
++mech-engine = { version = "0.3.5", path = "../../mech/src/engine", default-features = false, features = ["functions"] }
+ mech-math = { version = "0.3.5", default-features = false, optional = true }
+ mech-compare = { version = "0.3.5", default-features = false, optional = true }
+ mech-logic = { version = "0.3.5", default-features = false, optional = true }
+@@ -358,8 +358,21 @@
+ mech-combinatorics = { version = "0.3.5", default-features = false, optional = true }
+ 
+ [dev-dependencies]
+-mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false }
++mech-syntax = { version = "0.3.5", path = "../../mech/src/syntax", default-features = false }
+ nalgebra = { version = "0.34.1" }
+ serde = { version = "1", features = ["derive"] }
+ serde_json = "1"
+ sha2 = "0.10"
++
++[workspace]
++
++[patch.crates-io]
++mech-combinatorics = { path = "../machines/combinatorics" }
++mech-compare = { path = "../machines/compare" }
++mech-logic = { path = "../machines/logic" }
++mech-math = { path = "../machines/math" }
++mech-matrix = { path = "../machines/matrix" }
++mech-range = { path = "../machines/range" }
++mech-set = { path = "../machines/set" }
++mech-stats = { path = "../machines/stats" }
++mech-string = { path = "../machines/string" }

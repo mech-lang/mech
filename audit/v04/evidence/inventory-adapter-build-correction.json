@@ -1,0 +1,15 @@
+{
+  "id": "inventory-adapter-build-correction",
+  "classification": "new audit adapter compile feedback",
+  "original_log": "evidence/wasm-inventory-adapter-compile-failure.log",
+  "original_error": "Rust E0515: returning a borrowed schema from an Arc-owned schema lookup closure",
+  "change": "Format the schema body to an owned string inside the lookup closure.",
+  "source": "src/wasm/src/i64_publication.rs",
+  "validation": [
+    "evidence/wasm-build-inventory.log",
+    "evidence/inventory-adapter-native.json",
+    "evidence/inventory-browser.json"
+  ],
+  "outcome": "verified",
+  "semantics": "Public canonical source and resident runtime APIs unchanged."
+}

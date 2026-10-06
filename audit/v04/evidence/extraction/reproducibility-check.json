@@ -1,0 +1,39 @@
+{
+  "baseline": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "experiment": "/private/tmp/mech-v04-extraction",
+  "reproduction": "/private/tmp/mech-v04-extraction-reproduction",
+  "preparation_command": [
+    "python3",
+    "scripts/audit-v04-extraction.py",
+    "/private/tmp/mech-v04-extraction-reproduction",
+    "--finalize"
+  ],
+  "measurement_command": [
+    "python3",
+    "audit/v04/evidence/extraction/measure.py",
+    "/private/tmp/mech-v04-extraction-reproduction",
+    "/private/tmp/mech-v04-extraction-reproduction-counts.json"
+  ],
+  "all_measured_scopes_equal": true,
+  "measured_scopes": {
+    "actual_remaining": {
+      "files": 1673,
+      "bytes": 28317111,
+      "physical_lines": 781745,
+      "nonblank_lines": 736058
+    },
+    "actual_external": {
+      "files": 303,
+      "bytes": 1614973,
+      "physical_lines": 44521,
+      "nonblank_lines": 39390
+    },
+    "actual_combined": {
+      "files": 1976,
+      "bytes": 29932084,
+      "physical_lines": 826266,
+      "nonblank_lines": 775448
+    }
+  },
+  "old_paths_absent": true
+}

@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>Mech syntax checks</title>
+<pre id="result">Running</pre><script type="module">
+import init, * as api from './pkg/mech_wasm.js';
+import {runStreamingChecks, json} from './streaming-checks.js';
+try {
+ const bytes = await (await fetch('./pkg/mech_wasm_bg.wasm')).arrayBuffer();
+ await init({module_or_path: bytes});
+ window.result = await runStreamingChecks(api);
+ window.result.loadedWasmSha256 = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))).map(x => x.toString(16).padStart(2,'0')).join('');
+ window.result.artifact = await (await fetch('./artifact.json')).json();
+ if(window.result.loadedWasmSha256 !== window.result.artifact.artifacts['pkg/mech_wasm_bg.wasm'].sha256) throw Error('artifact hash mismatch');
+}
+catch(error) { window.result = {status:'failed', error:String(error), stack:error.stack}; }
+document.querySelector('#result').textContent = json(window.result);
+window.streamingTestDone = true;
+</script>

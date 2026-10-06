@@ -1,0 +1,12 @@
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/math)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/compare)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/runtime)
+   Compiling audit-inventory v0.0.0 (/private/tmp/mech-v04-audit-20261006/audit/v04/evidence/inventory/native)
+    Finished `dev` profile [unoptimized] target(s) in 22.15s
+     Running `/private/tmp/mech-v04-target-extraction/extracted/debug/audit-inventory`
+
+thread 'main' (959575) panicked at src/main.rs:32:2:
+DiagnosticStore { revision: Revision(0), diagnostics: [Diagnostic { id: DiagnosticId(1), code: DiagnosticCode("syntax/unexpected-document-source"), phase: Syntax, severity: Error, rule: Some(RuleId(1111180012)), context: None, primary: Element { element: Node(NodeId(574)), relative: TextRange { start: TextSize(0), end: TextSize(23) } }, labels: [], expected: [], found: Some(FoundSyntax { kind: Some(Unknown), text: Some(":= stock >= 0i64\nstock\n") }), fixes: [], related: [], recovery: Some(Abandon { rule: RuleId(1111180012), at: TextSize(93) }), tags: DiagnosticTags(0), message: "unexpected source after the canonical document" }] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

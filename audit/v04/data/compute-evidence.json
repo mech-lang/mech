@@ -1,0 +1,45 @@
+{
+  "records": [
+    {
+      "id": "E-COMPUTE-CONTRACTS",
+      "claim": "backend registry, memory plan and memory runtime contracts pass selected native library tests",
+      "contract": "src/compute and .github/ci/owners.toml mech-compute owner",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "artifact_identity": [
+        {
+          "path": "/private/tmp/mech-v04-target-product/debug/deps/mech_compute-67b87235c8b7d0f0",
+          "sha256": "7a94feb93a2f1fb3a199dc92de18fdfc9096a713d6012c13a8038eea79551276",
+          "bytes": 1021744
+        },
+        {
+          "path": "/private/tmp/mech-v04-target-product/debug/deps/memory_plan-8b055d6b9a2ed109",
+          "sha256": "c0120b841d6f3bf671169c7c131d70f18103b80fc64aefb0ec11bf80d50e03dd",
+          "bytes": 5893200
+        },
+        {
+          "path": "/private/tmp/mech-v04-target-product/debug/deps/memory_runtime-134e6169cd58f134",
+          "sha256": "0a8271829328658ca24a51941c0c710ebaa9eca35df5d82784bcd209f82a2b87",
+          "bytes": 5929312
+        }
+      ],
+      "configuration": {
+        "package": "mech-compute",
+        "features": "default",
+        "profile": "test",
+        "target": "aarch64-apple-darwin"
+      },
+      "environment": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "input_or_seed": "checked-in deterministic tests",
+      "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-product CARGO_BUILD_JOBS=3 cargo test --locked --offline -p mech-compute",
+      "expected_outcome": "nonzero tests pass; no hardware execution inferred",
+      "actual_outcome": {
+        "passed": 22,
+        "failed": 0,
+        "doc_tests": 0
+      },
+      "evidence_level": "native-library-tests",
+      "outcome": "passed",
+      "result_location": "audit/v04/evidence/compute-contract-tests.log"
+    }
+  ]
+}

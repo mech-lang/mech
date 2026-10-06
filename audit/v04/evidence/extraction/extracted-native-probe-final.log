@@ -1,0 +1,27 @@
+warning: patch `mech-logic v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/logic)` was not used in the crate graph
+warning: patch `mech-string v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/string)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+   Compiling serde v1.0.229
+   Compiling indexmap v2.14.2
+   Compiling serde_json v1.0.151
+   Compiling uuid v1.26.1
+   Compiling camino v1.2.5
+   Compiling cargo-platform v0.3.3
+   Compiling semver v1.0.28
+   Compiling bincode v2.0.1
+   Compiling toml_edit v0.23.10+spec-1.0.0
+   Compiling cargo_metadata v0.23.1
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/core)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/engine)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/math)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/runtime)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+   Compiling mech-build v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/build)
+   Compiling extraction-native-probe v0.0.0 (/private/tmp/mech-v04-extraction/native-probe)
+    Finished `dev` profile [unoptimized] target(s) in 31.45s
+     Running `/private/tmp/mech-v04-target-extraction/extracted/debug/extraction-native-probe /private/tmp/mech-v04-extraction/mech /private/tmp/mech-v04-extraction/generated-registry-original`
+unmodified_workspace_result=Ok(())
+registry_project=/private/tmp/mech-v04-extraction/generated-registry-original

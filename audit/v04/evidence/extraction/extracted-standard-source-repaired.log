@@ -1,0 +1,7 @@
+    Blocking waiting for file lock on build directory
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/engine)
+error: couldn't read `build.rs`: No such file or directory (os error 2)
+
+error: could not compile `mech-stdlib` (build script) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

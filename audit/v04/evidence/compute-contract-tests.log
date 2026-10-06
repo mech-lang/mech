@@ -1,0 +1,136 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.24
+   Compiling autocfg v1.5.1
+   Compiling typenum v1.20.1
+   Compiling stable_deref_trait v1.2.1
+   Compiling libm v0.2.16
+   Compiling num-traits v0.2.19
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling libc v0.2.189
+   Compiling syn v2.0.119
+   Compiling generic-array v0.14.7
+   Compiling hybrid-array v0.4.14
+   Compiling paste v1.0.15
+   Compiling bytemuck v1.25.2
+   Compiling safe_arch v0.7.4
+   Compiling syn v3.0.3
+   Compiling matrixmultiply v0.3.11
+   Compiling writeable v0.6.3
+   Compiling synstructure v0.13.2
+   Compiling zmij v1.0.23
+   Compiling litemap v0.8.2
+   Compiling alloc-no-stdlib v2.0.4
+   Compiling cfg-if v1.0.4
+   Compiling serde v1.0.229
+   Compiling icu_properties_data v2.2.0
+   Compiling alloc-stdlib v0.2.4
+   Compiling serde_derive v1.0.229
+   Compiling wide v0.7.33
+   Compiling zerofrom-derive v0.1.7
+   Compiling zerofrom v0.1.8
+   Compiling yoke-derive v0.8.2
+   Compiling zerovec-derive v0.11.3
+   Compiling yoke v0.8.3
+   Compiling displaydoc v0.2.6
+   Compiling zerovec v0.11.6
+   Compiling zerotrie v0.2.4
+   Compiling block-buffer v0.12.1
+   Compiling crypto-common v0.2.2
+   Compiling num-complex v0.4.6
+   Compiling tinystr v0.8.3
+   Compiling icu_locale_core v2.2.0
+   Compiling potential_utf v0.1.5
+   Compiling approx v0.5.1
+   Compiling num-integer v0.1.46
+   Compiling virtue v0.0.18
+   Compiling rawpointer v0.2.1
+   Compiling utf8_iter v1.0.4
+   Compiling crc32fast v1.5.0
+   Compiling serde_json v1.0.151
+   Compiling tinyvec_macros v0.1.1
+   Compiling tinyvec v1.12.0
+   Compiling bincode_derive v2.0.1
+   Compiling icu_provider v2.2.0
+   Compiling icu_collections v2.2.0
+   Compiling num-rational v0.4.2
+   Compiling digest v0.11.3
+   Compiling simba v0.9.1
+   Compiling nalgebra-macros v0.3.0
+   Compiling brotli-decompressor v5.0.3
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling cpufeatures v0.3.0
+   Compiling memchr v2.8.3
+   Compiling equivalent v1.0.2
+   Compiling unicode-segmentation v1.13.3
+   Compiling unty v0.0.4
+   Compiling hashbrown v0.17.1
+   Compiling itoa v1.0.18
+   Compiling indexmap v2.14.0
+   Compiling grapheme_macro v2.0.0
+   Compiling bincode v2.0.1
+   Compiling brotli v8.0.4
+   Compiling nalgebra v0.34.2
+   Compiling sha2 v0.11.0
+   Compiling digest v0.10.7
+   Compiling icu_properties v2.2.0
+   Compiling unicode-normalization v0.1.25
+   Compiling cpufeatures v0.2.17
+   Compiling base64 v0.22.1
+   Compiling smallvec v1.15.2
+   Compiling seahash v4.1.0
+   Compiling byteorder v1.5.0
+   Compiling grapheme v1.3.0
+   Compiling sha2 v0.10.9
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/compute)
+    Finished `test` profile [unoptimized] target(s) in 4m 44s
+     Running unittests src/lib.rs (/private/tmp/mech-v04-target-product/debug/deps/mech_compute-67b87235c8b7d0f0)
+
+running 17 tests
+test fixed_shape::tests::integrity_predicates_share_the_same_scalar_semantics ... ok
+test ir::tests::elementwise_ir_has_backend_independent_scalar_semantics ... ok
+test fixed_shape::tests::fixed_shape_ir_evaluates_without_backend_state ... ok
+test ir::tests::vertical_concatenation_uses_row_offsets ... ok
+test port::broadcast_tests::matrix_batch_requires_the_outer_lane_axis ... ok
+test port::broadcast_tests::canonical_ranked_batch_is_not_reinterpreted ... ok
+test ir::tests::semantic_operations_select_portable_ir_instructions ... ok
+test port::broadcast_tests::single_matrix_and_scalar_batches_keep_their_declared_axes ... ok
+test port::tests::column_major_ingress_converts_once_to_canonical_row_major ... ok
+test port::broadcast_tests::thousand_lane_matrix_shapes_are_unambiguous ... ok
+test port::tests::rectangular_dimensions_are_validated_exactly ... ok
+test port::tests::runtime_delivery_uses_the_planned_port_shape ... ok
+test port::tests::scalar_and_one_by_one_matrix_are_distinct ... ok
+test registry::tests::auto_falls_back_only_after_backend_admission_rejection ... ok
+test registry::tests::exact_backend_rejection_never_falls_back ... ok
+test registry::tests::hard_placement_never_silently_crosses_backend_class ... ok
+test registry::tests::selector_policy_is_deterministic_across_native_and_browser ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/memory_plan.rs (/private/tmp/mech-v04-target-product/debug/deps/memory_plan-8b055d6b9a2ed109)
+
+running 4 tests
+test backend_neutral_compute_program_remains_separate_from_target_memory_authority ... ok
+test compute_activation_cannot_default_a_missing_footprint ... ok
+test compute_activation_plan_is_deterministic_and_target_local ... ok
+test mixed_compute_uses_each_memory_spaces_own_target_layout ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/memory_runtime.rs (/private/tmp/mech-v04-target-product/debug/deps/memory_runtime-134e6169cd58f134)
+
+running 1 test
+test compute_activation_realizes_its_subordinate_planned_storage ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests mech_compute
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

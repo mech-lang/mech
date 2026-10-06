@@ -1,0 +1,15 @@
+     Locking 157 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/math)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/runtime)
+   Compiling audit-inventory v0.0.0 (/private/tmp/mech-v04-audit-20261006/audit/v04/evidence/inventory/native)
+    Finished `dev` profile [unoptimized] target(s) in 29.54s
+     Running `/private/tmp/mech-v04-target-extraction/extracted/debug/audit-inventory`
+
+thread 'main' (956053) panicked at src/main.rs:35:219:
+called `Result::unwrap()` on an `Err` value: SourceSemanticError { code: "source-semantics/non-numeric-arithmetic-kind", message: "type resolution for `math/add` failed; Signed { width: W64, lower: 0, upper: 1000000, upper_inclusive: true } does not satisfy Number; structure Signed { width: W64, lower: 0, upper: 1000000, upper_inclusive: true } does not match matrix<T0;1×d2>; structure Signed { width: W64, lower: 0, upper: 1000000, upper_inclusive: true } does not match matrix<T0;d0×d1>; structure Signed { width: W64, lower: 0, upper: 1000000, upper_inclusive: true } does not match matrix<T0;d2×1>; structure Signed { width: W64, lower: 0, upper: 1000000, upper_inclusive: true } does not match matrix<T1;d0×d1>", anchor: SourceSemanticAnchor { document: DocumentId(8427710846065347), revision: Revision(0), range: TextRange { start: TextSize(43), end: TextSize(68) } } }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

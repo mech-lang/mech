@@ -1,0 +1,136 @@
+   Compiling libc v0.2.189
+   Compiling cfg-if v1.0.4
+   Compiling getrandom v0.3.4
+   Compiling typenum v1.20.1
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling zerocopy v0.8.55
+   Compiling autocfg v1.5.1
+   Compiling serde_core v1.0.229
+   Compiling unicode-ident v1.0.24
+   Compiling hybrid-array v0.4.14
+   Compiling libm v0.2.16
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling num-traits v0.2.19
+   Compiling paste v1.0.15
+   Compiling rand_core v0.9.5
+   Compiling cpufeatures v0.3.0
+   Compiling digest v0.11.3
+   Compiling zmij v1.0.23
+   Compiling serde v1.0.229
+   Compiling bytecount v0.6.9
+   Compiling unicode-width v0.2.2
+   Compiling fnv v1.0.7
+   Compiling papergrid v0.17.0
+   Compiling syn v3.0.3
+   Compiling sha2 v0.11.0
+   Compiling serde_json v1.0.151
+   Compiling seahash v4.1.0
+   Compiling equivalent v1.0.2
+   Compiling hashbrown v0.17.1
+   Compiling tabled v0.20.0
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+   Compiling indexmap v2.14.0
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling unarray v0.1.4
+   Compiling bitflags v2.13.1
+   Compiling itoa v1.0.18
+   Compiling regex-syntax v0.8.11
+   Compiling unicode-segmentation v1.13.3
+   Compiling memchr v2.8.3
+   Compiling colored v3.1.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling serde_derive v1.0.229
+   Compiling rand_chacha v0.9.0
+   Compiling proptest v1.11.0
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax)
+    Finished `test` profile [unoptimized] target(s) in 27.74s
+     Running tests/document_incremental.rs (/private/tmp/mech-v04-target-streaming/debug/deps/document_incremental-6d7cc4f791daca1d)
+
+running 11 tests
+test edit_that_opens_a_fence_reparses_across_the_following_section ... ok
+test editing_a_diagnostic_truncated_snapshot_recovers_later_diagnostics ... ok
+test annotations_on_reused_nodes_survive_and_replaced_nodes_are_invalidated ... ok
+test deleted_nodes_no_longer_resolve ... ok
+test fence_content_edit_reuses_later_section_and_never_treats_inner_heading_as_restart ... ok
+test diagnostics_on_reused_nodes_shift_with_earlier_edits ... ok
+test one_section_edit_reports_the_actual_canonical_full_parse_work ... ok
+test rhs_deletion_uses_canonical_recovery_and_invalidates_changed_right_context ... ok
+test canonical_edit_sequence_reparses_document_and_reuses_later_section ... ok
+test deterministic_edit_sequence_matches_full_parse_each_revision ... ok
+test repeated_eof_appends_behave_like_streamed_editing ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.92s
+
+     Running tests/document_incremental_properties.rs (/private/tmp/mech-v04-target-streaming/debug/deps/document_incremental_properties-b8746ca988a28165)
+
+running 11 tests
+test deleted_subtree_identity_is_removed ... ok
+test historical_line_prefix_edit_matches_canonical_classification ... ok
+test removing_a_section_heading_merges_it_with_the_prior_section ... ok
+test incomplete_definition_recovery_includes_the_following_line ... ok
+test historical_comment_edit_matches_canonical_classification ... ok
+test deleting_whitespace_can_join_a_definition_across_lines ... ok
+test removing_paragraph_newline_reparses_the_containing_section ... ok
+test inserting_a_line_prefix_can_reclassify_an_underlined_subtitle ... ok
+test unchanged_later_section_retains_identity ... ok
+test repeated_eof_appends_match_streaming ... ok
+test random_edits_match_full_parse_after_every_revision ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 34.97s
+
+     Running tests/document_streaming_equivalence.rs (/private/tmp/mech-v04-target-streaming/debug/deps/document_streaming_equivalence-637121995ab7ef0c)
+
+running 2 tests
+test range_and_numbered_prose_ownership_survives_every_input_cut ... ok
+test finalized_streams_match_one_shot_at_every_scalar_cut has been running for over 60 seconds
+test finalized_streams_match_one_shot_at_every_scalar_cut ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 199.24s
+
+     Running tests/document_streaming_lifecycle.rs (/private/tmp/mech-v04-target-streaming/debug/deps/document_streaming_lifecycle-aea2cf6f839a9b0d)
+
+running 9 tests
+test cancellation_and_source_capacity_preserve_every_accepted_byte ... ok
+test empty_append_preserves_identity_work_and_pending_progress ... ok
+test session_conversion_reports_retained_storage_and_shared_export_copy_volume ... ok
+test lifecycle_distinguishes_scheduling_input_and_finality ... ok
+test retained_completed_nodes_keep_identity_and_typed_access_through_finalization ... ok
+test historical_event_and_diagnostic_views_are_immutable ... ok
+test source_lookup_work_survives_append_and_edits_without_counting_public_reads ... ok
+test unchanged_session_roundtrip_does_not_reuse_stream_identity ... ok
+test edits_invalidate_continuations_and_transfer_between_stream_and_session ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests/document_streaming_publication.rs (/private/tmp/mech-v04-target-streaming/debug/deps/document_streaming_publication-5bee8fb0e503979d)
+
+running 3 tests
+test limited_materialization_requires_explicit_consumer_resynchronization ... ok
+test comment_probe_recovery_policy_survives_tiny_yields_and_restores_for_real_code ... ok
+test every_delta_maintains_the_consumer_through_rewinds_recovery_eof_and_edits ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.65s
+
+     Running tests/document_streaming_recovery.rs (/private/tmp/mech-v04-target-streaming/debug/deps/document_streaming_recovery-8fc6d2683956a8d9)
+
+running 3 tests
+test established_errors_are_published_before_final_eof ... ok
+test finite_previews_recover_without_closing_live_alternatives ... ok
+test malformed_documents_and_physical_closers_survive_every_cut ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.92s
+
+     Running tests/document_streaming_resources.rs (/private/tmp/mech-v04-target-streaming/debug/deps/document_streaming_resources-aae5226fe7006cdc)
+
+running 5 tests
+test limited_export_changes_identity_and_updates_the_delta_baseline ... ok
+test preview_and_live_parsing_share_the_cumulative_session_budget ... ok
+test rejected_edits_are_atomic_and_do_not_scan_or_allocate_the_insertion ... ok
+test session_work_limit_is_cumulative_and_separate_from_call_allowance ... ok
+test hard_limits_and_resource_exports_are_lossless_under_small_allowances ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.06s
+

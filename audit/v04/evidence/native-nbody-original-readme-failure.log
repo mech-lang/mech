@@ -1,0 +1,7 @@
+error: unexpected argument '--resident' found
+
+  tip: to pass '--resident' as a value, use '-- --resident'
+
+Usage: mech run <mech_run_paths>...
+
+For more information, try '--help'.

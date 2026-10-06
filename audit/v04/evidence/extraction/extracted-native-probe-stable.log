@@ -1,0 +1,15 @@
+warning: patch `mech-logic v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/logic)` was not used in the crate graph
+warning: patch `mech-string v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/string)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+    Blocking waiting for file lock on artifact directory
+   Compiling serde_core v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling thiserror v2.0.21
+   Compiling camino v1.2.5
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+error: invalid instruction `cargo:rustc-link-arg-tests` from build script of `mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)`
+The package mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib) does not have a test target.
+warning: build failed, waiting for other jobs to finish...

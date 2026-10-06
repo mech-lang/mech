@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "check",
+    "--offline",
+    "--locked",
+    "-p",
+    "mech-stdlib",
+    "--lib",
+    "--no-default-features",
+    "--features",
+    "standard_source"
+  ],
+  "cwd": "/private/tmp/mech-v04-audit-20261006",
+  "exit_code": 101,
+  "elapsed_seconds": 165.23512816429138,
+  "environment": {
+    "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/baseline",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  }
+}

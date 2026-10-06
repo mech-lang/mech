@@ -1,0 +1,5 @@
+[Mech Run] Loading config… /private/tmp/mech-v04-audit-20261006/audit/v04/site/fixtures/nbody-two/mech.mcfg
+[Mech Run] Default filesystem grant: /private/tmp/mech-v04-audit-20261006 (:read,:list,:watch,:resolve,:import,:serve)
+matrix
+[0.0000003000050188748086 0.0000000010001503037934954 0; 0.9996999949811252 0.019998999849696206 0]
+MECH_RUNTIME_INFO {"coalesced_host_packets":0,"effects":1,"ignored_host_packets":0,"layout_generation":1,"observations":1,"plan_generation":1,"program_revision":"7b9e54f77aea4aad1ef6d443ba1d7b606fb11dd940367e8644bc7c199889c904","requirements":2,"resident_accepted_turns":2,"resident_rejected_turns":0,"route":"resident-external","routing_policy":"require-resident"}

@@ -1,0 +1,13 @@
+warning: patch `mech-logic v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/logic)` was not used in the crate graph
+warning: patch `mech-string v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/string)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+    Blocking waiting for file lock on artifact directory
+   Compiling extraction-native-probe v0.0.0 (/private/tmp/mech-v04-extraction/native-probe)
+    Finished `dev` profile [unoptimized] target(s) in 1m 09s
+     Running `/private/tmp/mech-v04-target-extraction/extracted/debug/extraction-native-probe /private/tmp/mech-v04-extraction/mech /private/tmp/mech-v04-extraction/generated-registry-with-kernel`
+external_kernel=AddSS<f64> first=3 changed_input_result=7
+unmodified_workspace_result=Ok(())
+registry_project=/private/tmp/mech-v04-extraction/generated-registry-with-kernel

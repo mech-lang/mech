@@ -1,0 +1,211 @@
+{
+  "bytecode_bytes": 5608,
+  "bytecode_roundtrip": "passed",
+  "records": [
+    {
+      "accepted_stock": 105,
+      "after": {
+        "epoch": "InstanceEpoch(2)",
+        "output": "Ok(I64(105))",
+        "state_hash": "4731103623968751437"
+      },
+      "arrivals": 20,
+      "before": {
+        "epoch": "InstanceEpoch(1)",
+        "output": "Ok(I64(100))",
+        "state_hash": "12867755705414490004"
+      },
+      "demand": 15,
+      "error": null,
+      "independent_candidate": 105,
+      "outcome": "accepted"
+    },
+    {
+      "accepted_stock": 105,
+      "after": {
+        "epoch": "InstanceEpoch(2)",
+        "output": "Ok(I64(105))",
+        "state_hash": "4731103623968751437"
+      },
+      "arrivals": 0,
+      "before": {
+        "epoch": "InstanceEpoch(2)",
+        "output": "Ok(I64(105))",
+        "state_hash": "4731103623968751437"
+      },
+      "demand": 110,
+      "error": "execution/publication: Integrity { constraint: IntegrityConstraintId(2) }",
+      "independent_candidate": -5,
+      "outcome": "rejected"
+    },
+    {
+      "accepted_stock": 90,
+      "after": {
+        "epoch": "InstanceEpoch(3)",
+        "output": "Ok(I64(90))",
+        "state_hash": "10501763539444001462"
+      },
+      "arrivals": 10,
+      "before": {
+        "epoch": "InstanceEpoch(2)",
+        "output": "Ok(I64(105))",
+        "state_hash": "4731103623968751437"
+      },
+      "demand": 25,
+      "error": null,
+      "independent_candidate": 90,
+      "outcome": "accepted"
+    },
+    {
+      "accepted_stock": 0,
+      "after": {
+        "epoch": "InstanceEpoch(4)",
+        "output": "Ok(I64(0))",
+        "state_hash": "13514051035131198309"
+      },
+      "arrivals": 0,
+      "before": {
+        "epoch": "InstanceEpoch(3)",
+        "output": "Ok(I64(90))",
+        "state_hash": "10501763539444001462"
+      },
+      "demand": 90,
+      "error": null,
+      "independent_candidate": 0,
+      "outcome": "accepted"
+    },
+    {
+      "accepted_stock": 5,
+      "after": {
+        "epoch": "InstanceEpoch(5)",
+        "output": "Ok(I64(5))",
+        "state_hash": "4793486603118821489"
+      },
+      "arrivals": 5,
+      "before": {
+        "epoch": "InstanceEpoch(4)",
+        "output": "Ok(I64(0))",
+        "state_hash": "13514051035131198309"
+      },
+      "demand": 0,
+      "error": null,
+      "independent_candidate": 5,
+      "outcome": "accepted"
+    },
+    {
+      "accepted_stock": 5,
+      "after": {
+        "epoch": "InstanceEpoch(5)",
+        "output": "Ok(I64(5))",
+        "state_hash": "4793486603118821489"
+      },
+      "arrivals": -1,
+      "before": {
+        "epoch": "InstanceEpoch(5)",
+        "output": "Ok(I64(5))",
+        "state_hash": "4793486603118821489"
+      },
+      "demand": 0,
+      "error": "execution/publication: Integrity { constraint: IntegrityConstraintId(0) }",
+      "independent_candidate": 4,
+      "outcome": "rejected"
+    },
+    {
+      "accepted_stock": 5,
+      "after": {
+        "epoch": "InstanceEpoch(5)",
+        "output": "Ok(I64(5))",
+        "state_hash": "4793486603118821489"
+      },
+      "arrivals": 0,
+      "before": {
+        "epoch": "InstanceEpoch(5)",
+        "output": "Ok(I64(5))",
+        "state_hash": "4793486603118821489"
+      },
+      "demand": -1,
+      "error": "execution/publication: Integrity { constraint: IntegrityConstraintId(1) }",
+      "independent_candidate": 6,
+      "outcome": "rejected"
+    },
+    {
+      "accepted_stock": 5,
+      "after": {
+        "epoch": "InstanceEpoch(5)",
+        "output": "Ok(I64(5))",
+        "state_hash": "4793486603118821489"
+      },
+      "arrivals": 1000000,
+      "before": {
+        "epoch": "InstanceEpoch(5)",
+        "output": "Ok(I64(5))",
+        "state_hash": "4793486603118821489"
+      },
+      "demand": 0,
+      "error": "execution/publication: Integrity { constraint: IntegrityConstraintId(3) }",
+      "independent_candidate": 1000005,
+      "outcome": "rejected"
+    },
+    {
+      "accepted_stock": 12,
+      "after": {
+        "epoch": "InstanceEpoch(6)",
+        "output": "Ok(I64(12))",
+        "state_hash": "16404658927954749386"
+      },
+      "arrivals": 10,
+      "before": {
+        "epoch": "InstanceEpoch(5)",
+        "output": "Ok(I64(5))",
+        "state_hash": "4793486603118821489"
+      },
+      "demand": 3,
+      "error": null,
+      "independent_candidate": 12,
+      "outcome": "accepted"
+    }
+  ],
+  "same_instance": true,
+  "source": "~stock\u27e8i64\u27e9 := 100\nstock = stock + arrivals - demand\n\narrivals-nonnegative! := arrivals >= 0\u27e8i64\u27e9\ndemand-nonnegative! := demand >= 0\u27e8i64\u27e9\nstock-nonnegative! := stock >= 0\u27e8i64\u27e9\ncapacity! := 1000000\u27e8i64\u27e9 >= stock\nstock\n",
+  "source_compile": "passed",
+  "target": "native resident CPU",
+  "claim": "Generic inventory source executes with changed inputs, guards rejection transactionally, and recovers on the same resident instance",
+  "baseline_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "source_revision_patch": "audit/v04/evidence/inventory/source-revisions.patch",
+  "source_file_hashes": "audit/v04/evidence/inventory/source-files.json",
+  "source_files_unchanged_during_run": true,
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "run",
+    "--offline",
+    "--locked",
+    "--manifest-path",
+    "audit/v04/evidence/inventory/native/Cargo.toml",
+    "--",
+    "audit/v04/evidence/inventory/inventory.mecb"
+  ],
+  "cwd": "/private/tmp/mech-v04-audit-20261006",
+  "environment": {
+    "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "exit_code": 0,
+  "elapsed_seconds": 3.6201541423797607,
+  "bytecode_sha256": "cdc3374448ac921e881453cc0fa4bd02b3d37d11e32ad2fb0014ca7b2aaeed98",
+  "source_sha256": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+  "executable": "/private/tmp/mech-v04-target-extraction/extracted/debug/audit-inventory",
+  "executable_bytes": 81053488,
+  "executable_sha256": "e986a36015eb36698a3cc71633e8c0528a5e34cfc48faa3dcd6121745345bdce",
+  "log_sha256": "ba02769a6b16f71085c60497d979518d556314f7062ea9b1b8a6505d089f222e",
+  "initial_turn": {
+    "arrivals": 0,
+    "demand": 0,
+    "expected_stock": 100
+  },
+  "oracle": "candidate=previous accepted stock+arrivals-demand; publish iff arrivals>=0, demand>=0 and 0<=candidate<=1000000; accepted value compared exactly as I64; rejected output, epoch and state hash compared for equality",
+  "evidence_level": "independent-result-comparison",
+  "outcome": "passed",
+  "fixture_sha256": "d21f8d438c44c588f0440d2a7346c380215729190f392b5c7448dbbaaca17a89"
+}

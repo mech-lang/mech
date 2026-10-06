@@ -1,0 +1,518 @@
+I would give the agent **a two-phase assignment: first establish what v0.4 contains and what its code is doing; then build working demonstrations that exercise those capabilities through the real public interfaces.** Use the same measurements and evidence throughout, so fixes and deletions produce an updated picture of the project.
+
+The standard library extraction should be a central part of the audit. We need to answer both **“How much smaller will the Mech repository become?”** and **“How much implementation and complexity will we actually eliminate?”** Moving code changes the first number; simplifying or deleting it changes the second.
+
+I checked the structure and architecture contracts on `integration/v0.4` at [commit `c4777b7`](https://github.com/mech-lang/mech/commit/c4777b7015fe8ff47fdfa48d18606c49aace7d97). This was preparation for the plan, rather than an executed quality audit. Several documented boundaries matter immediately:
+
+| Area | What the current contract says | Consequence for the assignment |
+|---|---|---|
+| Editor | `DocumentSession` parses the complete updated document after each edit, then reconciles matching subtrees and preserves their identities. | Show parsing work and subtree reuse separately. Preserved IDs do not establish reduced parsing work. |
+| Streaming | `DocumentStream` retains parser progress across incoming chunks and exposes lifecycle, publication, and work information. | Demonstrate actual suspension, continuation, recovery, and publication behavior. |
+| Compute | The documented application backends are `cpu-scalar` and `wgpu`; SIMD and JIT implementations have a narrower experimental scope. | Distinguish supported application paths from library and benchmark paths. |
+| Refinements | Fixed integer intervals have a defined contract, including admission and publication checks. | Demonstrate the supported constraints precisely, and inventory additional type changes separately. |
+
+These distinctions come from the [incremental editor contract](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/docs/design/incremental-syntax-architecture.mec), [streaming contract](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/docs/design/canonical-document-streaming.mec), [compute-region contract](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/docs/design/named-compute-regions.md), and [integer-interval contract](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/docs/design/grammar-audit/fixed-integer-intervals.md). The agent must compare those current statements with the original accepted requirements: current documentation cannot, by itself, excuse a missing commitment.
+
+Below is the assignment I would give the agent.
+
+# Agent brief: Mech v0.4 audit, code reduction, and working demonstrations
+
+## Objective
+
+Audit the merged `integration/v0.4` branch and make its architecture, implementation size, quality, and capabilities understandable through reproducible measurements and working examples.
+
+The governing principle is:
+
+> **The code is only as good as what you can prove.**
+
+Every significant finding should identify the relevant code, explain the observation, state its scope, and provide a way to reproduce it.
+
+Complete two phases:
+
+1. **Audit:** establish the code inventory, architecture, quality findings, capability coverage, and standard library extraction model.
+2. **Demonstrations and corrections:** build a small website using the actual Mech implementation, expose the new capabilities, repair demonstrated defects, and update the audit.
+
+Treat subtraction as a requirement throughout. Account for any new audit tooling, adapters, instrumentation, or demo code added to accomplish the assignment.
+
+---
+
+# Phase 1 — Establish what exists, why it exists, and what can leave
+
+## 1. Preserve a reproducible baseline
+
+Identify the integration branch’s current commit when work begins. Preserve that commit as the baseline for all subsequent measurements.
+
+Record:
+
+- Commit, branch, and any local changes.
+- Toolchain and dependency lockfile.
+- Build profiles, feature selections, and targets.
+- Available browser, native, CPU, and GPU environments.
+- Existing repository instructions and validation ownership.
+
+Use an isolated checkout or worktree for experiments. Capture the initial measurements before adding instrumentation or changing production code.
+
+Choose an explicit historical comparison point from the project’s history. Explain whether it represents the previous release, the start of v0.4 development, or another meaningful milestone. These answer different questions.
+
+Produce two views:
+
+- **Current composition:** what the integrated project contains.
+- **Change over the development period:** what was added, removed, replaced, or moved.
+
+Detect renames and moves where possible. A relocated implementation should not automatically appear as an entirely new feature.
+
+## 2. Produce a code inventory with clear attribution
+
+Start from tracked files and generate a machine-readable census.
+
+The initial subsystem map should follow the existing workspace. The current manifest identifies these starting points; the agent must inspect their contents and refine the attribution. [Workspace manifest](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/Cargo.toml)
+
+| Area | Initial locations to investigate |
+|---|---|
+| Source, syntax, parsing, editor structures | `src/syntax` |
+| Shared values, types, interfaces, ABI | `src/core`, `src/abi` |
+| Semantic compilation and engine operations | `src/engine` |
+| Activation, scheduling, state, effects | `src/runtime` |
+| Artifacts, bytecode, application construction | `src/bytecode`, `src/build` |
+| Compute contracts and execution providers | `src/compute`, `hosts/gpu` |
+| Browser, WASM, and other hosts | `src/wasm`, `hosts/*` |
+| Standard library composition and implementations | `src/stdlib`, `machines/*` |
+| Product entry points and development support | Root source, scripts, tests, examples, benchmarks |
+
+Classify code along **two independent dimensions**:
+
+- **Responsibility:** parser, types, runtime, compute, standard library, and so forth.
+- **Role:** production implementation, tests, fixtures, benchmarks, examples, generated code, build tooling, documentation, or third-party material.
+
+This should let us answer questions such as:
+
+- How much handwritten production code implements the parser?
+- How much additional code tests it?
+- How much is generated?
+- How much of the runtime is scheduling versus type handling versus host integration?
+- How much code exists to support migration and compatibility?
+- Which responsibilities are spread across several crates?
+
+For each file, retain its path, blob identity, language, classification, bytes, and consistently measured source lines. Document the counting method and tool version.
+
+Handle mixed files explicitly. Test modules embedded in production files should not silently inflate production totals. Where useful, classify source spans; otherwise mark the attribution as mixed. **Physical totals must count each line once.**
+
+Report generated source separately from its handwritten generator. If macro expansion or generated implementations materially affect build size or complexity, describe that separately rather than adding expanded code to handwritten source totals.
+
+The census must reconcile. Unresolved classifications should remain visible until investigated.
+
+## 3. Reconstruct the capability inventory
+
+The requested demos are the starting list. Discover the rest from the specification, accepted migration requirements, public interfaces, feature declarations, tests, examples, and implementation.
+
+Investigate at least:
+
+- Streaming source ingestion, editor sessions, identities, recovery, and diagnostics.
+- Type inference, schemas, binding, option values, refinements, and shape handling.
+- Operation contracts and function catalogs.
+- Source compilation, artifacts, bytecode, and application builds.
+- Resident activation, memory planning, state changes, and publication.
+- CPU/GPU placement and backend selection.
+- Host interfaces, capabilities, effects, and resources.
+- Interactive runtime and program replacement.
+- Native and browser/WASM product paths.
+
+These are investigation categories, not declarations that every item is newly implemented in v0.4.
+
+Create a capability register with:
+
+| Field | Required content |
+|---|---|
+| Claim | Specific user-visible behavior |
+| History | New, changed, preserved, experimental, or unresolved |
+| Entry point | Actual syntax, API, command, or configuration |
+| Owner | Source modules and relevant contracts |
+| Configuration | Required features, target, hosts, and hardware |
+| Existing evidence | Tests and the behavior they actually establish |
+| Demonstration | Minimal executable example or interaction |
+| Status | Verified, failed, blocked, unverified, or outside the agreed scope |
+| Limits | Unsupported cases and unresolved commitments |
+
+Track the stages separately:
+
+**Parsing → semantic checking → artifact construction → activation → execution → correct publication.**
+
+A program that reaches one stage has not automatically demonstrated later stages. The source-boundary contract itself distinguishes successful semantic/artifact construction from resident capabilities that may reject activation. [Source and execution boundaries](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/docs/design/canonical-source-boundary.mec)
+
+Also distinguish configuration options from language option types. Both may deserve demonstrations.
+
+## 4. Review code quality through concrete responsibilities
+
+Use metrics to identify places to inspect. Findings must come from reading and tracing the code.
+
+Review these dimensions:
+
+| Dimension | Questions to answer |
+|---|---|
+| Organization | Does each module have a coherent responsibility? Are related operations easy to find? |
+| Readability | Can a reader follow the main path and understand the invariants without reconstructing several unrelated modules? |
+| Complexity | Which branches and state transitions are required by the semantics, and which result from the implementation structure? |
+| Duplication | Are policy, validation, conversion, or lifecycle rules implemented repeatedly? |
+| Ownership | Who owns state, caches, resources, identities, and invalidation? |
+| Interfaces | Do public APIs expose a clear contract or incidental internal structure? |
+| Errors | Are failures precise, correctly located, and preserved across boundaries? |
+| Configuration | Can the supported feature combinations be explained and built independently? |
+| Tests | Do tests establish behavior and invariants? Which checks depend unnecessarily on incidental implementation details? |
+
+Give particular attention to:
+
+- Repeated conversions and overlapping representations.
+- Compatibility paths and migration scaffolding.
+- Large stateful modules with several responsibilities.
+- Caches with difficult invalidation rules.
+- Repeated backend or frontend implementations of shared policy.
+- Feature forwarding and dependencies that are broader than their consumers need.
+- Generated repetition that hides maintenance or compilation cost.
+- Unsafe boundaries and their stated invariants.
+- Tests or scripts that inspect source spelling where a behavioral or architectural check would be stronger.
+
+Include several **annotated implementation walkthroughs**:
+
+1. Source text through syntax, semantics, artifact construction, and activation.
+2. A changing input through computation and accepted publication.
+3. An editor change through parsing, reconciliation, and diagnostics.
+4. A named compute region through selection, dispatch, and completion.
+
+Each walkthrough should identify the actual entry points, data representations, and ownership transitions. These will help explain why the code exists.
+
+Every quality finding needs a location, consequence, proposed action, affected contracts, and validation requirement. Record the extent of manual review so untouched code does not inherit an implied endorsement.
+
+## 5. Build a code atlas from the measurements
+
+Produce a small interactive report driven by the census and capability register. It should answer practical questions through these coordinated views:
+
+| Visualization | Question it answers |
+|---|---|
+| Subsystem composition, with drill-down | Where is the code, and how much serves each responsibility? |
+| Production/tests/generated breakdown | What kind of code accounts for the volume? |
+| Historical change view | Where did v0.4 add, replace, move, or remove implementation? |
+| Collapsed dependency graph | Which components depend on which others? |
+| Quality findings over the code map | Where are the concrete readability, duplication, or coupling problems? |
+| Standard library extraction waterfall | What moves, what disappears, what must be added, and what remains? |
+| Capability/evidence matrix | What works through which product paths, with what evidence? |
+
+Every chart must expose its units, scope, commit, exclusions, and underlying records. Clicking a subsystem should reveal its constituent files and findings.
+
+Keep dependency meanings explicit. A crate dependency, runtime interaction, and observed execution path describe different relationships.
+
+Reuse this report inside the later demo website. Prefer a small generated report with JSON/CSV data over building a new analysis service.
+
+## 6. Establish the standard library extraction boundary
+
+**Do not estimate the future project by subtracting only `src/stdlib`.**
+
+The composition contract places distribution selection in `mech-stdlib` and concrete standard operations in machine crates. It also assigns some language operations to engine intrinsics and states that machine directories are synchronized subtrees of their owning repositories. The extraction audit must respect and verify those distinctions. [Standard library composition and ownership](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/docs/design/static-stdlib-composition.md)
+
+Classify each relevant component as:
+
+- **Move:** library implementation or composition that should live externally.
+- **Retain:** language/runtime machinery with a documented reason to remain.
+- **Separate:** mixed code requiring a smaller public boundary.
+- **Delete:** obsolete or redundant implementation.
+- **Unresolved:** boundary decision requiring investigation.
+
+Include associated tests, documentation, fixtures, manifests, feature forwarding, packaging, and CI ownership. Determine which integration tests still belong in Mech after machine-private tests move elsewhere.
+
+For every retained component near the boundary, explain why it is essential. Existing coupling is something to investigate; it is not sufficient justification by itself.
+
+Report the arithmetic explicitly:
+
+\[
+\text{Remaining Mech source}
+=
+\text{Baseline source}
+-
+\text{Moved source}
+-
+\text{Deleted source}
++
+\text{Added boundary code}
+\]
+
+Apply this separately to production code and supporting material.
+
+Produce these distinct measurements:
+
+| Measurement | Meaning |
+|---|---|
+| Current repository implementation | What Mech maintains in-tree now |
+| Estimated remaining implementation | Classification-based extraction estimate |
+| Measured remaining implementation | Actual result from an extraction experiment |
+| External standard library implementation | Code moved to the external owner |
+| Combined maintained implementation | Core plus external library, without double counting |
+| Product build and artifact sizes | What selected applications actually compile and ship |
+
+Moving code can reduce repository size while leaving the combined maintenance burden nearly unchanged. Show both.
+
+### Prove the proposed separation in an isolated experiment
+
+After the initial classification, perform an extraction feasibility experiment in an isolated checkout.
+
+Build the remaining components and an external standard library through the intended public interfaces. Remove access to the old in-tree paths for that experiment.
+
+Check for hidden reliance on:
+
+- Workspace membership and root patches.
+- Private modules or internal source paths.
+- Development dependencies and feature unification.
+- Generated files or fixtures outside packaged inputs.
+- Build scripts and CI assumptions.
+- Implicit standard catalog installation.
+
+Validate the maintained runtime/source/compiler profiles and relevant native/WASM/compute configurations. Derive the matrix from actual product contracts rather than assuming one broad build covers them all.
+
+Measure declared dependencies, resolved build dependencies, and linked artifact sizes separately. Record identical build settings when comparing before and after.
+
+An estimate remains an estimate until this boundary works. The experiment should produce a concrete extraction patch and measurements; permanent repository migration can then follow that established boundary.
+
+## 7. Create a prioritized subtraction queue
+
+For every removal or simplification candidate, record:
+
+- Proposed action: delete, move, consolidate, simplify, or retain.
+- Evidence supporting the action.
+- Affected features, platforms, public consumers, and behaviors.
+- Expected removals, required additions, and net change.
+- Dependencies on other changes.
+- Acceptance checks.
+
+Check optional features, generated registration, platform code, dynamic loading, and public consumers before declaring code unused.
+
+Prioritize completed migration scaffolding, duplicated policy, obsolete adapters, redundant representations, and unnecessary dependency coupling.
+
+Preserve readability while reducing code. Shorter spelling, denser formatting, or a large abstraction that obscures behavior should not count as a successful simplification.
+
+### Phase 1 completion gate
+
+Phase 1 is ready when:
+
+- The census reproduces and reconciles.
+- Major responsibilities and dependencies are mapped.
+- Major capabilities have owners, configuration scopes, and evidence states.
+- Quality findings identify specific code and consequences.
+- Extraction accounting includes associated code and boundary costs.
+- The subtraction queue identifies how each proposal will be verified.
+- The visual report exposes the underlying evidence.
+
+Deliver this checkpoint before expanding the demonstration interface.
+
+---
+
+# Phase 2 — Build working demonstrations and correct discrepancies
+
+## 8. Use the existing product and validation infrastructure
+
+Build one compact website containing the code atlas and several working examples.
+
+Start by inspecting and reusing the existing WASM build, browser harness, examples, and smoke checks. Relevant current starting points include `scripts/build-wasm.py`, the browser harness under `tests/browser/harness`, the compute/browser smoke scripts, and the existing examples. [Scripts](https://github.com/mech-lang/mech/tree/c4777b7015fe8ff47fdfa48d18606c49aace7d97/scripts) · [Examples](https://github.com/mech-lang/mech/tree/c4777b7015fe8ff47fdfa48d18606c49aace7d97/examples)
+
+The interactive runtime contract already assigns shared behavior to the resident session and treats frontends as adapters. Follow that ownership when exposing the runtime in the website. [Interactive runtime architecture](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/docs/architecture/interactive-runtime.md)
+
+Each demonstration must expose:
+
+- The actual Mech source and changing inputs.
+- Its execution target and selected configuration.
+- Returned values and diagnostics.
+- Relevant implementation state.
+- Source commit and executable artifact identity.
+- A reproducible scenario and evidence record.
+
+JavaScript can handle controls, transport, rendering, and the production browser bridge. The demonstrated Mech semantics must run through Mech.
+
+If inspection data is unavailable, identify the missing interface and add the smallest justified adapter. Count that addition in the audit.
+
+## 9. Demonstration A: streaming source and editor inspection
+
+**Make this the first substantial demonstration.**
+
+Provide coordinated views for source text, streaming progress, syntax structures, diagnostics, and—when valid and available—semantic representations.
+
+### Streaming interaction
+
+Allow the user to:
+
+- Feed source in controlled chunks.
+- Step, pause, resume, finish, cancel, and restart.
+- Adjust chunk size and processing allowance.
+- Inspect accepted input, pending work, and published changes.
+- Request a clearly labeled provisional preview.
+
+Feed the API the input form it actually accepts. If transport bytes can split UTF-8 sequences, handle that buffering at the transport boundary.
+
+Consume every published update according to the production contract. Associate displayed state with the full interpretation identity so finishing, cancellation, restarts, and asynchronous work cannot leave stale information on screen.
+
+### Editing interaction
+
+Support insertion, deletion, and replacement.
+
+Show:
+
+- The affected source range.
+- Actual parsing work.
+- Reconciliation work.
+- Preserved and replaced node identities.
+- Added, removed, or changed diagnostics.
+
+For the currently documented session behavior, state clearly that edits trigger a complete parse followed by reconciliation. Highlight reused structure without suggesting it proves partial reparsing.
+
+### Structures and errors
+
+Expose the representations actually available: lossless tokens, tree structure, typed views, event information, source ranges, and diagnostic fields.
+
+Let selecting a node highlight its source. Let selecting a diagnostic show its location and structured details.
+
+Show semantic output only after the relevant validation and compilation gates. A recoverable syntax tree or clean provisional preview must not silently become an executable program.
+
+### Required scenarios
+
+Use a small deterministic corpus covering valid input, incomplete constructs, malformed input followed by valid material, error repair, deletion, Unicode, mixed Mech/Mechdown, explicit finalization, cancellation, and resource limits.
+
+For short fixtures, exercise all legal chunk split positions. For larger inputs, use representative and seeded schedules.
+
+Validate losslessness, expected structures and diagnostics, publication updates, and final equivalence with one-shot parsing. Use independent grammar expectations as well: agreement between paths sharing the same parser cannot establish correctness by itself.
+
+Graph parsing work and elapsed time separately. Measure view/export costs separately from ingestion, and expose retained-history settings when they affect memory.
+
+**Acceptance:** the editor demonstrates real source handling, recovery, identities, and diagnostics, with measured work and no stale representations.
+
+## 10. Demonstration B: types, options, and publication
+
+Build an interactive set of small examples showing a valid case, a boundary case, and a rejection.
+
+Begin with the supported integer interval contract. For example, the documented `u8:1..10` interval includes 1 through 9; its inclusive-upper variant admits 10. Exercise the actual Mech syntax from maintained fixtures. [Interval semantics and required outcomes](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/docs/design/grammar-audit/fixed-integer-intervals.md)
+
+Show where enforcement happens:
+
+- Source admission or type checking.
+- Artifact construction and transport.
+- External input admission.
+- State update and publication.
+
+Include a same-instance sequence: accept a valid value, reject an invalid update, show that accepted state remains intact, then accept a later valid update.
+
+Add examples for option construction, nesting, inference, schemas, shapes, named bindings, and other changes that the capability audit establishes. Show actual inferred or checked information where exposed.
+
+Preserve exact wide-integer values through browser transport; a rounded display must not stand in for the checked value.
+
+Provide a separate configuration view for build features and runtime selectors. Make clear which settings require a rebuilt artifact.
+
+**Acceptance:** the examples establish actual enforcement and state behavior, with errors connected to source and execution phase.
+
+## 11. Demonstration C: CPU and GPU execution
+
+Reuse the existing GPU particle example if it remains the smallest supported complete path. Its source and integration are already described in the compute-region contract. [Named compute regions and particle integration](https://github.com/mech-lang/mech/blob/c4777b7015fe8ff47fdfa48d18606c49aace7d97/docs/design/named-compute-regions.md)
+
+Show three distinct facts:
+
+| Stage | Required evidence |
+|---|---|
+| Requested | Annotation, configuration, or default request |
+| Selected | Chosen backend and selection reason |
+| Completed | Backend that actually finished the computation |
+
+A GPU request or dispatch attempt is insufficient evidence of GPU completion.
+
+Use identical source, initial conditions, and recorded inputs across applicable backends. Include a small independently checkable case and a workload that exercises meaningful dispatch.
+
+Define numerical tolerances before comparison. Capture results after the relevant completion boundary.
+
+Exercise hard placement requirements and unsupported configurations according to their contracts. Separate application backends from experimental implementations, and native execution from browser execution.
+
+Record the adapter/device and distinguish hardware execution from software adapters. Unavailable hardware produces a blocked result with a reproduction procedure.
+
+Timing may be shown, but report compilation, transfers, computation, readback, and rendering with clear scope. Performance claims need their own controlled evidence.
+
+**Acceptance:** correct results are accompanied by execution provenance supporting the claimed backend.
+
+## 12. Demonstration D: a complete Mech application in WASM
+
+Use a maintained application such as the EKF, resident n-body example, or another workload selected after checking the supported path.
+
+It should connect changing inputs, meaningful Mech computation, state, outputs, and visible behavior. Include an invalid-input or failure case appropriate to the application.
+
+Verify:
+
+- The loaded WASM artifact comes from the demonstrated source commit.
+- User input reaches the real Mech execution path.
+- Changed inputs produce the expected changed results.
+- A small reference case has independently established expected output.
+- Native and WASM behavior agree where comparable.
+- Restart, disposal, and repeated interaction do not display obsolete results.
+
+Distinguish a WASM-hosted Mech runtime from any separately supported compilation-to-WASM capability. Demonstrate the path that actually exists.
+
+This application should reuse the earlier examples’ infrastructure. Its purpose is to prove that the components work together.
+
+---
+
+# Evidence, corrections, and final acceptance
+
+## 13. Keep an evidence record for every significant claim
+
+Each record should include the claim, contract, source commit, artifact identity, configuration, environment, input or seed, command, expected outcome, actual outcome, and result location.
+
+Keep **evidence level** separate from **outcome**. A static inspection, successful compilation, browser execution, independent result comparison, and performance measurement establish different things.
+
+The website can render these records directly. Recorded runs should identify their environment; live results should identify the current browser and device.
+
+## 14. Turn failures into focused revisions
+
+For every discrepancy:
+
+1. Preserve the smallest reproduction and original result.
+2. Identify the expected behavior and its authority.
+3. Locate the failing boundary.
+4. Classify the cause.
+5. Make the smallest coherent correction.
+6. Re-run the reproduction and relevant existing gates.
+7. Update the affected demonstration and audit.
+
+Useful classifications include implementation defect, missing product integration, packaging/configuration defect, incorrect example, test-harness defect, unavailable environment, and unmet or ambiguous commitment.
+
+Routine defects can be corrected while independent work continues. A change to the intended language or product contract needs an explicit decision supported by the concrete reproduction.
+
+**Do not silently downgrade an accepted requirement to make the report pass.** Conversely, a documented future feature should not become an unrequested implementation project.
+
+If the same invariant fails after repeated attempted fixes, broaden the investigation to shared ownership, architecture, and test assumptions before making another local patch.
+
+Keep fixes and substantial simplifications in reviewable changes. Preserve the original baseline, and remeasure after changes so newly added inspection or repair code remains visible.
+
+## 15. Required deliverables
+
+| Deliverable | Required content |
+|---|---|
+| Audit report | Architecture explanation, quality findings, review coverage, priorities |
+| Code census | Reproducible file-level measurements and attribution |
+| Interactive code atlas | Composition, changes, dependencies, findings, extraction, capability evidence |
+| Capability register | Claims, interfaces, configurations, evidence, limits, discrepancies |
+| Extraction package | Boundary map, estimated and measured remaining size, isolated proof, migration work |
+| Subtraction queue | Ranked proposals with net changes and acceptance checks |
+| Working demo website | Streaming/editor inspection, types/options, compute, complete WASM application |
+| Evidence and revisions | Reproduction procedures, results, discovered failures, fixes, remaining blockers |
+
+Provide a documented way to regenerate the audit and a documented way to build and run the demos. Reuse maintained tooling and keep added infrastructure small.
+
+The final review must answer:
+
+- **What did v0.4 add or change?**
+- **Where is the code, and why does it exist?**
+- **Which parts are difficult to understand or unnecessarily complex?**
+- **What can we move, delete, or simplify?**
+- **How large is the remaining Mech project after extracting the standard library?**
+- **Which capabilities have worked through real native/browser/backend paths?**
+- **Which accepted claims still require revisions?**
+
+Required claims that remain failed or blocked must stay visible in the final status.
+
+## The first work packet
+
+Start with the baseline, census, architecture map, capability register, and extraction estimate. Run small existing examples as feasibility checks while doing that work.
+
+The first reviewable result should let us inspect **where the code is, what it supports, and what is expected to remain after extraction**. Then build the streaming editor demonstration, establish the real WASM path, add the type and compute examples, and use their failures to drive focused corrections.
+
+That gives the agent a concrete starting point and keeps the audit useful throughout the work, including when proving the implementation reveals something that needs to change.

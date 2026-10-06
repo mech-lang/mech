@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "run",
+    "--offline",
+    "--manifest-path",
+    "tests/fixtures/bytecode-runtime-consumer/Cargo.toml",
+    "--",
+    "tests/architecture/bytecode-v1/scalar-add-f64.mecb"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 54.28838515281677,
+  "environment": {
+    "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/baseline",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  }
+}

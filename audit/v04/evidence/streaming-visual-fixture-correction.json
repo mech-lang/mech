@@ -1,0 +1,13 @@
+{
+  "id": "streaming-visual-fixture-correction",
+  "classification": "audit visual harness fixture correction",
+  "original_log": "evidence/streaming-visual-selection-fixture.log",
+  "original_input": "x := [1 +, 2]\\ny := 3\\n",
+  "original_expectation": "First diagnostic selects text containing +",
+  "cause": "This spelling produces an earlier diagnostic with a different selection; the visual assertion targeted the maintained recovery fixture.",
+  "change": "Use the exact maintained recovery source x := [1, +, 2] followed by a valid definition.",
+  "actual": "Selection [9,13) resolves to +, 2 on the final artifact.",
+  "validation": "evidence/streaming-diagnostic-ui.json",
+  "outcome": "verified",
+  "product_changes": "none"
+}

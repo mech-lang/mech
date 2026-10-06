@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "run",
+    "--offline",
+    "--manifest-path",
+    "audit/v04/evidence/inventory/native/Cargo.toml"
+  ],
+  "cwd": "/private/tmp/mech-v04-audit-20261006",
+  "exit_code": 101,
+  "elapsed_seconds": 11.590567827224731,
+  "environment": {
+    "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  }
+}

@@ -1,0 +1,342 @@
+{
+  "status": "passed",
+  "environment": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+  "metadata": {
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+    "source_modifications": {
+      "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+      "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+      "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+      "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+      "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+      "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+      "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+      "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+      "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+      "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+      "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+      "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+      "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+    },
+    "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+    "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+    "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+    "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+    "target": "wasm32-unknown-unknown",
+    "profile": "release",
+    "wasm_opt": false,
+    "expected_exports": [
+      "WasmSyntaxStream",
+      "WasmSyntaxEditor",
+      "WasmDocument",
+      "WasmMixedComputeProject",
+      "TypePublicationSession",
+      "inspectMechTypes",
+      "I64PublicationSession",
+      "inventorySource"
+    ],
+    "artifacts": {
+      "pkg/mech_wasm.js": {
+        "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+        "bytes": 92075
+      },
+      "pkg/mech_wasm_bg.wasm": {
+        "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+        "bytes": 208709347
+      }
+    },
+    "environment": {
+      "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+      "wasm_pack": "wasm-pack 0.15.0"
+    },
+    "limits": [
+      "Artifact source identity comprises the baseline commit and listed modifications.",
+      "Browser device and execution outcomes are recorded separately."
+    ],
+    "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+    "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36"
+  },
+  "scope": "canonical-source WASM single-candidate execution",
+  "results": [
+    {
+      "id": "original",
+      "passed": true,
+      "expected": "5",
+      "result": {
+        "artifact_bytes": 3728,
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "diagnostics": [],
+        "epoch": "InstanceEpoch(1)",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "source": "~x := 1.0\nnext := x * 2.0 + 3.0\nsafe! := next < 1000.0\nx = next\nx\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "correct_publication": "published; independent expected-value comparison required",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "scalar_text": "5",
+            "schema": "FloatingPoint(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4617315517961601024))"
+          }
+        ]
+      }
+    },
+    {
+      "id": "perturbed",
+      "passed": true,
+      "expected": "7",
+      "result": {
+        "artifact_bytes": 3728,
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "diagnostics": [],
+        "epoch": "InstanceEpoch(1)",
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "source": "~x := 1.0\nnext := x * 3.0 + 4.0\nsafe! := next < 1000.0\nx = next\nx\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "correct_publication": "published; independent expected-value comparison required",
+          "execution": "completed",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU",
+        "values": [
+          {
+            "scalar_text": "7",
+            "schema": "FloatingPoint(W64)",
+            "shape": "ShapeInstance { parameter_values: [] }",
+            "transport": "exact Rust value text; no JavaScript Number conversion",
+            "value": "F64(F64Bits(4619567317775286272))"
+          }
+        ]
+      }
+    },
+    {
+      "id": "syntax",
+      "passed": true,
+      "expected": "semantic_checking: blocked by strict syntax validation",
+      "result": {
+        "diagnostics": [
+          {
+            "code": "syntax/missing-delimiter",
+            "context": null,
+            "expected": [
+              {
+                "kind": "token",
+                "value": "RightBracket"
+              }
+            ],
+            "fixes": [
+              {
+                "applicability": "machine-applicable",
+                "edits": [
+                  {
+                    "delete": {
+                      "end": 15,
+                      "start": 15
+                    },
+                    "insert": "]"
+                  }
+                ],
+                "title": "Insert `]`"
+              }
+            ],
+            "found": {
+              "kind": "Eof",
+              "text": null
+            },
+            "id": 1,
+            "labels": [],
+            "message": "missing closing delimiter",
+            "phase": "syntax",
+            "primary": {
+              "element": {
+                "Node": 71
+              },
+              "kind": "element",
+              "relative": {
+                "end": 0,
+                "start": 0
+              }
+            },
+            "recovery": {
+              "at": 15,
+              "kind": "insert",
+              "syntax": {
+                "kind": "token",
+                "value": "RightBracket"
+              }
+            },
+            "related": [],
+            "rule": 365099244,
+            "severity": "error",
+            "tags": 0
+          }
+        ],
+        "source": "~x := [1.0; 2.0",
+        "stages": {
+          "parsing": "completed",
+          "semantic_checking": "blocked by strict syntax validation"
+        },
+        "target": "WASM-hosted resident CPU"
+      }
+    },
+    {
+      "id": "type",
+      "passed": true,
+      "expected": "semantic_checking: rejected",
+      "result": {
+        "diagnostics": [
+          {
+            "code": "source-semantics/non-numeric-arithmetic-kind",
+            "document": "41643696389498949",
+            "message": "type resolution for `math/mul` failed; string does not satisfy Number; structure f64 does not match matrix<T0;1\u00d7d2>; structure f64 does not match matrix<T0;d0\u00d7d1>; structure f64 does not match matrix<T0;d2\u00d71>; structure string does not match matrix<T1;d0\u00d7d1>",
+            "phase": "semantic_checking",
+            "range": [
+              18,
+              27
+            ],
+            "revision": "0"
+          }
+        ],
+        "product_diagnostic": {
+          "message": "type resolution for `math/mul` failed; string does not satisfy Number; structure f64 does not match matrix<T0;1\u00d7d2>; structure f64 does not match matrix<T0;d0\u00d7d1>; structure f64 does not match matrix<T0;d2\u00d71>; structure string does not match matrix<T1;d0\u00d7d1>",
+          "presentation_range": "[2:9, 2:18)",
+          "semantic": {
+            "code": "source-semantics/non-numeric-arithmetic-kind",
+            "document": "41643696389498949",
+            "message": "type resolution for `math/mul` failed; string does not satisfy Number; structure f64 does not match matrix<T0;1\u00d7d2>; structure f64 does not match matrix<T0;d0\u00d7d1>; structure f64 does not match matrix<T0;d2\u00d71>; structure string does not match matrix<T1;d0\u00d7d1>",
+            "phase": "semantic_checking",
+            "range": [
+              18,
+              27
+            ],
+            "revision": "0"
+          }
+        },
+        "source": "~x := 1.0\nnext := x * \"two\"\nx = next\nx\n",
+        "stages": {
+          "parsing": "completed",
+          "semantic_checking": "rejected"
+        },
+        "target": "WASM-hosted resident CPU"
+      }
+    },
+    {
+      "id": "integrity",
+      "passed": true,
+      "expected": "execution: rejected",
+      "result": {
+        "artifact_bytes": 3728,
+        "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+        "diagnostics": [
+          {
+            "message": "Integrity { constraint: IntegrityConstraintId(0) }",
+            "phase": "execution"
+          }
+        ],
+        "inputs": [],
+        "outputs": [
+          "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+        ],
+        "source": "~x := 509.0\nnext := x * 2.0 + 3.0\nsafe! := next < 1000.0\nx = next\nx\n",
+        "stages": {
+          "activation": "completed",
+          "artifact_construction": "completed",
+          "execution": "rejected",
+          "parsing": "completed",
+          "semantic_checking": "completed"
+        },
+        "target": "WASM-hosted resident CPU"
+      }
+    }
+  ],
+  "native_record_status": "passed",
+  "id": "E-TRUST-BROWSER",
+  "claim": "Canonical-source recurrence, source perturbation and rejected syntax/type/integrity candidates",
+  "contract": "examples/r-stack-proof/README.md",
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "source_state": "baseline plus source modifications hashed in site/artifact.json",
+  "evidence_level": "browser-execution",
+  "outcome": "passed",
+  "artifact_identity": {
+    "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+    "source_modifications": {
+      "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+      "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+      "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+      "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+      "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+      "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+      "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+      "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+      "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+      "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+      "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+      "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+      "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+    },
+    "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+    "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+    "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+    "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+    "target": "wasm32-unknown-unknown",
+    "profile": "release",
+    "wasm_opt": false,
+    "expected_exports": [
+      "WasmSyntaxStream",
+      "WasmSyntaxEditor",
+      "WasmDocument",
+      "WasmMixedComputeProject",
+      "TypePublicationSession",
+      "inspectMechTypes",
+      "I64PublicationSession",
+      "inventorySource"
+    ],
+    "artifacts": {
+      "pkg/mech_wasm.js": {
+        "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+        "bytes": 92075
+      },
+      "pkg/mech_wasm_bg.wasm": {
+        "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+        "bytes": 208709347
+      }
+    },
+    "environment": {
+      "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+      "wasm_pack": "wasm-pack 0.15.0"
+    },
+    "limits": [
+      "Artifact source identity comprises the baseline commit and listed modifications.",
+      "Browser device and execution outcomes are recorded separately."
+    ],
+    "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+    "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36"
+  },
+  "command": "python3 audit/v04/check_trust_browser.py",
+  "ui_sources": {
+    "audit/v04/site/trust.html": "8c508b18b20077b60939ce54f74a36ba86d3ff97830199dc16ec8255b12b61a7",
+    "audit/v04/site/trust.js": "7d5343c4b7b73577e6014f1e748690060e2042ed2d922b5617751fd2095e1567",
+    "audit/v04/check_trust_browser.py": "e64571921588b61412662453801a908ede4f4a5d9e718605fef5dd9daf3e7c8e"
+  }
+}

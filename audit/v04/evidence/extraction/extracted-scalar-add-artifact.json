@@ -1,0 +1,7 @@
+{
+  "path": "/private/tmp/mech-v04-target-extraction/extracted/debug/extracted-scalar-add",
+  "bytes": 42870720,
+  "sha256": "0b5e2249d7eb471eb55747871188bc6b1ec82f0598ae08930e776e237aabdad1",
+  "profile": "dev, debug=0, incremental=false",
+  "baseline_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+}

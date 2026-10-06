@@ -1,0 +1,1438 @@
+{
+  "schema": 1,
+  "records": [
+    {
+      "id": "E-CORE-INTERVAL",
+      "claim": "Cell readiness, atomic rejection, exact widths and in-place retry",
+      "contract": "docs/design/grammar-audit/fixed-integer-intervals.md",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "artifact_identity": {
+        "path": "/private/tmp/mech-v04-target-architecture/debug/deps/memory_runtime-93194a02ffce6271",
+        "sha256": "8e9df7b5ade62f2968d40af6f030a451a94c822b81319d80e5b2fbc5b60e6800"
+      },
+      "configuration": {
+        "package": "mech-core",
+        "features": "full",
+        "default_features": false,
+        "profile": "test"
+      },
+      "environment": {
+        "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+        "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)"
+      },
+      "input_or_seed": "deterministic checked-in test cases",
+      "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-architecture cargo test -p mech-core --locked --offline --no-default-features --features full --test memory_runtime interval_",
+      "expected_outcome": "6 tests pass",
+      "actual_outcome": "6 passed, 0 failed",
+      "evidence_level": "native-execution",
+      "outcome": "passed",
+      "result_location": "audit/v04/evidence/core-interval-publication-full.log"
+    },
+    {
+      "id": "E-CORE-TYPE",
+      "claim": "Descriptor/schema agreement, output materialization and shapes",
+      "contract": "docs/design/semantic-type-authority.md",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "artifact_identity": {
+        "path": "/private/tmp/mech-v04-target-architecture/debug/deps/canonical_type_contract-940292ce1744709e",
+        "sha256": "6f3e112c17da63480bd779cbef32a3582dca4170c5b721d0d88cea872504a7cf"
+      },
+      "configuration": {
+        "package": "mech-core",
+        "features": "full",
+        "default_features": false,
+        "profile": "test"
+      },
+      "environment": {
+        "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+        "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)"
+      },
+      "input_or_seed": "deterministic checked-in test cases",
+      "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-architecture cargo test -p mech-core --locked --offline --no-default-features --features full --test canonical_type_contract",
+      "expected_outcome": "14 tests pass",
+      "actual_outcome": "14 passed, 0 failed",
+      "evidence_level": "native-execution",
+      "outcome": "passed",
+      "result_location": "audit/v04/evidence/core-canonical-type-full.log"
+    },
+    {
+      "id": "E-SEMANTIC-DIAGNOSTIC",
+      "claim": "Typed semantic error identity and projected presentation range survive the public runtime compiler boundary",
+      "contract": "docs/design/type-system-v1.md \u00a717 and docs/design/canonical-source-boundary.mec",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "source_state": "baseline plus F-001 correction; hashed files in site/artifact.json",
+      "artifact_identity": {
+        "path": "/private/tmp/mech-v04-target-architecture/debug/deps/canonical_semantic_diagnostics-d99d33bd0cbe00a5",
+        "sha256": "d59fcaf15b07e3e69818889d247401c1c48a6ab5fc5618f7f5b99a046449d8e0"
+      },
+      "configuration": {
+        "package": "mech-runtime",
+        "features": "full_source,resident-routing-source",
+        "default_features": false,
+        "profile": "test"
+      },
+      "environment": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-architecture cargo test -p mech-runtime --locked --offline --no-default-features --features full_source,resident-routing-source --test canonical_semantic_diagnostics",
+      "input_or_seed": "excluded interval upper bound, with and without caf\u00e9 Unicode prefix",
+      "expected_outcome": "direct and product code/document/revision/byte range agree; presentation range matches retained source projection",
+      "actual_outcome": "1passed0failed",
+      "evidence_level": "native-execution",
+      "outcome": "passed",
+      "result_location": "audit/v04/evidence/canonical-semantic-diagnostics.log"
+    },
+    {
+      "id": "E-TYPES-NATIVE-BROWSER",
+      "claim": "Identical scalar sources publish exact expected values through native and WASM resident execution",
+      "contract": "docs/design/grammar-audit/fixed-integer-intervals.md; canonical source contracts",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "source_state": "baseline with recorded audit corrections and optional inspection adapters",
+      "artifact_identity": {
+        "native_binary": "/private/tmp/mech-v04-target-architecture/debug/deps/mech_wasm-3c5b3b61ca23e47d",
+        "native_sha256": "b27d6bc4f5999ac61385500fa4a871a5a454fb0584e3ecd3bb73c1a24def3afc",
+        "wasm_manifest": "audit/v04/site/artifact.json",
+        "wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194"
+      },
+      "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-architecture cargo test -p mech-wasm --locked --offline --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection type_inspection::tests -- --nocapture",
+      "comparison_command": "python3 audit/v04/compare_type_targets.py",
+      "evidence_level": "native-and-browser-execution",
+      "outcome": "passed",
+      "native_test_result": "3 passed; 104 filtered out; other integration targets had 0 selected tests",
+      "pairs": [
+        {
+          "source": "answer := 1\u27e8u8:1..10\u27e9\nanswer\n",
+          "native": [
+            "1"
+          ],
+          "browser": [
+            "1"
+          ],
+          "equal": true,
+          "artifact_bytes_native": 1088,
+          "artifact_bytes_browser": 1088
+        },
+        {
+          "source": "answer := 9\u27e8u8:1..10\u27e9\nanswer\n",
+          "native": [
+            "9"
+          ],
+          "browser": [
+            "9"
+          ],
+          "equal": true,
+          "artifact_bytes_native": 1088,
+          "artifact_bytes_browser": 1088
+        },
+        {
+          "source": "answer := 10\u27e8u8:1..=10\u27e9\nanswer\n",
+          "native": [
+            "10"
+          ],
+          "browser": [
+            "10"
+          ],
+          "equal": true,
+          "artifact_bytes_native": 1088,
+          "artifact_bytes_browser": 1088
+        },
+        {
+          "source": "answer := math/sub(right: 3, left: 10)\nanswer\n",
+          "native": [
+            "7"
+          ],
+          "browser": [
+            "7"
+          ],
+          "equal": true,
+          "artifact_bytes_native": 1605,
+          "artifact_bytes_browser": 1605
+        },
+        {
+          "source": "answer := 340282366920938463463374607431768211455u128\nanswer\n",
+          "native": [
+            "340282366920938463463374607431768211455"
+          ],
+          "browser": [
+            "340282366920938463463374607431768211455"
+          ],
+          "equal": true,
+          "artifact_bytes_native": 1056,
+          "artifact_bytes_browser": 1056
+        }
+      ],
+      "results": [
+        "audit/v04/evidence/type-inspection-native-final.log",
+        "audit/v04/evidence/types-browser.json"
+      ]
+    },
+    {
+      "status": "passed",
+      "environment": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+      "metadata": {
+        "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+        "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+        "source_modifications": {
+          "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+          "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+          "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+          "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+          "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+          "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+          "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+          "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+          "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+          "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+          "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+          "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+          "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+        },
+        "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+        "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+        "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "target": "wasm32-unknown-unknown",
+        "profile": "release",
+        "wasm_opt": false,
+        "expected_exports": [
+          "WasmSyntaxStream",
+          "WasmSyntaxEditor",
+          "WasmDocument",
+          "WasmMixedComputeProject",
+          "TypePublicationSession",
+          "inspectMechTypes",
+          "I64PublicationSession",
+          "inventorySource"
+        ],
+        "artifacts": {
+          "pkg/mech_wasm.js": {
+            "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+            "bytes": 92075
+          },
+          "pkg/mech_wasm_bg.wasm": {
+            "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+            "bytes": 208709347
+          }
+        },
+        "environment": {
+          "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+          "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+          "wasm_pack": "wasm-pack 0.15.0"
+        },
+        "limits": [
+          "Artifact source identity comprises the baseline commit and listed modifications.",
+          "Browser device and execution outcomes are recorded separately."
+        ],
+        "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+        "loaded_wasm_bytes": 208709347,
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36"
+      },
+      "results": [
+        {
+          "id": "lower",
+          "passed": true,
+          "expectation": "1",
+          "result": {
+            "artifact_bytes": 1088,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false }) })"
+            ],
+            "source": "answer := 1\u27e8u8:1..10\u27e9\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": "1",
+                "schema": "IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false })",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U8(1)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "last",
+          "passed": true,
+          "expectation": "9",
+          "result": {
+            "artifact_bytes": 1088,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false }) })"
+            ],
+            "source": "answer := 9\u27e8u8:1..10\u27e9\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": "9",
+                "schema": "IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false })",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U8(9)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "exclusive",
+          "passed": true,
+          "expectation": "source-semantics/integer-interval-violation",
+          "result": {
+            "diagnostics": [
+              {
+                "code": "source-semantics/integer-interval-violation",
+                "document": "41643696389498949",
+                "message": "integer literal is outside its annotated interval",
+                "phase": "semantic_checking",
+                "range": [
+                  10,
+                  12
+                ],
+                "revision": "0"
+              }
+            ],
+            "product_diagnostic": {
+              "message": "integer literal is outside its annotated interval",
+              "presentation_range": "[1:11, 1:13)",
+              "semantic": {
+                "code": "source-semantics/integer-interval-violation",
+                "document": "41643696389498949",
+                "message": "integer literal is outside its annotated interval",
+                "phase": "semantic_checking",
+                "range": [
+                  10,
+                  12
+                ],
+                "revision": "0"
+              }
+            },
+            "source": "answer := 10\u27e8u8:1..10\u27e9\nanswer\n",
+            "stages": {
+              "parsing": "completed",
+              "semantic_checking": "rejected"
+            },
+            "target": "WASM-hosted resident CPU"
+          }
+        },
+        {
+          "id": "below",
+          "passed": true,
+          "expectation": "source-semantics/integer-interval-violation",
+          "result": {
+            "diagnostics": [
+              {
+                "code": "source-semantics/integer-interval-violation",
+                "document": "41643696389498949",
+                "message": "integer literal is outside its annotated interval",
+                "phase": "semantic_checking",
+                "range": [
+                  10,
+                  11
+                ],
+                "revision": "0"
+              }
+            ],
+            "product_diagnostic": {
+              "message": "integer literal is outside its annotated interval",
+              "presentation_range": "[1:11, 1:12)",
+              "semantic": {
+                "code": "source-semantics/integer-interval-violation",
+                "document": "41643696389498949",
+                "message": "integer literal is outside its annotated interval",
+                "phase": "semantic_checking",
+                "range": [
+                  10,
+                  11
+                ],
+                "revision": "0"
+              }
+            },
+            "source": "answer := 0\u27e8u8:1..10\u27e9\nanswer\n",
+            "stages": {
+              "parsing": "completed",
+              "semantic_checking": "rejected"
+            },
+            "target": "WASM-hosted resident CPU"
+          }
+        },
+        {
+          "id": "inclusive",
+          "passed": true,
+          "expectation": "10",
+          "result": {
+            "artifact_bytes": 1088,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: true }) })"
+            ],
+            "source": "answer := 10\u27e8u8:1..=10\u27e9\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": "10",
+                "schema": "IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: true })",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U8(10)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "interval-arithmetic",
+          "passed": true,
+          "expectation": "source-semantics/non-numeric-arithmetic-kind",
+          "result": {
+            "diagnostics": [
+              {
+                "code": "source-semantics/non-numeric-arithmetic-kind",
+                "document": "41643696389498949",
+                "message": "type resolution for `math/add` failed; Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not satisfy Number; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T0;1\u00d7d2>; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T0;d0\u00d7d1>; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T0;d2\u00d71>; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T1;d0\u00d7d1>",
+                "phase": "semantic_checking",
+                "range": [
+                  10,
+                  43
+                ],
+                "revision": "0"
+              }
+            ],
+            "product_diagnostic": {
+              "message": "type resolution for `math/add` failed; Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not satisfy Number; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T0;1\u00d7d2>; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T0;d0\u00d7d1>; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T0;d2\u00d71>; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T1;d0\u00d7d1>",
+              "presentation_range": "[1:11, 1:36)",
+              "semantic": {
+                "code": "source-semantics/non-numeric-arithmetic-kind",
+                "document": "41643696389498949",
+                "message": "type resolution for `math/add` failed; Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not satisfy Number; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T0;1\u00d7d2>; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T0;d0\u00d7d1>; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T0;d2\u00d71>; structure Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false } does not match matrix<T1;d0\u00d7d1>",
+                "phase": "semantic_checking",
+                "range": [
+                  10,
+                  43
+                ],
+                "revision": "0"
+              }
+            },
+            "source": "answer := 1\u27e8u8:1..10\u27e9 + 2\u27e8u8:1..10\u27e9\nanswer\n",
+            "stages": {
+              "parsing": "completed",
+              "semantic_checking": "rejected"
+            },
+            "target": "WASM-hosted resident CPU"
+          }
+        },
+        {
+          "id": "option",
+          "passed": true,
+          "expectation": "Option",
+          "result": {
+            "artifact_bytes": 1296,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: Option(UnsignedInteger(W8)) })"
+            ],
+            "source": "answer<u8?> := 1\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": null,
+                "schema": "Option(UnsignedInteger(W8))",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "Option(Some(U8(1)))"
+              }
+            ]
+          }
+        },
+        {
+          "id": "absent",
+          "passed": true,
+          "expectation": "Option",
+          "result": {
+            "artifact_bytes": 1128,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: Option(UnsignedInteger(W8)) })"
+            ],
+            "source": "answer<u8?> := _\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": null,
+                "schema": "Option(UnsignedInteger(W8))",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "Option(None)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "nested",
+          "passed": true,
+          "expectation": "Option",
+          "result": {
+            "artifact_bytes": 2222,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: Option(Record([SchemaField { name: \"missing\", schema: Option(UnsignedInteger(W8)) }])) })"
+            ],
+            "source": "answer<{missing<u8?>}?> := {missing:_}\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": null,
+                "schema": "Option(Record([SchemaField { name: \"missing\", schema: Option(UnsignedInteger(W8)) }]))",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "Option(Some(Record(RecordValue { fields: [Option(None)] })))"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inference",
+          "passed": true,
+          "expectation": "peer-constrained signal",
+          "result": {
+            "artifact_bytes": 1661,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "inputs": [
+              {
+                "name": "signal",
+                "schema": "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+              }
+            ],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "source": "answer := signal + 1\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "execution": "awaiting external inputs",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU"
+          }
+        },
+        {
+          "id": "shape",
+          "passed": true,
+          "expectation": "Matrix",
+          "result": {
+            "artifact_bytes": 1528,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: Matrix { element: FloatingPoint(W64), dimensions: [Constant(2), Constant(2)] } })"
+            ],
+            "source": "answer := [1 2; 3 4]\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": null,
+                "schema": "Matrix { element: FloatingPoint(W64), dimensions: [Constant(2), Constant(2)] }",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "Matrix(MatrixValue { elements: F64([F64Bits(4607182418800017408), F64Bits(4611686018427387904), F64Bits(4613937818241073152), F64Bits(4616189618054758400)]) })"
+              }
+            ]
+          }
+        },
+        {
+          "id": "named",
+          "passed": true,
+          "expectation": "7",
+          "result": {
+            "artifact_bytes": 1605,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "source": "answer := math/sub(right: 3, left: 10)\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": "7",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4619567317775286272))"
+              }
+            ]
+          }
+        },
+        {
+          "id": "wide",
+          "passed": true,
+          "expectation": "340282366920938463463374607431768211455",
+          "result": {
+            "artifact_bytes": 1056,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: UnsignedInteger(W128) })"
+            ],
+            "source": "answer := 340282366920938463463374607431768211455u128\nanswer\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": "340282366920938463463374607431768211455",
+                "schema": "UnsignedInteger(W128)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U128(340282366920938463463374607431768211455)"
+              }
+            ]
+          }
+        }
+      ],
+      "publication": {
+        "passed": true,
+        "sequence": [
+          {
+            "after": {
+              "epoch": "InstanceEpoch(2)",
+              "instance": "0xa04:1 (this object; no replacement on update)",
+              "output": {
+                "scalar_text": "9",
+                "schema": "IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false })",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U8(9)"
+              },
+              "source": "~state\u27e8u8:1..10\u27e9 := 2\nstate = signal\nstate\n",
+              "state_hash": "13247498144409895206"
+            },
+            "before": {
+              "epoch": "InstanceEpoch(1)",
+              "instance": "0xa04:1 (this object; no replacement on update)",
+              "output": {
+                "scalar_text": "2",
+                "schema": "IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false })",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U8(2)"
+              },
+              "source": "~state\u27e8u8:1..10\u27e9 := 2\nstate = signal\nstate\n",
+              "state_hash": "2927363484818612085"
+            },
+            "input": "9",
+            "outcome": "accepted",
+            "phase": "correct_publication"
+          },
+          {
+            "accepted_state_unchanged": true,
+            "after": {
+              "epoch": "InstanceEpoch(2)",
+              "instance": "0xa04:1 (this object; no replacement on update)",
+              "output": {
+                "scalar_text": "9",
+                "schema": "IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false })",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U8(9)"
+              },
+              "source": "~state\u27e8u8:1..10\u27e9 := 2\nstate = signal\nstate\n",
+              "state_hash": "13247498144409895206"
+            },
+            "before": {
+              "epoch": "InstanceEpoch(2)",
+              "instance": "0xa04:1 (this object; no replacement on update)",
+              "output": {
+                "scalar_text": "9",
+                "schema": "IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false })",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U8(9)"
+              },
+              "source": "~state\u27e8u8:1..10\u27e9 := 2\nstate = signal\nstate\n",
+              "state_hash": "13247498144409895206"
+            },
+            "input": "10",
+            "message": "IntegerIntervalViolationV1 { path: SnapshotPath { segments: [] } }",
+            "outcome": "rejected",
+            "phase": "external_input_admission"
+          },
+          {
+            "after": {
+              "epoch": "InstanceEpoch(3)",
+              "instance": "0xa04:1 (this object; no replacement on update)",
+              "output": {
+                "scalar_text": "3",
+                "schema": "IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false })",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U8(3)"
+              },
+              "source": "~state\u27e8u8:1..10\u27e9 := 2\nstate = signal\nstate\n",
+              "state_hash": "11501611969782272615"
+            },
+            "before": {
+              "epoch": "InstanceEpoch(2)",
+              "instance": "0xa04:1 (this object; no replacement on update)",
+              "output": {
+                "scalar_text": "9",
+                "schema": "IntegerInterval(Unsigned { width: W8, lower: 1, upper: 10, upper_inclusive: false })",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "U8(9)"
+              },
+              "source": "~state\u27e8u8:1..10\u27e9 := 2\nstate = signal\nstate\n",
+              "state_hash": "13247498144409895206"
+            },
+            "input": "3",
+            "outcome": "accepted",
+            "phase": "correct_publication"
+          }
+        ],
+        "restarts": [
+          {
+            "initial": "2",
+            "accepted": "9",
+            "passed": true
+          },
+          {
+            "initial": "2",
+            "accepted": "9",
+            "passed": true
+          },
+          {
+            "initial": "2",
+            "accepted": "9",
+            "passed": true
+          }
+        ]
+      },
+      "diagnostic_selection": {
+        "source": "caf\u00e9 := 1\n10\u27e8u8:1..10\u27e9\n",
+        "selected": "10",
+        "selection": [
+          10,
+          12
+        ],
+        "stale_cleared": true,
+        "passed": true
+      },
+      "id": "E-TYPES-BROWSER",
+      "claim": "Type admission, exact values, diagnostic selection and same-instance publication",
+      "contract": "docs/design/grammar-audit/fixed-integer-intervals.md",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "source_state": "baseline plus source modifications hashed in site/artifact.json",
+      "evidence_level": "browser-execution",
+      "outcome": "passed",
+      "artifact_identity": {
+        "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+        "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+        "source_modifications": {
+          "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+          "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+          "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+          "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+          "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+          "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+          "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+          "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+          "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+          "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+          "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+          "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+          "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+        },
+        "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+        "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+        "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "target": "wasm32-unknown-unknown",
+        "profile": "release",
+        "wasm_opt": false,
+        "expected_exports": [
+          "WasmSyntaxStream",
+          "WasmSyntaxEditor",
+          "WasmDocument",
+          "WasmMixedComputeProject",
+          "TypePublicationSession",
+          "inspectMechTypes",
+          "I64PublicationSession",
+          "inventorySource"
+        ],
+        "artifacts": {
+          "pkg/mech_wasm.js": {
+            "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+            "bytes": 92075
+          },
+          "pkg/mech_wasm_bg.wasm": {
+            "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+            "bytes": 208709347
+          }
+        },
+        "environment": {
+          "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+          "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+          "wasm_pack": "wasm-pack 0.15.0"
+        },
+        "limits": [
+          "Artifact source identity comprises the baseline commit and listed modifications.",
+          "Browser device and execution outcomes are recorded separately."
+        ],
+        "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+        "loaded_wasm_bytes": 208709347,
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36"
+      },
+      "command": "python3 audit/v04/check_types_browser.py",
+      "ui_sources": {
+        "audit/v04/site/types.html": "dab68f182991687412f68ec65672067416d173131707aa209b7cbe1d568fbab3",
+        "audit/v04/site/types.js": "7cb63822511669a4df76cd4767270530812e86052ea8d68383351c1aaf50b867",
+        "audit/v04/check_types_browser.py": "5a2abe8d86bd5f4e79c5cd09adf8734e91c2214467535ef53c9b9fce3300bebb"
+      }
+    },
+    {
+      "status": "passed",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "absorbed_pr": "https://github.com/mech-lang/mech/pull/829",
+      "absorbed_revision": "9ae5c00e0184fe341d2ff2bdc590ede712009d2f",
+      "source_modifications": {
+        "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+        "examples/r-stack-proof/perturbed-program.mec": "b12bb44f05b9991bd93c314c60741209e94024369dedf3b75707a27d7d0262b2",
+        "examples/r-stack-proof/trust-program.mec": "9f73e1cedec94e5792a128c95cf3ea6c0852db293a05fa8b6c936887fb4aba8d",
+        "examples/r_stack_trust_proof.rs": "424c6f876e5df6ed01245a82f31ea5d2d3c6dd20705ad2c07b3e289b7c9eacf9",
+        "scripts/demo-r-stack.sh": "94e9c39ac29cacafd1c77b67ea6b3f4b8076bca71c3e8cede9b5f96e5b5c681e",
+        "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+        "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+        "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+        "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+        "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+        "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3"
+      },
+      "scope": "native canonical parser and semantic frontend, source and decoded artifacts, engine resident primitive execution",
+      "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-product cargo run -p mech --locked --offline --no-default-features --example r-stack-trust-proof --features r_stack_trust_proof -- --dump all",
+      "features": "r_stack_trust_proof",
+      "default_features": false,
+      "exit_code": 0,
+      "binary": {
+        "path": "/private/tmp/mech-v04-target-product/debug/examples/r-stack-trust-proof",
+        "sha256": "98ad3d6f3af12ea4c8178665da673bf8f57fdfc5e0eec833b08ad405c872b2e4"
+      },
+      "environment": {
+        "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+        "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)"
+      },
+      "source": "~x := 1.0\nnext := x * 2.0 + 3.0\nsafe! := next < 1000.0\nx = next\nx\n",
+      "source_artifact_revision": "00bbba96a8956175aa2aaa2266ccebe49a6fb6e770210206b198f8daa2fcf146",
+      "turns": [
+        {
+          "turn": 1,
+          "expected": 5,
+          "source_artifact": 5,
+          "decoded_bytecode": 5,
+          "epoch": 1
+        },
+        {
+          "turn": 2,
+          "expected": 13,
+          "source_artifact": 13,
+          "decoded_bytecode": 13,
+          "epoch": 2
+        },
+        {
+          "turn": 3,
+          "expected": 29,
+          "source_artifact": 29,
+          "decoded_bytecode": 29,
+          "epoch": 3
+        },
+        {
+          "turn": 4,
+          "expected": 61,
+          "source_artifact": 61,
+          "decoded_bytecode": 61,
+          "epoch": 4
+        },
+        {
+          "turn": 5,
+          "expected": 125,
+          "source_artifact": 125,
+          "decoded_bytecode": 125,
+          "epoch": 5
+        },
+        {
+          "turn": 6,
+          "expected": 253,
+          "source_artifact": 253,
+          "decoded_bytecode": 253,
+          "epoch": 6
+        },
+        {
+          "turn": 7,
+          "expected": 509,
+          "source_artifact": 509,
+          "decoded_bytecode": 509,
+          "epoch": 7
+        }
+      ],
+      "checks": [
+        "malformed source rejected",
+        "incompatible source rejected by semantic typing",
+        "truncated bytecode rejected before activation",
+        "tampered artifact rejected before receiving a revision",
+        "one-byte activation budget rejected atomically (used=0)",
+        "candidate 1021 rejected by safe!; epoch/hash/state/output stayed (7, 4468696535707004211, 509, 509)"
+      ],
+      "perturbation": {
+        "expected": [
+          7,
+          25,
+          79
+        ],
+        "passed": true
+      },
+      "missing_catalog_rejected": true,
+      "full_transcript": {
+        "path": "audit/v04/evidence/trust-native-full.log",
+        "sha256": "8b058186a5e7a95f81d894d45222320290e1ef2d3af4c8cd76cd792c738106fd"
+      },
+      "id": "E-TRUST-NATIVE",
+      "claim": "Source recurrence and perturbation, artifact/bytecode receipt equality, and isolated rejection paths",
+      "contract": "examples/r-stack-proof/README.md",
+      "evidence_level": "native-execution",
+      "outcome": "passed",
+      "artifact_identity": {
+        "path": "/private/tmp/mech-v04-target-product/debug/examples/r-stack-trust-proof",
+        "sha256": "98ad3d6f3af12ea4c8178665da673bf8f57fdfc5e0eec833b08ad405c872b2e4"
+      }
+    },
+    {
+      "status": "passed",
+      "environment": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+      "metadata": {
+        "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+        "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+        "source_modifications": {
+          "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+          "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+          "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+          "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+          "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+          "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+          "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+          "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+          "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+          "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+          "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+          "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+          "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+        },
+        "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+        "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+        "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "target": "wasm32-unknown-unknown",
+        "profile": "release",
+        "wasm_opt": false,
+        "expected_exports": [
+          "WasmSyntaxStream",
+          "WasmSyntaxEditor",
+          "WasmDocument",
+          "WasmMixedComputeProject",
+          "TypePublicationSession",
+          "inspectMechTypes",
+          "I64PublicationSession",
+          "inventorySource"
+        ],
+        "artifacts": {
+          "pkg/mech_wasm.js": {
+            "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+            "bytes": 92075
+          },
+          "pkg/mech_wasm_bg.wasm": {
+            "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+            "bytes": 208709347
+          }
+        },
+        "environment": {
+          "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+          "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+          "wasm_pack": "wasm-pack 0.15.0"
+        },
+        "limits": [
+          "Artifact source identity comprises the baseline commit and listed modifications.",
+          "Browser device and execution outcomes are recorded separately."
+        ],
+        "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36"
+      },
+      "scope": "canonical-source WASM single-candidate execution",
+      "results": [
+        {
+          "id": "original",
+          "passed": true,
+          "expected": "5",
+          "result": {
+            "artifact_bytes": 3728,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "source": "~x := 1.0\nnext := x * 2.0 + 3.0\nsafe! := next < 1000.0\nx = next\nx\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": "5",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4617315517961601024))"
+              }
+            ]
+          }
+        },
+        {
+          "id": "perturbed",
+          "passed": true,
+          "expected": "7",
+          "result": {
+            "artifact_bytes": 3728,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [],
+            "epoch": "InstanceEpoch(1)",
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "source": "~x := 1.0\nnext := x * 3.0 + 4.0\nsafe! := next < 1000.0\nx = next\nx\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "correct_publication": "published; independent expected-value comparison required",
+              "execution": "completed",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU",
+            "values": [
+              {
+                "scalar_text": "7",
+                "schema": "FloatingPoint(W64)",
+                "shape": "ShapeInstance { parameter_values: [] }",
+                "transport": "exact Rust value text; no JavaScript Number conversion",
+                "value": "F64(F64Bits(4619567317775286272))"
+              }
+            ]
+          }
+        },
+        {
+          "id": "syntax",
+          "passed": true,
+          "expected": "semantic_checking: blocked by strict syntax validation",
+          "result": {
+            "diagnostics": [
+              {
+                "code": "syntax/missing-delimiter",
+                "context": null,
+                "expected": [
+                  {
+                    "kind": "token",
+                    "value": "RightBracket"
+                  }
+                ],
+                "fixes": [
+                  {
+                    "applicability": "machine-applicable",
+                    "edits": [
+                      {
+                        "delete": {
+                          "end": 15,
+                          "start": 15
+                        },
+                        "insert": "]"
+                      }
+                    ],
+                    "title": "Insert `]`"
+                  }
+                ],
+                "found": {
+                  "kind": "Eof",
+                  "text": null
+                },
+                "id": 1,
+                "labels": [],
+                "message": "missing closing delimiter",
+                "phase": "syntax",
+                "primary": {
+                  "element": {
+                    "Node": 71
+                  },
+                  "kind": "element",
+                  "relative": {
+                    "end": 0,
+                    "start": 0
+                  }
+                },
+                "recovery": {
+                  "at": 15,
+                  "kind": "insert",
+                  "syntax": {
+                    "kind": "token",
+                    "value": "RightBracket"
+                  }
+                },
+                "related": [],
+                "rule": 365099244,
+                "severity": "error",
+                "tags": 0
+              }
+            ],
+            "source": "~x := [1.0; 2.0",
+            "stages": {
+              "parsing": "completed",
+              "semantic_checking": "blocked by strict syntax validation"
+            },
+            "target": "WASM-hosted resident CPU"
+          }
+        },
+        {
+          "id": "type",
+          "passed": true,
+          "expected": "semantic_checking: rejected",
+          "result": {
+            "diagnostics": [
+              {
+                "code": "source-semantics/non-numeric-arithmetic-kind",
+                "document": "41643696389498949",
+                "message": "type resolution for `math/mul` failed; string does not satisfy Number; structure f64 does not match matrix<T0;1\u00d7d2>; structure f64 does not match matrix<T0;d0\u00d7d1>; structure f64 does not match matrix<T0;d2\u00d71>; structure string does not match matrix<T1;d0\u00d7d1>",
+                "phase": "semantic_checking",
+                "range": [
+                  18,
+                  27
+                ],
+                "revision": "0"
+              }
+            ],
+            "product_diagnostic": {
+              "message": "type resolution for `math/mul` failed; string does not satisfy Number; structure f64 does not match matrix<T0;1\u00d7d2>; structure f64 does not match matrix<T0;d0\u00d7d1>; structure f64 does not match matrix<T0;d2\u00d71>; structure string does not match matrix<T1;d0\u00d7d1>",
+              "presentation_range": "[2:9, 2:18)",
+              "semantic": {
+                "code": "source-semantics/non-numeric-arithmetic-kind",
+                "document": "41643696389498949",
+                "message": "type resolution for `math/mul` failed; string does not satisfy Number; structure f64 does not match matrix<T0;1\u00d7d2>; structure f64 does not match matrix<T0;d0\u00d7d1>; structure f64 does not match matrix<T0;d2\u00d71>; structure string does not match matrix<T1;d0\u00d7d1>",
+                "phase": "semantic_checking",
+                "range": [
+                  18,
+                  27
+                ],
+                "revision": "0"
+              }
+            },
+            "source": "~x := 1.0\nnext := x * \"two\"\nx = next\nx\n",
+            "stages": {
+              "parsing": "completed",
+              "semantic_checking": "rejected"
+            },
+            "target": "WASM-hosted resident CPU"
+          }
+        },
+        {
+          "id": "integrity",
+          "passed": true,
+          "expected": "execution: rejected",
+          "result": {
+            "artifact_bytes": 3728,
+            "artifact_transport": "bytecode-v1 encoded and decoded before activation",
+            "diagnostics": [
+              {
+                "message": "Integrity { constraint: IntegrityConstraintId(0) }",
+                "phase": "execution"
+              }
+            ],
+            "inputs": [],
+            "outputs": [
+              "Some(Schema { dimension_parameters: [], body: FloatingPoint(W64) })"
+            ],
+            "source": "~x := 509.0\nnext := x * 2.0 + 3.0\nsafe! := next < 1000.0\nx = next\nx\n",
+            "stages": {
+              "activation": "completed",
+              "artifact_construction": "completed",
+              "execution": "rejected",
+              "parsing": "completed",
+              "semantic_checking": "completed"
+            },
+            "target": "WASM-hosted resident CPU"
+          }
+        }
+      ],
+      "native_record_status": "passed",
+      "id": "E-TRUST-BROWSER",
+      "claim": "Canonical-source recurrence, source perturbation and rejected syntax/type/integrity candidates",
+      "contract": "examples/r-stack-proof/README.md",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "source_state": "baseline plus source modifications hashed in site/artifact.json",
+      "evidence_level": "browser-execution",
+      "outcome": "passed",
+      "artifact_identity": {
+        "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+        "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+        "source_modifications": {
+          "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+          "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+          "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+          "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+          "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+          "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+          "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+          "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+          "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+          "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+          "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+          "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+          "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+        },
+        "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+        "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+        "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "target": "wasm32-unknown-unknown",
+        "profile": "release",
+        "wasm_opt": false,
+        "expected_exports": [
+          "WasmSyntaxStream",
+          "WasmSyntaxEditor",
+          "WasmDocument",
+          "WasmMixedComputeProject",
+          "TypePublicationSession",
+          "inspectMechTypes",
+          "I64PublicationSession",
+          "inventorySource"
+        ],
+        "artifacts": {
+          "pkg/mech_wasm.js": {
+            "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+            "bytes": 92075
+          },
+          "pkg/mech_wasm_bg.wasm": {
+            "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+            "bytes": 208709347
+          }
+        },
+        "environment": {
+          "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+          "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+          "wasm_pack": "wasm-pack 0.15.0"
+        },
+        "limits": [
+          "Artifact source identity comprises the baseline commit and listed modifications.",
+          "Browser device and execution outcomes are recorded separately."
+        ],
+        "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+        "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36"
+      },
+      "command": "python3 audit/v04/check_trust_browser.py",
+      "ui_sources": {
+        "audit/v04/site/trust.html": "8c508b18b20077b60939ce54f74a36ba86d3ff97830199dc16ec8255b12b61a7",
+        "audit/v04/site/trust.js": "7d5343c4b7b73577e6014f1e748690060e2042ed2d922b5617751fd2095e1567",
+        "audit/v04/check_trust_browser.py": "e64571921588b61412662453801a908ede4f4a5d9e718605fef5dd9daf3e7c8e"
+      }
+    },
+    {
+      "id": "E-INTERVAL-ARITHMETIC-CONTRACT",
+      "claim": "Fixed integer interval arithmetic rejection follows the original conversion boundary and explicit predicate contract",
+      "evidence_level": "history-and-contract-review",
+      "outcome": "verified",
+      "classification": "documented-capability-limit",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "records": [
+        {
+          "revision": "61d0203aa96e70d44f83c58d29cb4f5296e7cf0a",
+          "path": "docs/design/grammar-audit/r15-fixed-integer-intervals.md",
+          "sha256": "dea5cc9b74742cce9e7d320580fc3ebc4af0ac8eee8f3f814bd2dc5f9cafa949",
+          "relevant_lines": [
+            {
+              "line": 26,
+              "text": "layer, but source typing does not implicitly widen it. Different intervals"
+            }
+          ]
+        },
+        {
+          "revision": "edcd11eef9603b6629011ce3edca74670270e9a8",
+          "path": "docs/design/grammar-audit/r15-fixed-integer-intervals.md",
+          "sha256": "648a69a9e3b17ce54e1f4333deac2755546061a63df5dc0ce200a866f32e0a9c",
+          "relevant_lines": [
+            {
+              "line": 26,
+              "text": "layer, but source typing does not implicitly widen it. Different intervals"
+            },
+            {
+              "line": 44,
+              "text": "the schema-derived path. The correction assigns `Equatable`, `Keyable`, and"
+            },
+            {
+              "line": 45,
+              "text": "`Ordered` to valid intervals in the shared intrinsic predicate classifier,"
+            },
+            {
+              "line": 48,
+              "text": "remains schema-authoritative. This does not grant numeric, arithmetic, or"
+            },
+            {
+              "line": 49,
+              "text": "range-endpoint capabilities and does not change implicit narrowing/widening."
+            }
+          ]
+        },
+        {
+          "revision": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+          "path": "docs/design/grammar-audit/fixed-integer-intervals.md",
+          "sha256": "70d2776e26d326822df9a1531fe624c0269bf94ecd780f85ee21a2459b89de0e",
+          "relevant_lines": [
+            {
+              "line": 10,
+              "text": "subtyping, or arithmetic result-bound inference; those need separate contracts."
+            },
+            {
+              "line": 30,
+              "text": "layer, but source typing does not implicitly widen it. Different intervals"
+            },
+            {
+              "line": 48,
+              "text": "Valid intervals are Equatable, Keyable, and Ordered whether constructed directly"
+            },
+            {
+              "line": 49,
+              "text": "or derived from a schema. They do not gain Number, arithmetic promotion, or"
+            }
+          ]
+        }
+      ],
+      "native_rejection": "audit/v04/evidence/extraction/native-inventory-initial.log",
+      "browser_rejection": "audit/v04/evidence/types-browser.json",
+      "core_test": "src/core/tests/type_system_builtin.rs:239"
+    },
+    {
+      "id": "E-CORE-TYPE-REGISTRY",
+      "claim": "Closed scalar registry and direct/schema-derived interval predicate identities agree",
+      "contract": "docs/design/semantic-type-authority.md and fixed-integer-intervals.md",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "artifact_identity": {
+        "path": "/private/tmp/mech-v04-target-architecture/debug/deps/type_system_builtin-c939f3a04f3a4ef3",
+        "sha256": "1b6af5fefa9cba3d46aec5436ddead34695a5334f531a8a865c146fb6c865aee"
+      },
+      "configuration": {
+        "package": "mech-core",
+        "default_features": false,
+        "original_build_command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-architecture cargo test -p mech-core --locked --offline --test type_system_builtin --no-default-features"
+      },
+      "command": "/private/tmp/mech-v04-target-architecture/debug/deps/type_system_builtin-c939f3a04f3a4ef3",
+      "evidence_level": "native-execution",
+      "outcome": "passed",
+      "actual_outcome": "17passed0failed",
+      "result_location": "audit/v04/evidence/core-type-registry.log"
+    }
+  ]
+}

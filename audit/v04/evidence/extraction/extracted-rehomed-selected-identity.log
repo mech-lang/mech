@@ -1,0 +1,7 @@
+
+running 1 test
+MECH_CATALOG_COUNTS	3	0	a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d
+test distribution_size_report_catalog_counts ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

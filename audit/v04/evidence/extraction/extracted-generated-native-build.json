@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--offline",
+    "--manifest-path",
+    "../generated-registry-development/Cargo.toml"
+  ],
+  "cwd": "/private/tmp/mech-v04-extraction/mech",
+  "exit_code": 0,
+  "elapsed_seconds": 44.91223073005676,
+  "environment": {
+    "CARGO_TARGET_DIR": "/private/tmp/mech-v04-target-extraction/extracted",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  }
+}

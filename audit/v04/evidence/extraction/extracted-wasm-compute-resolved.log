@@ -1,0 +1,38 @@
+    Checking wide v0.7.33
+    Checking num-bigint v0.4.8
+   Compiling semver v1.0.28
+    Checking signature v2.2.0
+    Checking zeroize v1.9.0
+    Checking subtle v2.6.1
+    Checking rand_core v0.6.4
+    Checking web-sys v0.3.103
+    Checking ed25519 v2.2.3
+   Compiling rustc_version v0.4.1
+   Compiling curve25519-dalek v4.1.3
+    Checking num-rational v0.4.2
+    Checking ed25519-dalek v2.2.0
+    Checking simba v0.9.1
+    Checking nalgebra v0.34.2
+    Checking mech-core v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/core)
+    Checking gloo-utils v0.2.0
+    Checking gloo-net v0.6.0
+    Checking mech-syntax v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/syntax)
+    Checking mech-bytecode v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/bytecode)
+    Checking mech-math v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/math)
+    Checking mech-logic v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/logic)
+    Checking mech-string v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/string)
+    Checking mech-compare v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/compare)
+    Checking mech-matrix v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/matrix)
+    Checking mech-range v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/range)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/engine)
+    Checking mech-compute v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/compute)
+    Checking mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+    Checking mech-runtime v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/runtime)
+    Checking mech-scene v0.3.5 (/private/tmp/mech-v04-extraction/mech/hosts/scene)
+    Checking mech-time v0.3.5 (/private/tmp/mech-v04-extraction/mech/hosts/time)
+    Checking mech-timer v0.3.5 (/private/tmp/mech-v04-extraction/mech/hosts/timer)
+    Checking mech-gpu v0.3.5 (/private/tmp/mech-v04-extraction/mech/hosts/gpu)
+    Checking mech-browser v0.3.5 (/private/tmp/mech-v04-extraction/mech/hosts/browser)
+    Checking mech-console v0.3.5 (/private/tmp/mech-v04-extraction/mech/hosts/console)
+    Checking mech-wasm v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/wasm)
+    Finished `dev` profile [unoptimized] target(s) in 1m 45s

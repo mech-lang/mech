@@ -1,0 +1,680 @@
+{
+  "outcome": "passed",
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+  "cases": [
+    {
+      "outcome": "passed",
+      "target": "wasm32-unknown-unknown",
+      "api": "WasmProject.fromSources",
+      "which": "two",
+      "dt": "0.01",
+      "source": "N-body resident activation v1\n===============================================================================\n+> combinatorics\n+> stats\n===============================================================================\n\n@clock := timer://clock/tick{:read(tick)}\n@scene := scene://orbit/frame{:write(points)}\n\n  days-per-year := 365.24\n  \u03c0 := 3.141592654\n  solar-mass := 4 * \u03c0 ^ 2\n  \u0394t := @clock/tick * 0.0 + 0.01\n\n  \u2609 := [0 0 0 0 0 0 solar-mass]'\n  \u263f := [ -0.38972469318558057,\n           -0.15022403533011131,\n            0.023476059815063703,\n            0.0042923857521344092 * days-per-year,\n           -0.021425298453769862 * days-per-year,\n           -0.0023708721826123731 * days-per-year,\n            1.660120e-07 * solar-mass ]\n  \u2640 := [ -0.71803521454713496,\n            0.041947688018485076,\n            0.041304042456734767,\n           -0.0013897739822126357 * days-per-year,\n           -0.020119890903497486 * days-per-year,\n           -0.00030021717325320866 * days-per-year,\n            2.447838e-06 * solar-mass ]\n  \u2641 := [ -0.17713546150023925,\n            0.96724162210078579,\n           -0.0000039007362829064718,\n           -0.017201146327519165 * days-per-year,\n           -0.0031864352617521142 * days-per-year,\n            0.00000018827814191274 * days-per-year,\n            3.003489e-06 * solar-mass ]\n  \u2642 := [ 1.3907159267594730,\n           -0.013415706106135855,\n           -0.034467796700612273,\n            0.00021345415375975118 * days-per-year,\n            0.015123072614264662 * days-per-year,\n            0.00030512951698556953 * days-per-year,\n            3.227151e-07 * solar-mass ]\n  \u2643 := [4.84143144246472090,\n           -1.16032004402742839,\n           -0.103622044471123109,\n            0.00166007664274403694 * days-per-year,\n            0.00769901118419740425 * days-per-year,\n           -0.0000690460016972063023 * days-per-year,\n            0.000954791938424326609 * solar-mass]\n  \u2644 := [8.34336671824457987,\n            4.12479856412430479,\n           -0.403523417114321381,\n           -0.00276742510726862411 * days-per-year,\n            0.00499852801234917238 * days-per-year,\n            0.0000230417297573763929 * days-per-year,\n            0.000285885980666130812 * solar-mass]\n  \u2645 := [12.8943695621391310,\n          -15.1111514016986312,\n           -0.223307578892655734,\n            0.00296460137564761618 * days-per-year,\n            0.00237847173959480950 * days-per-year,\n           -0.0000296589568540237556 * days-per-year,\n            0.0000436624404335156298 * solar-mass]\n  \u2646 := [15.3796971148509165,\n          -25.9193146099879641,\n            0.179258772950371181,\n            0.00268067772490389322 * days-per-year,\n            0.00162824170038242295 * days-per-year,\n           -0.000095159225451971587 * days-per-year,\n            0.0000515138902046611451 * solar-mass]\n  \u2647 := [ -9.87512510193949936,\n           -27.9392880241831424,\n            5.06873275440839440,\n            0.00344178030872987300 * days-per-year,\n           -0.00152819214839188910 * days-per-year,\n           -0.00129137458409475460 * days-per-year,\n            6.547e-09 * solar-mass ]\n\n  planets := [0 0 0 0 0 0 1; 1 0 0 0 1 0 0.001]\n  ixes := combinatorics/n-choose-k(1..=2,2)\n  ix1 := ixes[1,:]\n  ix2 := ixes[2,:]\n\n  ~x := planets[:,[1,2,3]]\n  ~v := planets[:,[4,5,6]]\n  m := planets[:,7]\n\n  \u0394 := x[ix1,:] - x[ix2,:]\n  distance\u00b2 := stats/sum/column(\u0394 ^ 2)\n  mag := \u0394t * distance\u00b2 ^ -1.5\n  v[ix1,:] -= \u0394 * m[ix2] * mag\n  v[ix2,:] += \u0394 * m[ix1] * mag\n  x += v * \u0394t\n\n  display-position := x[:,[1,2]]\n  display-distance\u00b2 := stats/sum/column(display-position ^ 2)\n  display-scale := (display-distance\u00b2 + 0.000000000000000000000000000001) ^ -0.25 * 44.0\n  screen-x := 300.0 + display-position[:,1] * display-scale\n  screen-y := 300.0 - display-position[:,2] * display-scale\n  screen-points := [screen-x screen-y]\n\n  @scene/points <- screen-points\n  positions := x\n",
+      "configuration": "config := {\n  runtime: {\n    resident-durability: \"volatile\"\n\n    limits: {\n      max-turn-duration-ms: 2000\n    }\n  }\n\n  hosts: [\n    {\n      name: \"clock\"\n      provider: \"timer\"\n      settings: {\n        frequency-hz: 60\n        max-catch-up-steps: 1\n        queue-policy: \"latest\"\n      }\n    }\n\n    {\n      name: \"orbit\"\n      provider: \"scene\"\n      settings: {\n        selector: \"#nbody\"\n        renderer: \"svg\"\n        width: 800\n        height: 600\n        point-radius: 4\n        first-point-radius: 8\n        background: \"#050816\"\n      }\n    }\n  ]\n\n  run: {\n    paths: [\"n-body.mec\"]\n\n    grants: [\n      {\n        target: \"clock/tick\"\n        operations: [\"read\"]\n        paths: [\"tick\"]\n      }\n\n      {\n        target: \"orbit/frame\"\n        operations: [\"write\"]\n        paths: [\"points\"]\n      }\n    ]\n  }\n}\n",
+      "compile_ms": 1009.5,
+      "frames": [
+        {
+          "processed": 0,
+          "pending": 0,
+          "rendered": 0,
+          "events": [],
+          "route": "resident-external",
+          "residentTurns": 0,
+          "accepted": 0,
+          "rejected": 0,
+          "coalesced": 0,
+          "computeCommand": null
+        },
+        {
+          "processed": 1,
+          "pending": 0,
+          "rendered": 1,
+          "events": [
+            {
+              "protocol_version": 1,
+              "sequence": 0,
+              "event": {
+                "channel": "output",
+                "event": {
+                  "source": {
+                    "kind": "host",
+                    "details": {
+                      "name": "scene://orbit/frame"
+                    }
+                  },
+                  "stream": "stdout",
+                  "display_id": "scene-orbit",
+                  "operation": "create",
+                  "content": {
+                    "kind": "scene",
+                    "data": {
+                      "representations": {
+                        "representations": [
+                          {
+                            "media_type": "application/vnd.mech.scene+json",
+                            "data": {
+                              "encoding": "text",
+                              "value": "{\"width\":800.0,\"height\":600.0,\"background\":\"#050816\",\"circles\":[{\"id\":\"body-0\",\"x\":300.01391402170475,\"y\":300.0,\"radius\":8.0,\"fill\":\"#ffd166\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-1\",\"x\":343.99669984874555,\"y\":299.5599890004126,\"radius\":4.0,\"fill\":\"#b8b8b8\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0}],\"lines\":[],\"line_strips\":[],\"texts\":[]}"
+                            }
+                          },
+                          {
+                            "media_type": "text/plain",
+                            "data": {
+                              "encoding": "text",
+                              "value": "scene 800\u00d7600 (2 circles, 0 lines, 0 line strips, 0 texts)"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "route": "resident-external",
+          "residentTurns": 1,
+          "accepted": 1,
+          "rejected": 0,
+          "coalesced": 0,
+          "computeCommand": null
+        },
+        {
+          "processed": 1,
+          "pending": 0,
+          "rendered": 1,
+          "events": [
+            {
+              "protocol_version": 1,
+              "sequence": 1,
+              "event": {
+                "channel": "output",
+                "event": {
+                  "source": {
+                    "kind": "host",
+                    "details": {
+                      "name": "scene://orbit/frame"
+                    }
+                  },
+                  "stream": "stdout",
+                  "display_id": "scene-orbit",
+                  "operation": "update",
+                  "content": {
+                    "kind": "scene",
+                    "data": {
+                      "representations": {
+                        "representations": [
+                          {
+                            "media_type": "application/vnd.mech.scene+json",
+                            "data": {
+                              "encoding": "text",
+                              "value": "{\"width\":800.0,\"height\":600.0,\"background\":\"#050816\",\"circles\":[{\"id\":\"body-0\",\"x\":300.0240999271573,\"y\":299.9999196561792,\"radius\":8.0,\"fill\":\"#ffd166\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-1\",\"x\":343.98899895457646,\"y\":299.1200000121062,\"radius\":4.0,\"fill\":\"#b8b8b8\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0}],\"lines\":[],\"line_strips\":[],\"texts\":[]}"
+                            }
+                          },
+                          {
+                            "media_type": "text/plain",
+                            "data": {
+                              "encoding": "text",
+                              "value": "scene 800\u00d7600 (2 circles, 0 lines, 0 line strips, 0 texts)"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "route": "resident-external",
+          "residentTurns": 2,
+          "accepted": 2,
+          "rejected": 0,
+          "coalesced": 0,
+          "computeCommand": null
+        }
+      ],
+      "info": {
+        "route": "resident-external",
+        "routing_policy": "require-resident",
+        "program_revision": "a05b99b50d5ded6526904fb5fa68dd39ca5bb7e355d8327ee7eae06e6e530631",
+        "plan_generation": 1,
+        "layout_generation": 1,
+        "requirements": 2,
+        "observations": 1,
+        "effects": 1,
+        "resident_accepted_turns": 2,
+        "resident_rejected_turns": 0,
+        "coalesced_host_packets": 0,
+        "ignored_host_packets": 0
+      },
+      "actual": [
+        3.000050188748086e-07,
+        1.0001503037934954e-09,
+        0,
+        0.9996999949811252,
+        0.019998999849696206,
+        0
+      ],
+      "expected": [
+        3.000050188748086e-07,
+        1.0001503037934954e-09,
+        0,
+        0.9996999949811252,
+        0.019998999849696206,
+        0
+      ],
+      "max_absolute_error": 0,
+      "tolerance": 1e-12,
+      "artifact": {
+        "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+        "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+        "source_modifications": {
+          "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+          "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+          "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+          "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+          "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+          "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+          "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+          "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+          "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+          "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+          "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+          "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+          "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+        },
+        "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+        "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+        "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "target": "wasm32-unknown-unknown",
+        "profile": "release",
+        "wasm_opt": false,
+        "expected_exports": [
+          "WasmSyntaxStream",
+          "WasmSyntaxEditor",
+          "WasmDocument",
+          "WasmMixedComputeProject",
+          "TypePublicationSession",
+          "inspectMechTypes",
+          "I64PublicationSession",
+          "inventorySource"
+        ],
+        "artifacts": {
+          "pkg/mech_wasm.js": {
+            "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+            "bytes": 92075
+          },
+          "pkg/mech_wasm_bg.wasm": {
+            "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+            "bytes": 208709347
+          }
+        },
+        "environment": {
+          "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+          "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+          "wasm_pack": "wasm-pack 0.15.0"
+        },
+        "limits": [
+          "Artifact source identity comprises the baseline commit and listed modifications.",
+          "Browser device and execution outcomes are recorded separately."
+        ],
+        "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194"
+      }
+    },
+    {
+      "outcome": "passed",
+      "target": "wasm32-unknown-unknown",
+      "api": "WasmProject.fromSources",
+      "which": "two",
+      "dt": "0.02",
+      "source": "N-body resident activation v1\n===============================================================================\n+> combinatorics\n+> stats\n===============================================================================\n\n@clock := timer://clock/tick{:read(tick)}\n@scene := scene://orbit/frame{:write(points)}\n\n  days-per-year := 365.24\n  \u03c0 := 3.141592654\n  solar-mass := 4 * \u03c0 ^ 2\n  \u0394t := @clock/tick * 0.0 + 0.02\n\n  \u2609 := [0 0 0 0 0 0 solar-mass]'\n  \u263f := [ -0.38972469318558057,\n           -0.15022403533011131,\n            0.023476059815063703,\n            0.0042923857521344092 * days-per-year,\n           -0.021425298453769862 * days-per-year,\n           -0.0023708721826123731 * days-per-year,\n            1.660120e-07 * solar-mass ]\n  \u2640 := [ -0.71803521454713496,\n            0.041947688018485076,\n            0.041304042456734767,\n           -0.0013897739822126357 * days-per-year,\n           -0.020119890903497486 * days-per-year,\n           -0.00030021717325320866 * days-per-year,\n            2.447838e-06 * solar-mass ]\n  \u2641 := [ -0.17713546150023925,\n            0.96724162210078579,\n           -0.0000039007362829064718,\n           -0.017201146327519165 * days-per-year,\n           -0.0031864352617521142 * days-per-year,\n            0.00000018827814191274 * days-per-year,\n            3.003489e-06 * solar-mass ]\n  \u2642 := [ 1.3907159267594730,\n           -0.013415706106135855,\n           -0.034467796700612273,\n            0.00021345415375975118 * days-per-year,\n            0.015123072614264662 * days-per-year,\n            0.00030512951698556953 * days-per-year,\n            3.227151e-07 * solar-mass ]\n  \u2643 := [4.84143144246472090,\n           -1.16032004402742839,\n           -0.103622044471123109,\n            0.00166007664274403694 * days-per-year,\n            0.00769901118419740425 * days-per-year,\n           -0.0000690460016972063023 * days-per-year,\n            0.000954791938424326609 * solar-mass]\n  \u2644 := [8.34336671824457987,\n            4.12479856412430479,\n           -0.403523417114321381,\n           -0.00276742510726862411 * days-per-year,\n            0.00499852801234917238 * days-per-year,\n            0.0000230417297573763929 * days-per-year,\n            0.000285885980666130812 * solar-mass]\n  \u2645 := [12.8943695621391310,\n          -15.1111514016986312,\n           -0.223307578892655734,\n            0.00296460137564761618 * days-per-year,\n            0.00237847173959480950 * days-per-year,\n           -0.0000296589568540237556 * days-per-year,\n            0.0000436624404335156298 * solar-mass]\n  \u2646 := [15.3796971148509165,\n          -25.9193146099879641,\n            0.179258772950371181,\n            0.00268067772490389322 * days-per-year,\n            0.00162824170038242295 * days-per-year,\n           -0.000095159225451971587 * days-per-year,\n            0.0000515138902046611451 * solar-mass]\n  \u2647 := [ -9.87512510193949936,\n           -27.9392880241831424,\n            5.06873275440839440,\n            0.00344178030872987300 * days-per-year,\n           -0.00152819214839188910 * days-per-year,\n           -0.00129137458409475460 * days-per-year,\n            6.547e-09 * solar-mass ]\n\n  planets := [0 0 0 0 0 0 1; 1 0 0 0 1 0 0.001]\n  ixes := combinatorics/n-choose-k(1..=2,2)\n  ix1 := ixes[1,:]\n  ix2 := ixes[2,:]\n\n  ~x := planets[:,[1,2,3]]\n  ~v := planets[:,[4,5,6]]\n  m := planets[:,7]\n\n  \u0394 := x[ix1,:] - x[ix2,:]\n  distance\u00b2 := stats/sum/column(\u0394 ^ 2)\n  mag := \u0394t * distance\u00b2 ^ -1.5\n  v[ix1,:] -= \u0394 * m[ix2] * mag\n  v[ix2,:] += \u0394 * m[ix1] * mag\n  x += v * \u0394t\n\n  display-position := x[:,[1,2]]\n  display-distance\u00b2 := stats/sum/column(display-position ^ 2)\n  display-scale := (display-distance\u00b2 + 0.000000000000000000000000000001) ^ -0.25 * 44.0\n  screen-x := 300.0 + display-position[:,1] * display-scale\n  screen-y := 300.0 - display-position[:,2] * display-scale\n  screen-points := [screen-x screen-y]\n\n  @scene/points <- screen-points\n  positions := x\n",
+      "configuration": "config := {\n  runtime: {\n    resident-durability: \"volatile\"\n\n    limits: {\n      max-turn-duration-ms: 2000\n    }\n  }\n\n  hosts: [\n    {\n      name: \"clock\"\n      provider: \"timer\"\n      settings: {\n        frequency-hz: 60\n        max-catch-up-steps: 1\n        queue-policy: \"latest\"\n      }\n    }\n\n    {\n      name: \"orbit\"\n      provider: \"scene\"\n      settings: {\n        selector: \"#nbody\"\n        renderer: \"svg\"\n        width: 800\n        height: 600\n        point-radius: 4\n        first-point-radius: 8\n        background: \"#050816\"\n      }\n    }\n  ]\n\n  run: {\n    paths: [\"n-body.mec\"]\n\n    grants: [\n      {\n        target: \"clock/tick\"\n        operations: [\"read\"]\n        paths: [\"tick\"]\n      }\n\n      {\n        target: \"orbit/frame\"\n        operations: [\"write\"]\n        paths: [\"points\"]\n      }\n    ]\n  }\n}\n",
+      "compile_ms": 630.1000000089407,
+      "frames": [
+        {
+          "processed": 1,
+          "pending": 0,
+          "rendered": 1,
+          "events": [
+            {
+              "protocol_version": 1,
+              "sequence": 0,
+              "event": {
+                "channel": "output",
+                "event": {
+                  "source": {
+                    "kind": "host",
+                    "details": {
+                      "name": "scene://orbit/frame"
+                    }
+                  },
+                  "stream": "stdout",
+                  "display_id": "scene-orbit",
+                  "operation": "create",
+                  "content": {
+                    "kind": "scene",
+                    "data": {
+                      "representations": {
+                        "representations": [
+                          {
+                            "media_type": "application/vnd.mech.scene+json",
+                            "data": {
+                              "encoding": "text",
+                              "value": "{\"width\":800.0,\"height\":600.0,\"background\":\"#050816\",\"circles\":[{\"id\":\"body-0\",\"x\":300.0278280434095,\"y\":300.0,\"radius\":8.0,\"fill\":\"#ffd166\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-1\",\"x\":343.9867975797141,\"y\":299.119912013211,\"radius\":4.0,\"fill\":\"#b8b8b8\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0}],\"lines\":[],\"line_strips\":[],\"texts\":[]}"
+                            }
+                          },
+                          {
+                            "media_type": "text/plain",
+                            "data": {
+                              "encoding": "text",
+                              "value": "scene 800\u00d7600 (2 circles, 0 lines, 0 line strips, 0 texts)"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "route": "resident-external",
+          "residentTurns": 1,
+          "accepted": 1,
+          "rejected": 0,
+          "coalesced": 0,
+          "computeCommand": null
+        },
+        {
+          "processed": 1,
+          "pending": 0,
+          "rendered": 1,
+          "events": [
+            {
+              "protocol_version": 1,
+              "sequence": 1,
+              "event": {
+                "channel": "output",
+                "event": {
+                  "source": {
+                    "kind": "host",
+                    "details": {
+                      "name": "scene://orbit/frame"
+                    }
+                  },
+                  "stream": "stdout",
+                  "display_id": "scene-orbit",
+                  "operation": "update",
+                  "content": {
+                    "kind": "scene",
+                    "data": {
+                      "representations": {
+                        "representations": [
+                          {
+                            "media_type": "application/vnd.mech.scene+json",
+                            "data": {
+                              "encoding": "text",
+                              "value": "{\"width\":800.0,\"height\":600.0,\"background\":\"#050816\",\"circles\":[{\"id\":\"body-0\",\"x\":300.0482006605395,\"y\":299.99967849055577,\"radius\":8.0,\"fill\":\"#ffd166\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-1\",\"x\":343.95598327401865,\"y\":298.24000038756617,\"radius\":4.0,\"fill\":\"#b8b8b8\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0}],\"lines\":[],\"line_strips\":[],\"texts\":[]}"
+                            }
+                          },
+                          {
+                            "media_type": "text/plain",
+                            "data": {
+                              "encoding": "text",
+                              "value": "scene 800\u00d7600 (2 circles, 0 lines, 0 line strips, 0 texts)"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "route": "resident-external",
+          "residentTurns": 2,
+          "accepted": 2,
+          "rejected": 0,
+          "coalesced": 0,
+          "computeCommand": null
+        }
+      ],
+      "info": {
+        "route": "resident-external",
+        "routing_policy": "require-resident",
+        "program_revision": "5c89471df40ecee6dfa1d334fee39a4303f1743a56799e0a96cd61c8ce314e44",
+        "plan_generation": 1,
+        "layout_generation": 1,
+        "requirements": 2,
+        "observations": 1,
+        "effects": 1,
+        "resident_accepted_turns": 2,
+        "resident_rejected_turns": 0,
+        "coalesced_host_packets": 0,
+        "ignored_host_packets": 0
+      },
+      "actual": [
+        1.2000802479504122e-06,
+        8.004810084966266e-09,
+        0,
+        0.9987999197520496,
+        0.03999199518991503,
+        0
+      ],
+      "expected": [
+        1.2000802479504122e-06,
+        8.004810084966266e-09,
+        0,
+        0.9987999197520496,
+        0.03999199518991503,
+        0
+      ],
+      "max_absolute_error": 0,
+      "tolerance": 1e-12,
+      "artifact": {
+        "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+        "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+        "source_modifications": {
+          "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+          "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+          "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+          "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+          "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+          "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+          "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+          "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+          "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+          "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+          "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+          "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+          "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+        },
+        "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+        "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+        "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+        "target": "wasm32-unknown-unknown",
+        "profile": "release",
+        "wasm_opt": false,
+        "expected_exports": [
+          "WasmSyntaxStream",
+          "WasmSyntaxEditor",
+          "WasmDocument",
+          "WasmMixedComputeProject",
+          "TypePublicationSession",
+          "inspectMechTypes",
+          "I64PublicationSession",
+          "inventorySource"
+        ],
+        "artifacts": {
+          "pkg/mech_wasm.js": {
+            "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+            "bytes": 92075
+          },
+          "pkg/mech_wasm_bg.wasm": {
+            "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+            "bytes": 208709347
+          }
+        },
+        "environment": {
+          "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+          "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+          "wasm_pack": "wasm-pack 0.15.0"
+        },
+        "limits": [
+          "Artifact source identity comprises the baseline commit and listed modifications.",
+          "Browser device and execution outcomes are recorded separately."
+        ],
+        "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194"
+      }
+    },
+    {
+      "outcome": "passed",
+      "scenario": "invalid allowance rejects without accepted-state change; disposal leaves no stale scene",
+      "rejection": "max_inputs must be greater than zero",
+      "generation": 5
+    },
+    {
+      "outcome": "passed",
+      "scenario": "fresh runtime reproduces initial trace",
+      "actual": [
+        3.000050188748086e-07,
+        1.0001503037934954e-09,
+        0,
+        0.9996999949811252,
+        0.019998999849696206,
+        0
+      ]
+    }
+  ],
+  "maintained_application": {
+    "outcome": "passed",
+    "target": "wasm32-unknown-unknown",
+    "api": "WasmProject.fromSources",
+    "which": "ten",
+    "dt": "0.01",
+    "source": "N-body resident activation v1\n===============================================================================\n+> combinatorics\n+> stats\n===============================================================================\n\n@clock := timer://clock/tick{:read(tick)}\n@scene := scene://orbit/frame{:write(points)}\n\n  days-per-year := 365.24\n  \u03c0 := 3.141592654\n  solar-mass := 4 * \u03c0 ^ 2\n  \u0394t := @clock/tick * 0.0 + 0.01\n\n  \u2609 := [0 0 0 0 0 0 solar-mass]'\n  \u263f := [ -0.38972469318558057,\n           -0.15022403533011131,\n            0.023476059815063703,\n            0.0042923857521344092 * days-per-year,\n           -0.021425298453769862 * days-per-year,\n           -0.0023708721826123731 * days-per-year,\n            1.660120e-07 * solar-mass ]\n  \u2640 := [ -0.71803521454713496,\n            0.041947688018485076,\n            0.041304042456734767,\n           -0.0013897739822126357 * days-per-year,\n           -0.020119890903497486 * days-per-year,\n           -0.00030021717325320866 * days-per-year,\n            2.447838e-06 * solar-mass ]\n  \u2641 := [ -0.17713546150023925,\n            0.96724162210078579,\n           -0.0000039007362829064718,\n           -0.017201146327519165 * days-per-year,\n           -0.0031864352617521142 * days-per-year,\n            0.00000018827814191274 * days-per-year,\n            3.003489e-06 * solar-mass ]\n  \u2642 := [ 1.3907159267594730,\n           -0.013415706106135855,\n           -0.034467796700612273,\n            0.00021345415375975118 * days-per-year,\n            0.015123072614264662 * days-per-year,\n            0.00030512951698556953 * days-per-year,\n            3.227151e-07 * solar-mass ]\n  \u2643 := [4.84143144246472090,\n           -1.16032004402742839,\n           -0.103622044471123109,\n            0.00166007664274403694 * days-per-year,\n            0.00769901118419740425 * days-per-year,\n           -0.0000690460016972063023 * days-per-year,\n            0.000954791938424326609 * solar-mass]\n  \u2644 := [8.34336671824457987,\n            4.12479856412430479,\n           -0.403523417114321381,\n           -0.00276742510726862411 * days-per-year,\n            0.00499852801234917238 * days-per-year,\n            0.0000230417297573763929 * days-per-year,\n            0.000285885980666130812 * solar-mass]\n  \u2645 := [12.8943695621391310,\n          -15.1111514016986312,\n           -0.223307578892655734,\n            0.00296460137564761618 * days-per-year,\n            0.00237847173959480950 * days-per-year,\n           -0.0000296589568540237556 * days-per-year,\n            0.0000436624404335156298 * solar-mass]\n  \u2646 := [15.3796971148509165,\n          -25.9193146099879641,\n            0.179258772950371181,\n            0.00268067772490389322 * days-per-year,\n            0.00162824170038242295 * days-per-year,\n           -0.000095159225451971587 * days-per-year,\n            0.0000515138902046611451 * solar-mass]\n  \u2647 := [ -9.87512510193949936,\n           -27.9392880241831424,\n            5.06873275440839440,\n            0.00344178030872987300 * days-per-year,\n           -0.00152819214839188910 * days-per-year,\n           -0.00129137458409475460 * days-per-year,\n            6.547e-09 * solar-mass ]\n\n  planets := [\u2609 \u263f \u2640 \u2641 \u2642 \u2643 \u2644 \u2645 \u2646 \u2647]'\n  ixes := combinatorics/n-choose-k(1..=10,2)\n  ix1 := ixes[1,:]\n  ix2 := ixes[2,:]\n\n  ~x := planets[:,[1,2,3]]\n  ~v := planets[:,[4,5,6]]\n  m := planets[:,7]\n\n  \u0394 := x[ix1,:] - x[ix2,:]\n  distance\u00b2 := stats/sum/column(\u0394 ^ 2)\n  mag := \u0394t * distance\u00b2 ^ -1.5\n  v[ix1,:] -= \u0394 * m[ix2] * mag\n  v[ix2,:] += \u0394 * m[ix1] * mag\n  x += v * \u0394t\n\n  display-position := x[:,[1,2]]\n  display-distance\u00b2 := stats/sum/column(display-position ^ 2)\n  display-scale := (display-distance\u00b2 + 0.000000000000000000000000000001) ^ -0.25 * 44.0\n  screen-x := 300.0 + display-position[:,1] * display-scale\n  screen-y := 300.0 - display-position[:,2] * display-scale\n  screen-points := [screen-x screen-y]\n\n  @scene/points <- screen-points\n  positions := x\n",
+    "configuration": "config := {\n  runtime: {\n    resident-durability: \"volatile\"\n\n    limits: {\n      max-turn-duration-ms: 2000\n    }\n  }\n\n  hosts: [\n    {\n      name: \"clock\"\n      provider: \"timer\"\n      settings: {\n        frequency-hz: 60\n        max-catch-up-steps: 1\n        queue-policy: \"latest\"\n      }\n    }\n\n    {\n      name: \"orbit\"\n      provider: \"scene\"\n      settings: {\n        selector: \"#nbody\"\n        renderer: \"svg\"\n        width: 800\n        height: 600\n        point-radius: 4\n        first-point-radius: 8\n        background: \"#050816\"\n      }\n    }\n  ]\n\n  run: {\n    paths: [\"n-body.mec\"]\n\n    grants: [\n      {\n        target: \"clock/tick\"\n        operations: [\"read\"]\n        paths: [\"tick\"]\n      }\n\n      {\n        target: \"orbit/frame\"\n        operations: [\"write\"]\n        paths: [\"points\"]\n      }\n    ]\n  }\n}\n",
+    "compile_ms": 618.2999999970198,
+    "frames": [
+      {
+        "processed": 1,
+        "pending": 0,
+        "rendered": 1,
+        "events": [
+          {
+            "protocol_version": 1,
+            "sequence": 0,
+            "event": {
+              "channel": "output",
+              "event": {
+                "source": {
+                  "kind": "host",
+                  "details": {
+                    "name": "scene://orbit/frame"
+                  }
+                },
+                "stream": "stdout",
+                "display_id": "scene-orbit",
+                "operation": "create",
+                "content": {
+                  "kind": "scene",
+                  "data": {
+                    "representations": {
+                      "representations": [
+                        {
+                          "media_type": "application/vnd.mech.scene+json",
+                          "data": {
+                            "encoding": "text",
+                            "value": "{\"width\":800.0,\"height\":600.0,\"background\":\"#050816\",\"circles\":[{\"id\":\"body-0\",\"x\":300.01616766225993,\"y\":300.00218264604587,\"radius\":8.0,\"fill\":\"#ffd166\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-1\",\"x\":275.9214296297268,\"y\":315.03085685620647,\"radius\":4.0,\"fill\":\"#b8b8b8\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-2\",\"x\":262.7993895984915,\"y\":301.66270416573695,\"radius\":4.0,\"fill\":\"#f4a261\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-3\",\"x\":289.37370788376086,\"y\":257.7308735993873,\"radius\":4.0,\"fill\":\"#4cc9f0\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-4\",\"x\":351.8533474880103,\"y\":298.43858935246726,\"radius\":4.0,\"fill\":\"#e76f51\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-5\",\"x\":395.5954915447769,\"y\":322.32764470674636,\"radius\":4.0,\"fill\":\"#f9c74f\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-6\",\"x\":420.19235635001735,\"y\":240.2438380563857,\"radius\":4.0,\"fill\":\"#90be6d\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-7\",\"x\":427.4001961089955,\"y\":449.09162855238446,\"radius\":4.0,\"fill\":\"#577590\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-8\",\"x\":423.3430920042214,\"y\":507.6894878590076,\"radius\":4.0,\"fill\":\"#4361ee\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-9\",\"x\":220.2840067107693,\"y\":525.8697858717215,\"radius\":4.0,\"fill\":\"#adb5bd\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0}],\"lines\":[],\"line_strips\":[],\"texts\":[]}"
+                          }
+                        },
+                        {
+                          "media_type": "text/plain",
+                          "data": {
+                            "encoding": "text",
+                            "value": "scene 800\u00d7600 (10 circles, 0 lines, 0 line strips, 0 texts)"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "route": "resident-external",
+        "residentTurns": 1,
+        "accepted": 1,
+        "rejected": 0,
+        "coalesced": 0,
+        "computeCommand": null
+      },
+      {
+        "processed": 1,
+        "pending": 0,
+        "rendered": 1,
+        "events": [
+          {
+            "protocol_version": 1,
+            "sequence": 1,
+            "event": {
+              "channel": "output",
+              "event": {
+                "source": {
+                  "kind": "host",
+                  "details": {
+                    "name": "scene://orbit/frame"
+                  }
+                },
+                "stream": "stdout",
+                "display_id": "scene-orbit",
+                "operation": "update",
+                "content": {
+                  "kind": "scene",
+                  "data": {
+                    "representations": {
+                      "representations": [
+                        {
+                          "media_type": "application/vnd.mech.scene+json",
+                          "data": {
+                            "encoding": "text",
+                            "value": "{\"width\":800.0,\"height\":600.0,\"background\":\"#050816\",\"circles\":[{\"id\":\"body-0\",\"x\":300.0279792189267,\"y\":300.0039045047254,\"radius\":8.0,\"fill\":\"#ffd166\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-1\",\"x\":279.51789551713904,\"y\":319.20271325179476,\"radius\":4.0,\"fill\":\"#b8b8b8\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-2\",\"x\":263.2500227230895,\"y\":305.50008835235315,\"radius\":4.0,\"fill\":\"#f4a261\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-3\",\"x\":286.64616959542997,\"y\":258.5596018433301,\"radius\":4.0,\"fill\":\"#4cc9f0\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-4\",\"x\":351.7402174342369,\"y\":296.37811229273535,\"radius\":4.0,\"fill\":\"#e76f51\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-5\",\"x\":395.7159423181852,\"y\":321.77322876370084,\"radius\":4.0,\"fill\":\"#f9c74f\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-6\",\"x\":420.05178537266164,\"y\":239.97790646248632,\"radius\":4.0,\"fill\":\"#90be6d\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-7\",\"x\":427.50563019961123,\"y\":449.004163494211,\"radius\":4.0,\"fill\":\"#577590\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-8\",\"x\":423.4217745745782,\"y\":507.64217859678365,\"radius\":4.0,\"fill\":\"#4361ee\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0},{\"id\":\"body-9\",\"x\":220.38707852712466,\"y\":525.9107395988761,\"radius\":4.0,\"fill\":\"#adb5bd\",\"stroke\":\"none\",\"stroke_width\":0.0,\"opacity\":1.0}],\"lines\":[],\"line_strips\":[],\"texts\":[]}"
+                          }
+                        },
+                        {
+                          "media_type": "text/plain",
+                          "data": {
+                            "encoding": "text",
+                            "value": "scene 800\u00d7600 (10 circles, 0 lines, 0 line strips, 0 texts)"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "route": "resident-external",
+        "residentTurns": 2,
+        "accepted": 2,
+        "rejected": 0,
+        "coalesced": 0,
+        "computeCommand": null
+      }
+    ],
+    "info": {
+      "route": "resident-external",
+      "routing_policy": "require-resident",
+      "program_revision": "fbb5e1cd33e1c3a06f269ba43140ee4e1d85baa5a953bbf41aa980b59b4ff1cc",
+      "plan_generation": 1,
+      "layout_generation": 1,
+      "requirements": 2,
+      "observations": 1,
+      "effects": 1,
+      "resident_accepted_turns": 2,
+      "resident_rejected_turns": 0,
+      "coalesced_host_packets": 0,
+      "ignored_host_packets": 0
+    },
+    "actual": [
+      4.082760931503337e-07,
+      -5.697499773542936e-08,
+      -7.528579006069235e-09,
+      -0.2970326495632206,
+      -0.2784788448255517,
+      0.0028844204619726706,
+      -0.7053732195371628,
+      -0.10556782116095911,
+      0.03781352991614343,
+      -0.30031529320441175,
+      0.9319562212403731,
+      -2.487691137578379e-06,
+      1.3861576032598568,
+      0.09703297420347085,
+      -0.03208892998450502,
+      4.853093384519003,
+      -1.1039698289911675,
+      -0.10411646713513087,
+      8.323028896352325,
+      4.161251058295799,
+      -0.4033491773900426,
+      12.916005876487603,
+      -15.093754278140237,
+      -0.22352389384327098,
+      15.399272266984338,
+      -25.907409396301723,
+      0.17856357596002903,
+      -9.849979274362704,
+      -27.950438970676707,
+      5.059297310064116
+    ],
+    "expected": null,
+    "max_absolute_error": null,
+    "tolerance": 1e-12,
+    "artifact": {
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+      "source_modifications": {
+        "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+        "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+        "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+        "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+        "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+        "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+        "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+        "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+        "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+        "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
+        "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+        "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
+        "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+      },
+      "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+      "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+      "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+      "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
+      "target": "wasm32-unknown-unknown",
+      "profile": "release",
+      "wasm_opt": false,
+      "expected_exports": [
+        "WasmSyntaxStream",
+        "WasmSyntaxEditor",
+        "WasmDocument",
+        "WasmMixedComputeProject",
+        "TypePublicationSession",
+        "inspectMechTypes",
+        "I64PublicationSession",
+        "inventorySource"
+      ],
+      "artifacts": {
+        "pkg/mech_wasm.js": {
+          "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
+          "bytes": 92075
+        },
+        "pkg/mech_wasm_bg.wasm": {
+          "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
+          "bytes": 208709347
+        }
+      },
+      "environment": {
+        "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+        "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+        "wasm_pack": "wasm-pack 0.15.0"
+      },
+      "limits": [
+        "Artifact source identity comprises the baseline commit and listed modifications.",
+        "Browser device and execution outcomes are recorded separately."
+      ],
+      "loaded_wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194"
+    }
+  },
+  "controls": {
+    "start_stop_and_bounded_run": "passed"
+  }
+}

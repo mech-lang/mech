@@ -1,0 +1,7 @@
+{
+  "path": "/private/tmp/mech-v04-target-extraction/extracted/debug/extraction-native-probe",
+  "bytes": 57381136,
+  "sha256": "abf40e8922aa929aeac0a8eb522073bcc0e785dca689d534a3c1549a51ea15a0",
+  "profile": "dev, debug=0, incremental=false",
+  "baseline_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+}

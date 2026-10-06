@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "accounting": "Null means unestimated. File moves reduce in-tree volume; combined maintained implementation includes both repositories.",
+  "candidates": [
+    {
+      "id": "S-001",
+      "priority": 1,
+      "action": "consolidate",
+      "candidate": "Structured semantic error handoff",
+      "finding_ids": [
+        "F-001"
+      ],
+      "evidence": "Repeated string conversion sites drop one typed anchor.",
+      "affected": [
+        "native compiler",
+        "WASM events",
+        "interactive errors"
+      ],
+      "expected_removals_lines": null,
+      "required_additions_lines": null,
+      "net_change_lines": null,
+      "measurement_state": "unmeasured pending coherent typed adapter",
+      "dependencies": [
+        "MechError/source diagnostic transport decision"
+      ],
+      "acceptance_checks": [
+        "Run the same invalid named-binding or interval source directly and through ProgramCompiler; assert identical document, revision, byte range and stable code.",
+        "Render that diagnostic in the real browser and select its source range."
+      ]
+    },
+    {
+      "id": "S-002",
+      "priority": 2,
+      "action": "simplify",
+      "candidate": "BuiltinSchema scalar/Option conversion tables",
+      "finding_ids": [
+        "F-003"
+      ],
+      "evidence": "371-line reviewed region includes repeated mapping machinery, interleaved with retained schema construction.",
+      "affected": [
+        "all scalar features",
+        "options",
+        "Dynamic",
+        "source compiler"
+      ],
+      "expected_removals_lines": null,
+      "required_additions_lines": null,
+      "net_change_lines": null,
+      "measurement_state": "candidate span measured; net estimate intentionally withheld until representation prototype",
+      "dependencies": [
+        "Preserve BuiltinScalarKind registry authority",
+        "Maintain arbitrary nested Option schemas"
+      ],
+      "acceptance_checks": [
+        "Run scalar registry, nested option, live option, Dynamic boxing and schema roundtrip suites under full and selected profiles.",
+        "Measure added and deleted physical source lines, with file moves accounted for separately."
+      ]
+    },
+    {
+      "id": "S-003",
+      "priority": 2,
+      "action": "consolidate",
+      "candidate": "Positive source-spelling architecture checks",
+      "finding_ids": [
+        "F-004"
+      ],
+      "evidence": "Specific lexical predicates infer ownership; behavioral/API tests already exist.",
+      "affected": [
+        "architecture CI",
+        "feature matrices"
+      ],
+      "expected_removals_lines": null,
+      "required_additions_lines": null,
+      "net_change_lines": null,
+      "measurement_state": "unmeasured; preserve coverage in replacement checks",
+      "dependencies": [
+        "Map each gate to invariant and owning test"
+      ],
+      "acceptance_checks": [
+        "Introduce controlled equivalent spelling changes and invalid ownership examples; strong gates should accept the former and reject the latter.",
+        "Run existing sealed-API/BoundCall behavior suites and checker self-tests."
+      ]
+    },
+    {
+      "id": "S-004",
+      "priority": 3,
+      "action": "simplify",
+      "candidate": "Obsolete migration handoff comments",
+      "finding_ids": [
+        "F-006"
+      ],
+      "evidence": "Two obsolete comments reference a future canonical route cutover.",
+      "affected": [
+        "developer documentation"
+      ],
+      "expected_removals_lines": 6,
+      "required_additions_lines": 4,
+      "net_change_lines": -2,
+      "measurement_state": "editorial candidate; implementation pending",
+      "dependencies": [],
+      "acceptance_checks": [
+        "Trace all public callers and run relevant source boundary/wasm document tests."
+      ]
+    },
+    {
+      "id": "S-005",
+      "priority": 2,
+      "action": "move",
+      "candidate": "Private resident EKF control/benchmark implementation",
+      "finding_ids": [],
+      "evidence": "src/engine/Cargo.toml resident-ekf comment explicitly assigns this implementation to workload benchmark ownership and says it is never product-routed.",
+      "affected": [
+        "resident-ekf benchmark/conformance",
+        "tests/fixtures/resident-ekf",
+        "native benchmarks"
+      ],
+      "expected_removals_lines": null,
+      "required_additions_lines": null,
+      "net_change_lines": null,
+      "measurement_state": "requires extraction agent census and external consumer proof",
+      "dependencies": [
+        "Account for the general resident executor and control fixture separately",
+        "Inventory public benchmark consumers and feature gates"
+      ],
+      "acceptance_checks": [
+        "Run resident EKF conformance before/after relocation; preserve controls and selected build closure.",
+        "Count moved implementation externally; no combined-maintenance reduction without actual deletion."
+      ]
+    },
+    {
+      "id": "S-006",
+      "priority": 1,
+      "action": "retain",
+      "candidate": "Canonical source semantics, resident activation, core schemas and transactional publication",
+      "finding_ids": [],
+      "evidence": "Walkthroughs show language/type/ownership authorities consumed independently of concrete library operations.",
+      "affected": [
+        "all execution products"
+      ],
+      "expected_removals_lines": 0,
+      "required_additions_lines": 0,
+      "net_change_lines": 0,
+      "measurement_state": "retention boundary",
+      "dependencies": [
+        "External library must consume public operation/catalog contracts"
+      ],
+      "acceptance_checks": [
+        "Runtime-only consumer compiles without syntax/compiler; source and compiler profiles load external operations through public contracts."
+      ]
+    }
+  ]
+}

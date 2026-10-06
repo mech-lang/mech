@@ -1,0 +1,17 @@
+[
+  {
+    "source": "/private/tmp/mech-v04-extraction-reproduction/external/stdlib/tests/specialization_contract.rs",
+    "include_target": "/private/tmp/mech-v04-extraction-reproduction/tests/architecture/function-system/specialization-cases.json",
+    "exists": false
+  },
+  {
+    "source": "/private/tmp/mech-v04-extraction-reproduction/external/stdlib/tests/profile_contracts.rs",
+    "include_target": "/private/tmp/mech-v04-extraction-reproduction/tests/architecture/function-system/runtime-factory-surface.json",
+    "exists": false
+  },
+  {
+    "source": "/private/tmp/mech-v04-extraction-reproduction/external/stdlib/tests/profile_contracts.rs",
+    "include_target": "/private/tmp/mech-v04-extraction-reproduction/tests/architecture/function-system/function-surface.json",
+    "exists": false
+  }
+]

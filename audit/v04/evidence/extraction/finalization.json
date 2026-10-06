@@ -1,0 +1,20 @@
+{
+  "destination": "/private/tmp/mech-v04-extraction-reproduction",
+  "baseline": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "source_patches": [
+    "source-only-cfg-fix.patch",
+    "source-profile-feature-fix.patch"
+  ],
+  "retained_test_manifest_lines": 52,
+  "lock_resolution_command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "metadata",
+    "--offline",
+    "--format-version",
+    "1",
+    "--no-default-features"
+  ],
+  "lock_resolution_exit_code": 0,
+  "old_paths_absent": true
+}

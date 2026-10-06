@@ -1,0 +1,25 @@
+{
+  "baseline_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "checks": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "outcome": "passed",
+      "evidence_level": "format validation"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "outcome": "passed",
+      "evidence_level": "patch whitespace validation"
+    },
+    {
+      "command": "sh -n scripts/demo-r-stack.sh",
+      "exit_code": 0,
+      "outcome": "passed",
+      "evidence_level": "shell syntax validation"
+    }
+  ],
+  "wasm_source_modification_hashes": "all match final source files",
+  "final_browser_artifact_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194"
+}

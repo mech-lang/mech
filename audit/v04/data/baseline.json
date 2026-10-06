@@ -1,0 +1,21 @@
+{
+  "baseline_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "branch": "origin/integration/v0.4 fetched 2026-10-06",
+  "integration_manifest_version": "0.3.6; integration branch designation v0.4",
+  "original_checkout": "/Users/cim310/mech-lang/mech",
+  "original_commit": "6ce0eebed136129f70234fb6036b16fa20496cd8",
+  "original_status": " M hosts/gpu/benchmarks/parallel-ekf/README.md\n M hosts/gpu/examples/parallel_ekf_benchmark.rs\n M hosts/gpu/src/batched/jit.rs\n M hosts/gpu/tests/parallel_ekf.rs\n M src/runtime/src/service/workspace_session.rs\n M src/runtime/src/workspace/watch.rs\n M src/serve.rs\n?? docs/design/mechscript-prototype.mec\n?? docs/spec/mechscript.ebnf\n?? examples/mechscript/literate-prototype.mec\n?? examples/mechscript/literate-unfenced-prototype.mec\n?? examples/mechscript/prototype.ms\n?? hosts/gpu/benchmarks/parallel-ekf/results/apple-m3-simd-rayon-2026-08-14.json\n",
+  "isolation": "Shared local clone with independent worktree/index; initial checkout clean. Git objects are borrowed from original clone. Original working files are untouched.",
+  "audit_checkout": "/private/tmp/mech-v04-audit-20261006",
+  "audit_branch": "codex/v04-audit-demonstrations",
+  "comparison": {
+    "commit": "f7d551ca8914a72df575fd40b94dba82d1d23fe6",
+    "tag": "v0.3.5-beta",
+    "meaning": "Prior tagged release, verified ancestor; measures the complete release-to-integration development interval."
+  },
+  "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+  "instructions": "No tracked AGENTS.md in baseline and no parent AGENTS.md found; validation ownership .github/ci/owners.toml. Full assignment retained in audit/v04/assignment.txt.",
+  "profiles": "Maintained standard/full runtime/source/compiler plus browser/browser-compute/browser-compute-canary. Actual command/features/target belong to individual evidence records.",
+  "counting": "bytes, physical text lines, nonblank text lines (comments included); binary line count is zero",
+  "preserved_checkout": "/Users/cim310/.codex/worktrees/v04-audit/mech"
+}

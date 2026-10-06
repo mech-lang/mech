@@ -1,0 +1,96 @@
+{
+  "baseline": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "totals": {
+    "files": 1976,
+    "bytes": 29930045,
+    "physical_lines": 826254,
+    "nonblank_lines": 775438
+  },
+  "roles": [
+    {
+      "name": "asset",
+      "files": 1,
+      "bytes": 32988,
+      "physical_lines": 0,
+      "nonblank_lines": 0
+    },
+    {
+      "name": "benchmark",
+      "files": 25,
+      "bytes": 211039,
+      "physical_lines": 5384,
+      "nonblank_lines": 4923
+    },
+    {
+      "name": "build-tooling",
+      "files": 97,
+      "bytes": 1413942,
+      "physical_lines": 34278,
+      "nonblank_lines": 31906
+    },
+    {
+      "name": "configuration",
+      "files": 59,
+      "bytes": 426280,
+      "physical_lines": 14791,
+      "nonblank_lines": 13309
+    },
+    {
+      "name": "documentation",
+      "files": 155,
+      "bytes": 973750,
+      "physical_lines": 22334,
+      "nonblank_lines": 17404
+    },
+    {
+      "name": "example",
+      "files": 52,
+      "bytes": 193618,
+      "physical_lines": 5018,
+      "nonblank_lines": 4236
+    },
+    {
+      "name": "fixture",
+      "files": 167,
+      "bytes": 558548,
+      "physical_lines": 19008,
+      "nonblank_lines": 17391
+    },
+    {
+      "name": "generated",
+      "files": 11,
+      "bytes": 371825,
+      "physical_lines": 4478,
+      "nonblank_lines": 4459
+    },
+    {
+      "name": "license",
+      "files": 12,
+      "bytes": 124895,
+      "physical_lines": 2213,
+      "nonblank_lines": 1861
+    },
+    {
+      "name": "production",
+      "files": 709,
+      "bytes": 8498538,
+      "physical_lines": 235500,
+      "nonblank_lines": 219035
+    },
+    {
+      "name": "production-mixed-tests",
+      "files": 267,
+      "bytes": 10684069,
+      "physical_lines": 286725,
+      "nonblank_lines": 271929
+    },
+    {
+      "name": "test",
+      "files": 421,
+      "bytes": 6440553,
+      "physical_lines": 196525,
+      "nonblank_lines": 188985
+    }
+  ],
+  "unresolved": []
+}

@@ -1,0 +1,1231 @@
+{
+  "schema": 1,
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "evidence_policy": "Existing test sources identify test ownership. Execution records identify actual runs. Stage statuses refer to this audit, with API, product and browser evidence recorded separately.",
+  "capabilities": [
+    {
+      "id": "canonical-source",
+      "claim": "Valid UTF-8 source produces a lossless revisioned document; strict validation prevents recovered syntax entering source semantics.",
+      "history": "changed; canonical parser cutover in September 2026",
+      "entry_point": "parse_canonical_document; validate_strict; CanonicalSourceFrontend::compile_document",
+      "owners": [
+        "src/syntax/src/document",
+        "src/engine/src/source_semantics/frontend.rs"
+      ],
+      "configuration": [
+        "mech-syntax document API; engine source feature"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/syntax/tests/canonical_rules/canonical_document_root.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/engine/tests/canonical_source_review.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/streaming-native.json",
+          "scope": "44 existing syntax tests across 7 suites: losslessness, lifecycle, equivalence, recovery, publication, resources and editor updates",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        },
+        {
+          "path": "audit/v04/evidence/streaming-browser-result.json",
+          "scope": "111 deterministic chunk schedules and 1,030,314 publication updates; independent grammar expectations, preview/finalization/cancel and resource behavior",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/streaming-ui-result.json",
+          "scope": "source selection, UTF-8 transport and editor replacement/identity/diagnostic inspection",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "scope": "clean source reaches canonical compilation; malformed syntax blocks semantic admission in trust browser case",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Parse valid and malformed mixed document; reconstruct exact token bytes; attempt strict semantic admission.",
+      "status": "verified-scoped",
+      "limits": "Executable admission requires strict syntax and later semantic/activation checks. Resource limits can preserve an ERROR remainder.",
+      "stages": {
+        "parsing": "verified for cited executed examples",
+        "semantic_checking": "verified for cited executed examples",
+        "artifact_construction": "verified for cited executed examples",
+        "activation": "verified for cited executed examples",
+        "execution": "verified for cited executed examples",
+        "correct_publication": "verified for cited executed examples"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "streaming",
+      "claim": "DocumentStream retains parsing progress and publishes revision/interpretation-owned updates across UTF-8 chunks.",
+      "history": "new; a37dbc8ab contract, retained implementation follow-ups",
+      "entry_point": "DocumentStream::append / advance / finish / cancel",
+      "owners": [
+        "src/syntax/src/document/parser/stream"
+      ],
+      "configuration": [
+        "mech-syntax; optional serde for export"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/syntax/tests/document_streaming_equivalence.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/syntax/tests/document_streaming_lifecycle.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/syntax/tests/document_streaming_resources.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/streaming-native.json",
+          "scope": "44 existing syntax tests across 7 suites: losslessness, lifecycle, equivalence, recovery, publication, resources and editor updates",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        },
+        {
+          "path": "audit/v04/evidence/streaming-browser-result.json",
+          "scope": "111 deterministic chunk schedules and 1,030,314 publication updates; independent grammar expectations, preview/finalization/cancel and resource behavior",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/streaming-ui-result.json",
+          "scope": "source selection, UTF-8 transport and editor replacement/identity/diagnostic inspection",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Stream deterministic source over every legal split, drain all updates, compare finished tree to one-shot tree.",
+      "status": "verified-scoped",
+      "limits": "Final acceptance requires explicit end-of-input; byte transport must buffer incomplete UTF-8.",
+      "stages": {
+        "parsing": "verified in recorded native and browser syntax cases",
+        "semantic_checking": "unverified",
+        "artifact_construction": "unverified",
+        "activation": "unverified",
+        "execution": "unverified",
+        "correct_publication": "unverified"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "editor-identity",
+      "claim": "DocumentSession applies UTF-8 edits, performs a full canonical parse, then reuses structurally equal untouched subtrees and diagnostic identities.",
+      "history": "changed; original partial-reparse commitment remains unresolved (F-002)",
+      "entry_point": "DocumentSession::try_apply_edits",
+      "owners": [
+        "src/syntax/src/document/incremental/session.rs",
+        "src/syntax/src/document/incremental/reparse.rs"
+      ],
+      "configuration": [
+        "mech-syntax"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/syntax/tests/canonical_document_incremental.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/syntax/tests/document_incremental_properties.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/streaming-native.json",
+          "scope": "44 existing syntax tests across 7 suites: losslessness, lifecycle, equivalence, recovery, publication, resources and editor updates",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        },
+        {
+          "path": "audit/v04/evidence/streaming-browser-result.json",
+          "scope": "111 deterministic chunk schedules and 1,030,314 publication updates; independent grammar expectations, preview/finalization/cancel and resource behavior",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/streaming-ui-result.json",
+          "scope": "source selection, UTF-8 transport and editor replacement/identity/diagnostic inspection",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Insert/delete/replace; display parser work separately from reused IDs and reconciliation work.",
+      "status": "verified-scoped",
+      "limits": "Baseline reparses the entire updated document; fragment restarts remain an unresolved historical requirement.",
+      "stages": {
+        "parsing": "verified in recorded native and browser syntax cases",
+        "semantic_checking": "unverified",
+        "artifact_construction": "unverified",
+        "activation": "unverified",
+        "execution": "unverified",
+        "correct_publication": "unverified"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "type-registry",
+      "claim": "Closed scalar type identities, predicates and exact interval identities are consistent between direct and schema-derived types.",
+      "history": "changed; Type System v1 fa8d687df",
+      "entry_point": "BuiltinScalarKind; ResolvedType::new / from_schema_body",
+      "owners": [
+        "src/core/src/type_system/builtin.rs",
+        "src/core/src/type_system"
+      ],
+      "configuration": [
+        "mech-core no default features sufficient for registry tests"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/core/tests/type_system_builtin.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        }
+      ],
+      "demonstration": "Run type_system_builtin; inspect direct/schema interval predicates.",
+      "status": "verified",
+      "limits": "Seventeen core unit and integration checks establish the tested type behavior.",
+      "stages": {
+        "parsing": "unverified",
+        "semantic_checking": "verified",
+        "artifact_construction": "unverified",
+        "activation": "unverified",
+        "execution": "unverified",
+        "correct_publication": "unverified"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "inference",
+      "claim": "Expression-local peers constrain undeclared input kinds; unresolved/ambiguous inputs fail with semantic errors.",
+      "history": "changed; Type System v1 plus canonical source frontend",
+      "entry_point": "CanonicalSourceFrontend::compile_expression / compile_document",
+      "owners": [
+        "src/engine/src/source_semantics/frontend.rs",
+        "src/core/src/type_system"
+      ],
+      "configuration": [
+        "engine source; explicit function catalog for operations"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/engine/tests/canonical_source_review.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "signal +1 infers FloatingPoint(W64); activation completed and execution awaits external input",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Use live endpoint peer inference, then independently attempt activation.",
+      "status": "verified-scoped",
+      "limits": "No let-polymorphism, higher-rank types, arbitrary dependent types or Dynamic-to-concrete cast; inferred live ranges can still fail activation.",
+      "stages": {
+        "parsing": "verified",
+        "semantic_checking": "verified",
+        "artifact_construction": "verified",
+        "activation": "verified",
+        "execution": "awaiting external input in recorded browser example",
+        "correct_publication": "unverified for inferred-input example"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "option-values",
+      "claim": "Present and absent option values preserve nesting, payload type, shape and live dependencies.",
+      "history": "changed; source-boundary option preservation",
+      "entry_point": "Mech x? / kind option annotations; CanonicalSourceFrontend",
+      "owners": [
+        "src/engine/src/source_semantics/frontend.rs",
+        "src/core/src/snapshot"
+      ],
+      "configuration": [
+        "engine source; matching runtime catalog for execution"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/engine/tests/canonical_source_review.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/engine/tests/canonical_source_semantics.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "present u8 option, absent u8 option and optional record containing absent option",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Present, absent, nested and live option cases; record exact schema and change propagation.",
+      "status": "verified-scoped",
+      "limits": "Language option values are distinct from build/runtime configuration selectors; unsupported Dynamic escape remains rejected.",
+      "stages": {
+        "parsing": "verified in recorded browser cases",
+        "semantic_checking": "verified in recorded browser cases",
+        "artifact_construction": "verified in recorded browser cases",
+        "activation": "verified in recorded browser cases",
+        "execution": "verified in recorded browser cases",
+        "correct_publication": "verified in recorded browser cases"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "interval-admission",
+      "claim": "Fixed integer interval annotations admit their lower endpoint and reject excluded upper bounds while retaining exact 8\u2013128-bit identity.",
+      "history": "new within canonical grammar work; fixed-integer-intervals contract",
+      "entry_point": "1\u27e8u8:1..10\u27e9; 10\u27e8u8:1..=10\u27e9",
+      "owners": [
+        "src/engine/src/source_semantics/frontend.rs",
+        "src/core/src/type_system",
+        "src/core/src/snapshot"
+      ],
+      "configuration": [
+        "matching integer feature; engine source"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/engine/tests/canonical_source_semantics.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/core/tests/type_system_builtin.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "u8 lower, last, inclusive/exclusive upper and below-lower source cases; exact u128 maximum",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/interval-arithmetic-contract.json",
+          "evidence_level": "history-and-contract-review",
+          "outcome": "verified",
+          "scope": "documented arithmetic rejection; actual native and browser rejection records linked"
+        }
+      ],
+      "demonstration": "Run lower/last/below/excluded/inclusive upper and malformed-bound cases with positioned errors.",
+      "status": "verified-scoped",
+      "limits": "No dynamic bounds, steps, arbitrary predicates, implicit interval subtyping or arithmetic bound inference. Arithmetic capability remains outside the fixed-interval contract; F-008 records the supported positioned rejection.",
+      "stages": {
+        "parsing": "verified in recorded browser cases",
+        "semantic_checking": "verified in recorded browser cases",
+        "artifact_construction": "verified in recorded browser cases",
+        "activation": "verified in recorded browser cases",
+        "execution": "verified in recorded browser cases",
+        "correct_publication": "verified in recorded browser cases"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "interval-publication",
+      "claim": "Initialized integer interval candidates are revalidated under retained leases before publication; rejection leaves accepted state intact.",
+      "history": "changed; fixed-integer-intervals candidate publication contract",
+      "entry_point": "PreparedCellPublicationBatch::ready; MemoryDomain::ready_cell_publication",
+      "owners": [
+        "src/core/src/memory_runtime/transaction.rs"
+      ],
+      "configuration": [
+        "mech-core functions; full test profile covers scalar representations"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/core/tests/memory_runtime.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/core-interval-publication-full.log",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "tests_passed": 6,
+          "scope": "core managed cell readiness and publication"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "external interval admission rejects10 preserving the accepted resident snapshot; managed-cell interval publication tests are recorded separately",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Accept valid candidate; reject late out-of-range matrix member or in-place write; inspect versions and retry.",
+      "status": "verified-scoped",
+      "limits": "Core cell proof is separate from public runtime and browser input admission; logical coordinates exclude padding.",
+      "stages": {
+        "parsing": "verified in recorded browser cases",
+        "semantic_checking": "verified in recorded browser cases",
+        "artifact_construction": "verified in recorded browser cases",
+        "activation": "verified in recorded browser cases",
+        "execution": "verified in recorded browser cases",
+        "correct_publication": "verified in recorded browser cases"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "schemas-shapes",
+      "claim": "ResolvedValueDescriptor validates semantic kind, canonical schema and ShapeInstance agreement before physical selection.",
+      "history": "changed; semantic-type-authority and type-memory boundary",
+      "entry_point": "ResolvedValueDescriptor; BoundCall",
+      "owners": [
+        "src/core/src/type_system",
+        "src/core/src/type_system",
+        "src/core/src/memory_contract"
+      ],
+      "configuration": [
+        "core full for descriptor test suite; runtime target coverage remains separate"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/core/tests/canonical_type_contract.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/core/tests/type_memory_contract.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/core-canonical-type-full.log",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "tests_passed": 14,
+          "scope": "core descriptor and shape contracts"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "checked2x2 f64 matrix schema and resident output",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Exercise row/column orientation, independent dimensions, dynamic witnesses and invalid extents.",
+      "status": "verified-scoped",
+      "limits": "Resident arenas are fixed for an activation; changing a mask cardinality can be rejected before publication.",
+      "stages": {
+        "parsing": "verified in recorded browser cases",
+        "semantic_checking": "verified in recorded browser cases",
+        "artifact_construction": "verified in recorded browser cases",
+        "activation": "verified in recorded browser cases",
+        "execution": "verified in recorded browser cases",
+        "correct_publication": "verified in recorded browser cases"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "named-bindings",
+      "claim": "Named arguments reorder according to semantic parameter metadata and reject unknown, duplicate or missing bindings.",
+      "history": "changed; canonical source boundary",
+      "entry_point": "math/sub(right: signal, left: 10) via catalog parameter metadata",
+      "owners": [
+        "src/engine/src/source_semantics/frontend.rs",
+        "src/core/src/function"
+      ],
+      "configuration": [
+        "source catalog declaring parameter names"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/engine/tests/canonical_source_review.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "named math/sub right:3,left:10 publishes 7",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Execute maintained named-binding positive and negative fixtures.",
+      "status": "verified-scoped",
+      "limits": "Functions without name metadata require positional calls; copied syntax must be checked against fixtures before live demo. The browser run checks the valid named-argument permutation; duplicate, unknown and missing-binding rejections retain their existing test-source evidence.",
+      "stages": {
+        "parsing": "verified in recorded browser cases",
+        "semantic_checking": "verified in recorded browser cases",
+        "artifact_construction": "verified in recorded browser cases",
+        "activation": "verified in recorded browser cases",
+        "execution": "verified in recorded browser cases",
+        "correct_publication": "verified in recorded browser cases"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "function-catalog",
+      "claim": "Shared operation contracts fix semantics before concrete runtime/native implementation selection.",
+      "history": "changed; fa8d687df and semantic authority follow-up",
+      "entry_point": "FunctionCatalog; KindScheme; ResolvedCall; BoundCall",
+      "owners": [
+        "src/core/src/function",
+        "src/core/src/operation_contract",
+        "src/engine/src/function",
+        "src/stdlib"
+      ],
+      "configuration": [
+        "runtime/source/compiler catalogs are distinct feature closures"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/core/tests/type_system_catalog.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/core/tests/operation_contract_contract.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/stdlib/tests/profile_contracts.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/extraction/extracted-native-and-kernel-probe.json",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "scope": "Externally owned mech-math AddSS<f64> factory through FunctionCatalog returns3 for1+2 and7 after changing input to5; generated native planning also succeeds",
+          "result_location": "audit/v04/evidence/extraction/extracted-native-and-kernel-probe.log"
+        }
+      ],
+      "demonstration": "Inspect one operation from source resolution to resident/native factory; test ambiguous and duplicate registration.",
+      "status": "verified-scoped",
+      "limits": "Type validity follows semantic contracts. Generated registrations contribute additional compile cost. Engine resident arithmetic is an additional retained implementation path; see F-007 and the extraction evidence.",
+      "stages": {
+        "parsing": "unverified",
+        "semantic_checking": "unverified",
+        "artifact_construction": "unverified",
+        "activation": "unverified",
+        "execution": "verified external AddSS<f64> factory on two input values",
+        "correct_publication": "verified outputs3and7 through concrete factory"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "artifact-bytecode",
+      "claim": "Canonical semantic source produces immutable ProgramArtifact with explicit slots, schemas, constants, operations and bytecode-v1 transport.",
+      "history": "changed; 04e8d4ae3 artifact activation contract",
+      "entry_point": "CanonicalSourceProgram::compile_artifact; encode/decode_program_artifact_bytecode_v1",
+      "owners": [
+        "src/engine/src/artifact",
+        "src/bytecode"
+      ],
+      "configuration": [
+        "engine source for source graph; artifact-codec/compiler profile for selected transport"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/engine/tests/program_artifact_contract.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "each executable type case encodes and decodes bytecode-v1 before activation",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/inventory-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "nine inventory candidates on one instance with rejection/recovery and exact native comparison",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Compile maintained scalar/state source; encode, decode, activate and compare returned values.",
+      "status": "verified-scoped",
+      "limits": "Resident capability requires activation evidence. Compound mixed compute products use source packaging; single-root .mecb activation remains unsupported.",
+      "stages": {
+        "parsing": "verified in recorded browser cases",
+        "semantic_checking": "verified in recorded browser cases",
+        "artifact_construction": "verified in recorded browser cases",
+        "activation": "verified in recorded browser cases",
+        "execution": "verified in recorded browser cases",
+        "correct_publication": "verified in recorded browser cases"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "activation-memory",
+      "claim": "Activation classifies operations, resolves shape facts, builds schedule/layout and binds concrete kernels before mutable state becomes visible.",
+      "history": "changed; artifact/memory-planner contracts",
+      "entry_point": "resident::activate; preflight_resident_target",
+      "owners": [
+        "src/engine/src/resident/general/mod.rs",
+        "src/engine/src/memory_planner",
+        "src/core/src/memory_runtime"
+      ],
+      "configuration": [
+        "engine resident-artifact; target-specific catalog and ActivationFacts"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/engine/tests/resident_activation_contract.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/engine/tests/memory_plan.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "fixed scalar, option, nested-record and2x2 matrix examples activate",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Contrast supported fixed source with artifact-valid live-cardinality range rejected at activation.",
+      "status": "verified-scoped",
+      "limits": "Fixed activation arenas constrain turn-varying shapes; the memory budget measures Mech-owned accounted memory. Process RSS is a separate measurement.",
+      "stages": {
+        "parsing": "verified in recorded browser cases",
+        "semantic_checking": "verified in recorded browser cases",
+        "artifact_construction": "verified in recorded browser cases",
+        "activation": "verified in recorded browser cases",
+        "execution": "verified in recorded browser cases",
+        "correct_publication": "verified in recorded browser cases"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "state-publication",
+      "claim": "Prepared resident turns separate candidate execution from accepted publication and abort on failure.",
+      "history": "changed; resident activation/memory-runtime contracts",
+      "entry_point": "ReactiveInstance::prepare_turn_values; PreparedResidentTurn::publish / publish_external",
+      "owners": [
+        "src/engine/src/resident/general/execution.rs",
+        "src/runtime/src/runtime/program"
+      ],
+      "configuration": [
+        "resident runtime; external publication requires private coordinator authority"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/runtime/tests/resident_external_contract.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/engine/tests/resident_ekf_program_execution.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "same activated interval-state instance accepts9, rejects10 preserving output/epoch/state hash, then accepts3",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/data/application-evidence.json",
+          "scope": "native retained timer/scene source with 2 accepted turns and independent two-body comparison",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        },
+        {
+          "path": "audit/v04/evidence/application-browser-result.json",
+          "scope": "WasmProject two-body sources at dt 0.01/0.02 match independent values; maintained 10-body source renders 2 frames; replacement/restart/start-stop controls pass",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/inventory-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "nine inventory candidates on one instance with rejection/recovery and exact native comparison",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Change inputs on one instance; retain old state across rejected update; accept later valid turn.",
+      "status": "verified-scoped",
+      "limits": "Core memory-cell transactions and resident epoch publication are distinct mechanisms; both require evidence.",
+      "stages": {
+        "parsing": "verified for cited executed examples",
+        "semantic_checking": "verified for cited executed examples",
+        "artifact_construction": "verified for cited executed examples",
+        "activation": "verified for cited executed examples",
+        "execution": "verified for cited executed examples",
+        "correct_publication": "verified for cited executed examples"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "host-effects",
+      "claim": "Runtime resolves declared resources/capabilities and prepares external effects before authorized resident publication.",
+      "history": "changed; runtime host/resource contracts",
+      "entry_point": "RuntimeBuilder; RuntimeResourceRegistry; load_source_program",
+      "owners": [
+        "src/runtime/src/runtime/host",
+        "src/runtime/src/runtime/resources.rs",
+        "src/runtime/src/outbox"
+      ],
+      "configuration": [
+        "selected provider plus explicit grants"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/runtime/tests/generic_host_kernel.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/runtime/tests/resource_preflight.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/runtime/tests/resident_external_contract.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/data/application-evidence.json",
+          "scope": "native retained timer/scene source with 2 accepted turns and independent two-body comparison",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        },
+        {
+          "path": "audit/v04/evidence/application-browser-result.json",
+          "scope": "WasmProject two-body sources at dt 0.01/0.02 match independent values; maintained 10-body source renders 2 frames; replacement/restart/start-stop controls pass",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Admit granted resource read/write; reject missing grant; inject provider prepare failure and check state.",
+      "status": "verified-scoped",
+      "limits": "Capability resolution requires runtime grants in addition to transported @ctx/path source identities. Effects retain explicit commit/compensation requirements. Executed evidence covers timer/scene providers and the selected compute integration; other provider and compensation paths remain unverified.",
+      "stages": {
+        "parsing": "verified for cited executed examples",
+        "semantic_checking": "verified for cited executed examples",
+        "artifact_construction": "verified for cited executed examples",
+        "activation": "verified for cited executed examples",
+        "execution": "verified for cited executed examples",
+        "correct_publication": "verified for cited executed examples"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "interactive-replacement",
+      "claim": "ResidentReplSession validates a candidate, migrates compatible state/inputs and commits replacement after retirement begins.",
+      "history": "changed; accepted interactive architecture b175945e1",
+      "entry_point": "ResidentReplSession::submit / replace_document / reset / drain_events",
+      "owners": [
+        "src/runtime/src/interactive.rs",
+        "src/runtime/src/repl_dispatch.rs"
+      ],
+      "configuration": [
+        "runtime source/compiler/resident profile; frontend supplies factory"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/runtime/src/interactive.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/data/application-evidence.json",
+          "scope": "native retained timer/scene source with 2 accepted turns and independent two-body comparison",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        },
+        {
+          "path": "audit/v04/evidence/application-browser-result.json",
+          "scope": "WasmProject two-body sources at dt 0.01/0.02 match independent values; maintained 10-body source renders 2 frames; replacement/restart/start-stop controls pass",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Submit valid source, reject malformed candidate, replace compatible state, reset and inspect generation-owned events.",
+      "status": "verified-scoped",
+      "limits": "Retirement failure becomes a warning after acceptance; browser disposal and asynchronous generations need browser evidence.",
+      "stages": {
+        "parsing": "verified for cited executed examples",
+        "semantic_checking": "verified for cited executed examples",
+        "artifact_construction": "verified for cited executed examples",
+        "activation": "verified for cited executed examples",
+        "execution": "verified for cited executed examples",
+        "correct_publication": "verified for cited executed examples"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "compute-selection",
+      "claim": "Named @compute/@cpu/@gpu sections select a compatible registered backend and enforce hard placement requirements.",
+      "history": "new; d54feddf8, subsequent mixed runtime integration",
+      "entry_point": "ProgramCompiler::compile_mixed_document; ComputeBackendRegistry::resolve",
+      "owners": [
+        "src/runtime/src/runtime/program/compiler.rs",
+        "src/compute/src/registry.rs",
+        "hosts/gpu/src/compute_backends.rs"
+      ],
+      "configuration": [
+        "compute_backends_native or browser_compute; device for wgpu"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/compute/src/registry.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/data/compute-evidence.json",
+          "scope": "22 native compute contract tests and native GPU publication test; registry tests cover hard placement and exact backend rejection",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        },
+        {
+          "path": "audit/v04/evidence/compute-browser-result.json",
+          "scope": "CPU scalar and hardware wgpu complete3- and1024-column workloads with independent expected-value comparison and lifecycle controls",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/diffusion-browser.json",
+          "evidence_level": "browser-execution-and-independent-stencil-comparison",
+          "outcome": "passed",
+          "scope": "new heat-diffusion workload: six CPU/hardware GPU runs on 16/64-cell grids with changed diffusivity and heater inputs"
+        }
+      ],
+      "demonstration": "Same particle source and fixed initial inputs; record requested, selected and completed backend separately.",
+      "status": "verified-scoped",
+      "limits": "Application paths are cpu-scalar and wgpu. SIMD/JIT fixed-shape paths are experimental; several regions in one turn remain unsupported. The browser @gpu negative fixture rejects unsupported matrix/transpose during lowering; native registry tests separately qualify hard-placement selection. Experimental SIMD/JIT application execution remains unverified.",
+      "stages": {
+        "parsing": "verified for cited executed examples",
+        "semantic_checking": "verified for cited executed examples",
+        "artifact_construction": "verified for cited executed examples",
+        "activation": "verified for cited executed examples",
+        "execution": "verified for cited executed examples",
+        "correct_publication": "verified for cited executed examples"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "compute-completion",
+      "claim": "Compute dispatch distinguishes submitted from completed and accepts only the matching in-flight logical turn before publishing samples.",
+      "history": "changed; interactive compute lifecycle",
+      "entry_point": "ComputeSession::dispatch; ComputeCompletionTarget::complete",
+      "owners": [
+        "src/compute/src/registry.rs",
+        "hosts/gpu/src/compute_provider.rs",
+        "src/wasm/src/gpu.rs"
+      ],
+      "configuration": [
+        "native or browser backend; asynchronous completion bridge for browser"
+      ],
+      "existing_evidence": [
+        {
+          "path": "hosts/gpu/src/compute_provider.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/data/compute-evidence.json",
+          "scope": "22 native compute contract tests and native GPU publication test; registry tests cover hard placement and exact backend rejection",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        },
+        {
+          "path": "audit/v04/evidence/compute-browser-result.json",
+          "scope": "CPU scalar and hardware wgpu complete3- and1024-column workloads with independent expected-value comparison and lifecycle controls",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/diffusion-browser.json",
+          "evidence_level": "browser-execution-and-independent-stencil-comparison",
+          "outcome": "passed",
+          "scope": "new heat-diffusion workload: six CPU/hardware GPU runs on 16/64-cell grids with changed diffusivity and heater inputs"
+        }
+      ],
+      "demonstration": "Dispatch known small case, await completed report, compare independent values and inspect adapter identity.",
+      "status": "verified-scoped",
+      "limits": "GPU qualification requires matching completed work and independent output comparison. Device unavailability is recorded as blocked. The browser @gpu negative fixture rejects unsupported matrix/transpose during lowering; native registry tests separately qualify hard-placement selection. Experimental SIMD/JIT application execution remains unverified.",
+      "stages": {
+        "parsing": "verified for cited executed examples",
+        "semantic_checking": "verified for cited executed examples",
+        "artifact_construction": "verified for cited executed examples",
+        "activation": "verified for cited executed examples",
+        "execution": "verified for cited executed examples",
+        "correct_publication": "verified for cited executed examples"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "native-app",
+      "claim": "Native application building infers a source/artifact-specific dependency and linked operation closure.",
+      "history": "changed; f9965cb3d and exact closure follow-ups",
+      "entry_point": "mech build; mech-build",
+      "owners": [
+        "src/build",
+        "src/bin/mech.rs",
+        "src/abi"
+      ],
+      "configuration": [
+        "build feature; native toolchain; configured providers"
+      ],
+      "existing_evidence": [
+        {
+          "path": "tests/fixtures/native-build-owner-runner/Cargo.toml",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "tests/fixtures/native-linkage/Cargo.toml",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/extraction/extracted-generated-native-execution.json",
+          "scope": "generated scalar-add application exits0 and prints3 with externalized machine directories; its resident arithmetic remains engine-owned",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        }
+      ],
+      "demonstration": "Build small maintained native source under locked settings; hash binary; compare output against fixture.",
+      "status": "verified-scoped",
+      "limits": "Declared dependency graph, resolved dependencies and linked artifact size require separate measurements.",
+      "stages": {
+        "parsing": "unverified",
+        "semantic_checking": "unverified",
+        "artifact_construction": "verified scalar-add generated product",
+        "activation": "verified scalar-add generated product",
+        "execution": "verified scalar-add generated product",
+        "correct_publication": "verified output3 in scalar-add product"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "wasm-runtime",
+      "claim": "WasmRepl and document controller expose the resident runtime compiled into WebAssembly.",
+      "history": "changed; canonical source/browser cutover",
+      "entry_point": "WasmRepl::invoke / submit / continue_step / shutdown; scripts/build-wasm.py",
+      "owners": [
+        "src/wasm/src/repl.rs",
+        "src/wasm/src/project.rs",
+        "src/wasm/Cargo.toml"
+      ],
+      "configuration": [
+        "wasm32-unknown-unknown; browser_project_core plus inferred source/host closure"
+      ],
+      "existing_evidence": [
+        {
+          "path": "src/wasm/src/repl.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "tests/browser/harness",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/evidence/types-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "exact recorded Mech WASM artifact executes type examples",
+          "source_state": "baseline plus source modifications hashed in site/artifact.json",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/data/application-evidence.json",
+          "scope": "native retained timer/scene source with 2 accepted turns and independent two-body comparison",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "source_state": "exact source and artifacts identified by the cited record",
+          "artifact_manifest": null
+        },
+        {
+          "path": "audit/v04/evidence/application-browser-result.json",
+          "scope": "WasmProject two-body sources at dt 0.01/0.02 match independent values; maintained 10-body source renders 2 frames; replacement/restart/start-stop controls pass",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/inventory-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "nine inventory candidates on one instance with rejection/recovery and exact native comparison",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Load identified WASM artifact; drive source and input updates through public controller; compare small native reference.",
+      "status": "verified-scoped",
+      "limits": "The recorded browser cases execute a WASM-hosted Mech runtime. Standalone application-WASM compilation remains outside this evidence.",
+      "stages": {
+        "parsing": "verified for cited executed examples",
+        "semantic_checking": "verified for cited executed examples",
+        "artifact_construction": "verified for cited executed examples",
+        "activation": "verified for cited executed examples",
+        "execution": "verified for cited executed examples",
+        "correct_publication": "verified for cited executed examples"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "configuration",
+      "claim": "Build features select supported language/host closures; runtime backend selectors choose among compiled providers.",
+      "history": "preserved and changed feature composition",
+      "entry_point": "Cargo features standard_runtime/standard_source/standard_compiler; BackendRequest",
+      "owners": [
+        "Cargo.toml",
+        "src/wasm/Cargo.toml",
+        "src/stdlib/Cargo.toml"
+      ],
+      "configuration": [
+        "explicit no-default-feature profiles"
+      ],
+      "existing_evidence": [
+        {
+          "path": "tests/architecture/distributions/profile-contracts.json",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "src/stdlib/tests/profile_contracts.rs",
+          "evidence_level": "test-source-inspection",
+          "outcome": "not-run-in-this-audit"
+        },
+        {
+          "path": "audit/v04/site/artifact.json",
+          "scope": "explicit browser feature closure built; loaded WASM hash checked by each demo",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        },
+        {
+          "path": "audit/v04/evidence/compute-browser-result.json",
+          "scope": "runtime CPU/GPU selectors resolved and completed recorded compute workloads",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "source_state": "baseline plus recorded audit modifications",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Render feature closure separately from runtime selector; rebuild when selected feature absent.",
+      "status": "verified-scoped",
+      "limits": "Build configuration and language option values have separate authorities. Cargo feature unification can hide missing forwarding.",
+      "stages": {
+        "parsing": "unverified",
+        "semantic_checking": "unverified",
+        "artifact_construction": "unverified",
+        "activation": "unverified",
+        "execution": "unverified",
+        "correct_publication": "unverified"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "recurrence-proof",
+      "claim": "Visible recurrence source compiles to the exact current node sequence; source and bytecode artifacts publish seven literal expected values and reject the next candidate preserving accepted state",
+      "history": "PR829 two-commit example at9ae5c00e0184fe341d2ff2bdc590ede712009d2f absorbed and migrated to current canonical interfaces",
+      "entry_point": "examples/r_stack_trust_proof.rs; audit/v04/site/trust.html",
+      "owners": [
+        "examples/r_stack_trust_proof.rs",
+        "src/engine/src/source_semantics",
+        "src/engine/src/artifact",
+        "src/engine/src/resident"
+      ],
+      "configuration": [
+        "native no-default-features r_stack_trust_proof",
+        "WASM browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection"
+      ],
+      "existing_evidence": [
+        {
+          "path": "audit/v04/evidence/trust-native.json",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "scope": "seven source/decoded turns and equal receipts,3 perturbed-source turns, syntax/type/missing-catalog/truncation/tamper/budget/integrity rejection"
+        },
+        {
+          "path": "audit/v04/evidence/trust-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "first original and perturbed outputs 5 and 7, syntax/type/integrity rejection; recorded native evidence loaded"
+        }
+      ],
+      "demonstration": "Native full structure transcript and actual WASM source controls",
+      "status": "verified-scoped",
+      "limits": "Current canonical graph has 5 nodes using 4 original primitive identities. State starts at 1; derived output is compared after publication. Earlier API, node-shape, initial-output and state-role adaptation failures are preserved. The browser extension executes one candidate per source; the seven-turn stateful proof runs natively.",
+      "stages": {
+        "parsing": "verified for cited recurrence cases",
+        "semantic_checking": "verified for cited recurrence cases",
+        "artifact_construction": "verified for cited recurrence cases",
+        "activation": "verified for cited recurrence cases",
+        "execution": "verified for cited recurrence cases",
+        "correct_publication": "verified for cited recurrence cases"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "source_revision_evidence": "audit/v04/evidence/pr829-absorption.json"
+    },
+    {
+      "id": "heat-diffusion",
+      "claim": "Two-dimensional heat diffusion source completes through scalar CPU and hardware wgpu with outputs matching an independent nearest-neighbour flux reference",
+      "history": "New audit workload; supported fixed-shape matrix compute path",
+      "entry_point": "audit/v04/site/diffusion.html; WasmMixedComputeProject",
+      "owners": [
+        "src/engine/src/source_semantics",
+        "src/compute",
+        "hosts/gpu",
+        "src/wasm/src/mixed_compute.rs"
+      ],
+      "configuration": [
+        "4\u00d74 and 8\u00d78 grids; alpha 0.125; 8 turns",
+        "4\u00d74 grid; alpha 0.0625; 6 turns and changed heater inputs",
+        "scalar CPU and hardware wgpu in browser"
+      ],
+      "existing_evidence": [
+        {
+          "path": "audit/v04/evidence/diffusion-browser.json",
+          "evidence_level": "browser-execution-and-independent-stencil-comparison",
+          "outcome": "passed",
+          "scope": "six runs on two grid sizes, changed diffusivity/heater inputs, expected energy sums and nonnegative temperatures",
+          "source_state": "exact source, configuration, device, manifest and artifact hash attached per run"
+        }
+      ],
+      "demonstration": "Interactive heat field with backend and input controls",
+      "status": "verified-scoped",
+      "limits": "The measured cases use fixed-shape matrix compute; timing fields describe recorded stages and provide no comparative performance claim.",
+      "stages": {
+        "parsing": "verified for cited diffusion runs",
+        "semantic_checking": "verified for cited diffusion runs",
+        "artifact_construction": "verified for cited diffusion runs",
+        "activation": "verified for cited diffusion runs",
+        "execution": "verified for cited diffusion runs",
+        "correct_publication": "verified for cited diffusion runs"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    },
+    {
+      "id": "inventory-state",
+      "claim": "Inventory source applies arrival and demand inputs to one activated i64 state, rejects integrity violations atomically, and accepts later valid inputs",
+      "history": "New audit workload developed from an interval-typed candidate; F-008 records the interval arithmetic boundary",
+      "entry_point": "audit/v04/site/inventory.html; I64PublicationSession",
+      "owners": [
+        "src/wasm/src/i64_publication.rs",
+        "src/engine/src/source_semantics",
+        "src/engine/src/resident"
+      ],
+      "configuration": [
+        "final shared WASM features in site/artifact.json, including i64_publication",
+        "native source fixture and literal arrival/demand sequence"
+      ],
+      "existing_evidence": [
+        {
+          "path": "audit/v04/evidence/inventory/native-result.json",
+          "evidence_level": "native-execution",
+          "outcome": "passed",
+          "scope": "same source and input sequence produce exact accepted stock values and preserved state after rejected candidates"
+        },
+        {
+          "path": "audit/v04/evidence/inventory-browser.json",
+          "evidence_level": "browser-execution",
+          "outcome": "passed",
+          "scope": "nine literal cases, native/source equality, three input-admission rejections, generic alternate source, three restarts and UI rejection/recovery",
+          "artifact_manifest": "audit/v04/site/artifact.json"
+        }
+      ],
+      "demonstration": "Inventory input controls and accepted stock/publication receipts",
+      "status": "verified-scoped",
+      "limits": "The workload uses base i64 arithmetic and explicit invariants for nonnegative arrivals/demand/stock and maximum capacity. Fixed-interval arithmetic remains outside the supported interval contract.",
+      "stages": {
+        "parsing": "verified for recorded inventory cases",
+        "semantic_checking": "verified for recorded inventory cases",
+        "artifact_construction": "verified for recorded inventory cases",
+        "activation": "verified for recorded inventory cases",
+        "execution": "verified for recorded inventory cases",
+        "correct_publication": "verified for recorded inventory cases"
+      },
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97"
+    }
+  ]
+}

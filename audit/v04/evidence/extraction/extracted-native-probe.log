@@ -1,0 +1,6 @@
+     Locking 164 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+error: failed to download `mech-combinatorics v0.3.5`
+
+Caused by:
+  attempting to make an HTTP request, but --offline was specified

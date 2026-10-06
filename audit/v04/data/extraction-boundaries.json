@@ -1,0 +1,4951 @@
+{
+  "metadata": {
+    "baseline": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "units": "bytes, physical text lines, nonblank text lines (comments included); binary line count is zero",
+    "scope": "Baseline tracked files joined to census. Counts retain mixed production/test files as a separate role. Actual tree counts exclude generated Cargo.lock/build outputs and audit additions.",
+    "experiment": "/private/tmp/mech-v04-extraction",
+    "old_paths_absent": true,
+    "stage": "rehomed-integration-tests-and-cfg-repair"
+  },
+  "arithmetic": {
+    "baseline": {
+      "files": 1976,
+      "bytes": 29930045,
+      "physical_lines": 826254,
+      "nonblank_lines": 775438
+    },
+    "candidate_directory_relocation": {
+      "files": 303,
+      "bytes": 1614315,
+      "physical_lines": 44508,
+      "nonblank_lines": 39379
+    },
+    "estimated_moved": {
+      "files": 293,
+      "bytes": 1500518,
+      "physical_lines": 41307,
+      "nonblank_lines": 36377
+    },
+    "estimated_retained_integration_tests": {
+      "files": 9,
+      "bytes": 113365,
+      "physical_lines": 3191,
+      "nonblank_lines": 2993
+    },
+    "estimated_remaining_before_boundary_additions": {
+      "files": 1683,
+      "bytes": 28429527,
+      "physical_lines": 784947,
+      "nonblank_lines": 739061
+    },
+    "actual_remaining": {
+      "files": 1684,
+      "bytes": 28432933,
+      "physical_lines": 784987,
+      "nonblank_lines": 739101
+    },
+    "actual_external": {
+      "files": 293,
+      "bytes": 1501322,
+      "physical_lines": 41325,
+      "nonblank_lines": 36393
+    },
+    "actual_combined": {
+      "files": 1977,
+      "bytes": 29934255,
+      "physical_lines": 826312,
+      "nonblank_lines": 775494
+    },
+    "deleted_implementation": {
+      "files": 0,
+      "physical_lines": 0,
+      "bytes": 0
+    },
+    "added_rust_boundary_code": {
+      "files": 0,
+      "physical_lines": 0,
+      "bytes": 0
+    },
+    "separate_source_profile_repair": {
+      "removed_lines": 8,
+      "added_lines": 2,
+      "net_lines": -6
+    },
+    "source_profile_feature_repair": {
+      "added_manifest_lines": 10
+    },
+    "added_test_harness_manifest": {
+      "files": 1,
+      "physical_lines": 52
+    }
+  },
+  "by_role": {
+    "baseline": {
+      "asset": {
+        "files": 1,
+        "bytes": 32988,
+        "physical_lines": 0,
+        "nonblank_lines": 0
+      },
+      "benchmark": {
+        "files": 25,
+        "bytes": 211039,
+        "physical_lines": 5384,
+        "nonblank_lines": 4923
+      },
+      "build-tooling": {
+        "files": 97,
+        "bytes": 1413942,
+        "physical_lines": 34278,
+        "nonblank_lines": 31906
+      },
+      "configuration": {
+        "files": 59,
+        "bytes": 426280,
+        "physical_lines": 14791,
+        "nonblank_lines": 13309
+      },
+      "documentation": {
+        "files": 155,
+        "bytes": 973750,
+        "physical_lines": 22334,
+        "nonblank_lines": 17404
+      },
+      "example": {
+        "files": 52,
+        "bytes": 193618,
+        "physical_lines": 5018,
+        "nonblank_lines": 4236
+      },
+      "fixture": {
+        "files": 167,
+        "bytes": 558548,
+        "physical_lines": 19008,
+        "nonblank_lines": 17391
+      },
+      "generated": {
+        "files": 11,
+        "bytes": 371825,
+        "physical_lines": 4478,
+        "nonblank_lines": 4459
+      },
+      "license": {
+        "files": 12,
+        "bytes": 124895,
+        "physical_lines": 2213,
+        "nonblank_lines": 1861
+      },
+      "production": {
+        "files": 709,
+        "bytes": 8498538,
+        "physical_lines": 235500,
+        "nonblank_lines": 219035
+      },
+      "production-mixed-tests": {
+        "files": 267,
+        "bytes": 10684069,
+        "physical_lines": 286725,
+        "nonblank_lines": 271929
+      },
+      "test": {
+        "files": 421,
+        "bytes": 6440553,
+        "physical_lines": 196525,
+        "nonblank_lines": 188985
+      }
+    },
+    "candidate_move": {
+      "benchmark": {
+        "files": 5,
+        "bytes": 26394,
+        "physical_lines": 678,
+        "nonblank_lines": 574
+      },
+      "build-tooling": {
+        "files": 1,
+        "bytes": 432,
+        "physical_lines": 10,
+        "nonblank_lines": 9
+      },
+      "configuration": {
+        "files": 28,
+        "bytes": 62462,
+        "physical_lines": 1673,
+        "nonblank_lines": 1481
+      },
+      "documentation": {
+        "files": 10,
+        "bytes": 16882,
+        "physical_lines": 376,
+        "nonblank_lines": 263
+      },
+      "example": {
+        "files": 1,
+        "bytes": 9241,
+        "physical_lines": 312,
+        "nonblank_lines": 290
+      },
+      "license": {
+        "files": 6,
+        "bytes": 56831,
+        "physical_lines": 1007,
+        "nonblank_lines": 847
+      },
+      "production": {
+        "files": 226,
+        "bytes": 960639,
+        "physical_lines": 27828,
+        "nonblank_lines": 24125
+      },
+      "production-mixed-tests": {
+        "files": 11,
+        "bytes": 360553,
+        "physical_lines": 9205,
+        "nonblank_lines": 8612
+      },
+      "test": {
+        "files": 15,
+        "bytes": 120881,
+        "physical_lines": 3419,
+        "nonblank_lines": 3178
+      }
+    },
+    "estimated_move": {
+      "benchmark": {
+        "files": 5,
+        "bytes": 26394,
+        "physical_lines": 678,
+        "nonblank_lines": 574
+      },
+      "configuration": {
+        "files": 28,
+        "bytes": 62462,
+        "physical_lines": 1673,
+        "nonblank_lines": 1481
+      },
+      "documentation": {
+        "files": 10,
+        "bytes": 16882,
+        "physical_lines": 376,
+        "nonblank_lines": 263
+      },
+      "example": {
+        "files": 1,
+        "bytes": 9241,
+        "physical_lines": 312,
+        "nonblank_lines": 290
+      },
+      "license": {
+        "files": 6,
+        "bytes": 56831,
+        "physical_lines": 1007,
+        "nonblank_lines": 847
+      },
+      "production": {
+        "files": 226,
+        "bytes": 960639,
+        "physical_lines": 27828,
+        "nonblank_lines": 24125
+      },
+      "production-mixed-tests": {
+        "files": 11,
+        "bytes": 360553,
+        "physical_lines": 9205,
+        "nonblank_lines": 8612
+      },
+      "test": {
+        "files": 6,
+        "bytes": 7516,
+        "physical_lines": 228,
+        "nonblank_lines": 185
+      }
+    },
+    "estimated_remaining": {
+      "asset": {
+        "files": 1,
+        "bytes": 32988,
+        "physical_lines": 0,
+        "nonblank_lines": 0
+      },
+      "benchmark": {
+        "files": 20,
+        "bytes": 184645,
+        "physical_lines": 4706,
+        "nonblank_lines": 4349
+      },
+      "build-tooling": {
+        "files": 97,
+        "bytes": 1413942,
+        "physical_lines": 34278,
+        "nonblank_lines": 31906
+      },
+      "configuration": {
+        "files": 31,
+        "bytes": 363818,
+        "physical_lines": 13118,
+        "nonblank_lines": 11828
+      },
+      "documentation": {
+        "files": 145,
+        "bytes": 956868,
+        "physical_lines": 21958,
+        "nonblank_lines": 17141
+      },
+      "example": {
+        "files": 51,
+        "bytes": 184377,
+        "physical_lines": 4706,
+        "nonblank_lines": 3946
+      },
+      "fixture": {
+        "files": 167,
+        "bytes": 558548,
+        "physical_lines": 19008,
+        "nonblank_lines": 17391
+      },
+      "generated": {
+        "files": 11,
+        "bytes": 371825,
+        "physical_lines": 4478,
+        "nonblank_lines": 4459
+      },
+      "license": {
+        "files": 6,
+        "bytes": 68064,
+        "physical_lines": 1206,
+        "nonblank_lines": 1014
+      },
+      "production": {
+        "files": 483,
+        "bytes": 7537899,
+        "physical_lines": 207672,
+        "nonblank_lines": 194910
+      },
+      "production-mixed-tests": {
+        "files": 256,
+        "bytes": 10323516,
+        "physical_lines": 277520,
+        "nonblank_lines": 263317
+      },
+      "test": {
+        "files": 415,
+        "bytes": 6433037,
+        "physical_lines": 196297,
+        "nonblank_lines": 188800
+      }
+    },
+    "actual_remaining": {
+      "asset": {
+        "files": 1,
+        "bytes": 32988,
+        "physical_lines": 0,
+        "nonblank_lines": 0
+      },
+      "benchmark": {
+        "files": 20,
+        "bytes": 184645,
+        "physical_lines": 4706,
+        "nonblank_lines": 4349
+      },
+      "build-tooling": {
+        "files": 97,
+        "bytes": 1413942,
+        "physical_lines": 34278,
+        "nonblank_lines": 31906
+      },
+      "configuration": {
+        "files": 32,
+        "bytes": 366082,
+        "physical_lines": 13164,
+        "nonblank_lines": 11874
+      },
+      "documentation": {
+        "files": 145,
+        "bytes": 956868,
+        "physical_lines": 21958,
+        "nonblank_lines": 17141
+      },
+      "example": {
+        "files": 51,
+        "bytes": 184377,
+        "physical_lines": 4706,
+        "nonblank_lines": 3946
+      },
+      "fixture": {
+        "files": 167,
+        "bytes": 559760,
+        "physical_lines": 19008,
+        "nonblank_lines": 17391
+      },
+      "generated": {
+        "files": 11,
+        "bytes": 371825,
+        "physical_lines": 4478,
+        "nonblank_lines": 4459
+      },
+      "license": {
+        "files": 6,
+        "bytes": 68064,
+        "physical_lines": 1206,
+        "nonblank_lines": 1014
+      },
+      "production": {
+        "files": 483,
+        "bytes": 7537829,
+        "physical_lines": 207666,
+        "nonblank_lines": 194904
+      },
+      "production-mixed-tests": {
+        "files": 256,
+        "bytes": 10323516,
+        "physical_lines": 277520,
+        "nonblank_lines": 263317
+      },
+      "test": {
+        "files": 415,
+        "bytes": 6433037,
+        "physical_lines": 196297,
+        "nonblank_lines": 188800
+      }
+    },
+    "actual_external": {
+      "benchmark": {
+        "files": 5,
+        "bytes": 26394,
+        "physical_lines": 678,
+        "nonblank_lines": 574
+      },
+      "configuration": {
+        "files": 28,
+        "bytes": 63266,
+        "physical_lines": 1691,
+        "nonblank_lines": 1497
+      },
+      "documentation": {
+        "files": 10,
+        "bytes": 16882,
+        "physical_lines": 376,
+        "nonblank_lines": 263
+      },
+      "example": {
+        "files": 1,
+        "bytes": 9241,
+        "physical_lines": 312,
+        "nonblank_lines": 290
+      },
+      "license": {
+        "files": 6,
+        "bytes": 56831,
+        "physical_lines": 1007,
+        "nonblank_lines": 847
+      },
+      "production": {
+        "files": 226,
+        "bytes": 960639,
+        "physical_lines": 27828,
+        "nonblank_lines": 24125
+      },
+      "production-mixed-tests": {
+        "files": 11,
+        "bytes": 360553,
+        "physical_lines": 9205,
+        "nonblank_lines": 8612
+      },
+      "test": {
+        "files": 6,
+        "bytes": 7516,
+        "physical_lines": 228,
+        "nonblank_lines": 185
+      }
+    },
+    "actual_combined": {
+      "asset": {
+        "files": 1,
+        "bytes": 32988,
+        "physical_lines": 0,
+        "nonblank_lines": 0
+      },
+      "benchmark": {
+        "files": 25,
+        "bytes": 211039,
+        "physical_lines": 5384,
+        "nonblank_lines": 4923
+      },
+      "build-tooling": {
+        "files": 97,
+        "bytes": 1413942,
+        "physical_lines": 34278,
+        "nonblank_lines": 31906
+      },
+      "configuration": {
+        "files": 60,
+        "bytes": 429348,
+        "physical_lines": 14855,
+        "nonblank_lines": 13371
+      },
+      "documentation": {
+        "files": 155,
+        "bytes": 973750,
+        "physical_lines": 22334,
+        "nonblank_lines": 17404
+      },
+      "example": {
+        "files": 52,
+        "bytes": 193618,
+        "physical_lines": 5018,
+        "nonblank_lines": 4236
+      },
+      "fixture": {
+        "files": 167,
+        "bytes": 559760,
+        "physical_lines": 19008,
+        "nonblank_lines": 17391
+      },
+      "generated": {
+        "files": 11,
+        "bytes": 371825,
+        "physical_lines": 4478,
+        "nonblank_lines": 4459
+      },
+      "license": {
+        "files": 12,
+        "bytes": 124895,
+        "physical_lines": 2213,
+        "nonblank_lines": 1861
+      },
+      "production": {
+        "files": 709,
+        "bytes": 8498468,
+        "physical_lines": 235494,
+        "nonblank_lines": 219029
+      },
+      "production-mixed-tests": {
+        "files": 267,
+        "bytes": 10684069,
+        "physical_lines": 286725,
+        "nonblank_lines": 271929
+      },
+      "test": {
+        "files": 421,
+        "bytes": 6440553,
+        "physical_lines": 196525,
+        "nonblank_lines": 188985
+      }
+    }
+  },
+  "declared_manifests": [
+    {
+      "path": "machines/combinatorics/Cargo.toml",
+      "package": "mech-combinatorics",
+      "publish": true,
+      "features": 58,
+      "declared_dependency_entries": {
+        "dependencies": 6,
+        "dev-dependencies": 1,
+        "build-dependencies": 0
+      }
+    },
+    {
+      "path": "machines/compare/Cargo.toml",
+      "package": "mech-compare",
+      "publish": true,
+      "features": 72,
+      "declared_dependency_entries": {
+        "dependencies": 3,
+        "dev-dependencies": 0,
+        "build-dependencies": 0
+      }
+    },
+    {
+      "path": "machines/logic/Cargo.toml",
+      "package": "mech-logic",
+      "publish": true,
+      "features": 41,
+      "declared_dependency_entries": {
+        "dependencies": 3,
+        "dev-dependencies": 0,
+        "build-dependencies": 0
+      }
+    },
+    {
+      "path": "machines/math/Cargo.toml",
+      "package": "mech-math",
+      "publish": true,
+      "features": 142,
+      "declared_dependency_entries": {
+        "dependencies": 7,
+        "dev-dependencies": 0,
+        "build-dependencies": 0
+      }
+    },
+    {
+      "path": "machines/matrix/Cargo.toml",
+      "package": "mech-matrix",
+      "publish": true,
+      "features": 61,
+      "declared_dependency_entries": {
+        "dependencies": 5,
+        "dev-dependencies": 3,
+        "build-dependencies": 0
+      }
+    },
+    {
+      "path": "machines/range/Cargo.toml",
+      "package": "mech-range",
+      "publish": true,
+      "features": 47,
+      "declared_dependency_entries": {
+        "dependencies": 4,
+        "dev-dependencies": 0,
+        "build-dependencies": 0
+      }
+    },
+    {
+      "path": "machines/set/Cargo.toml",
+      "package": "mech-set",
+      "publish": true,
+      "features": 92,
+      "declared_dependency_entries": {
+        "dependencies": 3,
+        "dev-dependencies": 0,
+        "build-dependencies": 0
+      }
+    },
+    {
+      "path": "machines/stats/Cargo.toml",
+      "package": "mech-stats",
+      "publish": true,
+      "features": 57,
+      "declared_dependency_entries": {
+        "dependencies": 4,
+        "dev-dependencies": 0,
+        "build-dependencies": 0
+      }
+    },
+    {
+      "path": "machines/string/Cargo.toml",
+      "package": "mech-string",
+      "publish": true,
+      "features": 37,
+      "declared_dependency_entries": {
+        "dependencies": 3,
+        "dev-dependencies": 0,
+        "build-dependencies": 0
+      }
+    },
+    {
+      "path": "src/stdlib/Cargo.toml",
+      "package": "mech-stdlib",
+      "publish": false,
+      "features": 165,
+      "declared_dependency_entries": {
+        "dependencies": 11,
+        "dev-dependencies": 5,
+        "build-dependencies": 0
+      }
+    }
+  ],
+  "records": [
+    {
+      "path": ".github/ci/owners.toml",
+      "blob": "15236ca05787ff58b1bb6511c7a108734fb0db71",
+      "role": "build-tooling",
+      "bytes": 11641,
+      "physical_lines": 281,
+      "nonblank_lines": 248,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": ".github/workflows/ci-full.yml",
+      "blob": "098e50b8952ab294da5bbcd2ed6277d0a17e8a3c",
+      "role": "build-tooling",
+      "bytes": 97545,
+      "physical_lines": 2279,
+      "nonblank_lines": 2138,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "blob": "6d11776d6fecc06ab8fae93ba8489e7894d9926e",
+      "role": "build-tooling",
+      "bytes": 45573,
+      "physical_lines": 1063,
+      "nonblank_lines": 1033,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "Cargo.toml",
+      "blob": "8ab1d846c68da979b161e2a003e4ad09dcc6820c",
+      "role": "configuration",
+      "bytes": 23777,
+      "physical_lines": 512,
+      "nonblank_lines": 474,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "docs/design/static-stdlib-composition.md",
+      "blob": "285528b7a5375365b1f116c189bd565cb9d8fc33",
+      "role": "documentation",
+      "bytes": 9237,
+      "physical_lines": 224,
+      "nonblank_lines": 175,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "docs/stdlib/index.mec",
+      "blob": "7765dc608b5ddf0aba6f9bf710c9ea7f87a1f1a6",
+      "role": "documentation",
+      "bytes": 738,
+      "physical_lines": 17,
+      "nonblank_lines": 16,
+      "disposition": "Separate",
+      "reason": "Operation documentation and candidate-function list mix external functions with engine intrinsics; split ownership and repair stale engine/src/stdlib reference.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "docs/stdlib/missing-functions.mec",
+      "blob": "0e2f8f443c958a57821b08a8813c566fdaf42801",
+      "role": "documentation",
+      "bytes": 5469,
+      "physical_lines": 224,
+      "nonblank_lines": 211,
+      "disposition": "Separate",
+      "reason": "Operation documentation and candidate-function list mix external functions with engine intrinsics; split ownership and repair stale engine/src/stdlib reference.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "machines/combinatorics/.gitignore",
+      "blob": "b5db4eae27d4d1b71d208705dbeca49a5fe48842",
+      "role": "configuration",
+      "bytes": 303,
+      "physical_lines": 32,
+      "nonblank_lines": 24,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/.gitlab-ci.yml",
+      "blob": "af285e8e0c1659f63b7a8580e0428cf0d43e6755",
+      "role": "configuration",
+      "bytes": 91,
+      "physical_lines": 5,
+      "nonblank_lines": 5,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/Cargo.toml",
+      "blob": "6225f225b7335f5badd143f9179f1c2b2bc1c91f",
+      "role": "configuration",
+      "bytes": 4160,
+      "physical_lines": 114,
+      "nonblank_lines": 102,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/LICENSE",
+      "blob": "41c00c99942792057b7d84e2ba001fdd4f141831",
+      "role": "license",
+      "bytes": 11344,
+      "physical_lines": 201,
+      "nonblank_lines": 169,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/README.md",
+      "blob": "2d21f05c83f5e7691aa0a27fe3460b541e33699b",
+      "role": "documentation",
+      "bytes": 1625,
+      "physical_lines": 38,
+      "nonblank_lines": 26,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/index.mec",
+      "blob": "767e404f2e7672f809aec302d9142afadf50c32d",
+      "role": "production",
+      "bytes": 653,
+      "physical_lines": 22,
+      "nonblank_lines": 16,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/src/catalog.rs",
+      "blob": "f3e500edaa256ab6406335087dbbe694c251addd",
+      "role": "production",
+      "bytes": 7653,
+      "physical_lines": 168,
+      "nonblank_lines": 156,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/src/dynamic_module.rs",
+      "blob": "cec0e2b58ca4d4742f8718a31dad62fedd620902",
+      "role": "production-mixed-tests",
+      "bytes": 4565,
+      "physical_lines": 153,
+      "nonblank_lines": 129,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/src/kernels.rs",
+      "blob": "58e6dfcff1e1ad0cdd974f26574d766afcdef6a6",
+      "role": "production-mixed-tests",
+      "bytes": 2493,
+      "physical_lines": 90,
+      "nonblank_lines": 79,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/src/lib.rs",
+      "blob": "c5d4a2a6660aa4febb54f51216571de253d1455d",
+      "role": "production",
+      "bytes": 723,
+      "physical_lines": 30,
+      "nonblank_lines": 22,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/combinatorics/src/n_choose_k.rs",
+      "blob": "b4342cbcd68595f5dbee4fadfe4b4d82de5bcd45",
+      "role": "production-mixed-tests",
+      "bytes": 42682,
+      "physical_lines": 1216,
+      "nonblank_lines": 1151,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/.gitignore",
+      "blob": "b5db4eae27d4d1b71d208705dbeca49a5fe48842",
+      "role": "configuration",
+      "bytes": 303,
+      "physical_lines": 32,
+      "nonblank_lines": 24,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/.gitlab-ci.yml",
+      "blob": "af285e8e0c1659f63b7a8580e0428cf0d43e6755",
+      "role": "configuration",
+      "bytes": 91,
+      "physical_lines": 5,
+      "nonblank_lines": 5,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/Cargo.toml",
+      "blob": "e22f1784462f70df47fe251dfd55991598b9daff",
+      "role": "configuration",
+      "bytes": 3956,
+      "physical_lines": 116,
+      "nonblank_lines": 103,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/README.md",
+      "blob": "673827db5a94cdf1d5d9c8e64b5cac9ba3c04c35",
+      "role": "documentation",
+      "bytes": 1562,
+      "physical_lines": 32,
+      "nonblank_lines": 22,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/index.mec",
+      "blob": "a5f5e65c1cd524ccc7e2f32cce69ed8ba49cd771",
+      "role": "production",
+      "bytes": 732,
+      "physical_lines": 27,
+      "nonblank_lines": 21,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/catalog.rs",
+      "blob": "4430d067c68e716863e68147e6688717df43277c",
+      "role": "production",
+      "bytes": 18979,
+      "physical_lines": 541,
+      "nonblank_lines": 510,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/eq.rs",
+      "blob": "f89a19a60ca796f3d8cf5a5e01775b0e3f3923a1",
+      "role": "production",
+      "bytes": 32010,
+      "physical_lines": 963,
+      "nonblank_lines": 923,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/gt.rs",
+      "blob": "7ec5bb9d59eaf96aeee075ab76674f2806162505",
+      "role": "production",
+      "bytes": 6074,
+      "physical_lines": 177,
+      "nonblank_lines": 166,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/gte.rs",
+      "blob": "9984bb8ecab763303ad65e98ff0a514b6bd906a5",
+      "role": "production",
+      "bytes": 6106,
+      "physical_lines": 177,
+      "nonblank_lines": 166,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/lib.rs",
+      "blob": "8ca996c1d98a7e7281ce0a55b7cb5b92e9d63896",
+      "role": "production",
+      "bytes": 39702,
+      "physical_lines": 1049,
+      "nonblank_lines": 1005,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/lt.rs",
+      "blob": "7e43cd63c751beb56e9af517c020c55eb737724a",
+      "role": "production",
+      "bytes": 6245,
+      "physical_lines": 184,
+      "nonblank_lines": 173,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/lte.rs",
+      "blob": "a305ef8d6629976ae38d7aa82b24f25a7f010c64",
+      "role": "production",
+      "bytes": 6100,
+      "physical_lines": 177,
+      "nonblank_lines": 166,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/max.rs",
+      "blob": "1826dd92959b0f557143d2082d67928e7ce88920",
+      "role": "production",
+      "bytes": 9100,
+      "physical_lines": 269,
+      "nonblank_lines": 258,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/min.rs",
+      "blob": "75c57eb9aa8a38aca9f4f5ead6455d0c4d46d23d",
+      "role": "production",
+      "bytes": 9337,
+      "physical_lines": 276,
+      "nonblank_lines": 265,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/neq.rs",
+      "blob": "76a23eccd1243410fca48508bf3ad8060b7d8287",
+      "role": "production",
+      "bytes": 13046,
+      "physical_lines": 416,
+      "nonblank_lines": 395,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/seq.rs",
+      "blob": "4c3b56e164ca9f82e1ebdef7cfef3db2432ac32a",
+      "role": "production",
+      "bytes": 8241,
+      "physical_lines": 239,
+      "nonblank_lines": 219,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/compare/src/sneq.rs",
+      "blob": "58ae1fb194973445846433f2379261eee839f2fe",
+      "role": "production",
+      "bytes": 3705,
+      "physical_lines": 106,
+      "nonblank_lines": 96,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/.gitignore",
+      "blob": "b5db4eae27d4d1b71d208705dbeca49a5fe48842",
+      "role": "configuration",
+      "bytes": 303,
+      "physical_lines": 32,
+      "nonblank_lines": 24,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/.gitlab-ci.yml",
+      "blob": "af285e8e0c1659f63b7a8580e0428cf0d43e6755",
+      "role": "configuration",
+      "bytes": 91,
+      "physical_lines": 5,
+      "nonblank_lines": 5,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/Cargo.toml",
+      "blob": "4a398961c2b81cd1a7cfad9c9308b2aaccd99a1d",
+      "role": "configuration",
+      "bytes": 2497,
+      "physical_lines": 75,
+      "nonblank_lines": 66,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/README.md",
+      "blob": "7474c3da7aca9abf925e5b678b699ede575e09bb",
+      "role": "documentation",
+      "bytes": 1547,
+      "physical_lines": 32,
+      "nonblank_lines": 22,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/index.mec",
+      "blob": "fb5c0d8dfb4f2f5ac74cccb122b8b21947a1bb38",
+      "role": "production",
+      "bytes": 690,
+      "physical_lines": 25,
+      "nonblank_lines": 19,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/src/and.rs",
+      "blob": "dbb96b2a97d0d14cb80f3061eeb8365c30a69718",
+      "role": "production",
+      "bytes": 1907,
+      "physical_lines": 76,
+      "nonblank_lines": 65,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/src/catalog.rs",
+      "blob": "f0f6aaf99c8a4378660c4855cd3301e17d2d605a",
+      "role": "production",
+      "bytes": 13542,
+      "physical_lines": 342,
+      "nonblank_lines": 322,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/src/lib.rs",
+      "blob": "a1f3e8d2b1e48d23cc43a223bc3e2df3bac94a71",
+      "role": "production",
+      "bytes": 30499,
+      "physical_lines": 870,
+      "nonblank_lines": 835,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/src/not.rs",
+      "blob": "5d820973b2db0bd3bcd58b6ada0c80ad78948ae4",
+      "role": "production",
+      "bytes": 8763,
+      "physical_lines": 263,
+      "nonblank_lines": 238,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/src/or.rs",
+      "blob": "d8e0003336a54a2152dccb9b0a2276e540511258",
+      "role": "production",
+      "bytes": 1892,
+      "physical_lines": 76,
+      "nonblank_lines": 65,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/logic/src/xor.rs",
+      "blob": "3a3d3e9abc43d9d9882e2269f587d1d8ca93cb9a",
+      "role": "production",
+      "bytes": 1900,
+      "physical_lines": 76,
+      "nonblank_lines": 65,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/.gitignore",
+      "blob": "b5db4eae27d4d1b71d208705dbeca49a5fe48842",
+      "role": "configuration",
+      "bytes": 303,
+      "physical_lines": 32,
+      "nonblank_lines": 24,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/.gitlab-ci.yml",
+      "blob": "af285e8e0c1659f63b7a8580e0428cf0d43e6755",
+      "role": "configuration",
+      "bytes": 91,
+      "physical_lines": 5,
+      "nonblank_lines": 5,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/Cargo.toml",
+      "blob": "7da3b5234bcefc6c18b21fd5109b8dcf1d358632",
+      "role": "configuration",
+      "bytes": 7334,
+      "physical_lines": 209,
+      "nonblank_lines": 186,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/LICENSE",
+      "blob": "41c00c99942792057b7d84e2ba001fdd4f141831",
+      "role": "license",
+      "bytes": 11344,
+      "physical_lines": 201,
+      "nonblank_lines": 169,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/README.md",
+      "blob": "f4d51918be40800d57269c137012b1a559d05cea",
+      "role": "documentation",
+      "bytes": 1544,
+      "physical_lines": 32,
+      "nonblank_lines": 22,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/arithmetic/abs.mec",
+      "blob": "20a87632fc99da2e4f2bbc36559afc2491c42b26",
+      "role": "production",
+      "bytes": 2269,
+      "physical_lines": 69,
+      "nonblank_lines": 46,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/arithmetic/copysign.mec",
+      "blob": "c0019f687f39687553e91dfa4d285f424700b954",
+      "role": "production",
+      "bytes": 2419,
+      "physical_lines": 74,
+      "nonblank_lines": 53,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/arithmetic/fdim.mec",
+      "blob": "a6f56ee940858e5177ee05f4b990e0c035a7d4c5",
+      "role": "production",
+      "bytes": 2315,
+      "physical_lines": 79,
+      "nonblank_lines": 54,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/arithmetic/fmod.mec",
+      "blob": "2ac216a4c898347072a2bc6862d6a0c03cb8b1a8",
+      "role": "production",
+      "bytes": 2143,
+      "physical_lines": 72,
+      "nonblank_lines": 50,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/arithmetic/nextafter.mec",
+      "blob": "a681d34c4885e7a0170459b165f0dea0892d97de",
+      "role": "production",
+      "bytes": 2800,
+      "physical_lines": 77,
+      "nonblank_lines": 60,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/arithmetic/remainder.mec",
+      "blob": "6a66b7b21aa0eedfabce43c7db7bdbc4b37b4b27",
+      "role": "production",
+      "bytes": 2710,
+      "physical_lines": 70,
+      "nonblank_lines": 61,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/bessel/j0.mec",
+      "blob": "13023c82419aaea2826468f9897fe45aa041a7ae",
+      "role": "production",
+      "bytes": 2098,
+      "physical_lines": 70,
+      "nonblank_lines": 48,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/bessel/j1.mec",
+      "blob": "d3ace6638c5da93d23fc068a848965471872fd7e",
+      "role": "production",
+      "bytes": 2067,
+      "physical_lines": 70,
+      "nonblank_lines": 48,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/bessel/jn.mec",
+      "blob": "f386852ec18a3ee9cda18161e4d4945374d0137b",
+      "role": "production",
+      "bytes": 2360,
+      "physical_lines": 70,
+      "nonblank_lines": 48,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/bessel/y0.mec",
+      "blob": "daf1150d56968a11b14c77ef358f24b79a977e46",
+      "role": "production",
+      "bytes": 2358,
+      "physical_lines": 67,
+      "nonblank_lines": 45,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/bessel/y1.mec",
+      "blob": "9c4d2e8cad605285cd6e4f67addc0f6beb7316bb",
+      "role": "production",
+      "bytes": 2360,
+      "physical_lines": 67,
+      "nonblank_lines": 45,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/bessel/yn.mec",
+      "blob": "4a3dd20d6a21ba190b0bc0d751dc57190e227426",
+      "role": "production",
+      "bytes": 2854,
+      "physical_lines": 81,
+      "nonblank_lines": 56,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/exponential/exp.mec",
+      "blob": "e576c7e83b665b785018df2d201db4fb677fe640",
+      "role": "production",
+      "bytes": 2616,
+      "physical_lines": 75,
+      "nonblank_lines": 54,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/exponential/exp10.mec",
+      "blob": "ea186d41d866dbee51b4ea22e9f854dea4e944d1",
+      "role": "production",
+      "bytes": 2462,
+      "physical_lines": 79,
+      "nonblank_lines": 52,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/exponential/exp2.mec",
+      "blob": "0fdb91d37508b0707a63ece013ee12cac6e97c27",
+      "role": "production",
+      "bytes": 2437,
+      "physical_lines": 79,
+      "nonblank_lines": 52,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/exponential/expm1.mec",
+      "blob": "143085eadbef85fcd9a9980a71a2aa4376990591",
+      "role": "production",
+      "bytes": 2130,
+      "physical_lines": 70,
+      "nonblank_lines": 49,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/gamma/lgamma.mec",
+      "blob": "f1ed99044fdc1ec579f7dcb5fddd80e071dc497f",
+      "role": "production",
+      "bytes": 3496,
+      "physical_lines": 94,
+      "nonblank_lines": 65,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/gamma/tgamma.mec",
+      "blob": "c0608d07b8cbf652c47221768ed40e25c6d93dce",
+      "role": "production",
+      "bytes": 3232,
+      "physical_lines": 93,
+      "nonblank_lines": 63,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/index.mec",
+      "blob": "6fdd9804c55b46c051cf2b0973625c6c4a84c178",
+      "role": "production",
+      "bytes": 10188,
+      "physical_lines": 167,
+      "nonblank_lines": 123,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/log/log.mec",
+      "blob": "5a515f5f301e28116826746b34aef23d416f7767",
+      "role": "production",
+      "bytes": 2580,
+      "physical_lines": 90,
+      "nonblank_lines": 61,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/log/log10.mec",
+      "blob": "bd7ef8b41fc9ba1d46b28f1cc5db477c970fe9be",
+      "role": "production",
+      "bytes": 2217,
+      "physical_lines": 78,
+      "nonblank_lines": 55,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/log/log1p.mec",
+      "blob": "c512d0e0c9aaad914a4be6c44710c634d3ea0348",
+      "role": "production",
+      "bytes": 2967,
+      "physical_lines": 100,
+      "nonblank_lines": 69,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/log/log2.mec",
+      "blob": "cac1028c8911c49f25b05987439116c65ac08d97",
+      "role": "production",
+      "bytes": 2178,
+      "physical_lines": 78,
+      "nonblank_lines": 55,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/op_assign/add_assign.mec",
+      "blob": "aec97d9c426b982045e4f59b153633907376272d",
+      "role": "production",
+      "bytes": 4662,
+      "physical_lines": 148,
+      "nonblank_lines": 104,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/op_assign/div_assign.mec",
+      "blob": "08de35ee9a3d7ad2a217944da59172a5291d4395",
+      "role": "production",
+      "bytes": 5002,
+      "physical_lines": 150,
+      "nonblank_lines": 109,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/op_assign/mul_assign.mec",
+      "blob": "ff41b28204d36cb44bd9ecc4e573acf0ca978320",
+      "role": "production",
+      "bytes": 3745,
+      "physical_lines": 85,
+      "nonblank_lines": 56,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/op_assign/sub_assign.mec",
+      "blob": "2eb7e15a011d2e0752ef12f23f2af62c8f07a2f2",
+      "role": "production",
+      "bytes": 2651,
+      "physical_lines": 89,
+      "nonblank_lines": 63,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/ops/add.mec",
+      "blob": "5397049d01b35c604c88196f2ecef24b3d3d2116",
+      "role": "production",
+      "bytes": 4316,
+      "physical_lines": 112,
+      "nonblank_lines": 78,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/ops/div.mec",
+      "blob": "ceda507c4488408d650aa1fb5375ef2a2cc47915",
+      "role": "production",
+      "bytes": 3995,
+      "physical_lines": 114,
+      "nonblank_lines": 80,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/ops/exp.mec",
+      "blob": "ad8930286bc60900c165060d6dd08f71e7594b89",
+      "role": "production",
+      "bytes": 4899,
+      "physical_lines": 122,
+      "nonblank_lines": 87,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/ops/modulus.mec",
+      "blob": "56e36ba937c35ebb245c112b42849143cd51f734",
+      "role": "production",
+      "bytes": 4271,
+      "physical_lines": 119,
+      "nonblank_lines": 84,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/ops/mul.mec",
+      "blob": "70c66d4bebe76d16893afa1a95fd53add611fd3b",
+      "role": "production",
+      "bytes": 4359,
+      "physical_lines": 114,
+      "nonblank_lines": 79,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/ops/negate.mec",
+      "blob": "ea83fb16fdaf1297afd9ae54a1138787046f18d5",
+      "role": "production",
+      "bytes": 3144,
+      "physical_lines": 83,
+      "nonblank_lines": 57,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/ops/pow.mec",
+      "blob": "74b932259cd54789bfda4fa1ba2b44b4c0dddab7",
+      "role": "production",
+      "bytes": 1870,
+      "physical_lines": 65,
+      "nonblank_lines": 46,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/ops/sub.mec",
+      "blob": "4635a52d9a7eb5a30a7d995aa8f507cc02f2cc72",
+      "role": "production",
+      "bytes": 4145,
+      "physical_lines": 113,
+      "nonblank_lines": 79,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/root/cbrt.mec",
+      "blob": "8eb3380e7efd696be95f7619f259e55a936c2a5d",
+      "role": "production",
+      "bytes": 2512,
+      "physical_lines": 72,
+      "nonblank_lines": 48,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/root/sqrt.mec",
+      "blob": "b0106bc730dbdd9db0138db0241a3ece7f7497dd",
+      "role": "production",
+      "bytes": 2116,
+      "physical_lines": 77,
+      "nonblank_lines": 54,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/rounding/ceil.mec",
+      "blob": "47c1a322ce386fce7597b82bf06e262da9375852",
+      "role": "production",
+      "bytes": 2287,
+      "physical_lines": 77,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/rounding/floor.mec",
+      "blob": "4de20100a7c422b79e4b8f25ae99a02c5bde92ad",
+      "role": "production",
+      "bytes": 2483,
+      "physical_lines": 82,
+      "nonblank_lines": 58,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/rounding/rint.mec",
+      "blob": "4f347259a12ddebf86993fdaf00d1d907b27098c",
+      "role": "production",
+      "bytes": 2581,
+      "physical_lines": 81,
+      "nonblank_lines": 58,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/rounding/round.mec",
+      "blob": "3bc08d61d672c2321eccbe25e78bf4039e8affc4",
+      "role": "production",
+      "bytes": 2521,
+      "physical_lines": 85,
+      "nonblank_lines": 60,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/rounding/roundeven.mec",
+      "blob": "64429e8a334b1056744a5a837ee6ba478b9233e7",
+      "role": "production",
+      "bytes": 2714,
+      "physical_lines": 89,
+      "nonblank_lines": 64,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/rounding/trunc.mec",
+      "blob": "8e9012aaa2a918e6c6400a329d79fc53bb38d5b2",
+      "role": "production",
+      "bytes": 2484,
+      "physical_lines": 85,
+      "nonblank_lines": 60,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/stat_error/erf.mec",
+      "blob": "cb1527849e32683f4e1be3e839f9285a4ba9f0f6",
+      "role": "production",
+      "bytes": 2701,
+      "physical_lines": 89,
+      "nonblank_lines": 59,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/stat_error/erfc.mec",
+      "blob": "2eef430e73d570e2d01b6be472fa887ae6322dab",
+      "role": "production",
+      "bytes": 2321,
+      "physical_lines": 74,
+      "nonblank_lines": 49,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/acos.mec",
+      "blob": "c623fe5a361178a6cf160aff01d592858e66d7f0",
+      "role": "production",
+      "bytes": 2679,
+      "physical_lines": 79,
+      "nonblank_lines": 52,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/acosh.mec",
+      "blob": "f0ad70c48613562a321cc29ef3741aec26f79270",
+      "role": "production",
+      "bytes": 2520,
+      "physical_lines": 77,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/acot.mec",
+      "blob": "cbee784578be6944b0173c0e913c5fae295733d4",
+      "role": "production",
+      "bytes": 2530,
+      "physical_lines": 83,
+      "nonblank_lines": 54,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/acsc.mec",
+      "blob": "e522e69613e5797a11e5c9a1924d933804bb3865",
+      "role": "production",
+      "bytes": 2562,
+      "physical_lines": 83,
+      "nonblank_lines": 54,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/asec.mec",
+      "blob": "bebb47920cfc2f48586334e31abdb74821d624f2",
+      "role": "production",
+      "bytes": 2582,
+      "physical_lines": 87,
+      "nonblank_lines": 56,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/asin.mec",
+      "blob": "f79d55cbc169ef0c8def5bf528092b65cb713788",
+      "role": "production",
+      "bytes": 2663,
+      "physical_lines": 79,
+      "nonblank_lines": 52,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/asinh.mec",
+      "blob": "55cd173565db31181e1dffd1a31eddaf033d3d09",
+      "role": "production",
+      "bytes": 2251,
+      "physical_lines": 67,
+      "nonblank_lines": 45,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/atan.mec",
+      "blob": "206073d23431934da181e57d9fea9be08aa4a5d4",
+      "role": "production",
+      "bytes": 2378,
+      "physical_lines": 68,
+      "nonblank_lines": 45,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/atan2.mec",
+      "blob": "a50c0be35fe8853e294d7a6d4645b2755cf40fc4",
+      "role": "production",
+      "bytes": 2469,
+      "physical_lines": 73,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/atanh.mec",
+      "blob": "c8318d7f9dd053c79d7d43ec76a1a51784642f6d",
+      "role": "production",
+      "bytes": 2082,
+      "physical_lines": 68,
+      "nonblank_lines": 47,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/cos.mec",
+      "blob": "f5d6af40059109261c7807b63509501401d869cc",
+      "role": "production",
+      "bytes": 2655,
+      "physical_lines": 77,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/cosh.mec",
+      "blob": "78ed5ab85bc340688acf19f874c758e4ee1acb92",
+      "role": "production",
+      "bytes": 2395,
+      "physical_lines": 66,
+      "nonblank_lines": 44,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/cot.mec",
+      "blob": "415e6bff51bd9b4b068ca1a4e7c4acdd3d7e1ff0",
+      "role": "production",
+      "bytes": 2559,
+      "physical_lines": 77,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/csc.mec",
+      "blob": "70e32b62f19b81c6d9d6d47e2fc51d2d27c0c818",
+      "role": "production",
+      "bytes": 2522,
+      "physical_lines": 77,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/sec.mec",
+      "blob": "352a7286fe1d8eda2d380b38cb2e6aab63831ab9",
+      "role": "production",
+      "bytes": 2509,
+      "physical_lines": 77,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/sin.mec",
+      "blob": "01ba06481a8e01627bb06d4bfe223e4c6ef85bcc",
+      "role": "production",
+      "bytes": 2634,
+      "physical_lines": 77,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/sinh.mec",
+      "blob": "c03bbb2d133ee0f6438cee11695d374e6b70b8b9",
+      "role": "production",
+      "bytes": 2347,
+      "physical_lines": 66,
+      "nonblank_lines": 44,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/tan.mec",
+      "blob": "b922f550b3d5054f600cae1ec02035096c9488a5",
+      "role": "production",
+      "bytes": 2665,
+      "physical_lines": 77,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/docs/trig/tanh.mec",
+      "blob": "3b560d8d99f7cc106497df2884ee3348dd8e8032",
+      "role": "production",
+      "bytes": 2366,
+      "physical_lines": 66,
+      "nonblank_lines": 44,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/index.mec",
+      "blob": "67ea19ed7b1b4a7d7b90313594dd9e352c171a09",
+      "role": "production",
+      "bytes": 1292,
+      "physical_lines": 70,
+      "nonblank_lines": 53,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/arithmetic/abs.rs",
+      "blob": "73cc9642dee6f9599b408711e847164a4ca96d75",
+      "role": "production",
+      "bytes": 7658,
+      "physical_lines": 266,
+      "nonblank_lines": 240,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/arithmetic/copysign.rs",
+      "blob": "6cd994f2ab047dfd590e15e83e7ce5986ae0579e",
+      "role": "production",
+      "bytes": 1057,
+      "physical_lines": 44,
+      "nonblank_lines": 37,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/arithmetic/fdim.rs",
+      "blob": "4bd49077349d1d5fb99ab916e1d193fb3429615f",
+      "role": "production",
+      "bytes": 977,
+      "physical_lines": 44,
+      "nonblank_lines": 37,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/arithmetic/fmod.rs",
+      "blob": "c74f90d21f2c42511d5a1b85b0d7788c6653fd5c",
+      "role": "production",
+      "bytes": 977,
+      "physical_lines": 44,
+      "nonblank_lines": 37,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/arithmetic/mod.rs",
+      "blob": "5289ceb182872bc0daa4ddd9267e4ef3cffd257a",
+      "role": "production",
+      "bytes": 743,
+      "physical_lines": 26,
+      "nonblank_lines": 25,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/arithmetic/nextafter.rs",
+      "blob": "a2bd8d6f7a64fea5fd49faef6a77465da2697adc",
+      "role": "production",
+      "bytes": 1077,
+      "physical_lines": 44,
+      "nonblank_lines": 37,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/arithmetic/remainder.rs",
+      "blob": "7fb6a634f517135476d91ec085ecd21897743627",
+      "role": "production",
+      "bytes": 1077,
+      "physical_lines": 44,
+      "nonblank_lines": 37,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/bessel/j0.rs",
+      "blob": "349d7de51619656db45f1004412af2640120c607",
+      "role": "production",
+      "bytes": 483,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/bessel/j1.rs",
+      "blob": "8fd6d0f94b6c7370760b791caffd87af8346f42d",
+      "role": "production",
+      "bytes": 483,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/bessel/jn.rs",
+      "blob": "93ded46f1e729e48058e3e1dc8ef8804e87fcfc0",
+      "role": "production",
+      "bytes": 965,
+      "physical_lines": 44,
+      "nonblank_lines": 37,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/bessel/mod.rs",
+      "blob": "4148c82d5488f6eca47f535d3faee1aa5c49f4fa",
+      "role": "production",
+      "bytes": 643,
+      "physical_lines": 26,
+      "nonblank_lines": 25,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/bessel/y0.rs",
+      "blob": "ad950d0c24dac205db12db5927ec7b6313a1d55c",
+      "role": "production",
+      "bytes": 483,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/bessel/y1.rs",
+      "blob": "0dfba3652f7cd883fe7a2efd9cd53d5a4b4ffe88",
+      "role": "production",
+      "bytes": 483,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/bessel/yn.rs",
+      "blob": "c173a60be97d6e93f56026ac7b0542fa9d23cb19",
+      "role": "production",
+      "bytes": 965,
+      "physical_lines": 44,
+      "nonblank_lines": 37,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/catalog.rs",
+      "blob": "bee8f8d975a9d6fed1717c08f0875181863892d5",
+      "role": "production-mixed-tests",
+      "bytes": 125076,
+      "physical_lines": 2940,
+      "nonblank_lines": 2784,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/dynamic_module.rs",
+      "blob": "dfb22f99dedae8774f999a4b68cf833313574d29",
+      "role": "production-mixed-tests",
+      "bytes": 23389,
+      "physical_lines": 758,
+      "nonblank_lines": 663,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/float_binary_identity_tests.rs",
+      "blob": "21089be095e4e17bc0cb1f9ce24ff978666c8bb1",
+      "role": "production",
+      "bytes": 9827,
+      "physical_lines": 245,
+      "nonblank_lines": 240,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/gamma/lgamma.rs",
+      "blob": "8dc0e3a4255ff448e9bfc26e184eb40bae1fe62b",
+      "role": "production",
+      "bytes": 532,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/gamma/mod.rs",
+      "blob": "7945895e699f85635e71f1ed9de048be07da7be3",
+      "role": "production",
+      "bytes": 259,
+      "physical_lines": 10,
+      "nonblank_lines": 9,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/gamma/tgamma.rs",
+      "blob": "0c6aa1970e811cd850533a6222ebadecece94012",
+      "role": "production",
+      "bytes": 532,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/kernels.rs",
+      "blob": "b9c1357a497d6227a37503ee43085199d9e0d550",
+      "role": "production",
+      "bytes": 1498,
+      "physical_lines": 40,
+      "nonblank_lines": 36,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/lib.rs",
+      "blob": "4d81b258ceec92b9a465da81d6d926e078bd7e62",
+      "role": "production",
+      "bytes": 30625,
+      "physical_lines": 855,
+      "nonblank_lines": 809,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/logarithm/log.rs",
+      "blob": "836caf5cb4ea3ec6cda244386c01c2f1e2a9da46",
+      "role": "production",
+      "bytes": 490,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/logarithm/log10.rs",
+      "blob": "428d63440605638cfc2e7780fbeb34ea7534816e",
+      "role": "production",
+      "bytes": 518,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/logarithm/log1p.rs",
+      "blob": "3a0a536be6211311859ead7f9c5fd8d3184636f6",
+      "role": "production",
+      "bytes": 518,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/logarithm/log2.rs",
+      "blob": "c8d600c0d9a99f99e48bee8c98a3bb850c3dd626",
+      "role": "production",
+      "bytes": 504,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/logarithm/mod.rs",
+      "blob": "0157b42b4f04654645cb2a8ff96a39b16bbaa23a",
+      "role": "production",
+      "bytes": 471,
+      "physical_lines": 18,
+      "nonblank_lines": 17,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/managed_binary.rs",
+      "blob": "c6e5710cf3a23a4be195e1f0193dd38a8a3cb6f3",
+      "role": "production",
+      "bytes": 1818,
+      "physical_lines": 45,
+      "nonblank_lines": 42,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/managed_unary.rs",
+      "blob": "29963f90c98c672e854d33705dd819e9ec60049c",
+      "role": "production",
+      "bytes": 845,
+      "physical_lines": 20,
+      "nonblank_lines": 17,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/op_assign/add_assign.rs",
+      "blob": "d258872c71de5cd3e8a09624bf44e97453a674ab",
+      "role": "production",
+      "bytes": 3958,
+      "physical_lines": 132,
+      "nonblank_lines": 113,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/op_assign/div_assign.rs",
+      "blob": "7efbbd951cc875bd80ae3139d111446c3757955b",
+      "role": "production",
+      "bytes": 4033,
+      "physical_lines": 134,
+      "nonblank_lines": 115,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/op_assign/mod.rs",
+      "blob": "4aecf4fdd03fe3d2ab17bd3c698089a8b47f4616",
+      "role": "production-mixed-tests",
+      "bytes": 54871,
+      "physical_lines": 1377,
+      "nonblank_lines": 1315,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/op_assign/mul_assign.rs",
+      "blob": "af432ff581aec7f40fcafb1aeb3ba98f20f281e1",
+      "role": "production",
+      "bytes": 3958,
+      "physical_lines": 132,
+      "nonblank_lines": 113,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/op_assign/port_tests.rs",
+      "blob": "287372510179402838aa3221b8a2a9f66f6f8626",
+      "role": "production",
+      "bytes": 19243,
+      "physical_lines": 528,
+      "nonblank_lines": 494,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/op_assign/sub_assign.rs",
+      "blob": "15457a0bb6f981a7016821e2de41317fd4ff9b02",
+      "role": "production",
+      "bytes": 3958,
+      "physical_lines": 132,
+      "nonblank_lines": 113,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/ops/add.rs",
+      "blob": "b34bc099398686221b9e9fbf0ce313609d6e8412",
+      "role": "production",
+      "bytes": 21283,
+      "physical_lines": 551,
+      "nonblank_lines": 507,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/ops/div.rs",
+      "blob": "45578160a3c4822ed76b6398f9d9a22ef776681f",
+      "role": "production",
+      "bytes": 3707,
+      "physical_lines": 135,
+      "nonblank_lines": 116,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/ops/mod.rs",
+      "blob": "abeca3a026fe6a25ec8e7e96737d3cdf30f0a087",
+      "role": "production",
+      "bytes": 11827,
+      "physical_lines": 350,
+      "nonblank_lines": 310,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/ops/modulus.rs",
+      "blob": "7e335c5e813741cc4c7762d13ed37fb9297f4ba4",
+      "role": "production",
+      "bytes": 3461,
+      "physical_lines": 127,
+      "nonblank_lines": 109,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/ops/mul.rs",
+      "blob": "fdfea1932576fbd8af3030a62df07dd890ea59c5",
+      "role": "production",
+      "bytes": 2477,
+      "physical_lines": 73,
+      "nonblank_lines": 63,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/ops/negate.rs",
+      "blob": "2774248680985fd10570e497fd156668e461ae89",
+      "role": "production",
+      "bytes": 7302,
+      "physical_lines": 189,
+      "nonblank_lines": 169,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/ops/pow.rs",
+      "blob": "a870ff27512d70ce2f5d10d069590b4bcf36daa1",
+      "role": "production",
+      "bytes": 6705,
+      "physical_lines": 194,
+      "nonblank_lines": 171,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/ops/sub.rs",
+      "blob": "b5512fdd1091f2cf28416201feff59fc16ce5ef4",
+      "role": "production",
+      "bytes": 2473,
+      "physical_lines": 73,
+      "nonblank_lines": 63,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/root/cbrt.rs",
+      "blob": "51f775ae07564a0f267c42b5870d9adac074d9bf",
+      "role": "production",
+      "bytes": 504,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/root/mod.rs",
+      "blob": "948119f38b8e7913626b171fb004ba47095d5e6a",
+      "role": "production",
+      "bytes": 243,
+      "physical_lines": 10,
+      "nonblank_lines": 9,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/root/sqrt.rs",
+      "blob": "cd6a8df30f4f4a8c2a5b211f28f966dbc691a85e",
+      "role": "production",
+      "bytes": 608,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/rounding/ceil.rs",
+      "blob": "656beb937eb5ad215bc82728225740c3784fbb04",
+      "role": "production",
+      "bytes": 608,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/rounding/floor.rs",
+      "blob": "80e0528757dbd90388ce6383c8884695858f3dfc",
+      "role": "production",
+      "bytes": 622,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/rounding/mod.rs",
+      "blob": "739482dc50f0984bee33883d0d7cdfa4da134b65",
+      "role": "production",
+      "bytes": 723,
+      "physical_lines": 26,
+      "nonblank_lines": 25,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/rounding/rint.rs",
+      "blob": "8a8a7697a6ab5652942f408e09ddb76e664adf67",
+      "role": "production",
+      "bytes": 504,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/rounding/round.rs",
+      "blob": "f2742accfe70b08f61d10c610a46f082e3722ab7",
+      "role": "production",
+      "bytes": 518,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/rounding/roundeven.rs",
+      "blob": "8a471967f4ef2d3ff92cf7124195e2c2fbd8d06c",
+      "role": "production",
+      "bytes": 574,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/rounding/trunc.rs",
+      "blob": "e5ada8164c617619bfe8289f4617ad4535a88e5f",
+      "role": "production",
+      "bytes": 518,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/stat_error/erf.rs",
+      "blob": "7726905e48fe9caf548f58e10c016ece6da6fa2e",
+      "role": "production",
+      "bytes": 490,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/stat_error/erfc.rs",
+      "blob": "ec80ba0f5ae9db7b97b2f44c819a17f67ae9c135",
+      "role": "production",
+      "bytes": 504,
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/stat_error/mod.rs",
+      "blob": "64009145b4efb74a4767dfa3c70266019aeff293",
+      "role": "production",
+      "bytes": 239,
+      "physical_lines": 10,
+      "nonblank_lines": 9,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/acos.rs",
+      "blob": "b0f8ea05259e43f35d0b4326cc521f0787670341",
+      "role": "production",
+      "bytes": 608,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/acosh.rs",
+      "blob": "b236b186aa90a264135cbd3ae7234d68a861b2a9",
+      "role": "production",
+      "bytes": 555,
+      "physical_lines": 27,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/acot.rs",
+      "blob": "2789e26703b37aa769469412e268cd92f0c595ae",
+      "role": "production",
+      "bytes": 620,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/acsc.rs",
+      "blob": "116545a1adec17043fec9c5df54d0035c4539fa8",
+      "role": "production",
+      "bytes": 620,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/asec.rs",
+      "blob": "7b9824b0b469fd831efc10099ab75052a15083e9",
+      "role": "production",
+      "bytes": 620,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/asin.rs",
+      "blob": "deff690616a53d137c277f80afbeec33c8f65e9d",
+      "role": "production",
+      "bytes": 608,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/asinh.rs",
+      "blob": "6577be9e100d0dfe6a0fe813d7d5fe5a2d7cb766",
+      "role": "production",
+      "bytes": 555,
+      "physical_lines": 27,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/atan.rs",
+      "blob": "a8f594a77feb8f3a6a140e5936daf511524669b5",
+      "role": "production",
+      "bytes": 608,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/atan2.rs",
+      "blob": "d2547eb78a6c257fb0b628366dec6fc2a220d2b6",
+      "role": "production",
+      "bytes": 8579,
+      "physical_lines": 216,
+      "nonblank_lines": 201,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/atanh.rs",
+      "blob": "f9a0e3d1c7089b539672b92a020fdfdbd9de2dd0",
+      "role": "production",
+      "bytes": 555,
+      "physical_lines": 27,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/cos.rs",
+      "blob": "00368008b69df658cb7cbbcc82b08c73f82b198e",
+      "role": "production",
+      "bytes": 594,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/cosh.rs",
+      "blob": "03be2dfb518bac2abd0f1a39eaf26236e8d9cb81",
+      "role": "production",
+      "bytes": 607,
+      "physical_lines": 27,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/cot.rs",
+      "blob": "14ddcb79a7ecb0a4c0f44eb7a26255266dad2a1c",
+      "role": "production",
+      "bytes": 606,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/csc.rs",
+      "blob": "35c39061d81b8c210afc4db2a9e547632da103b4",
+      "role": "production",
+      "bytes": 606,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/mod.rs",
+      "blob": "a3e4c4361ad1c807e7e999b74bcc28003757db7e",
+      "role": "production",
+      "bytes": 2139,
+      "physical_lines": 78,
+      "nonblank_lines": 77,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/sec.rs",
+      "blob": "c3dceeba92461abf05ceae481fb079030176c48f",
+      "role": "production",
+      "bytes": 606,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/sin.rs",
+      "blob": "810c3767baa369833973c917bb9b96bb562dc376",
+      "role": "production",
+      "bytes": 594,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/sinh.rs",
+      "blob": "d6556f9c4ab9ddd2dc7c3e7183143b7f08dc802c",
+      "role": "production",
+      "bytes": 607,
+      "physical_lines": 27,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/tan.rs",
+      "blob": "7e1d46b12c23813aeabbfbbd3e1c6a5d1eaf51c6",
+      "role": "production",
+      "bytes": 594,
+      "physical_lines": 28,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/src/trig/tanh.rs",
+      "blob": "22ef59a03990918f91a6bcc74f66e27a03754890",
+      "role": "production",
+      "bytes": 607,
+      "physical_lines": 27,
+      "nonblank_lines": 23,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/math/tests/math.mec",
+      "blob": "840222204a31c1f0968fb5bb459049c00c5f0596",
+      "role": "test",
+      "bytes": 1073,
+      "physical_lines": 46,
+      "nonblank_lines": 30,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/.gitignore",
+      "blob": "869df07dae8bac23301b7f3e7869d29d88975fef",
+      "role": "configuration",
+      "bytes": 18,
+      "physical_lines": 2,
+      "nonblank_lines": 2,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/.gitlab-ci.yml",
+      "blob": "af285e8e0c1659f63b7a8580e0428cf0d43e6755",
+      "role": "configuration",
+      "bytes": 91,
+      "physical_lines": 5,
+      "nonblank_lines": 5,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/Cargo.toml",
+      "blob": "917813876dde3e8400bb0f47e9e7ea675c9daa0b",
+      "role": "configuration",
+      "bytes": 4829,
+      "physical_lines": 133,
+      "nonblank_lines": 119,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/README.md",
+      "blob": "816a38cca984f7075a7b46e1ede08c17858c372e",
+      "role": "documentation",
+      "bytes": 1614,
+      "physical_lines": 38,
+      "nonblank_lines": 26,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/benchmarks/steady_state/README.md",
+      "blob": "38a5e92e439b3ee2e15908d9689ef6f184907312",
+      "role": "benchmark",
+      "bytes": 2079,
+      "physical_lines": 50,
+      "nonblank_lines": 37,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/benchmarks/steady_state/RESULTS_APPLE_M1_2026-08-05.md",
+      "blob": "79809c6cdfee25d92353d6cdd8c0399fd59d71a9",
+      "role": "benchmark",
+      "bytes": 8303,
+      "physical_lines": 173,
+      "nonblank_lines": 138,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/benchmarks/steady_state/lua_benchmark.lua",
+      "blob": "248dfe7563528f736e9103efb4b893161ea2f209",
+      "role": "benchmark",
+      "bytes": 5835,
+      "physical_lines": 156,
+      "nonblank_lines": 147,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/benchmarks/steady_state/python_benchmark.py",
+      "blob": "1e8be2c2856abd59ac15562af1b012fa1d9b3987",
+      "role": "benchmark",
+      "bytes": 6811,
+      "physical_lines": 187,
+      "nonblank_lines": 156,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/benchmarks/steady_state/rectangular_numpy_benchmark.py",
+      "blob": "ff9ec15a8a93b42bf349ae3afb0ebdcab2057790",
+      "role": "benchmark",
+      "bytes": 3366,
+      "physical_lines": 112,
+      "nonblank_lines": 96,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/docs/dot.mec",
+      "blob": "a9393f861b7699766f1726b632fdf859fe83df1f",
+      "role": "production",
+      "bytes": 2708,
+      "physical_lines": 70,
+      "nonblank_lines": 47,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/examples/steady_state_benchmark.rs",
+      "blob": "efe45f83f4681ecb43cc1193150b0f371bd8f226",
+      "role": "example",
+      "bytes": 9241,
+      "physical_lines": 312,
+      "nonblank_lines": 290,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/index.mec",
+      "blob": "6f9a62958fa565440e7ede524e1afb8fd69411a8",
+      "role": "production",
+      "bytes": 642,
+      "physical_lines": 24,
+      "nonblank_lines": 18,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/src/catalog.rs",
+      "blob": "3c9900c316d01144b4fe7c7fbcfa3ed7ab41be85",
+      "role": "production-mixed-tests",
+      "bytes": 53464,
+      "physical_lines": 1096,
+      "nonblank_lines": 1030,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/src/dot.rs",
+      "blob": "fd876d21a78347c2b605ceb9aa27358e6888856f",
+      "role": "production",
+      "bytes": 9375,
+      "physical_lines": 261,
+      "nonblank_lines": 239,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/src/lib.rs",
+      "blob": "ecb883241d47bd0266a0a361ababb0be374ed0eb",
+      "role": "production",
+      "bytes": 14734,
+      "physical_lines": 444,
+      "nonblank_lines": 402,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/src/matmul.rs",
+      "blob": "1f9d98e61660993346ce08a4e27401c8b0f7b5cc",
+      "role": "production",
+      "bytes": 15826,
+      "physical_lines": 404,
+      "nonblank_lines": 375,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/src/solve.rs",
+      "blob": "bd881ea4f0974eb0f32ce5817f214a2de8d696cc",
+      "role": "production",
+      "bytes": 28233,
+      "physical_lines": 712,
+      "nonblank_lines": 679,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/matrix/src/transpose.rs",
+      "blob": "70be73b64ee17418f713e9ff2a6661c29cada9fd",
+      "role": "production",
+      "bytes": 23164,
+      "physical_lines": 589,
+      "nonblank_lines": 560,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/publish.ps1",
+      "blob": "25e2f23d59a98dce77dd3f40d60bcc06004e1fc0",
+      "role": "production",
+      "bytes": 1322,
+      "physical_lines": 49,
+      "nonblank_lines": 40,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/.gitignore",
+      "blob": "b5db4eae27d4d1b71d208705dbeca49a5fe48842",
+      "role": "configuration",
+      "bytes": 303,
+      "physical_lines": 32,
+      "nonblank_lines": 24,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/.gitlab-ci.yml",
+      "blob": "af285e8e0c1659f63b7a8580e0428cf0d43e6755",
+      "role": "configuration",
+      "bytes": 91,
+      "physical_lines": 5,
+      "nonblank_lines": 5,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/Cargo.toml",
+      "blob": "27f3b26c65fcdf2a18683f2f07db939b16402d8f",
+      "role": "configuration",
+      "bytes": 3037,
+      "physical_lines": 92,
+      "nonblank_lines": 82,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/README.md",
+      "blob": "3b738ae4eb18bd9227f59f4d76267d7665038a87",
+      "role": "documentation",
+      "bytes": 1580,
+      "physical_lines": 37,
+      "nonblank_lines": 25,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/index.mec",
+      "blob": "29c5df3037d2b851e9b765f287a01f2584a18ad0",
+      "role": "production",
+      "bytes": 699,
+      "physical_lines": 25,
+      "nonblank_lines": 19,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/src/catalog.rs",
+      "blob": "85e9f89bce6fbeadeab713e2775422bc2faff9d4",
+      "role": "production",
+      "bytes": 15083,
+      "physical_lines": 364,
+      "nonblank_lines": 341,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/src/exclusive.rs",
+      "blob": "88b95bb88dd97a14293bd7068ec9f4ba9536b358",
+      "role": "production",
+      "bytes": 3842,
+      "physical_lines": 109,
+      "nonblank_lines": 100,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/src/exclusive_increment.rs",
+      "blob": "604e3a2e647c128a74160af653f6bfae177ce3a7",
+      "role": "production",
+      "bytes": 4406,
+      "physical_lines": 123,
+      "nonblank_lines": 115,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/src/inclusive.rs",
+      "blob": "b0f6a1a4b95938b1a19c696526b28c4bcc56909c",
+      "role": "production",
+      "bytes": 5408,
+      "physical_lines": 145,
+      "nonblank_lines": 134,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/src/inclusive_increment.rs",
+      "blob": "f7c994a44bb90cdfd18bcb0af7ea70e5e2a1e212",
+      "role": "production",
+      "bytes": 5302,
+      "physical_lines": 144,
+      "nonblank_lines": 135,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/src/lib.rs",
+      "blob": "8c68a23f81850e581e8bc465e7fa98f7de6e7ff0",
+      "role": "production-mixed-tests",
+      "bytes": 18900,
+      "physical_lines": 523,
+      "nonblank_lines": 477,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/range/src/port_tests.rs",
+      "blob": "31504bdef14d776652e847dd0f044f767a9c3e51",
+      "role": "production",
+      "bytes": 7944,
+      "physical_lines": 204,
+      "nonblank_lines": 190,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/.gitignore",
+      "blob": "a0b245627353ab3a37f4673e0ee72ff1726b5567",
+      "role": "configuration",
+      "bytes": 23,
+      "physical_lines": 3,
+      "nonblank_lines": 3,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/.gitlab-ci.yml",
+      "blob": "af285e8e0c1659f63b7a8580e0428cf0d43e6755",
+      "role": "configuration",
+      "bytes": 91,
+      "physical_lines": 5,
+      "nonblank_lines": 5,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/Cargo.toml",
+      "blob": "98feed544f8eff3671009f5922066f716ad6b805",
+      "role": "configuration",
+      "bytes": 5260,
+      "physical_lines": 149,
+      "nonblank_lines": 130,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/LICENSE",
+      "blob": "41c00c99942792057b7d84e2ba001fdd4f141831",
+      "role": "license",
+      "bytes": 11344,
+      "physical_lines": 201,
+      "nonblank_lines": 169,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/README.md",
+      "blob": "a555221f2cdc217bf061971c521b4001de224432",
+      "role": "documentation",
+      "bytes": 1474,
+      "physical_lines": 32,
+      "nonblank_lines": 22,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/index.mec",
+      "blob": "762079a29ca8c1d6e7d698f632f038dee52e4357",
+      "role": "production",
+      "bytes": 2030,
+      "physical_lines": 29,
+      "nonblank_lines": 22,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/complement.mec",
+      "blob": "eb6118c3ed385ce3f422effda8584fd7ce39ff0e",
+      "role": "production",
+      "bytes": 3140,
+      "physical_lines": 102,
+      "nonblank_lines": 74,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/difference.mec",
+      "blob": "fe4c42e864cdb5c09d95292abe7422e58de75894",
+      "role": "production",
+      "bytes": 2367,
+      "physical_lines": 90,
+      "nonblank_lines": 64,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/element-of.mec",
+      "blob": "1508401ac111d7b8c605959048c1f6fa14efe552",
+      "role": "production",
+      "bytes": 2284,
+      "physical_lines": 90,
+      "nonblank_lines": 64,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/intersection.mec",
+      "blob": "303f552cd064b10b301b388834ec2972fbc2f943",
+      "role": "production",
+      "bytes": 2437,
+      "physical_lines": 95,
+      "nonblank_lines": 67,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/not-element-of.mec",
+      "blob": "735c27cdb4e8b7a750b779d90b2aa1c6558ceb2d",
+      "role": "production",
+      "bytes": 2322,
+      "physical_lines": 90,
+      "nonblank_lines": 64,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/proper-subset.mec",
+      "blob": "dcfcc8f59e7754902e567e9c98db0be00cc78867",
+      "role": "production",
+      "bytes": 2557,
+      "physical_lines": 94,
+      "nonblank_lines": 68,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/proper-superset.mec",
+      "blob": "4b65bb543758f55670fef758598e52e5d335e547",
+      "role": "production",
+      "bytes": 2547,
+      "physical_lines": 94,
+      "nonblank_lines": 68,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/subset.mec",
+      "blob": "597d7811d96f475a4a3fc302fc57dadc06475f25",
+      "role": "production",
+      "bytes": 2501,
+      "physical_lines": 97,
+      "nonblank_lines": 71,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/superset.mec",
+      "blob": "575a52b63235f1cfad27a7c50a2585f40312c8bb",
+      "role": "production",
+      "bytes": 2528,
+      "physical_lines": 97,
+      "nonblank_lines": 71,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/symmetric-difference.mec",
+      "blob": "aff471dfbc1bc9b957cda4a4c93dd5a46b080b99",
+      "role": "production",
+      "bytes": 2620,
+      "physical_lines": 91,
+      "nonblank_lines": 65,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/ops/union.mec",
+      "blob": "c05efcc29009061c603bd87b9924b2051c3bbdfe",
+      "role": "production",
+      "bytes": 2786,
+      "physical_lines": 89,
+      "nonblank_lines": 64,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/slice.mec",
+      "blob": "5407eb07184ae4c12ec222fa9c3d8fb6c1f11946",
+      "role": "production",
+      "bytes": 2657,
+      "physical_lines": 90,
+      "nonblank_lines": 65,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/docs/splice.mec",
+      "blob": "8392052c232e7aec7ec70996061e6bac1e0a72cd",
+      "role": "production",
+      "bytes": 3383,
+      "physical_lines": 105,
+      "nonblank_lines": 87,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/index.mec",
+      "blob": "d7fbccfa43e274f82b1d3deb53ddf4eb1f3abe44",
+      "role": "production",
+      "bytes": 634,
+      "physical_lines": 22,
+      "nonblank_lines": 16,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/canonical.rs",
+      "blob": "9300db2fffed8abad99ab4051346db752320ba09",
+      "role": "production",
+      "bytes": 27200,
+      "physical_lines": 742,
+      "nonblank_lines": 682,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/catalog.rs",
+      "blob": "504edcde1faa2666ce36ed73e32c7abad2814f1f",
+      "role": "production",
+      "bytes": 33075,
+      "physical_lines": 865,
+      "nonblank_lines": 820,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/lib.rs",
+      "blob": "b885ed1098563eb75cc90fc0d0c71b69bd35cc41",
+      "role": "production-mixed-tests",
+      "bytes": 5011,
+      "physical_lines": 175,
+      "nonblank_lines": 164,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/membership/element_of.rs",
+      "blob": "f05bf54443b6b3d1e8c6e7048f841af6e124ac77",
+      "role": "production",
+      "bytes": 99,
+      "physical_lines": 1,
+      "nonblank_lines": 1,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/membership/mod.rs",
+      "blob": "e690b67b8117e4a685d65c2d87bf536a227904fc",
+      "role": "production",
+      "bytes": 357,
+      "physical_lines": 13,
+      "nonblank_lines": 12,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/membership/not_element_of.rs",
+      "blob": "d531146490fb8f988a28efef81e834cf6c645427",
+      "role": "production",
+      "bytes": 125,
+      "physical_lines": 6,
+      "nonblank_lines": 6,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/modify/insert.rs",
+      "blob": "4888474b541b902a59c523e772c94c04a380e2c2",
+      "role": "production",
+      "bytes": 3240,
+      "physical_lines": 94,
+      "nonblank_lines": 84,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/modify/mod.rs",
+      "blob": "588de53e4ac35c2a93836934b1f799641ffa724d",
+      "role": "production",
+      "bytes": 296,
+      "physical_lines": 13,
+      "nonblank_lines": 12,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/modify/remove.rs",
+      "blob": "6412ad0f00e615f1411b1602e614753bf00c9f6d",
+      "role": "production",
+      "bytes": 3203,
+      "physical_lines": 93,
+      "nonblank_lines": 83,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/operations/cartesian_product.rs",
+      "blob": "68bd76c92f22f2285dd32cfe9eae68b310b2754c",
+      "role": "production",
+      "bytes": 5503,
+      "physical_lines": 163,
+      "nonblank_lines": 150,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/operations/difference.rs",
+      "blob": "a997cb95bbd498c78bc7d129b05da2eb75aeb99a",
+      "role": "production",
+      "bytes": 3175,
+      "physical_lines": 93,
+      "nonblank_lines": 83,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/operations/intersection.rs",
+      "blob": "ef2f16d4d30ca70e9b22581857951445cda21716",
+      "role": "production",
+      "bytes": 3299,
+      "physical_lines": 97,
+      "nonblank_lines": 88,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/operations/mod.rs",
+      "blob": "db458abff5fc041fa4b71f2a8821b9bce1fa6e5c",
+      "role": "production",
+      "bytes": 1053,
+      "physical_lines": 37,
+      "nonblank_lines": 36,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/operations/powerset.rs",
+      "blob": "50252f29b26c05cc51b081ccc9ad89408dfbf315",
+      "role": "production",
+      "bytes": 5301,
+      "physical_lines": 163,
+      "nonblank_lines": 149,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/operations/symmetric_difference.rs",
+      "blob": "6cd525605304de1dece336fecfcdfcec653a4e03",
+      "role": "production",
+      "bytes": 3259,
+      "physical_lines": 93,
+      "nonblank_lines": 84,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/operations/union.rs",
+      "blob": "f0c3a30caf9da34fc4a386632c9b857478fb9aa5",
+      "role": "production",
+      "bytes": 3173,
+      "physical_lines": 98,
+      "nonblank_lines": 84,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/port_tests.rs",
+      "blob": "32a9a47fbf587bb0f9106afdf1bed69f8e62f999",
+      "role": "production",
+      "bytes": 9879,
+      "physical_lines": 272,
+      "nonblank_lines": 253,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/relations/disjoint.rs",
+      "blob": "66e20fa03961cc0b4179ffece27bb59eca037d82",
+      "role": "production",
+      "bytes": 97,
+      "physical_lines": 1,
+      "nonblank_lines": 1,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/relations/equals.rs",
+      "blob": "6c21ab640dd2f03d446fb66d450f53ba3ea2ef90",
+      "role": "production",
+      "bytes": 88,
+      "physical_lines": 1,
+      "nonblank_lines": 1,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/relations/mod.rs",
+      "blob": "acb7e78be2564eb73787978aa12109163843c644",
+      "role": "production",
+      "bytes": 1007,
+      "physical_lines": 38,
+      "nonblank_lines": 37,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/relations/not_equals.rs",
+      "blob": "eeea74c1541e0a3d9cce41aa1acc0338f2fa0a1e",
+      "role": "production",
+      "bytes": 100,
+      "physical_lines": 1,
+      "nonblank_lines": 1,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/relations/proper_subset.rs",
+      "blob": "3d2974f3bb86aa9f7b843652e659ed6328912610",
+      "role": "production",
+      "bytes": 131,
+      "physical_lines": 6,
+      "nonblank_lines": 6,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/relations/proper_superset.rs",
+      "blob": "d292b9853c89996f95cf53ba922b69fafd8ad208",
+      "role": "production",
+      "bytes": 139,
+      "physical_lines": 6,
+      "nonblank_lines": 6,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/relations/subset.rs",
+      "blob": "071c747600604ef07118bb14455e37c5cf5dbeb8",
+      "role": "production",
+      "bytes": 89,
+      "physical_lines": 1,
+      "nonblank_lines": 1,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/relations/superset.rs",
+      "blob": "831fc45b4bbcbde0abcab09edba55050edb1e962",
+      "role": "production",
+      "bytes": 97,
+      "physical_lines": 1,
+      "nonblank_lines": 1,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/setdata/mod.rs",
+      "blob": "cd5cf128affdbeacd13c645d5014e9ab161d933e",
+      "role": "production",
+      "bytes": 203,
+      "physical_lines": 8,
+      "nonblank_lines": 7,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/src/setdata/size.rs",
+      "blob": "9edd2a8fc6f1aac3a18a96ceff51b64ebd387645",
+      "role": "production",
+      "bytes": 2843,
+      "physical_lines": 82,
+      "nonblank_lines": 74,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/tests/set.mec",
+      "blob": "3f3b481ffaa60760cea878e057d6c591c9e0257e",
+      "role": "test",
+      "bytes": 634,
+      "physical_lines": 17,
+      "nonblank_lines": 12,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/set/tests/tests.mec",
+      "blob": "bd5dd542006a87fd1c15c5bb6ad7b95a046eff04",
+      "role": "test",
+      "bytes": 3601,
+      "physical_lines": 95,
+      "nonblank_lines": 86,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/.gitignore",
+      "blob": "b5db4eae27d4d1b71d208705dbeca49a5fe48842",
+      "role": "configuration",
+      "bytes": 303,
+      "physical_lines": 32,
+      "nonblank_lines": 24,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/.gitlab-ci.yml",
+      "blob": "af285e8e0c1659f63b7a8580e0428cf0d43e6755",
+      "role": "configuration",
+      "bytes": 91,
+      "physical_lines": 5,
+      "nonblank_lines": 5,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/Cargo.toml",
+      "blob": "96e32b3b42f6a368ed466e3b5716669048cb82e2",
+      "role": "configuration",
+      "bytes": 3453,
+      "physical_lines": 100,
+      "nonblank_lines": 90,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/LICENSE",
+      "blob": "41c00c99942792057b7d84e2ba001fdd4f141831",
+      "role": "license",
+      "bytes": 11344,
+      "physical_lines": 201,
+      "nonblank_lines": 169,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/README.md",
+      "blob": "de68bb427c719cb0fda50d94013d45f6a37b25c6",
+      "role": "documentation",
+      "bytes": 1566,
+      "physical_lines": 37,
+      "nonblank_lines": 25,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/index.mec",
+      "blob": "2ed3563c57e3245390482db54f5c2d4c663ba64a",
+      "role": "production",
+      "bytes": 618,
+      "physical_lines": 23,
+      "nonblank_lines": 17,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/src/catalog.rs",
+      "blob": "4830bacc685a80e9f51ec68972dd28e41c88044b",
+      "role": "production",
+      "bytes": 17089,
+      "physical_lines": 333,
+      "nonblank_lines": 311,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/src/lib.rs",
+      "blob": "dee5a7a1fd05e923298aecf8279605ce40a94017",
+      "role": "production-mixed-tests",
+      "bytes": 10365,
+      "physical_lines": 327,
+      "nonblank_lines": 300,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/src/sum_column.rs",
+      "blob": "b24071764c9011fa91e3d07d46853443e1659aff",
+      "role": "production",
+      "bytes": 10558,
+      "physical_lines": 276,
+      "nonblank_lines": 263,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/src/sum_row.rs",
+      "blob": "c0230fb56bbf22deffc44ea7678c6351222b9497",
+      "role": "production",
+      "bytes": 8163,
+      "physical_lines": 205,
+      "nonblank_lines": 195,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/stats/tests/stats.mec",
+      "blob": "7f0dac2a23c747258f68a1fd563bfb029bb7a07b",
+      "role": "test",
+      "bytes": 571,
+      "physical_lines": 13,
+      "nonblank_lines": 10,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/.gitignore",
+      "blob": "a0b245627353ab3a37f4673e0ee72ff1726b5567",
+      "role": "configuration",
+      "bytes": 23,
+      "physical_lines": 3,
+      "nonblank_lines": 3,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/.gitlab-ci.yml",
+      "blob": "2611018866ae5b9cbdf710d2d2ec769f8acaac95",
+      "role": "configuration",
+      "bytes": 196,
+      "physical_lines": 9,
+      "nonblank_lines": 8,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/Cargo.toml",
+      "blob": "635d2faa4ac33e0293097eef24c4cc588f965a21",
+      "role": "configuration",
+      "bytes": 2431,
+      "physical_lines": 71,
+      "nonblank_lines": 62,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/LICENSE",
+      "blob": "41c00c99942792057b7d84e2ba001fdd4f141831",
+      "role": "license",
+      "bytes": 11344,
+      "physical_lines": 201,
+      "nonblank_lines": 169,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/README.md",
+      "blob": "0d33fe30a36d59d8006a7155580544e846f023cb",
+      "role": "documentation",
+      "bytes": 1555,
+      "physical_lines": 32,
+      "nonblank_lines": 22,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/index.mec",
+      "blob": "0cbb09b3f2c2e4dac8a791298905c49767cd340c",
+      "role": "production",
+      "bytes": 618,
+      "physical_lines": 22,
+      "nonblank_lines": 16,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/src/catalog.rs",
+      "blob": "e182a5ead540609022a933f1a6c4bb0fe8c96beb",
+      "role": "production",
+      "bytes": 3206,
+      "physical_lines": 100,
+      "nonblank_lines": 89,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/src/concat.rs",
+      "blob": "de3378f160dccbcea2a42e85f992bd81c363d3cf",
+      "role": "production",
+      "bytes": 19249,
+      "physical_lines": 540,
+      "nonblank_lines": 498,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/src/lib.rs",
+      "blob": "03db1a746d5153910d030b55bb96499d7ceb3c15",
+      "role": "production-mixed-tests",
+      "bytes": 19737,
+      "physical_lines": 550,
+      "nonblank_lines": 520,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/tests/string.mec",
+      "blob": "35c2c6ad6323fc2ffc123b2c5546a5a5530a5644",
+      "role": "test",
+      "bytes": 16,
+      "physical_lines": 2,
+      "nonblank_lines": 1,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "machines/string/tests/support/allocation_probe.rs",
+      "blob": "7772bb69641849a8a6c8895e378c3c8f9e78ea5d",
+      "role": "test",
+      "bytes": 1621,
+      "physical_lines": 55,
+      "nonblank_lines": 46,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "scripts/check-function-system-contracts.sh",
+      "blob": "54baef47b01f6ae730b562c07550e49fed5d9f43",
+      "role": "build-tooling",
+      "bytes": 1381,
+      "physical_lines": 54,
+      "nonblank_lines": 46,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "scripts/check-native-linkage-coverage.py",
+      "blob": "35f3fc947ed71b0b90ea2377d2b768860e7f0b6f",
+      "role": "build-tooling",
+      "bytes": 45177,
+      "physical_lines": 1054,
+      "nonblank_lines": 972,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "scripts/check-package-archives.py",
+      "blob": "e75befea1d314bda4aa31bec735dee925bed8a52",
+      "role": "build-tooling",
+      "bytes": 5821,
+      "physical_lines": 155,
+      "nonblank_lines": 137,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "scripts/check-source-catalog-entrypoints.py",
+      "blob": "ea0cccf1bcea4002b63d37a580b3e61d5f362c62",
+      "role": "build-tooling",
+      "bytes": 2457,
+      "physical_lines": 71,
+      "nonblank_lines": 61,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "scripts/check-standard-machine-baseline.sh",
+      "blob": "f650961163a7547e62ac4d319d6150c5c083d3e9",
+      "role": "build-tooling",
+      "bytes": 10929,
+      "physical_lines": 328,
+      "nonblank_lines": 298,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "scripts/check-standard-machine-library-tests.sh",
+      "blob": "0642eaf8d48d55b10aafd43a655b62f0446f79b9",
+      "role": "build-tooling",
+      "bytes": 1138,
+      "physical_lines": 48,
+      "nonblank_lines": 42,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "scripts/check-static-distribution-profiles.sh",
+      "blob": "0f888e9d9144c2acc50e3d259088fe9dc1a5d08c",
+      "role": "build-tooling",
+      "bytes": 25567,
+      "physical_lines": 679,
+      "nonblank_lines": 632,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/build/Cargo.toml",
+      "blob": "9b6b82af84db6b19db5940f3833ed250711cc3f5",
+      "role": "configuration",
+      "bytes": 2643,
+      "physical_lines": 59,
+      "nonblank_lines": 53,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/build/src/dependency/fingerprint.rs",
+      "blob": "ce88353a87fad2604e04a78ca571a85123f8523f",
+      "role": "production-mixed-tests",
+      "bytes": 45204,
+      "physical_lines": 1294,
+      "nonblank_lines": 1192,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/build/src/dependency/mod.rs",
+      "blob": "0540d397b7b64c872c47cefb3df79afa7d55c643",
+      "role": "production-mixed-tests",
+      "bytes": 3218,
+      "physical_lines": 102,
+      "nonblank_lines": 91,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/build/src/dependency/registry.rs",
+      "blob": "f324df09cc7ff3f15ddcf90a8c82747278feb6c8",
+      "role": "production-mixed-tests",
+      "bytes": 7277,
+      "physical_lines": 218,
+      "nonblank_lines": 200,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/build/src/dependency/resolution.rs",
+      "blob": "5d6f155b54282d0cf182f028e3d2168936edd7d1",
+      "role": "production",
+      "bytes": 467,
+      "physical_lines": 13,
+      "nonblank_lines": 12,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/build/src/dependency/workspace.rs",
+      "blob": "141fd3250ed761dae94dd21ee06308dd6f4b390a",
+      "role": "production-mixed-tests",
+      "bytes": 6774,
+      "physical_lines": 212,
+      "nonblank_lines": 189,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/core/src/stdlib.rs",
+      "blob": "56fdcf096fccd87e510e51167923adc01e717ec0",
+      "role": "production",
+      "bytes": 95339,
+      "physical_lines": 2686,
+      "nonblank_lines": 2587,
+      "disposition": "Separate",
+      "reason": "35 exported generic kernel/factory/lowering macros used by SDK consumers. Retain the exported SDK contract initially; separate family expansion helpers after external macro-hygiene and feature checks.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/core/tests/stdlib_macro_hygiene.rs",
+      "blob": "1e67b9828ee4c114537ed4a06da6b500fde9651a",
+      "role": "test",
+      "bytes": 3161,
+      "physical_lines": 100,
+      "nonblank_lines": 82,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/access/map.rs",
+      "blob": "9e03ebfd4659e167e2859e9ec7239303b49b7cda",
+      "role": "production",
+      "bytes": 481,
+      "physical_lines": 22,
+      "nonblank_lines": 17,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "blob": "2e658aa61b34ec4399cbb71cae60cbd42dad9094",
+      "role": "production",
+      "bytes": 128747,
+      "physical_lines": 3621,
+      "nonblank_lines": 3412,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/access/mod.rs",
+      "blob": "59bdb5339ca182d92fd9bb548d9fcc87c5321233",
+      "role": "production",
+      "bytes": 48139,
+      "physical_lines": 1318,
+      "nonblank_lines": 1251,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/access/record.rs",
+      "blob": "67331c6ba2726acc27d34db64bed4e5cae792ce3",
+      "role": "production",
+      "bytes": 222,
+      "physical_lines": 10,
+      "nonblank_lines": 7,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/access/string.rs",
+      "blob": "10bc93715b837a8dca68951050475a1cd0038a6e",
+      "role": "production",
+      "bytes": 124,
+      "physical_lines": 4,
+      "nonblank_lines": 3,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/access/table.rs",
+      "blob": "e840875f050323ccc9397a4f22107625b5e4975e",
+      "role": "production",
+      "bytes": 428,
+      "physical_lines": 22,
+      "nonblank_lines": 15,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/access/tuple.rs",
+      "blob": "8811ae7d77123e19bb1fb100963d6d5f50544f48",
+      "role": "production",
+      "bytes": 2429,
+      "physical_lines": 71,
+      "nonblank_lines": 60,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/aggregate.rs",
+      "blob": "2f4aac00b4a8fa1cb36edec210d8e40b2d28a7dd",
+      "role": "production",
+      "bytes": 8202,
+      "physical_lines": 239,
+      "nonblank_lines": 227,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/aggregate_tests.rs",
+      "blob": "9cb63c24aa8020c59f126946df3e671ebdd0918c",
+      "role": "production",
+      "bytes": 8291,
+      "physical_lines": 224,
+      "nonblank_lines": 211,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/assign/catalog.rs",
+      "blob": "c595e56be2903609c619e6f8e8087701a6f91b11",
+      "role": "production",
+      "bytes": 168807,
+      "physical_lines": 3124,
+      "nonblank_lines": 2995,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/assign/map.rs",
+      "blob": "80ad98eff0091380e72e679800c60b6a46069229",
+      "role": "production",
+      "bytes": 201,
+      "physical_lines": 7,
+      "nonblank_lines": 5,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/assign/matrix.rs",
+      "blob": "b914879e944d1b13e075e59529aa96266643009b",
+      "role": "production",
+      "bytes": 129153,
+      "physical_lines": 3322,
+      "nonblank_lines": 3154,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/assign/mod.rs",
+      "blob": "69e16f1446c5688dd6157b12ef67aa334d83ccd5",
+      "role": "production",
+      "bytes": 73588,
+      "physical_lines": 1891,
+      "nonblank_lines": 1786,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/assign/record.rs",
+      "blob": "0ee0336663400f390ba2eed9b0e39b66bd4994aa",
+      "role": "production",
+      "bytes": 534,
+      "physical_lines": 22,
+      "nonblank_lines": 17,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/assign/table.rs",
+      "blob": "8461998c6f76dd0312de28d8d1b8384270fca96e",
+      "role": "production",
+      "bytes": 502,
+      "physical_lines": 22,
+      "nonblank_lines": 17,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/assign/tuple.rs",
+      "blob": "c0fd56f09c0884455295c3535d4e56e05a1d6c26",
+      "role": "production",
+      "bytes": 207,
+      "physical_lines": 7,
+      "nonblank_lines": 5,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/canonical_access.rs",
+      "blob": "231828c5c28aa7ddaea3ca4b58ae7666a9bcea0e",
+      "role": "production",
+      "bytes": 9439,
+      "physical_lines": 248,
+      "nonblank_lines": 240,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/catalog.rs",
+      "blob": "a039caf7b095853925301720fe6712ab3c3e8115",
+      "role": "production",
+      "bytes": 18026,
+      "physical_lines": 509,
+      "nonblank_lines": 486,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/constructors.rs",
+      "blob": "66899e0c05b1e8521d5a59101f0fcc135c78c3ef",
+      "role": "production",
+      "bytes": 42199,
+      "physical_lines": 1148,
+      "nonblank_lines": 1065,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/convert/mod.rs",
+      "blob": "03669bd0d3bf6bbe9e5a2bcfc1eb0cc035f5f3b3",
+      "role": "production",
+      "bytes": 19233,
+      "physical_lines": 656,
+      "nonblank_lines": 608,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/convert/scalar.rs",
+      "blob": "a42c5b79ee9b051ae9aad2cf9dd83d9d3952ce28",
+      "role": "production",
+      "bytes": 4779,
+      "physical_lines": 134,
+      "nonblank_lines": 123,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/define.rs",
+      "blob": "a1cf22ebaa6bcfcca7fa990efdc06a6f866465c2",
+      "role": "production",
+      "bytes": 41422,
+      "physical_lines": 1129,
+      "nonblank_lines": 1055,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/horzcat.rs",
+      "blob": "9e7d836e87d477363eb0adec7681e5e8b60fc7ee",
+      "role": "production",
+      "bytes": 122031,
+      "physical_lines": 3163,
+      "nonblank_lines": 2833,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/kind_conversion.rs",
+      "blob": "b45bf00efebebac2672a2033eb68c7e622f45756",
+      "role": "production",
+      "bytes": 286027,
+      "physical_lines": 7488,
+      "nonblank_lines": 7272,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/mod.rs",
+      "blob": "3b97228f2610d3668453a7a0c47d1196ef0abf00",
+      "role": "production",
+      "bytes": 17658,
+      "physical_lines": 464,
+      "nonblank_lines": 444,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/table_ops.rs",
+      "blob": "ad21984005edc082f3bac6a2d954e6be32a8a616",
+      "role": "production-mixed-tests",
+      "bytes": 38278,
+      "physical_lines": 1047,
+      "nonblank_lines": 986,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/intrinsics/vertcat.rs",
+      "blob": "a6a15a929be9f9d8e01671a741f16003b5bbc6ff",
+      "role": "production",
+      "bytes": 57802,
+      "physical_lines": 1427,
+      "nonblank_lines": 1250,
+      "disposition": "Retain",
+      "reason": "Language operations for access, assignment, definition, conversion, structural construction and resident lowering; exposed through public intrinsic installers.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/general/closed_comprehension.rs",
+      "blob": "e890f1b0bdb796923ba3ec1be54b0bb5b0dc57b6",
+      "role": "production",
+      "bytes": 63546,
+      "physical_lines": 1717,
+      "nonblank_lines": 1696,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/general/comprehension.rs",
+      "blob": "1066aef7c936ea39dcb79e422d1b7486c3425465",
+      "role": "production-mixed-tests",
+      "bytes": 56801,
+      "physical_lines": 1450,
+      "nonblank_lines": 1406,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/general/comprehension_execution.rs",
+      "blob": "750007f0c12dca1ec76b9be534187c472f391ada",
+      "role": "production-mixed-tests",
+      "bytes": 407134,
+      "physical_lines": 10627,
+      "nonblank_lines": 10361,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/general/execution.rs",
+      "blob": "c074d0f9d5e8a57a7783bef34ee575b171d078ae",
+      "role": "production-mixed-tests",
+      "bytes": 272912,
+      "physical_lines": 6665,
+      "nonblank_lines": 6434,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/general/live.rs",
+      "blob": "126e2de49aa06a432b58eed071cc8550faa8ea10",
+      "role": "production-mixed-tests",
+      "bytes": 47794,
+      "physical_lines": 1186,
+      "nonblank_lines": 1155,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/general/mod.rs",
+      "blob": "c39e24594aa1d566d3abd6cb9580ceaddb01de9a",
+      "role": "production-mixed-tests",
+      "bytes": 965872,
+      "physical_lines": 23873,
+      "nonblank_lines": 23403,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/numeric/mod.rs",
+      "blob": "a50a942ace463c16e2e72089c256eb067ebf95b7",
+      "role": "production-mixed-tests",
+      "bytes": 1101718,
+      "physical_lines": 29434,
+      "nonblank_lines": 28566,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/numeric/nested_assignment.rs",
+      "blob": "b6cfbddf6a0106dd845f9e9a67f878d827d24eea",
+      "role": "production",
+      "bytes": 27746,
+      "physical_lines": 707,
+      "nonblank_lines": 691,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/numeric/promoted_assignment.rs",
+      "blob": "dbc6aa69ddfd3d5f6ad0461a2836b8710bb3431a",
+      "role": "production",
+      "bytes": 18196,
+      "physical_lines": 451,
+      "nonblank_lines": 448,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/engine/src/resident/numeric/selection_address.rs",
+      "blob": "da65bc2667d9d821e60f4e8f9edb640df05790f5",
+      "role": "production",
+      "bytes": 12500,
+      "physical_lines": 324,
+      "nonblank_lines": 317,
+      "disposition": "Retain",
+      "reason": "Resident arithmetic, value execution and artifact operation binding. Generated scalar-add links core/engine/runtime; direct external machine execution is separately verified through FunctionCatalog.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/runtime/Cargo.toml",
+      "blob": "77a7e5b1f01ac20450fad9007fc97a2bc578868f",
+      "role": "configuration",
+      "bytes": 12368,
+      "physical_lines": 288,
+      "nonblank_lines": 259,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/Cargo.toml",
+      "blob": "bbda43bd89eb914ab2793343d0e15eefba27a000",
+      "role": "configuration",
+      "bytes": 22699,
+      "physical_lines": 365,
+      "nonblank_lines": 341,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "src/stdlib/LICENSE",
+      "blob": "db03d92dc557625f753aa2046cd0e2ff1c35ab91",
+      "role": "license",
+      "bytes": 111,
+      "physical_lines": 2,
+      "nonblank_lines": 2,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "src/stdlib/README.md",
+      "blob": "b3b9229571b1e07fd8aa83e9df9925f3b9fee446",
+      "role": "documentation",
+      "bytes": 2815,
+      "physical_lines": 66,
+      "nonblank_lines": 51,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "src/stdlib/build.rs",
+      "blob": "3e8d82ba6f1dbfd633a0d5bd2164ad4c64ddab45",
+      "role": "build-tooling",
+      "bytes": 432,
+      "physical_lines": 10,
+      "nonblank_lines": 9,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/src/catalog.rs",
+      "blob": "5549b3909fa6185c2235270fd62791dc23de2152",
+      "role": "production",
+      "bytes": 14559,
+      "physical_lines": 372,
+      "nonblank_lines": 344,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "src/stdlib/src/lib.rs",
+      "blob": "080fc8764b8139d3068b9a8aee78cfd5d611af76",
+      "role": "production",
+      "bytes": 1737,
+      "physical_lines": 68,
+      "nonblank_lines": 62,
+      "disposition": "Move",
+      "reason": "Concrete standard operation implementation and private tests, or external distribution composition and its packaging.",
+      "experiment_disposition": "Move"
+    },
+    {
+      "path": "src/stdlib/tests/canonical_type_contract.rs",
+      "blob": "f7cefb8c17b5881cbc4bc272c10e10c2e9c15c2c",
+      "role": "test",
+      "bytes": 3541,
+      "physical_lines": 105,
+      "nonblank_lines": 98,
+      "disposition": "Separate",
+      "reason": "Distribution, type, memory and catalog integration contracts remain Mech-owned; relocate test targets and expose fixtures without reaching outside a package.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/tests/maintained_contract_authority.rs",
+      "blob": "036a07582527170029c23fc8d679066809d47022",
+      "role": "test",
+      "bytes": 2813,
+      "physical_lines": 84,
+      "nonblank_lines": 81,
+      "disposition": "Separate",
+      "reason": "Distribution, type, memory and catalog integration contracts remain Mech-owned; relocate test targets and expose fixtures without reaching outside a package.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/tests/managed_functions.rs",
+      "blob": "d4f691bb98d9345c7b7a2ed4582a9872fbf5d09e",
+      "role": "test",
+      "bytes": 52751,
+      "physical_lines": 1436,
+      "nonblank_lines": 1375,
+      "disposition": "Separate",
+      "reason": "Distribution, type, memory and catalog integration contracts remain Mech-owned; relocate test targets and expose fixtures without reaching outside a package.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/tests/memory_contract.rs",
+      "blob": "be75de0e5eff31e32da647f1267da646b95e53ac",
+      "role": "test",
+      "bytes": 4369,
+      "physical_lines": 116,
+      "nonblank_lines": 111,
+      "disposition": "Separate",
+      "reason": "Distribution, type, memory and catalog integration contracts remain Mech-owned; relocate test targets and expose fixtures without reaching outside a package.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/tests/profile_contracts.rs",
+      "blob": "495e0511b599757b29c983bc1a0b061b8227aeff",
+      "role": "test",
+      "bytes": 15738,
+      "physical_lines": 432,
+      "nonblank_lines": 399,
+      "disposition": "Separate",
+      "reason": "Distribution, type, memory and catalog integration contracts remain Mech-owned; relocate test targets and expose fixtures without reaching outside a package.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/tests/source_op_assign_contract.rs",
+      "blob": "660d855aed5c1d0c4cf738f44f13f61ac259cefb",
+      "role": "test",
+      "bytes": 1648,
+      "physical_lines": 53,
+      "nonblank_lines": 48,
+      "disposition": "Separate",
+      "reason": "Distribution, type, memory and catalog integration contracts remain Mech-owned; relocate test targets and expose fixtures without reaching outside a package.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/tests/specialization_contract.rs",
+      "blob": "80b36e6e1d49a2e46d059b9da1f66e009d1f0a7e",
+      "role": "test",
+      "bytes": 14730,
+      "physical_lines": 447,
+      "nonblank_lines": 411,
+      "disposition": "Separate",
+      "reason": "Distribution, type, memory and catalog integration contracts remain Mech-owned; relocate test targets and expose fixtures without reaching outside a package.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/tests/support/mod.rs",
+      "blob": "97f71024b3218808fabb982569b6fb11c4dee76c",
+      "role": "test",
+      "bytes": 3952,
+      "physical_lines": 124,
+      "nonblank_lines": 114,
+      "disposition": "Separate",
+      "reason": "Distribution, type, memory and catalog integration contracts remain Mech-owned; relocate test targets and expose fixtures without reaching outside a package.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/stdlib/tests/type_system_source.rs",
+      "blob": "8b5597282f7ac8968f003343c8b613ae5e816663",
+      "role": "test",
+      "bytes": 13823,
+      "physical_lines": 394,
+      "nonblank_lines": 356,
+      "disposition": "Separate",
+      "reason": "Distribution, type, memory and catalog integration contracts remain Mech-owned; relocate test targets and expose fixtures without reaching outside a package.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "src/wasm/Cargo.toml",
+      "blob": "9860aa438d2dae1e0a3d7f43536a88e6e7cf0935",
+      "role": "configuration",
+      "bytes": 23331,
+      "physical_lines": 399,
+      "nonblank_lines": 369,
+      "disposition": "Separate",
+      "reason": "Keep product integration/build ownership in Mech; replace local-machine path assumptions with external package/version inputs.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/architecture/distributions/full.json",
+      "blob": "36b27238a0bb796234af2bcf796347a556c8ba3e",
+      "role": "test",
+      "bytes": 4688,
+      "physical_lines": 263,
+      "nonblank_lines": 263,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/architecture/distributions/profile-contracts.json",
+      "blob": "54b921560e50a487fe5fc7b55d7861673b53cd27",
+      "role": "test",
+      "bytes": 6893,
+      "physical_lines": 238,
+      "nonblank_lines": 238,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/architecture/distributions/standard.json",
+      "blob": "877a108f12f379388113dcdbf51753670deb6d1d",
+      "role": "test",
+      "bytes": 3795,
+      "physical_lines": 198,
+      "nonblank_lines": 198,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/architecture/function-system/README.md",
+      "blob": "6029ee9c69606888c6c2d4204e94e98f1bcda0de",
+      "role": "test",
+      "bytes": 1165,
+      "physical_lines": 36,
+      "nonblank_lines": 28,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/architecture/function-system/function-surface.json",
+      "blob": "076df4d1869cc847bba4d4f1ef8d07db7d419050",
+      "role": "test",
+      "bytes": 20612,
+      "physical_lines": 1004,
+      "nonblank_lines": 1004,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/architecture/function-system/runtime-factory-surface.json",
+      "blob": "631597673e0f82abc4ba24cfd476a0b230354e31",
+      "role": "test",
+      "bytes": 1204183,
+      "physical_lines": 48587,
+      "nonblank_lines": 48587,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/architecture/function-system/source-cases.json",
+      "blob": "dbf232904442a6e22416f379fee231334c8dc772",
+      "role": "test",
+      "bytes": 3117,
+      "physical_lines": 122,
+      "nonblank_lines": 122,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/architecture/function-system/specialization-cases.json",
+      "blob": "28c50dd2ddfc8859385399b570c10205880fd499",
+      "role": "test",
+      "bytes": 9278,
+      "physical_lines": 484,
+      "nonblank_lines": 484,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/catalog_closure.rs",
+      "blob": "ba605ec45df1ca6dcb95e6b94994659a44719b7a",
+      "role": "test",
+      "bytes": 32076,
+      "physical_lines": 820,
+      "nonblank_lines": 793,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/bytecode-compiler-producer/Cargo.toml",
+      "blob": "f294afcee35077e2a490dd48094f89424176cf8b",
+      "role": "fixture",
+      "bytes": 1141,
+      "physical_lines": 36,
+      "nonblank_lines": 33,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/bytecode-compiler-producer/src/main.rs",
+      "blob": "822483c4ce5a310744e59bcb770bd1759f79fb9f",
+      "role": "fixture",
+      "bytes": 557,
+      "physical_lines": 18,
+      "nonblank_lines": 17,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/bytecode-runtime-consumer/Cargo.toml",
+      "blob": "ba31e2623619224f8b2e626758ec4005bdfcb85c",
+      "role": "fixture",
+      "bytes": 988,
+      "physical_lines": 33,
+      "nonblank_lines": 30,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/bytecode-runtime-consumer/src/main.rs",
+      "blob": "f7e2fd859f2cdb976dde7233e3b07a8a6652d319",
+      "role": "fixture",
+      "bytes": 857,
+      "physical_lines": 22,
+      "nonblank_lines": 21,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/full-bytecode-runtime/.gitignore",
+      "blob": "b83d22266ac8aa2f8df2edef68082c789727841d",
+      "role": "fixture",
+      "bytes": 9,
+      "physical_lines": 1,
+      "nonblank_lines": 1,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/full-bytecode-runtime/Cargo.lock",
+      "blob": "9477edeb568b8a1c2ac7af1dc0e3e9c5704eed31",
+      "role": "fixture",
+      "bytes": 35587,
+      "physical_lines": 1441,
+      "nonblank_lines": 1280,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/full-bytecode-runtime/Cargo.toml",
+      "blob": "1ad570af1121dc69c01c25ad8605b2af2439a1cc",
+      "role": "fixture",
+      "bytes": 1081,
+      "physical_lines": 35,
+      "nonblank_lines": 32,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/full-bytecode-runtime/src/main.rs",
+      "blob": "6e88dafc39323c6b5d69e5e32732850cc164b0a0",
+      "role": "fixture",
+      "bytes": 853,
+      "physical_lines": 22,
+      "nonblank_lines": 21,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/full-source-runtime/Cargo.lock",
+      "blob": "0349c2ba43a5d3873160622f2ede48ec65873f23",
+      "role": "fixture",
+      "bytes": 43319,
+      "physical_lines": 1742,
+      "nonblank_lines": 1549,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/full-source-runtime/Cargo.toml",
+      "blob": "c8edf4e1623de0bb272389d0ce1a18ef30486c70",
+      "role": "fixture",
+      "bytes": 1507,
+      "physical_lines": 48,
+      "nonblank_lines": 44,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/fixtures/full-source-runtime/src/main.rs",
+      "blob": "d959b190b533d6489e362e4df478cb835c0dde28",
+      "role": "fixture",
+      "bytes": 3823,
+      "physical_lines": 125,
+      "nonblank_lines": 116,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    },
+    {
+      "path": "tests/lazy_stdlib.rs",
+      "blob": "b35044e915942f0add96a497ab7f9aac24dca22c",
+      "role": "test",
+      "bytes": 3375,
+      "physical_lines": 129,
+      "nonblank_lines": 105,
+      "disposition": "Retain",
+      "reason": "Mech owns stable catalog identity, distribution integration, public SDK compatibility and complete product canaries.",
+      "experiment_disposition": "Retain"
+    }
+  ],
+  "limits": [
+    "The measured experiment verifies local package separation; permanent migration acceptance remains pending CI and release ownership checks.",
+    "Mech-owned integration tests are re-homed under tests/stdlib-integration; the JSON preserves the earlier coarse relocation stage.",
+    "A separate pre-existing source-only cfg defect was repaired: 8 lines removed and 2 added in engine define.rs. Relocation itself adds zero Rust implementation.",
+    "SDK registry publication and independently versioned release CI remain unverified; offline packaging fails on missing mech-engine registry metadata. The stdlib manifest has publish=false; registry release requires an explicit publishing policy change."
+  ],
+  "coarse_experiment_before_repairs": {
+    "baseline": {
+      "files": 1976,
+      "bytes": 29930045,
+      "physical_lines": 826254,
+      "nonblank_lines": 775438
+    },
+    "candidate_directory_relocation": {
+      "files": 303,
+      "bytes": 1614315,
+      "physical_lines": 44508,
+      "nonblank_lines": 39379
+    },
+    "estimated_moved": {
+      "files": 294,
+      "bytes": 1500950,
+      "physical_lines": 41317,
+      "nonblank_lines": 36386
+    },
+    "estimated_retained_integration_tests": {
+      "files": 9,
+      "bytes": 113365,
+      "physical_lines": 3191,
+      "nonblank_lines": 2993
+    },
+    "estimated_remaining_before_boundary_additions": {
+      "files": 1682,
+      "bytes": 28429095,
+      "physical_lines": 784937,
+      "nonblank_lines": 739052
+    },
+    "actual_remaining": {
+      "files": 1673,
+      "bytes": 28317111,
+      "physical_lines": 781745,
+      "nonblank_lines": 736058
+    },
+    "actual_external": {
+      "files": 303,
+      "bytes": 1614973,
+      "physical_lines": 44521,
+      "nonblank_lines": 39390
+    },
+    "actual_combined": {
+      "files": 1976,
+      "bytes": 29932084,
+      "physical_lines": 826266,
+      "nonblank_lines": 775448
+    },
+    "deleted_implementation": {
+      "files": 0,
+      "physical_lines": 0,
+      "bytes": 0
+    },
+    "added_rust_boundary_code": {
+      "files": 0,
+      "physical_lines": 0,
+      "bytes": 0
+    }
+  }
+}

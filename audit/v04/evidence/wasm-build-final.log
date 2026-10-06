@@ -1,0 +1,18 @@
+[INFO]: 🎯  Checking for the Wasm target...
+[INFO]: 🌀  Compiling to Wasm...
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/compute)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/runtime)
+   Compiling mech-console v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/console)
+   Compiling mech-scene v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/scene)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/gpu)
+   Compiling mech-browser v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/browser)
+   Compiling mech-time v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/time)
+   Compiling mech-timer v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/timer)
+   Compiling mech-wasm v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/wasm)
+    Finished `release` profile [optimized] target(s) in 4m 04s
+[INFO]: ⬇️  Installing wasm-bindgen...
+[INFO]: ✨   Done in 6m 03s
+[INFO]: 📦   Your wasm pkg is ready to publish at src/wasm/pkg.
+[WARN]: ⚠️   failed to get wasm-pack version

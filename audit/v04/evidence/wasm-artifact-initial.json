@@ -1,0 +1,50 @@
+{
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "source_description": "Preserved integration/v0.4 baseline plus the explicitly hashed source modifications.",
+  "source_modifications": {
+    "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
+    "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+    "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+    "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+    "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
+    "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+    "src/wasm/Cargo.toml": "b703546bbd927d55c574585d3bdc5d6583c6a2a498aaf0a353502467f5cf99df",
+    "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+    "src/wasm/src/lib.rs": "2c363fdc4ae0e5fda7d5a38592b5db097268661cfef492bbfea19026320315c1",
+    "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+  },
+  "source_modifications_sha256": "dc879cf3589dc0148de1032cd093dd5f69830e71e3ec6549a5ea640a99e33e7a",
+  "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+  "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection",
+  "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection",
+  "target": "wasm32-unknown-unknown",
+  "profile": "release",
+  "wasm_opt": false,
+  "expected_exports": [
+    "WasmSyntaxStream",
+    "WasmSyntaxEditor",
+    "WasmDocument",
+    "WasmMixedComputeProject",
+    "TypePublicationSession",
+    "inspectMechTypes"
+  ],
+  "artifacts": {
+    "pkg/mech_wasm.js": {
+      "sha256": "06387fbed7075d36df8373dbd1750ef919b1377dd90f41bb799f13017b41d9ad",
+      "bytes": 88636
+    },
+    "pkg/mech_wasm_bg.wasm": {
+      "sha256": "6976bc77b066e565f08a9cbe245eaa4a21377786cb84ed53dd051e8219c1220b",
+      "bytes": 208564533
+    }
+  },
+  "environment": {
+    "system": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+    "wasm_pack": "wasm-pack 0.15.0"
+  },
+  "limits": [
+    "Artifact source identity comprises the baseline commit and listed modifications.",
+    "Browser device and execution outcomes are recorded separately."
+  ]
+}

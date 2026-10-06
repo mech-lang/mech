@@ -1,0 +1,121 @@
+   Compiling unicode-ident v1.0.24
+    Checking typenum v1.20.1
+    Checking libm v0.2.16
+    Checking serde_core v1.0.229
+    Checking libc v0.2.189
+    Checking bytemuck v1.25.2
+    Checking alloc-no-stdlib v2.0.4
+    Checking cfg-if v1.0.4
+    Checking rawpointer v0.2.1
+   Compiling proc-macro2 v1.0.107
+   Compiling crc32fast v1.5.0
+    Checking alloc-stdlib v0.2.4
+    Checking brotli-decompressor v5.0.3
+    Checking safe_arch v0.7.4
+    Checking wide v0.7.33
+    Checking matrixmultiply v0.3.11
+    Checking zmij v1.0.23
+   Compiling quote v1.0.47
+    Checking cpufeatures v0.3.0
+    Checking itoa v1.0.18
+   Compiling syn v2.0.119
+   Compiling syn v3.0.3
+    Checking unty v0.0.4
+    Checking hashbrown v0.17.1
+    Checking equivalent v1.0.2
+    Checking memchr v2.8.3
+    Checking num-traits v0.2.19
+    Checking hybrid-array v0.4.14
+    Checking brotli v8.0.4
+    Checking byteorder v1.5.0
+    Checking num-integer v0.1.46
+    Checking num-complex v0.4.6
+    Checking approx v0.5.1
+    Checking seahash v4.1.0
+    Checking block-buffer v0.12.1
+    Checking crypto-common v0.2.2
+    Checking num-rational v0.4.2
+    Checking base64 v0.22.1
+    Checking stable_deref_trait v1.2.1
+    Checking generic-array v0.14.7
+    Checking simba v0.9.1
+    Checking serde_json v1.0.151
+    Checking indexmap v2.14.0
+    Checking digest v0.11.3
+    Checking sha2 v0.11.0
+    Checking writeable v0.6.3
+    Checking litemap v0.8.2
+   Compiling icu_properties_data v2.2.0
+    Checking bytecount v0.6.9
+    Checking utf8_iter v1.0.4
+    Checking fnv v1.0.7
+    Checking unicode-width v0.2.2
+    Checking tinyvec_macros v0.1.1
+    Checking tinyvec v1.12.0
+    Checking papergrid v0.17.0
+   Compiling serde_derive v1.0.229
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+    Checking unicode-segmentation v1.13.3
+    Checking digest v0.10.7
+    Checking unicode-normalization v0.1.25
+    Checking cpufeatures v0.2.17
+    Checking smallvec v1.15.2
+    Checking colored v3.1.1
+    Checking either v1.16.0
+    Checking sha2 v0.10.9
+    Checking itertools v0.14.0
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+    Checking tabled v0.20.0
+   Compiling synstructure v0.13.2
+   Compiling nalgebra-macros v0.3.0
+   Compiling zerofrom-derive v0.1.7
+   Compiling yoke-derive v0.8.2
+   Compiling zerovec-derive v0.11.3
+   Compiling displaydoc v0.2.6
+   Compiling grapheme_macro v2.0.0
+    Checking nalgebra v0.34.2
+    Checking serde v1.0.229
+    Checking zerofrom v0.1.8
+    Checking yoke v0.8.3
+    Checking bincode v2.0.1
+    Checking zerovec v0.11.6
+    Checking zerotrie v0.2.4
+    Checking tinystr v0.8.3
+    Checking potential_utf v0.1.5
+    Checking icu_collections v2.2.0
+    Checking icu_locale_core v2.2.0
+    Checking icu_provider v2.2.0
+    Checking icu_properties v2.2.0
+    Checking grapheme v1.3.0
+    Checking mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+    Checking mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax)
+    Checking mech-matrix v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/matrix)
+    Checking mech-set v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/set)
+    Checking mech-stats v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/stats)
+    Checking mech-math v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/math)
+    Checking mech-compare v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/compare)
+    Checking mech-logic v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/logic)
+    Checking mech-range v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/range)
+    Checking mech-combinatorics v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/combinatorics)
+    Checking mech-string v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/string)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine)
+error[E0425]: cannot find function `install_intrinsic_source` in crate `mech_engine`
+  --> src/stdlib/src/catalog.rs:66:18
+   |
+66 |     mech_engine::install_intrinsic_source(builder)?;
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+  ::: src/engine/src/function/catalog.rs:12:1
+   |
+12 | pub fn install_intrinsic_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+   | ------------------------------------------------------------------------------------- similarly named function `install_intrinsic_runtime` defined here
+   |
+help: a function with a similar name exists
+   |
+66 -     mech_engine::install_intrinsic_source(builder)?;
+66 +     mech_engine::install_intrinsic_runtime(builder)?;
+   |
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `mech-stdlib` (lib) due to 1 previous error

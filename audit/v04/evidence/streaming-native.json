@@ -1,0 +1,24 @@
+{
+  "id": "streaming-native-baseline",
+  "claim": "Canonical streams preserve losslessness, recovery, publication mirrors, lifecycle and edit equivalence under tested schedules",
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "configuration": {
+    "package": "mech-syntax",
+    "features": "default (empty)",
+    "target": "aarch64-apple-darwin",
+    "profile": "test"
+  },
+  "evidence_level": "native execution; equality and invariant assertions",
+  "outcome": "verified",
+  "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming cargo test -p mech-syntax --test document_streaming_lifecycle --test document_streaming_equivalence --test document_streaming_recovery --test document_streaming_publication --test document_streaming_resources --test document_incremental --test document_incremental_properties",
+  "expected": "44 existing tests pass",
+  "actual": "44 passed, 0 failed across 7 suites",
+  "result_location": "evidence/streaming-native-tests.log",
+  "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
+  "limits": [
+    "Semantic compilation and program execution: unverified by this record",
+    "Browser adapter behavior: unverified by this native record",
+    "Most equivalence checks share canonical grammar; dedicated range/list tests assert grammar expectations independently"
+  ],
+  "environment": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0"
+}

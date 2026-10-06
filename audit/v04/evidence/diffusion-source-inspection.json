@@ -1,0 +1,27 @@
+{
+  "diagnostics": [
+    {
+      "code": "source-semantics/unbound-resource-send",
+      "document": "41643696389498949",
+      "message": "canonical resource send @particles/input/force-strength has no resolved context binding",
+      "phase": "semantic_checking",
+      "range": [
+        191,
+        242
+      ],
+      "revision": "0"
+    }
+  ],
+  "product_diagnostic": {
+    "message": "ProviderUnavailable: resident source planning failed: MechError { kind name: \"RuntimeResourceProviderNotFound\", kind message: \"no runtime resource provider registered for scheme `pointer` while reading `pointer://pointer/frame`\", message: None, program_range: None, annotations: [], tokens: [], compiler_location: None, source: None }",
+    "presentation_range": null,
+    "semantic": null
+  },
+  "source": "@pointer := pointer://pointer/frame{:read(pulse), :read(pressed), :read(delta-seconds)}\n@particles := compute://particles/kernel{:write(input/force-strength), :write(input/dt), :write(turn)}\n@particles/input/force-strength <- @pointer/pressed\n@particles/input/dt <- @pointer/delta-seconds\n@particles/turn <- @pointer/pulse\n\nheat-diffusion @compute\n-------------------------------------------------------------------------------\nforce-strength := 0f32\ndt := 0.125<f32>\nlaplacian := [-2f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n1f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 1f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 0f32 1f32 -2f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n1f32 0f32 0f32 0f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32\n0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32\n0f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32\n0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 0f32 0f32 0f32 1f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 -2f32 1f32 0f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 1f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 1f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -2f32]\nheater-mask := [0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 1f32; 0f32; 0f32; 0f32; 0f32; 0f32]\n~temperature := [80f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32]\ntemperature = temperature + (laplacian ** temperature) * dt + heater-mask * force-strength\ntemperature\n",
+  "stages": {
+    "parsing": "completed",
+    "semantic_checking": "rejected"
+  },
+  "target": "WASM-hosted resident CPU",
+  "scope": "Provider-free source inspection used during syntax diagnosis. Host resource execution is qualified separately by WasmMixedComputeProject with pointer and compute providers."
+}

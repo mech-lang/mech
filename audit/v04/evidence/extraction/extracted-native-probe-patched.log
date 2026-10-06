@@ -1,0 +1,24 @@
+warning: patch `mech-logic v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/logic)` was not used in the crate graph
+warning: patch `mech-string v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/string)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+     Locking 6 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding mech-combinatorics v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/combinatorics)
+      Adding mech-compare v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/compare)
+      Adding mech-matrix v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/matrix)
+      Adding mech-range v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/range)
+      Adding mech-set v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/set)
+      Adding mech-stats v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/stats)
+    Blocking waiting for file lock on artifact directory
+   Compiling serde_core v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling camino v1.2.5
+   Compiling thiserror v2.0.21
+   Compiling thiserror-impl v2.0.21
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+error: couldn't read `/private/tmp/mech-v04-extraction/external/stdlib/build.rs`: No such file or directory (os error 2)
+
+error: could not compile `mech-stdlib` (build script) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

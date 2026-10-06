@@ -1,0 +1,65 @@
+{
+  "source": "inventory.mec",
+  "initial_stock": 100,
+  "capacity": 1000000,
+  "initial_turn": [
+    0,
+    0
+  ],
+  "cases": [
+    {
+      "arrivals": 20,
+      "demand": 15,
+      "expected_stock": 105,
+      "expected_outcome": "accepted"
+    },
+    {
+      "arrivals": 0,
+      "demand": 110,
+      "expected_stock": 105,
+      "expected_outcome": "rejected"
+    },
+    {
+      "arrivals": 10,
+      "demand": 25,
+      "expected_stock": 90,
+      "expected_outcome": "accepted"
+    },
+    {
+      "arrivals": 0,
+      "demand": 90,
+      "expected_stock": 0,
+      "expected_outcome": "accepted"
+    },
+    {
+      "arrivals": 5,
+      "demand": 0,
+      "expected_stock": 5,
+      "expected_outcome": "accepted"
+    },
+    {
+      "arrivals": -1,
+      "demand": 0,
+      "expected_stock": 5,
+      "expected_outcome": "rejected"
+    },
+    {
+      "arrivals": 0,
+      "demand": -1,
+      "expected_stock": 5,
+      "expected_outcome": "rejected"
+    },
+    {
+      "arrivals": 1000000,
+      "demand": 0,
+      "expected_stock": 5,
+      "expected_outcome": "rejected"
+    },
+    {
+      "arrivals": 10,
+      "demand": 3,
+      "expected_stock": 12,
+      "expected_outcome": "accepted"
+    }
+  ]
+}

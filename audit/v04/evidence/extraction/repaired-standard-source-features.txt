@@ -1,0 +1,503 @@
+mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+├── mech-combinatorics v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/combinatorics)
+│   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+│   │   ├── sha2 v0.11.0
+│   │   │   ├── cfg-if feature "default"
+│   │   │   │   └── cfg-if v1.0.4
+│   │   │   ├── cpufeatures feature "default"
+│   │   │   │   └── cpufeatures v0.3.0
+│   │   │   │       └── libc v0.2.189
+│   │   │   └── digest feature "default"
+│   │   │       ├── digest v0.11.3
+│   │   │       │   ├── block-buffer feature "default"
+│   │   │       │   │   └── block-buffer v0.12.1
+│   │   │       │   │       └── hybrid-array feature "default"
+│   │   │       │   │           └── hybrid-array v0.4.14
+│   │   │       │   │               ├── typenum feature "const-generics"
+│   │   │       │   │               │   └── typenum v1.20.1
+│   │   │       │   │               └── typenum feature "default"
+│   │   │       │   │                   └── typenum v1.20.1
+│   │   │       │   └── crypto-common feature "default"
+│   │   │       │       └── crypto-common v0.2.2
+│   │   │       │           └── hybrid-array feature "default" (*)
+│   │   │       └── digest feature "block-api"
+│   │   │           └── digest v0.11.3 (*)
+│   │   ├── base64 feature "default"
+│   │   │   ├── base64 v0.22.1
+│   │   │   └── base64 feature "std"
+│   │   │       ├── base64 v0.22.1
+│   │   │       └── base64 feature "alloc"
+│   │   │           └── base64 v0.22.1
+│   │   ├── bincode feature "default"
+│   │   │   ├── bincode v2.0.1
+│   │   │   │   ├── serde v1.0.229
+│   │   │   │   │   ├── serde_core feature "result"
+│   │   │   │   │   │   └── serde_core v1.0.229
+│   │   │   │   │   └── serde_derive feature "default"
+│   │   │   │   │       └── serde_derive v1.0.229 (proc-macro)
+│   │   │   │   │           ├── proc-macro2 feature "proc-macro"
+│   │   │   │   │           │   └── proc-macro2 v1.0.107
+│   │   │   │   │           │       └── unicode-ident feature "default"
+│   │   │   │   │           │           └── unicode-ident v1.0.24
+│   │   │   │   │           ├── quote feature "proc-macro"
+│   │   │   │   │           │   ├── quote v1.0.47
+│   │   │   │   │           │   │   └── proc-macro2 v1.0.107 (*)
+│   │   │   │   │           │   └── proc-macro2 feature "proc-macro" (*)
+│   │   │   │   │           ├── syn feature "clone-impls"
+│   │   │   │   │           │   └── syn v3.0.3
+│   │   │   │   │           │       ├── proc-macro2 v1.0.107 (*)
+│   │   │   │   │           │       ├── quote v1.0.47 (*)
+│   │   │   │   │           │       └── unicode-ident feature "default" (*)
+│   │   │   │   │           ├── syn feature "derive"
+│   │   │   │   │           │   └── syn v3.0.3 (*)
+│   │   │   │   │           ├── syn feature "parsing"
+│   │   │   │   │           │   └── syn v3.0.3 (*)
+│   │   │   │   │           ├── syn feature "printing"
+│   │   │   │   │           │   └── syn v3.0.3 (*)
+│   │   │   │   │           └── syn feature "proc-macro"
+│   │   │   │   │               ├── syn v3.0.3 (*)
+│   │   │   │   │               ├── proc-macro2 feature "proc-macro" (*)
+│   │   │   │   │               └── quote feature "proc-macro" (*)
+│   │   │   │   ├── bincode_derive feature "default"
+│   │   │   │   │   └── bincode_derive v2.0.1 (proc-macro)
+│   │   │   │   │       └── virtue feature "default"
+│   │   │   │   │           └── virtue v0.0.18
+│   │   │   │   └── unty feature "default"
+│   │   │   │       └── unty v0.0.4
+│   │   │   ├── bincode feature "derive"
+│   │   │   │   ├── bincode v2.0.1 (*)
+│   │   │   │   └── bincode feature "bincode_derive"
+│   │   │   │       └── bincode v2.0.1 (*)
+│   │   │   └── bincode feature "std"
+│   │   │       ├── bincode v2.0.1 (*)
+│   │   │       ├── bincode feature "alloc"
+│   │   │       │   ├── bincode v2.0.1 (*)
+│   │   │       │   └── serde feature "alloc"
+│   │   │       │       ├── serde v1.0.229 (*)
+│   │   │       │       └── serde_core feature "alloc"
+│   │   │       │           └── serde_core v1.0.229
+│   │   │       └── serde feature "std"
+│   │   │           ├── serde v1.0.229 (*)
+│   │   │           └── serde_core feature "std"
+│   │   │               └── serde_core v1.0.229
+│   │   ├── serde feature "alloc" (*)
+│   │   ├── serde feature "derive"
+│   │   │   ├── serde v1.0.229 (*)
+│   │   │   └── serde feature "serde_derive"
+│   │   │       └── serde v1.0.229 (*)
+│   │   ├── serde_derive feature "default" (*)
+│   │   ├── brotli feature "default"
+│   │   │   ├── brotli v8.0.4
+│   │   │   │   ├── brotli-decompressor v5.0.3
+│   │   │   │   │   ├── alloc-no-stdlib feature "default"
+│   │   │   │   │   │   └── alloc-no-stdlib v2.0.4
+│   │   │   │   │   └── alloc-stdlib feature "default"
+│   │   │   │   │       └── alloc-stdlib v0.2.4
+│   │   │   │   │           └── alloc-no-stdlib feature "default" (*)
+│   │   │   │   ├── alloc-no-stdlib feature "default" (*)
+│   │   │   │   └── alloc-stdlib feature "default" (*)
+│   │   │   └── brotli feature "std"
+│   │   │       ├── brotli v8.0.4 (*)
+│   │   │       ├── brotli feature "alloc-stdlib"
+│   │   │       │   └── brotli v8.0.4 (*)
+│   │   │       └── brotli-decompressor feature "std"
+│   │   │           ├── brotli-decompressor v5.0.3 (*)
+│   │   │           └── brotli-decompressor feature "alloc-stdlib"
+│   │   │               └── brotli-decompressor v5.0.3 (*)
+│   │   ├── byteorder feature "default"
+│   │   │   ├── byteorder v1.5.0
+│   │   │   └── byteorder feature "std"
+│   │   │       └── byteorder v1.5.0
+│   │   ├── crc32fast feature "default"
+│   │   │   ├── crc32fast v1.5.0
+│   │   │   │   └── cfg-if feature "default" (*)
+│   │   │   └── crc32fast feature "std"
+│   │   │       └── crc32fast v1.5.0 (*)
+│   │   ├── indexmap feature "default"
+│   │   │   ├── indexmap v2.14.0
+│   │   │   │   ├── equivalent v1.0.2
+│   │   │   │   ├── hashbrown v0.17.1
+│   │   │   │   └── serde_core v1.0.229
+│   │   │   └── indexmap feature "std"
+│   │   │       └── indexmap v2.14.0 (*)
+│   │   ├── libm feature "default"
+│   │   │   ├── libm v0.2.16
+│   │   │   └── libm feature "arch"
+│   │   │       └── libm v0.2.16
+│   │   ├── nalgebra feature "default"
+│   │   │   ├── nalgebra v0.34.2
+│   │   │   │   ├── approx v0.5.1
+│   │   │   │   │   └── num-traits v0.2.19
+│   │   │   │   │       └── libm feature "default" (*)
+│   │   │   │   │       [build-dependencies]
+│   │   │   │   │       └── autocfg feature "default"
+│   │   │   │   │           └── autocfg v1.5.1
+│   │   │   │   ├── num-complex v0.4.6
+│   │   │   │   │   └── num-traits feature "i128"
+│   │   │   │   │       └── num-traits v0.2.19 (*)
+│   │   │   │   ├── num-rational v0.4.2
+│   │   │   │   │   ├── num-traits feature "i128" (*)
+│   │   │   │   │   └── num-integer feature "i128"
+│   │   │   │   │       └── num-integer v0.1.46
+│   │   │   │   │           └── num-traits feature "i128" (*)
+│   │   │   │   ├── num-traits v0.2.19 (*)
+│   │   │   │   ├── simba v0.9.1
+│   │   │   │   │   ├── approx v0.5.1 (*)
+│   │   │   │   │   ├── num-complex v0.4.6 (*)
+│   │   │   │   │   ├── num-traits v0.2.19 (*)
+│   │   │   │   │   ├── wide v0.7.33
+│   │   │   │   │   │   ├── bytemuck feature "default"
+│   │   │   │   │   │   │   └── bytemuck v1.25.2
+│   │   │   │   │   │   ├── safe_arch feature "bytemuck"
+│   │   │   │   │   │   │   └── safe_arch v0.7.4
+│   │   │   │   │   │   │       └── bytemuck feature "default" (*)
+│   │   │   │   │   │   └── safe_arch feature "default"
+│   │   │   │   │   │       └── safe_arch v0.7.4 (*)
+│   │   │   │   │   └── paste feature "default"
+│   │   │   │   │       └── paste v1.0.15 (proc-macro)
+│   │   │   │   ├── matrixmultiply feature "default"
+│   │   │   │   │   ├── matrixmultiply v0.3.11
+│   │   │   │   │   │   └── rawpointer feature "default"
+│   │   │   │   │   │       └── rawpointer v0.2.1
+│   │   │   │   │   │   [build-dependencies]
+│   │   │   │   │   │   └── autocfg feature "default" (*)
+│   │   │   │   │   ├── matrixmultiply feature "avx512"
+│   │   │   │   │   │   └── matrixmultiply v0.3.11 (*)
+│   │   │   │   │   └── matrixmultiply feature "std"
+│   │   │   │   │       └── matrixmultiply v0.3.11 (*)
+│   │   │   │   ├── nalgebra-macros feature "default"
+│   │   │   │   │   └── nalgebra-macros v0.3.0 (proc-macro)
+│   │   │   │   │       ├── proc-macro2 feature "default"
+│   │   │   │   │       │   ├── proc-macro2 v1.0.107 (*)
+│   │   │   │   │       │   └── proc-macro2 feature "proc-macro" (*)
+│   │   │   │   │       ├── quote feature "default"
+│   │   │   │   │       │   ├── quote v1.0.47 (*)
+│   │   │   │   │       │   └── quote feature "proc-macro" (*)
+│   │   │   │   │       ├── syn feature "default"
+│   │   │   │   │       │   ├── syn v2.0.119
+│   │   │   │   │       │   │   ├── proc-macro2 v1.0.107 (*)
+│   │   │   │   │       │   │   ├── quote v1.0.47 (*)
+│   │   │   │   │       │   │   └── unicode-ident feature "default" (*)
+│   │   │   │   │       │   ├── syn feature "clone-impls"
+│   │   │   │   │       │   │   └── syn v2.0.119 (*)
+│   │   │   │   │       │   ├── syn feature "derive"
+│   │   │   │   │       │   │   └── syn v2.0.119 (*)
+│   │   │   │   │       │   ├── syn feature "parsing"
+│   │   │   │   │       │   │   └── syn v2.0.119 (*)
+│   │   │   │   │       │   ├── syn feature "printing"
+│   │   │   │   │       │   │   └── syn v2.0.119 (*)
+│   │   │   │   │       │   └── syn feature "proc-macro"
+│   │   │   │   │       │       ├── syn v2.0.119 (*)
+│   │   │   │   │       │       ├── proc-macro2 feature "proc-macro" (*)
+│   │   │   │   │       │       └── quote feature "proc-macro" (*)
+│   │   │   │   │       └── syn feature "full"
+│   │   │   │   │           └── syn v2.0.119 (*)
+│   │   │   │   └── typenum feature "default" (*)
+│   │   │   ├── nalgebra feature "macros"
+│   │   │   │   ├── nalgebra v0.34.2 (*)
+│   │   │   │   └── nalgebra feature "nalgebra-macros"
+│   │   │   │       └── nalgebra v0.34.2 (*)
+│   │   │   └── nalgebra feature "std"
+│   │   │       ├── nalgebra v0.34.2 (*)
+│   │   │       ├── nalgebra feature "matrixmultiply"
+│   │   │       │   └── nalgebra v0.34.2 (*)
+│   │   │       ├── approx feature "std"
+│   │   │       │   └── approx v0.5.1 (*)
+│   │   │       ├── num-traits feature "std"
+│   │   │       │   └── num-traits v0.2.19 (*)
+│   │   │       ├── num-complex feature "std"
+│   │   │       │   ├── num-complex v0.4.6 (*)
+│   │   │       │   └── num-traits feature "std" (*)
+│   │   │       ├── num-rational feature "std"
+│   │   │       │   ├── num-rational v0.4.2 (*)
+│   │   │       │   ├── num-traits feature "std" (*)
+│   │   │       │   └── num-integer feature "std"
+│   │   │       │       ├── num-integer v0.1.46 (*)
+│   │   │       │       └── num-traits feature "std" (*)
+│   │   │       └── simba feature "std"
+│   │   │           ├── simba v0.9.1 (*)
+│   │   │           ├── simba feature "wide"
+│   │   │           │   └── simba v0.9.1 (*)
+│   │   │           └── wide feature "std"
+│   │   │               └── wide v0.7.33 (*)
+│   │   ├── num-traits feature "libm"
+│   │   │   └── num-traits v0.2.19 (*)
+│   │   ├── paste feature "default" (*)
+│   │   ├── seahash feature "default"
+│   │   │   └── seahash v4.1.0
+│   │   └── serde_json feature "default"
+│   │       ├── serde_json v1.0.151
+│   │       │   ├── memchr v2.8.3
+│   │       │   ├── serde_core v1.0.229
+│   │       │   ├── itoa feature "default"
+│   │       │   │   └── itoa v1.0.18
+│   │       │   └── zmij feature "default"
+│   │       │       └── zmij v1.0.23
+│   │       └── serde_json feature "std"
+│   │           ├── serde_json v1.0.151 (*)
+│   │           ├── serde_core feature "std" (*)
+│   │           └── memchr feature "std"
+│   │               ├── memchr v2.8.3
+│   │               └── memchr feature "alloc"
+│   │                   └── memchr v2.8.3
+│   ├── itertools feature "default"
+│   │   ├── itertools v0.14.0
+│   │   │   └── either v1.16.0
+│   │   └── itertools feature "use_std"
+│   │       ├── itertools v0.14.0 (*)
+│   │       ├── itertools feature "use_alloc"
+│   │       │   └── itertools v0.14.0 (*)
+│   │       └── either feature "use_std"
+│   │           ├── either v1.16.0
+│   │           └── either feature "std"
+│   │               └── either v1.16.0
+│   ├── nalgebra feature "default" (*)
+│   ├── num-traits feature "libm" (*)
+│   └── paste feature "default" (*)
+├── mech-compare v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/compare)
+│   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+│   ├── nalgebra feature "default" (*)
+│   └── paste feature "default" (*)
+├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+├── mech-logic v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/logic)
+│   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+│   ├── nalgebra feature "default" (*)
+│   └── paste feature "default" (*)
+├── mech-math v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/math)
+│   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+│   ├── libm feature "default" (*)
+│   ├── nalgebra feature "default" (*)
+│   ├── num-traits feature "libm" (*)
+│   ├── simba feature "default"
+│   │   ├── simba v0.9.1 (*)
+│   │   └── simba feature "std" (*)
+│   └── paste feature "default" (*)
+├── mech-matrix v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/matrix)
+│   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+│   ├── nalgebra feature "default" (*)
+│   ├── num-traits feature "libm" (*)
+│   └── paste feature "default" (*)
+├── mech-range v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/range)
+│   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+│   ├── nalgebra feature "default" (*)
+│   ├── num-traits feature "libm" (*)
+│   └── paste feature "default" (*)
+├── mech-set v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/set)
+│   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+│   ├── indexmap feature "default" (*)
+│   └── paste feature "default" (*)
+├── mech-stats v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/stats)
+│   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+│   ├── nalgebra feature "default" (*)
+│   ├── num-traits feature "libm" (*)
+│   └── paste feature "default" (*)
+├── mech-string v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/string)
+│   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+│   ├── nalgebra feature "default" (*)
+│   └── paste feature "default" (*)
+└── mech-engine feature "functions"
+    ├── mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine)
+    │   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+    │   ├── mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax)
+    │   │   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+    │   │   ├── serde feature "default"
+    │   │   │   ├── serde v1.0.229 (*)
+    │   │   │   └── serde feature "std" (*)
+    │   │   ├── serde_derive feature "default" (*)
+    │   │   ├── indexmap feature "default" (*)
+    │   │   ├── num-traits feature "libm" (*)
+    │   │   ├── paste feature "default" (*)
+    │   │   ├── unicode-segmentation feature "default"
+    │   │   │   └── unicode-segmentation v1.13.3
+    │   │   ├── colored feature "default"
+    │   │   │   └── colored v3.1.1
+    │   │   └── tabled feature "std"
+    │   │       ├── tabled v0.20.0
+    │   │       │   └── papergrid v0.17.0
+    │   │       │       ├── bytecount feature "default"
+    │   │       │       │   └── bytecount v0.6.9
+    │   │       │       ├── fnv feature "default"
+    │   │       │       │   ├── fnv v1.0.7
+    │   │       │       │   └── fnv feature "std"
+    │   │       │       │       └── fnv v1.0.7
+    │   │       │       └── unicode-width feature "default"
+    │   │       │           ├── unicode-width v0.2.2
+    │   │       │           └── unicode-width feature "cjk"
+    │   │       │               └── unicode-width v0.2.2
+    │   │       └── papergrid feature "std"
+    │   │           ├── papergrid v0.17.0 (*)
+    │   │           └── papergrid feature "fnv"
+    │   │               └── papergrid v0.17.0 (*)
+    │   ├── tinyvec v1.12.0
+    │   │   └── tinyvec_macros feature "default"
+    │   │       └── tinyvec_macros v0.1.1
+    │   ├── serde feature "default" (*)
+    │   ├── serde feature "derive" (*)
+    │   ├── byteorder feature "default" (*)
+    │   ├── indexmap feature "default" (*)
+    │   ├── nalgebra feature "default" (*)
+    │   ├── paste feature "default" (*)
+    │   ├── serde_json feature "default" (*)
+    │   ├── grapheme feature "default"
+    │   │   └── grapheme v1.3.0
+    │   │       ├── grapheme_macro feature "default"
+    │   │       │   └── grapheme_macro v2.0.0 (proc-macro)
+    │   │       │       ├── quote feature "default" (*)
+    │   │       │       ├── syn feature "default" (*)
+    │   │       │       └── unicode-segmentation feature "default" (*)
+    │   │       ├── unicode-segmentation feature "default" (*)
+    │   │       ├── icu_properties feature "default"
+    │   │       │   ├── icu_properties v2.2.0
+    │   │       │   │   ├── icu_collections v2.2.0
+    │   │       │   │   │   ├── displaydoc v0.2.6 (proc-macro)
+    │   │       │   │   │   │   ├── proc-macro2 feature "default" (*)
+    │   │       │   │   │   │   ├── quote feature "default" (*)
+    │   │       │   │   │   │   └── syn feature "default" (*)
+    │   │       │   │   │   ├── utf8_iter v1.0.4
+    │   │       │   │   │   ├── potential_utf feature "zerovec"
+    │   │       │   │   │   │   └── potential_utf v0.1.5
+    │   │       │   │   │   │       └── zerovec v0.11.6
+    │   │       │   │   │   │           ├── yoke v0.8.3
+    │   │       │   │   │   │           │   ├── stable_deref_trait v1.2.1
+    │   │       │   │   │   │           │   ├── yoke-derive v0.8.2 (proc-macro)
+    │   │       │   │   │   │           │   │   ├── proc-macro2 feature "default" (*)
+    │   │       │   │   │   │           │   │   ├── quote feature "default" (*)
+    │   │       │   │   │   │           │   │   ├── syn feature "default" (*)
+    │   │       │   │   │   │           │   │   ├── syn feature "fold"
+    │   │       │   │   │   │           │   │   │   └── syn v2.0.119 (*)
+    │   │       │   │   │   │           │   │   └── synstructure feature "default"
+    │   │       │   │   │   │           │   │       ├── synstructure v0.13.2
+    │   │       │   │   │   │           │   │       │   ├── proc-macro2 v1.0.107 (*)
+    │   │       │   │   │   │           │   │       │   ├── quote v1.0.47 (*)
+    │   │       │   │   │   │           │   │       │   ├── syn feature "clone-impls" (*)
+    │   │       │   │   │   │           │   │       │   ├── syn feature "derive" (*)
+    │   │       │   │   │   │           │   │       │   ├── syn feature "extra-traits"
+    │   │       │   │   │   │           │   │       │   │   └── syn v2.0.119 (*)
+    │   │       │   │   │   │           │   │       │   ├── syn feature "parsing" (*)
+    │   │       │   │   │   │           │   │       │   ├── syn feature "printing" (*)
+    │   │       │   │   │   │           │   │       │   └── syn feature "visit"
+    │   │       │   │   │   │           │   │       │       └── syn v2.0.119 (*)
+    │   │       │   │   │   │           │   │       └── synstructure feature "proc-macro"
+    │   │       │   │   │   │           │   │           ├── synstructure v0.13.2 (*)
+    │   │       │   │   │   │           │   │           ├── proc-macro2 feature "proc-macro" (*)
+    │   │       │   │   │   │           │   │           ├── quote feature "proc-macro" (*)
+    │   │       │   │   │   │           │   │           └── syn feature "proc-macro" (*)
+    │   │       │   │   │   │           │   └── zerofrom v0.1.8
+    │   │       │   │   │   │           │       └── zerofrom-derive v0.1.7 (proc-macro)
+    │   │       │   │   │   │           │           ├── proc-macro2 feature "default" (*)
+    │   │       │   │   │   │           │           ├── quote feature "default" (*)
+    │   │       │   │   │   │           │           ├── syn feature "default" (*)
+    │   │       │   │   │   │           │           ├── syn feature "fold" (*)
+    │   │       │   │   │   │           │           └── synstructure feature "default" (*)
+    │   │       │   │   │   │           ├── zerofrom v0.1.8 (*)
+    │   │       │   │   │   │           └── zerovec-derive v0.11.3 (proc-macro)
+    │   │       │   │   │   │               ├── proc-macro2 feature "default" (*)
+    │   │       │   │   │   │               ├── quote feature "default" (*)
+    │   │       │   │   │   │               ├── syn feature "default" (*)
+    │   │       │   │   │   │               └── syn feature "extra-traits" (*)
+    │   │       │   │   │   ├── zerovec feature "derive"
+    │   │       │   │   │   │   └── zerovec v0.11.6 (*)
+    │   │       │   │   │   ├── zerovec feature "yoke"
+    │   │       │   │   │   │   └── zerovec v0.11.6 (*)
+    │   │       │   │   │   ├── yoke feature "derive"
+    │   │       │   │   │   │   ├── yoke v0.8.3 (*)
+    │   │       │   │   │   │   ├── yoke feature "zerofrom"
+    │   │       │   │   │   │   │   └── yoke v0.8.3 (*)
+    │   │       │   │   │   │   └── zerofrom feature "derive"
+    │   │       │   │   │   │       └── zerofrom v0.1.8 (*)
+    │   │       │   │   │   └── zerofrom feature "derive" (*)
+    │   │       │   │   ├── icu_properties_data v2.2.0
+    │   │       │   │   ├── icu_provider v2.2.0
+    │   │       │   │   │   ├── displaydoc v0.2.6 (proc-macro) (*)
+    │   │       │   │   │   ├── icu_locale_core v2.2.0
+    │   │       │   │   │   │   ├── displaydoc v0.2.6 (proc-macro) (*)
+    │   │       │   │   │   │   ├── litemap v0.8.2
+    │   │       │   │   │   │   ├── tinystr v0.8.3
+    │   │       │   │   │   │   │   ├── displaydoc v0.2.6 (proc-macro) (*)
+    │   │       │   │   │   │   │   └── zerovec v0.11.6 (*)
+    │   │       │   │   │   │   ├── writeable v0.6.3
+    │   │       │   │   │   │   └── zerovec v0.11.6 (*)
+    │   │       │   │   │   ├── writeable v0.6.3
+    │   │       │   │   │   ├── zerotrie v0.2.4
+    │   │       │   │   │   │   ├── displaydoc v0.2.6 (proc-macro) (*)
+    │   │       │   │   │   │   ├── zerofrom v0.1.8 (*)
+    │   │       │   │   │   │   └── yoke feature "derive" (*)
+    │   │       │   │   │   ├── zerovec feature "derive" (*)
+    │   │       │   │   │   ├── yoke feature "derive" (*)
+    │   │       │   │   │   └── zerofrom feature "derive" (*)
+    │   │       │   │   ├── zerovec feature "derive" (*)
+    │   │       │   │   ├── zerovec feature "yoke" (*)
+    │   │       │   │   ├── icu_locale_core feature "zerovec"
+    │   │       │   │   │   ├── icu_locale_core v2.2.0 (*)
+    │   │       │   │   │   └── tinystr feature "zerovec"
+    │   │       │   │   │       └── tinystr v0.8.3 (*)
+    │   │       │   │   ├── zerotrie feature "yoke"
+    │   │       │   │   │   └── zerotrie v0.2.4 (*)
+    │   │       │   │   └── zerotrie feature "zerofrom"
+    │   │       │   │       └── zerotrie v0.2.4 (*)
+    │   │       │   └── icu_properties feature "compiled_data"
+    │   │       │       ├── icu_properties v2.2.0 (*)
+    │   │       │       └── icu_provider feature "baked"
+    │   │       │           └── icu_provider v2.2.0 (*)
+    │   │       ├── smallvec feature "default"
+    │   │       │   └── smallvec v1.15.2
+    │   │       └── unicode-normalization feature "default"
+    │   │           ├── unicode-normalization v0.1.25
+    │   │           │   ├── tinyvec feature "alloc"
+    │   │           │   │   ├── tinyvec v1.12.0 (*)
+    │   │           │   │   └── tinyvec feature "tinyvec_macros"
+    │   │           │   │       └── tinyvec v1.12.0 (*)
+    │   │           │   └── tinyvec feature "default"
+    │   │           │       └── tinyvec v1.12.0 (*)
+    │   │           └── unicode-normalization feature "std"
+    │   │               └── unicode-normalization v0.1.25 (*)
+    │   └── sha2 feature "default"
+    │       ├── sha2 v0.10.9
+    │       │   ├── cfg-if feature "default" (*)
+    │       │   ├── cpufeatures feature "default"
+    │       │   │   └── cpufeatures v0.2.17
+    │       │   │       └── libc v0.2.189
+    │       │   └── digest feature "default"
+    │       │       ├── digest v0.10.7
+    │       │       │   ├── block-buffer feature "default"
+    │       │       │   │   └── block-buffer v0.10.4
+    │       │       │   │       └── generic-array feature "default"
+    │       │       │   │           └── generic-array v0.14.7
+    │       │       │   │               └── typenum feature "default" (*)
+    │       │       │   │               [build-dependencies]
+    │       │       │   │               └── version_check feature "default"
+    │       │       │   │                   └── version_check v0.9.5
+    │       │       │   └── crypto-common feature "default"
+    │       │       │       └── crypto-common v0.1.7
+    │       │       │           ├── typenum feature "default" (*)
+    │       │       │           ├── generic-array feature "default" (*)
+    │       │       │           └── generic-array feature "more_lengths"
+    │       │       │               └── generic-array v0.14.7 (*)
+    │       │       └── digest feature "core-api"
+    │       │           ├── digest v0.10.7 (*)
+    │       │           └── digest feature "block-buffer"
+    │       │               └── digest v0.10.7 (*)
+    │       └── sha2 feature "std"
+    │           ├── sha2 v0.10.9 (*)
+    │           └── digest feature "std"
+    │               ├── digest v0.10.7 (*)
+    │               ├── digest feature "alloc"
+    │               │   └── digest v0.10.7 (*)
+    │               └── crypto-common feature "std"
+    │                   └── crypto-common v0.1.7 (*)
+    ├── mech-core feature "functions"
+    │   ├── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+    │   ├── mech-core feature "indexmap"
+    │   │   └── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+    │   └── mech-core feature "symbol_table"
+    │       └── mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) (*)
+    ├── mech-engine feature "symbol_table"
+    │   ├── mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine) (*)
+    │   ├── mech-core feature "symbol_table" (*)
+    │   └── mech-syntax feature "symbol_table"
+    │       ├── mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax) (*)
+    │       └── mech-core feature "symbol_table" (*)
+    └── mech-syntax feature "functions"
+        ├── mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax) (*)
+        ├── mech-core feature "functions" (*)
+        └── mech-syntax feature "symbol_table" (*)

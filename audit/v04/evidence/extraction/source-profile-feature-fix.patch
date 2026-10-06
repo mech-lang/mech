@@ -1,0 +1,28 @@
+--- a/src/stdlib/Cargo.toml
++++ b/src/stdlib/Cargo.toml
+@@ -29,15 +29,25 @@
+ source = [
+   "runtime",
+   "mech-engine/source",
++  "mech-engine/semantic-compiler",
+   "mech-math?/source",
++  "mech-math?/semantic-compiler",
+   "mech-compare?/source",
++  "mech-compare?/semantic-compiler",
+   "mech-logic?/source",
++  "mech-logic?/semantic-compiler",
+   "mech-range?/source",
++  "mech-range?/semantic-compiler",
+   "mech-matrix?/source",
++  "mech-matrix?/semantic-compiler",
+   "mech-set?/source",
++  "mech-set?/semantic-compiler",
+   "mech-string?/source",
++  "mech-string?/semantic-compiler",
+   "mech-stats?/source",
++  "mech-stats?/semantic-compiler",
+   "mech-combinatorics?/source",
++  "mech-combinatorics?/semantic-compiler",
+ ]
+ semantic-compiler = [
+   "source",

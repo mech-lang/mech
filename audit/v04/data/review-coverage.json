@@ -1,0 +1,250 @@
+{
+  "schema": 1,
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "method": "Manually read listed inclusive baseline line spans and trace adjacent public contracts; search-only hits excluded from substantive review. Test source inspection is separately referenced in capability records.",
+  "not_endorsed": [
+    "Untouched functions within listed files",
+    "Numerical accuracy of compute kernels",
+    "All unsafe blocks and Miri qualification",
+    "Dynamic module consumer inventory",
+    "Hardware GPU completion",
+    "Browser lifecycle under real asynchronous execution"
+  ],
+  "files": [
+    {
+      "path": "src/engine/src/source_semantics/frontend.rs",
+      "reviewed_spans": [
+        [
+          1,
+          225
+        ],
+        [
+          286,
+          368
+        ],
+        [
+          600,
+          616
+        ],
+        [
+          675,
+          727
+        ],
+        [
+          1173,
+          1543
+        ]
+      ],
+      "scope": "Source/artifact ownership, semantic errors, scalar-option tables; remaining frontend: unreviewed",
+      "blob": "2e1e40cd932afd5bebc4c12a6e9a08d17feedc25"
+    },
+    {
+      "path": "src/runtime/src/runtime/program/compiler.rs",
+      "reviewed_spans": [
+        [
+          88,
+          161
+        ],
+        [
+          169,
+          350
+        ],
+        [
+          697,
+          782
+        ]
+      ],
+      "scope": "Compilation entry points and source error propagation; resource planner remainder: partially reviewed",
+      "blob": "c1accc6b36f323170b2b8a84dc86e4892afe535d"
+    },
+    {
+      "path": "src/syntax/src/document/incremental/session.rs",
+      "reviewed_spans": [
+        [
+          1,
+          96
+        ]
+      ],
+      "scope": "Entire session orchestration",
+      "blob": "31dc181d3baf50d74ac22476a9d2c5ad6d53fcd7"
+    },
+    {
+      "path": "src/syntax/src/document/incremental/reparse.rs",
+      "reviewed_spans": [
+        [
+          1,
+          120
+        ]
+      ],
+      "scope": "Full parse and reconciliation orchestration; detailed matcher: outside review",
+      "blob": "198773f5ea1e38631bba3e7fe3cf873811e6fdf4"
+    },
+    {
+      "path": "src/core/src/memory_runtime/transaction.rs",
+      "reviewed_spans": [
+        [
+          270,
+          329
+        ],
+        [
+          729,
+          795
+        ]
+      ],
+      "scope": "Interval readiness and lock ordering only",
+      "blob": "0ef0174b5c74702b76ee15654388f6a60188174f"
+    },
+    {
+      "path": "src/engine/src/resident/general/mod.rs",
+      "reviewed_spans": [
+        [
+          1969,
+          2110
+        ],
+        [
+          4379,
+          4450
+        ]
+      ],
+      "scope": "Activation/preflight ownership; remaining spans of the 23,873-line mixed file: outside review; closed resident arithmetic selection",
+      "blob": "c39e24594aa1d566d3abd6cb9580ceaddb01de9a"
+    },
+    {
+      "path": "src/engine/src/resident/general/execution.rs",
+      "reviewed_spans": [
+        [
+          211,
+          355
+        ],
+        [
+          836,
+          966
+        ]
+      ],
+      "scope": "Prepared turn publication API and epoch boundary",
+      "blob": "c074d0f9d5e8a57a7783bef34ee575b171d078ae"
+    },
+    {
+      "path": "src/runtime/src/interactive.rs",
+      "reviewed_spans": [
+        [
+          148,
+          215
+        ],
+        [
+          430,
+          600
+        ]
+      ],
+      "scope": "Session ownership and replacement commit/retirement path",
+      "blob": "d561df25b229de55d556f90e9d486fb334e281be"
+    },
+    {
+      "path": "src/compute/src/registry.rs",
+      "reviewed_spans": [
+        [
+          1,
+          220
+        ],
+        [
+          338,
+          435
+        ]
+      ],
+      "scope": "Selector, capability and completion contracts",
+      "blob": "754a3b3379395d4a62505697b1b01e4456a3daff"
+    },
+    {
+      "path": "hosts/gpu/src/compute_provider.rs",
+      "reviewed_spans": [
+        [
+          500,
+          582
+        ],
+        [
+          946,
+          1020
+        ]
+      ],
+      "scope": "Asynchronous matching and submit/completion distinction; numerical kernels: outside review",
+      "blob": "46329c432438e3f4e647ef951469caafcaadd338"
+    },
+    {
+      "path": "src/wasm/src/canonical_document.rs",
+      "reviewed_spans": [
+        [
+          1,
+          106
+        ]
+      ],
+      "scope": "Document ownership and source replacement; browser execution: tracked separately",
+      "blob": "72a041f0dca1dd59da8aca91d1ce8547ea2c002c"
+    },
+    {
+      "path": "src/core/src/error.rs",
+      "reviewed_spans": [
+        [
+          1,
+          120
+        ]
+      ],
+      "scope": "Error construction and metadata retention",
+      "blob": "bc85cfa78308857b2de0cca37ec736169f5f49ea"
+    },
+    {
+      "path": "scripts/check-semantic-type-authority.py",
+      "reviewed_spans": [
+        [
+          167,
+          211
+        ]
+      ],
+      "scope": "Selected positive lexical gates",
+      "blob": "b249d956bd3b0f0d749bb4e2d0498db9e3f39260"
+    },
+    {
+      "path": "scripts/check-production-resident-routing.py",
+      "reviewed_spans": [
+        [
+          272,
+          304
+        ]
+      ],
+      "scope": "Selected positive lexical gates",
+      "blob": "26d3ecabe834cd7f80bc771917a109af5b71382d"
+    },
+    {
+      "path": "src/engine/src/function/catalog.rs",
+      "reviewed_spans": [
+        [
+          1,
+          64
+        ]
+      ],
+      "scope": "Runtime, source and resident installer responsibilities",
+      "blob": "f833266c1fbdd8d8bdb397a5927fad71ab49891d"
+    },
+    {
+      "path": "src/engine/src/resident/numeric/mod.rs",
+      "reviewed_spans": [
+        [
+          688,
+          738
+        ]
+      ],
+      "scope": "Resident numeric operation registration",
+      "blob": "a50a942ace463c16e2e72089c256eb067ebf95b7"
+    },
+    {
+      "path": "src/build/tests/native_scalar.rs",
+      "reviewed_spans": [
+        [
+          1,
+          86
+        ]
+      ],
+      "scope": "Maintained scalar-add native closure contract",
+      "blob": "420538f8178ecbb78ab89facefe126b54934086e"
+    }
+  ]
+}

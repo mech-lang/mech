@@ -1,0 +1,84 @@
+{
+  "id": "E-TYPES-NATIVE-BROWSER",
+  "claim": "Identical scalar sources publish exact expected values through native and WASM resident execution",
+  "contract": "docs/design/grammar-audit/fixed-integer-intervals.md; canonical source contracts",
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "source_state": "baseline with recorded audit corrections and optional inspection adapters",
+  "artifact_identity": {
+    "native_binary": "/private/tmp/mech-v04-target-architecture/debug/deps/mech_wasm-3c5b3b61ca23e47d",
+    "native_sha256": "b27d6bc4f5999ac61385500fa4a871a5a454fb0584e3ecd3bb73c1a24def3afc",
+    "wasm_manifest": "audit/v04/site/artifact.json",
+    "wasm_sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194"
+  },
+  "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-architecture cargo test -p mech-wasm --locked --offline --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection type_inspection::tests -- --nocapture",
+  "comparison_command": "python3 audit/v04/compare_type_targets.py",
+  "evidence_level": "native-and-browser-execution",
+  "outcome": "passed",
+  "native_test_result": "3 passed; 104 filtered out; other integration targets had 0 selected tests",
+  "pairs": [
+    {
+      "source": "answer := 1\u27e8u8:1..10\u27e9\nanswer\n",
+      "native": [
+        "1"
+      ],
+      "browser": [
+        "1"
+      ],
+      "equal": true,
+      "artifact_bytes_native": 1088,
+      "artifact_bytes_browser": 1088
+    },
+    {
+      "source": "answer := 9\u27e8u8:1..10\u27e9\nanswer\n",
+      "native": [
+        "9"
+      ],
+      "browser": [
+        "9"
+      ],
+      "equal": true,
+      "artifact_bytes_native": 1088,
+      "artifact_bytes_browser": 1088
+    },
+    {
+      "source": "answer := 10\u27e8u8:1..=10\u27e9\nanswer\n",
+      "native": [
+        "10"
+      ],
+      "browser": [
+        "10"
+      ],
+      "equal": true,
+      "artifact_bytes_native": 1088,
+      "artifact_bytes_browser": 1088
+    },
+    {
+      "source": "answer := math/sub(right: 3, left: 10)\nanswer\n",
+      "native": [
+        "7"
+      ],
+      "browser": [
+        "7"
+      ],
+      "equal": true,
+      "artifact_bytes_native": 1605,
+      "artifact_bytes_browser": 1605
+    },
+    {
+      "source": "answer := 340282366920938463463374607431768211455u128\nanswer\n",
+      "native": [
+        "340282366920938463463374607431768211455"
+      ],
+      "browser": [
+        "340282366920938463463374607431768211455"
+      ],
+      "equal": true,
+      "artifact_bytes_native": 1056,
+      "artifact_bytes_browser": 1056
+    }
+  ],
+  "results": [
+    "audit/v04/evidence/type-inspection-native-final.log",
+    "audit/v04/evidence/types-browser.json"
+  ]
+}

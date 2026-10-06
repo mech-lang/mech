@@ -1,0 +1,79 @@
+   Compiling memchr v2.8.3
+   Compiling syn v2.0.119
+   Compiling crossbeam-utils v0.8.22
+   Compiling crossbeam-epoch v0.9.20
+   Compiling cpufeatures v0.2.17
+   Compiling log v0.4.33
+   Compiling crossbeam-deque v0.8.7
+   Compiling bitflags v2.13.1
+   Compiling sha2 v0.10.9
+   Compiling notify-types v2.1.0
+   Compiling getrandom v0.4.3
+   Compiling fsevent-sys v4.1.0
+   Compiling notify v8.2.0
+   Compiling uuid v1.24.0
+   Compiling serde_json v1.0.151
+   Compiling aho-corasick v1.1.4
+   Compiling bstr v1.13.0
+   Compiling target-triple v1.0.1
+   Compiling serde_spanned v1.1.1
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+   Compiling termcolor v1.4.1
+   Compiling tinytemplate v1.2.1
+   Compiling regex-automata v0.4.16
+   Compiling toml v1.1.3+spec-1.1.0
+   Compiling glob v0.3.4
+   Compiling trybuild v1.0.118
+   Compiling synstructure v0.13.2
+   Compiling globset v0.4.19
+   Compiling regex v1.13.1
+   Compiling nalgebra-macros v0.3.0
+   Compiling zerofrom-derive v0.1.7
+   Compiling yoke-derive v0.8.2
+   Compiling zerovec-derive v0.11.3
+   Compiling displaydoc v0.2.6
+   Compiling grapheme_macro v2.0.0
+   Compiling zerocopy-derive v0.8.55
+   Compiling ignore v0.4.31
+   Compiling nalgebra v0.34.2
+   Compiling zerofrom v0.1.8
+   Compiling yoke v0.8.3
+   Compiling zerocopy v0.8.55
+   Compiling zerovec v0.11.6
+   Compiling zerotrie v0.2.4
+   Compiling tinystr v0.8.3
+   Compiling potential_utf v0.1.5
+   Compiling icu_collections v2.2.0
+   Compiling icu_locale_core v2.2.0
+   Compiling icu_provider v2.2.0
+   Compiling icu_properties v2.2.0
+   Compiling grapheme v1.3.0
+   Compiling half v2.7.1
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling criterion v0.8.2
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/bytecode)
+   Compiling mech-logic v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/logic)
+   Compiling mech-compare v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/compare)
+   Compiling mech-range v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/range)
+   Compiling mech-string v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/string)
+   Compiling mech-matrix v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/matrix)
+   Compiling mech-stats v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/stats)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/set)
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/combinatorics)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/math)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/runtime)
+   Compiling mech-native-live-host-fixture v0.3.5 (/private/tmp/mech-v04-audit-20261006/tests/fixtures/native-live-host)
+   Compiling mech-terminal v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/terminal)
+    Finished `test` profile [unoptimized] target(s) in 5m 34s
+     Running tests/canonical_semantic_diagnostics.rs (/private/tmp/mech-v04-target-architecture/debug/deps/canonical_semantic_diagnostics-d99d33bd0cbe00a5)
+
+running 1 test
+test product_semantic_error_preserves_exact_identity_and_projected_range ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.72s
+

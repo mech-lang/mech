@@ -1,0 +1,52 @@
+[package]
+name = "mech-stdlib-integration"
+version = "0.0.0"
+edition = "2024"
+publish = false
+[features]
+default = []
+compiler = ["mech-stdlib/compiler", "source"]
+f64 = ["mech-stdlib/f64"]
+full_compiler = ["mech-stdlib/full_compiler", "compiler", "source", "full_source", "full_runtime"]
+full_runtime = ["mech-stdlib/full_runtime"]
+full_source = ["mech-stdlib/full_source", "source", "full_runtime"]
+math_add = ["mech-stdlib/math_add"]
+matrix1 = ["mech-stdlib/matrix1"]
+matrix2 = ["mech-stdlib/matrix2"]
+matrix2x3 = ["mech-stdlib/matrix2x3"]
+matrix3 = ["mech-stdlib/matrix3"]
+matrix3x2 = ["mech-stdlib/matrix3x2"]
+matrix4 = ["mech-stdlib/matrix4"]
+no_std = ["mech-stdlib/no_std"]
+row_vector2 = ["mech-stdlib/row_vector2"]
+row_vector3 = ["mech-stdlib/row_vector3"]
+row_vector4 = ["mech-stdlib/row_vector4"]
+runtime = ["mech-stdlib/runtime"]
+source = ["mech-stdlib/source"]
+standard_compiler = ["mech-stdlib/standard_compiler", "compiler", "source"]
+standard_runtime = ["mech-stdlib/standard_runtime"]
+standard_source = ["mech-stdlib/standard_source", "source"]
+u8 = ["mech-stdlib/u8"]
+vector2 = ["mech-stdlib/vector2"]
+vector3 = ["mech-stdlib/vector3"]
+vector4 = ["mech-stdlib/vector4"]
+[dependencies]
+mech-stdlib = { path = "../../../external/stdlib", default-features = false }
+mech-core = { path = "../../src/core", default-features = false }
+mech-engine = { path = "../../src/engine", default-features = false }
+mech-syntax = { path = "../../src/syntax", default-features = false }
+nalgebra = "0.34.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+[workspace]
+[patch.crates-io]
+mech-combinatorics = { path = "../../../external/machines/combinatorics" }
+mech-compare = { path = "../../../external/machines/compare" }
+mech-logic = { path = "../../../external/machines/logic" }
+mech-math = { path = "../../../external/machines/math" }
+mech-matrix = { path = "../../../external/machines/matrix" }
+mech-range = { path = "../../../external/machines/range" }
+mech-set = { path = "../../../external/machines/set" }
+mech-stats = { path = "../../../external/machines/stats" }
+mech-string = { path = "../../../external/machines/string" }

@@ -1,0 +1,22 @@
+   Compiling mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core)
+    Finished `test` profile [unoptimized] target(s) in 1.63s
+     Running tests/canonical_type_contract.rs (/private/tmp/mech-v04-target-architecture/debug/deps/canonical_type_contract-940292ce1744709e)
+
+running 14 tests
+test interval_output_materialization_preserves_dynamic_set_rule_identity ... ok
+test compound_dimension_expressions_materialize_exact_witnesses ... ok
+test interval_output_materialization_preserves_parameterized_shape_witnesses ... ok
+test bound_call_retains_the_selected_semantic_and_physical_identities ... ok
+test descriptors_exact_check_semantics_before_storage ... ok
+test cartesian_product_and_powerset_materialize_dynamic_schemas_semantically ... ok
+test published_collection_shape_is_derived_from_its_materialized_data ... ok
+test interval_output_materialization_rejects_erased_base_integer_templates ... ok
+test row_column_and_dynamic_matrix_orientation_remain_semantic ... ok
+test semantic_output_materialization_preserves_dynamic_collection_schema ... ok
+test shared_dimension_witnesses_reject_inconsistent_extents ... ok
+test turn_varying_collection_shapes_retain_one_type_contract ... ok
+test interval_output_materialization_rejects_different_interval_templates ... ok
+test interval_output_materialization_preserves_exact_identity_for_every_authority ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+

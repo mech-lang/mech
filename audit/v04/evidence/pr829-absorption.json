@@ -1,0 +1,108 @@
+{
+  "id": "PR829-ABSORPTION",
+  "claim": "Absorb the two PR829 example commits and extend the proof with native evidence and live canonical WASM checks",
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "pull_request": "https://github.com/mech-lang/mech/pull/829",
+  "original_head": "9ae5c00e0184fe341d2ff2bdc590ede712009d2f",
+  "original_base": "1ee1a6a94d1fffc80d685f4a2dd3e8f456204513",
+  "original_commits": [
+    "824b35851ae4f8875178693d3776caf85b3d9114 demo: add auditable v0.4 R-stack trust proof",
+    "9ae5c00e0184fe341d2ff2bdc590ede712009d2f demo: add source perturbation control"
+  ],
+  "original_patch": {
+    "path": "audit/v04/evidence/pr829-original.patch",
+    "sha256": "48400e4090b536c07f01bc23a205572e456a76c53a76cac6b30a7c1deaaf70ba"
+  },
+  "files": [
+    {
+      "path": "Cargo.toml",
+      "original_sha256": "dcad00e386432cfb30d9dc05c052fa3cee6cf10de2ccda96ab926aae643709be",
+      "integrated_sha256": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+      "handling": "selectively merged example and feature declarations"
+    },
+    {
+      "path": "examples/r-stack-proof/README.md",
+      "original_sha256": "2f6800cab931fd87d446e65ed42c746891f3db49915dd29b24faaf239e026f81",
+      "integrated_sha256": "dc82ed74db78e217fe1d7c4852c6fdaf1b2cacf8880c8a54890e45ec3b4eb3a1",
+      "handling": "updated factual execution ownership and prose; Rust also uses character-safe diagnostic truncation"
+    },
+    {
+      "path": "examples/r-stack-proof/perturbed-program.mec",
+      "original_sha256": "b12bb44f05b9991bd93c314c60741209e94024369dedf3b75707a27d7d0262b2",
+      "integrated_sha256": "b12bb44f05b9991bd93c314c60741209e94024369dedf3b75707a27d7d0262b2",
+      "handling": "source constants preserved exactly"
+    },
+    {
+      "path": "examples/r-stack-proof/trust-program.mec",
+      "original_sha256": "9f73e1cedec94e5792a128c95cf3ea6c0852db293a05fa8b6c936887fb4aba8d",
+      "integrated_sha256": "9f73e1cedec94e5792a128c95cf3ea6c0852db293a05fa8b6c936887fb4aba8d",
+      "handling": "source constants preserved exactly"
+    },
+    {
+      "path": "examples/r_stack_trust_proof.rs",
+      "original_sha256": "d3e5b97150fbdd5faec10fa40835e9f362d62097a1081d0533bc272ac1fecf21",
+      "integrated_sha256": "424c6f876e5df6ed01245a82f31ea5d2d3c6dd20705ad2c07b3e289b7c9eacf9",
+      "handling": "Migrated removed legacy parser/planner APIs to retained canonical parser/frontend; exact current5-node shape plus original4primitive identities; retained literal turn/receipt, perturbation, mutation and rejection checks; semantic role identifies state; source initializer checked before first turn; character-safe diagnostic truncation."
+    },
+    {
+      "path": "scripts/demo-r-stack.sh",
+      "original_sha256": "94e9c39ac29cacafd1c77b67ea6b3f4b8076bca71c3e8cede9b5f96e5b5c681e",
+      "integrated_sha256": "94e9c39ac29cacafd1c77b67ea6b3f4b8076bca71c3e8cede9b5f96e5b5c681e",
+      "handling": "script preserved exactly"
+    }
+  ],
+  "extensions": [
+    "audit/v04/site/trust.html",
+    "audit/v04/site/trust.js",
+    "audit/v04/check_trust_browser.py",
+    "audit/v04/record_trust_evidence.py"
+  ],
+  "evidence_level": "source-comparison",
+  "outcome": "absorbed-and-verified",
+  "preserved_behavior": "Seven literal accepted outputs, source/bytecode receipt equality, changed-source outputs7/25/79, syntax/type/missing-catalog/truncation/tampered-node/budget/integrity rejection, accepted epoch/hash/state/output unchanged after rejection. Original pre-turn output-alias assumption is documented as a changed representation.",
+  "validation": [
+    "audit/v04/evidence/trust-native.json",
+    "audit/v04/evidence/trust-browser.json"
+  ],
+  "representation_changes": [
+    {
+      "original": "legacy AST parser and CompilerPlanningProgram",
+      "current": "retained canonical lossless parser and CanonicalSourceFrontend",
+      "evidence": "audit/v04/evidence/trust-original-api-compatibility-failure.log"
+    },
+    {
+      "original": "4ordinary nodes: math/mul,math/add,compare/lt,core/assign",
+      "current": "exact5node sequence:core/assign,math/mul,math/add,compare/lt,core/assign;4originalprimitive identities retained",
+      "evidence": "audit/v04/evidence/trust-native-original-node-shape.log"
+    },
+    {
+      "original": "state and output alias both1at activation",
+      "current": "state initializer1in source and decoded artifacts; derived output compared after accepted publication; initial epoch/output printed",
+      "evidence": "audit/v04/evidence/trust-native-original-initial-output.log"
+    },
+    {
+      "original": "state selected by physical storage class",
+      "current": "state selected by semantic SlotRole::State; aliased derived views may share physical state storage",
+      "evidence": "audit/v04/evidence/trust-native-original-storage-class.log"
+    }
+  ],
+  "browser_extension": {
+    "record": "audit/v04/evidence/trust-browser.json",
+    "outcome": "passed",
+    "cases": 5,
+    "native_record_display": "passed"
+  },
+  "validation_artifacts": {
+    "native": {
+      "path": "/private/tmp/mech-v04-target-product/debug/examples/r-stack-trust-proof",
+      "sha256": "98ad3d6f3af12ea4c8178665da673bf8f57fdfc5e0eec833b08ad405c872b2e4"
+    },
+    "wasm": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194"
+  },
+  "extensions_sha256": {
+    "audit/v04/site/trust.html": "8c508b18b20077b60939ce54f74a36ba86d3ff97830199dc16ec8255b12b61a7",
+    "audit/v04/site/trust.js": "7d5343c4b7b73577e6014f1e748690060e2042ed2d922b5617751fd2095e1567",
+    "audit/v04/check_trust_browser.py": "e64571921588b61412662453801a908ede4f4a5d9e718605fef5dd9daf3e7c8e",
+    "audit/v04/record_trust_evidence.py": "01b9dc08dce6ea5f9f7c02eb31af24311d4ae1339a7495480fbdfaa9e0ed7fde"
+  }
+}

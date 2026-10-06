@@ -1,0 +1,43 @@
+{
+  "diagnostics": [
+    {
+      "code": "syntax/unexpected-document-source",
+      "context": null,
+      "expected": [],
+      "fixes": [],
+      "found": {
+        "kind": "Unknown",
+        "text": ":= 0.125f32\nlaplacian := [-2f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n1f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 1f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 0f32 1f32 -2f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n1f32 0f32 0f32 0f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32\n0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32\n0f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32\n0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 0f32 0f32 0f32 1f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 -2f32 1f32 0f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 1f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 1f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -2f32]\nheater-mask := [0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 1f32; 0f32; 0f32; 0f32; 0f32; 0f32]\n~temperature := [80f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32]\ntemperature = temperature + (laplacian ** temperature) * dt + heater-mask * force-strength\ntemperature\n"
+      },
+      "id": 1,
+      "labels": [],
+      "message": "unexpected source after the canonical document",
+      "phase": "syntax",
+      "primary": {
+        "element": {
+          "Node": 952
+        },
+        "kind": "element",
+        "relative": {
+          "end": 1652,
+          "start": 0
+        }
+      },
+      "recovery": {
+        "at": 2106,
+        "kind": "abandon",
+        "rule": 1111180012
+      },
+      "related": [],
+      "rule": 1111180012,
+      "severity": "error",
+      "tags": 0
+    }
+  ],
+  "source": "@pointer := pointer://pointer/frame{:read(pulse), :read(pressed), :read(delta-seconds)}\n@particles := compute://particles/kernel{:write(input/force-strength), :write(input/dt), :write(turn)}\n@particles/input/force-strength <- @pointer/pressed\n@particles/input/dt <- @pointer/delta-seconds\n@particles/turn <- @pointer/pulse\n\nheat-diffusion @compute\n-------------------------------------------------------------------------------\nforce-strength := 0f32\ndt := 0.125f32\nlaplacian := [-2f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n1f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 1f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 0f32 1f32 -2f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n1f32 0f32 0f32 0f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32 0f32\n0f32 0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32 0f32\n0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 0f32\n0f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 -3f32 1f32 0f32 0f32 1f32 0f32 0f32 0f32\n0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -4f32 1f32 0f32 0f32 1f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 0f32 0f32 0f32 1f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 0f32 -2f32 1f32 0f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 1f32 0f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -3f32 1f32\n0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 0f32 1f32 0f32 0f32 1f32 -2f32]\nheater-mask := [0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 1f32; 0f32; 0f32; 0f32; 0f32; 0f32]\n~temperature := [80f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32; 0f32]\ntemperature = temperature + (laplacian ** temperature) * dt + heater-mask * force-strength\ntemperature\n",
+  "stages": {
+    "parsing": "completed",
+    "semantic_checking": "blocked by strict syntax validation"
+  },
+  "target": "WASM-hosted resident CPU"
+}

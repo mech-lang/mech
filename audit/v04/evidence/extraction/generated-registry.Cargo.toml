@@ -1,0 +1,16 @@
+[package]
+name = "extracted-scalar-add"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[[bin]]
+name = "extracted-scalar-add"
+path = "src/main.rs"
+
+[dependencies]
+mech_core = { package = "mech-core", version = "=0.3.5", default-features = false, features = ["f64", "program"] }
+mech_engine = { package = "mech-engine", version = "=0.3.5", default-features = false, features = ["f64", "runtime"] }
+mech_runtime = { package = "mech-runtime", version = "=0.3.5", default-features = false, features = ["f64", "resident-routing", "runtime", "string"] }

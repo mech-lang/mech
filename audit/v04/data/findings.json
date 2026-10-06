@@ -1,0 +1,305 @@
+{
+  "schema": 1,
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "findings": [
+    {
+      "id": "F-001",
+      "priority": 1,
+      "category": "errors",
+      "title": "Runtime compiler drops semantic source anchors",
+      "locations": [
+        {
+          "path": "src/engine/src/source_semantics/frontend.rs",
+          "start": 603,
+          "end": 615
+        },
+        {
+          "path": "src/runtime/src/runtime/program/compiler.rs",
+          "start": 120,
+          "end": 128
+        },
+        {
+          "path": "src/runtime/src/runtime/program/compiler.rs",
+          "start": 747,
+          "end": 757
+        }
+      ],
+      "observation": "SourceSemanticError owns code, message and document/revision/range. Its Display emits code and message only. ProgramCompiler repeatedly calls error.to_string(), then constructs a MechError with no program_range, annotations or source error.",
+      "consequence": "Public compiler consumers cannot reliably highlight the semantic error source range from this returned error, despite structured evidence existing in the frontend.",
+      "proposed_action": "Add one typed conversion preserving SourceSemanticAnchor and error code through MechError/event/browser serialization; reuse it at compiler handoff sites.",
+      "contracts": [
+        "docs/design/type-system-v1.md \u00a717",
+        "docs/design/canonical-source-boundary.mec"
+      ],
+      "validation": [
+        "Run the same invalid named-binding or interval source directly and through ProgramCompiler; assert identical document, revision, byte range and stable code.",
+        "Render that diagnostic in the real browser and select its source range."
+      ],
+      "evidence_level": "static-trace",
+      "outcome": "verified",
+      "scope": "Semantic error handoffs using canonical_compilation_error(error.to_string()); no claim about unrelated runtime errors.",
+      "revision": {
+        "status": "corrected-and-verified-scoped",
+        "files": [
+          "src/engine/src/source_semantics/frontend.rs",
+          "src/runtime/src/runtime/program/compiler.rs",
+          "src/runtime/tests/canonical_semantic_diagnostics.rs"
+        ],
+        "baseline_result": "audit/v04/evidence/semantic-diagnostic-baseline.json",
+        "scope": "Audited frontend compilation/binding handoffs now retain typed SourceSemanticError; matching retained documents project one-based source range. Other flattened error families and unreviewed handoffs remain outside this correction.",
+        "validation": [
+          "audit/v04/evidence/canonical-semantic-diagnostics.log",
+          "audit/v04/evidence/type-inspection-native-final.log",
+          "audit/v04/evidence/types-browser.json"
+        ],
+        "actual": "Native product regression preserves direct semantic identity and Unicode byte/range projection; WASM product handoff preserves the same code/range; diagnostic selection highlights exact source text10."
+      }
+    },
+    {
+      "id": "F-002",
+      "priority": 1,
+      "category": "historical-commitment",
+      "title": "Baseline editor path performs full-document parsing against an original fragment-reparse commitment",
+      "locations": [
+        {
+          "path": "src/syntax/src/document/incremental/reparse.rs",
+          "start": 27,
+          "end": 36
+        },
+        {
+          "path": "docs/design/incremental-syntax-architecture.mec",
+          "start": 171,
+          "end": 215
+        }
+      ],
+      "observation": "Ancestor 63414c821 \u00a78 specifies smallest intersecting restart root, fragment splice validation and document root as fallback. Baseline reparse always invokes the full document parser then reconciles identities; current documentation explicitly calls fragment optimization future work.",
+      "consequence": "Identity reuse measures retained syntax identity; parser work remains full-document. The original engineering commitment requires an explicit scope decision or an implementation and qualification effort.",
+      "proposed_action": "Keep the discrepancy visible; demonstrate measured full-parse and reconciliation counters. Resolve the accepted scope before implementing a fragment optimizer.",
+      "contracts": [
+        "63414c821:docs/design/incremental-syntax-architecture.mec \u00a78",
+        "docs/design/incremental-syntax-architecture.mec \u00a78"
+      ],
+      "validation": [
+        "Record actual parser extent for a one-character edit in a larger document.",
+        "If fragment reparsing is delivered, compare full structure, diagnostics, IDs and resource behavior with independent grammar fixtures and canonical full parse."
+      ],
+      "evidence_level": "history-and-static-trace",
+      "outcome": "verified",
+      "scope": "Baseline DocumentSession edit path; retained streaming continuation is a separate capability."
+    },
+    {
+      "id": "F-003",
+      "priority": 2,
+      "category": "duplication",
+      "title": "Frontend manually repeats scalar and optional scalar mapping tables",
+      "locations": [
+        {
+          "path": "src/engine/src/source_semantics/frontend.rs",
+          "start": 1173,
+          "end": 1543
+        },
+        {
+          "path": "src/core/src/type_system/builtin.rs",
+          "start": 1,
+          "end": 354
+        }
+      ],
+      "observation": "BuiltinSchema duplicates each scalar and an Option scalar variant, and schema_body, builtin_kind, option_schema, option_payload_schema repeat conversions. Core already owns BuiltinScalarKind and its schema registry.",
+      "consequence": "Adding a scalar or changing the representation requires synchronized frontend tables, and nested options require additional general-schema paths.",
+      "proposed_action": "Represent frontend scalar payloads with the core scalar identity and a structural Option wrapper where needed. Preserve Dynamic/Index and general aggregate schema cases explicitly.",
+      "contracts": [
+        "docs/design/type-system-v1.md \u00a73",
+        "docs/design/canonical-source-boundary.mec option preservation"
+      ],
+      "validation": [
+        "Run scalar registry, nested option, live option, Dynamic boxing and schema roundtrip suites under full and selected profiles.",
+        "Measure added and deleted physical source lines, with file moves accounted for separately."
+      ],
+      "evidence_level": "static-inspection",
+      "outcome": "verified",
+      "scope": "Duplication and change coupling only; no incorrect runtime result established."
+    },
+    {
+      "id": "F-004",
+      "priority": 2,
+      "category": "tests",
+      "title": "Architecture gates depend on exact implementation spelling",
+      "locations": [
+        {
+          "path": "scripts/check-semantic-type-authority.py",
+          "start": 167,
+          "end": 199
+        },
+        {
+          "path": "scripts/check-production-resident-routing.py",
+          "start": 288,
+          "end": 304
+        }
+      ],
+      "observation": "Checks require exact substrings such as plan: Rc<CallMemoryPlan>, a specific public field declaration, and named struct declarations to infer ownership.",
+      "consequence": "A semantically equivalent type alias or formatting change can fail. Behavioral authority and ownership require API or execution checks.",
+      "proposed_action": "Retain useful forbidden-boundary scans and move positive authority checks to compile-time public API/visibility tests and behavioral certificate assertions.",
+      "contracts": [
+        "docs/design/semantic-type-authority.md",
+        "docs/architecture/interactive-runtime.md"
+      ],
+      "validation": [
+        "Introduce controlled equivalent spelling changes and invalid ownership examples; strong gates should accept the former and reject the latter.",
+        "Run existing sealed-API/BoundCall behavior suites and checker self-tests."
+      ],
+      "evidence_level": "static-inspection",
+      "outcome": "verified",
+      "scope": "The recommendation covers the sampled positive-string checks."
+    },
+    {
+      "id": "F-005",
+      "priority": 2,
+      "category": "validation-configuration",
+      "title": "Feature-gated integration targets can return success after zero tests",
+      "locations": [
+        {
+          "path": "src/core/tests/memory_runtime.rs",
+          "start": 1,
+          "end": 1
+        },
+        {
+          "path": "src/core/tests/canonical_type_contract.rs",
+          "start": 1,
+          "end": 1
+        }
+      ],
+      "observation": "Both test binaries exited successfully with --no-default-features while running zero tests. Their crate-level cfg requires functions and full respectively.",
+      "consequence": "An audit or CI command can record a green process without exercising its claimed contract.",
+      "proposed_action": "Use maintained explicit feature profiles and record/assert nonzero expected case counts for contract runs; consider required-features metadata where supported.",
+      "contracts": [
+        "tests/architecture/distributions/profile-contracts.json",
+        "docs/design/memory-runtime.md \u00a713"
+      ],
+      "validation": [
+        "Preserve zero-test logs, rerun with full, and report actual test counts separately from exit codes."
+      ],
+      "evidence_level": "native-execution",
+      "outcome": "verified",
+      "scope": "Two commands in this audit; no claim that maintained CI currently omits their features."
+    },
+    {
+      "id": "F-006",
+      "priority": 3,
+      "category": "documentation",
+      "title": "Several handoff comments describe a completed canonical cutover as pending",
+      "locations": [
+        {
+          "path": "src/wasm/src/canonical_document.rs",
+          "start": 1,
+          "end": 10
+        },
+        {
+          "path": "src/runtime/src/runtime/program/compiler.rs",
+          "start": 416,
+          "end": 425
+        }
+      ],
+      "observation": "Comments still describe a prepared browser cutover and future coordinated C route switch, while current callers and source-boundary contract use canonical ownership.",
+      "consequence": "Readers may search for an obsolete alternative bootstrap or misidentify the active canonical public entry points.",
+      "proposed_action": "Replace historical migration comments with current ownership statements after checking callers; preserve historical rationale in git history.",
+      "contracts": [
+        "docs/design/canonical-source-boundary.mec"
+      ],
+      "validation": [
+        "Trace all public callers and run relevant source boundary/wasm document tests."
+      ],
+      "evidence_level": "static-inspection",
+      "outcome": "verified",
+      "scope": "Documentation correction; no unused implementation declaration."
+    },
+    {
+      "id": "F-007",
+      "priority": 1,
+      "category": "ownership-contract",
+      "title": "Engine resident arithmetic qualifies the standard-library ownership contract",
+      "locations": [
+        {
+          "path": "docs/design/static-stdlib-composition.md",
+          "start": 98,
+          "end": 103
+        },
+        {
+          "path": "src/engine/src/function/catalog.rs",
+          "start": 23,
+          "end": 43
+        },
+        {
+          "path": "src/engine/src/resident/numeric/mod.rs",
+          "start": 688,
+          "end": 723
+        },
+        {
+          "path": "src/engine/src/resident/general/mod.rs",
+          "start": 4413,
+          "end": 4428
+        },
+        {
+          "path": "src/build/tests/native_scalar.rs",
+          "start": 12,
+          "end": 86
+        }
+      ],
+      "observation": "The composition contract categorically assigns math/add implementation to the selected machine. The engine resident installer registers math/add and other arithmetic operations, and the general resident planner recognizes their canonical identities. The maintained native scalar fixture expects math/add execution with generated dependencies limited to core, engine and runtime.",
+      "consequence": "Extraction retains resident arithmetic in Mech. A successful resident scalar-add artifact qualifies that engine path; qualification of an external machine implementation requires a direct factory execution path.",
+      "proposed_action": "Reconcile the composition contract with the resident lowering boundary. Account for machine factories and resident arithmetic separately in extraction totals and behavioral evidence.",
+      "contracts": [
+        "docs/design/static-stdlib-composition.md",
+        "src/build/tests/native_scalar.rs"
+      ],
+      "validation": [
+        "Record the generated scalar-add application dependency plan and completed output.",
+        "Execute the externally owned machine factory through FunctionCatalog on changed inputs.",
+        "Retain source-contract, bytecode, resident and direct-factory evidence as separate records."
+      ],
+      "evidence_level": "static-trace-and-test-source-inspection",
+      "outcome": "verified",
+      "scope": "Concrete resident math/add registration and native fixture contract. Extraction packet owns executed plan and external-factory evidence."
+    },
+    {
+      "id": "F-008",
+      "priority": 2,
+      "category": "capability-boundary",
+      "classification": "documented-capability-limit",
+      "title": "Interval arithmetic requires a separate numeric contract",
+      "locations": [
+        {
+          "path": "docs/design/grammar-audit/fixed-integer-intervals.md",
+          "start": 27,
+          "end": 53
+        },
+        {
+          "path": "src/core/tests/type_system_builtin.rs",
+          "start": 239,
+          "end": 294
+        },
+        {
+          "path": "src/engine/src/source_semantics/frontend.rs",
+          "start": 3696,
+          "end": 3724
+        }
+      ],
+      "observation": "The inventory prototype attempts arithmetic on an IntegerInterval and receives source-semantics/non-numeric-arithmetic-kind. The original interval contract at61d0203aa excludes implicit source widening. The edcd11eef predicate correction explicitly excludes numeric/arithmetic/range-endpoint capabilities; the maintained contract grants Equatable,Keyable,Ordered. Core predicate tests assert the remaining capabilities false.",
+      "consequence": "Interval schemas support checked admission, exact identity, comparison and protected publication. Direct arithmetic on interval values stops at semantic checking. The inventory example uses base i64 arithmetic with explicit integrity constraints.",
+      "proposed_action": "Preserve the rejection as an explicit demo case. Any future interval arithmetic feature needs a separate contract for widening,result kinds,bounds and overflow before implementation.",
+      "contracts": [
+        "61d0203aa:docs/design/grammar-audit/r15-fixed-integer-intervals.md",
+        "edcd11eef:docs/design/grammar-audit/r15-fixed-integer-intervals.md",
+        "docs/design/grammar-audit/fixed-integer-intervals.md"
+      ],
+      "validation": [
+        "Retain native inventory rejection with source code and exact diagnostic.",
+        "Verify browser interval arithmetic rejects at semantic checking with a source range.",
+        "Retain core predicate agreement checks for directly constructed and schema-derived intervals."
+      ],
+      "evidence_level": "history,contract,test-source and native rejection",
+      "outcome": "verified",
+      "scope": "Supported fixed-integer-interval form; this finding records its arithmetic capability boundary.",
+      "result_location": "audit/v04/evidence/interval-arithmetic-contract.json"
+    }
+  ]
+}

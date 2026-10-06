@@ -1,0 +1,16 @@
+    Checking num-bigint v0.4.8
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+    Checking num-rational v0.4.2
+    Checking nalgebra v0.34.2
+    Checking mech-core v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/core)
+    Checking mech-math v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/math)
+    Checking mech-set v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/set)
+    Checking mech-matrix v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/matrix)
+    Checking mech-string v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/string)
+    Checking mech-logic v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/logic)
+    Checking mech-combinatorics v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/combinatorics)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/engine)
+    Checking mech-range v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/range)
+    Checking mech-compare v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/compare)
+    Checking mech-stats v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/stats)
+    Finished `dev` profile [unoptimized] target(s) in 5m 12s

@@ -1,0 +1,172 @@
+scripts/check-bytecode-compiler-boundaries.sh:16:machine_manifest="$repository_root/machines/math/Cargo.toml"
+scripts/check-function-system-contracts.sh:28:    --manifest-path "$repository_root/src/stdlib/Cargo.toml" \
+scripts/check-native-linkage-coverage.py:23:STDLIB_PROFILE_CONTRACT = ROOT / "src/stdlib/tests/profile_contracts.rs"
+scripts/check-native-linkage-coverage.py:44:    "mech-math": (ROOT / "machines/math/Cargo.toml", "extended-math", "full_runtime"),
+scripts/check-native-linkage-coverage.py:45:    "mech-compare": (ROOT / "machines/compare/Cargo.toml", "extended-compare", "full_runtime"),
+scripts/check-native-linkage-coverage.py:46:    "mech-logic": (ROOT / "machines/logic/Cargo.toml", "extended-logic", "full_runtime"),
+scripts/check-native-linkage-coverage.py:47:    "mech-range": (ROOT / "machines/range/Cargo.toml", "extended-range", "full_runtime"),
+scripts/check-native-linkage-coverage.py:48:    "mech-matrix": (ROOT / "machines/matrix/Cargo.toml", "extended-matrix", "full_runtime"),
+scripts/check-native-linkage-coverage.py:49:    "mech-set": (ROOT / "machines/set/Cargo.toml", "extended-set", "full_runtime"),
+scripts/check-native-linkage-coverage.py:50:    "mech-string": (ROOT / "machines/string/Cargo.toml", "extended-string", "full_runtime"),
+scripts/check-native-linkage-coverage.py:51:    "mech-stats": (ROOT / "machines/stats/Cargo.toml", "extended-stats", "full_runtime"),
+scripts/check-native-linkage-coverage.py:53:        ROOT / "machines/combinatorics/Cargo.toml",
+scripts/check-standard-machine-library-tests.sh:18:        --manifest-path "$repository_root/machines/$machine/Cargo.toml" \
+scripts/check-standard-machine-library-tests.sh:26:        --manifest-path "$repository_root/machines/$machine/Cargo.toml" \
+scripts/check-package-archives.py:20:    "mech-math": ROOT / "machines/math/Cargo.toml",
+scripts/check-package-archives.py:21:    "mech-compare": ROOT / "machines/compare/Cargo.toml",
+scripts/check-package-archives.py:22:    "mech-logic": ROOT / "machines/logic/Cargo.toml",
+scripts/check-package-archives.py:23:    "mech-range": ROOT / "machines/range/Cargo.toml",
+scripts/check-package-archives.py:24:    "mech-matrix": ROOT / "machines/matrix/Cargo.toml",
+scripts/check-package-archives.py:25:    "mech-set": ROOT / "machines/set/Cargo.toml",
+scripts/check-package-archives.py:26:    "mech-string": ROOT / "machines/string/Cargo.toml",
+scripts/check-package-archives.py:27:    "mech-stats": ROOT / "machines/stats/Cargo.toml",
+scripts/check-package-archives.py:28:    "mech-combinatorics": ROOT / "machines/combinatorics/Cargo.toml",
+scripts/check-memory-runtime.py:33:    "machines/string/src/lib.rs",
+scripts/check-memory-runtime.py:34:    "machines/matrix/src/transpose.rs",
+scripts/check-memory-runtime.py:35:    "machines/set/src/canonical.rs",
+scripts/check-memory-runtime.py:36:    "machines/set/src/operations/union.rs",
+scripts/check-memory-runtime.py:74:    "src/stdlib/tests/managed_functions.rs",
+scripts/check-memory-runtime.py:622:    string_runtime = rust_code(sources.get("machines/string/src/lib.rs", ""))
+scripts/check-memory-runtime.py:630:    set_runtime = rust_code(sources.get("machines/set/src/canonical.rs", ""))
+scripts/check-memory-runtime.py:631:    set_union = rust_code(sources.get("machines/set/src/operations/union.rs", ""))
+scripts/check-memory-runtime.py:645:    matrix_transpose = rust_code(sources.get("machines/matrix/src/transpose.rs", ""))
+scripts/check-semantic-type-authority.py:28:    "src/stdlib/tests/canonical_type_contract.rs",
+scripts/check-semantic-type-authority.py:70:    "src/stdlib", "machines/combinatorics", "machines/compare", "machines/logic",
+scripts/check-semantic-type-authority.py:71:    "machines/math", "machines/matrix", "machines/range", "machines/set",
+scripts/check-semantic-type-authority.py:72:    "machines/stats", "machines/string",
+scripts/check-semantic-type-authority.py:74:TEST_ONLY_ALLOWLIST = {"src/stdlib/tests/canonical_type_contract.rs"}
+scripts/check-standard-machine-baseline.sh:33:for manifest in "$repository_root"/machines/*/Cargo.toml
+scripts/check-standard-machine-baseline.sh:47:  manifest="$repository_root/machines/$machine/Cargo.toml"
+scripts/check-standard-machine-baseline.sh:204:mech-math = { path = "$repository_root/machines/math", default-features = false, features = ["runtime", "f64", "add"] }
+scripts/check-standard-machine-baseline.sh:235:mech-math = { path = "$repository_root/machines/math", default-features = false, features = ["runtime", "f64", "add"] }
+scripts/check-standard-machine-baseline.sh:268:mech-math = { path = "$repository_root/machines/math", default-features = false, features = ["compiler", "f64", "add"] }
+scripts/check-standard-machine-baseline.sh:302:mech-math = { path = "$repository_root/machines/math", default-features = false, features = ["runtime", "f64", "add"] }
+scripts/check-type-system.py:43:    "src/stdlib/tests/type_system_source.rs",
+src/build/src/project/manifest.rs:671:            "machines/math",
+src/build/src/project/manifest.rs:678:                workspace_relative_path: PathBuf::from("machines/math")
+scripts/check-memory-planner.py:51:    "src/stdlib/tests/memory_contract.rs",
+scripts/check-memory-planner.py:89:    "src/stdlib/src",
+tests/architecture/value-execution/legacy-boundary.json:110:        { "path": "machines/combinatorics/src/n_choose_k.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+tests/architecture/value-execution/legacy-boundary.json:111:        { "path": "machines/compare/src/eq.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+tests/architecture/value-execution/legacy-boundary.json:112:        { "path": "machines/compare/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:113:        { "path": "machines/compare/src/neq.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+tests/architecture/value-execution/legacy-boundary.json:114:        { "path": "machines/compare/src/seq.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:115:        { "path": "machines/compare/src/sneq.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:116:        { "path": "machines/logic/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:117:        { "path": "machines/logic/src/not.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+tests/architecture/value-execution/legacy-boundary.json:118:        { "path": "machines/math/src/arithmetic/copysign.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:119:        { "path": "machines/math/src/arithmetic/fdim.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:120:        { "path": "machines/math/src/arithmetic/fmod.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:121:        { "path": "machines/math/src/arithmetic/nextafter.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:122:        { "path": "machines/math/src/arithmetic/remainder.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:123:        { "path": "machines/math/src/bessel/jn.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:124:        { "path": "machines/math/src/bessel/yn.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:125:        { "path": "machines/math/src/op_assign/mod.rs", "scope_contains": "<file>", "max_occurrences": 5 },
+tests/architecture/value-execution/legacy-boundary.json:126:        { "path": "machines/math/src/ops/div.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:127:        { "path": "machines/math/src/ops/mod.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:128:        { "path": "machines/math/src/ops/modulus.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:129:        { "path": "machines/math/src/ops/negate.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+tests/architecture/value-execution/legacy-boundary.json:130:        { "path": "machines/math/src/ops/pow.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+tests/architecture/value-execution/legacy-boundary.json:131:        { "path": "machines/math/src/trig/atan2.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:132:        { "path": "machines/matrix/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:133:        { "path": "machines/matrix/src/solve.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:134:        { "path": "machines/matrix/src/transpose.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:135:        { "path": "machines/range/src/exclusive.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:136:        { "path": "machines/range/src/exclusive_increment.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:137:        { "path": "machines/range/src/inclusive.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:138:        { "path": "machines/range/src/inclusive_increment.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:139:        { "path": "machines/set/src/membership/element_of.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:140:        { "path": "machines/set/src/membership/not_element_of.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:141:        { "path": "machines/set/src/modify/insert.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:142:        { "path": "machines/set/src/modify/remove.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:143:        { "path": "machines/set/src/operations/cartesian_product.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:144:        { "path": "machines/set/src/operations/difference.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:145:        { "path": "machines/set/src/operations/intersection.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:146:        { "path": "machines/set/src/operations/powerset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:147:        { "path": "machines/set/src/operations/symmetric_difference.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:148:        { "path": "machines/set/src/operations/union.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:149:        { "path": "machines/set/src/relations/disjoint.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:150:        { "path": "machines/set/src/relations/equals.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:151:        { "path": "machines/set/src/relations/not_equals.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:152:        { "path": "machines/set/src/relations/proper_subset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:153:        { "path": "machines/set/src/relations/proper_superset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:154:        { "path": "machines/set/src/relations/subset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:155:        { "path": "machines/set/src/relations/superset.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:156:        { "path": "machines/set/src/setdata/size.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:157:        { "path": "machines/stats/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:158:        { "path": "machines/stats/src/sum_column.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:159:        { "path": "machines/string/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
+tests/architecture/value-execution/legacy-boundary.json:162:        { "path": "src/core/src/stdlib.rs", "scope_contains": "<file>", "max_occurrences": 2 },
+src/build/src/dependency/workspace.rs:178:            validate_workspace_relative_path("machines/math/src/lib.rs").unwrap(),
+src/build/src/dependency/workspace.rs:179:            PathBuf::from("machines/math/src/lib.rs")
+src/build/src/dependency/workspace.rs:182:            workspace_path_string(Path::new("machines/math/src/lib.rs")).unwrap(),
+src/build/src/dependency/workspace.rs:183:            "machines/math/src/lib.rs"
+src/build/src/dependency/workspace.rs:190:            "machines/../math",
+src/build/src/dependency/workspace.rs:203:        let mut package = WorkspacePackage::new("mech-math", "mech_math", "machines/math").unwrap();
+src/build/src/dependency/registry.rs:101:            "machines/combinatorics",
+src/build/src/dependency/registry.rs:103:        ("mech-compare", "mech_compare", "machines/compare"),
+src/build/src/dependency/registry.rs:112:        ("mech-logic", "mech_logic", "machines/logic"),
+src/build/src/dependency/registry.rs:113:        ("mech-math", "mech_math", "machines/math"),
+src/build/src/dependency/registry.rs:114:        ("mech-matrix", "mech_matrix", "machines/matrix"),
+src/build/src/dependency/registry.rs:115:        ("mech-range", "mech_range", "machines/range"),
+src/build/src/dependency/registry.rs:117:        ("mech-set", "mech_set", "machines/set"),
+src/build/src/dependency/registry.rs:118:        ("mech-stats", "mech_stats", "machines/stats"),
+src/build/src/dependency/registry.rs:119:        ("mech-string", "mech_string", "machines/string"),
+src/build/src/dependency/registry.rs:160:            .insert(WorkspacePackage::new("mech-math", "mech_math", "machines/math").unwrap())
+src/build/src/dependency/fingerprint.rs:782:            fs::create_dir_all(root.join("machines/math/src")).unwrap();
+src/build/src/dependency/fingerprint.rs:796:                root.join("machines/math/Cargo.toml"),
+src/build/src/dependency/fingerprint.rs:801:                root.join("machines/math/src/lib.rs"),
+src/build/src/dependency/fingerprint.rs:805:            fs::create_dir_all(root.join("machines/math/assets")).unwrap();
+src/build/src/dependency/fingerprint.rs:806:            fs::write(root.join("machines/math/assets/data.bin"), b"resource-v1").unwrap();
+src/build/src/dependency/fingerprint.rs:818:        WorkspacePackage::new("mech-math", "mech_math", "machines/math").unwrap()
+src/build/src/dependency/fingerprint.rs:825:        fs::create_dir_all(left.0.join("machines/unselected/src")).unwrap();
+src/build/src/dependency/fingerprint.rs:827:            left.0.join("machines/unselected/src/lib.rs"),
+src/build/src/dependency/fingerprint.rs:943:            workspace.0.join("machines/math/assets/data.bin"),
+src/build/src/dependency/fingerprint.rs:951:            workspace.0.join("machines/math/src/lib.rs"),
+src/build/src/dependency/fingerprint.rs:997:            fs::write(workspace.0.join("machines/math/src/lib.rs"), source).unwrap();
+src/build/src/dependency/fingerprint.rs:1000:                workspace.0.join("machines/math/assets/data.bin"),
+src/build/src/dependency/fingerprint.rs:1016:            workspace.0.join("machines/math/src/lib.rs"),
+src/build/src/dependency/fingerprint.rs:1020:        fs::create_dir_all(workspace.0.join("machines/math/generated")).unwrap();
+src/build/src/dependency/fingerprint.rs:1022:            workspace.0.join("machines/math/generated/catalog.rs"),
+src/build/src/dependency/fingerprint.rs:1029:            workspace.0.join("machines/math/generated/catalog.rs"),
+src/build/src/dependency/fingerprint.rs:1041:            workspace.0.join("machines/math/src/lib.rs"),
+src/build/src/dependency/fingerprint.rs:1045:        fs::create_dir_all(workspace.0.join("machines/math/generated/nested")).unwrap();
+src/build/src/dependency/fingerprint.rs:1047:            workspace.0.join("machines/math/generated/module.rs"),
+src/build/src/dependency/fingerprint.rs:1052:            workspace.0.join("machines/math/generated/nested/child.rs"),
+src/build/src/dependency/fingerprint.rs:1059:            workspace.0.join("machines/math/generated/module.rs"),
+src/build/src/dependency/fingerprint.rs:1070:            workspace.0.join("machines/math/generated/nested/child.rs"),
+src/build/src/dependency/fingerprint.rs:1085:            workspace.0.join("machines/math/src/lib.rs"),
+src/build/src/dependency/fingerprint.rs:1102:        fs::create_dir_all(custom_library.0.join("machines/math/generated")).unwrap();
+src/build/src/dependency/fingerprint.rs:1104:            custom_library.0.join("machines/math/generated/lib.rs"),
+src/build/src/dependency/fingerprint.rs:1109:            custom_library.0.join("machines/math/Cargo.toml"),
+src/build/src/dependency/fingerprint.rs:1119:        fs::create_dir_all(custom_build.0.join("machines/math/tools")).unwrap();
+src/build/src/dependency/fingerprint.rs:1121:            custom_build.0.join("machines/math/tools/build.rs"),
+src/build/src/dependency/fingerprint.rs:1126:            custom_build.0.join("machines/math/Cargo.toml"),
+src/build/src/dependency/fingerprint.rs:1140:            workspace.0.join("machines/math/Cargo.toml"),
+src/build/src/dependency/fingerprint.rs:1145:            workspace.0.join("machines/math/build.rs"),
+src/build/src/dependency/fingerprint.rs:1152:            workspace.0.join("machines/math/build.rs"),
+src/build/src/dependency/fingerprint.rs:1168:            fs::write(workspace.0.join("machines/math/Cargo.toml"), manifest).unwrap();
+src/build/src/dependency/fingerprint.rs:1170:                workspace.0.join("machines/math/build.rs"),
+src/build/src/dependency/fingerprint.rs:1189:            workspace.0.join("machines/math/src/lib.rs"),
+src/build/src/dependency/fingerprint.rs:1193:        fs::create_dir_all(workspace.0.join("machines/math/generated")).unwrap();
+src/build/src/dependency/fingerprint.rs:1195:            workspace.0.join("machines/math/generated/catalog.rs"),
+src/build/src/dependency/fingerprint.rs:1200:            workspace.0.join("machines/math/generated/generated.txt"),
+src/build/src/dependency/fingerprint.rs:1207:            workspace.0.join("machines/math/generated/generated.txt"),
+src/build/src/dependency/fingerprint.rs:1222:            workspace.0.join("machines/math/src/lib.rs"),
+src/build/src/dependency/fingerprint.rs:1228:        symlink(&outside, workspace.0.join("machines/math/generated.rs")).unwrap();
+src/build/src/dependency/fingerprint.rs:1245:            workspace.0.join("machines/math/src/lib.rs"),
+src/build/src/dependency/fingerprint.rs:1259:            workspace.0.join("machines/math/assets/data.bin"),
+src/build/src/dependency/fingerprint.rs:1273:        fs::create_dir_all(workspace.0.join("machines/math/shared-source")).unwrap();
+src/build/src/dependency/fingerprint.rs:1275:            workspace.0.join("machines/math/shared-source/linked.rs"),
+src/build/src/dependency/fingerprint.rs:1281:            workspace.0.join("machines/math/src/linked"),
+src/build/src/dependency/fingerprint.rs:1292:        assert!(error.kind_message().contains("machines/math/src/linked"));
+src/build/Cargo.toml:51:mech-stdlib = { version = "0.3.5", path = "../stdlib", default-features = false, features = ["native-plan", "full_compiler"] }
+src/build/tests/registry_generated_project.rs:443:        ("mech-math", "machines/math"),
+src/build/tests/registry_generated_project.rs:444:        ("mech-compare", "machines/compare"),
+src/build/tests/registry_generated_project.rs:445:        ("mech-logic", "machines/logic"),
+src/build/tests/registry_generated_project.rs:446:        ("mech-range", "machines/range"),
+src/build/tests/registry_generated_project.rs:447:        ("mech-matrix", "machines/matrix"),
+src/build/tests/registry_generated_project.rs:448:        ("mech-set", "machines/set"),
+src/build/tests/registry_generated_project.rs:449:        ("mech-string", "machines/string"),
+src/build/tests/registry_generated_project.rs:450:        ("mech-stats", "machines/stats"),
+src/build/tests/registry_generated_project.rs:451:        ("mech-combinatorics", "machines/combinatorics"),

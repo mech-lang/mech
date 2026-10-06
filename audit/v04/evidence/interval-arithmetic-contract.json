@@ -1,0 +1,74 @@
+{
+  "id": "E-INTERVAL-ARITHMETIC-CONTRACT",
+  "claim": "Fixed integer interval arithmetic rejection follows the original conversion boundary and explicit predicate contract",
+  "evidence_level": "history-and-contract-review",
+  "outcome": "verified",
+  "classification": "documented-capability-limit",
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "records": [
+    {
+      "revision": "61d0203aa96e70d44f83c58d29cb4f5296e7cf0a",
+      "path": "docs/design/grammar-audit/r15-fixed-integer-intervals.md",
+      "sha256": "dea5cc9b74742cce9e7d320580fc3ebc4af0ac8eee8f3f814bd2dc5f9cafa949",
+      "relevant_lines": [
+        {
+          "line": 26,
+          "text": "layer, but source typing does not implicitly widen it. Different intervals"
+        }
+      ]
+    },
+    {
+      "revision": "edcd11eef9603b6629011ce3edca74670270e9a8",
+      "path": "docs/design/grammar-audit/r15-fixed-integer-intervals.md",
+      "sha256": "648a69a9e3b17ce54e1f4333deac2755546061a63df5dc0ce200a866f32e0a9c",
+      "relevant_lines": [
+        {
+          "line": 26,
+          "text": "layer, but source typing does not implicitly widen it. Different intervals"
+        },
+        {
+          "line": 44,
+          "text": "the schema-derived path. The correction assigns `Equatable`, `Keyable`, and"
+        },
+        {
+          "line": 45,
+          "text": "`Ordered` to valid intervals in the shared intrinsic predicate classifier,"
+        },
+        {
+          "line": 48,
+          "text": "remains schema-authoritative. This does not grant numeric, arithmetic, or"
+        },
+        {
+          "line": 49,
+          "text": "range-endpoint capabilities and does not change implicit narrowing/widening."
+        }
+      ]
+    },
+    {
+      "revision": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "path": "docs/design/grammar-audit/fixed-integer-intervals.md",
+      "sha256": "70d2776e26d326822df9a1531fe624c0269bf94ecd780f85ee21a2459b89de0e",
+      "relevant_lines": [
+        {
+          "line": 10,
+          "text": "subtyping, or arithmetic result-bound inference; those need separate contracts."
+        },
+        {
+          "line": 30,
+          "text": "layer, but source typing does not implicitly widen it. Different intervals"
+        },
+        {
+          "line": 48,
+          "text": "Valid intervals are Equatable, Keyable, and Ordered whether constructed directly"
+        },
+        {
+          "line": 49,
+          "text": "or derived from a schema. They do not gain Number, arithmetic promotion, or"
+        }
+      ]
+    }
+  ],
+  "native_rejection": "audit/v04/evidence/extraction/native-inventory-initial.log",
+  "browser_rejection": "audit/v04/evidence/types-browser.json",
+  "core_test": "src/core/tests/type_system_builtin.rs:239"
+}

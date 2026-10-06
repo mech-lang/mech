@@ -1,0 +1,46 @@
+{
+  "baseline": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "destination": "/private/tmp/mech-v04-extraction-reproduction",
+  "moves": [
+    [
+      "src/stdlib",
+      "stdlib"
+    ],
+    [
+      "machines",
+      "machines"
+    ]
+  ],
+  "changed_manifests": [
+    "mech/Cargo.toml",
+    "mech/hosts/gpu/Cargo.toml",
+    "mech/hosts/scene/Cargo.toml",
+    "mech/src/build/Cargo.toml",
+    "mech/src/runtime/Cargo.toml",
+    "mech/src/wasm/Cargo.toml",
+    "mech/tests/fixtures/bytecode-compiler-producer/Cargo.toml",
+    "mech/tests/fixtures/bytecode-runtime-consumer/Cargo.toml",
+    "mech/tests/fixtures/bytecode-v1-fixed-generator/Cargo.toml",
+    "mech/tests/fixtures/bytecode-v1-source-generator/Cargo.toml",
+    "mech/tests/fixtures/full-bytecode-runtime/Cargo.toml",
+    "mech/tests/fixtures/full-source-runtime/Cargo.toml",
+    "mech/tests/fixtures/native-build-owner-runner/Cargo.toml",
+    "mech/tests/fixtures/native-linkage/Cargo.toml",
+    "mech/tests/fixtures/resident-nbody-conformance/Cargo.toml",
+    "external/machines/combinatorics/Cargo.toml",
+    "external/machines/compare/Cargo.toml",
+    "external/machines/logic/Cargo.toml",
+    "external/machines/math/Cargo.toml",
+    "external/machines/matrix/Cargo.toml",
+    "external/machines/range/Cargo.toml",
+    "external/machines/set/Cargo.toml",
+    "external/machines/stats/Cargo.toml",
+    "external/machines/string/Cargo.toml",
+    "external/stdlib/Cargo.toml"
+  ],
+  "old_paths_absent": true,
+  "production_rust_changes": 0,
+  "added_rust_lines": 0,
+  "deleted_rust_lines": 0,
+  "fixture_portability": "stdlib integration tests still reference root fixtures; preserved as a known independent-test packaging failure"
+}

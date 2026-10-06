@@ -1,0 +1,56 @@
+{
+  "records": [
+    {
+      "id": "E-NATIVE-NBODY-TWO",
+      "claim": "two-body retained timer/scene source executes two accepted native turns and agrees with independent scalar reference",
+      "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+      "artifact_identity": {
+        "sha256": "6affa3782984c67203c099421a15e7f8acedcb9264aa41c1ed1501915a50b747",
+        "bytes": 379734920
+      },
+      "configuration": {
+        "features": "default,compute_backends_native",
+        "profile": "dev",
+        "target": "aarch64-apple-darwin"
+      },
+      "environment": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "command": "/private/tmp/mech-v04-target-product/debug/mech run audit/v04/site/fixtures/nbody-two --runtime-info --max-live-turns 2",
+      "input_or_seed": "688e2b9319385c9149897d8601a649b693165f27b32fda9911375349e3286261",
+      "expected_outcome": [
+        3.000050188748086e-07,
+        1.0001503037934954e-09,
+        0.0,
+        0.9996999949811252,
+        0.019998999849696206,
+        0.0
+      ],
+      "actual_outcome": [
+        3.000050188748086e-07,
+        1.0001503037934954e-09,
+        0.0,
+        0.9996999949811252,
+        0.019998999849696206,
+        0.0
+      ],
+      "maximum_absolute_error": 0.0,
+      "absolute_tolerance": 1e-12,
+      "runtime_info": {
+        "coalesced_host_packets": 0,
+        "effects": 1,
+        "ignored_host_packets": 0,
+        "layout_generation": 1,
+        "observations": 1,
+        "plan_generation": 1,
+        "program_revision": "7b9e54f77aea4aad1ef6d443ba1d7b606fb11dd940367e8644bc7c199889c904",
+        "requirements": 2,
+        "resident_accepted_turns": 2,
+        "resident_rejected_turns": 0,
+        "route": "resident-external",
+        "routing_policy": "require-resident"
+      },
+      "evidence_level": "native-execution-and-independent-reference",
+      "outcome": "passed",
+      "result_location": "audit/v04/evidence/native-nbody-two.log"
+    }
+  ]
+}

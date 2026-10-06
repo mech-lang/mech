@@ -1,0 +1,19 @@
+[package]
+name = "extraction-native-probe"
+version = "0.0.0"
+edition = "2024"
+[dependencies]
+mech-core = { path = "../mech/src/core", default-features = false }
+mech-build = { path = "../mech/src/build", default-features = false }
+mech-stdlib = { path = "../external/stdlib", default-features = false, features = ["runtime", "f64", "math_add"] }
+[patch.crates-io]
+mech-combinatorics = { path = "../external/machines/combinatorics" }
+mech-compare = { path = "../external/machines/compare" }
+mech-logic = { path = "../external/machines/logic" }
+mech-math = { path = "../external/machines/math" }
+mech-matrix = { path = "../external/machines/matrix" }
+mech-range = { path = "../external/machines/range" }
+mech-set = { path = "../external/machines/set" }
+mech-stats = { path = "../external/machines/stats" }
+mech-string = { path = "../external/machines/string" }
+[workspace]

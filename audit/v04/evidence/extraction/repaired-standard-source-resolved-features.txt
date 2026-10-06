@@ -1,0 +1,230 @@
+mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib) |access,assign,atom,bool,convert,enum,f64,invariant_define,map,matrix_comprehensions,matrix_horzcat,matrix_vertcat,matrixd,mech-combinatorics,mech-compare,mech-logic,mech-math,mech-matrix,mech-range,mech-set,mech-stats,mech-string,record,row_vectord,runtime,set,set_comprehensions,set_define,source,standard_operations,standard_runtime,standard_source,standard_values,string,subscript_default,table,table_ops,tuple,variable_define,variables,vectord
+mech-combinatorics v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/combinatorics) |combinatorics,combinatorics_default,f64,floats,matrix,matrixd,n_choose_k,nalgebra,numbers,row_vectord,runtime,semantic-compiler,source,standard_operations,standard_runtime,standard_values,vectord
+itertools v0.14.0 |default,use_alloc,use_std
+either v1.16.0 |std,use_std
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord
+base64 v0.22.1 |alloc,default,std
+bincode v2.0.1 |alloc,bincode_derive,default,derive,serde,std
+bincode_derive v2.0.1 (proc-macro) |
+virtue v0.0.18 |
+serde v1.0.229 |alloc,default,derive,serde_derive,std
+serde_core v1.0.229 |alloc,result,std
+serde_derive v1.0.229 (proc-macro) |default
+proc-macro2 v1.0.107 |default,proc-macro
+unicode-ident v1.0.24 |
+quote v1.0.47 |default,proc-macro
+proc-macro2 v1.0.107 |default,proc-macro (*)
+syn v3.0.3 |clone-impls,derive,parsing,printing,proc-macro
+proc-macro2 v1.0.107 |default,proc-macro (*)
+quote v1.0.47 |default,proc-macro (*)
+unicode-ident v1.0.24 |
+unty v0.0.4 |
+brotli v8.0.4 |alloc-stdlib,default,std
+alloc-no-stdlib v2.0.4 |
+alloc-stdlib v0.2.4 |
+alloc-no-stdlib v2.0.4 |
+brotli-decompressor v5.0.3 |alloc-stdlib,std
+alloc-no-stdlib v2.0.4 |
+alloc-stdlib v0.2.4 | (*)
+byteorder v1.5.0 |default,std
+crc32fast v1.5.0 |default,std
+cfg-if v1.0.4 |
+indexmap v2.14.0 |default,serde,std
+equivalent v1.0.2 |
+hashbrown v0.17.1 |
+serde_core v1.0.229 |alloc,result,std
+libm v0.2.16 |arch,default
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std
+approx v0.5.1 |std
+num-traits v0.2.19 |i128,libm,std
+libm v0.2.16 |arch,default
+autocfg v1.5.1 |
+matrixmultiply v0.3.11 |avx512,default,std
+rawpointer v0.2.1 |
+autocfg v1.5.1 |
+nalgebra-macros v0.3.0 (proc-macro) |
+proc-macro2 v1.0.107 |default,proc-macro (*)
+quote v1.0.47 |default,proc-macro (*)
+syn v2.0.119 |clone-impls,default,derive,extra-traits,fold,full,parsing,printing,proc-macro,visit
+proc-macro2 v1.0.107 |default,proc-macro (*)
+quote v1.0.47 |default,proc-macro (*)
+unicode-ident v1.0.24 |
+num-complex v0.4.6 |std
+num-traits v0.2.19 |i128,libm,std (*)
+num-rational v0.4.2 |std
+num-integer v0.1.46 |i128,std
+num-traits v0.2.19 |i128,libm,std (*)
+num-traits v0.2.19 |i128,libm,std (*)
+num-traits v0.2.19 |i128,libm,std (*)
+simba v0.9.1 |default,std,wide
+approx v0.5.1 |std (*)
+num-complex v0.4.6 |std (*)
+num-traits v0.2.19 |i128,libm,std (*)
+paste v1.0.15 (proc-macro) |
+wide v0.7.33 |std
+bytemuck v1.25.2 |
+safe_arch v0.7.4 |bytemuck,default
+bytemuck v1.25.2 |
+typenum v1.20.1 |const-generics
+num-traits v0.2.19 |i128,libm,std (*)
+paste v1.0.15 (proc-macro) |
+seahash v4.1.0 |default
+serde v1.0.229 |alloc,default,derive,serde_derive,std (*)
+serde_derive v1.0.229 (proc-macro) |default (*)
+serde_json v1.0.151 |default,std
+itoa v1.0.18 |
+memchr v2.8.3 |alloc,std
+serde_core v1.0.229 |alloc,result,std
+zmij v1.0.23 |
+sha2 v0.11.0 |
+cfg-if v1.0.4 |
+cpufeatures v0.3.0 |
+libc v0.2.189 |
+digest v0.11.3 |block-api,default
+block-buffer v0.12.1 |
+hybrid-array v0.4.14 |
+typenum v1.20.1 |const-generics
+crypto-common v0.2.2 |
+hybrid-array v0.4.14 | (*)
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std (*)
+num-traits v0.2.19 |i128,libm,std (*)
+paste v1.0.15 (proc-macro) |
+mech-compare v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/compare) |atom,bool,compare,compare_default,eq,f64,floats,gt,gte,lt,lte,matrix,matrixd,max,min,nalgebra,neq,numbers,record,row_vectord,runtime,semantic-compiler,seq,sneq,source,standard_operations,standard_runtime,standard_values,string,table,tuple,vectord
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std (*)
+paste v1.0.15 (proc-macro) |
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine) |access,artifact-codec,assign,atom,bool,combinatorics_default,combinatorics_n_choose_k,compare_default,compare_eq,compare_gt,compare_gte,compare_lt,compare_lte,compare_neq,compare_seq,compare_sneq,convert,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,logic_and,logic_default,logic_not,logic_or,logic_xor,logical_indexing,map,math_add,math_atan2,math_cos,math_div,math_mod,math_mul,math_neg,math_ops_default,math_pow,math_root_default,math_sin,math_sqrt,math_standard,math_sub,matrix,matrix_comprehensions,matrix_default,matrix_dot,matrix_horzcat,matrix_matmul,matrix_solve,matrix_transpose,matrix_vertcat,matrixd,nalgebra,numbers,program,range_default,range_exclusive,range_exclusive_increment,range_inclusive,range_inclusive_increment,record,row_vectord,runtime,semantic-compiler,set,set_comprehensions,set_difference,set_disjoint,set_element_of,set_equals,set_insert,set_intersection,set_membership_default,set_modify_default,set_not_element_of,set_not_equals,set_proper_subset,set_proper_superset,set_relations_default,set_remove,set_setdata_default,set_size,set_standard,set_subset,set_superset,set_symmetric_difference,set_union,source,statements,stats_default,stats_sum,string,string_concat,string_default,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord
+byteorder v1.5.0 |default,std
+grapheme v1.3.0 |
+grapheme_macro v2.0.0 (proc-macro) |
+quote v1.0.47 |default,proc-macro (*)
+syn v2.0.119 |clone-impls,default,derive,extra-traits,fold,full,parsing,printing,proc-macro,visit (*)
+unicode-segmentation v1.13.3 |
+icu_properties v2.2.0 |compiled_data,default
+icu_collections v2.2.0 |
+displaydoc v0.2.6 (proc-macro) |
+proc-macro2 v1.0.107 |default,proc-macro (*)
+quote v1.0.47 |default,proc-macro (*)
+syn v2.0.119 |clone-impls,default,derive,extra-traits,fold,full,parsing,printing,proc-macro,visit (*)
+potential_utf v0.1.5 |zerovec
+zerovec v0.11.6 |derive,yoke
+yoke v0.8.3 |derive,zerofrom
+stable_deref_trait v1.2.1 |
+yoke-derive v0.8.2 (proc-macro) |
+proc-macro2 v1.0.107 |default,proc-macro (*)
+quote v1.0.47 |default,proc-macro (*)
+syn v2.0.119 |clone-impls,default,derive,extra-traits,fold,full,parsing,printing,proc-macro,visit (*)
+synstructure v0.13.2 |default,proc-macro
+proc-macro2 v1.0.107 |default,proc-macro (*)
+quote v1.0.47 |default,proc-macro (*)
+syn v2.0.119 |clone-impls,default,derive,extra-traits,fold,full,parsing,printing,proc-macro,visit (*)
+zerofrom v0.1.8 |derive
+zerofrom-derive v0.1.7 (proc-macro) |
+proc-macro2 v1.0.107 |default,proc-macro (*)
+quote v1.0.47 |default,proc-macro (*)
+syn v2.0.119 |clone-impls,default,derive,extra-traits,fold,full,parsing,printing,proc-macro,visit (*)
+synstructure v0.13.2 |default,proc-macro (*)
+zerofrom v0.1.8 |derive (*)
+zerovec-derive v0.11.3 (proc-macro) |
+proc-macro2 v1.0.107 |default,proc-macro (*)
+quote v1.0.47 |default,proc-macro (*)
+syn v2.0.119 |clone-impls,default,derive,extra-traits,fold,full,parsing,printing,proc-macro,visit (*)
+utf8_iter v1.0.4 |
+yoke v0.8.3 |derive,zerofrom (*)
+zerofrom v0.1.8 |derive (*)
+zerovec v0.11.6 |derive,yoke (*)
+icu_locale_core v2.2.0 |zerovec
+displaydoc v0.2.6 (proc-macro) | (*)
+litemap v0.8.2 |
+tinystr v0.8.3 |zerovec
+displaydoc v0.2.6 (proc-macro) | (*)
+zerovec v0.11.6 |derive,yoke (*)
+writeable v0.6.3 |
+zerovec v0.11.6 |derive,yoke (*)
+icu_properties_data v2.2.0 |
+icu_provider v2.2.0 |baked
+displaydoc v0.2.6 (proc-macro) | (*)
+icu_locale_core v2.2.0 |zerovec (*)
+writeable v0.6.3 |
+yoke v0.8.3 |derive,zerofrom (*)
+zerofrom v0.1.8 |derive (*)
+zerotrie v0.2.4 |yoke,zerofrom
+displaydoc v0.2.6 (proc-macro) | (*)
+yoke v0.8.3 |derive,zerofrom (*)
+zerofrom v0.1.8 |derive (*)
+zerovec v0.11.6 |derive,yoke (*)
+zerotrie v0.2.4 |yoke,zerofrom (*)
+zerovec v0.11.6 |derive,yoke (*)
+smallvec v1.15.2 |
+unicode-normalization v0.1.25 |default,std
+tinyvec v1.12.0 |alloc,default,tinyvec_macros
+tinyvec_macros v0.1.1 |
+unicode-segmentation v1.13.3 |
+indexmap v2.14.0 |default,serde,std (*)
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax) |atom,bool,dot_indexing,enum,f64,floats,formulas,functions,invariant_define,kind_annotation,logical_indexing,map,matrix,matrix_horzcat,matrix_vertcat,matrixd,numbers,record,row_vectord,semantic-compiler,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord
+colored v3.1.1 |
+indexmap v2.14.0 |default,serde,std (*)
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+num-traits v0.2.19 |i128,libm,std (*)
+paste v1.0.15 (proc-macro) |
+serde v1.0.229 |alloc,default,derive,serde_derive,std (*)
+serde_derive v1.0.229 (proc-macro) |default (*)
+tabled v0.20.0 |std
+papergrid v0.17.0 |fnv,std
+bytecount v0.6.9 |
+fnv v1.0.7 |default,std
+unicode-width v0.2.2 |cjk,default
+unicode-segmentation v1.13.3 |
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std (*)
+paste v1.0.15 (proc-macro) |
+serde v1.0.229 |alloc,default,derive,serde_derive,std (*)
+serde_json v1.0.151 |default,std (*)
+sha2 v0.10.9 |default,std
+cfg-if v1.0.4 |
+cpufeatures v0.2.17 |
+libc v0.2.189 |
+digest v0.10.7 |alloc,block-buffer,core-api,default,std
+block-buffer v0.10.4 |
+generic-array v0.14.7 |more_lengths
+typenum v1.20.1 |const-generics
+version_check v0.9.5 |
+crypto-common v0.1.7 |std
+generic-array v0.14.7 |more_lengths (*)
+typenum v1.20.1 |const-generics
+tinyvec v1.12.0 |alloc,default,tinyvec_macros (*)
+mech-logic v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/logic) |and,bool,logic,logic_default,matrix,matrixd,nalgebra,not,or,row_vectord,runtime,semantic-compiler,source,standard_operations,standard_runtime,standard_values,vectord,xor
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std (*)
+paste v1.0.15 (proc-macro) |
+mech-math v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/math) |abs,add,arithmetic,atan2,bool,cos,div,f64,floats,math,matrix,matrixd,mod,mul,nalgebra,neg,numbers,ops,pow,root,row_vectord,runtime,semantic-compiler,sin,source,sqrt,standard_operations,standard_runtime,standard_values,sub,trig,vectord
+libm v0.2.16 |arch,default
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std (*)
+num-traits v0.2.19 |i128,libm,std (*)
+paste v1.0.15 (proc-macro) |
+simba v0.9.1 |default,std,wide (*)
+mech-matrix v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/matrix) |bool,dot,f64,floats,matmul,matrix,matrix_default,matrixd,numbers,row_vectord,runtime,semantic-compiler,solve,source,standard_operations,standard_runtime,standard_values,string,transpose,vectord
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std (*)
+num-traits v0.2.19 |i128,libm,std (*)
+paste v1.0.15 (proc-macro) |
+mech-range v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/range) |exclusive,exclusive_increment,f64,floats,inclusive,inclusive_increment,matrix,matrixd,nalgebra,numbers,range,row_vectord,runtime,semantic-compiler,source,standard_operations,standard_runtime,standard_values
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std (*)
+num-traits v0.2.19 |i128,libm,std (*)
+paste v1.0.15 (proc-macro) |
+mech-set v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/set) |atom,bool,difference,disjoint,element_of,enum,equals,f64,floats,insert,intersection,map,matrix,matrixd,membership,membership_default,modify,modify_default,not_element_of,not_equals,numbers,operations,proper_subset,proper_superset,record,relations,relations_default,remove,row_vectord,runtime,semantic-compiler,set,setdata,setdata_default,size,source,standard_operations,standard_runtime,standard_values,string,subset,superset,symmetric_difference,table,tuple,union,vectord
+indexmap v2.14.0 |default,serde,std (*)
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+paste v1.0.15 (proc-macro) |
+mech-stats v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/stats) |f64,floats,matrix,matrixd,nalgebra,numbers,row_vectord,runtime,semantic-compiler,source,standard_operations,standard_runtime,standard_values,stats,stats_default,sum,vectord
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std (*)
+num-traits v0.2.19 |i128,libm,std (*)
+paste v1.0.15 (proc-macro) |
+mech-string v0.3.5 (/private/tmp/mech-v04-audit-20261006/machines/string) |concat,matrix,matrixd,nalgebra,row_vectord,runtime,semantic-compiler,source,standard_operations,standard_runtime,standard_values,string,string_default,vectord
+mech-core v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/core) |atom,base64,bincode,bool,brotli,byteorder,crc32fast,dot_indexing,enum,f64,floats,formulas,functions,indexmap,invariant_define,kind_annotation,libm,logical_indexing,map,math_pow,matrix,matrixd,nalgebra,num-traits,numbers,program,range,record,row_vectord,semantic-compiler,serde,serde_derive,serde_json,set,statements,string,subscript,subscript_default,subscript_formula,subscript_range,subscript_slice,swizzle,symbol_table,table,tuple,variable_define,variables,vectord (*)
+nalgebra v0.34.2 |default,macros,matrixmultiply,nalgebra-macros,std (*)
+paste v1.0.15 (proc-macro) |

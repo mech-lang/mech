@@ -1,0 +1,5 @@
+{
+  "status": "failed",
+  "error": "Error: resume completes open matrix",
+  "stack": "Error: resume completes open matrix\n    at assert (http://127.0.0.1:63621/streaming-checks.js:4:64)\n    at runStreamingChecks (http://127.0.0.1:63621/streaming-checks.js:141:3)\n    at async http://127.0.0.1:63621/streaming-check.html:8:18"
+}

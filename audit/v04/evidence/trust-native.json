@@ -1,0 +1,115 @@
+{
+  "status": "passed",
+  "source_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "absorbed_pr": "https://github.com/mech-lang/mech/pull/829",
+  "absorbed_revision": "9ae5c00e0184fe341d2ff2bdc590ede712009d2f",
+  "source_modifications": {
+    "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
+    "examples/r-stack-proof/perturbed-program.mec": "b12bb44f05b9991bd93c314c60741209e94024369dedf3b75707a27d7d0262b2",
+    "examples/r-stack-proof/trust-program.mec": "9f73e1cedec94e5792a128c95cf3ea6c0852db293a05fa8b6c936887fb4aba8d",
+    "examples/r_stack_trust_proof.rs": "424c6f876e5df6ed01245a82f31ea5d2d3c6dd20705ad2c07b3e289b7c9eacf9",
+    "scripts/demo-r-stack.sh": "94e9c39ac29cacafd1c77b67ea6b3f4b8076bca71c3e8cede9b5f96e5b5c681e",
+    "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
+    "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+    "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
+    "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
+    "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+    "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3"
+  },
+  "scope": "native canonical parser and semantic frontend, source and decoded artifacts, engine resident primitive execution",
+  "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-product cargo run -p mech --locked --offline --no-default-features --example r-stack-trust-proof --features r_stack_trust_proof -- --dump all",
+  "features": "r_stack_trust_proof",
+  "default_features": false,
+  "exit_code": 0,
+  "binary": {
+    "path": "/private/tmp/mech-v04-target-product/debug/examples/r-stack-trust-proof",
+    "sha256": "98ad3d6f3af12ea4c8178665da673bf8f57fdfc5e0eec833b08ad405c872b2e4"
+  },
+  "environment": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)"
+  },
+  "source": "~x := 1.0\nnext := x * 2.0 + 3.0\nsafe! := next < 1000.0\nx = next\nx\n",
+  "source_artifact_revision": "00bbba96a8956175aa2aaa2266ccebe49a6fb6e770210206b198f8daa2fcf146",
+  "turns": [
+    {
+      "turn": 1,
+      "expected": 5,
+      "source_artifact": 5,
+      "decoded_bytecode": 5,
+      "epoch": 1
+    },
+    {
+      "turn": 2,
+      "expected": 13,
+      "source_artifact": 13,
+      "decoded_bytecode": 13,
+      "epoch": 2
+    },
+    {
+      "turn": 3,
+      "expected": 29,
+      "source_artifact": 29,
+      "decoded_bytecode": 29,
+      "epoch": 3
+    },
+    {
+      "turn": 4,
+      "expected": 61,
+      "source_artifact": 61,
+      "decoded_bytecode": 61,
+      "epoch": 4
+    },
+    {
+      "turn": 5,
+      "expected": 125,
+      "source_artifact": 125,
+      "decoded_bytecode": 125,
+      "epoch": 5
+    },
+    {
+      "turn": 6,
+      "expected": 253,
+      "source_artifact": 253,
+      "decoded_bytecode": 253,
+      "epoch": 6
+    },
+    {
+      "turn": 7,
+      "expected": 509,
+      "source_artifact": 509,
+      "decoded_bytecode": 509,
+      "epoch": 7
+    }
+  ],
+  "checks": [
+    "malformed source rejected",
+    "incompatible source rejected by semantic typing",
+    "truncated bytecode rejected before activation",
+    "tampered artifact rejected before receiving a revision",
+    "one-byte activation budget rejected atomically (used=0)",
+    "candidate 1021 rejected by safe!; epoch/hash/state/output stayed (7, 4468696535707004211, 509, 509)"
+  ],
+  "perturbation": {
+    "expected": [
+      7,
+      25,
+      79
+    ],
+    "passed": true
+  },
+  "missing_catalog_rejected": true,
+  "full_transcript": {
+    "path": "audit/v04/evidence/trust-native-full.log",
+    "sha256": "8b058186a5e7a95f81d894d45222320290e1ef2d3af4c8cd76cd792c738106fd"
+  },
+  "id": "E-TRUST-NATIVE",
+  "claim": "Source recurrence and perturbation, artifact/bytecode receipt equality, and isolated rejection paths",
+  "contract": "examples/r-stack-proof/README.md",
+  "evidence_level": "native-execution",
+  "outcome": "passed",
+  "artifact_identity": {
+    "path": "/private/tmp/mech-v04-target-product/debug/examples/r-stack-trust-proof",
+    "sha256": "98ad3d6f3af12ea4c8178665da673bf8f57fdfc5e0eec833b08ad405c872b2e4"
+  }
+}

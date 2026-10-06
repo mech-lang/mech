@@ -1,0 +1,49 @@
+    Checking serde_core v1.0.229
+    Checking alloc-no-stdlib v2.0.4
+    Checking zmij v1.0.23
+    Checking unty v0.0.4
+    Checking itoa v1.0.18
+    Checking memchr v2.8.3
+    Checking base64 v0.22.1
+    Checking unicode-width v0.2.2
+    Checking bytecount v0.6.9
+    Checking alloc-stdlib v0.2.4
+    Checking fnv v1.0.7
+    Checking brotli-decompressor v5.0.3
+    Checking colored v3.1.1
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-extraction/external/stdlib)
+    Checking papergrid v0.17.0
+    Checking brotli v8.0.4
+    Checking tabled v0.20.0
+    Checking serde v1.0.229
+    Checking serde_json v1.0.151
+    Checking indexmap v2.14.2
+    Checking bincode v2.0.1
+    Checking mech-core v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/core)
+    Checking mech-syntax v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/syntax)
+    Checking mech-stats v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/stats)
+    Checking mech-logic v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/logic)
+    Checking mech-string v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/string)
+    Checking mech-matrix v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/matrix)
+    Checking mech-set v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/set)
+    Checking mech-math v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/math)
+    Checking mech-range v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/range)
+    Checking mech-combinatorics v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/combinatorics)
+    Checking mech-compare v0.3.5 (/private/tmp/mech-v04-extraction/external/machines/compare)
+    Checking mech-engine v0.3.5 (/private/tmp/mech-v04-extraction/mech/src/engine)
+error: static `PURE_VARIABLE_DEFINITION_CONTRACT` is never used
+ --> /private/tmp/mech-v04-extraction/mech/src/engine/src/intrinsics/define.rs:8:19
+  |
+8 | pub(crate) static PURE_VARIABLE_DEFINITION_CONTRACT: std::sync::LazyLock<
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `-D dead-code` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: function `canonical_variable_definition_runtime_name` is never used
+   --> /private/tmp/mech-v04-extraction/mech/src/engine/src/intrinsics/define.rs:156:15
+    |
+156 | pub(crate) fn canonical_variable_definition_runtime_name(
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: could not compile `mech-engine` (lib) due to 2 previous errors

@@ -1,0 +1,19 @@
+{
+  "id": "streaming-completion-budget",
+  "origin": "audit browser test configuration",
+  "classification": "test-harness defect",
+  "contract": "StreamLimits.max_parser_work bounds cumulative live and preview parser work",
+  "original_expected": "Finish after preview under an arbitrarily selected 100000-transition cap",
+  "actual": "Limited after cumulative live + preview parser work reached the cap",
+  "correction": "Completion scenario uses 10000000 transitions; explicit resource-limit scenarios retain low limits",
+  "evidence": [
+    "evidence/streaming-browser-budget-failure.json",
+    "evidence/streaming-resume-native-probe.log"
+  ],
+  "reproduction_source": "streaming-budget-probe.rs",
+  "native_configuration": "mech-syntax default features, existing baseline test rlib",
+  "outcome": "verified",
+  "native_command": "rustc --edition 2024 audit/v04/streaming-budget-probe.rs --extern mech_syntax=/private/tmp/mech-v04-target-streaming/debug/deps/libmech_syntax-5a821030212e7ca0.rlib -L dependency=/private/tmp/mech-v04-target-streaming/debug/deps -o /private/tmp/mech_stream_probe && /private/tmp/mech_stream_probe",
+  "native_artifact_prerequisite": "Run the recorded default-feature native syntax suites first; the rlib filename is specific to the recorded toolchain/configuration.",
+  "final_result": "evidence/streaming-browser-result.json"
+}
