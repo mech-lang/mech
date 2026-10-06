@@ -778,7 +778,10 @@ fn rendered_source_roles_have_palette_selectors() {
         let renderer = CanonicalDocumentRenderer;
         for html in [
             renderer.format_html(&document).unwrap(),
-            renderer.render_repl_source_html(&document).unwrap().unwrap(),
+            renderer
+                .render_repl_source_html(&document)
+                .unwrap()
+                .unwrap(),
         ] {
             for role in roles {
                 assert!(
