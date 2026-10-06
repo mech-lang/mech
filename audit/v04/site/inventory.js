@@ -1,3 +1,4 @@
+import {fetchAuditWasm} from './wasm-transport.js';
 import init, {I64PublicationSession, inventorySource} from './pkg/mech_wasm.js';
 const $=id=>document.getElementById(id);
 const pretty=value=>JSON.stringify(value,null,2);
@@ -56,7 +57,7 @@ $('submit').onclick=()=>submit();$('restart').onclick=restart;$('sequence').oncl
 $('export').onclick=()=>{const bytes=new Blob([pretty({metadata,source,generation,history,snapshot:JSON.parse(session.snapshot())})],{type:'application/json'});const url=URL.createObjectURL(bytes);const anchor=document.createElement('a');anchor.href=url;anchor.download='mech-inventory-evidence.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),0);};
 window.addEventListener('pagehide',()=>{session?.free();session=null;});window.addEventListener('pageshow',event=>{if(event.persisted&&source)restart();});
 try{
- const responses=await Promise.all([fetch('./pkg/mech_wasm_bg.wasm'),fetch('./artifact.json'),fetch('./fixtures/inventory.mec'),fetch('./fixtures/inventory.json')]);for(const response of responses)if(!response.ok)throw new Error(`Resource ${response.url}: ${response.status}`);
+ const responses=await Promise.all([fetchAuditWasm(),fetch('./artifact.json'),fetch('./fixtures/inventory.mec'),fetch('./fixtures/inventory.json')]);for(const response of responses)if(!response.ok)throw new Error(`Resource ${response.url}: ${response.status}`);
  const bytes=await responses[0].arrayBuffer();metadata=await responses[1].json();const fixtureSource=await responses[2].text(),fixtureText=await responses[3].text();fixture=JSON.parse(fixtureText);await init({module_or_path:bytes});
  const loadedHash=await hash(bytes);if(loadedHash!==metadata.artifacts['pkg/mech_wasm_bg.wasm'].sha256)throw new Error('Loaded WASM hash differs from the artifact manifest.');source=inventorySource();if(source!==fixtureSource)throw new Error('Compiled source fixture differs from the displayed fixture.');
  metadata={...metadata,loaded_wasm_sha256:loadedHash,loaded_wasm_bytes:bytes.byteLength,source_sha256:await hash(new TextEncoder().encode(source)),fixture_sha256:await hash(new TextEncoder().encode(fixtureText)),browser:navigator.userAgent};

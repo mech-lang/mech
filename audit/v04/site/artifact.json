@@ -5,18 +5,40 @@
     "Cargo.toml": "a6b7d70b158b6134fd2baa72330f97fbd66f81e0897ea691214dbb3b5f9362b7",
     "examples/resident-n-body/README.md": "bedcf0969ef8bf92fc60bcf7216a43f060a72339b281eeb3a00f863948c7c939",
     "src/engine/src/intrinsics/define.rs": "ce3e586aea4bedcbd2fb69c5cdaac2a02d613388f8ee046d7436432ab9f5355d",
-    "src/engine/src/source_semantics/frontend.rs": "1e59aeb374f8caab58638c84964f22c131b0100e64dd56cfb4a5e72fbc45bd85",
+    "src/engine/src/source_semantics/frontend.rs": "d4f9dfd372aac8de09ebd2aab5ed4733da39ea9526059633f78dc93103d53af0",
     "src/runtime/src/runtime/program/compiler.rs": "c1b896397df14fa4484ced09ca61a3f442c59780420a96c47be75d23c78b2b45",
     "src/runtime/tests/canonical_semantic_diagnostics.rs": "c1814cc4eb9d4c5076b59991ca0ee0337fe2e0a7299b7a88c38abbb5249da642",
     "src/stdlib/Cargo.toml": "beeab53e9fb72afc9cc9bed7d01cb44848ddddbeaccc46eb1676be497b6716e7",
     "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
-    "src/wasm/src/fixtures/inventory.mec": "b20d99a51835470f52fc70f462acde751f0458fb8f406ce4f732b4ada63e7a3a",
+    "src/wasm/src/fixtures/inventory.mec": "9e5881ccf46bc5eeb070866f5565e76b180452c9634b9794a37a484774361a12",
     "src/wasm/src/i64_publication.rs": "e5a62239ee72b759a29c489d1b4c16fa7a2eed2f8cd8a9c8929436f16d093f3b",
-    "src/wasm/src/inspection.rs": "a8793beb08810dd73e656eeb966143fbff120066b228487d60dd0bc7cd38d574",
+    "src/wasm/src/inspection.rs": "146cdfc9cc96b00da9961ba68fbe0b90b461945dd6fcad0fca0cb67d92ffd486",
     "src/wasm/src/lib.rs": "c5eaba5e82f31360083eb8b6de88ebfb000766e0d9fecd48aa4a1e10b4557eb3",
-    "src/wasm/src/type_inspection.rs": "4b0cbab049de59efc52e50651d9404b1e1266b1f8f1df255a8cd112a6473cd12"
+    "src/wasm/src/type_inspection.rs": "212bbae27335f55066082f3e6a91bdc798bc8b91e5bde7912e699eeb93d93dfd",
+    "src/runtime/src/snapshot/html.rs": "60245f582d49b15f5420e911c6e8642eb8410f24d37c523a8dc80de014027366",
+    "src/runtime/src/snapshot/mod.rs": "504b50ee11ae5290c9e5716ffb626125572625ffffff7578ff43617934bc2544",
+    "src/runtime/src/snapshot/tests.rs": "d69c14812f836c9906b2f62fae8d7c51279049d5a242bba0e460a595c935036b",
+    "src/engine/tests/canonical_source_semantics.rs": "8ffbc25ce1b6093a02f679d11b14fd3a7609d989b90f627ff93287da60cda25d",
+    "docs/design/type-system-v1.md": "1363c6404badd00706d8aa6777c48155ddf676640dc458a73add34245d7bcd74",
+    "src/runtime/src/document_render.rs": "fefc01be56f478eb6b25abf4599a9b5c5168d5b413fbc20619e67841c1ddcada",
+    "src/syntax/src/document/ast/document.rs": "5f92fc4d5945558169dd3a112155523f878c0808a6c32d250f4f4582df70631d",
+    "src/syntax/src/document/parser/canonical/document/continuation.rs": "89b0952746c286921fc3e8e4a801606eb84e90f6ecb3418ef7f8db0554e5224e",
+    "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/brace.rs": "0ea791b8da93b4a95cb6bab520315366e343cb50acff19447dcfd18200895c08",
+    "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/bracket.rs": "de9d1def6a734ff465cf8dca386fe94da8d2f507b577f8285a474de9f398fe84",
+    "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/mod.rs": "79fe8348917725cf0beba1211405b90ff42129f4d339c15d9d452b4677373c20",
+    "src/syntax/src/document/parser/canonical/recursive_core/precedence/continuation/parenthesis.rs": "29ea746c526db6e4a42412b2c1765892ea19e8017736533c84658cf215198ac1",
+    "src/syntax/src/document/parser/canonical/recursive_core/required.rs": "da058186fca5cc11e8d4974e24ad09f87729db093f09d84a520003cd9f53cdfe",
+    "src/syntax/src/document/parser/canonical/recursive_core/required/document_restart.rs": "3d72895ef502477d8095d145f3e142a6054f167149b1e9da81ec8270db376e74",
+    "src/syntax/src/document/parser/mod.rs": "e3cb178f4cbbfa67a5c1d60ba09d74c6b03409f0f695f103d5f468cc29e3b271",
+    "src/syntax/src/document/parser/recovery/abandon.rs": "7dc360e6da031710fe8fea62e00a1f8afd1770aa99cc01cc2be0c46c686b8f92",
+    "src/syntax/tests/canonical_document_fence_views.rs": "81181bc8094f7787ec69a446d4658f539899083751429b0afa57016f24890b46",
+    "src/syntax/tests/fixtures/document/recovery/fenced-unclosed-matrix.mec": "578ffbff357c1c14fe7b3f8942b9a498285f7d4c1139b21497c211da7b7afb44",
+    "Cargo.lock": "3bafde738e893a2c1c186d10856ec3ec0c104adefa4002cacee9f830c46980ff",
+    "src/syntax/Cargo.toml": "b6bd0618b8a88f1c48db231c793f4db74f6b41c611867fb93f201c7b15ca216f",
+    "src/syntax/src/document/diagnostic.rs": "a71c49aa527f7a9f4bb73c0b9fe6b5d88403acf3565c5c7316784e55dae1a87f",
+    "src/syntax/tests/document_diagnostics.rs": "ea8c62ec61b3b66d79c37623118a16746fd90f0368e8a93d22d9e08cced1b319"
   },
-  "source_modifications_sha256": "6c56eb4ada88a967784379c7b07a659176ac032ae63ae9e74cc1db4f63ac85ea",
+  "source_modifications_sha256": "838733a10ca570cf59f7d9ba9108d63d96e3b8556d73446cf6928d63229c3989",
   "lockfile_sha256": "6088eff9ee301c9f5dec6c9f2f706796387e0e43c0bbe6386f9ec1285c1293de",
   "command": "CARGO_TARGET_DIR=/private/tmp/mech-v04-target-streaming wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
   "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication",
@@ -35,12 +57,12 @@
   ],
   "artifacts": {
     "pkg/mech_wasm.js": {
-      "sha256": "6b0ba67bac8171f30dd8f925c876db94730415913ba7f99a0412dd4cee7fc6b0",
-      "bytes": 92075
+      "sha256": "6bde9f2e47142fc1d69e4d994bbb14e5eb98043aae28bd919a051c1db7c1859d",
+      "bytes": 92753
     },
     "pkg/mech_wasm_bg.wasm": {
-      "sha256": "f833f55e74cbbd2887ba6431d0ef0fb1aa433e53ef374e8e79c355512b9d0194",
-      "bytes": 208709347
+      "sha256": "a3a06b2c3ebd51d4dea940021456d1efb01453bf2e76884b41a34f35012d26e1",
+      "bytes": 208781722
     }
   },
   "environment": {
@@ -51,5 +73,21 @@
   "limits": [
     "Artifact source identity comprises the baseline commit and listed modifications.",
     "Browser device and execution outcomes are recorded separately."
-  ]
+  ],
+  "formatter": "Canonical RuntimeValueSnapshot HTML projection with record fields, table columns, matrix cells and escaped scalar text.",
+  "formatter_source_commit": "836670d6099206524ca7ab6a9072499c9354d1a8",
+  "formatter_source_patch": "../evidence/value-html-formatter/canonical-value-html.patch",
+  "source_modifications_hash_encoding": "JSON with sorted keys and compact separators, UTF-8",
+  "literal_inference": "Unsuffixed integer literals receive integer operand or declaration context with exact range checks.",
+  "literal_inference_source_patch": "../evidence/literal-inference/contextual-integer-literals.patch",
+  "literal_inference_source_commit": "493ca16455a5b01293d7d7008f3099c77dde4ae9",
+  "document_preview_export": "WasmSyntaxEditor.renderHtml()",
+  "document_preview_source_patch": "../evidence/document-preview/canonical-document-preview.patch",
+  "document_preview_source_commit": "37a8c06b5ed6ed68ec2e1e0a5246d2e9a9ca2c60",
+  "streaming_recovery_source_commit": "0d5368117602a27ca3fcf3df02b92eb4d33d68ec",
+  "streaming_recovery_source_patch": "../evidence/streaming-recovery/canonical-recovery.patch",
+  "streaming_recovery": "Retained canonical document and statement attachment probes, delimiter-local diagnostics, and source rendering across recovered nodes.",
+  "rich_diagnostics_source_commit": "304caa36df7294d5a1e5b7454d8081fa934487b4",
+  "rich_diagnostics_source_patch": "../evidence/rich-diagnostics/editor-diagnostics.patch",
+  "rich_diagnostics": "Shared Rust source excerpts with primary and secondary labels, expected syntax and suggested fixes; canonical UTF-8 ranges on editor preview regions."
 }

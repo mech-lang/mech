@@ -1,7 +1,8 @@
+import {fetchAuditWasm} from './wasm-transport.js';
 export async function loadAuditWasm(initialize) {
   const [artifactResponse, wasmResponse] = await Promise.all([
     fetch('artifact.json'),
-    fetch('pkg/mech_wasm_bg.wasm'),
+    fetchAuditWasm(),
   ]);
   if (!artifactResponse.ok || !wasmResponse.ok) {
     throw new Error('Executable package or provenance record unavailable');

@@ -1,0 +1,22 @@
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax)
+    Finished `test` profile [unoptimized] target(s) in 4.09s
+     Running tests/document_diagnostics.rs (/private/tmp/mech-v04-target-architecture/debug/deps/document_diagnostics-ebb2d59be988b5e5)
+
+running 5 tests
+test structural_anchor_moves_with_reused_node ... ok
+test source_excerpt_aligns_unicode_and_tabs_and_draws_eof_insertion ... ok
+test structured_diagnostic_serializes_and_renders ... ok
+test source_excerpt_bounds_multiline_context_and_escapes_terminal_controls ... ok
+test canonical_missing_closer_retains_position_and_applicable_repair ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/document_parser_render.rs (/private/tmp/mech-v04-target-architecture/debug/deps/document_parser_render-5cd935ed7ab58e38)
+
+running 3 tests
+test renders_malformed_mech_before_heading_without_losing_heading ... ok
+test renders_missing_operand_at_its_canonical_position ... ok
+test renders_multiple_independent_errors ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+

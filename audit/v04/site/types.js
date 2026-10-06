@@ -1,3 +1,4 @@
+import {fetchAuditWasm} from './wasm-transport.js';
 import init, {inspectMechTypes, TypePublicationSession} from './pkg/mech_wasm.js';
 const $=id=>document.getElementById(id);
 const pretty=value=>JSON.stringify(value,null,2);
@@ -39,7 +40,7 @@ export function runTypeChecks(){
 }
 $('source').oninput=()=>{invalidate();$('expectation').textContent='Custom source. Compile to inspect its stages and diagnostics.';};$('example').onchange=loadCase;$('run').onclick=run;$('restart').onclick=restart;$('update').onclick=()=>update();$('sequence').onclick=()=>{for(const value of ['9','10','3'])update(value);};$('checks').onclick=()=>{$('check-result').hidden=false;$('check-result').textContent=pretty(runTypeChecks());};loadCase();
 try{
- const wasmResponse=await fetch("./pkg/mech_wasm_bg.wasm");if(!wasmResponse.ok)throw new Error(`WASM download ${wasmResponse.status}`);const wasmBytes=await wasmResponse.arrayBuffer();
+ const wasmResponse=await fetchAuditWasm();if(!wasmResponse.ok)throw new Error(`WASM download ${wasmResponse.status}`);const wasmBytes=await wasmResponse.arrayBuffer();
  await init({module_or_path:wasmBytes});
  const loadedHash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",wasmBytes))).map(x=>x.toString(16).padStart(2,"0")).join("");
  const response=await fetch('./artifact.json');if(response.ok)metadata=await response.json();

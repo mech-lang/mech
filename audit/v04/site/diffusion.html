@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mech · finite-volume heat diffusion</title><link rel="stylesheet" href="style.css"><body>
+<title>Mech · finite-volume heat diffusion</title><link rel="stylesheet" href="human-data.css"><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%225%22%20fill%3D%22%23216d73%22%2F%3E%3Cpath%20d%3D%22M7%2024V8l9%2010%209-10v16%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%223%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E"><link rel="stylesheet" href="style.css"><body>
 <header><div class="eyebrow">MECH / ADDITIONAL WORKLOAD</div><h1>Finite-volume heat diffusion</h1><p>A square grid evolves through a Mech matrix recurrence. CPU and GPU results are checked against an independent neighbour-sum calculation.</p><nav><a href="index.html">Audit atlas</a><a href="inventory.html">Inventory</a><a href="trust.html">R-stack proof</a><a href="compute.html">Compute controls</a><a href="application.html">N-body qualification</a></nav></header>
 <main><aside id="artifact">Loading executable identity…</aside><section><h2>Grid and boundary conditions</h2>
 <p>Each cell exchanges heat with its horizontal and vertical neighbours. Boundary faces are insulated. The initial upper-left cell has temperature 80 and all other cells start at zero. The dimensionless timestep is α = κΔt/Δx². The selected α values satisfy the explicit two-dimensional stability condition α ≤ ¼. Optional heater input adds one unit to the centre cell after each diffusion step.</p>
@@ -8,3 +8,5 @@
 <p>The source declares the discrete Laplacian and performs <code>temperature = temperature + (laplacian ** temperature) * alpha + heater-mask * heater</code>. The JavaScript reference visits neighbouring cells directly. Absolute comparison tolerance: 10⁻⁵. The sum of temperatures remains 80 for insulated runs; each active heater turn adds one unit.</p>
 <details><summary>Configuration and completed execution record</summary><pre id="config"></pre><pre id="result"></pre></details><p><a href="../evidence/diffusion-browser.json">Recorded workload qualification</a></p></section></main>
 <script src="../../../include/browser-compute.js"></script><script type="module" src="diffusion.js"></script></body></html>
+
+<script type="module" src="human-data.js"></script>
