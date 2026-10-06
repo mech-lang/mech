@@ -10,6 +10,7 @@ use alloc::{boxed::Box, vec::Vec};
 
 pub(crate) enum BoundaryProgress {
     Complete(bool),
+    DocumentRestart,
     NeedInput,
     NeedsProcessing,
     Limited,
@@ -166,6 +167,16 @@ impl<'a> AbandonContinuation<'a> {
                     let progress = boundary(parser, character, final_input, allowance);
                     self.work += before - *allowance;
                     match progress {
+                        BoundaryProgress::DocumentRestart => {
+                            // An enclosing document owner survives malformed
+                            // delimiters encountered while skipping bad source.
+                            self.delimiters.clear();
+                            if final_probe {
+                                self.exhausted(parser, true);
+                            } else {
+                                self.phase = Phase::FinalBoundary;
+                            }
+                        }
                         BoundaryProgress::Complete(stop) => {
                             let stopped = recovery_boundary(character, &self.delimiters, stop);
                             if final_probe {
@@ -243,6 +254,9 @@ impl<'a> AbandonContinuation<'a> {
                             } else {
                                 Phase::Consume(character, matched)
                             };
+                        }
+                        BoundaryProgress::DocumentRestart => {
+                            unreachable!("annotation probe returns an attempt")
                         }
                         BoundaryProgress::NeedInput => {
                             self.phase = Phase::Annotation(character, checkpoint, child);

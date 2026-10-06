@@ -109,12 +109,15 @@ impl Continuation {
     }
     fn brace_record_recover(&mut self, owner: Owner) {
         self.brace(Phase::RecordRecovered(owner));
-        self.push(Frame::Closer(Box::new(Closer::new(
-            rules::RECORD,
-            rules::RIGHT_BRACE,
-            SyntaxKind::RightBrace,
-            "}",
-        ))));
+        self.push(Frame::Closer(Box::new(
+            Closer::new(
+                rules::RECORD,
+                rules::RIGHT_BRACE,
+                SyntaxKind::RightBrace,
+                "}",
+            )
+            .with_opening(owner.record, TextSize(1)),
+        )));
     }
     fn brace_head(
         &mut self,
@@ -458,12 +461,10 @@ impl Continuation {
                     self.brace_set_finish(parser, owner, committed);
                 } else {
                     self.brace(Phase::SetRecovered(owner));
-                    self.push(Frame::Closer(Box::new(Closer::new(
-                        rules::SET,
-                        rules::RIGHT_BRACE,
-                        SyntaxKind::RightBrace,
-                        "}",
-                    ))));
+                    self.push(Frame::Closer(Box::new(
+                        Closer::new(rules::SET, rules::RIGHT_BRACE, SyntaxKind::RightBrace, "}")
+                            .with_opening(owner.set, TextSize(1)),
+                    )));
                 }
             }
             Phase::SetRecovered(owner) => self.brace_set_finish(parser, owner, true),
@@ -616,12 +617,10 @@ impl Continuation {
                         map.committed = true;
                     }
                     self.brace(Phase::MapRecovered(map));
-                    self.push(Frame::Closer(Box::new(Closer::new(
-                        rules::MAP,
-                        rules::RIGHT_BRACE,
-                        SyntaxKind::RightBrace,
-                        "}",
-                    ))));
+                    self.push(Frame::Closer(Box::new(
+                        Closer::new(rules::MAP, rules::RIGHT_BRACE, SyntaxKind::RightBrace, "}")
+                            .with_opening(map.owner.map, TextSize(1)),
+                    )));
                 }
             }
             Phase::MapRecovered(map) => self.brace_map_finish(parser, map),

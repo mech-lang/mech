@@ -473,3 +473,216 @@ fn configured_crlf_fences_keep_information_and_decodable_option_values() {
         }
     }
 }
+
+#[test]
+fn recovered_fence_body_keeps_header_presentation_and_later_document_nodes() {
+    use mech_syntax::document::{NodeFlags, TextRange, TextSize};
+    let text = include_str!("fixtures/document/recovery/fenced-unclosed-matrix.mec");
+    let expected = parse_canonical_document(source(text), ParseConfig::default());
+    assert!(!expected.is_strictly_clean());
+    let fence = find::<CodeBlockSyntax>(expected.syntax()).unwrap();
+    assert!(fence.presentation().is_some());
+    assert_eq!(fence.delimiters().len(), 2);
+    assert!(
+        fence
+            .mech_code()
+            .unwrap()
+            .syntax()
+            .flags()
+            .contains(NodeFlags::CONTAINS_MISSING)
+    );
+    let diagnostic = expected.diagnostics.iter().next().unwrap();
+    assert_eq!(diagnostic.code.as_str(), "syntax/missing-delimiter");
+    let opening = text.find('[').unwrap() as u32;
+    assert_eq!(
+        diagnostic
+            .primary
+            .resolve(expected.revision, &expected.nodes),
+        Some(TextRange::new(TextSize(opening), TextSize(opening + 1)))
+    );
+    let boundary = text.rfind("```\n").unwrap() as u32;
+    assert_eq!(
+        diagnostic.labels[0]
+            .anchor
+            .resolve(expected.revision, &expected.nodes),
+        Some(TextRange::empty(TextSize(boundary)))
+    );
+    assert_eq!(
+        diagnostic.fixes[0].edits[0].delete,
+        TextRange::empty(TextSize(boundary))
+    );
+    assert_eq!(
+        find::<mech_syntax::document::UlSubtitleSyntax>(expected.syntax())
+            .unwrap()
+            .syntax()
+            .flags(),
+        NodeFlags::NONE
+    );
+
+    for split in 0..=text.len() {
+        let mut stream = DocumentStream::new(DocumentId(0x572), ParseConfig::default());
+        support::append(&mut stream, &text[..split], 31);
+        support::append(&mut stream, &text[split..], 31);
+        support::equivalent_to(&support::finish(&mut stream, 31), text, &expected);
+    }
+}
+
+#[test]
+fn recovered_bodies_preserve_options_while_malformed_options_remain_invalid() {
+    for body in ["x := [1 2\nx\n", "x := [1, +, 2]\n", "x :=\n"] {
+        let text = format!("```mech{{output: false, color: red}}\n{body}```\n");
+        let parsed = parse_canonical_document(source(&text), ParseConfig::default());
+        assert!(!parsed.is_strictly_clean());
+        let presentation = find::<CodeBlockSyntax>(parsed.syntax())
+            .unwrap()
+            .presentation()
+            .unwrap();
+        assert!(!presentation.show_output);
+        assert_eq!(presentation.styles, vec![("color".into(), "red".into())]);
+    }
+    let text = "```mech{output: }\nx := 1\n```\n";
+    let parsed = parse_canonical_document(source(text), ParseConfig::default());
+    assert!(!parsed.is_strictly_clean());
+    assert!(
+        find::<CodeBlockSyntax>(parsed.syntax())
+            .unwrap()
+            .presentation()
+            .is_none()
+    );
+}
+
+#[test]
+fn unfenced_delimiter_recovery_preserves_section_and_statement_restarts() {
+    for body in [
+        "answer := [1 2 3\n",
+        "answer := (1 + 2\n",
+        "answer := {x: 1 y: 2\n",
+    ] {
+        let text = format!("{body}\n1. Section One\n---\n\nLater prose.\n");
+        let expected = parse_canonical_document(source(&text), ParseConfig::default());
+        let section = find::<mech_syntax::document::UlSubtitleSyntax>(expected.syntax()).unwrap();
+        assert!(section.syntax().text().unwrap().contains("Section One"));
+        assert_eq!(
+            section.syntax().flags(),
+            mech_syntax::document::NodeFlags::NONE
+        );
+        assert!(expected.diagnostics.iter().all(|d| {
+            d.primary
+                .resolve(expected.revision, &expected.nodes)
+                .unwrap()
+                .end
+                .0 as usize
+                <= body.len()
+        }));
+        for split in 0..=text.len() {
+            let mut stream = DocumentStream::new(DocumentId(0x572), ParseConfig::default());
+            support::append(&mut stream, &text[..split], 31);
+            support::append(&mut stream, &text[split..], 31);
+            support::equivalent_to(&support::finish(&mut stream, 31), &text, &expected);
+        }
+    }
+    for definition in ["next := 7", "next⟨i64⟩ := 7", "~next := 7", "next = 7"] {
+        let text = format!("answer := [1 2 3\n{definition}\nnext\n");
+        let parsed = parse_canonical_document(source(&text), ParseConfig::default());
+        assert!(has_identifier(parsed.syntax(), "next"));
+        let code = find::<mech_syntax::document::MechCodeSyntax>(parsed.syntax()).unwrap();
+        assert_eq!(
+            code.items().len(),
+            3,
+            "{}",
+            mech_syntax::document::compact_debug_tree(&parsed.syntax())
+        );
+        assert_eq!(parsed.diagnostics.len(), 1);
+        for split in text
+            .char_indices()
+            .map(|(at, _)| at)
+            .chain(core::iter::once(text.len()))
+        {
+            let mut stream = DocumentStream::new(DocumentId(0x572), ParseConfig::default());
+            support::append(&mut stream, &text[..split], 31);
+            support::append(&mut stream, &text[split..], 31);
+            support::equivalent_to(&support::finish(&mut stream, 31), &text, &parsed);
+        }
+    }
+}
+
+#[test]
+fn restart_probes_preserve_valid_multiline_source() {
+    for body in [
+        "answer := [1 2;\n3 4]\n",
+        "answer := [1 2;\n\n3 4]\n",
+        "x := 1\nanswer := [1 2; x 4]\n",
+        "x := 1\nanswer := [x == 1; x == 2]\n",
+        "x := 1\nanswer := [x == 1]\n",
+        "answer := {x: 1\ny: 2}\n",
+        "answer := (1,\n2)\n",
+    ] {
+        let text = format!("{body}\n1. Section One\n---\n\nLater prose.\n");
+        let parsed = parse_canonical_document(source(&text), ParseConfig::default());
+        assert!(
+            parsed.is_strictly_clean(),
+            "{text}: {:?}",
+            parsed.diagnostics
+        );
+        for split in 0..=text.len() {
+            let mut stream = DocumentStream::new(DocumentId(0x572), ParseConfig::default());
+            support::append(&mut stream, &text[..split], 17);
+            support::append(&mut stream, &text[split..], 17);
+            support::equivalent_to(&support::finish(&mut stream, 17), &text, &parsed);
+        }
+    }
+}
+
+#[test]
+fn recovery_attaches_after_statement_separators_and_at_section_prefixes() {
+    for body in [
+        "answer := [1 2; next := 7; next\n",
+        "answer := [1 2\n  next := 7\nnext\n",
+        "answer := [1 @\nnext := 7\nnext\n",
+        "answer := [1 @; next := 7; next\n",
+    ] {
+        let parsed = parse_canonical_document(source(body), ParseConfig::default());
+        let code = find::<mech_syntax::document::MechCodeSyntax>(parsed.syntax()).unwrap();
+        assert_eq!(
+            code.items().len(),
+            3,
+            "{body}: {}",
+            mech_syntax::document::compact_debug_tree(&parsed.syntax())
+        );
+        assert!(!parsed.is_strictly_clean());
+        validate_lossless(&parsed.root, &parsed.source).unwrap();
+        for split in 0..=body.len() {
+            let mut stream = DocumentStream::new(DocumentId(0x572), ParseConfig::default());
+            support::append(&mut stream, &body[..split], 17);
+            support::append(&mut stream, &body[split..], 17);
+            support::equivalent_to(&support::finish(&mut stream, 17), body, &parsed);
+        }
+    }
+    for (element, kind) in [
+        ("(i)> Later information.\n", SyntaxKind::InfoBlock),
+        ("(?)> Later question.\n", SyntaxKind::QuestionBlock),
+        ("(!)> Later warning.\n", SyntaxKind::WarningBlock),
+        ("![Later image](image.png)\n", SyntaxKind::Img),
+        ("- Later list item\n", SyntaxKind::MechdownList),
+        ("```mech\nnext := 7\n```\n", SyntaxKind::CodeBlock),
+    ] {
+        let text = format!("answer := [1 2\n\n{element}");
+        let parsed = parse_canonical_document(source(&text), ParseConfig::default());
+        fn clean_node(node: SyntaxNode, kind: SyntaxKind) -> bool {
+            (node.kind() == kind && node.flags() == mech_syntax::document::NodeFlags::NONE)
+                || node.children().any(|child| clean_node(child, kind))
+        }
+        assert!(
+            clean_node(parsed.syntax(), kind),
+            "{text}: {}",
+            mech_syntax::document::compact_debug_tree(&parsed.syntax())
+        );
+        validate_lossless(&parsed.root, &parsed.source).unwrap();
+        for split in 0..=text.len() {
+            let mut stream = DocumentStream::new(DocumentId(0x572), ParseConfig::default());
+            support::append(&mut stream, &text[..split], 17);
+            support::append(&mut stream, &text[split..], 17);
+            support::equivalent_to(&support::finish(&mut stream, 17), &text, &parsed);
+        }
+    }
+}

@@ -308,16 +308,19 @@ impl Continuation {
                 } else {
                     body.committed = true;
                     self.parenthesis(Phase::Finish(body));
-                    self.push(Frame::Closer(Box::new(Closer::new(
-                        if body.selected {
-                            rules::PARENTHETICAL_TERM
-                        } else {
-                            rules::TUPLE
-                        },
-                        rules::RIGHT_PARENTHESIS,
-                        SyntaxKind::RightParen,
-                        ")",
-                    ))));
+                    self.push(Frame::Closer(Box::new(
+                        Closer::new(
+                            if body.selected {
+                                rules::PARENTHETICAL_TERM
+                            } else {
+                                rules::TUPLE
+                            },
+                            rules::RIGHT_PARENTHESIS,
+                            SyntaxKind::RightParen,
+                            ")",
+                        )
+                        .with_opening(body.owner.parenthetical, TextSize(1)),
+                    )));
                 }
             }
             Phase::Finish(body) => self.parenthesis_finish(parser, body),

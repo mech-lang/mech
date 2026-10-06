@@ -38,6 +38,7 @@ pub(super) enum Phase {
     Loop(Owner, bool),
     Decoration(Owner, bool),
     EndProbe(Owner, bool, ParserCheckpoint),
+    Restart(Owner, bool),
     Row(Owner, bool, TextSize),
     Trailing(Owner, bool),
     Close(Owner, bool),
@@ -90,13 +91,16 @@ impl Continuation {
             (SyntaxKind::BoxDrawing, "╯")
         };
         self.bracket(Phase::Recovered(owner));
-        self.push(Frame::Closer(Box::new(Closer::set(
-            rules::MATRIX,
-            rules::MATRIX_END,
-            kind,
-            text,
-            &[']', '╯', '┘', '┛', ')', '}'],
-        ))));
+        self.push(Frame::Closer(Box::new(
+            Closer::set(
+                rules::MATRIX,
+                rules::MATRIX_END,
+                kind,
+                text,
+                &[']', '╯', '┘', '┛', ')', '}', ';', '\n', '\r'],
+            )
+            .with_opening(owner.matrix, TextSize(if owner.ordinary { 1 } else { 3 })),
+        )));
     }
     fn bracket_shell(&mut self, rule: RuleId) {
         self.push(Frame::Shell(Box::new(
@@ -345,6 +349,14 @@ impl Continuation {
                 if end {
                     self.bracket(Phase::Trailing(owner, committed));
                     self.base(rules::WHITESPACE0);
+                } else {
+                    self.bracket(Phase::Restart(owner, committed));
+                    self.push(Frame::DocumentRestart(Box::new(DocumentRestart::new())));
+                }
+            }
+            Phase::Restart(owner, committed) => {
+                if self.result == Attempt::Matched {
+                    self.bracket_recover(owner);
                 } else {
                     self.bracket(Phase::Row(owner, committed, parser.offset()));
                     self.push(Frame::Call(rules::MATRIX_ROW));

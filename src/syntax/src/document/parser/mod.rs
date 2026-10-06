@@ -115,6 +115,8 @@ pub(crate) struct ParserState {
     input_frontier: bool,
     cursor_frontier: bool,
     context_frontier: bool,
+    document_mech: bool,
+    fenced_mech: bool,
 }
 
 pub(crate) struct CleanSubtree {
@@ -138,6 +140,8 @@ impl ParserState {
             tree_cache: tree_cache::TreeCache::default(),
             grapheme_tail: None,
             open_markers: Vec::new(),
+            document_mech: false,
+            fenced_mech: false,
             peak_open_markers: 0,
             peak_events: 0,
             rewinds: 0,
@@ -657,6 +661,35 @@ impl<'a> Parser<'a> {
             .diagnostics
             .last_mut()
             .map(|pending| &mut pending.diagnostic)
+    }
+
+    pub(crate) fn anchor_missing_delimiter_to_opening(
+        &mut self,
+        missing: CompletedMarker,
+        opening: Marker,
+        length: TextSize,
+    ) {
+        let revision = self.source().revision();
+        let Some(pending) = self.state.diagnostics.last_mut() else {
+            return;
+        };
+        // A diagnostic limit can suppress the missing node's diagnostic.
+        if pending.event != Some(missing.position()) {
+            return;
+        }
+        pending
+            .diagnostic
+            .labels
+            .push(crate::document::DiagnosticLabel {
+                anchor: pending.diagnostic.primary.clone(),
+                message: String::from("closing delimiter expected before this boundary"),
+            });
+        pending.diagnostic.primary = DiagnosticAnchor::Absolute {
+            revision,
+            range: TextRange::new(opening.offset, opening.offset + length),
+        };
+        pending.event = Some(opening.position);
+        pending.relative = TextRange::new(TextSize::ZERO, length);
     }
 
     pub(crate) fn found_syntax(&self) -> FoundSyntax {

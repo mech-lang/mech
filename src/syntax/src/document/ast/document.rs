@@ -534,12 +534,24 @@ impl CodeBlockSyntax {
 
     pub fn presentation(&self) -> Option<crate::document::CodeFencePresentation> {
         use crate::document::NodeFlags;
-        if self.syntax().flags().intersects(
-            NodeFlags::ERROR
-                | NodeFlags::MISSING
-                | NodeFlags::CONTAINS_ERROR
-                | NodeFlags::CONTAINS_MISSING,
-        ) {
+        // Presentation options belong to the fence header. Recovered body
+        // syntax and an unfinished closing fence retain that header's meaning.
+        let header = self.info_range()?;
+        let invalid = NodeFlags::ERROR
+            | NodeFlags::MISSING
+            | NodeFlags::CONTAINS_ERROR
+            | NodeFlags::CONTAINS_MISSING;
+        if self
+            .syntax()
+            .flags()
+            .intersects(NodeFlags::ERROR | NodeFlags::MISSING)
+            || self.syntax().children().any(|child| {
+                child.range().start <= header.end
+                    && child.range().end >= header.start
+                    && child.flags().intersects(invalid)
+                    && child.kind() != SyntaxKind::MechCode
+            })
+        {
             return None;
         }
         let mut presentation = crate::document::CodeFencePresentation::default();

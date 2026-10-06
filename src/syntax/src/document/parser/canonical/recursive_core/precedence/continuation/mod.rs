@@ -23,7 +23,7 @@ mod table_row;
 use super::super::{ExpressionForm, FactAttempt};
 use super::super::{
     kinds,
-    required::{Closer, Required},
+    required::{Closer, DocumentRestart, Required},
 };
 use super::*;
 use crate::document::TextSize;
@@ -123,6 +123,7 @@ struct Level {
     committed: bool,
 }
 enum Frame {
+    DocumentRestart(Box<DocumentRestart>),
     Brace(Box<brace::Phase>),
     Bracket(Box<bracket::Phase>),
     Inline(Box<inline::Phase>),
@@ -199,6 +200,7 @@ enum Frame {
     Exit(ParserCheckpoint),
     First(Level),
     Loop(Level),
+    RecoveryAttachment(Level),
     OperatorResult(Level, TextSize),
     OperandResult(Level, TextSize),
     Recovered(Level, TextSize),
@@ -555,6 +557,7 @@ impl Continuation {
             if !matches!(
                 frame,
                 Frame::Missing(_)
+                    | Frame::DocumentRestart(_)
                     | Frame::Shell(_)
                     | Frame::Primitive(_)
                     | Frame::Closer(_)
@@ -572,6 +575,35 @@ impl Continuation {
                 self.work += 1;
             }
             match frame {
+                Frame::DocumentRestart(mut child) => {
+                    let before = *allowance;
+                    let result = child.advance(parser, final_input, allowance);
+                    self.work += before - *allowance;
+                    match result {
+                        crate::document::parser::recovery::BoundaryProgress::DocumentRestart => {
+                            self.result = Attempt::Matched
+                        }
+                        crate::document::parser::recovery::BoundaryProgress::Complete(found) => {
+                            self.result = if found {
+                                Attempt::Matched
+                            } else {
+                                Attempt::NoMatch
+                            }
+                        }
+                        crate::document::parser::recovery::BoundaryProgress::NeedInput => {
+                            self.push(Frame::DocumentRestart(child));
+                            return Progress::NeedInput;
+                        }
+                        crate::document::parser::recovery::BoundaryProgress::NeedsProcessing => {
+                            self.push(Frame::DocumentRestart(child));
+                            return Progress::NeedsProcessing;
+                        }
+                        crate::document::parser::recovery::BoundaryProgress::Limited => {
+                            self.push(Frame::DocumentRestart(child));
+                            return Progress::Limited;
+                        }
+                    }
+                }
                 Frame::LeafBase(mut child) => {
                     let before = *allowance;
                     let progress = child.advance(parser, final_input, allowance);
@@ -871,6 +903,20 @@ impl Continuation {
                 }
                 Frame::Loop(level) => {
                     if parser.is_halted() {
+                        self.finish_level(parser, level);
+                    } else if level.committed
+                        && parser.state.document_mech
+                        && !parser.state.fenced_mech
+                    {
+                        self.push(Frame::RecoveryAttachment(level));
+                        self.push(Frame::DocumentRestart(Box::new(DocumentRestart::new())));
+                    } else {
+                        self.push(Frame::OperatorResult(level, parser.offset()));
+                        self.push(Frame::Operator(level.index, 0));
+                    }
+                }
+                Frame::RecoveryAttachment(level) => {
+                    if self.result == Attempt::Matched {
                         self.finish_level(parser, level);
                     } else {
                         self.push(Frame::OperatorResult(level, parser.offset()));

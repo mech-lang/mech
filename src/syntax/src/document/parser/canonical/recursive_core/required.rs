@@ -9,6 +9,8 @@ use crate::document::parser::recovery::{
 };
 use crate::document::{ExpectedSyntax, TextRange, TextSize, TokenFlags};
 use alloc::{boxed::Box, string::String, vec::Vec};
+mod document_restart;
+pub(super) use document_restart::DocumentRestart;
 
 const RESTART_BOUNDARIES: &[char] = &[
     ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '?', '\n', '\r',
@@ -309,7 +311,9 @@ impl<'a> Required<'a> {
                     };
                     self.work += before - *allowance;
                     match result {
-                        BoundaryProgress::Complete(true) => self.missing(),
+                        BoundaryProgress::Complete(true) | BoundaryProgress::DocumentRestart => {
+                            self.missing()
+                        }
                         BoundaryProgress::Complete(false) => {
                             self.phase = Phase::Abandon(AbandonContinuation::new(
                                 self.target,
@@ -520,6 +524,8 @@ pub(super) struct Closer<'a> {
     close_kind: SyntaxKind,
     close_text: &'a str,
     boundaries: &'a [char],
+    opening: Option<(crate::document::parser::Marker, TextSize)>,
+    restart: Option<(TextSize, DocumentRestart)>,
     phase: CloserPhase<'a>,
     pub work: u64,
 }
@@ -554,6 +560,8 @@ impl<'a> Closer<'a> {
             close_kind,
             close_text,
             boundaries: CLOSER_BOUNDARIES,
+            opening: None,
+            restart: None,
             phase: CloserPhase::Abandon(AbandonContinuation::new(
                 target,
                 "syntax/unexpected-delimited-content",
@@ -561,6 +569,15 @@ impl<'a> Closer<'a> {
             )),
             work: 0,
         }
+    }
+
+    pub fn with_opening(
+        mut self,
+        opening: crate::document::parser::Marker,
+        length: TextSize,
+    ) -> Self {
+        self.opening = Some((opening, length));
+        self
     }
     pub fn advance(
         &mut self,
@@ -582,13 +599,35 @@ impl<'a> Closer<'a> {
             let phase = core::mem::replace(&mut self.phase, CloserPhase::Done);
             let result = match phase {
                 CloserPhase::Abandon(mut child) => {
-                    match child.advance(parser, final_input, allowance, |_, ch, _, allowance| {
-                        if *allowance == 0 {
-                            return BoundaryProgress::NeedsProcessing;
-                        }
-                        *allowance -= 1;
-                        BoundaryProgress::Complete(self.boundaries.contains(&ch))
-                    }) {
+                    match child.advance(
+                        parser,
+                        final_input,
+                        allowance,
+                        |parser, ch, _, allowance| {
+                            if *allowance == 0 {
+                                return BoundaryProgress::NeedsProcessing;
+                            }
+                            *allowance -= 1;
+                            if self.boundaries.contains(&ch) {
+                                return BoundaryProgress::Complete(true);
+                            }
+                            if self.restart.as_ref().is_none_or(|(at, probe)| {
+                                *at != parser.offset() && probe.is_finished()
+                            }) {
+                                self.restart = Some((parser.offset(), DocumentRestart::new()));
+                            }
+                            match self.restart.as_mut().unwrap().1.advance(
+                                parser,
+                                final_input,
+                                allowance,
+                            ) {
+                                BoundaryProgress::Complete(true) => {
+                                    BoundaryProgress::DocumentRestart
+                                }
+                                result => result,
+                            }
+                        },
+                    ) {
                         AbandonProgress::Complete(_) => {
                             self.token();
                             None
@@ -663,8 +702,12 @@ impl<'a> Closer<'a> {
                 }
                 CloserPhase::Missing(mut child) => {
                     match child.advance(parser, final_input, allowance) {
-                        MissingProgress::Complete(_) => {
+                        MissingProgress::Complete(missing) => {
                             combinator::attach_missing_fix(parser, Some(self.close_text));
+                            if let Some((opening, length)) = self.opening {
+                                parser
+                                    .anchor_missing_delimiter_to_opening(missing, opening, length);
+                            }
                             None
                         }
                         MissingProgress::NeedInput => {

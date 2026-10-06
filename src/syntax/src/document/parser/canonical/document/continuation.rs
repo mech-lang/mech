@@ -50,6 +50,7 @@ struct RuleExit<'g> {
     checkpoint: ParserCheckpoint,
     marker: Option<Marker>,
     outer: GrammarState,
+    outer_document_mech: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -194,11 +195,16 @@ impl<'g> Continuation<'g> {
         }
         let marker = specification.kind.map(|_| parser.start());
         let outer = core::mem::take(&mut self.state);
+        let outer_document_mech = parser.state.document_mech;
+        if specification.rule == rules::MECH_CODE {
+            parser.state.document_mech = true;
+        }
         self.push(Frame::RuleExit(RuleExit {
             specification,
             checkpoint,
             marker,
             outer,
+            outer_document_mech,
         }));
         if specification.rule == rules::MECH_CODE_ALT {
             self.push(Frame::CommentProbe(
@@ -979,6 +985,7 @@ impl<'g> Continuation<'g> {
                     }
                 }
                 Frame::RuleComplete(frame) => {
+                    parser.state.document_mech = frame.outer_document_mech;
                     if let Some(marker) = frame.marker {
                         if self.result == Attempt::NoMatch {
                             marker.abandon(parser);
@@ -1197,7 +1204,10 @@ impl<'g> Continuation<'g> {
                     parser.state.cursor_frontier = !fence.sealed;
                     parser.state.context_frontier = !fence.sealed;
                     let before = *allowance;
+                    let outer_fenced_mech = parser.state.fenced_mech;
+                    parser.state.fenced_mech = true;
                     let progress = fence.child.advance(parser, fence.sealed, allowance);
+                    parser.state.fenced_mech = outer_fenced_mech;
                     self.child_work += before - *allowance;
                     parser.leave_cursor_scope(outer);
                     match progress {

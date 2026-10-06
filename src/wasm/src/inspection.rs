@@ -493,4 +493,70 @@ mod editor_render_tests {
         assert!(html.contains("&lt;img"));
         assert!(!html.contains("<img src=x"));
     }
+
+    #[test]
+    fn editor_preview_renders_recovered_fence_and_repairs_its_error() {
+        let source = include_str!(
+            "../../syntax/tests/fixtures/document/recovery/fenced-unclosed-matrix.mec"
+        );
+        let mut editor = WasmSyntaxEditor::new(713, source);
+        let snapshot = editor.session.snapshot();
+        assert!(!snapshot.is_strictly_clean());
+        let html = render_editor_document(snapshot).unwrap();
+        for text in [
+            "Calculation",
+            "answer",
+            "Section One",
+            "This is the first section.",
+        ] {
+            assert!(html.contains(text), "{html}");
+        }
+        let position = source.find("5\n").unwrap() as u32 + 1;
+        editor
+            .session
+            .try_apply_edits(&[TextEdit::insert(TextSize(position), "]")])
+            .unwrap();
+        assert!(editor.session.snapshot().is_strictly_clean());
+        assert!(
+            render_editor_document(editor.session.snapshot())
+                .unwrap()
+                .contains("Section One")
+        );
+    }
+
+    #[test]
+    fn editor_preview_preserves_later_sections_for_fenced_and_unfenced_errors() {
+        let tail =
+            "\n1. Section One\n------------------------------\n\nThis is the first section.\n";
+        for body in [
+            "answer := [1 2 3 4 5\n",
+            "answer := (1 + 2\n",
+            "answer := {x: 1 y: 2\n",
+            "answer := [1, +, 2]\n",
+            "answer := 1 +\n",
+            "answer := [1 @ [2\n",
+        ] {
+            for fenced in [false, true] {
+                let source = if fenced {
+                    format!("```mech\n{body}```\n{tail}")
+                } else {
+                    format!("{body}{tail}")
+                };
+                let editor = WasmSyntaxEditor::new(714, &source);
+                assert!(!editor.session.snapshot().is_strictly_clean(), "{source}");
+                let html = render_editor_document(editor.session.snapshot()).unwrap();
+                assert!(html.contains("Section One"), "{source}: {html}");
+                assert!(
+                    html.contains("This is the first section."),
+                    "{source}: {html}"
+                );
+                assert!(html.contains("mech-subtitle"), "{source}: {html}");
+            }
+        }
+        let source = format!("```mech{{output: }}\nanswer := 1\n```\n{tail}");
+        let editor = WasmSyntaxEditor::new(715, &source);
+        let html = render_editor_document(editor.session.snapshot()).unwrap();
+        assert!(html.contains("mech-recovered-source"), "{html}");
+        assert!(html.contains("Section One"), "{html}");
+    }
 }
