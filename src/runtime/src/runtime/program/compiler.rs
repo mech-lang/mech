@@ -46,12 +46,7 @@ use crate::{
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure};
 
 fn canonical_frontend(document: &SourceDocument) -> CanonicalSourceFrontend {
-    document
-        .nominal_origin()
-        .cloned()
-        .map_or(CanonicalSourceFrontend, |origin| {
-            CanonicalSourceFrontend.with_nominal_origin(origin)
-        })
+    document.canonical_frontend()
 }
 
 pub(super) fn canonical_dependency_identity_hash(
@@ -167,6 +162,7 @@ fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
         Arc::<str>::from(source),
         mech_syntax::document::ParseConfig::default(),
     )
+    .map(SourceDocument::with_standalone_nominal_origin)
     .map_err(|error| canonical_compilation_error(format!("invalid retained source: {error:?}")))
 }
 

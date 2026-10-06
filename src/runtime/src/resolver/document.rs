@@ -118,10 +118,54 @@ impl mech_core::MechErrorKind for SourceDocumentIndexError {
 }
 
 impl SourceDocument {
+    /// Allocate a durable owner for one standalone document or interactive session.
+    /// The reserved virtual package cannot collide with a Cargo package name.
+    /// Hosts that save editable documents must retain this origin alongside the
+    /// source; neither source text nor its transport URI defines nominal identity.
+    pub fn new_standalone_origin() -> mech_core::CanonicalNominalPath {
+        mech_core::CanonicalNominalPath::new(vec![
+            "mech:standalone".to_owned(),
+            uuid::Uuid::now_v7().to_string(),
+        ])
+        .expect("the reserved standalone namespace and UUID are valid path segments")
+    }
+
+    /// Admit an explicitly standalone document without replacing package provenance.
+    /// Call once when creating its owner, then retain the origin across revisions.
+    pub fn with_standalone_nominal_origin(mut self) -> Self {
+        if self.nominal_origin.is_none() {
+            self.nominal_origin = Some(Self::new_standalone_origin());
+        }
+        self
+    }
+
+    /// Configure direct semantic compilation with this document's retained identity.
+    /// Unowned resolver documents still require their defining package provenance.
+    #[cfg(feature = "semantic-compiler")]
+    pub fn canonical_frontend(&self) -> mech_engine::CanonicalSourceFrontend {
+        self.nominal_origin
+            .as_ref()
+            .map_or(mech_engine::CanonicalSourceFrontend, |origin| {
+                mech_engine::CanonicalSourceFrontend.with_nominal_origin(origin.clone())
+            })
+    }
+
     /// Attach the defining package and module namespace supplied by the
     /// resolver. Nominal declarations require this before compilation.
     pub fn with_nominal_origin(mut self, origin: mech_core::CanonicalNominalPath) -> Self {
         self.nominal_origin = Some(origin);
+        self
+    }
+
+    /// Replace the defining origin and its optional package discriminator together.
+    /// A new origin must not inherit a discriminator belonging to the old owner.
+    pub fn with_nominal_provenance(
+        mut self,
+        origin: mech_core::CanonicalNominalPath,
+        package_id: Option<String>,
+    ) -> Self {
+        self.nominal_origin = Some(origin);
+        self.nominal_package_id = package_id;
         self
     }
 

@@ -121,7 +121,29 @@ pub trait ResidentReplRuntimeFactory {
         events: MechEventBuffer,
         document: &crate::SourceDocument,
     ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
-        self.activate(events, &document.source().to_contiguous_string())
+        let mut runtime = self.build(events)?;
+        if document.source().to_contiguous_string().trim().is_empty() {
+            return Ok((
+                runtime,
+                RuntimeProgramLoadOutcome {
+                    route: crate::RuntimeProgramRoute::None,
+                    initial_value: RuntimeValueSnapshot::empty(),
+                    info: crate::RuntimeProgramExecutionInfo::default(),
+                },
+            ));
+        }
+        let outcome = match runtime
+            .load_interactive_document_program(document, ResidentDurabilityPolicy::Volatile)
+        {
+            Ok(outcome) => outcome,
+            Err(error) => {
+                if let Err(shutdown_error) = runtime.shutdown() {
+                    return Err(shutdown_error.with_source(error));
+                }
+                return Err(error);
+            }
+        };
+        Ok((runtime, outcome))
     }
 
     /// Prepare a successfully activated candidate for commit while the
@@ -147,6 +169,7 @@ pub const DEFAULT_REPL_VALUE_ELEMENT_LIMIT: usize = 500;
 
 pub struct ResidentReplSession<F: ResidentReplRuntimeFactory> {
     factory: F,
+    standalone_nominal_origin: mech_core::CanonicalNominalPath,
     initial_document: Option<crate::SourceDocument>,
     source: String,
     source_document: Option<crate::SourceDocument>,
@@ -169,6 +192,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     pub fn with_quiet(factory: F, quiet: bool) -> Self {
         Self {
             factory,
+            standalone_nominal_origin: crate::SourceDocument::new_standalone_origin(),
             initial_document: None,
             source: String::new(),
             source_document: None,
@@ -200,21 +224,9 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     /// Construct a canonical interactive session around one retained source
     /// revision. No legacy syntax tree is created or retained.
     pub fn from_document(factory: F, document: crate::SourceDocument) -> MResult<Self> {
-        let mut session = Self {
-            factory,
-            initial_document: Some(document.clone()),
-            source: String::new(),
-            source_document: None,
-            runtime: None,
-            program_events: None,
-            pending_selection: None,
-            cleared_synthetic_symbols: std::collections::BTreeSet::new(),
-            retained_selections: BTreeMap::new(),
-            reusable_selection_tokens: BTreeMap::new(),
-            events: MechEventJournal::default(),
-            quiet: false,
-            value_element_limit: DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
-        };
+        let mut session = Self::new(factory);
+        let document = session.preserve_document_provenance(document);
+        session.initial_document = Some(document.clone());
         session.replace_document(document)?;
         Ok(session)
     }
@@ -442,13 +454,25 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         &self,
         mut document: crate::SourceDocument,
     ) -> crate::SourceDocument {
-        if let Some(current) = self.source_document.as_ref() {
+        if document.nominal_origin().is_some() {
+            return document;
+        }
+        if let Some(current) = self
+            .source_document
+            .as_ref()
+            .or(self.initial_document.as_ref())
+        {
             if let Some(origin) = current.nominal_origin() {
                 document = document.with_nominal_origin(origin.clone());
             }
-            if let Some(package_id) = current.nominal_package_id() {
-                document = document.with_nominal_package_id(package_id);
+            if document.nominal_package_id().is_none() {
+                if let Some(package_id) = current.nominal_package_id() {
+                    document = document.with_nominal_package_id(package_id);
+                }
             }
+        }
+        if document.nominal_origin().is_none() {
+            document = document.with_nominal_origin(self.standalone_nominal_origin.clone());
         }
         document
     }
@@ -509,6 +533,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         candidate_document: crate::SourceDocument,
         changed_state_names: Option<&std::collections::BTreeSet<String>>,
     ) -> MResult<RuntimeValueSnapshot> {
+        let candidate_document = self.preserve_document_provenance(candidate_document);
         let candidate_events = MechEventBuffer::default();
         let activated = self
             .factory
@@ -1384,6 +1409,193 @@ mod tests {
         stream
     }
 
+    fn assert_enum_value(
+        value: &RuntimeValueSnapshot,
+        origin: &mech_core::CanonicalNominalPath,
+        name: &str,
+        variant: &str,
+    ) {
+        let schemas = value.value().schemas().unwrap();
+        let mech_core::SchemaBody::Enum { key, variants } =
+            schemas.get(value.schema()).unwrap().body()
+        else {
+            panic!("expected a nominal enum schema");
+        };
+        let path = mech_core::CanonicalNominalPath::new(
+            origin
+                .segments()
+                .iter()
+                .cloned()
+                .chain(std::iter::once(name.to_owned()))
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+        assert_eq!(
+            *key,
+            mech_core::NominalKey::from_path(mech_core::NominalKind::Enum, &path)
+        );
+        let mech_core::ValueData::Enum(data) = value.value().data() else {
+            panic!("expected a nominal enum value");
+        };
+        assert_eq!(variants[data.ordinal() as usize].name, variant);
+    }
+
+    #[test]
+    fn standalone_enum_owner_survives_interactive_edits_clear_and_reset() {
+        const SOURCE: &str = "<color> := :red | :green | :blue\nmy-color<color> := :red\n";
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit(SOURCE).unwrap();
+        let origin = session
+            .source_document()
+            .unwrap()
+            .nominal_origin()
+            .unwrap()
+            .clone();
+        let red = session.symbol("my-color").unwrap().unwrap();
+        assert_enum_value(&red, &origin, "color", "red");
+
+        let green = session.submit("other-color<color> := :green").unwrap();
+        assert_enum_value(&green, &origin, "color", "green");
+        assert_eq!(red.schema_key(), green.schema_key());
+        let accepted = session.source_document().unwrap().clone();
+        assert!(session.submit("bad<color> := :yellow").is_err());
+        assert_eq!(session.source_document(), Some(&accepted));
+        assert_eq!(session.symbol("my-color").unwrap().unwrap(), red);
+
+        session
+            .replace_source(SOURCE.replace("my-color<color> := :red", "my-color<color> := :blue"))
+            .unwrap();
+        assert_enum_value(
+            &session.symbol("my-color").unwrap().unwrap(),
+            &origin,
+            "color",
+            "blue",
+        );
+        let mut replacement = finished_stream(905, SOURCE);
+        session.replace_finished_stream(&mut replacement).unwrap();
+        assert_enum_value(
+            &session.symbol("my-color").unwrap().unwrap(),
+            &origin,
+            "color",
+            "red",
+        );
+        session.clear_variables(&["my-color".to_owned()]).unwrap();
+        let green = session.submit("my-color<color> := :green").unwrap();
+        assert_enum_value(&green, &origin, "color", "green");
+
+        session.clear_variables(&[]).unwrap();
+        assert!(session.source().is_empty());
+        assert_eq!(
+            session.source_document().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        session.submit(SOURCE).unwrap();
+        session.reset().unwrap();
+        assert!(session.source().is_empty());
+        assert_eq!(
+            session.source_document().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        session.submit(SOURCE).unwrap();
+        let restored = session.symbol("my-color").unwrap().unwrap();
+        assert_eq!(restored.schema_key(), red.schema_key());
+        assert_enum_value(&restored, &origin, "color", "red");
+
+        let mut independent = ResidentReplSession::new(SourceRuntimeFactory);
+        independent.submit(SOURCE).unwrap();
+        assert_ne!(
+            independent.source_document().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        assert_ne!(
+            independent
+                .symbol("my-color")
+                .unwrap()
+                .unwrap()
+                .schema_key(),
+            red.schema_key()
+        );
+    }
+
+    #[test]
+    fn raw_source_enum_compilation_is_independent_and_bytecode_keeps_its_key() {
+        const SOURCE: &str = "<color> := :red | :green | :blue\nmy-color<color> := :red\n";
+        let mut runtime = SourceRuntimeFactory
+            .build(MechEventBuffer::default())
+            .unwrap();
+        let first = runtime
+            .load_source_program(SOURCE, ResidentDurabilityPolicy::Volatile)
+            .unwrap()
+            .initial_value;
+        assert!(matches!(
+            first.value().data(),
+            mech_core::ValueData::Enum(_)
+        ));
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()
+            .unwrap();
+        let product = compiler.compile_source(SOURCE).unwrap();
+        runtime.unload_active_program().unwrap();
+        let decoded = runtime
+            .load_bytecode_program(product.bytecode(), ResidentDurabilityPolicy::Volatile)
+            .unwrap()
+            .initial_value;
+        assert!(matches!(
+            decoded.value().data(),
+            mech_core::ValueData::Enum(_)
+        ));
+        assert_ne!(first.schema_key(), decoded.schema_key());
+        runtime.unload_active_program().unwrap();
+        let restored = runtime
+            .load_bytecode_program(product.bytecode(), ResidentDurabilityPolicy::Volatile)
+            .unwrap()
+            .initial_value;
+        assert_eq!(decoded, restored);
+    }
+
+    #[test]
+    fn explicit_document_namespace_takes_precedence_over_session_fallback() {
+        const SOURCE: &str = "<color> := :red | :green\nmy-color<color> := :red\n";
+        let mut session =
+            ResidentReplSession::from_source(SourceRuntimeFactory, SOURCE.to_owned()).unwrap();
+        let standalone = session.symbol("my-color").unwrap().unwrap();
+        let origin = mech_core::CanonicalNominalPath::new(vec![
+            "example-package".to_owned(),
+            "colors".to_owned(),
+        ])
+        .unwrap();
+        let document = crate::SourceDocument::parse_resolved(
+            "package:colors",
+            Revision(0),
+            SOURCE,
+            ParseConfig::default(),
+        )
+        .unwrap()
+        .with_nominal_origin(origin.clone())
+        .with_nominal_package_id("example-package-instance");
+        session.replace_document(document).unwrap();
+        let packaged = session.symbol("my-color").unwrap().unwrap();
+        assert_enum_value(&packaged, &origin, "color", "red");
+        assert_ne!(standalone.schema_key(), packaged.schema_key());
+        session.submit("other-color<color> := :green").unwrap();
+        assert_eq!(
+            session.source_document().unwrap().nominal_package_id(),
+            Some("example-package-instance")
+        );
+        assert_enum_value(
+            &session.symbol("other-color").unwrap().unwrap(),
+            &origin,
+            "color",
+            "green",
+        );
+        session.reset().unwrap();
+        assert_eq!(
+            session.symbol("my-color").unwrap().unwrap().schema_key(),
+            standalone.schema_key()
+        );
+    }
+
     #[test]
     fn canonical_clear_removes_definitions_assignments_and_op_assignments() {
         let initial = crate::SourceDocument::parse_resolved(
@@ -1415,20 +1627,21 @@ mod tests {
         let initial = crate::SourceDocument::parse_resolved(
             "repl://nominal-origin",
             Revision(0),
-            Arc::<str>::from("<event> := :idle | :busy\nvalue := :idle\n"),
+            Arc::<str>::from("<event> := :idle | :busy\nvalue<event> := :idle\n"),
             ParseConfig::default(),
         )
         .unwrap()
         .with_nominal_origin(origin.clone())
         .with_nominal_package_id("test-package");
-        let mut session = ResidentReplSession::from_document(
-            CanonicalRuntimeFactory {
-                activations: std::rc::Rc::new(Cell::new(0)),
-            },
-            initial,
-        )
-        .unwrap();
-        session.submit("next := :busy").unwrap();
+        let mut session =
+            ResidentReplSession::from_document(SourceRuntimeFactory, initial).unwrap();
+        assert_enum_value(
+            &session.symbol("value").unwrap().unwrap(),
+            &origin,
+            "event",
+            "idle",
+        );
+        session.submit("next<event> := :busy").unwrap();
         assert_eq!(
             session.source_document.as_ref().unwrap().nominal_origin(),
             Some(&origin)
@@ -1454,7 +1667,8 @@ mod tests {
                 .nominal_package_id(),
             Some("test-package")
         );
-        let mut replacement = finished_stream(904, "<event> := :idle | :busy\nvalue := :busy\n");
+        let mut replacement =
+            finished_stream(904, "<event> := :idle | :busy\nvalue<event> := :busy\n");
         session.replace_finished_stream(&mut replacement).unwrap();
         assert_eq!(
             session.source_document.as_ref().unwrap().nominal_origin(),
@@ -1467,6 +1681,31 @@ mod tests {
                 .unwrap()
                 .nominal_package_id(),
             Some("test-package")
+        );
+        session
+            .replace_source("<event> := :idle | :busy\nvalue<event> := :busy\n".to_owned())
+            .unwrap();
+        assert_enum_value(
+            &session.symbol("value").unwrap().unwrap(),
+            &origin,
+            "event",
+            "busy",
+        );
+        session.clear_variables(&[]).unwrap();
+        session.reset().unwrap();
+        assert_eq!(
+            session.source_document().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        assert_eq!(
+            session.source_document().unwrap().nominal_package_id(),
+            Some("test-package")
+        );
+        assert_enum_value(
+            &session.symbol("value").unwrap().unwrap(),
+            &origin,
+            "event",
+            "idle",
         );
     }
 
@@ -1727,10 +1966,10 @@ mod tests {
             unreachable!("the test factory supplies an activated runtime")
         }
 
-        fn activate(
+        fn activate_document(
             &self,
             events: MechEventBuffer,
-            _source: &str,
+            _document: &crate::SourceDocument,
         ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
             *self.events.lock().unwrap() = Some(events);
             Ok((
@@ -1749,10 +1988,10 @@ mod tests {
             unreachable!("the test factory supplies activated runtimes directly")
         }
 
-        fn activate(
+        fn activate_document(
             &self,
             _events: MechEventBuffer,
-            _source: &str,
+            _document: &crate::SourceDocument,
         ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
             let activation = self.activations.get();
             self.activations.set(activation + 1);
