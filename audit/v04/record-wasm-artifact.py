@@ -16,7 +16,7 @@ site = ROOT / 'audit/v04/site'
 package = ROOT / 'src/wasm/pkg'
 for name in ('mech_wasm.js', 'mech_wasm_bg.wasm'):
     if not (package / name).is_file(): raise SystemExit(f'Missing completed package: {name}')
-exports = ('WasmSyntaxStream', 'WasmSyntaxEditor', 'WasmDocument', 'WasmMixedComputeProject', 'TypePublicationSession', 'inspectMechTypes', 'I64PublicationSession', 'inventorySource')
+exports = ('WasmSyntaxStream', 'WasmSyntaxEditor', 'WasmDocument', 'WasmMixedComputeProject', 'TypePublicationSession', 'inspectMechTypes', 'inspectMechDocument', 'I64PublicationSession', 'inventorySource')
 glue = package.joinpath('mech_wasm.js').read_text()
 for name in exports:
     if name not in glue: raise SystemExit(f'Missing expected export {name}')

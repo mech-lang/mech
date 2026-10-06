@@ -9,9 +9,15 @@ use mech_core::{
     Value, ValueDataDraft, ValueDraft,
 };
 use mech_engine::resident::{ActivationFacts, CapturedValueInput, ReactiveInstance, activate};
-use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
-use mech_runtime::SourceDocument;
-use mech_syntax::document::{ParseConfig, Revision, TextSnapshot, render_source_excerpt};
+use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, ProgramArtifact};
+use mech_runtime::{
+    CanonicalDocumentRenderer, CanonicalRenderScope, CanonicalScopeResults, RuntimeValueSnapshot,
+    SourceDocument,
+};
+use mech_syntax::document::{
+    AstNode, CodeBlockSyntax, CodeFenceScope, ParseConfig, Revision, SyntaxKind, SyntaxNode,
+    TextSnapshot, render_source_excerpt,
+};
 use serde_json::{Value as Json, json};
 use wasm_bindgen::prelude::*;
 
@@ -113,6 +119,15 @@ fn inspect(source: &str) -> Json {
             return result;
         }
     };
+    inspect_program(&program, &catalog, &mut result);
+    result
+}
+
+fn inspect_program(
+    program: &CanonicalSourceProgram,
+    catalog: &Arc<mech_core::FunctionCatalog>,
+    result: &mut Json,
+) -> Option<Vec<Value>> {
     result["stages"]["semantic_checking"] = json!("completed");
     result["inputs"]=json!(program.program().inputs.iter().map(|input|json!({"name":input.name,"schema":format!("{:?}",program.schemas().get(input.schema))})).collect::<Vec<_>>());
     result["outputs"] = json!(
@@ -129,7 +144,7 @@ fn inspect(source: &str) -> Json {
             result["stages"]["artifact_construction"] = json!("rejected");
             result["diagnostics"] =
                 json!([{"phase":"artifact_construction","message":format!("{error:?}")}]);
-            return result;
+            return None;
         }
     };
     result["stages"]["artifact_construction"] = json!("completed");
@@ -138,7 +153,7 @@ fn inspect(source: &str) -> Json {
         Err(error) => {
             result["diagnostics"] =
                 json!([{"phase":"artifact_transport","message":format!("{error:?}")}]);
-            return result;
+            return None;
         }
     };
     result["artifact_bytes"] = json!(encoded.len());
@@ -147,7 +162,7 @@ fn inspect(source: &str) -> Json {
         Err(error) => {
             result["diagnostics"] =
                 json!([{"phase":"artifact_transport","message":format!("{error:?}")}]);
-            return result;
+            return None;
         }
     };
     result["artifact_transport"] = json!("bytecode-v1 encoded and decoded before activation");
@@ -161,34 +176,261 @@ fn inspect(source: &str) -> Json {
         Err(error) => {
             result["stages"]["activation"] = json!("rejected");
             result["diagnostics"] = json!([{"phase":"activation","message":format!("{error:?}")}]);
-            return result;
+            return None;
         }
     };
     result["stages"]["activation"] = json!("completed");
     if !instance.plan.inputs.is_empty() {
         result["stages"]["execution"] = json!("awaiting external inputs");
-        return result;
+        return None;
     }
     match instance.turn(&[]) {
         Ok(_) => {
             result["stages"]["execution"] = json!("completed");
             result["stages"]["correct_publication"] =
                 json!("published; independent expected-value comparison required");
-            result["values"] = json!(
-                (0..decoded.outputs().len())
-                    .map(|index| match instance.copied_output(index) {
-                        Ok(value) => describe(&value),
-                        Err(error) => json!({"error":format!("{error:?}")}),
-                    })
-                    .collect::<Vec<_>>()
-            );
+            let values = match (0..decoded.outputs().len())
+                .map(|index| instance.copied_output(index))
+                .collect::<Result<Vec<_>, _>>()
+            {
+                Ok(values) => values,
+                Err(error) => {
+                    result["diagnostics"] =
+                        json!([{"phase":"publication","message":format!("{error:?}")}]);
+                    return None;
+                }
+            };
+            result["values"] = json!(values.iter().map(describe).collect::<Vec<_>>());
             result["epoch"] = json!(format!("{:?}", instance.published_epoch()));
+            return Some(values);
         }
         Err(error) => {
             result["stages"]["execution"] = json!("rejected");
             result["diagnostics"] = json!([{"phase":"execution","message":format!("{error:?}")}]);
         }
     }
+    None
+}
+
+/// Compile each canonical document-local execution owner and render its completed
+/// fence/inline outputs against the same retained source revision.
+#[wasm_bindgen(js_name = inspectMechDocument)]
+pub fn inspect_mech_document(source: &str) -> String {
+    inspect_document(source).to_string()
+}
+
+fn named_scopes(root: &SyntaxNode) -> Vec<String> {
+    let mut names = Vec::new();
+    let mut pending = vec![root.clone()];
+    while let Some(node) = pending.pop() {
+        if matches!(
+            node.kind(),
+            SyntaxKind::MikaSection | SyntaxKind::InlineMechCode
+        ) {
+            continue;
+        }
+        if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+            if let Some(CodeFenceScope::Named(name)) = fence.info().map(|info| info.scope)
+                && !names.contains(&name)
+            {
+                names.push(name);
+            }
+            continue;
+        }
+        let children: Vec<_> = node.children().collect();
+        pending.extend(children.into_iter().rev());
+    }
+    names
+}
+
+fn inspect_document(source: &str) -> Json {
+    let mut result = json!({"source":source,"target":if cfg!(target_arch="wasm32"){"WASM-hosted resident CPU"}else{"native resident CPU"},"stages":{},"diagnostics":[],"scopes":[],"values":[],"inputs":[],"outputs":[]});
+    let document = match SourceDocument::parse_resolved(
+        "audit:document",
+        Revision(0),
+        source,
+        ParseConfig::default(),
+    ) {
+        Ok(document) => document,
+        Err(error) => {
+            result["diagnostics"] = json!([{"phase":"parsing","message":format!("{error:?}")}]);
+            return result;
+        }
+    };
+    result["stages"]["parsing"] = json!("completed");
+    if !document.is_strictly_clean() {
+        result["stages"]["semantic_checking"] = json!("blocked by strict syntax validation");
+        result["diagnostics"] =
+            serde_json::to_value(document.snapshot().diagnostics.as_slice()).unwrap_or(json!([]));
+        return result;
+    }
+    let syntax = document.document();
+    let catalog = mech_stdlib::source_catalog();
+    let frontend = CanonicalSourceFrontend;
+    let mut candidates = vec![(
+        syntax.scope_id(),
+        "document".to_owned(),
+        CanonicalRenderScope::Root,
+        frontend.compile_document_with_catalog(&syntax, Arc::clone(&catalog)),
+    )];
+    for name in named_scopes(syntax.syntax()) {
+        let program = frontend.compile_named_document_scope_with_catalog(
+            &syntax,
+            &name,
+            Arc::clone(&catalog),
+        );
+        candidates.push((
+            syntax.scope_id(),
+            "document".to_owned(),
+            CanonicalRenderScope::Named(name),
+            program,
+        ));
+    }
+    for child in syntax.mika_scopes() {
+        let section = child.section;
+        let owner_label = format!("Mika at byte {}", section.syntax().range().start.0);
+        candidates.push((
+            section.scope_id(),
+            owner_label.clone(),
+            CanonicalRenderScope::Root,
+            frontend.compile_mika_section_with_catalog(&section, Arc::clone(&catalog)),
+        ));
+        if let Some(body) = section.body() {
+            for name in named_scopes(body.syntax()) {
+                let program = frontend.compile_named_mika_scope_with_catalog(
+                    &section,
+                    &name,
+                    Arc::clone(&catalog),
+                );
+                candidates.push((
+                    section.scope_id(),
+                    owner_label.clone(),
+                    CanonicalRenderScope::Named(name),
+                    program,
+                ));
+            }
+        }
+    }
+    let mut rendered_results = Vec::new();
+    let mut scopes = Vec::new();
+    let mut diagnostics = Vec::new();
+    let mut visible_values = Vec::new();
+    let mut inputs = Vec::new();
+    let mut outputs = Vec::new();
+    let mut empty_document = None;
+    for (owner, owner_label, scope, candidate) in candidates {
+        let name = match &scope {
+            CanonicalRenderScope::Root => "root",
+            CanonicalRenderScope::Named(name) => name,
+        };
+        let mut record = json!({"owner":owner_label,"name":name,"stages":{"parsing":"completed"},"diagnostics":[]});
+        let program = match candidate {
+            Ok(program) => program,
+            Err(error) if error.code == "source-semantics/empty-document" => {
+                empty_document
+                    .get_or_insert_with(|| semantic_error(error, &document.snapshot().source));
+                continue;
+            }
+            Err(error) => {
+                record["stages"]["semantic_checking"] = json!("rejected");
+                record["diagnostics"] = json!([semantic_error(error, &document.snapshot().source)]);
+                diagnostics.extend(record["diagnostics"].as_array().unwrap().iter().cloned());
+                scopes.push(record);
+                continue;
+            }
+        };
+        if let Some(values) = inspect_program(&program, &catalog, &mut record) {
+            let snapshots = values
+                .iter()
+                .map(RuntimeValueSnapshot::try_from)
+                .collect::<Result<Vec<_>, _>>();
+            let capture =
+                snapshots
+                    .map_err(|error| error.display_message())
+                    .and_then(|snapshots| {
+                        CanonicalScopeResults::from_values(
+                            owner,
+                            scope.clone(),
+                            &program,
+                            &snapshots,
+                        )
+                        .map_err(|error| error.to_string())
+                    });
+            match capture {
+                Ok(capture) => rendered_results.push(capture),
+                Err(error) => {
+                    record["diagnostics"] = json!([{"phase":"document_rendering","message":error}])
+                }
+            }
+            for binding in program
+                .document_outputs()
+                .iter()
+                .filter(|binding| binding.visible)
+            {
+                let mut value = describe(&values[binding.output as usize]);
+                value["scope"] = json!(name);
+                value["owner"] = json!(owner_label);
+                let anchor = program.source_map().outputs[binding.output as usize];
+                value["range"] = json!([anchor.range.start.0, anchor.range.end.0]);
+                value["presentation"] = json!(format!("{:?}", binding.kind));
+                visible_values.push(value);
+            }
+        }
+        diagnostics.extend(record["diagnostics"].as_array().unwrap().iter().cloned());
+        if let Some(scope_inputs) = record["inputs"].as_array() {
+            inputs.extend(scope_inputs.iter().map(|input| {
+                let mut input = input.clone();
+                input["scope"] = json!(name);
+                input
+            }));
+        }
+        if let Some(scope_outputs) = record["outputs"].as_array() {
+            outputs.extend(scope_outputs.iter().cloned());
+        }
+        scopes.push(record);
+    }
+    if scopes.is_empty()
+        && let Some(information) = empty_document
+    {
+        diagnostics.push(information);
+    }
+    for stage in [
+        "semantic_checking",
+        "artifact_construction",
+        "activation",
+        "execution",
+    ] {
+        let state = if scopes.is_empty() {
+            "executable source required"
+        } else if scopes
+            .iter()
+            .all(|scope| scope["stages"][stage] == "completed")
+        {
+            "completed"
+        } else if scopes
+            .iter()
+            .any(|scope| scope["stages"][stage] == "awaiting external inputs")
+        {
+            "awaiting external inputs"
+        } else {
+            "incomplete"
+        };
+        result["stages"][stage] = json!(state);
+    }
+    if diagnostics.is_empty() && result["stages"]["execution"] == "completed" {
+        match CanonicalDocumentRenderer.render_editor_html(&syntax, &rendered_results) {
+            Ok(html) => result["document_html"] = json!(html),
+            Err(error) => {
+                diagnostics.push(json!({"phase":"document_rendering","message":error.to_string()}))
+            }
+        }
+    }
+    visible_values.sort_by_key(|value| value["range"][0].as_u64().unwrap_or(0));
+    result["scopes"] = json!(scopes);
+    result["diagnostics"] = json!(diagnostics);
+    result["values"] = json!(visible_values);
+    result["inputs"] = json!(inputs);
+    result["outputs"] = json!(outputs);
     result
 }
 
@@ -320,6 +562,141 @@ impl TypePublicationSession {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn document_named_fences_publish_independent_values_in_place() {
+        let source = "Calculation\r\n===========\r\n\r\nThe result is published by the final expression.\r\n\r\n```mech:foo\r\nanswer := 123\r\n```\r\n\r\n```mech:bar\r\nanswer := 456\r\n```\r\n\r\n1. Section One\r\n------------------------------\r\n\r\nThis is the first section.\r\n";
+        let result = inspect_document(source);
+        assert_eq!(result["stages"]["execution"], "completed", "{result}");
+        assert_eq!(result["diagnostics"], json!([]), "{result}");
+        assert_eq!(result["scopes"].as_array().unwrap().len(), 2);
+        assert_eq!(result["values"][0]["scope"], "foo");
+        assert_eq!(result["values"][0]["text"], "123");
+        assert_eq!(result["values"][1]["scope"], "bar");
+        assert_eq!(result["values"][1]["text"], "456");
+        let html = result["document_html"].as_str().unwrap();
+        assert_eq!(html.matches("<figcaption class='mech-output'>").count(), 2);
+        assert_eq!(
+            html.matches("<div class='mech-output-kind'>f64</div>")
+                .count(),
+            2
+        );
+        assert!(html.contains("data-mech-scope='foo'"), "{html}");
+        assert!(html.contains("This is the first section."), "{html}");
+        assert!(html.contains("data-mech-start="), "{html}");
+    }
+
+    #[test]
+    fn document_scopes_share_repeated_fences_and_reset_each_run() {
+        let source = "answer := 9\n\n```mech:foo\n~answer := 10\nanswer += 1\nanswer\n```\n\n```mech:bar\nanswer := 20\n```\n\n```mech:foo\nanswer += 2\nanswer\n```\n";
+        for _ in 0..2 {
+            let result = inspect_document(source);
+            assert_eq!(result["diagnostics"], json!([]), "{result}");
+            let values = result["values"].as_array().unwrap();
+            assert_eq!(
+                values
+                    .iter()
+                    .map(|value| value["text"].as_str().unwrap())
+                    .collect::<Vec<_>>(),
+                ["9", "11", "20", "13"]
+            );
+            assert_eq!(
+                result["document_html"]
+                    .as_str()
+                    .unwrap()
+                    .matches("<figcaption class='mech-output'>")
+                    .count(),
+                3
+            );
+        }
+    }
+
+    #[test]
+    fn document_named_scope_uses_host_function_catalog() {
+        let result = inspect_document("```mech:foo\nanswer := math/sub(right: 3, left: 10)\n```\n");
+        assert_eq!(result["diagnostics"], json!([]), "{result}");
+        assert_eq!(result["values"][0]["text"], "7");
+    }
+
+    #[test]
+    fn document_named_semantic_errors_keep_source_ranges() {
+        let source =
+            "```mech:foo\nanswer := 10⟨u8:1..10⟩\n```\n\n```mech:bar\nanswer := 456\n```\n";
+        let result = inspect_document(source);
+        assert_eq!(
+            result["diagnostics"][0]["code"], "source-semantics/integer-interval-violation",
+            "{result}"
+        );
+        let range = result["diagnostics"][0]["range"].as_array().unwrap();
+        let selected =
+            &source[range[0].as_u64().unwrap() as usize..range[1].as_u64().unwrap() as usize];
+        assert!(selected.contains("10"), "{selected}");
+        assert_eq!(result["values"][0]["scope"], "bar");
+        assert_eq!(result["values"][0]["text"], "456");
+        assert!(result["document_html"].is_null());
+    }
+
+    #[test]
+    fn document_reserved_fences_and_output_settings_are_preserved() {
+        let source = "```mech:hidden\nanswer := 1\n```\n\n```mech:disabled\nanswer := 999\n```\n\n```rust\nthis is source text\n```\n\n```mech:foo{output: false}\nanswer := 2\n```\n\n```mech:bar\nanswer := {x: 3, y: 4}\n```\n";
+        let result = inspect_document(source);
+        assert_eq!(result["diagnostics"], json!([]), "{result}");
+        assert_eq!(result["scopes"].as_array().unwrap().len(), 3);
+        assert_eq!(result["values"].as_array().unwrap().len(), 1);
+        let html = result["document_html"].as_str().unwrap();
+        assert_eq!(html.matches("<figcaption class='mech-output'>").count(), 1);
+        assert!(html.contains("mech-record"), "{html}");
+        assert!(html.contains("answer := 999"), "{html}");
+        assert!(!html.contains("answer := 1"), "{html}");
+    }
+
+    #[test]
+    fn document_inline_values_use_root_bindings_and_named_fences_stay_isolated() {
+        let result = inspect_document(
+            "answer := 42\n\nThe answer is {answer}.\n\n```mech:foo\nanswer := 123\n```\n",
+        );
+        assert_eq!(result["diagnostics"], json!([]), "{result}");
+        let html = result["document_html"].as_str().unwrap();
+        assert!(html.contains("The answer is "), "{html}");
+        assert!(
+            html.contains("The answer is <span class='mech-value'>42</span>."),
+            "{html}"
+        );
+        assert_eq!(
+            result["values"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value["text"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            ["42", "123"]
+        );
+    }
+
+    #[cfg(feature = "mika")]
+    #[test]
+    fn document_mika_named_scopes_keep_local_owners() {
+        let result = inspect_document(
+            "```mech:foo\nanswer := 123\n```\n\n~∘~⸢```mech:foo\nanswer := 456\n```\n⸥\n",
+        );
+        assert_eq!(result["diagnostics"], json!([]), "{result}");
+        assert_eq!(result["scopes"].as_array().unwrap().len(), 2);
+        assert_ne!(result["scopes"][0]["owner"], result["scopes"][1]["owner"]);
+        let html = result["document_html"].as_str().unwrap();
+        assert_eq!(html.matches("<figcaption class='mech-output'>").count(), 2);
+        assert_eq!(result["values"][0]["text"], "123");
+        assert_eq!(result["values"][1]["text"], "456");
+    }
+
+    #[test]
+    fn document_without_active_source_has_information_only() {
+        let result = inspect_document(
+            "Calculation\n===========\n\nThis is prose.\n\n```mech:disabled\nanswer := 123\n```\n",
+        );
+        assert_eq!(result["diagnostics"][0]["severity"], "info");
+        assert_eq!(result["diagnostics"].as_array().unwrap().len(), 1);
+        assert_eq!(result["scopes"], json!([]));
+    }
+
     #[test]
     fn same_instance_rejects_and_recovers() {
         let mut session = TypePublicationSession::create().unwrap();

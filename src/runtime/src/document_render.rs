@@ -226,6 +226,16 @@ impl CanonicalDocumentRenderer {
         self.render_html_mode(document, &[], RenderMode::Source, true, &[], true)
     }
 
+    /// Render completed scope results in an editor preview, retaining source ranges
+    /// and showing each block output's kind before its value.
+    pub fn render_editor_html(
+        &self,
+        document: &DocumentSyntax,
+        results: &[CanonicalScopeResults],
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, results, RenderMode::Completed, true, &[], true)
+    }
+
     /// Format section content for a host shim that owns the article and title.
     pub fn format_html_body(
         &self,
@@ -2980,7 +2990,22 @@ fn render_fence_html(
         output.push_str(&escape_attribute(&styles));
         output.push('\'');
     }
-    output.push_str("><pre><code");
+    if lookup.source_ranges
+        && let CodeFenceScope::Named(name) = &info.scope
+    {
+        output.push_str(" data-mech-scope='");
+        output.push_str(&escape_attribute(name));
+        output.push('\'');
+    }
+    output.push('>');
+    if lookup.source_ranges
+        && let CodeFenceScope::Named(name) = &info.scope
+    {
+        output.push_str("<div class='mech-scope-label'>");
+        output.push_str(&escape_html(name));
+        output.push_str("</div>");
+    }
+    output.push_str("<pre><code");
     if matches!(info.scope, CodeFenceScope::Inert)
         && let Some(language) = fence_language(fence)
     {
@@ -3053,7 +3078,7 @@ fn render_fence_html(
                 range: Some(fence.syntax().range()),
             })?;
         output.push_str("<figcaption class='mech-output'>");
-        output.push_str(&value.format_html());
+        append_completed_block_value(value, lookup, output);
         output.push_str("</figcaption>");
     }
     output.push_str("</figure>");
@@ -3411,10 +3436,25 @@ fn append_program_html(
     }
     if let Some(value) = value {
         output.push_str("<output class='mech-program-output'>");
-        output.push_str(&value.format_html());
+        append_completed_block_value(value, lookup, output);
         output.push_str("</output>");
     }
     Ok(())
+}
+
+fn append_completed_block_value(
+    value: &RuntimeValueSnapshot,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) {
+    if lookup.source_ranges {
+        output.push_str("<div class='mech-output-kind'>");
+        output.push_str(&escape_html(&value.format_repl_kind()));
+        output.push_str("</div>");
+        output.push_str(&value.format_repl_html(crate::DEFAULT_REPL_VALUE_ELEMENT_LIMIT));
+    } else {
+        output.push_str(&value.format_html());
+    }
 }
 
 fn append_program_text(

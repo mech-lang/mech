@@ -456,8 +456,15 @@ pub(super) fn compile_named_document_scope(
     document: &DocumentSyntax,
     name: &str,
     nominal_origin: Option<&CanonicalNominalPath>,
+    catalog: Option<Arc<mech_core::FunctionCatalog>>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    compile_named_scope(document.syntax(), document.scope_id(), name, nominal_origin)
+    compile_named_scope(
+        document.syntax(),
+        document.scope_id(),
+        name,
+        nominal_origin,
+        catalog,
+    )
 }
 
 fn compile_named_scope(
@@ -465,6 +472,7 @@ fn compile_named_scope(
     owner: DocumentScopeId,
     name: &str,
     nominal_origin: Option<&CanonicalNominalPath>,
+    catalog: Option<Arc<mech_core::FunctionCatalog>>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(root);
     let mut units = Vec::new();
@@ -505,7 +513,7 @@ fn compile_named_scope(
         &BTreeMap::new(),
         units,
         exports,
-        None,
+        catalog,
         BTreeMap::new(),
         false,
         BTreeMap::new(),
@@ -520,13 +528,20 @@ pub(super) fn compile_mika_section(
     section: &mech_syntax::document::MikaSectionSyntax,
     name: Option<&str>,
     nominal_origin: Option<&CanonicalNominalPath>,
+    catalog: Option<Arc<mech_core::FunctionCatalog>>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(section.syntax());
     let body = section
         .body()
         .ok_or_else(|| internal(anchor, "Mika section has no retained body".to_owned()))?;
     if let Some(name) = name {
-        return compile_named_scope(body.syntax(), section.scope_id(), name, nominal_origin);
+        return compile_named_scope(
+            body.syntax(),
+            section.scope_id(),
+            name,
+            nominal_origin,
+            catalog,
+        );
     }
     let mut units = Vec::new();
     let mut exports = Vec::new();
@@ -539,7 +554,7 @@ pub(super) fn compile_mika_section(
         &BTreeMap::new(),
         units,
         exports,
-        None,
+        catalog,
         BTreeMap::new(),
         false,
         BTreeMap::new(),

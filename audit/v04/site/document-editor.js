@@ -3,6 +3,7 @@ import {renderDocumentPreview} from './document-preview.js';
 import {annotateDocumentPreview} from './document-annotations.js';
 const examples = {
   document: 'Calculation\n===========\n\nThe result is published by the final expression.\n\n```mech\nanswer := 6 * 7\nanswer\n```\n',
+  named: 'Calculation\n===========\n\nThe result is published by the final expression.\n\n```mech:foo\nanswer := 123\n```\n\n```mech:bar\nanswer := 456\n```\n\n1. Section One\n------------------------------\n\nThis is the first section.\n',
   matrix: 'matrix := [1 2;\n3 4]\nmatrix\n',
   syntax: 'x := [1, +, 2]\ny := [3, *, 4]\n',
   recovery: 'Calculation\n===========\n\nThe result is published by the final expression.\n\n```mech\nanswer := [1 2 3 4 5\nanswer\n```\n\n1. Section One\n------------------------------\n\nThis is the first section.\n',
@@ -115,12 +116,18 @@ export function prepareDocumentEditor() {
     }));
     syncScroll(); caret();
   }
+  function setPreview(html) {
+    clearPreviewAnnotations();clearPreviewAnnotations = () => {};
+    $('document-preview').replaceChildren(renderDocumentPreview(html));
+    delete $('document-preview').dataset.renderFailed;
+  }
   function parse() {
     clearTimeout(parseTimer);
     if (!api || composing) return;
     const source = area.value;
     if (source === parsedSource && snapshot) {
       colorSpans = syntaxSpans(snapshot, byteOffsets(source));
+      setPreview(parser.renderHtml());
       if (snapshot.strictly_clean) {paint();renderPreviewDiagnostics();}
       else showDiagnostics(syntaxDiagnostics(), true);
       return;
@@ -130,8 +137,7 @@ export function prepareDocumentEditor() {
     parsedSource = source;
     colorSpans = syntaxSpans(snapshot, byteOffsets(source));
     try {
-      $('document-preview').replaceChildren(renderDocumentPreview(parser.renderHtml()));
-      delete $('document-preview').dataset.renderFailed;
+      setPreview(parser.renderHtml());
     } catch (error) {
       $('document-preview').textContent = 'Complete the document’s syntax to update its preview.';
       $('document-preview').dataset.renderFailed = 'true';
@@ -239,13 +245,13 @@ export function prepareDocumentEditor() {
     const container = $('document-output'); container.replaceChildren();
     if (diagnostics.length && diagnostics.every(d => d.severity === 'info')) {container.textContent = 'Document inspection completed. Add executable Mech code to produce program output.';return;}
     if (result.stages?.execution === 'awaiting external inputs') {
-      const p = document.createElement('p'); p.textContent = `Compilation completed. Execution requires external inputs: ${(result.inputs || []).map(input => input.name).join(', ')}.`;container.append(p);return;
+      const p = document.createElement('p'); p.textContent = `Compilation completed. Execution requires external inputs: ${(result.inputs || []).map(input => input.name).join(', ')}.`;container.append(p);if (!result.values?.length) return;
     }
-    if (result.stages?.execution !== 'completed') {container.textContent = 'Resolve the reported diagnostics, then compile again.';return;}
+    if (!['completed','awaiting external inputs'].includes(result.stages?.execution)) {const p=document.createElement('p');p.textContent = 'Resolve the reported diagnostics, then compile again.';container.append(p);if (!result.values?.length) return;}
     if (!result.values?.length) {container.textContent = 'Execution completed with 0 published outputs.';return;}
     for (const [index, value] of result.values.entries()) {
       const card = document.createElement('div'); card.className = 'output-value';
-      const label = document.createElement('h3'); label.textContent = `Output ${index + 1}`; card.append(label);
+      const label = document.createElement('h3'); label.textContent = `${value.scope ? value.owner === 'document' ? value.scope : value.owner + ' · ' + value.scope : 'Output'} · ${index + 1}`; card.append(label);
       const kind = document.createElement('div'); kind.className = 'output-kind mech-output-kind';
       kind.textContent = value.kind || 'Kind unavailable'; kind.setAttribute('aria-label', `Kind: ${kind.textContent}`);
       card.append(kind);
@@ -261,10 +267,12 @@ export function prepareDocumentEditor() {
       await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
       if (owner !== revision) {status('Document changed. Ctrl+Enter compiles the current source.');return null;}
       parse(); const source = area.value, start = performance.now();
-      const result = JSON.parse(api.inspectMechTypes(source));
+      const result = JSON.parse(api.inspectMechDocument(source));
+      if (result.document_html) setPreview(result.document_html);
       runNumber++;
       const records = snapshot.strictly_clean ? result.diagnostics ?? [] : syntaxDiagnostics();
       showDiagnostics(records); showOutputs(result);
+      if (result.document_html) $('document-preview-status').textContent = `Run ${runNumber} · current source`;
       $('document-result').textContent = json(result);
       $('document-stages').replaceChildren(...Object.entries(result.stages ?? {}).map(([stage, state]) => {const p = document.createElement('p');p.textContent = `${stage.replaceAll('_', ' ')}: ${stage === 'semantic_checking' && diagnostics.length && diagnostics.every(d => d.severity === 'info') ? 'executable source required for program compilation' : state}`;return p;}));
       $('document-run-label').textContent = `Run ${runNumber}`;
