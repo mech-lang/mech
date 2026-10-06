@@ -390,6 +390,148 @@ pub fn render_plain(diagnostic: &Diagnostic, source: &TextSnapshot, nodes: &Node
     output
 }
 
+/// Console-style diagnostic presentation shared with passive editor clients.
+/// Anchors are resolved against this source revision before excerpts are drawn.
+pub fn render_pretty(diagnostic: &Diagnostic, source: &TextSnapshot, nodes: &NodeIndex) -> String {
+    let mut output = format!(
+        "{:?}[{}]: {}\n",
+        diagnostic.severity,
+        diagnostic.code.as_str(),
+        diagnostic.message
+    );
+    if let Some(range) = diagnostic.primary.resolve(source.revision(), nodes) {
+        output.push_str(&render_source_excerpt(source, range, &diagnostic.message));
+    }
+    for label in &diagnostic.labels {
+        if let Some(range) = label.anchor.resolve(source.revision(), nodes) {
+            output.push_str(&render_source_excerpt(source, range, &label.message));
+        }
+    }
+    if !diagnostic.expected.is_empty() {
+        let expected = diagnostic
+            .expected
+            .iter()
+            .map(|expected| match expected {
+                ExpectedSyntax::Production(name) => name.clone(),
+                ExpectedSyntax::Token(kind) => match kind {
+                    SyntaxKind::RightBracket => "`]`".into(),
+                    SyntaxKind::RightParen => "`)`".into(),
+                    SyntaxKind::RightBrace => "`}`".into(),
+                    SyntaxKind::RightAngle => "`⟩`".into(),
+                    SyntaxKind::Eof => "end of input".into(),
+                    kind => format!("{kind:?}"),
+                },
+            })
+            .collect::<Vec<_>>()
+            .join(" or ");
+        let _ = writeln!(output, "  = expected: {expected}");
+    }
+    for fix in &diagnostic.fixes {
+        let _ = writeln!(output, "  = help: {}", fix.title);
+        for edit in &fix.edits {
+            if let Some(location) = source.source_location(edit.delete.start) {
+                let _ = writeln!(
+                    output,
+                    "    at {}:{}: replace {} source bytes with {:?}",
+                    location.row,
+                    location.col,
+                    edit.delete.len().0,
+                    edit.insert
+                );
+            }
+        }
+    }
+    output
+}
+
+/// Draw a source range, including one surrounding line and an insertion caret
+/// for empty ranges. UTF-8 byte anchors are projected to source coordinates;
+/// tab expansion and Unicode display width determine underline alignment.
+pub fn render_source_excerpt(source: &TextSnapshot, range: TextRange, message: &str) -> String {
+    if source.validate_range(range).is_err() {
+        return String::new();
+    }
+    let index = source.line_index();
+    let first = index.line_of(range.start);
+    let last = index.line_of(if range.is_empty() {
+        range.end
+    } else {
+        TextSize(range.end.0 - 1)
+    });
+    let start = first.saturating_sub(1);
+    let end = (last + 1).min(index.line_count() - 1);
+    let width = (end + 1).to_string().len();
+    let location = source.source_location(range.start);
+    let mut output = location
+        .map(|at| format!(" --> document:{}:{}\n", at.row, at.col))
+        .unwrap_or_default();
+    let _ = writeln!(output, "{:width$} |", "");
+    for line in start..=end {
+        if last > first + 4 && line > first + 1 && line < last - 1 {
+            if line == first + 2 {
+                let _ = writeln!(output, "{:width$} | …", "");
+            }
+            continue;
+        }
+        let line_start = index.line_start(line).unwrap();
+        let line_end = index
+            .line_start(line + 1)
+            .unwrap_or_else(|| source.byte_len());
+        let text = source
+            .text(TextRange::new(line_start, line_end))
+            .unwrap_or_default();
+        let text = text.trim_end_matches(['\r', '\n']);
+        let _ = writeln!(output, "{:>width$} | {}", line + 1, display_source(text));
+        if line >= first && line <= last {
+            let from = range
+                .start
+                .0
+                .saturating_sub(line_start.0)
+                .min(text.len() as u32) as usize;
+            let to = range
+                .end
+                .0
+                .saturating_sub(line_start.0)
+                .min(text.len() as u32) as usize;
+            let prefix = display_source(&text[..from]);
+            let through = display_source(&text[..to]);
+            let indent = unicode_width::UnicodeWidthStr::width(prefix.as_str());
+            let length = unicode_width::UnicodeWidthStr::width(through.as_str())
+                .saturating_sub(indent)
+                .max(1);
+            let _ = writeln!(
+                output,
+                "{:width$} | {}{}{}",
+                "",
+                " ".repeat(indent),
+                "^".repeat(length),
+                if line == last {
+                    format!(" {message}")
+                } else {
+                    String::new()
+                }
+            );
+        }
+    }
+    output
+}
+
+fn display_source(text: &str) -> String {
+    let mut output = String::new();
+    for ch in text.chars() {
+        if ch == '\t' {
+            let count = 2 - unicode_width::UnicodeWidthStr::width(output.as_str()) % 2;
+            output.push_str(&" ".repeat(count));
+        } else if ch.is_control() {
+            let escaped = format!("{ch:?}");
+            output.push_str(&escaped);
+        } else {
+            output.push(ch);
+        }
+    }
+    output
+}
+
 pub fn anchor_flags(anchor: &DiagnosticAnchor, nodes: &NodeIndex) -> Option<NodeFlags> {
     let DiagnosticAnchor::Element { element, .. } = anchor else {
         return None;

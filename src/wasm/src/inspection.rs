@@ -221,10 +221,16 @@ struct Snapshot {
     tree: Vec<TreeRow>,
     diagnostics: Vec<Diagnostic>,
     diagnostic_ranges: Vec<Option<[u32; 2]>>,
+    diagnostic_presentations: Vec<DiagnosticPresentation>,
     parse_work: BTreeMap<&'static str, u64>,
     typed_document: bool,
     contains_executable_source: bool,
     semantic_status: &'static str,
+}
+#[derive(Serialize)]
+struct DiagnosticPresentation {
+    report: String,
+    excerpt: String,
 }
 fn snapshot(value: &SyntaxSnapshot) -> Snapshot {
     let document = DocumentSyntax::cast(value.syntax());
@@ -240,6 +246,18 @@ fn snapshot(value: &SyntaxSnapshot) -> Snapshot {
             .diagnostics
             .iter()
             .map(|d| d.primary.resolve(value.revision, &value.nodes).map(range))
+            .collect(),
+        diagnostic_presentations: value
+            .diagnostics
+            .iter()
+            .map(|diagnostic| DiagnosticPresentation {
+                report: render_pretty(diagnostic, &value.source, &value.nodes),
+                excerpt: diagnostic
+                    .primary
+                    .resolve(value.revision, &value.nodes)
+                    .map(|range| render_source_excerpt(&value.source, range, &diagnostic.message))
+                    .unwrap_or_default(),
+            })
             .collect(),
         parse_work: counters!(value.stats; source_bytes, parser_steps, events_emitted, diagnostics_emitted, recovery_bytes),
         typed_document: document.is_some(),
@@ -451,7 +469,7 @@ fn render_editor_document(snapshot: &SyntaxSnapshot) -> Result<String, String> {
     let document = DocumentSyntax::cast(snapshot.syntax())
         .ok_or_else(|| "editor snapshot requires canonical document syntax".to_owned())?;
     mech_runtime::CanonicalDocumentRenderer
-        .format_html(&document)
+        .format_editor_html(&document)
         .map_err(|error| error.to_string())
 }
 
@@ -468,6 +486,12 @@ mod editor_render_tests {
         let html = render_editor_document(editor.session.snapshot()).unwrap();
         assert!(html.contains("Calculation"));
         assert!(html.contains("<strong"));
+        assert!(html.contains("data-mech-start="));
+        assert!(html.contains("data-mech-end="));
+        let ordinary = mech_runtime::CanonicalDocumentRenderer
+            .format_html(&DocumentSyntax::cast(editor.session.snapshot().syntax()).unwrap())
+            .unwrap();
+        assert!(!ordinary.contains("data-mech-start="));
         assert!(html.contains("mech-code"));
         assert!(!html.contains("```"));
     }
@@ -502,6 +526,16 @@ mod editor_render_tests {
         let mut editor = WasmSyntaxEditor::new(713, source);
         let snapshot = editor.session.snapshot();
         assert!(!snapshot.is_strictly_clean());
+        let exported = super::snapshot(snapshot);
+        assert_eq!(
+            exported.diagnostic_presentations.len(),
+            exported.diagnostics.len()
+        );
+        let report = &exported.diagnostic_presentations[0].report;
+        assert!(report.contains("answer := [1 2 3 4 5"));
+        assert!(report.contains("^ missing closing delimiter"));
+        assert!(report.contains("closing delimiter expected before this boundary"));
+        assert!(report.contains("= help: Insert `]`"));
         let html = render_editor_document(snapshot).unwrap();
         for text in [
             "Calculation",

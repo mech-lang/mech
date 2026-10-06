@@ -11,16 +11,29 @@ use mech_core::{
 use mech_engine::resident::{ActivationFacts, CapturedValueInput, ReactiveInstance, activate};
 use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
 use mech_runtime::SourceDocument;
-use mech_syntax::document::{ParseConfig, Revision};
+use mech_syntax::document::{ParseConfig, Revision, TextSnapshot, render_source_excerpt};
 use serde_json::{Value as Json, json};
 use wasm_bindgen::prelude::*;
 
 const INTERVAL_SOURCE: &str = "~state⟨u8:1..10⟩ := 2\nstate = signal\nstate\n";
 
-fn semantic_error(error: mech_engine::SourceSemanticError) -> Json {
+fn semantic_error(error: mech_engine::SourceSemanticError, source: &TextSnapshot) -> Json {
+    let excerpt = render_source_excerpt(source, error.anchor.range, &error.message);
+    let severity = if error.code == "source-semantics/empty-document" {
+        "info"
+    } else {
+        "error"
+    };
+    let report = format!(
+        "{}[{}]: {}\n{}",
+        if severity == "info" { "Info" } else { "Error" },
+        error.code,
+        error.message,
+        excerpt
+    );
     json!({"phase":"semantic_checking", "code":error.code, "message":error.message,
         "document":error.anchor.document.0.to_string(), "revision":error.anchor.revision.0.to_string(),
-        "range":[error.anchor.range.start.0,error.anchor.range.end.0]})
+        "range":[error.anchor.range.start.0,error.anchor.range.end.0], "severity":severity, "presentation":{"report":report,"excerpt":excerpt}})
 }
 fn scalar_text(value: &Value) -> Option<String> {
     use mech_core::ValueData;
@@ -81,7 +94,7 @@ fn inspect(source: &str) -> Json {
         Ok(value) => value,
         Err(error) => {
             result["stages"]["semantic_checking"] = json!("rejected");
-            result["diagnostics"] = json!([semantic_error(error)]);
+            result["diagnostics"] = json!([semantic_error(error, &document.snapshot().source)]);
             // Exercise the product handoff as well as direct frontend inspection.
             result["product_diagnostic"] = match mech_runtime::RuntimeBuilder::new()
                 .function_catalog(Arc::clone(&catalog))
@@ -89,7 +102,7 @@ fn inspect(source: &str) -> Json {
                 .and_then(|mut compiler| compiler.compile_document(&document))
             {
                 Err(error) => json!({
-                    "semantic":error.kind_as::<mech_engine::SourceSemanticError>().cloned().map(semantic_error),
+                    "semantic":error.kind_as::<mech_engine::SourceSemanticError>().cloned().map(|error| semantic_error(error, &document.snapshot().source)),
                     "presentation_range":error.primary_range().map(|range|format!("{range:?}")),
                     "message":error.display_message(),
                 }),

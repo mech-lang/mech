@@ -4,7 +4,7 @@ use mech_syntax::document::{
     FoundSyntax, GreenBuilder, IdGenerator, NodeIndex, ParseConfig, RecoveryAction, Revision,
     Severity, SyntaxElementId, SyntaxKind, TextEdit, TextRange, TextSize, TextSnapshot,
     normalize_diagnostics, parse_canonical_document, reconstruct_source, render_plain,
-    validate_lossless,
+    render_pretty, render_source_excerpt, validate_lossless,
 };
 
 fn paragraph_tree(
@@ -100,6 +100,13 @@ fn structured_diagnostic_serializes_and_renders() {
     assert!(rendered.contains("syntax/missing-expression"));
     assert!(rendered.contains("1:9"));
     assert!(rendered.contains("right operand"));
+    let pretty = render_pretty(&diagnostic, &source, &index);
+    assert!(pretty.contains("1 | x := 1 +"));
+    assert!(pretty.contains("^ expected an expression after `+`"));
+    assert!(pretty.contains("^ `+` requires a right operand"));
+    assert!(pretty.contains("= expected: expression"));
+    assert!(pretty.contains("= help: Insert an expression"));
+    assert!(pretty.contains("at 1:9: replace 0 source bytes with \" _\""));
 
     let normalized = normalize_diagnostics(&store, Revision(2), &index);
     assert_eq!(normalized.len(), 1);
@@ -154,7 +161,11 @@ fn canonical_missing_closer_retains_position_and_applicable_repair() {
             .primary
             .resolve(snapshot.revision, &snapshot.nodes)
     );
-    assert!(normalized[0].primary.unwrap().is_empty());
+    let opening = text.find('(').unwrap() as u32;
+    assert_eq!(
+        normalized[0].primary,
+        Some(TextRange::new(TextSize(opening), TextSize(opening + 1)))
+    );
     assert!(
         snapshot
             .diagnostics
@@ -180,4 +191,41 @@ fn canonical_missing_closer_retains_position_and_applicable_repair() {
             .unwrap()
             .contains("2)")
     );
+}
+
+#[test]
+fn source_excerpt_aligns_unicode_and_tabs_and_draws_eof_insertion() {
+    let text = "Context\n\t界 👩‍💻x\n";
+    let source = TextSnapshot::new(DocumentId(20), Revision(0), text).unwrap();
+    let at = text.rfind('x').unwrap() as u32;
+    let rendered = render_source_excerpt(
+        &source,
+        TextRange::new(TextSize(at), TextSize(at + 1)),
+        "invalid token",
+    );
+    assert!(rendered.contains("1 | Context"));
+    assert!(rendered.contains("2 |   界 👩‍💻x"));
+    assert!(
+        rendered.contains("  |        ^ invalid token"),
+        "{rendered}"
+    );
+    assert!(rendered.contains("document:2:5"), "{rendered}");
+    let eof = render_source_excerpt(&source, TextRange::empty(source.byte_len()), "insert here");
+    assert!(eof.contains("3 | \n  | ^ insert here"), "{eof}");
+}
+
+#[test]
+fn source_excerpt_bounds_multiline_context_and_escapes_terminal_controls() {
+    let text = "before\nfirst\nsecond\nthird\nfourth\nfifth\nsixth\nlast\nafter\n\u{1b}";
+    let source = TextSnapshot::new(DocumentId(21), Revision(0), text).unwrap();
+    let rendered = render_source_excerpt(
+        &source,
+        TextRange::new(TextSize(7), TextSize(49)),
+        "invalid region",
+    );
+    assert!(rendered.contains("| before"));
+    assert!(rendered.contains("| …"));
+    assert!(rendered.contains("invalid region"));
+    let eof = render_source_excerpt(&source, TextRange::empty(source.byte_len()), "end");
+    assert!(!eof.contains('\u{1b}'));
 }

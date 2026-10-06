@@ -214,7 +214,16 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source, true, &[])
+        self.render_html_mode(document, &[], RenderMode::Source, true, &[], false)
+    }
+
+    /// Format a passive editor preview with canonical UTF-8 source ranges on
+    /// document regions. Clients can attach diagnostics without parsing markup.
+    pub fn format_editor_html(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, &[], RenderMode::Source, true, &[], true)
     }
 
     /// Format section content for a host shim that owns the article and title.
@@ -222,7 +231,7 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source, false, &[])
+        self.render_html_mode(document, &[], RenderMode::Source, false, &[], false)
     }
 
     /// Format a browser fragment with addresses for values in the resident
@@ -232,7 +241,14 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         output_addresses: &[(TextRange, u64)],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Live, false, output_addresses)
+        self.render_html_mode(
+            document,
+            &[],
+            RenderMode::Live,
+            false,
+            output_addresses,
+            false,
+        )
     }
 
     /// Format a live browser document before execution, preserving canonical output addresses.
@@ -240,7 +256,7 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Browser, true, &[])
+        self.render_html_mode(document, &[], RenderMode::Browser, true, &[], false)
     }
 
     /// Render the documented host-shim regions from the same retained syntax and
@@ -402,7 +418,7 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, results, RenderMode::Completed, true, &[])
+        self.render_html_mode(document, results, RenderMode::Completed, true, &[], false)
     }
 
     fn render_html_mode(
@@ -412,8 +428,10 @@ impl CanonicalDocumentRenderer {
         mode: RenderMode,
         document_frame: bool,
         output_addresses: &[(TextRange, u64)],
+        source_ranges: bool,
     ) -> Result<String, CanonicalDocumentRenderError> {
         let mut lookup = ResultLookup::new(document, results, mode)?;
+        lookup.source_ranges = source_ranges;
         lookup.output_addresses = Cow::Owned(output_addresses.iter().copied().collect());
         let mut output = String::new();
         if document_frame {
@@ -820,6 +838,7 @@ fn title_slot_fields(
 
 struct ResultLookup<'a> {
     mode: RenderMode,
+    source_ranges: bool,
     owns_navigation_targets: bool,
     root_owner: DocumentScopeId,
     values: Cow<'a, HashMap<ResultKey, &'a RuntimeValueSnapshot>>,
@@ -995,6 +1014,7 @@ impl<'a> ResultLookup<'a> {
         }
         Ok(Self {
             mode,
+            source_ranges: false,
             owns_navigation_targets: true,
             root_owner: document.scope_id(),
             values: Cow::Owned(values),
@@ -1015,6 +1035,7 @@ impl<'a> ResultLookup<'a> {
                 RenderMode::Live | RenderMode::Browser => RenderMode::Source,
                 mode => mode,
             },
+            source_ranges: self.source_ranges,
             owns_navigation_targets: false,
             root_owner: self.root_owner,
             values: Cow::Borrowed(&self.values),
@@ -1131,7 +1152,11 @@ fn render_title_html(
         .source()
         .text(TextRange::new(title.syntax().range().start, title_end))
         .map_err(|_| range_error(title.syntax().range()))?;
-    output.push_str("<header class='mech-document-header'><h1 class='mech-document-title'>");
+    output.push_str("<header class='mech-document-header'");
+    if lookup.source_ranges {
+        push_preview_range(title.syntax().range(), output);
+    }
+    output.push_str("><h1 class='mech-document-title'>");
     output.push_str(&escape_html(title_text.trim()));
     output.push_str("</h1>");
     render_title_front_matter_html(title, owner, lookup, output)?;
@@ -1150,7 +1175,15 @@ fn render_title_front_matter_html(
         Err(error) if lookup.mode == RenderMode::Source => {
             output.truncate(checkpoint);
             if let Some(front) = title.front_matter() {
+                if lookup.source_ranges {
+                    output.push_str("<div class='mech-source-region'");
+                    push_preview_range(front.syntax().range(), output);
+                    output.push('>');
+                }
                 render_recovered_source_html(front.syntax(), &error, output)?;
+                if lookup.source_ranges {
+                    output.push_str("</div>");
+                }
             }
             Ok(())
         }
@@ -1219,15 +1252,35 @@ fn render_document_node_html(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    let region_start = output.len();
+    if lookup.source_ranges {
+        output.push_str("<div class='mech-source-region'");
+        push_preview_range(value.range(), output);
+        output.push('>');
+    }
     let checkpoint = output.len();
-    match render_document_node_html_inner(value, owner, lookup, output) {
+    let result = match render_document_node_html_inner(value, owner, lookup, output) {
         Err(error) if lookup.mode == RenderMode::Source => {
             output.truncate(checkpoint);
-            render_recovered_source_html(value, &error, output)?;
-            Ok(())
+            render_recovered_source_html(value, &error, output)
         }
         result => result,
+    };
+    if lookup.source_ranges {
+        if output.len() == checkpoint {
+            output.truncate(region_start);
+        } else {
+            output.push_str("</div>");
+        }
     }
+    result
+}
+
+fn push_preview_range(range: TextRange, output: &mut String) {
+    output.push_str(&format!(
+        " data-mech-start='{}' data-mech-end='{}'",
+        range.start.0, range.end.0
+    ));
 }
 
 fn render_recovered_source_html(
