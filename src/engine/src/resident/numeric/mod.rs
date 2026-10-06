@@ -2989,6 +2989,9 @@ pub(super) fn snapshot_arithmetic_element_supported(
 pub(super) fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
     use mech_core::{FloatWidth, IntegerWidth};
     match element {
+        SchemaBody::IntegerInterval(interval) => {
+            snapshot_fixed_element_encoded_bytes(&interval.base_body())
+        }
         SchemaBody::Bool
         | SchemaBody::UnsignedInteger(IntegerWidth::W8)
         | SchemaBody::SignedInteger(IntegerWidth::W8) => Some(1),
@@ -3182,7 +3185,19 @@ fn bind_snapshot_numeric_binary(
         && left_element == &SchemaBody::Rational64
         && right_element == &SchemaBody::SignedInteger(mech_core::IntegerWidth::W32)
         && output_element == &SchemaBody::Rational64;
+    // Checked interval addition preserves the whole scalar schema. Inspect
+    // the ports' schemas, not just their element kinds: a 1x1 matrix is still
+    // outside this scalar contract. Other arithmetic keeps its existing kinds.
+    let scalar_interval_add = arithmetic == SemanticArithmetic::Add
+        && matches!(output_element, SchemaBody::IntegerInterval(interval) if interval.is_valid())
+        && [left, right, &request.output].iter().all(|port| {
+            request
+                .schemas
+                .get(port.schema_id)
+                .is_some_and(|schema| schema.body() == output_element)
+        });
     if !rational_power
+        && !scalar_interval_add
         && (left_element != right_element
             || left_element != output_element
             || !snapshot_arithmetic_element_supported(arithmetic, output_element))
@@ -13082,6 +13097,7 @@ fn snapshot_numeric_dimensions(
         SchemaBody::Matrix { .. } => snapshot_matrix_dimensions(value, schema),
         SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
+        | SchemaBody::IntegerInterval(_)
         | SchemaBody::FloatingPoint(_)
         | SchemaBody::Complex(_)
         | SchemaBody::Rational64 => {
@@ -21478,6 +21494,266 @@ mod tests {
         }
         .finalize(&SnapshotValidationContext::new(schemas))
         .unwrap()
+    }
+
+    #[test]
+    fn interval_addition_binding_requires_identical_scalar_intervals() {
+        let interval = |width, lower, upper, upper_inclusive| {
+            SchemaBody::IntegerInterval(mech_core::IntegerInterval::Unsigned {
+                width,
+                lower,
+                upper,
+                upper_inclusive,
+            })
+        };
+        let exact = interval(IntegerWidth::W8, 1, 10, true);
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(exact.clone()),
+            dimensions: vec![mech_core::DimensionExpr::Constant(1); 2].into_boxed_slice(),
+        };
+        let bind = |bodies: [SchemaBody; 3], arithmetic| {
+            let matrix_output = matches!(bodies[2], SchemaBody::Matrix { .. });
+            let (schemas, ids) = test_schema_table(bodies);
+            let contract = test_contract(
+                &ids[..2],
+                ids[2],
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                if matrix_output {
+                    ChangeDetectionPolicy::KernelReported
+                } else {
+                    ChangeDetectionPolicy::ExactScalar
+                },
+            );
+            let port = |id| {
+                test_layout(
+                    &schemas,
+                    id,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                )
+            };
+            bind_snapshot_numeric_binary(
+                &ResidentKernelBindRequest {
+                    contract: &contract,
+                    schemas: &schemas,
+                    inputs: &[port(ids[0]), port(ids[1])],
+                    output: port(ids[2]),
+                },
+                arithmetic,
+            )
+        };
+        assert!(
+            bind(
+                [exact.clone(), exact.clone(), exact.clone()],
+                SemanticArithmetic::Add
+            )
+            .is_ok()
+        );
+        for arithmetic in [
+            SemanticArithmetic::Subtract,
+            SemanticArithmetic::Multiply,
+            SemanticArithmetic::Divide,
+            SemanticArithmetic::Remainder,
+            SemanticArithmetic::Power,
+        ] {
+            assert!(matches!(
+                bind([exact.clone(), exact.clone(), exact.clone()], arithmetic),
+                Err(ResidentKernelBindError::UnsupportedLayout)
+            ));
+        }
+        for other in [
+            SchemaBody::UnsignedInteger(IntegerWidth::W8),
+            interval(IntegerWidth::W16, 1, 10, true),
+            interval(IntegerWidth::W8, 2, 10, true),
+            interval(IntegerWidth::W8, 1, 9, true),
+            interval(IntegerWidth::W8, 1, 10, false),
+            SchemaBody::IntegerInterval(mech_core::IntegerInterval::Signed {
+                width: IntegerWidth::W8,
+                lower: 1,
+                upper: 10,
+                upper_inclusive: true,
+            }),
+            matrix.clone(),
+        ] {
+            for position in 0..3 {
+                let mut bodies = [exact.clone(), exact.clone(), exact.clone()];
+                bodies[position] = other.clone();
+                assert!(matches!(
+                    bind(bodies, SemanticArithmetic::Add),
+                    Err(ResidentKernelBindError::UnsupportedLayout)
+                ));
+            }
+        }
+        assert!(matches!(
+            bind(
+                [matrix.clone(), matrix.clone(), matrix],
+                SemanticArithmetic::Add
+            ),
+            Err(ResidentKernelBindError::UnsupportedLayout)
+        ));
+    }
+
+    #[test]
+    fn interval_addition_checks_membership_and_overflow_before_publication() {
+        use mech_core::IntegerInterval;
+
+        fn check(
+            interval: IntegerInterval,
+            turns: impl IntoIterator<
+                Item = (
+                    ValueDataDraft,
+                    ValueDataDraft,
+                    Result<ValueDataDraft, ResidentKernelError>,
+                ),
+            >,
+        ) {
+            let (schemas, ids) = test_schema_table([SchemaBody::IntegerInterval(interval)]);
+            let schema = ids[0];
+            let layout = test_layout(
+                &schemas,
+                schema,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            );
+            let contract = test_contract(
+                &[schema, schema],
+                schema,
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::ExactScalar,
+            );
+            let kernel = bind_add(&ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &[layout.clone(), layout.clone()],
+                output: layout,
+            })
+            .unwrap();
+            let mut output = [None];
+            for (left, right, expected) in turns {
+                let left = [Some(test_value(&schemas, schema, left))];
+                let right = [Some(test_value(&schemas, schema, right))];
+                let inputs = [
+                    ResidentValueRef::Snapshot(&left),
+                    ResidentValueRef::Snapshot(&right),
+                ];
+                let previous = output[0].clone();
+                let result =
+                    kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output));
+                match expected {
+                    Ok(data) => {
+                        assert!(result.is_ok(), "{interval:?}: {result:?}");
+                        let value = output[0].as_ref().unwrap();
+                        assert_eq!(value.schema(), schema);
+                        assert_eq!(value.canonical_data_draft().unwrap(), data);
+                    }
+                    Err(error) => {
+                        assert_eq!(result, Err(error), "{interval:?}");
+                        assert!(
+                            output[0]
+                                .as_ref()
+                                .unwrap()
+                                .snapshot_eq(&schemas, &previous.unwrap(), &schemas,)
+                                .unwrap()
+                        );
+                    }
+                }
+            }
+        }
+
+        for inclusive in [false, true] {
+            check(
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W8,
+                    lower: 1,
+                    upper: 10,
+                    upper_inclusive: inclusive,
+                },
+                [
+                    (
+                        ValueDataDraft::U8(3),
+                        ValueDataDraft::U8(3),
+                        Ok(ValueDataDraft::U8(6)),
+                    ),
+                    (
+                        ValueDataDraft::U8(8),
+                        ValueDataDraft::U8(3),
+                        Err(ResidentKernelError::InvalidOutput),
+                    ),
+                    (
+                        ValueDataDraft::U8(8),
+                        ValueDataDraft::U8(2),
+                        if inclusive {
+                            Ok(ValueDataDraft::U8(10))
+                        } else {
+                            Err(ResidentKernelError::InvalidOutput)
+                        },
+                    ),
+                    (
+                        ValueDataDraft::U8(1),
+                        ValueDataDraft::U8(2),
+                        Ok(ValueDataDraft::U8(3)),
+                    ),
+                ],
+            );
+        }
+        check(
+            IntegerInterval::Signed {
+                width: IntegerWidth::W8,
+                lower: -10,
+                upper: 10,
+                upper_inclusive: true,
+            },
+            [
+                (
+                    ValueDataDraft::I8(-3),
+                    ValueDataDraft::I8(-3),
+                    Ok(ValueDataDraft::I8(-6)),
+                ),
+                (
+                    ValueDataDraft::I8(-8),
+                    ValueDataDraft::I8(-3),
+                    Err(ResidentKernelError::InvalidOutput),
+                ),
+                (
+                    ValueDataDraft::I8(-8),
+                    ValueDataDraft::I8(-2),
+                    Ok(ValueDataDraft::I8(-10)),
+                ),
+            ],
+        );
+        check(
+            IntegerInterval::Unsigned {
+                width: IntegerWidth::W128,
+                lower: 1,
+                upper: u128::MAX,
+                upper_inclusive: true,
+            },
+            [
+                (
+                    ValueDataDraft::U128(1 << 100),
+                    ValueDataDraft::U128(1),
+                    Ok(ValueDataDraft::U128((1 << 100) + 1)),
+                ),
+                (
+                    ValueDataDraft::U128(u128::MAX),
+                    ValueDataDraft::U128(1),
+                    Err(ResidentKernelError::Arithmetic),
+                ),
+                (
+                    ValueDataDraft::U128(u128::MAX - 1),
+                    ValueDataDraft::U128(1),
+                    Ok(ValueDataDraft::U128(u128::MAX)),
+                ),
+            ],
+        );
     }
 
     #[test]

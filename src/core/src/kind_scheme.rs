@@ -85,6 +85,7 @@ pub enum SourceSchemeTemplate {
     SetDefinition,
     TableJoin(TableJoinMode),
     OrderedComparison,
+    Addition,
 }
 
 impl KindScheme {

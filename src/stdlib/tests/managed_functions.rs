@@ -1104,6 +1104,75 @@ mod ordinary_managed_execution {
 
     #[cfg(feature = "u8")]
     #[test]
+    fn interval_scalar_addition_preserves_bounds_and_recovers_after_rejected_sum() {
+        let body = interval_u8_schema();
+        let left = ValueCell::from_schema_data(body.clone(), ValueDataDraft::U8(2)).unwrap();
+        let right = ValueCell::from_schema_data(body.clone(), ValueDataDraft::U8(3)).unwrap();
+        let function = add(left.clone(), right);
+        let output = function.output().clone();
+        let alias = output.clone();
+        let identity = output.reactive_cell_id();
+        let descriptor = output.resolved_descriptor().unwrap();
+
+        function.instance().solve_result().unwrap();
+        assert_interval_cell(&alias, &body, ValueDataDraft::U8(5));
+        assert_eq!(function.bound_call().outputs()[0], descriptor);
+        let revision = output.published_version();
+
+        // Both inputs remain valid, but their sum reaches the excluded upper bound.
+        let next = left.rebuild_data_draft(ValueDataDraft::U8(7)).unwrap();
+        left.replace(&next).unwrap();
+        assert!(function.instance().solve_result().is_err());
+        assert_eq!(output.published_version(), revision);
+        assert_eq!(output.reactive_cell_id(), identity);
+        assert_eq!(output.resolved_descriptor().unwrap(), descriptor);
+        assert_interval_cell(&alias, &body, ValueDataDraft::U8(5));
+
+        let next = left.rebuild_data_draft(ValueDataDraft::U8(6)).unwrap();
+        left.replace(&next).unwrap();
+        function.instance().solve_result().unwrap();
+        assert!(output.published_version() > revision);
+        assert_eq!(output.reactive_cell_id(), identity);
+        assert_eq!(output.resolved_descriptor().unwrap(), descriptor);
+        assert_interval_cell(&alias, &body, ValueDataDraft::U8(9));
+    }
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn interval_scalar_addition_rejects_physical_overflow_without_publication() {
+        let body = SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 0,
+            upper: u128::from(u8::MAX),
+            upper_inclusive: true,
+        });
+        let left = ValueCell::from_schema_data(body.clone(), ValueDataDraft::U8(254)).unwrap();
+        let right = ValueCell::from_schema_data(body.clone(), ValueDataDraft::U8(1)).unwrap();
+        let function = add(left, right.clone());
+        let output = function.output().clone();
+
+        function.instance().solve_result().unwrap();
+        assert_interval_cell(&output, &body, ValueDataDraft::U8(255));
+        let revision = output.published_version();
+        let identity = output.reactive_cell_id();
+
+        let next = right.rebuild_data_draft(ValueDataDraft::U8(2)).unwrap();
+        right.replace(&next).unwrap();
+        assert!(function.instance().solve_result().is_err());
+        assert_eq!(output.published_version(), revision);
+        assert_eq!(output.reactive_cell_id(), identity);
+        assert_interval_cell(&output, &body, ValueDataDraft::U8(255));
+
+        let next = right.rebuild_data_draft(ValueDataDraft::U8(0)).unwrap();
+        right.replace(&next).unwrap();
+        function.instance().solve_result().unwrap();
+        assert!(output.published_version() > revision);
+        assert_eq!(output.reactive_cell_id(), identity);
+        assert_interval_cell(&output, &body, ValueDataDraft::U8(254));
+    }
+
+    #[cfg(feature = "u8")]
+    #[test]
     fn interval_scalar_checked_mutable_replacement_retains_identity_revision_and_recovers() {
         let body = interval_u8_schema();
         let cell = ValueCell::from_schema_data(body.clone(), ValueDataDraft::U8(2)).unwrap();
