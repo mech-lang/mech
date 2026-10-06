@@ -1,0 +1,5 @@
+~x := 1.0
+next := x * 3.0 + 4.0
+safe! := next < 1000.0
+x = next
+x
