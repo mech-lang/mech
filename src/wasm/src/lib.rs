@@ -36,3 +36,18 @@ pub use project::*;
 #[cfg(feature = "browser_compute")]
 pub use mixed_compute::*;
 pub use repl::*;
+
+#[cfg(feature = "syntax_inspection")]
+mod inspection;
+#[cfg(feature = "syntax_inspection")]
+pub use inspection::*;
+
+#[cfg(feature = "type_inspection")]
+mod type_inspection;
+#[cfg(feature = "type_inspection")]
+pub use type_inspection::*;
+
+#[cfg(feature = "i64_publication")]
+mod i64_publication;
+#[cfg(feature = "i64_publication")]
+pub use i64_publication::*;

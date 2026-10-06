@@ -1,0 +1,8 @@
+~stock⟨i64⟩ := 100
+stock = stock + arrivals - demand
+
+arrivals-nonnegative! := arrivals >= 0⟨i64⟩
+demand-nonnegative! := demand >= 0⟨i64⟩
+stock-nonnegative! := stock >= 0⟨i64⟩
+capacity! := 1000000⟨i64⟩ >= stock
+stock

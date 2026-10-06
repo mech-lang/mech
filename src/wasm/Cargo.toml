@@ -18,6 +18,10 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 
+# Optional inspection adapter for source/type/publication evidence.
+type_inspection = ["browser_project_core", "u8", "dep:serde_json"]
+i64_publication = ["browser_project_core", "i64", "dep:serde_json"]
+
 default = []
 full = ["base",
       "u8", "u16", "u32", "u64", "u128",
@@ -72,6 +76,8 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # Every document controller exports both WasmDocument and WasmRepl. Keep the
 # console provider in this smallest document closure so reduced, base, full,
 # and compiler-inferred builds all satisfy the same controller contract.
+# Explicit inspection surface for engineering tools; excluded from normal browser profiles.
+syntax_inspection = ["browser_project_core"]
 browser_project_core = ["resident-routing-source", "program", "pretty_print", "formatter", "serde", "browser_host_console"]
 browser_project = ["browser_project_core", "source", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_scene", "baselib", "mika", "statements_default", "state_machines", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "stats_default", "combinatorics_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
 # CI exercises the maintained particle and EKF compute paths through a
@@ -320,6 +326,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-engine/dot_indexing
 swizzle = ["subscript", "mech-core/swizzle", "mech-engine/swizzle", "mech-syntax/swizzle", "mech-runtime/swizzle"]
 
 [dependencies]
+serde_json = { version = "1", optional = true }
 mech-core = {version = "0.3.5", path = "../core", default-features = false}
 mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false}
 mech-engine = { version = "0.3.5", path = "../engine", default-features = false}
