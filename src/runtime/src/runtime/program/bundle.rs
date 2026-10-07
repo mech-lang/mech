@@ -473,7 +473,7 @@ mod tests {
             let encoded = bundle.encode()?;
             let restored = CanonicalProgramBundle::decode_standalone(&encoded, Some(source))?;
             let edited_source = source
-                .replace(":= :red", ":= :blue")
+                .replace("my-color<color> := :red", "my-color<color> := :blue")
                 .replace("=> 1.0.", "=> 2.0.");
             let edited = SourceDocument::parse_resolved(
                 "runtime:interactive",

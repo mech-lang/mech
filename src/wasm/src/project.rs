@@ -7141,7 +7141,7 @@ phase"#;
                 decode_document_bundle(&encoded, "document.mec", &source_map, &HashMap::new())
                     .unwrap();
             let edited_source = source
-                .replace(":= :red", ":= :blue")
+                .replace("my-color<color> := :red", "my-color<color> := :blue")
                 .replace("=> 1.0.", "=> 2.0.");
             assert!(
                 decode_document_bundle(
@@ -9603,7 +9603,7 @@ mod browser_tests {
             let original_keys = enum_keys(product.artifact());
             assert!(!original_keys.is_empty());
             let edited = source
-                .replace(":= :red", ":= :blue")
+                .replace("my-color<color> := :red", "my-color<color> := :blue")
                 .replace("=> 1.0.", "=> 2.0.");
             document.repl_replace_source(&edited).unwrap();
             let edited_product = compiler
