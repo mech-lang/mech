@@ -1,0 +1,182 @@
+{
+  "id": "E-STANDALONE-ENUM-REVIEW-FIXES",
+  "outcome": "passed",
+  "recorded_at": "2026-10-07T13:04:34.795180+00:00",
+  "source_commit": "c998b07a59353bdfb7c5408ac0036e262f8987f4",
+  "evidence_level": "real-Chrome-WASM-execution",
+  "scope": "Fresh focused package for the type demonstration and standalone enum review fixes",
+  "command": "python3 /private/tmp/mech-review896-types-validation.py",
+  "validation_script_sha256": "2188a54c1c7cf81517de96edc7132dbc81ebcef9b436128786351c5177276401",
+  "maintained_assertions": "audit/v04/check_types_browser.py deterministic cases, publication/restarts, exact UTF-8 diagnostic selection and stale-diagnostic clearing",
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+  "artifact_identity": {
+    "source_commit": "c998b07a59353bdfb7c5408ac0036e262f8987f4",
+    "scope": "Fresh focused package for the type demonstration and standalone enum review fixes",
+    "features": "browser_project,type_inspection,u64,u128",
+    "target": "wasm32-unknown-unknown",
+    "profile": "release",
+    "wasm_opt": false,
+    "command": "RUSTUP_TOOLCHAIN=nightly-2026-03-03 CARGO_BUILD_JOBS=1 CARGO_TARGET_DIR=/private/tmp/mech-review896-browser-target /private/tmp/mech-ci-wasm-pack/wasm-pack-v0.15.0-aarch64-apple-darwin/wasm-pack build src/wasm --target web --out-dir pkg --no-default-features --features browser_project,type_inspection,u64,u128 --locked --offline",
+    "environment": {
+      "system": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+      "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+      "wasm_pack": "wasm-pack 0.15.0",
+      "wasm_bindgen": "0.2.126 (Cargo.lock)"
+    },
+    "lockfile_sha256": "3bafde738e893a2c1c186d10856ec3ec0c104adefa4002cacee9f830c46980ff",
+    "code_sha256": {
+      "src/wasm/src/type_inspection.rs": "b4feb1b45059591a2c11db4c0bc1afa1aa0ff740e8397b6e63a8d4a9b8d8dad1",
+      "src/wasm/src/project.rs": "635d837c22518f3f3cae3a446909858ab39ad3d270805ae986763fbd615daaa5",
+      "src/wasm/src/canonical_document.rs": "0ee43804007a77dd79bd7ea77b52d98db2fbd329948ebf52b439bec124fe6494",
+      "src/wasm/src/repl.rs": "8ff1907c44d7e5663eb14439699621227000cf36487575987b59304fce560e53",
+      "src/runtime/src/interactive.rs": "ad54625a28805ce43a39281cd0ac38c2d2e60b93e18101f1903e806e15250e71",
+      "src/runtime/src/resolver/document.rs": "0c501a55efb47d44abef50834d09d88ac1eb4e4459413e179f27f6d70295f26c",
+      "src/runtime/src/runtime/program/compiler.rs": "07c41aeac92657518a924628fd12adf79262f81857e6f7ae3e8063cf0de4bb1e",
+      "src/runtime/src/runtime/program/bundle.rs": "399deceac4b6a51472ead98e64cbae7b902847795169841e1004033e253d6f8d",
+      "src/engine/src/source_semantics/frontend.rs": "9b7650137723f87c31fef40b784e2f77c8be4f309d2404c4e14c5a90ba7a4e73",
+      "src/engine/src/source_semantics/document_lowering.rs": "1c1756927b8f26e1d6900785c461f9177cbcf3b4d1bfb5036a34d32842b0dc41",
+      "src/wasm/Cargo.toml": "a67e53147c6379452454179b909ee3f51dd72d9785dd07202b4497adac7f26ea",
+      "Cargo.lock": "3bafde738e893a2c1c186d10856ec3ec0c104adefa4002cacee9f830c46980ff",
+      "audit/v04/check_types_browser.py": "5a2abe8d86bd5f4e79c5cd09adf8734e91c2214467535ef53c9b9fce3300bebb",
+      "tests/browser/harness/chrome.py": "dcda3597755d5408cad018204110f44f8a95ef23b00ab7d5bb2c81b64224d82e",
+      "audit/v04/site/types.html": "f25415e6f065fe7fe699cacdedb7abf4f69367fab68e2e8541dfd954f228b441",
+      "audit/v04/site/types.js": "4abd86c907847eb9e60363a85324e86c56ec4d67f4b66dc117288b7ddea9c9f2",
+      "audit/v04/site/wasm-transport.js": "68ab1c1ec3e150e4b52eb90dabde10cd06c5fb8247048067aee6939d1570bbf1",
+      "audit/v04/site/human-data.css": "19fd8ea4bde49b986450085adc28d8e770b5a9d1c56084f34c82b49d18e483a9",
+      "audit/v04/site/human-data.js": "c7700cf6525aa8d6ccaba193f0b017db4bda6be2ad3267899db888b856443f30",
+      "audit/v04/site/style.css": "a505fbf6657619154e69be131a946e2567f8dd1d40b446ec7fcc2d754cb0f626"
+    },
+    "artifacts": {
+      "pkg/mech_wasm.js": {
+        "sha256": "964b5b7dd2920b515e4d1110e662de2d4f0041ecd380ab3296d6cae3ca803380",
+        "bytes": 74115
+      },
+      "pkg/mech_wasm_bg.wasm": {
+        "sha256": "af9a69aa9d6b4a065fadbeaa54950711553eb9cd52b900405f225a5981f2dd57",
+        "bytes": 173461593
+      }
+    },
+    "transport": {
+      "encoding": "gzip",
+      "uncompressed_bytes": 173461593,
+      "uncompressed_sha256": "af9a69aa9d6b4a065fadbeaa54950711553eb9cd52b900405f225a5981f2dd57",
+      "compressed_bytes": 7606262,
+      "chunks": [
+        {
+          "path": "mech-wasm-af9a69aa9d6b-00.gz.part",
+          "bytes": 7606262,
+          "sha256": "e5274f1e88c709e5fcc9a9cc059afd464f2964c8de3f1ac3b8fadd845b4e6498"
+        }
+      ]
+    }
+  },
+  "deterministic_cases": {
+    "passed": 15,
+    "failed": 0,
+    "cases": [
+      {
+        "id": "lower",
+        "passed": true
+      },
+      {
+        "id": "last",
+        "passed": true
+      },
+      {
+        "id": "exclusive",
+        "passed": true
+      },
+      {
+        "id": "below",
+        "passed": true
+      },
+      {
+        "id": "inclusive",
+        "passed": true
+      },
+      {
+        "id": "interval-arithmetic",
+        "passed": true
+      },
+      {
+        "id": "option",
+        "passed": true
+      },
+      {
+        "id": "absent",
+        "passed": true
+      },
+      {
+        "id": "nested",
+        "passed": true
+      },
+      {
+        "id": "enum",
+        "passed": true
+      },
+      {
+        "id": "enum-variant",
+        "passed": true
+      },
+      {
+        "id": "inference",
+        "passed": true
+      },
+      {
+        "id": "shape",
+        "passed": true
+      },
+      {
+        "id": "named",
+        "passed": true
+      },
+      {
+        "id": "wide",
+        "passed": true
+      }
+    ]
+  },
+  "publication": {
+    "passed": true,
+    "same_instance_inputs": [
+      "9",
+      "10",
+      "3"
+    ],
+    "fresh_instance_restarts": 3
+  },
+  "diagnostic_selection": {
+    "source": "café := 1\n10⟨u8:1..10⟩\n",
+    "selected": "10",
+    "selection": [
+      10,
+      12
+    ],
+    "stale_cleared": true,
+    "passed": true
+  },
+  "exact_source_editor": {
+    "passed": true,
+    "source": "<color> := :red | :green | :blue\nmy-color<color> := :red\n",
+    "variants": [
+      "red",
+      "blue",
+      "yellow rejected",
+      "red recovered"
+    ],
+    "nominal_key": "NominalKey([216, 240, 166, 142, 95, 63, 48, 104, 84, 229, 248, 252, 42, 76, 26, 208, 108, 236, 85, 36, 160, 101, 47, 190, 122, 235, 156, 175, 155, 102, 186, 109])",
+    "schema": "Enum { key: NominalKey([216, 240, 166, 142, 95, 63, 48, 104, 84, 229, 248, 252, 42, 76, 26, 208, 108, 236, 85, 36, 160, 101, 47, 190, 122, 235, 156, 175, 155, 102, 186, 109]), variants: [EnumVariantSchema { name: \"red\", payload: None }, EnumVariantSchema { name: \"green\", payload: None }, EnumVariantSchema { name: \"blue\", payload: None }] }",
+    "same_schema_and_nominal_key_after_edits_and_recovery": true,
+    "selected_rejected_variant": ":yellow"
+  },
+  "temporary_details": {
+    "types_checks": "/private/tmp/mech-review896-types-evidence/types-checks.json",
+    "enum_editor": "/private/tmp/mech-review896-types-evidence/exact-enum-editor.json",
+    "screenshot": "/private/tmp/mech-review896-types-evidence/types-review-fixes.png"
+  },
+  "cleanup": {
+    "local_http_server": "stopped and waited",
+    "ChromeSession": "closed",
+    "temporary_browser_profile": "removed"
+  }
+}
