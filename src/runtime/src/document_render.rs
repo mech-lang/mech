@@ -214,7 +214,7 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source, true, &[], false)
+        self.render_html_mode(document, &[], RenderMode::Source, true, &[], false, true)
     }
 
     /// Format a passive editor preview with canonical UTF-8 source ranges on
@@ -223,17 +223,25 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source, true, &[], true)
+        self.render_html_mode(document, &[], RenderMode::Source, true, &[], true, true)
     }
 
-    /// Render completed scope results in an editor preview, retaining source ranges
-    /// and showing each block output's kind before its value.
+    /// Render authored fence and inline outputs in an editor preview with source
+    /// ranges. The host output panel owns the aggregate program result.
     pub fn render_editor_html(
         &self,
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, results, RenderMode::Completed, true, &[], true)
+        self.render_html_mode(
+            document,
+            results,
+            RenderMode::Completed,
+            true,
+            &[],
+            true,
+            false,
+        )
     }
 
     /// Format section content for a host shim that owns the article and title.
@@ -241,7 +249,7 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source, false, &[], false)
+        self.render_html_mode(document, &[], RenderMode::Source, false, &[], false, true)
     }
 
     /// Format a browser fragment with addresses for values in the resident
@@ -258,6 +266,7 @@ impl CanonicalDocumentRenderer {
             false,
             output_addresses,
             false,
+            true,
         )
     }
 
@@ -266,7 +275,7 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Browser, true, &[], false)
+        self.render_html_mode(document, &[], RenderMode::Browser, true, &[], false, true)
     }
 
     /// Render the documented host-shim regions from the same retained syntax and
@@ -428,7 +437,15 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, results, RenderMode::Completed, true, &[], false)
+        self.render_html_mode(
+            document,
+            results,
+            RenderMode::Completed,
+            true,
+            &[],
+            false,
+            true,
+        )
     }
 
     fn render_html_mode(
@@ -439,9 +456,11 @@ impl CanonicalDocumentRenderer {
         document_frame: bool,
         output_addresses: &[(TextRange, u64)],
         source_ranges: bool,
+        program_output: bool,
     ) -> Result<String, CanonicalDocumentRenderError> {
         let mut lookup = ResultLookup::new(document, results, mode)?;
         lookup.source_ranges = source_ranges;
+        lookup.program_output = program_output;
         lookup.output_addresses = Cow::Owned(output_addresses.iter().copied().collect());
         let mut output = String::new();
         if document_frame {
@@ -849,6 +868,7 @@ fn title_slot_fields(
 struct ResultLookup<'a> {
     mode: RenderMode,
     source_ranges: bool,
+    program_output: bool,
     owns_navigation_targets: bool,
     root_owner: DocumentScopeId,
     values: Cow<'a, HashMap<ResultKey, &'a RuntimeValueSnapshot>>,
@@ -1025,6 +1045,7 @@ impl<'a> ResultLookup<'a> {
         Ok(Self {
             mode,
             source_ranges: false,
+            program_output: true,
             owns_navigation_targets: true,
             root_owner: document.scope_id(),
             values: Cow::Owned(values),
@@ -1046,6 +1067,7 @@ impl<'a> ResultLookup<'a> {
                 mode => mode,
             },
             source_ranges: self.source_ranges,
+            program_output: self.program_output,
             owns_navigation_targets: false,
             root_owner: self.root_owner,
             values: Cow::Borrowed(&self.values),
@@ -3407,6 +3429,9 @@ fn append_program_html(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
+    if !lookup.program_output {
+        return Ok(());
+    }
     if lookup.mode == RenderMode::Browser {
         if owner == lookup.root_owner
             && *scope == CanonicalRenderScope::Root

@@ -49,11 +49,28 @@ with tempfile.TemporaryDirectory(prefix='mech-document-scopes-') as profile:
   result=run(repeated)
   assert [v['text'] for v in result['values']]==['9','11','20','13'],result
   assert [v['output'] for v in state()['fences']]==['f6411','f6420','f6413'],state()
-  assert browser.evaluate("document.querySelector('#document-preview .mech-program-output').textContent")=='f649'
+  assert browser.evaluate("document.querySelectorAll('#document-preview .mech-program-output').length")==0
+  assert result['values'][0]['text']=='9' and 'root' in state()['outputs']
   record('root bindings are isolated and repeated scope fences share state in source order',result)
   result=browser.evaluate('window.compileMechDocument()')['result']
   assert [v['text'] for v in result['values']]==['9','11','20','13'],result
   record('each run resets named state',result)
+  table='|x<f64> y<f64>| 1 2 | 3 4 |\n'
+  result=run(table)
+  observed=browser.evaluate("({code:document.querySelector('#document-preview pre code').textContent,previewTables:document.querySelectorAll('#document-preview table').length,outputTables:document.querySelectorAll('#document-output table').length,cells:[...document.querySelectorAll('#document-output table td')].map(n=>n.textContent)})")
+  assert observed['code']==table and observed['previewTables']==0 and observed['outputTables']==1 and observed['cells']==['1','2','3','4'],observed
+  record('unfenced table retains source presentation and publishes to the output panel',result)
+  screenshot('unfenced-table.png')
+  result=run('```mech:example\n'+table+'```\n\n9\n')
+  observed=browser.evaluate("({fenceTables:document.querySelectorAll('#document-preview figcaption.mech-output table').length,previewTables:document.querySelectorAll('#document-preview table').length,aggregate:document.querySelectorAll('#document-preview .mech-program-output').length,kind:document.querySelector('#document-preview .mech-output-kind').textContent,cells:[...document.querySelectorAll('#document-preview figcaption table td')].map(n=>n.textContent)})")
+  assert observed['fenceTables']==1 and observed['previewTables']==1 and observed['aggregate']==0 and observed['kind']=='table' and observed['cells']==['1','2','3','4'],observed
+  record('fenced table uses its dedicated output channel',result)
+  screenshot('fenced-table.png')
+  result=run('data := '+table+'\nThe data is {data}.\n\n42\n')
+  observed=browser.evaluate("({previewTables:document.querySelectorAll('#document-preview table').length,aggregate:document.querySelectorAll('#document-preview .mech-program-output').length,cells:[...document.querySelectorAll('#document-preview table td')].map(n=>n.textContent)})")
+  assert observed['previewTables']==1 and observed['aggregate']==0 and observed['cells']==['1','2','3','4'],observed
+  assert any(value['text']=='42' for value in result['values']),result
+  record('explicit inline table reference owns its document value location',result)
   result=run('```mech:foo\nanswer := math/sub(right: 3, left: 10)\n```\n')
   assert result['diagnostics']==[] and result['values'][0]['text']=='7',result
   record('named scopes use the standard library catalog',result)

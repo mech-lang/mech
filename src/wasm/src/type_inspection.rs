@@ -563,6 +563,69 @@ impl TypePublicationSession {
 mod tests {
     use super::*;
     #[test]
+    fn document_preview_keeps_unfenced_table_as_source() {
+        let result = inspect_document("|x<f64> y<f64>| 1 2 | 3 4 |\n");
+        assert_eq!(result["stages"]["execution"], "completed", "{result}");
+        assert_eq!(result["values"][0]["kind"], "table");
+        let html = result["document_html"].as_str().unwrap();
+        assert!(html.contains("<pre class='mech-code'"), "{html}");
+        assert_eq!(html.matches("<table").count(), 0, "{html}");
+        assert_eq!(html.matches("mech-program-output").count(), 0, "{html}");
+    }
+
+    #[test]
+    fn document_preview_presents_table_through_fence_channel() {
+        for language in ["mech", "mech:example"] {
+            let source = format!("```{language}\n|x<f64> y<f64>| 1 2 | 3 4 |\n```\n\n9\n");
+            let result = inspect_document(&source);
+            assert_eq!(result["diagnostics"], json!([]), "{result}");
+            let html = result["document_html"].as_str().unwrap();
+            assert_eq!(
+                html.matches("<table class='mech-table'>").count(),
+                1,
+                "{html}"
+            );
+            assert_eq!(
+                html.matches("<figcaption class='mech-output'>").count(),
+                1,
+                "{html}"
+            );
+            assert_eq!(html.matches("mech-program-output").count(), 0, "{html}");
+            assert!(
+                result["values"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|value| value["text"] == "9"),
+                "{result}"
+            );
+        }
+    }
+
+    #[test]
+    fn document_preview_presents_table_at_explicit_inline_reference() {
+        let result =
+            inspect_document("data := |x<f64> y<f64>| 1 2 | 3 4 |\n\nThe data is {data}.\n\n42\n");
+        assert_eq!(result["diagnostics"], json!([]), "{result}");
+        let html = result["document_html"].as_str().unwrap();
+        assert_eq!(
+            html.matches("<table class='mech-table'>").count(),
+            1,
+            "{html}"
+        );
+        assert_eq!(html.matches("mech-program-output").count(), 0, "{html}");
+        assert!(html.contains("The data is "), "{html}");
+        assert!(
+            result["values"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|value| value["text"] == "42"),
+            "{result}"
+        );
+    }
+
+    #[test]
     fn document_named_fences_publish_independent_values_in_place() {
         let source = "Calculation\r\n===========\r\n\r\nThe result is published by the final expression.\r\n\r\n```mech:foo\r\nanswer := 123\r\n```\r\n\r\n```mech:bar\r\nanswer := 456\r\n```\r\n\r\n1. Section One\r\n------------------------------\r\n\r\nThis is the first section.\r\n";
         let result = inspect_document(source);
