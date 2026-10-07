@@ -1053,6 +1053,22 @@ pub(super) fn has_origin_dependent_declarations(
     Ok(!document_types::enum_declarations(&units)?.is_empty() || has_fsm(&units))
 }
 
+pub(super) fn declared_nominal_schemas(
+    document: &DocumentSyntax,
+    origin: &CanonicalNominalPath,
+) -> Result<Vec<(Box<[String]>, SchemaBody)>, SourceSemanticError> {
+    let mut units = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
+    let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(document.syntax()));
+    builder.register_document_types(&units, Some(origin))?;
+    builder.register_document_fsms(&units, origin.segments())?;
+    Ok(builder
+        .declaration_schemas
+        .into_iter()
+        .map(|declaration| (declaration.relative_path, declaration.schema.body))
+        .collect())
+}
+
 pub(super) fn declared_nominal_keys(
     document: &DocumentSyntax,
     origin: &CanonicalNominalPath,

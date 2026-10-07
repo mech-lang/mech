@@ -118,6 +118,34 @@ impl mech_core::MechErrorKind for SourceDocumentIndexError {
 }
 
 impl SourceDocument {
+    /// Validate reserved standalone identities wherever source provenance enters
+    /// a host. Package namespaces are authoritative resolver inputs.
+    pub fn validate_nominal_provenance(
+        origin: Option<&mech_core::CanonicalNominalPath>,
+        package_id: Option<&str>,
+    ) -> mech_core::MResult<()> {
+        if origin.is_some_and(|origin| {
+            origin
+                .segments()
+                .first()
+                .is_some_and(|namespace| namespace == "mech:standalone")
+                && (!matches!(origin.segments(), [_, owner] if uuid::Uuid::parse_str(owner)
+                .is_ok_and(|uuid| uuid.get_variant() == uuid::Variant::RFC4122
+                    && uuid.get_version_num() == 7 && uuid.to_string() == *owner))
+                    || package_id.is_some())
+        }) {
+            return Err(mech_core::MechError::new(
+                mech_core::GenericError {
+                    msg: "standalone nominal provenance is invalid; regenerate the bundle"
+                        .to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(())
+    }
+
     /// Allocate a durable owner for one standalone document or interactive session.
     /// The reserved virtual package cannot collide with a Cargo package name.
     /// Hosts that save editable documents must retain this origin alongside the

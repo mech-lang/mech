@@ -764,6 +764,17 @@ impl CanonicalSourceFrontend {
         document_lowering::declared_nominal_keys(document, origin)
     }
 
+    /// Complete executable enum and FSM schemas derived by the same declaration
+    /// registration used during compilation, without compiling statement bodies.
+    pub fn declared_nominal_schemas(
+        &self,
+        document: &DocumentSyntax,
+        origin: &CanonicalNominalPath,
+    ) -> Result<Vec<(Box<[String]>, SchemaBody)>, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::declared_nominal_schemas(document, origin)
+    }
+
     /// Return the names assigned by the root execution scope.
     pub fn root_state_mutation_names(
         &self,
