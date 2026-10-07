@@ -2793,6 +2793,81 @@ fn ordered_roots_reject_same_nominal_path_from_distinct_sources() {
 }
 
 #[test]
+fn ordered_roots_reject_same_fsm_path_from_distinct_sources() {
+    use mech_engine::CanonicalOrderedDocument;
+    use std::collections::{BTreeMap, BTreeSet};
+    let shared =
+        CanonicalNominalPath::new(vec!["shared".to_owned(), "machines".to_owned()]).unwrap();
+    let root = |identity, package_id: &str, origin: &CanonicalNominalPath| {
+        let source = format!(
+            "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nresult{identity} := #Drive()\nresult{identity}\n"
+        );
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x5c0 + identity as u64), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.diagnostics.is_empty());
+        CanonicalOrderedDocument {
+            identity,
+            publish_result: true,
+            document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            nominal_origin: Some(origin.clone()),
+            nominal_package_id: Some(package_id.to_owned()),
+            input_schemas: BTreeMap::new(),
+            resource_writes: BTreeMap::new(),
+            imports: BTreeMap::new(),
+            resolved_modules: BTreeSet::new(),
+        }
+    };
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = std::sync::Arc::new(catalog.build().unwrap());
+    for second_package in ["package-one", "package-two"] {
+        let error = CanonicalSourceFrontend
+            .compile_ordered_documents_with_catalog(
+                &[
+                    root(1, "package-one", &shared),
+                    root(2, second_package, &shared),
+                ],
+                catalog.clone(),
+            )
+            .err()
+            .expect("distinct documents must not share an FSM declaration path");
+        assert_eq!(
+            error.code,
+            "source-semantics/ambiguous-nominal-declaration-v1"
+        );
+        assert!(error.message.contains("shared/machines/fsm/Drive"));
+        assert_eq!(error.anchor.document, DocumentId(0x5c2));
+    }
+
+    let independent =
+        CanonicalNominalPath::new(vec!["independent".to_owned(), "machines".to_owned()]).unwrap();
+    let product = CanonicalSourceFrontend
+        .compile_ordered_documents_with_catalog(
+            &[
+                root(1, "package-one", &shared),
+                root(2, "package-one", &independent),
+            ],
+            catalog,
+        )
+        .expect("the same FSM name in distinct nominal origins remains independent");
+    let artifact = product.compile_artifact().unwrap();
+    let declarations = artifact.source_nominal_declarations();
+    assert_eq!(declarations.len(), 2);
+    let keys = declarations
+        .iter()
+        .map(
+            |declaration| match artifact.schemas().get(declaration.schema).unwrap().body() {
+                SchemaBody::Enum { key, .. } => *key,
+                _ => panic!("FSM declaration must retain its state enum schema"),
+            },
+        )
+        .collect::<Vec<_>>();
+    assert_ne!(keys[0], keys[1]);
+}
+
+#[test]
 fn ordered_imports_match_enum_arms_from_the_value_schema() {
     use mech_engine::{CanonicalOrderedDocument, CanonicalOrderedImport};
     use std::collections::{BTreeMap, BTreeSet};

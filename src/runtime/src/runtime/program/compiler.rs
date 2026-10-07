@@ -82,10 +82,9 @@ pub(super) fn canonical_dependency_identity_hash(
 
 fn canonical_document_dependency_hash(document: &SourceDocument) -> MResult<u64> {
     let source = document.source().to_contiguous_string();
-    let nominal = !canonical_frontend(document)
-        .declared_enum_names(&document.document())
-        .map_err(|error| canonical_compilation_error(error.to_string()))?
-        .is_empty();
+    let nominal = canonical_frontend(document)
+        .has_origin_dependent_declarations(&document.document())
+        .map_err(|error| canonical_compilation_error(error.to_string()))?;
     Ok(if nominal {
         canonical_dependency_identity_hash(
             &source,
@@ -1657,15 +1656,15 @@ impl<'a> ProgramCompilerView<'a> {
         let Some(origin) = document.nominal_origin() else {
             return Ok(());
         };
-        for name in canonical_frontend(document)
-            .declared_enum_names(&document.document())
+        for (relative_path, _) in canonical_frontend(document)
+            .declared_nominal_keys(&document.document(), origin)
             .map_err(|error| canonical_compilation_error(error.to_string()))?
         {
             let path = origin
                 .segments()
                 .iter()
                 .cloned()
-                .chain(std::iter::once(name))
+                .chain(relative_path.into_vec())
                 .collect::<Vec<_>>();
             let owner = document.nominal_package_id().map(str::to_owned);
             let defining_document = document.source().document();

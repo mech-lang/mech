@@ -5313,10 +5313,9 @@ fn validate_static_nominal_provenance(
             Default::default(),
         )
         .map_err(|error| document_runtime_error(format!("invalid static source: {error:?}")))?;
-        if !CanonicalSourceFrontend
-            .declared_enum_names(&document.document())
+        if CanonicalSourceFrontend
+            .has_origin_dependent_declarations(&document.document())
             .map_err(|error| document_runtime_error(error.to_string()))?
-            .is_empty()
             && !provenance.contains_key(specifier)
         {
             return Err(document_runtime_error(format!(
@@ -8295,6 +8294,33 @@ phase"#;
         validate_static_nominal_provenance(&sources, &provenance).unwrap();
     }
 
+    #[cfg(all(feature = "served_project_authority", feature = "state_machines"))]
+    #[test]
+    fn static_fsm_sources_require_retained_nominal_provenance() {
+        let source = "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nresult := #Drive()\nresult\n";
+        let sources = HashMap::from([("main.mec".to_owned(), source.to_owned())]);
+        let error = validate_static_nominal_provenance(&sources, &HashMap::new()).unwrap_err();
+        assert!(error.kind_message().contains("missing nominal provenance"));
+        let origin = SourceDocument::new_standalone_origin();
+        let provenance = HashMap::from([(
+            "main.mec".to_owned(),
+            ServedSourceProvenance {
+                nominal_origin: origin.clone(),
+                nominal_package_id: None,
+            },
+        )]);
+        validate_static_nominal_provenance(&sources, &provenance).unwrap();
+        let resolver = project_source_resolver_with_provenance(&sources, &provenance).unwrap();
+        let resolved =
+            mech_runtime::SourceResolver::resolve(&resolver, &SourceRequest::new("main.mec"))
+                .unwrap()
+                .unwrap();
+        assert_eq!(
+            resolved.source_document().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+    }
+
     #[cfg(all(feature = "served_project_authority", feature = "browser_host_scene"))]
     #[test]
     fn rejected_document_candidate_cannot_mutate_the_active_scene_registry() {
@@ -9441,6 +9467,74 @@ mod browser_tests {
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
+
+    #[cfg(all(feature = "served_project_authority", feature = "state_machines"))]
+    #[wasm_bindgen_test]
+    fn public_static_fsm_documents_require_retained_nominal_provenance() {
+        let source = "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nresult := #Drive()\nresult\n";
+        let config = r#"config := { hosts: [] run: { paths: ["main.mec"] grants: [] } }"#;
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str(source),
+        )
+        .unwrap();
+        let documents = Object::new();
+        Reflect::set(
+            &documents,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str(&encoded_document_at("main.mec", source)),
+        )
+        .unwrap();
+        let roots = Array::new();
+        roots.push(&JsValue::from_str("main.mec"));
+        let restore = |provenance| {
+            WasmProject::from_served_documents(
+                config,
+                sources.clone().into(),
+                documents.clone().into(),
+                roots.clone().into(),
+                Array::new().into(),
+                provenance,
+            )
+        };
+        let error = restore(JsValue::NULL).err().unwrap();
+        assert!(
+            error
+                .as_string()
+                .unwrap()
+                .contains("missing nominal provenance")
+        );
+
+        let document =
+            parse_config_document("mech.mcfg", config, ConfigProfileOptions::default()).unwrap();
+        install_served_authority(&BrowserRuntimeInjectionConfig {
+            runtime: mech_browser::BrowserHostRuntimeConfig::from(
+                &mech_runtime::RuntimeConfig::default(),
+            ),
+            hosts: document.hosts,
+            run_grants: document.run.unwrap().grants,
+        });
+        let origin = SourceDocument::new_standalone_origin();
+        let provenance = js_sys::JSON::parse(
+            &serde_json::json!({
+                "main.mec": {"nominalOrigin": origin}
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let mut project = restore(provenance).unwrap();
+        assert_eq!(
+            project
+                .runtime
+                .root_symbol_value("result")
+                .unwrap()
+                .format_canonical_inline(),
+            "1"
+        );
+        project.stop().unwrap();
+    }
 
     #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
     #[wasm_bindgen_test]

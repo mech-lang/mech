@@ -2375,23 +2375,28 @@ pub(super) fn compile_ordered_documents(
         let mut exports = Vec::new();
         collect_document_units(root.document.syntax(), &mut units, &mut exports)?;
         if let Some(origin) = root.nominal_origin.as_ref() {
-            for (name, syntax) in document_types::enum_declarations(&units)? {
+            let enum_declarations = document_types::enum_declarations(&units)?;
+            for (relative_path, _) in declared_nominal_keys(&root.document, origin)? {
                 let path = origin
                     .segments()
                     .iter()
                     .cloned()
-                    .chain(std::iter::once(name.clone()))
+                    .chain(relative_path.iter().cloned())
                     .collect::<Vec<_>>();
                 let defining_document = anchor.document;
                 if let Some(previous) = nominal_owners.get(&path) {
                     if previous.0 != root.nominal_package_id || previous.1 != defining_document {
+                        let declaration_anchor = enum_declarations
+                            .iter()
+                            .find(|(name, _)| relative_path.len() == 1 && relative_path[0] == *name)
+                            .map_or(anchor, |(_, syntax)| SourceSemanticAnchor::for_node(syntax));
                         return Err(SourceSemanticError {
                             code: "source-semantics/ambiguous-nominal-declaration-v1",
                             message: format!(
                                 "AmbiguousNominalDeclarationV1: {} has distinct defining sources",
                                 path.join("/")
                             ),
-                            anchor: SourceSemanticAnchor::for_node(&syntax),
+                            anchor: declaration_anchor,
                         });
                     }
                 } else {
@@ -2400,12 +2405,14 @@ pub(super) fn compile_ordered_documents(
                         (root.nominal_package_id.clone(), defining_document),
                     );
                 }
-                let key = NominalKey::from_path(
-                    NominalKind::Enum,
-                    &CanonicalNominalPath::new(path).map_err(|error| {
-                        internal(anchor, format!("invalid enum declaration path: {error:?}"))
-                    })?,
-                );
+            }
+            for (name, syntax) in enum_declarations {
+                let key = document_types::enum_nominal_key(origin, &name).map_err(|error| {
+                    internal(
+                        SourceSemanticAnchor::for_node(&syntax),
+                        format!("invalid enum declaration path: {error:?}"),
+                    )
+                })?;
                 builder.imported_enum_qualifiers.insert(key, name);
             }
         }
