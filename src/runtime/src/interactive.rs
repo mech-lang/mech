@@ -80,7 +80,7 @@ pub trait ResidentReplRuntimeFactory {
 
     /// Build and activate one complete candidate source.
     ///
-    /// Standalone hosts use the default interactive source loader. Document
+    /// Source-only hosts use the default interactive source loader. Document
     /// hosts may override this boundary to retain their source resolver,
     /// configured hosts, and root-program identity while preserving the same
     /// transactional session semantics.
@@ -114,9 +114,23 @@ pub trait ResidentReplRuntimeFactory {
         Ok((runtime, outcome))
     }
 
-    /// Build and activate one strictly admitted retained canonical revision.
-    /// Hosts override this to preserve canonical document authority through activation.
+    /// Activate one strictly admitted retained canonical revision.
+    ///
+    /// The default delegates to the source activation hook so existing hosts
+    /// that override only [`Self::activate`] retain their activation behavior.
+    /// Standalone hosts override this with [`Self::activate_standalone_document`]
+    /// to retain the session's nominal provenance. Document hosts override this
+    /// to preserve their resolver and canonical document authority.
     fn activate_document(
+        &self,
+        events: MechEventBuffer,
+        document: &crate::SourceDocument,
+    ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+        self.activate(events, &document.source().to_contiguous_string())
+    }
+
+    /// Build and activate a standalone canonical document with retained provenance.
+    fn activate_standalone_document(
         &self,
         events: MechEventBuffer,
         document: &crate::SourceDocument,
@@ -454,18 +468,19 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         &self,
         mut document: crate::SourceDocument,
     ) -> crate::SourceDocument {
-        if document.nominal_origin().is_some() {
-            return document;
-        }
         if let Some(current) = self
             .source_document
             .as_ref()
             .or(self.initial_document.as_ref())
         {
-            if let Some(origin) = current.nominal_origin() {
-                document = document.with_nominal_origin(origin.clone());
+            if document.nominal_origin().is_none() {
+                if let Some(origin) = current.nominal_origin() {
+                    document = document.with_nominal_origin(origin.clone());
+                }
             }
-            if document.nominal_package_id().is_none() {
+            if document.nominal_origin() == current.nominal_origin()
+                && document.nominal_package_id().is_none()
+            {
                 if let Some(package_id) = current.nominal_package_id() {
                     document = document.with_nominal_package_id(package_id);
                 }
@@ -1366,6 +1381,14 @@ mod tests {
                 .function_catalog(mech_stdlib::source_catalog())
                 .build()
         }
+
+        fn activate_document(
+            &self,
+            events: MechEventBuffer,
+            document: &crate::SourceDocument,
+        ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+            self.activate_standalone_document(events, document)
+        }
     }
 
     impl ResidentReplRuntimeFactory for CanonicalRuntimeFactory {
@@ -1438,6 +1461,71 @@ mod tests {
             panic!("expected a nominal enum value");
         };
         assert_eq!(variants[data.ordinal() as usize].name, variant);
+    }
+
+    #[test]
+    fn document_activation_preserves_source_only_factory_override() {
+        struct SourceHookFactory {
+            sources: std::rc::Rc<std::cell::RefCell<Vec<String>>>,
+        }
+
+        impl ResidentReplRuntimeFactory for SourceHookFactory {
+            fn build(&self, _events: MechEventBuffer) -> MResult<MechRuntime> {
+                panic!("document activation must use the custom source hook")
+            }
+
+            fn activate(
+                &self,
+                _events: MechEventBuffer,
+                source: &str,
+            ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+                self.sources.borrow_mut().push(source.to_owned());
+                let mut runtime = SourceRuntimeFactory.build(MechEventBuffer::default())?;
+                let outcome = runtime.load_interactive_source_program(
+                    &format!("hook-marker := 42\n{source}"),
+                    ResidentDurabilityPolicy::Volatile,
+                )?;
+                Ok((runtime, outcome))
+            }
+        }
+
+        let sources = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+        let initial = crate::SourceDocument::parse_resolved(
+            "repl://source-hook",
+            Revision(0),
+            "x := 1\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            SourceHookFactory {
+                sources: sources.clone(),
+            },
+            initial,
+        )
+        .unwrap();
+        assert_eq!(
+            session
+                .symbol("hook-marker")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "42"
+        );
+        session.submit("y := x + 1").unwrap();
+        assert_eq!(
+            session
+                .symbol("y")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "2"
+        );
+        session.reset().unwrap();
+        assert_eq!(
+            *sources.borrow(),
+            ["x := 1\n", "x := 1\ny := x + 1\n", "x := 1\n"]
+        );
     }
 
     #[test]
@@ -1593,6 +1681,78 @@ mod tests {
         assert_eq!(
             session.symbol("my-color").unwrap().unwrap().schema_key(),
             standalone.schema_key()
+        );
+    }
+
+    #[test]
+    fn explicit_matching_document_origin_inherits_missing_package_identity() {
+        const SOURCE: &str = "<color> := :red | :green\nmy-color<color> := :red\n";
+        let origin = mech_core::CanonicalNominalPath::new(vec![
+            "example-package".to_owned(),
+            "colors".to_owned(),
+        ])
+        .unwrap();
+        let document = |revision, origin| {
+            crate::SourceDocument::parse_resolved(
+                "package:colors",
+                Revision(revision),
+                SOURCE,
+                ParseConfig::default(),
+            )
+            .unwrap()
+            .with_nominal_origin(origin)
+        };
+        let initial =
+            document(0, origin.clone()).with_nominal_package_id("example-package-instance");
+        let mut session =
+            ResidentReplSession::from_document(SourceRuntimeFactory, initial).unwrap();
+        let accepted = session.symbol("my-color").unwrap().unwrap();
+
+        session
+            .replace_document(document(1, origin.clone()))
+            .unwrap();
+        assert_eq!(
+            session.source_document().unwrap().nominal_package_id(),
+            Some("example-package-instance")
+        );
+        assert_eq!(session.symbol("my-color").unwrap().unwrap(), accepted);
+        session.submit("other-color<color> := :green").unwrap();
+        assert_eq!(
+            session.source_document().unwrap().nominal_package_id(),
+            Some("example-package-instance")
+        );
+
+        session
+            .replace_document(
+                document(3, origin).with_nominal_package_id("replacement-package-instance"),
+            )
+            .unwrap();
+        assert_eq!(
+            session.source_document().unwrap().nominal_package_id(),
+            Some("replacement-package-instance")
+        );
+
+        let unrelated_origin = mech_core::CanonicalNominalPath::new(vec![
+            "unrelated-package".to_owned(),
+            "colors".to_owned(),
+        ])
+        .unwrap();
+        session
+            .replace_document(document(4, unrelated_origin.clone()))
+            .unwrap();
+        assert_eq!(
+            session.source_document().unwrap().nominal_package_id(),
+            None
+        );
+        assert_enum_value(
+            &session.symbol("my-color").unwrap().unwrap(),
+            &unrelated_origin,
+            "color",
+            "red",
+        );
+        assert_ne!(
+            session.symbol("my-color").unwrap().unwrap().schema_key(),
+            accepted.schema_key()
         );
     }
 
@@ -1966,10 +2126,10 @@ mod tests {
             unreachable!("the test factory supplies an activated runtime")
         }
 
-        fn activate_document(
+        fn activate(
             &self,
             events: MechEventBuffer,
-            _document: &crate::SourceDocument,
+            _source: &str,
         ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
             *self.events.lock().unwrap() = Some(events);
             Ok((
@@ -1988,10 +2148,10 @@ mod tests {
             unreachable!("the test factory supplies activated runtimes directly")
         }
 
-        fn activate_document(
+        fn activate(
             &self,
             _events: MechEventBuffer,
-            _document: &crate::SourceDocument,
+            _source: &str,
         ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
             let activation = self.activations.get();
             self.activations.set(activation + 1);

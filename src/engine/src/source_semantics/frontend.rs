@@ -720,6 +720,15 @@ impl CanonicalSourceFrontend {
         document_lowering::declared_enum_names(document)
     }
 
+    /// Whether executable enum or FSM declarations derive keys from the root origin.
+    pub fn has_origin_dependent_declarations(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<bool, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::has_origin_dependent_declarations(document)
+    }
+
     /// Return the names assigned by the root execution scope.
     pub fn root_state_mutation_names(
         &self,
