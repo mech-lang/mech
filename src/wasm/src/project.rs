@@ -5306,6 +5306,12 @@ fn validate_static_nominal_provenance(
     provenance: &HashMap<String, ServedSourceProvenance>,
 ) -> MResult<()> {
     for (specifier, source) in sources {
+        if let Some(owner) = provenance.get(specifier) {
+            SourceDocument::validate_nominal_provenance(
+                Some(&owner.nominal_origin),
+                owner.nominal_package_id.as_deref(),
+            )?;
+        }
         let document = SourceDocument::parse_resolved(
             specifier,
             mech_syntax::document::Revision(0),
@@ -9515,6 +9521,48 @@ mod browser_tests {
             hosts: document.hosts,
             run_grants: document.run.unwrap().grants,
         });
+        let valid_owner = SourceDocument::new_standalone_origin();
+        for (segments, package_id) in [
+            (
+                vec!["mech:standalone".to_owned(), "not-a-uuid".to_owned()],
+                None,
+            ),
+            (
+                vec![
+                    "mech:standalone".to_owned(),
+                    "01890f47-1b5a-7000-0000-000000000001".to_owned(),
+                ],
+                None,
+            ),
+            (
+                vec![
+                    "mech:standalone".to_owned(),
+                    "01890F47-1B5A-7000-8000-000000000001".to_owned(),
+                ],
+                None,
+            ),
+            (valid_owner.segments().to_vec(), Some("package-id")),
+        ] {
+            let invalid_origin = mech_core::CanonicalNominalPath::new(segments).unwrap();
+            let invalid = js_sys::JSON::parse(
+                &serde_json::json!({
+                    "main.mec": {"nominalOrigin": invalid_origin, "nominalPackageId": package_id}
+                })
+                .to_string(),
+            )
+            .unwrap();
+            let error = restore(invalid)
+                .err()
+                .expect("static reserved owners must be validated");
+            let message = Reflect::get(&error, &JsValue::from_str("message"))
+                .unwrap()
+                .as_string()
+                .unwrap();
+            assert!(
+                message.contains("standalone nominal provenance is invalid"),
+                "{message}"
+            );
+        }
         let origin = SourceDocument::new_standalone_origin();
         let provenance = js_sys::JSON::parse(
             &serde_json::json!({

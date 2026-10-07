@@ -2849,9 +2849,10 @@ fn declared_resource_send_operation<'a>(
 
 #[cfg(test)]
 mod nominal_provenance_tests {
-    use super::*;
+    use super::{CanonicalGraphCompilation, SourceDocument};
     use mech_core::{CanonicalNominalPath, NominalKey, NominalKind};
     use mech_syntax::document::{ParseConfig, Revision};
+    use std::collections::BTreeMap;
 
     #[test]
     fn fsm_ownership_does_not_publish_enum_qualifiers() {
