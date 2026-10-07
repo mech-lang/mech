@@ -1,0 +1,36 @@
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/syntax)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/compute)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/stdlib)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/runtime)
+   Compiling mech-browser v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/browser)
+   Compiling mech-scene v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/scene)
+   Compiling mech-time v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/time)
+   Compiling mech-console v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/console)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/gpu)
+   Compiling mech-timer v0.3.5 (/private/tmp/mech-v04-audit-20261006/hosts/timer)
+   Compiling mech-wasm v0.3.5 (/private/tmp/mech-v04-audit-20261006/src/wasm)
+    Finished `test` profile [unoptimized] target(s) in 1m 01s
+     Running unittests src/lib.rs (/private/tmp/mech-v04-target-streaming/debug/deps/mech_wasm-80d31cabfa2b47a2)
+
+running 5 tests
+test inspection::editor_render_tests::editor_preview_recovers_deep_errors_after_a_document_title ... ok
+test inspection::editor_render_tests::editor_preview_uses_current_revision_and_escapes_source_text ... ok
+test inspection::editor_render_tests::editor_preview_formats_retained_document_structure ... ok
+test inspection::editor_render_tests::editor_preview_renders_recovered_fence_and_repairs_its_error ... ok
+test inspection::editor_render_tests::editor_preview_preserves_later_sections_for_fenced_and_unfenced_errors ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 110 filtered out; finished in 1.39s
+
+     Running tests/bytecode_v1.rs (/private/tmp/mech-v04-target-streaming/debug/deps/bytecode_v1-275ff26566eb07a3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/function_system_source_contract.rs (/private/tmp/mech-v04-target-streaming/debug/deps/function_system_source_contract-7ba9d3d264ac6729)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

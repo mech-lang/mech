@@ -1,0 +1,314 @@
+{
+  "status": "passed",
+  "cases": 16,
+  "records": [
+    {
+      "case": "live preview and compiler source report with secondary label and fix",
+      "passed": true,
+      "state": {
+        "summary": "1 errorSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 1 error",
+        "cards": [
+          {
+            "text": "ErrorLine 9, column 11missing closing delimiter --> document:9:11\n   |\n 8 | ```mech\n 9 | answer := [1 2 3 4 5\n   |           ^ missing closing delimiter\n10 | answer\n",
+            "range": "137",
+            "source": " --> document:9:11\n   |\n 8 | ```mech\n 9 | answer := [1 2 3 4 5\n   |           ^ missing closing delimiter\n10 | answer\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:9:11\n   |\n 8 | ```mech\n 9 | answer := [1 2 3 4 5\n   |           ^ missing closing delimiter\n10 | answer\n --> document:11:1\n   |\n10 | answer\n11 | ```\n   | ^ closing delimiter expected before this boundary\n12 | \n  = expected: `]`\n  = help: Insert `]`\n    at 11:1: insert \"]\"\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>1 error</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"25\" data-mech-end=\"73\"><p>The result is published by the final expression.</p></div><div class=\"mech-source-region\" data-mech-start=\"75\" data-mech-end=\"135\"><p>The end result is going to be that this thing displays live.</p></div><div class=\"mech-source-region preview-region-error\" data-mech-start=\"137\" data-mech-end=\"178\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: missing closing delimiter. Line 9, column 11. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 9, column 11</strong><span class=\"diagnostic-message\">missing closing delimiter</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:9:11\n</span><span class=\"diagnostic-source-line\">   |\n</span><span class=\"diagnostic-source-line\"> 8 | ```mech\n</span><span class=\"diagnostic-source-line\"> 9 | answer := [1 2 3 4 5\n</span><span class=\"diagnostic-source-line diagnostic-underline\">   |           ^ missing closing delimiter\n</span><span class=\"diagnostic-source-line\">10 | answer\n</span></code></pre></article><figure class=\"mech-code-block\" data-mech-source=\"\"><pre><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := [<span class=\"mech-number\">1</span> <span class=\"mech-number\">2</span> <span class=\"mech-number\">3</span> <span class=\"mech-number\">4</span> <span class=\"mech-number\">5</span>\n<span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span>\n</code></pre></figure></div></section><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"178\" data-mech-end=\"225\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Section One</h2></div><div class=\"mech-source-region\" data-mech-start=\"225\" data-mech-end=\"251\"><p>This is the first section.</p></div></section></article>",
+        "diagnostics": "ErrorLine 9, column 11missing closing delimitersyntax/missing-delimiter --> document:9:11\n   |\n 8 | ```mech\n 9 | answer := [1 2 3 4 5\n   |           ^ missing closing delimiter\n10 | answer\n --> document:11:1\n   |\n10 | answer\n11 | ```\n   | ^ closing delimiter expected before this boundary\n12 | \n  = expected: `]`\n  = help: Insert `]`\n    at 11:1: insert \"]\"\n"
+      },
+      "selection": {
+        "start": 155,
+        "end": 156
+      }
+    },
+    {
+      "case": "repeated compilation preserves one indicator per diagnostic",
+      "passed": true
+    },
+    {
+      "case": "repair clears source and preview errors and publishes outputs",
+      "passed": true,
+      "state": {
+        "previewState": "",
+        "previewStatus": "Current source",
+        "cards": [],
+        "reports": [],
+        "html": "<article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"25\" data-mech-end=\"73\"><p>The result is published by the final expression.</p></div><div class=\"mech-source-region\" data-mech-start=\"75\" data-mech-end=\"135\"><p>The end result is going to be that this thing displays live.</p></div><div class=\"mech-source-region\" data-mech-start=\"137\" data-mech-end=\"179\"><figure class=\"mech-code-block\" data-mech-source=\"\"><pre><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := [<span class=\"mech-number\">1</span> <span class=\"mech-number\">2</span> <span class=\"mech-number\">3</span> <span class=\"mech-number\">4</span> <span class=\"mech-number\">5</span>]\n<span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span>\n</code></pre></figure></div></section><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"179\" data-mech-end=\"226\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Section One</h2></div><div class=\"mech-source-region\" data-mech-start=\"226\" data-mech-end=\"252\"><p>This is the first section.</p></div></section></article>",
+        "diagnostics": "Compile to check the current document."
+      }
+    },
+    {
+      "case": "two independent errors with separate source excerpts",
+      "passed": true,
+      "state": {
+        "summary": "2 errorsSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 2 errors",
+        "cards": [
+          {
+            "text": "ErrorLine 1, column 10unexpected source before the closing delimiter --> document:1:10\n  |\n1 | x := [1, +, 2]\n  |          ^^^^ unexpected source before the closing delimiter\n2 | y := [3, *, 4]\n",
+            "range": "0",
+            "source": " --> document:1:10\n  |\n1 | x := [1, +, 2]\n  |          ^^^^ unexpected source before the closing delimiter\n2 | y := [3, *, 4]\n",
+            "unmapped": false
+          },
+          {
+            "text": "ErrorLine 2, column 10unexpected source before the closing delimiter --> document:2:10\n  |\n1 | x := [1, +, 2]\n2 | y := [3, *, 4]\n  |          ^^^^ unexpected source before the closing delimiter\n3 |\n",
+            "range": "0",
+            "source": " --> document:2:10\n  |\n1 | x := [1, +, 2]\n2 | y := [3, *, 4]\n  |          ^^^^ unexpected source before the closing delimiter\n3 |\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:1:10\n  |\n1 | x := [1, +, 2]\n  |          ^^^^ unexpected source before the closing delimiter\n2 | y := [3, *, 4]\n",
+          " --> document:2:10\n  |\n1 | x := [1, +, 2]\n2 | y := [3, *, 4]\n  |          ^^^^ unexpected source before the closing delimiter\n3 |\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>2 errors</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region preview-region-error\" data-mech-start=\"0\" data-mech-end=\"30\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: unexpected source before the closing delimiter. Line 1, column 10. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 1, column 10</strong><span class=\"diagnostic-message\">unexpected source before the closing delimiter</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:1:10\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">1 | x := [1, +, 2]\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |          ^^^^ unexpected source before the closing delimiter\n</span><span class=\"diagnostic-source-line\">2 | y := [3, *, 4]\n</span></code></pre></article><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: unexpected source before the closing delimiter. Line 2, column 10. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 2, column 10</strong><span class=\"diagnostic-message\">unexpected source before the closing delimiter</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:2:10\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">1 | x := [1, +, 2]\n</span><span class=\"diagnostic-source-line\">2 | y := [3, *, 4]\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |          ^^^^ unexpected source before the closing delimiter\n</span><span class=\"diagnostic-source-line\">3 |\n</span></code></pre></article><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"x\">x</span> := [<span class=\"mech-number\">1</span>, +, 2]\n<span class=\"mech-var-name\" data-mech-var-name=\"y\">y</span> := [<span class=\"mech-number\">3</span>, *, 4]\n</code></pre></div></section></article>",
+        "diagnostics": "ErrorLine 1, column 10unexpected source before the closing delimitersyntax/unexpected-delimited-content --> document:1:10\n  |\n1 | x := [1, +, 2]\n  |          ^^^^ unexpected source before the closing delimiter\n2 | y := [3, *, 4]\nErrorLine 2, column 10unexpected source before the closing delimitersyntax/unexpected-delimited-content --> document:2:10\n  |\n1 | x := [1, +, 2]\n2 | y := [3, *, 4]\n  |          ^^^^ unexpected source before the closing delimiter\n3 |\n"
+      }
+    },
+    {
+      "case": "local recovered region: answer := (1 + 2",
+      "passed": true,
+      "state": {
+        "summary": "1 errorSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 1 error",
+        "cards": [
+          {
+            "text": "ErrorLine 4, column 11missing closing delimiter --> document:4:11\n  |\n3 | \n4 | answer := (1 + 2\n  |           ^ missing closing delimiter\n5 |\n",
+            "range": "25",
+            "source": " --> document:4:11\n  |\n3 | \n4 | answer := (1 + 2\n  |           ^ missing closing delimiter\n5 |\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:4:11\n  |\n3 | \n4 | answer := (1 + 2\n  |           ^ missing closing delimiter\n5 | \n --> document:6:1\n  |\n5 | \n6 | 1. Next\n  | ^ closing delimiter expected before this boundary\n7 | ---\n  = expected: `)`\n  = help: Insert `)`\n    at 6:1: insert \")\"\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>1 error</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region preview-region-error\" data-mech-start=\"25\" data-mech-end=\"43\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: missing closing delimiter. Line 4, column 11. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 4, column 11</strong><span class=\"diagnostic-message\">missing closing delimiter</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:4:11\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">3 | \n</span><span class=\"diagnostic-source-line\">4 | answer := (1 + 2\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |           ^ missing closing delimiter\n</span><span class=\"diagnostic-source-line\">5 |\n</span></code></pre></article><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := (<span class=\"mech-number\">1</span> + <span class=\"mech-number\">2</span>\n\n</code></pre></div></section><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"43\" data-mech-end=\"56\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Next</h2></div><div class=\"mech-source-region\" data-mech-start=\"56\" data-mech-end=\"74\"><p>A later paragraph.</p></div></section></article>",
+        "diagnostics": "ErrorLine 4, column 11missing closing delimitersyntax/missing-delimiter --> document:4:11\n  |\n3 | \n4 | answer := (1 + 2\n  |           ^ missing closing delimiter\n5 | \n --> document:6:1\n  |\n5 | \n6 | 1. Next\n  | ^ closing delimiter expected before this boundary\n7 | ---\n  = expected: `)`\n  = help: Insert `)`\n    at 6:1: insert \")\"\n"
+      }
+    },
+    {
+      "case": "local recovered region: answer := {x: 1 y: 2",
+      "passed": true,
+      "state": {
+        "summary": "1 errorSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 1 error",
+        "cards": [
+          {
+            "text": "ErrorLine 4, column 11missing closing delimiter --> document:4:11\n  |\n3 | \n4 | answer := {x: 1 y: 2\n  |           ^ missing closing delimiter\n5 |\n",
+            "range": "25",
+            "source": " --> document:4:11\n  |\n3 | \n4 | answer := {x: 1 y: 2\n  |           ^ missing closing delimiter\n5 |\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:4:11\n  |\n3 | \n4 | answer := {x: 1 y: 2\n  |           ^ missing closing delimiter\n5 | \n --> document:6:1\n  |\n5 | \n6 | 1. Next\n  | ^ closing delimiter expected before this boundary\n7 | ---\n  = expected: `}`\n  = help: Insert `}`\n    at 6:1: insert \"}\"\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>1 error</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region preview-region-error\" data-mech-start=\"25\" data-mech-end=\"47\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: missing closing delimiter. Line 4, column 11. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 4, column 11</strong><span class=\"diagnostic-message\">missing closing delimiter</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:4:11\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">3 | \n</span><span class=\"diagnostic-source-line\">4 | answer := {x: 1 y: 2\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |           ^ missing closing delimiter\n</span><span class=\"diagnostic-source-line\">5 |\n</span></code></pre></article><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := {x: <span class=\"mech-number\">1</span> y: <span class=\"mech-number\">2</span>\n\n</code></pre></div></section><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"47\" data-mech-end=\"60\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Next</h2></div><div class=\"mech-source-region\" data-mech-start=\"60\" data-mech-end=\"78\"><p>A later paragraph.</p></div></section></article>",
+        "diagnostics": "ErrorLine 4, column 11missing closing delimitersyntax/missing-delimiter --> document:4:11\n  |\n3 | \n4 | answer := {x: 1 y: 2\n  |           ^ missing closing delimiter\n5 | \n --> document:6:1\n  |\n5 | \n6 | 1. Next\n  | ^ closing delimiter expected before this boundary\n7 | ---\n  = expected: `}`\n  = help: Insert `}`\n    at 6:1: insert \"}\"\n"
+      }
+    },
+    {
+      "case": "local recovered region: answer := [1 @ [2",
+      "passed": true,
+      "state": {
+        "summary": "1 errorSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 1 error",
+        "cards": [
+          {
+            "text": "ErrorLine 4, column 18expected a closing bracket for the reference --> document:4:18\n  |\n3 | \n4 | answer := [1 @ [2\n  |                  ^ expected a closing bracket for the reference\n5 |\n",
+            "range": "25",
+            "source": " --> document:4:18\n  |\n3 | \n4 | answer := [1 @ [2\n  |                  ^ expected a closing bracket for the reference\n5 |\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:4:18\n  |\n3 | \n4 | answer := [1 @ [2\n  |                  ^ expected a closing bracket for the reference\n5 | \n  = expected: `]`\n  = help: Insert `]`\n    at 4:18: insert \"]\"\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>1 error</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"43\"><h1 class=\"mech-document-title\">Calculation</h1><div class=\"mech-source-region preview-region-error\" data-mech-start=\"25\" data-mech-end=\"43\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: expected a closing bracket for the reference. Line 4, column 18. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 4, column 18</strong><span class=\"diagnostic-message\">expected a closing bracket for the reference</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:4:18\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">3 | \n</span><span class=\"diagnostic-source-line\">4 | answer := [1 @ [2\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |                  ^ expected a closing bracket for the reference\n</span><span class=\"diagnostic-source-line\">5 |\n</span></code></pre></article><pre class=\"mech-recovered-source\" data-mech-source=\"\" title=\"canonical document source range is unavailable\"><code>answer := [1 @ [2\n</code></pre></div></header><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"44\" data-mech-end=\"57\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Next</h2></div><div class=\"mech-source-region\" data-mech-start=\"57\" data-mech-end=\"75\"><p>A later paragraph.</p></div></section></article>",
+        "diagnostics": "ErrorLine 4, column 18expected a closing bracket for the referencesyntax/unclosed-reference --> document:4:18\n  |\n3 | \n4 | answer := [1 @ [2\n  |                  ^ expected a closing bracket for the reference\n5 | \n  = expected: `]`\n  = help: Insert `]`\n    at 4:18: insert \"]\"\n"
+      }
+    },
+    {
+      "case": "local recovered region: answer := 1 +",
+      "passed": true,
+      "state": {
+        "summary": "1 errorSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 1 error",
+        "cards": [
+          {
+            "text": "ErrorLine 4, column 14missing expression after operator --> document:4:14\n  |\n3 | \n4 | answer := 1 +\n  |              ^ missing expression after operator\n5 |\n",
+            "range": "25",
+            "source": " --> document:4:14\n  |\n3 | \n4 | answer := 1 +\n  |              ^ missing expression after operator\n5 |\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:4:14\n  |\n3 | \n4 | answer := 1 +\n  |              ^ missing expression after operator\n5 | \n  = expected: expression\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>1 error</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region preview-region-error\" data-mech-start=\"25\" data-mech-end=\"40\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: missing expression after operator. Line 4, column 14. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 4, column 14</strong><span class=\"diagnostic-message\">missing expression after operator</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:4:14\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">3 | \n</span><span class=\"diagnostic-source-line\">4 | answer := 1 +\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |              ^ missing expression after operator\n</span><span class=\"diagnostic-source-line\">5 |\n</span></code></pre></article><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <span class=\"mech-number\">1</span> +\n\n</code></pre></div></section><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"40\" data-mech-end=\"53\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Next</h2></div><div class=\"mech-source-region\" data-mech-start=\"53\" data-mech-end=\"71\"><p>A later paragraph.</p></div></section></article>",
+        "diagnostics": "ErrorLine 4, column 14missing expression after operatorsyntax/missing-operator-operand --> document:4:14\n  |\n3 | \n4 | answer := 1 +\n  |              ^ missing expression after operator\n5 | \n  = expected: expression\n"
+      }
+    },
+    {
+      "case": "local recovered region: answer := [1 2; next := 7; next",
+      "passed": true,
+      "state": {
+        "summary": "1 errorSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 1 error",
+        "cards": [
+          {
+            "text": "ErrorLine 4, column 11missing closing delimiter --> document:4:11\n  |\n3 | \n4 | answer := [1 2; next := 7; next\n  |           ^ missing closing delimiter\n5 |\n",
+            "range": "25",
+            "source": " --> document:4:11\n  |\n3 | \n4 | answer := [1 2; next := 7; next\n  |           ^ missing closing delimiter\n5 |\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:4:11\n  |\n3 | \n4 | answer := [1 2; next := 7; next\n  |           ^ missing closing delimiter\n5 | \n --> document:4:17\n  |\n3 | \n4 | answer := [1 2; next := 7; next\n  |                 ^ closing delimiter expected before this boundary\n5 | \n  = expected: `]`\n  = help: Insert `]`\n    at 4:17: insert \"]\"\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>1 error</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region preview-region-error\" data-mech-start=\"25\" data-mech-end=\"58\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: missing closing delimiter. Line 4, column 11. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 4, column 11</strong><span class=\"diagnostic-message\">missing closing delimiter</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:4:11\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">3 | \n</span><span class=\"diagnostic-source-line\">4 | answer := [1 2; next := 7; next\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |           ^ missing closing delimiter\n</span><span class=\"diagnostic-source-line\">5 |\n</span></code></pre></article><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := [<span class=\"mech-number\">1</span> <span class=\"mech-number\">2</span><span class=\"mech-code-terminal\">;</span> <span class=\"mech-var-name\" data-mech-var-name=\"next\">next</span> := <span class=\"mech-number\">7</span><span class=\"mech-code-terminal\">;</span> <span class=\"mech-var-name\" data-mech-var-name=\"next\">next</span>\n\n</code></pre></div></section><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"58\" data-mech-end=\"71\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Next</h2></div><div class=\"mech-source-region\" data-mech-start=\"71\" data-mech-end=\"89\"><p>A later paragraph.</p></div></section></article>",
+        "diagnostics": "ErrorLine 4, column 11missing closing delimitersyntax/missing-delimiter --> document:4:11\n  |\n3 | \n4 | answer := [1 2; next := 7; next\n  |           ^ missing closing delimiter\n5 | \n --> document:4:17\n  |\n3 | \n4 | answer := [1 2; next := 7; next\n  |                 ^ closing delimiter expected before this boundary\n5 | \n  = expected: `]`\n  = help: Insert `]`\n    at 4:17: insert \"]\"\n"
+      }
+    },
+    {
+      "case": "local recovered region: ```mech{output: }\nanswer := 1\n```",
+      "passed": true,
+      "state": {
+        "summary": "2 errorsSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 2 errors",
+        "cards": [
+          {
+            "text": "ErrorLine 4, column 8expected a newline after the code-block header --> document:4:8\n  |\n3 | \n4 | ```mech{output: }\n  |        ^ expected a newline after the code-block header\n5 | answer := 1\n",
+            "range": "25",
+            "source": " --> document:4:8\n  |\n3 | \n4 | ```mech{output: }\n  |        ^ expected a newline after the code-block header\n5 | answer := 1\n",
+            "unmapped": false
+          },
+          {
+            "text": "ErrorLine 4, column 17missing value after binding colon --> document:4:17\n  |\n3 | \n4 | ```mech{output: }\n  |                 ^ missing value after binding colon\n5 | answer := 1\n",
+            "range": "25",
+            "source": " --> document:4:17\n  |\n3 | \n4 | ```mech{output: }\n  |                 ^ missing value after binding colon\n5 | answer := 1\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:4:8\n  |\n3 | \n4 | ```mech{output: }\n  |        ^ expected a newline after the code-block header\n5 | answer := 1\n  = expected: Newline\n",
+          " --> document:4:17\n  |\n3 | \n4 | ```mech{output: }\n  |                 ^ missing value after binding colon\n5 | answer := 1\n  = expected: expression\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>2 errors</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region preview-region-error\" data-mech-start=\"25\" data-mech-end=\"60\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: expected a newline after the code-block header. Line 4, column 8. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 4, column 8</strong><span class=\"diagnostic-message\">expected a newline after the code-block header</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:4:8\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">3 | \n</span><span class=\"diagnostic-source-line\">4 | ```mech{output: }\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |        ^ expected a newline after the code-block header\n</span><span class=\"diagnostic-source-line\">5 | answer := 1\n</span></code></pre></article><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: missing value after binding colon. Line 4, column 17. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 4, column 17</strong><span class=\"diagnostic-message\">missing value after binding colon</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:4:17\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">3 | \n</span><span class=\"diagnostic-source-line\">4 | ```mech{output: }\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |                 ^ missing value after binding colon\n</span><span class=\"diagnostic-source-line\">5 | answer := 1\n</span></code></pre></article><pre class=\"mech-recovered-source\" data-mech-source=\"\" title=\"code fence has no valid presentation options\"><code>```mech{output: }\nanswer := 1\n```\n\n</code></pre></div></section><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"60\" data-mech-end=\"73\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Next</h2></div><div class=\"mech-source-region\" data-mech-start=\"73\" data-mech-end=\"91\"><p>A later paragraph.</p></div></section></article>",
+        "diagnostics": "ErrorLine 4, column 8expected a newline after the code-block headersyntax/missing-codeblock-header-newline --> document:4:8\n  |\n3 | \n4 | ```mech{output: }\n  |        ^ expected a newline after the code-block header\n5 | answer := 1\n  = expected: Newline\nErrorLine 4, column 17missing value after binding colonsyntax/missing-binding-value --> document:4:17\n  |\n3 | \n4 | ```mech{output: }\n  |                 ^ missing value after binding colon\n5 | answer := 1\n  = expected: expression\n"
+      }
+    },
+    {
+      "case": "Unicode byte ranges navigate to exact delimiter",
+      "passed": true,
+      "state": {
+        "summary": "1 errorSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 1 error",
+        "cards": [
+          {
+            "text": "ErrorLine 5, column 11missing closing delimiter --> document:5:11\n  |\n4 | ```mech\n5 | answer := [1 2\n  |           ^ missing closing delimiter\n6 | ```\n",
+            "range": "29",
+            "source": " --> document:5:11\n  |\n4 | ```mech\n5 | answer := [1 2\n  |           ^ missing closing delimiter\n6 | ```\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:5:11\n  |\n4 | ```mech\n5 | answer := [1 2\n  |           ^ missing closing delimiter\n6 | ```\n --> document:6:1\n  |\n5 | answer := [1 2\n6 | ```\n  | ^ closing delimiter expected before this boundary\n7 | \n  = expected: `]`\n  = help: Insert `]`\n    at 6:1: insert \"]\"\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>1 error</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"29\"><h1 class=\"mech-document-title\">Café 👩‍💻</h1></header><section class=\"mech-section\"><div class=\"mech-source-region preview-region-error\" data-mech-start=\"29\" data-mech-end=\"56\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: missing closing delimiter. Line 5, column 11. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 5, column 11</strong><span class=\"diagnostic-message\">missing closing delimiter</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:5:11\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">4 | ```mech\n</span><span class=\"diagnostic-source-line\">5 | answer := [1 2\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |           ^ missing closing delimiter\n</span><span class=\"diagnostic-source-line\">6 | ```\n</span></code></pre></article><figure class=\"mech-code-block\" data-mech-source=\"\"><pre><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := [<span class=\"mech-number\">1</span> <span class=\"mech-number\">2</span>\n</code></pre></figure></div></section></article>",
+        "diagnostics": "ErrorLine 5, column 11missing closing delimitersyntax/missing-delimiter --> document:5:11\n  |\n4 | ```mech\n5 | answer := [1 2\n  |           ^ missing closing delimiter\n6 | ```\n --> document:6:1\n  |\n5 | answer := [1 2\n6 | ```\n  | ^ closing delimiter expected before this boundary\n7 | \n  = expected: `]`\n  = help: Insert `]`\n    at 6:1: insert \"]\"\n"
+      }
+    },
+    {
+      "case": "empty EOF range has a caret and source context",
+      "passed": true,
+      "state": {
+        "summary": "1 errorSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · recovered syntax · 1 error",
+        "cards": [
+          {
+            "text": "ErrorLine 1, column 14missing expression after operator --> document:1:14\n  |\n1 | answer := 1 +\n  |              ^ missing expression after operator\n",
+            "range": "0",
+            "source": " --> document:1:14\n  |\n1 | answer := 1 +\n  |              ^ missing expression after operator\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:1:14\n  |\n1 | answer := 1 +\n  |              ^ missing expression after operator\n  = expected: expression\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>1 error</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region preview-region-error\" data-mech-start=\"0\" data-mech-end=\"13\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: missing expression after operator. Line 1, column 14. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 1, column 14</strong><span class=\"diagnostic-message\">missing expression after operator</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:1:14\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">1 | answer := 1 +\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |              ^ missing expression after operator\n</span></code></pre></article><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <span class=\"mech-number\">1</span> +</code></pre></div></section></article>",
+        "diagnostics": "ErrorLine 1, column 14missing expression after operatorsyntax/missing-operator-operand --> document:1:14\n  |\n1 | answer := 1 +\n  |              ^ missing expression after operator\n  = expected: expression\n"
+      }
+    },
+    {
+      "case": "semantic compilation error shares contextual presentation",
+      "passed": true,
+      "state": {
+        "summary": "1 errorSource diagnostics appear at the affected document regions.",
+        "previewState": "error",
+        "previewStatus": "Current source · 1 error",
+        "cards": [
+          {
+            "text": "ErrorLine 5, column 11integer literal is outside its annotated interval --> document:5:11\n  |\n4 | ```mech\n5 | answer := 10⟨u8:1..10⟩\n  |           ^^ integer literal is outside its annotated interval\n6 | answer\n",
+            "range": "29",
+            "source": " --> document:5:11\n  |\n4 | ```mech\n5 | answer := 10⟨u8:1..10⟩\n  |           ^^ integer literal is outside its annotated interval\n6 | answer\n",
+            "unmapped": false
+          }
+        ],
+        "reports": [
+          " --> document:5:11\n  |\n4 | ```mech\n5 | answer := 10⟨u8:1..10⟩\n  |           ^^ integer literal is outside its annotated interval\n6 | answer\n"
+        ],
+        "html": "<div class=\"preview-diagnostic-summary\" role=\"status\"><strong>1 error</strong><span>Source diagnostics appear at the affected document regions.</span></div><article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"29\"><h1 class=\"mech-document-title\">Café 👩‍💻</h1></header><section class=\"mech-section\"><div class=\"mech-source-region preview-region-error\" data-mech-start=\"29\" data-mech-end=\"75\"><article class=\"preview-diagnostic preview-diagnostic-error\"><button class=\"preview-diagnostic-heading\" type=\"button\" aria-label=\"Error: integer literal is outside its annotated interval. Line 5, column 11. Locate in source.\"><span class=\"diagnostic-severity\">Error</span><strong>Line 5, column 11</strong><span class=\"diagnostic-message\">integer literal is outside its annotated interval</span></button><pre class=\"preview-error-source\"><code><span class=\"diagnostic-source-line\"> --&gt; document:5:11\n</span><span class=\"diagnostic-source-line\">  |\n</span><span class=\"diagnostic-source-line\">4 | ```mech\n</span><span class=\"diagnostic-source-line\">5 | answer := 10⟨u8:1..10⟩\n</span><span class=\"diagnostic-source-line diagnostic-underline\">  |           ^^ integer literal is outside its annotated interval\n</span><span class=\"diagnostic-source-line\">6 | answer\n</span></code></pre></article><figure class=\"mech-code-block\" data-mech-source=\"\"><pre><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <span class=\"mech-number\">10</span>⟨u8:<span class=\"mech-number\">1</span>..<span class=\"mech-number\">10</span>⟩\n<span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span>\n</code></pre></figure></div></section></article>",
+        "diagnostics": "ErrorLine 5, column 11integer literal is outside its annotated intervalsource-semantics/integer-interval-violation --> document:5:11\n  |\n4 | ```mech\n5 | answer := 10⟨u8:1..10⟩\n  |           ^^ integer literal is outside its annotated interval\n6 | answer\n"
+      }
+    },
+    {
+      "case": "document information preserves normal preview",
+      "passed": true,
+      "state": {
+        "previewState": "",
+        "previewStatus": "Current source",
+        "cards": [],
+        "reports": [
+          " --> document:1:1\n  |\n1 | Calculation\n  | ^^^^^^^^^^^\n2 | ===========\n  | ^^^^^^^^^^^\n3 | \n  | ^\n4 | A document paragraph.\n  | ^^^^^^^^^^^^^^^^^^^^^ canonical document contains no executable source unit\n5 |\n"
+        ],
+        "html": "<article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"25\" data-mech-end=\"46\"><p>A document paragraph.</p></div></section></article>",
+        "diagnostics": "InfoLine 1, column 1canonical document contains no executable source unitsource-semantics/empty-document --> document:1:1\n  |\n1 | Calculation\n  | ^^^^^^^^^^^\n2 | ===========\n  | ^^^^^^^^^^^\n3 | \n  | ^\n4 | A document paragraph.\n  | ^^^^^^^^^^^^^^^^^^^^^ canonical document contains no executable source unit\n5 |\n"
+      }
+    },
+    {
+      "case": "diagnostic source remains escaped passive text",
+      "passed": true,
+      "state": {
+        "active": false,
+        "excerpt": "ErrorLine 1, column 14unexpected source before the closing delimitersyntax/unexpected-delimited-content --> document:1:14\n  |\n1 | answer := [1 @ \"<img src=x onerror=alert(1)>\"\n  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unexpected source before the closing delimiter\n2 |\nErrorLine 1, column 11missing closing delimitersyntax/missing-delimiter --> document:1:11\n  |\n1 | answer := [1 @ \"<img src=x onerror=alert(1)>\"\n  |           ^ missing closing delimiter\n2 | \n --> document:1:46\n  |\n1 | answer := [1 @ \"<img src=x onerror=alert(1)>\"\n  |                                              ^ closing delimiter expected before this boundary\n2 | \n  = expected: `]`\n  = help: Insert `]`\n    at 1:46: insert \"]\"\n"
+      }
+    },
+    {
+      "case": "mobile preview indicators and horizontally scrollable excerpts",
+      "passed": true,
+      "layout": {
+        "width": 700,
+        "viewport": 700,
+        "cards": 1,
+        "report": true
+      }
+    }
+  ]
+}

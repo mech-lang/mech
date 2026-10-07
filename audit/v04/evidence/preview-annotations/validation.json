@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "wasm_sha256": "a3a06b2c3ebd51d4dea940021456d1efb01453bf2e76884b41a34f35012d26e1",
+  "browser": {
+    "preview_annotations": 18,
+    "document_rendering_regressions": 7
+  },
+  "presentation": "The original rendered code carries primary range marks. Numbered callouts connect to those marks with arrows. Console source reports remain in Diagnostics.",
+  "checks": [
+    "exact compiler ranges and source navigation",
+    "multiple independent errors",
+    "insertion point at EOF",
+    "Unicode source offsets",
+    "rich comments",
+    "recovered fence headers and title metadata",
+    "semantic error after compilation",
+    "repair and program output",
+    "same-source refresh",
+    "responsive arrow redraw",
+    "phone layout"
+  ],
+  "site_source_sha256": {
+    "document-annotations.js": "b930689d3f5ce43a99654a867e37051e156654660b523dcadc3b5615252d40e7",
+    "document-editor.js": "e8795e68790c77a9f2e85ce3a01a3d9ba500a7ab49fd566ee3362fbe6c106213",
+    "document-editor.css": "efa83312d03615dd885993dc4840309892ceb7b7678a4b935c8632541a8f393f",
+    "streaming.html": "96abacf2cb61d449f175871eee0767adf6c6d6a7cde875e3dae4871d3fd5c1bd"
+  }
+}

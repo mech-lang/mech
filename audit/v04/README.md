@@ -36,7 +36,7 @@ python3 audit/v04/record-wasm-artifact.py
 python3 audit/v04/prepare-demo-fixtures.py
 ```
 
-The recorder verifies required exports, copies the package into the site and records exact source and executable hashes. `site/pkg/` is generated and ignored by Git. The recorded 208,709,347-byte package uses the existing release settings with wasm-opt disabled in the package manifest.
+The recorder verifies required exports, copies the package into the site, creates gzip transport chunks and records exact source and executable hashes. `site/pkg/` is generated and ignored by Git. The current package uses the existing release settings with wasm-opt disabled in the package manifest.
 
 ## Run the website
 
@@ -49,6 +49,8 @@ python3 -m http.server 8764 --bind 127.0.0.1
 Open `http://127.0.0.1:8764/audit/v04/site/`. The atlas reads the generated JSON directly. The demonstrations load the `mech-wasm` package built from this checkout. Package identity and precise feature selections are recorded alongside the build evidence. The website runs on localhost.
 
 The streaming adapter calls Mech’s `DocumentStream` and `DocumentSession` APIs. Application demonstrations use the retained runtime and maintained browser compute bridge. Browser transport preserves wide integers exactly using strings or `BigInt`.
+
+The document editor shows syntax diagnostics while editing and compiles with Ctrl+Enter. It compiles the canonical root, named fence and Mika-local scopes separately. Repeated fences with the same name share bindings within their owner. Completed fence outputs and their kinds render beneath the corresponding source blocks. Unfenced code retains its source presentation; explicit inline expressions render at their authored locations. Aggregate results appear in the separate program output panel. Each run starts from the initial state. Its preview attaches error indicators to canonical source regions. The preview marks the rendered code and connects its error ranges to numbered callouts. Source excerpts, caret underlines, secondary labels and suggested fixes in Diagnostics are formatted in Rust. The verification records for this interface are in `evidence/rich-diagnostics/`.
 
 ## Validation ownership
 
@@ -65,6 +67,8 @@ With the server running, use the existing Chrome harness through these entry poi
 ```sh
 python3 audit/v04/check-atlas.py
 python3 audit/v04/check-streaming-browser.py
+python3 audit/v04/check-preview-annotations.py
+python3 audit/v04/check-document-scopes.py
 python3 audit/v04/check_types_browser.py
 python3 audit/v04/check-product-browser.py
 python3 audit/v04/check-diffusion-browser.py

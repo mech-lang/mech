@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Copy the completed shared Mech browser package and identify its source inputs."""
 import hashlib
+import gzip
 import json
 from pathlib import Path
 import platform
@@ -15,11 +16,28 @@ site = ROOT / 'audit/v04/site'
 package = ROOT / 'src/wasm/pkg'
 for name in ('mech_wasm.js', 'mech_wasm_bg.wasm'):
     if not (package / name).is_file(): raise SystemExit(f'Missing completed package: {name}')
-exports = ('WasmSyntaxStream', 'WasmSyntaxEditor', 'WasmDocument', 'WasmMixedComputeProject', 'WasmTypeInspector', 'TypePublicationSession', 'inspectMechTypes', 'I64PublicationSession', 'inventorySource')
+exports = ('WasmSyntaxStream', 'WasmSyntaxEditor', 'WasmDocument', 'WasmMixedComputeProject', 'WasmTypeInspector', 'TypePublicationSession', 'inspectMechTypes', 'inspectMechDocument', 'I64PublicationSession', 'inventorySource')
 glue = package.joinpath('mech_wasm.js').read_text()
 for name in exports:
     if name not in glue: raise SystemExit(f'Missing expected export {name}')
 shutil.copytree(package, site / 'pkg', dirs_exist_ok=True)
+# The browser reconstructs and verifies the package from bounded gzip chunks.
+wasm = package.joinpath('mech_wasm_bg.wasm').read_bytes()
+wasm_digest = hashlib.sha256(wasm).hexdigest()
+compressed = gzip.compress(wasm, compresslevel=9, mtime=0)
+chunks = []
+for index, offset in enumerate(range(0, len(compressed), 8 * 1024 * 1024)):
+    data = compressed[offset:offset + 8 * 1024 * 1024]
+    name = f'mech-wasm-{wasm_digest[:12]}-{index:02d}.gz.part'
+    (site / 'pkg' / name).write_bytes(data)
+    chunks.append({'path': name, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()})
+for old in (site / 'pkg').glob('mech-wasm-*.gz.part'):
+    if old.name not in {chunk['path'] for chunk in chunks}: old.unlink()
+(site / 'pkg/transport.json').write_text(json.dumps({
+    'encoding': 'gzip', 'uncompressed_bytes': len(wasm),
+    'uncompressed_sha256': wasm_digest, 'compressed_bytes': len(compressed),
+    'chunks': chunks,
+}, indent=2) + '\n')
 changed = command('git', 'diff', '--name-only', 'HEAD').splitlines()
 changed += command('git', 'ls-files', '--others', '--exclude-standard', 'src', 'hosts', 'machines').splitlines()
 modifications = {path: digest(ROOT / path) for path in sorted(set(changed)) if (ROOT / path).is_file() and not path.startswith('audit/')}

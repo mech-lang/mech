@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "source_commit": "654a5c770229ed05844cb0ed0cde15e80710b87c",
+  "wasm_sha256": "adbf247cd313b08f8cf265fb3c78e01ab9eb409b632d4790dba6e5a70691eefb",
+  "behavior": [
+    "Unfenced Mech source remains a code presentation in the editor document preview.",
+    "Fenced blocks display their own typed canonical output at the fence slot.",
+    "Explicit inline expressions render at their authored reference positions.",
+    "The separate Program output panel retains aggregate and visible scoped results."
+  ],
+  "native": {
+    "status": "passed",
+    "cases": 15,
+    "log": "native-tests.log",
+    "filter": "type_inspection::tests"
+  },
+  "browser": {
+    "status": "passed",
+    "cases": 17,
+    "report": "browser-results.json"
+  },
+  "preview_annotations": {
+    "status": "passed",
+    "cases": 18,
+    "report": "preview-annotations/browser-results.json"
+  },
+  "wasm_build": {
+    "status": "passed",
+    "log": "wasm-build.log",
+    "features": "browser_project,browser_compute,u8,u64,u128,syntax_inspection,type_inspection,i64_publication"
+  },
+  "screenshots": [
+    "unfenced-table.png",
+    "fenced-table.png",
+    "desktop.png",
+    "phone.png"
+  ]
+}

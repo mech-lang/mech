@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "compiled_source_commit": "f1a44a062fe3b7a02d05413adf1850bc0785df3c",
+  "wasm_sha256": "0fd98d19e77e6d82ee4596091673fbb893947ee43710af46e382a91f7ffae1bd",
+  "native": {
+    "type_and_document_inspection": 12
+  },
+  "browser": {
+    "document_scopes": 14,
+    "annotation_regression": 18,
+    "document_preview_regression": 7
+  },
+  "semantics": [
+    "independent root/named/Mika owners",
+    "shared repeated fences within a named owner",
+    "fresh state for each compile",
+    "host function catalog in named scopes",
+    "canonical fence and inline presentation bindings",
+    "reserved fence and output-visibility settings",
+    "precise semantic source ranges",
+    "strict syntax admission with recovered preview"
+  ],
+  "presentation": "Canonical scope labels, kinds and HTML values beneath each executed fence; visible outputs also summarized below the editor.",
+  "site_source_sha256": {
+    "document-editor.js": "db53689bba7d795da4880a50b14bc73fd377546c7a907f8cb14d5f207259b017",
+    "document-editor.css": "d294c2670194619ccfe4d35868fcf4e39af31751c6f38eaa2b732fb0694545a2",
+    "document-preview.js": "b940f79f08e0bc5ec4066ba2124480b485d9eb0fcd61770b6850aff413588555",
+    "document-annotations.js": "b930689d3f5ce43a99654a867e37051e156654660b523dcadc3b5615252d40e7",
+    "streaming.html": "b1151ac97cb56100314f4c2432524b13fa1eed2f6ad6c33c7ea5543698389b2c"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "source_commit": "304caa36df7294d5a1e5b7454d8081fa934487b4",
+  "wasm_sha256": "a3a06b2c3ebd51d4dea940021456d1efb01453bf2e76884b41a34f35012d26e1",
+  "native": {
+    "diagnostic_formatting": 8,
+    "editor_rendering": 5
+  },
+  "browser": {
+    "rich_diagnostics": 16,
+    "document_recovery": 14,
+    "document_preview": 7
+  },
+  "presentation": "Rust-generated source excerpts and diagnostic reports; canonical UTF-8 ranges map preview indicators to document regions.",
+  "checks": [
+    "primary and secondary compiler source labels",
+    "numbered context and caret underlines",
+    "expected syntax and compiler fixes",
+    "preview source navigation",
+    "multiple errors",
+    "Unicode and end-of-source ranges",
+    "repair and typed published output",
+    "passive markup",
+    "information severity",
+    "desktop and mobile layout"
+  ],
+  "site_source_sha256": {
+    "document-editor.js": "e146456166b8e778dfb21f2febdcdd818a2595118306c7efe5f11929b7e669b7",
+    "document-editor.css": "94673f77853df8a8b2b28924f3d02f2ca00b5d7ba4bfe475ce8ffef97a6dfd65",
+    "document-preview.js": "45ff33e033a76ec0ca3b810b4550833142029d5d19a19e0192fa16eed34e988b",
+    "streaming.html": "d13b6278545163375eaf29a1d146d1735afc52c0452b2bd5e44b3c33a3b1489d"
+  }
+}

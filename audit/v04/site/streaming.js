@@ -1,7 +1,10 @@
+import {prepareDocumentEditor} from './document-editor.js';
+import {fetchAuditWasm} from './wasm-transport.js';
 import init, * as api from './pkg/mech_wasm.js';
 import {applyPublication, fixtures, json, runStreamingChecks} from './streaming-checks.js';
 const $ = id => document.getElementById(id), encoder = new TextEncoder();
-for (const button of document.querySelectorAll('button')) button.disabled = true;
+for (const button of document.querySelectorAll('.parser-lab button')) button.disabled = true;
+const documentEditor = prepareDocumentEditor();
 let stream, editor, editorSnapshot, generation = 0, documentNumber = 1n, timer, running = false;
 let sourceBytes, cursor, decoder, pendingChunk, accepted, mirror, progress, records, lastWork, currentView = 'stream';
 const number = (id, min = 0, max = Number.MAX_SAFE_INTEGER) => Math.max(min, Math.min(max, Math.trunc(Number($(id).value) || 0)));
@@ -64,7 +67,7 @@ function consume(update, operation, totalMs) {
   applyPublication(mirror, update); progress = update.progress; currentView = 'stream'; clearSnapshot();
   $('accepted').value = accepted; $('stream-status').classList.remove('error');
   $('stream-status').textContent = `${progress}; transport ${cursor}/${sourceBytes.length} bytes; accepted ${update.source_bytes} bytes; parsed through ${update.parsed_through}; pending [${update.pending_source.join(', ')}).`;
-  $('identity').textContent = `Stream identity: ${json(update.identity)}\nController generation: ${generation}`;
+  $('identity').textContent = json({stream: update.identity, controller_generation: generation});
   $('events').replaceChildren(...mirror.events.map((event, index) => tableRow([index, event.event, event.kind, event.id?.toString(), event.range?.join('…')], () => { selectRange($('accepted'), accepted, event.range); $('detail').textContent = json(event); })));
   const ranges = mirror.diagnostics.map(d => d.primary?.kind === 'absolute' ? [d.primary.range.start, d.primary.range.end] : null);
   renderDiagnostics(mirror.diagnostics, ranges, $('accepted'), accepted);
@@ -83,7 +86,7 @@ function restart() {
   mirror = {events: [], diagnostics: []}; progress = 'NeedInput'; records = []; lastWork = null; currentView = 'stream';
   $('accepted').value = ''; $('events').replaceChildren(); $('diagnostics').replaceChildren(); clearSnapshot();
   const view = stream.resync(); applyPublication(mirror, view);
-  $('identity').textContent = `Stream identity: ${json(view.identity)}\nController generation: ${generation}`;
+  $('identity').textContent = json({stream: view.identity, controller_generation: generation});
   $('stream-status').textContent = 'Open. No input accepted. Step transports one chunk or advances pending parser work.';
   $('stream-status').classList.remove('error'); record('restart / initial view', view.work, 0, view.view_prepare_ms, 0);
 }
@@ -123,7 +126,7 @@ function exportSnapshot(provisional) {
   const totalMs = performance.now() - start;
   if (owner !== generation) return;
   currentView = 'stream'; showSnapshot(snapshot, provisional ? 'Explicit finite-prefix preview; provisional' : `Explicit ${identity.kind} export`, $('accepted'), snapshot.source);
-  $('identity').textContent = `Displayed snapshot identity: ${json(identity)}\nLive stream identity: ${json(mirror.identity)}\nController generation: ${generation}`;
+  $('identity').textContent = json({displayed_snapshot: identity, live_stream: mirror.identity, controller_generation: generation});
   record(provisional ? 'preview' : 'materialize', work, operationMs, 0, totalMs);
   if (identity.kind === 'Limited') {
     // Limited export changes the publication baseline. Do not treat this full
@@ -134,7 +137,7 @@ function exportSnapshot(provisional) {
 function loadEditor() {
   pause(); editor?.free(); editor = new api.WasmSyntaxEditor(documentNumber++, accepted);
   editorSnapshot = editor.snapshot(); $('editor-source').value = editorSnapshot.source; currentView = 'editor';
-  $('identity').textContent = `Displayed editor identity: ${json({document: editorSnapshot.document, revision: editorSnapshot.revision, kind: 'EditorSnapshot'})}\nController generation: ${generation}; stream remains a separate owner.`;
+  $('identity').textContent = json({displayed_editor: {document: editorSnapshot.document, revision: editorSnapshot.revision, kind: 'EditorSnapshot'}, controller_generation: generation});
   showSnapshot(editorSnapshot, 'Editor snapshot', $('editor-source'), editorSnapshot.source);
   $('editor-status').textContent = `Editor document ${editorSnapshot.document}, revision ${editorSnapshot.revision}. Full initial parse.`;
   $('edit-result').textContent = json(editorSnapshot.parse_work);
@@ -146,7 +149,7 @@ function edit(remove) {
   const timer = performance.now(), result = editor.replace(start, end, remove ? '' : $('replacement').value), totalMs = performance.now() - timer;
   editorSnapshot = result.snapshot; area.value = editorSnapshot.source; currentView = 'editor';
   const identity = {document: editorSnapshot.document, revision: editorSnapshot.revision, kind: 'EditorSnapshot'};
-  $('identity').textContent = `Displayed editor identity: ${json(identity)}\nController generation: ${generation}; stream remains a separate owner.`;
+  $('identity').textContent = json({displayed_editor: identity, controller_generation: generation});
   showSnapshot(editorSnapshot, 'Editor snapshot after full parse and reconciliation', area, editorSnapshot.source, new Set(result.preserved_ids));
   $('editor-status').textContent = `Edited bytes [${start}, ${end}); parser work ${result.work.total_parser_steps}; reconciliation work ${result.work.reconciliation_steps}; preserved ${result.preserved_ids.length}, new ${result.new_ids.length}, removed ${result.removed_ids.length} node identities. Mech edit ${result.operation_ms.toFixed(3)} ms; total call ${totalMs.toFixed(3)} ms.`;
   const {snapshot, ...details} = result; $('edit-result').textContent = JSON.stringify(details, (_, x) => typeof x === 'bigint' ? x.toString() : x, 2);
@@ -164,7 +167,7 @@ $('check').onclick = async () => { $('check').disabled = true; $('checks').textC
 window.addEventListener('pagehide', () => { pause(); stream?.free(); editor?.free(); stream = null; editor = null; });
 window.addEventListener('pageshow', event => { if (event.persisted && window.streamingReady) restart(); });
 try {
-  const wasmResponse = await fetch('./pkg/mech_wasm_bg.wasm');
+  const wasmResponse = await fetchAuditWasm();
   if (!wasmResponse.ok) throw new Error(`WASM fetch returned ${wasmResponse.status}`);
   const wasmBytes = await wasmResponse.arrayBuffer();
   const loadedHash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', wasmBytes))).map(x => x.toString(16).padStart(2, '0')).join('');
@@ -174,6 +177,7 @@ try {
   if (expectedHash && loadedHash !== expectedHash) throw new Error('Loaded WASM SHA-256 differs from the recorded artifact.');
   window.streamingArtifact = {loadedHash, provenance, browser: navigator.userAgent};
   $('artifact').textContent = provenance ? `Loaded Mech WASM; baseline ${provenance.source_commit ?? provenance.baseline_commit}; features ${provenance.features}; artifact SHA-256 ${provenance.artifacts?.['pkg/mech_wasm_bg.wasm']?.sha256 ?? 'see artifact.json'}.` : `Mech WASM loaded, SHA-256 ${loadedHash}. No provenance manifest was loaded; source identity is unverified.`;
-  for (const button of document.querySelectorAll('button')) button.disabled = false;
+  for (const button of document.querySelectorAll('.parser-lab button')) button.disabled = false;
+  documentEditor.connect(api);
   restart(); window.streamingReady = true;
-} catch(error) { $('artifact').textContent = `WASM unavailable: ${error}. Build the demonstrated browser package before using this page.`; reportError(error); }
+} catch(error) { documentEditor.fail(error); $('artifact').textContent = `WASM unavailable: ${error}. Build the demonstrated browser package before using this page.`; reportError(error); }

@@ -1,0 +1,564 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 798687023..c62a25d59 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -2914,6 +2914,7 @@ dependencies = [
+  "serde_json",
+  "tabled",
+  "unicode-segmentation",
++ "unicode-width 0.2.2",
+ ]
+ 
+ [[package]]
+diff --git a/src/runtime/src/document_render.rs b/src/runtime/src/document_render.rs
+index 6895180cc..8faf229e8 100644
+--- a/src/runtime/src/document_render.rs
++++ b/src/runtime/src/document_render.rs
+@@ -214,7 +214,16 @@ impl CanonicalDocumentRenderer {
+         &self,
+         document: &DocumentSyntax,
+     ) -> Result<String, CanonicalDocumentRenderError> {
+-        self.render_html_mode(document, &[], RenderMode::Source, true, &[])
++        self.render_html_mode(document, &[], RenderMode::Source, true, &[], false)
++    }
++
++    /// Format a passive editor preview with canonical UTF-8 source ranges on
++    /// document regions. Clients can attach diagnostics without parsing markup.
++    pub fn format_editor_html(
++        &self,
++        document: &DocumentSyntax,
++    ) -> Result<String, CanonicalDocumentRenderError> {
++        self.render_html_mode(document, &[], RenderMode::Source, true, &[], true)
+     }
+ 
+     /// Format section content for a host shim that owns the article and title.
+@@ -222,7 +231,7 @@ impl CanonicalDocumentRenderer {
+         &self,
+         document: &DocumentSyntax,
+     ) -> Result<String, CanonicalDocumentRenderError> {
+-        self.render_html_mode(document, &[], RenderMode::Source, false, &[])
++        self.render_html_mode(document, &[], RenderMode::Source, false, &[], false)
+     }
+ 
+     /// Format a browser fragment with addresses for values in the resident
+@@ -232,7 +241,14 @@ impl CanonicalDocumentRenderer {
+         document: &DocumentSyntax,
+         output_addresses: &[(TextRange, u64)],
+     ) -> Result<String, CanonicalDocumentRenderError> {
+-        self.render_html_mode(document, &[], RenderMode::Live, false, output_addresses)
++        self.render_html_mode(
++            document,
++            &[],
++            RenderMode::Live,
++            false,
++            output_addresses,
++            false,
++        )
+     }
+ 
+     /// Format a live browser document before execution, preserving canonical output addresses.
+@@ -240,7 +256,7 @@ impl CanonicalDocumentRenderer {
+         &self,
+         document: &DocumentSyntax,
+     ) -> Result<String, CanonicalDocumentRenderError> {
+-        self.render_html_mode(document, &[], RenderMode::Browser, true, &[])
++        self.render_html_mode(document, &[], RenderMode::Browser, true, &[], false)
+     }
+ 
+     /// Render the documented host-shim regions from the same retained syntax and
+@@ -402,7 +418,7 @@ impl CanonicalDocumentRenderer {
+         document: &DocumentSyntax,
+         results: &[CanonicalScopeResults],
+     ) -> Result<String, CanonicalDocumentRenderError> {
+-        self.render_html_mode(document, results, RenderMode::Completed, true, &[])
++        self.render_html_mode(document, results, RenderMode::Completed, true, &[], false)
+     }
+ 
+     fn render_html_mode(
+@@ -412,8 +428,10 @@ impl CanonicalDocumentRenderer {
+         mode: RenderMode,
+         document_frame: bool,
+         output_addresses: &[(TextRange, u64)],
++        source_ranges: bool,
+     ) -> Result<String, CanonicalDocumentRenderError> {
+         let mut lookup = ResultLookup::new(document, results, mode)?;
++        lookup.source_ranges = source_ranges;
+         lookup.output_addresses = Cow::Owned(output_addresses.iter().copied().collect());
+         let mut output = String::new();
+         if document_frame {
+@@ -820,6 +838,7 @@ fn title_slot_fields(
+ 
+ struct ResultLookup<'a> {
+     mode: RenderMode,
++    source_ranges: bool,
+     owns_navigation_targets: bool,
+     root_owner: DocumentScopeId,
+     values: Cow<'a, HashMap<ResultKey, &'a RuntimeValueSnapshot>>,
+@@ -995,6 +1014,7 @@ impl<'a> ResultLookup<'a> {
+         }
+         Ok(Self {
+             mode,
++            source_ranges: false,
+             owns_navigation_targets: true,
+             root_owner: document.scope_id(),
+             values: Cow::Owned(values),
+@@ -1015,6 +1035,7 @@ impl<'a> ResultLookup<'a> {
+                 RenderMode::Live | RenderMode::Browser => RenderMode::Source,
+                 mode => mode,
+             },
++            source_ranges: self.source_ranges,
+             owns_navigation_targets: false,
+             root_owner: self.root_owner,
+             values: Cow::Borrowed(&self.values),
+@@ -1131,7 +1152,11 @@ fn render_title_html(
+         .source()
+         .text(TextRange::new(title.syntax().range().start, title_end))
+         .map_err(|_| range_error(title.syntax().range()))?;
+-    output.push_str("<header class='mech-document-header'><h1 class='mech-document-title'>");
++    output.push_str("<header class='mech-document-header'");
++    if lookup.source_ranges {
++        push_preview_range(title.syntax().range(), output);
++    }
++    output.push_str("><h1 class='mech-document-title'>");
+     output.push_str(&escape_html(title_text.trim()));
+     output.push_str("</h1>");
+     render_title_front_matter_html(title, owner, lookup, output)?;
+@@ -1150,7 +1175,15 @@ fn render_title_front_matter_html(
+         Err(error) if lookup.mode == RenderMode::Source => {
+             output.truncate(checkpoint);
+             if let Some(front) = title.front_matter() {
++                if lookup.source_ranges {
++                    output.push_str("<div class='mech-source-region'");
++                    push_preview_range(front.syntax().range(), output);
++                    output.push('>');
++                }
+                 render_recovered_source_html(front.syntax(), &error, output)?;
++                if lookup.source_ranges {
++                    output.push_str("</div>");
++                }
+             }
+             Ok(())
+         }
+@@ -1219,15 +1252,35 @@ fn render_document_node_html(
+     lookup: &ResultLookup<'_>,
+     output: &mut String,
+ ) -> Result<(), CanonicalDocumentRenderError> {
++    let region_start = output.len();
++    if lookup.source_ranges {
++        output.push_str("<div class='mech-source-region'");
++        push_preview_range(value.range(), output);
++        output.push('>');
++    }
+     let checkpoint = output.len();
+-    match render_document_node_html_inner(value, owner, lookup, output) {
++    let result = match render_document_node_html_inner(value, owner, lookup, output) {
+         Err(error) if lookup.mode == RenderMode::Source => {
+             output.truncate(checkpoint);
+-            render_recovered_source_html(value, &error, output)?;
+-            Ok(())
++            render_recovered_source_html(value, &error, output)
+         }
+         result => result,
++    };
++    if lookup.source_ranges {
++        if output.len() == checkpoint {
++            output.truncate(region_start);
++        } else {
++            output.push_str("</div>");
++        }
+     }
++    result
++}
++
++fn push_preview_range(range: TextRange, output: &mut String) {
++    output.push_str(&format!(
++        " data-mech-start='{}' data-mech-end='{}'",
++        range.start.0, range.end.0
++    ));
+ }
+ 
+ fn render_recovered_source_html(
+diff --git a/src/syntax/Cargo.toml b/src/syntax/Cargo.toml
+index 93f0c991d..2ca45f771 100644
+--- a/src/syntax/Cargo.toml
++++ b/src/syntax/Cargo.toml
+@@ -158,6 +158,7 @@ matrix_vertcat = ["matrix"]
+ mech-core = {version = "0.3.5", path = "../core", default-features = false}
+ 
+ unicode-segmentation = "1.12.0"
++unicode-width = { version = "0.2.2", default-features = false }
+ rlibc = { version = "=1.0", optional = true }
+ serde = "1.0.228"
+ serde_derive = "1.0.228"
+diff --git a/src/syntax/src/document/diagnostic.rs b/src/syntax/src/document/diagnostic.rs
+index fa0dbf4dd..19f46a5de 100644
+--- a/src/syntax/src/document/diagnostic.rs
++++ b/src/syntax/src/document/diagnostic.rs
+@@ -390,6 +390,151 @@ pub fn render_plain(diagnostic: &Diagnostic, source: &TextSnapshot, nodes: &Node
+     output
+ }
+ 
++/// Console-style diagnostic presentation shared with passive editor clients.
++/// Anchors are resolved against this source revision before excerpts are drawn.
++pub fn render_pretty(diagnostic: &Diagnostic, source: &TextSnapshot, nodes: &NodeIndex) -> String {
++    let mut output = format!(
++        "{:?}[{}]: {}\n",
++        diagnostic.severity,
++        diagnostic.code.as_str(),
++        diagnostic.message
++    );
++    if let Some(range) = diagnostic.primary.resolve(source.revision(), nodes) {
++        output.push_str(&render_source_excerpt(source, range, &diagnostic.message));
++    }
++    for label in &diagnostic.labels {
++        if let Some(range) = label.anchor.resolve(source.revision(), nodes) {
++            output.push_str(&render_source_excerpt(source, range, &label.message));
++        }
++    }
++    if !diagnostic.expected.is_empty() {
++        let expected = diagnostic
++            .expected
++            .iter()
++            .map(|expected| match expected {
++                ExpectedSyntax::Production(name) => name.clone(),
++                ExpectedSyntax::Token(kind) => match kind {
++                    SyntaxKind::RightBracket => "`]`".into(),
++                    SyntaxKind::RightParen => "`)`".into(),
++                    SyntaxKind::RightBrace => "`}`".into(),
++                    SyntaxKind::RightAngle => "`⟩`".into(),
++                    SyntaxKind::Eof => "end of input".into(),
++                    kind => format!("{kind:?}"),
++                },
++            })
++            .collect::<Vec<_>>()
++            .join(" or ");
++        let _ = writeln!(output, "  = expected: {expected}");
++    }
++    for fix in &diagnostic.fixes {
++        let _ = writeln!(output, "  = help: {}", fix.title);
++        for edit in &fix.edits {
++            if let Some(location) = source.source_location(edit.delete.start) {
++                let action = if edit.delete.is_empty() {
++                    format!("insert {:?}", edit.insert)
++                } else {
++                    let selected = source.text(edit.delete).unwrap_or_default();
++                    if edit.insert.is_empty() {
++                        format!("remove {selected:?}")
++                    } else {
++                        format!("replace {selected:?} with {:?}", edit.insert)
++                    }
++                };
++                let _ = writeln!(output, "    at {}:{}: {action}", location.row, location.col);
++            }
++        }
++    }
++    output
++}
++
++/// Draw a source range, including one surrounding line and an insertion caret
++/// for empty ranges. UTF-8 byte anchors are projected to source coordinates;
++/// tab expansion and Unicode display width determine underline alignment.
++pub fn render_source_excerpt(source: &TextSnapshot, range: TextRange, message: &str) -> String {
++    if source.validate_range(range).is_err() {
++        return String::new();
++    }
++    let index = source.line_index();
++    let first = index.line_of(range.start);
++    let last = index.line_of(if range.is_empty() {
++        range.end
++    } else {
++        TextSize(range.end.0 - 1)
++    });
++    let start = first.saturating_sub(1);
++    let end = (last + 1).min(index.line_count() - 1);
++    let width = (end + 1).to_string().len();
++    let location = source.source_location(range.start);
++    let mut output = location
++        .map(|at| format!(" --> document:{}:{}\n", at.row, at.col))
++        .unwrap_or_default();
++    let _ = writeln!(output, "{:width$} |", "");
++    for line in start..=end {
++        if last > first + 4 && line > first + 1 && line < last - 1 {
++            if line == first + 2 {
++                let _ = writeln!(output, "{:width$} | …", "");
++            }
++            continue;
++        }
++        let line_start = index.line_start(line).unwrap();
++        let line_end = index
++            .line_start(line + 1)
++            .unwrap_or_else(|| source.byte_len());
++        let text = source
++            .text(TextRange::new(line_start, line_end))
++            .unwrap_or_default();
++        let text = text.trim_end_matches(['\r', '\n']);
++        let _ = writeln!(output, "{:>width$} | {}", line + 1, display_source(text));
++        if line >= first && line <= last {
++            let from = range
++                .start
++                .0
++                .saturating_sub(line_start.0)
++                .min(text.len() as u32) as usize;
++            let to = range
++                .end
++                .0
++                .saturating_sub(line_start.0)
++                .min(text.len() as u32) as usize;
++            let prefix = display_source(&text[..from]);
++            let through = display_source(&text[..to]);
++            let indent = unicode_width::UnicodeWidthStr::width(prefix.as_str());
++            let length = unicode_width::UnicodeWidthStr::width(through.as_str())
++                .saturating_sub(indent)
++                .max(1);
++            let _ = writeln!(
++                output,
++                "{:width$} | {}{}{}",
++                "",
++                " ".repeat(indent),
++                "^".repeat(length),
++                if line == last {
++                    format!(" {message}")
++                } else {
++                    String::new()
++                }
++            );
++        }
++    }
++    output
++}
++
++fn display_source(text: &str) -> String {
++    let mut output = String::new();
++    for ch in text.chars() {
++        if ch == '\t' {
++            let count = 2 - unicode_width::UnicodeWidthStr::width(output.as_str()) % 2;
++            output.push_str(&" ".repeat(count));
++        } else if ch.is_control() {
++            let escaped = format!("{ch:?}");
++            output.push_str(&escaped);
++        } else {
++            output.push(ch);
++        }
++    }
++    output
++}
++
+ pub fn anchor_flags(anchor: &DiagnosticAnchor, nodes: &NodeIndex) -> Option<NodeFlags> {
+     let DiagnosticAnchor::Element { element, .. } = anchor else {
+         return None;
+diff --git a/src/syntax/tests/document_diagnostics.rs b/src/syntax/tests/document_diagnostics.rs
+index f9217c14a..83396034a 100644
+--- a/src/syntax/tests/document_diagnostics.rs
++++ b/src/syntax/tests/document_diagnostics.rs
+@@ -4,7 +4,7 @@ use mech_syntax::document::{
+     FoundSyntax, GreenBuilder, IdGenerator, NodeIndex, ParseConfig, RecoveryAction, Revision,
+     Severity, SyntaxElementId, SyntaxKind, TextEdit, TextRange, TextSize, TextSnapshot,
+     normalize_diagnostics, parse_canonical_document, reconstruct_source, render_plain,
+-    validate_lossless,
++    render_pretty, render_source_excerpt, validate_lossless,
+ };
+ 
+ fn paragraph_tree(
+@@ -100,6 +100,13 @@ fn structured_diagnostic_serializes_and_renders() {
+     assert!(rendered.contains("syntax/missing-expression"));
+     assert!(rendered.contains("1:9"));
+     assert!(rendered.contains("right operand"));
++    let pretty = render_pretty(&diagnostic, &source, &index);
++    assert!(pretty.contains("1 | x := 1 +"));
++    assert!(pretty.contains("^ expected an expression after `+`"));
++    assert!(pretty.contains("^ `+` requires a right operand"));
++    assert!(pretty.contains("= expected: expression"));
++    assert!(pretty.contains("= help: Insert an expression"));
++    assert!(pretty.contains("at 1:9: insert \" _\""));
+ 
+     let normalized = normalize_diagnostics(&store, Revision(2), &index);
+     assert_eq!(normalized.len(), 1);
+@@ -154,7 +161,11 @@ fn canonical_missing_closer_retains_position_and_applicable_repair() {
+             .primary
+             .resolve(snapshot.revision, &snapshot.nodes)
+     );
+-    assert!(normalized[0].primary.unwrap().is_empty());
++    let opening = text.find('(').unwrap() as u32;
++    assert_eq!(
++        normalized[0].primary,
++        Some(TextRange::new(TextSize(opening), TextSize(opening + 1)))
++    );
+     assert!(
+         snapshot
+             .diagnostics
+@@ -181,3 +192,40 @@ fn canonical_missing_closer_retains_position_and_applicable_repair() {
+             .contains("2)")
+     );
+ }
++
++#[test]
++fn source_excerpt_aligns_unicode_and_tabs_and_draws_eof_insertion() {
++    let text = "Context\n\t界 👩‍💻x\n";
++    let source = TextSnapshot::new(DocumentId(20), Revision(0), text).unwrap();
++    let at = text.rfind('x').unwrap() as u32;
++    let rendered = render_source_excerpt(
++        &source,
++        TextRange::new(TextSize(at), TextSize(at + 1)),
++        "invalid token",
++    );
++    assert!(rendered.contains("1 | Context"));
++    assert!(rendered.contains("2 |   界 👩‍💻x"));
++    assert!(
++        rendered.contains("  |        ^ invalid token"),
++        "{rendered}"
++    );
++    assert!(rendered.contains("document:2:5"), "{rendered}");
++    let eof = render_source_excerpt(&source, TextRange::empty(source.byte_len()), "insert here");
++    assert!(eof.contains("3 | \n  | ^ insert here"), "{eof}");
++}
++
++#[test]
++fn source_excerpt_bounds_multiline_context_and_escapes_terminal_controls() {
++    let text = "before\nfirst\nsecond\nthird\nfourth\nfifth\nsixth\nlast\nafter\n\u{1b}";
++    let source = TextSnapshot::new(DocumentId(21), Revision(0), text).unwrap();
++    let rendered = render_source_excerpt(
++        &source,
++        TextRange::new(TextSize(7), TextSize(49)),
++        "invalid region",
++    );
++    assert!(rendered.contains("| before"));
++    assert!(rendered.contains("| …"));
++    assert!(rendered.contains("invalid region"));
++    let eof = render_source_excerpt(&source, TextRange::empty(source.byte_len()), "end");
++    assert!(!eof.contains('\u{1b}'));
++}
+diff --git a/src/wasm/src/inspection.rs b/src/wasm/src/inspection.rs
+index 74c82921a..bf5a21b6e 100644
+--- a/src/wasm/src/inspection.rs
++++ b/src/wasm/src/inspection.rs
+@@ -221,11 +221,17 @@ struct Snapshot {
+     tree: Vec<TreeRow>,
+     diagnostics: Vec<Diagnostic>,
+     diagnostic_ranges: Vec<Option<[u32; 2]>>,
++    diagnostic_presentations: Vec<DiagnosticPresentation>,
+     parse_work: BTreeMap<&'static str, u64>,
+     typed_document: bool,
+     contains_executable_source: bool,
+     semantic_status: &'static str,
+ }
++#[derive(Serialize)]
++struct DiagnosticPresentation {
++    report: String,
++    excerpt: String,
++}
+ fn snapshot(value: &SyntaxSnapshot) -> Snapshot {
+     let document = DocumentSyntax::cast(value.syntax());
+     Snapshot {
+@@ -241,6 +247,18 @@ fn snapshot(value: &SyntaxSnapshot) -> Snapshot {
+             .iter()
+             .map(|d| d.primary.resolve(value.revision, &value.nodes).map(range))
+             .collect(),
++        diagnostic_presentations: value
++            .diagnostics
++            .iter()
++            .map(|diagnostic| DiagnosticPresentation {
++                report: render_pretty(diagnostic, &value.source, &value.nodes),
++                excerpt: diagnostic
++                    .primary
++                    .resolve(value.revision, &value.nodes)
++                    .map(|range| render_source_excerpt(&value.source, range, &diagnostic.message))
++                    .unwrap_or_default(),
++            })
++            .collect(),
+         parse_work: counters!(value.stats; source_bytes, parser_steps, events_emitted, diagnostics_emitted, recovery_bytes),
+         typed_document: document.is_some(),
+         contains_executable_source: document.is_some_and(|d| d.contains_executable_source()),
+@@ -451,7 +469,7 @@ fn render_editor_document(snapshot: &SyntaxSnapshot) -> Result<String, String> {
+     let document = DocumentSyntax::cast(snapshot.syntax())
+         .ok_or_else(|| "editor snapshot requires canonical document syntax".to_owned())?;
+     mech_runtime::CanonicalDocumentRenderer
+-        .format_html(&document)
++        .format_editor_html(&document)
+         .map_err(|error| error.to_string())
+ }
+ 
+@@ -468,6 +486,12 @@ mod editor_render_tests {
+         let html = render_editor_document(editor.session.snapshot()).unwrap();
+         assert!(html.contains("Calculation"));
+         assert!(html.contains("<strong"));
++        assert!(html.contains("data-mech-start="));
++        assert!(html.contains("data-mech-end="));
++        let ordinary = mech_runtime::CanonicalDocumentRenderer
++            .format_html(&DocumentSyntax::cast(editor.session.snapshot().syntax()).unwrap())
++            .unwrap();
++        assert!(!ordinary.contains("data-mech-start="));
+         assert!(html.contains("mech-code"));
+         assert!(!html.contains("```"));
+     }
+@@ -502,6 +526,16 @@ mod editor_render_tests {
+         let mut editor = WasmSyntaxEditor::new(713, source);
+         let snapshot = editor.session.snapshot();
+         assert!(!snapshot.is_strictly_clean());
++        let exported = super::snapshot(snapshot);
++        assert_eq!(
++            exported.diagnostic_presentations.len(),
++            exported.diagnostics.len()
++        );
++        let report = &exported.diagnostic_presentations[0].report;
++        assert!(report.contains("answer := [1 2 3 4 5"));
++        assert!(report.contains("^ missing closing delimiter"));
++        assert!(report.contains("closing delimiter expected before this boundary"));
++        assert!(report.contains("= help: Insert `]`"));
+         let html = render_editor_document(snapshot).unwrap();
+         for text in [
+             "Calculation",
+diff --git a/src/wasm/src/type_inspection.rs b/src/wasm/src/type_inspection.rs
+index bb4263119..0eda1cf2a 100644
+--- a/src/wasm/src/type_inspection.rs
++++ b/src/wasm/src/type_inspection.rs
+@@ -11,16 +11,29 @@ use mech_core::{
+ use mech_engine::resident::{ActivationFacts, CapturedValueInput, ReactiveInstance, activate};
+ use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
+ use mech_runtime::SourceDocument;
+-use mech_syntax::document::{ParseConfig, Revision};
++use mech_syntax::document::{ParseConfig, Revision, TextSnapshot, render_source_excerpt};
+ use serde_json::{Value as Json, json};
+ use wasm_bindgen::prelude::*;
+ 
+ const INTERVAL_SOURCE: &str = "~state⟨u8:1..10⟩ := 2\nstate = signal\nstate\n";
+ 
+-fn semantic_error(error: mech_engine::SourceSemanticError) -> Json {
++fn semantic_error(error: mech_engine::SourceSemanticError, source: &TextSnapshot) -> Json {
++    let excerpt = render_source_excerpt(source, error.anchor.range, &error.message);
++    let severity = if error.code == "source-semantics/empty-document" {
++        "info"
++    } else {
++        "error"
++    };
++    let report = format!(
++        "{}[{}]: {}\n{}",
++        if severity == "info" { "Info" } else { "Error" },
++        error.code,
++        error.message,
++        excerpt
++    );
+     json!({"phase":"semantic_checking", "code":error.code, "message":error.message,
+         "document":error.anchor.document.0.to_string(), "revision":error.anchor.revision.0.to_string(),
+-        "range":[error.anchor.range.start.0,error.anchor.range.end.0]})
++        "range":[error.anchor.range.start.0,error.anchor.range.end.0], "severity":severity, "presentation":{"report":report,"excerpt":excerpt}})
+ }
+ fn scalar_text(value: &Value) -> Option<String> {
+     use mech_core::ValueData;
+@@ -81,7 +94,7 @@ fn inspect(source: &str) -> Json {
+         Ok(value) => value,
+         Err(error) => {
+             result["stages"]["semantic_checking"] = json!("rejected");
+-            result["diagnostics"] = json!([semantic_error(error)]);
++            result["diagnostics"] = json!([semantic_error(error, &document.snapshot().source)]);
+             // Exercise the product handoff as well as direct frontend inspection.
+             result["product_diagnostic"] = match mech_runtime::RuntimeBuilder::new()
+                 .function_catalog(Arc::clone(&catalog))
+@@ -89,7 +102,7 @@ fn inspect(source: &str) -> Json {
+                 .and_then(|mut compiler| compiler.compile_document(&document))
+             {
+                 Err(error) => json!({
+-                    "semantic":error.kind_as::<mech_engine::SourceSemanticError>().cloned().map(semantic_error),
++                    "semantic":error.kind_as::<mech_engine::SourceSemanticError>().cloned().map(|error| semantic_error(error, &document.snapshot().source)),
+                     "presentation_range":error.primary_range().map(|range|format!("{range:?}")),
+                     "message":error.display_message(),
+                 }),

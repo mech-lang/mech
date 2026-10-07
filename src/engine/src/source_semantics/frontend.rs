@@ -1076,6 +1076,7 @@ impl CanonicalSourceFrontend {
             document,
             name,
             self.nominal_origin.as_ref(),
+            None,
         )
     }
     /// Compile one retained Mika-local body without importing its parent's or
@@ -1085,7 +1086,7 @@ impl CanonicalSourceFrontend {
         section: &mech_syntax::document::MikaSectionSyntax,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(section)?;
-        document_lowering::compile_mika_section(section, None, self.nominal_origin.as_ref())
+        document_lowering::compile_mika_section(section, None, self.nominal_origin.as_ref(), None)
     }
 
     /// Compile repeated named fences within one Mika-local owner.
@@ -1095,7 +1096,59 @@ impl CanonicalSourceFrontend {
         name: &str,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(section)?;
-        document_lowering::compile_mika_section(section, Some(name), self.nominal_origin.as_ref())
+        document_lowering::compile_mika_section(
+            section,
+            Some(name),
+            self.nominal_origin.as_ref(),
+            None,
+        )
+    }
+
+    /// Compile a named document scope using the host's function catalog.
+    pub fn compile_named_document_scope_with_catalog(
+        &self,
+        document: &DocumentSyntax,
+        name: &str,
+        catalog: Arc<mech_core::FunctionCatalog>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_named_document_scope(
+            document,
+            name,
+            self.nominal_origin.as_ref(),
+            Some(catalog),
+        )
+    }
+
+    /// Compile a Mika-local root using the host's function catalog.
+    pub fn compile_mika_section_with_catalog(
+        &self,
+        section: &mech_syntax::document::MikaSectionSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(section)?;
+        document_lowering::compile_mika_section(
+            section,
+            None,
+            self.nominal_origin.as_ref(),
+            Some(catalog),
+        )
+    }
+
+    /// Compile a Mika-local named scope using the host's function catalog.
+    pub fn compile_named_mika_scope_with_catalog(
+        &self,
+        section: &mech_syntax::document::MikaSectionSyntax,
+        name: &str,
+        catalog: Arc<mech_core::FunctionCatalog>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(section)?;
+        document_lowering::compile_mika_section(
+            section,
+            Some(name),
+            self.nominal_origin.as_ref(),
+            Some(catalog),
+        )
     }
 }
 

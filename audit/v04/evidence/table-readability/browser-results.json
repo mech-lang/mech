@@ -1,0 +1,828 @@
+{
+  "status": "passed",
+  "cases": 5,
+  "minimum_contrast": 12.902506024117747,
+  "records": [
+    {
+      "case": "table literal in root preview and program output",
+      "tables": [
+        {
+          "surface": "document",
+          "kind": "mech-table",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        },
+        {
+          "surface": "output",
+          "kind": "mech-table",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "table row hover",
+      "tables": [
+        {
+          "surface": "document",
+          "kind": "mech-table",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                227,
+                239,
+                241
+              ],
+              "contrast": 12.902506024117747,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                227,
+                239,
+                241
+              ],
+              "contrast": 12.902506024117747,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        },
+        {
+          "surface": "output",
+          "kind": "mech-table",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "table within named fence output",
+      "tables": [
+        {
+          "surface": "document",
+          "kind": "mech-table",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        },
+        {
+          "surface": "output",
+          "kind": "mech-table",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "matrix and record value tables",
+      "tables": [
+        {
+          "surface": "document",
+          "kind": "mech-matrix",
+          "display": "table",
+          "cells": [
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        },
+        {
+          "surface": "document",
+          "kind": "mech-record",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        },
+        {
+          "surface": "output",
+          "kind": "mech-matrix",
+          "display": "table",
+          "cells": [
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        },
+        {
+          "surface": "output",
+          "kind": "mech-record",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "phone table output",
+      "tables": [
+        {
+          "surface": "document",
+          "kind": "mech-table",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        },
+        {
+          "surface": "output",
+          "kind": "mech-table",
+          "display": "table",
+          "cells": [
+            {
+              "text": "x",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "y",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                234,
+                240,
+                241
+              ],
+              "contrast": 13.15484315265137,
+              "font": 15
+            },
+            {
+              "text": "1",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "2",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                242,
+                246,
+                247
+              ],
+              "contrast": 13.925504175670076,
+              "font": 15
+            },
+            {
+              "text": "3",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            },
+            {
+              "text": "4",
+              "color": "rgb(23, 40, 50)",
+              "background": [
+                255,
+                255,
+                255
+              ],
+              "contrast": 15.151446649662388,
+              "font": 15
+            }
+          ]
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "site_source_sha256": {
+    "document-editor.css": "0c195f6c6550fb76a762561775266027f058dd35cf4226aa5a480c37db24bd18"
+  }
+}
