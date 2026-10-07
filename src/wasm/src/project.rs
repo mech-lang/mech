@@ -9500,12 +9500,11 @@ mod browser_tests {
             )
         };
         let error = restore(JsValue::NULL).err().unwrap();
-        assert!(
-            error
-                .as_string()
-                .unwrap()
-                .contains("missing nominal provenance")
-        );
+        let message = Reflect::get(&error, &JsValue::from_str("message"))
+            .unwrap()
+            .as_string()
+            .expect("project rejection returns a JavaScript Error");
+        assert!(message.contains("missing nominal provenance"), "{message}");
 
         let document =
             parse_config_document("mech.mcfg", config, ConfigProfileOptions::default()).unwrap();
