@@ -9623,6 +9623,67 @@ mod browser_tests {
         }
     }
 
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    #[wasm_bindgen_test]
+    fn public_standalone_bundle_scalar_revision_preserves_enum_owner() {
+        let enum_source = "<color> := :red | :blue\nmy-color<color> := :red\n";
+        let scalar_source = "answer := 42\n";
+        let mut document = WasmDocument::from_encoded(&encoded_document(enum_source)).unwrap();
+        let original = document.repl.session.symbol("my-color").unwrap().unwrap();
+        let origin = document
+            .repl
+            .session
+            .source_document()
+            .unwrap()
+            .nominal_origin()
+            .unwrap()
+            .clone();
+
+        document.repl_replace_source(scalar_source).unwrap();
+        let retained = SourceDocument::parse_resolved(
+            "bundle:///document.mec",
+            mech_syntax::document::Revision(1),
+            document.repl_source(),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap()
+        .with_nominal_origin(origin.clone());
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()
+            .unwrap();
+        let product = compiler.compile_document(&retained).unwrap();
+        let bundle =
+            CanonicalProgramBundle::from_product("bundle:///document.mec", &retained, &product)
+                .unwrap();
+        assert_eq!(bundle.root_nominal_origin.as_ref(), Some(&origin));
+
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("document.mec"),
+            &JsValue::from_str(scalar_source),
+        )
+        .unwrap();
+        let mut restored = WasmDocument::from_encoded_with_bundle(
+            &bundle.encode().unwrap(),
+            "document.mec",
+            sources.into(),
+            Array::new().into(),
+            Object::new().into(),
+        )
+        .unwrap();
+        assert_eq!(
+            restored.bootstrap.document_base().nominal_origin(),
+            Some(&origin),
+        );
+        restored.repl_replace_source(enum_source).unwrap();
+        let recovered = restored.repl.session.symbol("my-color").unwrap().unwrap();
+        assert_eq!(recovered.schema_key(), original.schema_key());
+        document.stop().unwrap();
+        restored.stop().unwrap();
+    }
+
     #[cfg(all(
         feature = "browser_host_timer",
         feature = "browser_host_scene",

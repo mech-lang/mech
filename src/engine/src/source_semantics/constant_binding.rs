@@ -88,6 +88,9 @@ impl CanonicalSourceProgram {
             })?
             .into_parts();
         self.schemas = schemas;
+        for declaration in &mut self.source_nominal_declarations {
+            declaration.schema = schema_ids[declaration.schema.get() as usize];
+        }
         let selected = selected_values
             .into_iter()
             .map(|(input, value)| {

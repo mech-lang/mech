@@ -103,6 +103,7 @@ pub struct CanonicalSourceProgram {
     document_outputs: Box<[SourceDocumentOutput]>,
     document_exports: Box<[SourceDocumentExport]>,
     compute_region: Option<(String, ComputePlacement)>,
+    source_nominal_declarations: Box<[crate::SourceNominalDeclaration]>,
 }
 
 /// One retained root in an explicitly ordered compilation. Imported roots refer
@@ -338,6 +339,7 @@ impl CanonicalSourceProgram {
             &contracts,
         )?;
         self.attach_compute_region(artifact)
+            .and_then(|artifact| self.attach_nominal_declarations(artifact))
     }
 
     /// Compile an artifact after resolving every external node against the
@@ -408,15 +410,46 @@ impl CanonicalSourceProgram {
             )
             .with_compiler_loc()
         })?;
-        self.attach_compute_region(artifact).map_err(|error| {
-            mech_core::MechError::new(
-                mech_core::GenericError {
-                    msg: format!("unable to attach canonical compute region: {error:?}"),
-                },
-                None,
-            )
-            .with_compiler_loc()
-        })
+        self.attach_compute_region(artifact)
+            .and_then(|artifact| self.attach_nominal_declarations(artifact))
+            .map_err(|error| {
+                mech_core::MechError::new(
+                    mech_core::GenericError {
+                        msg: format!("unable to attach canonical artifact declarations: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })
+    }
+
+    fn attach_nominal_declarations(
+        &self,
+        artifact: ProgramArtifact,
+    ) -> Result<ProgramArtifact, ArtifactBuildError> {
+        let declarations = self
+            .source_nominal_declarations
+            .iter()
+            .map(|declaration| {
+                let key = self
+                    .schemas
+                    .entry(declaration.schema)
+                    .ok_or(ArtifactBuildError::UnknownSchema {
+                        schema: declaration.schema,
+                    })?
+                    .key();
+                let schema = artifact.schemas().find_by_key(key).ok_or(
+                    ArtifactBuildError::UnknownSchema {
+                        schema: declaration.schema,
+                    },
+                )?;
+                Ok(crate::SourceNominalDeclaration {
+                    schema,
+                    ..declaration.clone()
+                })
+            })
+            .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
+        artifact.with_source_nominal_declarations(declarations.into_boxed_slice())
     }
 
     fn attach_compute_region(
@@ -727,6 +760,17 @@ impl CanonicalSourceFrontend {
     ) -> Result<bool, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::has_origin_dependent_declarations(document)
+    }
+
+    /// Durable keys of executable root enum and FSM declarations, using the
+    /// same defining paths as semantic registration.
+    pub fn declared_nominal_keys(
+        &self,
+        document: &DocumentSyntax,
+        origin: &CanonicalNominalPath,
+    ) -> Result<Vec<(Box<[String]>, NominalKey)>, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::declared_nominal_keys(document, origin)
     }
 
     /// Return the names assigned by the root execution scope.
@@ -1289,6 +1333,7 @@ struct SourceSchemas {
     node_ids: Vec<SchemaId>,
     constant_ids: Vec<SchemaId>,
     dynamic_payload_ids: BTreeMap<usize, SchemaId>,
+    declarations: Box<[crate::SourceNominalDeclaration]>,
 }
 
 fn retain_schema_tree(
@@ -1360,6 +1405,7 @@ impl SourceSchemas {
         inputs: &[PendingInput],
         nodes: &[PendingNode],
         constants: &[PendingConstant],
+        declarations: &[PendingNominalDeclaration],
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = SchemaTableBuilder::new();
         let mut insert = |draft: &SchemaDraft| retain_schema_tree(anchor, &mut builder, draft);
@@ -1405,6 +1451,10 @@ impl SourceSchemas {
             .iter()
             .map(|value| insert(&value.schema))
             .collect::<Result<Vec<_>, _>>()?;
+        let declaration_handles = declarations
+            .iter()
+            .map(|declaration| insert(&declaration.schema))
+            .collect::<Result<Vec<_>, _>>()?;
         let payload_handles = constants
             .iter()
             .enumerate()
@@ -1446,6 +1496,18 @@ impl SourceSchemas {
             .into_iter()
             .map(|(index, handle)| resolve(handle).map(|id| (index, id)))
             .collect::<Result<BTreeMap<_, _>, _>>()?;
+        let declarations = declarations
+            .iter()
+            .zip(declaration_handles)
+            .map(|(declaration, handle)| {
+                Ok(crate::SourceNominalDeclaration {
+                    document_id: declaration.document_id,
+                    relative_path: declaration.relative_path.clone(),
+                    schema: resolve(handle)?,
+                })
+            })
+            .collect::<Result<Vec<_>, SourceSemanticError>>()?
+            .into_boxed_slice();
         let (table, _) = build.into_parts();
         Ok(Self {
             table,
@@ -1453,6 +1515,7 @@ impl SourceSchemas {
             node_ids,
             constant_ids,
             dynamic_payload_ids,
+            declarations,
         })
     }
 
@@ -2935,6 +2998,12 @@ struct DeclaredEnumVariant {
     payload: Option<SchemaBody>,
 }
 
+struct PendingNominalDeclaration {
+    document_id: u64,
+    relative_path: Box<[String]>,
+    schema: SchemaDraft,
+}
+
 struct SemanticBuilder {
     function_catalog: Option<Arc<mech_core::FunctionCatalog>>,
     function_environment: Option<crate::FunctionEnvironment>,
@@ -2949,6 +3018,7 @@ struct SemanticBuilder {
     input_by_name: BTreeMap<String, u32>,
     input_declarations: BTreeMap<String, SchemaDraft>,
     declared_kinds: BTreeMap<String, SchemaDraft>,
+    declaration_schemas: Vec<PendingNominalDeclaration>,
     declared_variants: BTreeMap<String, Vec<DeclaredEnumVariant>>,
     imported_enum_qualifiers: BTreeMap<NominalKey, String>,
     nodes: Vec<PendingNode>,
@@ -3141,6 +3211,7 @@ impl SemanticBuilder {
             input_by_name: BTreeMap::new(),
             input_declarations: BTreeMap::new(),
             declared_kinds: BTreeMap::new(),
+            declaration_schemas: Vec::new(),
             declared_variants: BTreeMap::new(),
             imported_enum_qualifiers: BTreeMap::new(),
             nodes: Vec::new(),
@@ -7592,8 +7663,13 @@ impl SemanticBuilder {
         {
             value.resolved()?;
         }
-        let schemas =
-            SourceSchemas::build(self.anchor, &self.inputs, &self.nodes, &self.constants)?;
+        let schemas = SourceSchemas::build(
+            self.anchor,
+            &self.inputs,
+            &self.nodes,
+            &self.constants,
+            &self.declaration_schemas,
+        )?;
         let constant_schema_ids = self
             .constants
             .iter()
@@ -7940,6 +8016,7 @@ impl SemanticBuilder {
             document_outputs: Box::new([]),
             document_exports: Box::new([]),
             compute_region: None,
+            source_nominal_declarations: schemas.declarations,
         })
     }
 }

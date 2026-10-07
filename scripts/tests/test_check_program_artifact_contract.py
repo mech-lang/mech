@@ -89,7 +89,7 @@ class ProgramArtifactContractTests(unittest.TestCase):
     def test_canonical_source_proof_rejects_missing_field_assertions(self) -> None:
         source = (ROOT / "src/engine/tests/canonical_document_state.rs").read_text()
         for field in (
-            "requirements", "compute_regions", "contracts", "inputs",
+            "requirements", "compute_regions", "source_nominal_declarations", "contracts", "inputs",
             "slots", "bindings", "outputs", "constraints", "nodes",
         ):
             assertion = f"assert_eq!(artifact.{field}(), decoded.{field}());"
