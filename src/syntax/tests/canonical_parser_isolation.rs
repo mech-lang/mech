@@ -106,7 +106,8 @@ const EXECUTABLE_PRODUCTION_SOURCES: &[&str] = &[
     "recursive_core/precedence/continuation/table.rs",
     "recursive_core/precedence/continuation/table_row.rs",
     "recursive_core/precedence/mod.rs",
-    "recursive_core/required.rs",
+    "recursive_core/required/document_restart.rs",
+    "recursive_core/required/mod.rs",
     "recursive_core/structures/continuation.rs",
     "recursive_core/structures/mod.rs",
     "recursive_core/subscripts.rs",
@@ -385,19 +386,60 @@ fn use_statement_imports_prototype(tokens: &[String], start: usize) -> bool {
         return true;
     }
 
-    let prototype_target =
-        |token: &str| matches!(token, "document" | "mech" | "mechdown" | "statements");
-    let parser = statement.iter().position(|token| token == "parser");
-    parser.is_some_and(|parser| {
-        statement[parser + 1..]
-            .iter()
-            .any(|token| prototype_target(token))
-    }) || (statement
-        .iter()
-        .filter(|token| token.as_str() == "super")
-        .count()
-        >= 2
-        && statement.iter().any(|token| prototype_target(token)))
+    fn prototype_path(path: &[String]) -> bool {
+        let prototype_target =
+            |token: &str| matches!(token, "document" | "mech" | "mechdown" | "statements");
+        path.windows(2)
+            .any(|pair| pair[0] == "parser" && prototype_target(&pair[1]))
+            || {
+                let supers = path.iter().take_while(|token| *token == "super").count();
+                supers >= 2
+                    && path
+                        .get(supers)
+                        .is_some_and(|token| prototype_target(token))
+            }
+    }
+
+    fn import_tree(tokens: &[String], prefix: &[String]) -> bool {
+        let mut path = prefix.to_vec();
+        let mut cursor = 0;
+        while cursor < tokens.len() {
+            match tokens[cursor].as_str() {
+                "{" => {
+                    let open = cursor;
+                    let mut depth = 1;
+                    cursor += 1;
+                    while cursor < tokens.len() && depth > 0 {
+                        match tokens[cursor].as_str() {
+                            "{" => depth += 1,
+                            "}" => depth -= 1,
+                            _ => {}
+                        }
+                        cursor += 1;
+                    }
+                    if import_tree(&tokens[open + 1..cursor.saturating_sub(1)], &path) {
+                        return true;
+                    }
+                }
+                "," => {
+                    if prototype_path(&path) {
+                        return true;
+                    }
+                    path.truncate(prefix.len());
+                    cursor += 1;
+                }
+                "as" => cursor += 2,
+                "::" => cursor += 1,
+                _ => {
+                    path.push(tokens[cursor].clone());
+                    cursor += 1;
+                }
+            }
+        }
+        prototype_path(&path)
+    }
+
+    import_tree(&statement[1..], &[])
 }
 
 fn executable_violations(source: &str) -> Vec<&'static str> {
@@ -1936,6 +1978,43 @@ fn canonical_parser_production_sources_are_isolated() {
         "canonical parser isolation violations:\n{}",
         failures.join("\n")
     );
+}
+
+#[test]
+fn isolation_scanner_preserves_use_tree_namespaces() {
+    for canonical in [
+        "use crate::document::parser::canonical::document::continuation::Progress as DocumentProgress;",
+        "use crate::document::parser::{canonical::document::continuation::Progress};",
+        "use crate::document::parser::{canonical::{document::continuation::Progress, statements::Continuation}};",
+        "use crate::document::parser::canonical::{document, mechdown, statements};",
+        "use super::super::canonical::document::continuation::Progress;",
+        "use super::{super::{canonical::document::continuation::Progress}};",
+        "use crate::document::parser::canonical::Progress as document;",
+        "use crate::{document::parser::canonical::Progress, other::document};",
+    ] {
+        assert!(
+            executable_violations(canonical).is_empty(),
+            "scanner confused a canonical import with a prototype: {canonical}"
+        );
+    }
+
+    for prototype in [
+        "use crate::document::parser::document::parse;",
+        "use crate::document::parser::mech::parse_expression as parse;",
+        "use crate::document::parser::{document as prototype};",
+        "use crate::document::parser::{mechdown::parse, statements};",
+        "use crate::document::{parser::{document::parse}};",
+        "use super::super::document::parse;",
+        "use super::{super::{document::parse}};",
+        "use crate::document::parser::{canonical::document::continuation::Progress, document::parse};",
+        "use crate::{document::parser::canonical::Progress, document::parser::document::parse};",
+        "use crate::document::parser::parse_document as parse;",
+    ] {
+        assert!(
+            executable_violations(prototype).contains(&"prototype parser import"),
+            "scanner missed a prototype import: {prototype}"
+        );
+    }
 }
 
 #[test]

@@ -90,6 +90,7 @@ fn run_with_config<T: TestContinuation>(
     step: bool,
 ) -> (Output, u64) {
     assert_eq!(chunks.concat(), text);
+    let fuel = config.limits.fuel;
     let mut source = TextSnapshot::new(DocumentId(826), Revision(0), "").unwrap();
     let mut ids = IdGenerator::new();
     let mut parser = Parser::new(
@@ -111,7 +112,12 @@ fn run_with_config<T: TestContinuation>(
             if step {
                 assert!(continuation.work() - before <= 1);
             }
-            assert!(continuation.work() < 10_000_000);
+            assert!(
+                continuation.work() < 10_000_000,
+                "{rule:?}, open source {text:?}, chunks {chunks:?}, offset {:?}, fuel {}",
+                parser.offset(),
+                fuel,
+            );
             if matches!(progress, TestProgress::Limited) {
                 state = parser.suspend();
                 break 'input;
@@ -132,7 +138,12 @@ fn run_with_config<T: TestContinuation>(
         if step {
             assert!(continuation.work() - before <= 1);
         }
-        assert!(continuation.work() < 10_000_000);
+        assert!(
+            continuation.work() < 10_000_000,
+            "{rule:?}, final source {text:?}, chunks {chunks:?}, offset {:?}, fuel {}",
+            parser.offset(),
+            fuel,
+        );
         match progress {
             TestProgress::Complete(result) => break result,
             TestProgress::NeedsProcessing => {
