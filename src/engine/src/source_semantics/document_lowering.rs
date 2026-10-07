@@ -1062,11 +1062,17 @@ pub(super) fn declared_nominal_schemas(
     let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(document.syntax()));
     builder.register_document_types(&units, Some(origin))?;
     builder.register_document_fsms(&units, origin.segments())?;
-    Ok(builder
+    let anchor = SourceSemanticAnchor::for_node(document.syntax());
+    builder
         .declaration_schemas
         .into_iter()
-        .map(|declaration| (declaration.relative_path, declaration.schema.body))
-        .collect())
+        .map(|declaration| {
+            let schema = declaration.schema.finalize().map_err(|error| {
+                internal(anchor, format!("invalid declaration schema: {error:?}"))
+            })?;
+            Ok((declaration.relative_path, schema.body().clone()))
+        })
+        .collect()
 }
 
 pub(super) fn declared_nominal_keys(

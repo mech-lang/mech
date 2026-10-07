@@ -478,6 +478,10 @@ mod tests {
                 "<A> := <u64>\n<Item> := :some<A>\nvalue := 1.0\n",
             ),
             (
+                "<Item> := :pair<[f64]:1,2> | :none\nvalue := 1.0\n",
+                "<Item> := :pair<[f64]:1,3> | :none\nvalue := 1.0\n",
+            ),
+            (
                 "#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nvalue := 1.0\n",
                 "#Drive() => <f64>\n  | :Stopped.\n#Drive() -> :Stopped\n  :Stopped => 1.0.\nvalue := 1.0\n",
             ),
