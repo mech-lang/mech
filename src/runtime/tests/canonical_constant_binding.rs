@@ -900,6 +900,155 @@ fn fixed_integer_interval_literal_publishes_exact_source_and_decoded_identity() 
 }
 
 #[test]
+fn fixed_integer_interval_addition_preserves_bounds_in_source_and_bytecode() {
+    for (name, width, data) in [
+        ("u8", IntegerWidth::W8, D::U8(6)),
+        ("u16", IntegerWidth::W16, D::U16(6)),
+        ("u32", IntegerWidth::W32, D::U32(6)),
+        ("u64", IntegerWidth::W64, D::U64(6)),
+        ("u128", IntegerWidth::W128, D::U128(6)),
+    ] {
+        let body = SchemaBody::IntegerInterval(mech_core::IntegerInterval::Unsigned {
+            width,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: true,
+        });
+        assert_public_interval_source(
+            &format!("foo⟨{name}:1..=10⟩ := 3\nbar⟨{name}:1..=10⟩ := foo\nbar + foo\n"),
+            &snapshot(body, data),
+        );
+    }
+    for (name, width, data) in [
+        ("i8", IntegerWidth::W8, D::I8(-2)),
+        ("i16", IntegerWidth::W16, D::I16(-2)),
+        ("i32", IntegerWidth::W32, D::I32(-2)),
+        ("i64", IntegerWidth::W64, D::I64(-2)),
+        ("i128", IntegerWidth::W128, D::I128(-2)),
+    ] {
+        let body = SchemaBody::IntegerInterval(mech_core::IntegerInterval::Signed {
+            width,
+            lower: -5,
+            upper: 5,
+            upper_inclusive: false,
+        });
+        assert_public_interval_source(
+            &format!("foo⟨{name}:-5..5⟩ := -3\nbar⟨{name}:-5..5⟩ := 1\nbar + foo\n"),
+            &snapshot(body, data),
+        );
+    }
+    let body = SchemaBody::IntegerInterval(mech_core::IntegerInterval::Unsigned {
+        width: IntegerWidth::W8,
+        lower: 1,
+        upper: 10,
+        upper_inclusive: true,
+    });
+    assert_public_interval_source(
+        "+> math\nfoo⟨u8:1..=10⟩ := 5\nmath/add(right: foo, left: foo)\n",
+        &snapshot(body, D::U8(10)),
+    );
+}
+
+#[test]
+fn fixed_integer_interval_addition_rejects_out_of_range_constants() {
+    for source in [
+        "8⟨u8:1..=10⟩ + 3⟨u8:1..=10⟩\n",
+        "5⟨u8:1..10⟩ + 5⟨u8:1..10⟩\n",
+        "-4⟨i8:-5..=5⟩ + -3⟨i8:-5..=5⟩\n",
+        "200⟨u8:0..=255⟩ + 100⟨u8:0..=255⟩\n",
+        "-100⟨i8:-128..=127⟩ + -100⟨i8:-128..=127⟩\n",
+    ] {
+        // These are well-typed operations on identical interval kinds. The
+        // checked result must be refused by both public execution routes.
+        let artifact = compile_source(source).compile_artifact().unwrap();
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        for bytecode in [false, true] {
+            let mut runtime = RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog())
+                .build()
+                .unwrap();
+            let result = if bytecode {
+                runtime.load_bytecode_program(&bytes, ResidentDurabilityPolicy::Volatile)
+            } else {
+                runtime.load_source_program(source, ResidentDurabilityPolicy::Volatile)
+            };
+            assert!(result.is_err(), "out-of-range sum was published: {source}");
+        }
+    }
+}
+
+#[test]
+fn fixed_integer_interval_addition_refuses_a_live_sum_atomically_and_recovers() {
+    let body = SchemaBody::IntegerInterval(mech_core::IntegerInterval::Unsigned {
+        width: IntegerWidth::W8,
+        lower: 1,
+        upper: 10,
+        upper_inclusive: true,
+    });
+    let document = SourceDocument::parse_resolved(
+        "test:interval/addition",
+        Revision(1),
+        "~state⟨u8:1..=10⟩ := 2\nstate = signal + signal\nstate\n",
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(document.is_strictly_clean());
+    let catalog = mech_stdlib::source_catalog();
+    let direct = CanonicalSourceFrontend
+        .compile_document_with_catalog_and_input_schemas(
+            &document.document(),
+            Arc::clone(&catalog),
+            BTreeMap::from([("signal".to_owned(), body.clone())]),
+        )
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    for artifact in [direct.clone(), decoded(&direct)] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x865, 2),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        assert_eq!(instance.plan.inputs.len(), 1);
+        let input = instance.plan.inputs[0].clone();
+        let publish = |instance: &mut mech_engine::resident::ReactiveInstance, data: u8| {
+            let value = snapshot(body.clone(), D::U8(data))
+                .rebind(input.schema, &input.shape, artifact.schemas())
+                .unwrap();
+            instance
+                .prepare_turn_values(&[CapturedValueInput {
+                    slot: input.slot,
+                    value: &value,
+                }])
+                .and_then(|prepared| prepared.publish())
+        };
+        publish(&mut instance, 3).unwrap();
+        let accepted = instance.copied_output(0).unwrap();
+        assert_exact(&accepted, &snapshot(body.clone(), D::U8(6)), "accepted sum");
+        let epoch = instance.published_epoch();
+        let state_hash = instance.published_state_hash();
+        // The input 6 is valid. Its sum 12 violates the retained interval.
+        assert!(publish(&mut instance, 6).is_err());
+        assert_eq!(instance.published_epoch(), epoch);
+        assert_eq!(instance.published_state_hash(), state_hash);
+        assert_exact(
+            &instance.copied_output(0).unwrap(),
+            &accepted,
+            "refused sum",
+        );
+        publish(&mut instance, 4).unwrap();
+        assert!(instance.published_epoch() > epoch);
+        assert_exact(
+            &instance.copied_output(0).unwrap(),
+            &snapshot(body.clone(), D::U8(8)),
+            "recovered sum",
+        );
+    }
+}
+
+#[test]
 fn fixed_integer_interval_set_union_publishes_exact_source_and_decoded_identity() {
     let body = SchemaBody::Set {
         element: Box::new(SchemaBody::IntegerInterval(
