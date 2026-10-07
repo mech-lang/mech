@@ -1,0 +1,424 @@
+{
+  "status": "passed",
+  "cases": 18,
+  "records": [
+    {
+      "case": "two errors annotate original code and numbered callouts navigate source",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 1, column 10unexpected source before the closing delimiter",
+            "label": "Error 1. Line 1, column 10. unexpected source before the closing delimiter. Locate in source."
+          },
+          {
+            "text": "2Line 2, column 10unexpected source before the closing delimiter",
+            "label": "Error 2. Line 2, column 10. unexpected source before the closing delimiter. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "+, 2",
+            "number": "1"
+          },
+          {
+            "text": "*, 4",
+            "number": "2"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 33 H 98.109375",
+          "M 339.609375 117 H 328.609375 V 55.09375 H 98.109375"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "x := [1, +, 2]\ny := [3, *, 4]\n"
+        ],
+        "reports": [
+          " --> document:1:10\n  |\n1 | x := [1, +, 2]\n  |          ^^^^ unexpected source before the closing delimiter\n2 | y := [3, *, 4]\n",
+          " --> document:2:10\n  |\n1 | x := [1, +, 2]\n2 | y := [3, *, 4]\n  |          ^^^^ unexpected source before the closing delimiter\n3 |\n"
+        ],
+        "html": "<article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"0\" data-mech-end=\"30\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"x\">x</span> := [<span class=\"mech-number\">1</span>, <mark class=\"preview-source-error\" data-error=\"1\" aria-describedby=\"preview-error-1\" title=\"unexpected source before the closing delimiter\">+, 2</mark>]\n<span class=\"mech-var-name\" data-mech-var-name=\"y\">y</span> := [<span class=\"mech-number\">3</span>, <mark class=\"preview-source-error\" data-error=\"2\" aria-describedby=\"preview-error-2\" title=\"unexpected source before the closing delimiter\">*, 4</mark>]\n</code></pre></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 1, column 10. unexpected source before the closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 1, column 10</span><span class=\"preview-callout-message\">unexpected source before the closing delimiter</span></button><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-2\" aria-label=\"Error 2. Line 2, column 10. unexpected source before the closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">2</span><span class=\"preview-callout-location\">Line 2, column 10</span><span class=\"preview-callout-message\">unexpected source before the closing delimiter</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 180\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 33 H 98.109375\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path><marker id=\"preview-arrow-2\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 117 H 328.609375 V 55.09375 H 98.109375\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-2)\"></path></svg></div></div></section></article>"
+      },
+      "selection": {
+        "start": 24,
+        "end": 28
+      }
+    },
+    {
+      "case": "repeated compilation restores source before annotation",
+      "passed": true
+    },
+    {
+      "case": "fenced missing delimiter points to bracket and retains later section",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 9, column 11missing closing delimiter",
+            "label": "Error 1. Line 9, column 11. missing closing delimiter. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "[",
+            "number": "1"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 34 H 95.1953125"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "answer := [1 2 3 4 5\nanswer\n"
+        ],
+        "reports": [
+          " --> document:9:11\n   |\n 8 | ```mech\n 9 | answer := [1 2 3 4 5\n   |           ^ missing closing delimiter\n10 | answer\n --> document:11:1\n   |\n10 | answer\n11 | ```\n   | ^ closing delimiter expected before this boundary\n12 | \n  = expected: `]`\n  = help: Insert `]`\n    at 11:1: insert \"]\"\n"
+        ],
+        "html": "<article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"25\"><h1 class=\"mech-document-title\">Calculation</h1></header><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"25\" data-mech-end=\"73\"><p>The result is published by the final expression.</p></div><div class=\"mech-source-region\" data-mech-start=\"75\" data-mech-end=\"135\"><p>The end result is going to be that this thing displays live.</p></div><div class=\"mech-source-region\" data-mech-start=\"137\" data-mech-end=\"178\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><figure class=\"mech-code-block\" data-mech-source=\"\"><pre><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <mark class=\"preview-source-error\" data-error=\"1\" aria-describedby=\"preview-error-1\" title=\"missing closing delimiter\">[</mark><span class=\"mech-number\">1</span> <span class=\"mech-number\">2</span> <span class=\"mech-number\">3</span> <span class=\"mech-number\">4</span> <span class=\"mech-number\">5</span>\n<span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span>\n</code></pre></figure></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 9, column 11. missing closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 9, column 11</span><span class=\"preview-callout-message\">missing closing delimiter</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 70.1875\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 34 H 95.1953125\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path></svg></div></div></section><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"178\" data-mech-end=\"225\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Section One</h2></div><div class=\"mech-source-region\" data-mech-start=\"225\" data-mech-end=\"251\"><p>This is the first section.</p></div></section></article>"
+      }
+    },
+    {
+      "case": "repair removes annotations and runs program",
+      "passed": true
+    },
+    {
+      "case": "code ranges retain their anchors across rendered rich comments",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 1, column 10unexpected source before the closing delimiter",
+            "label": "Error 1. Line 1, column 10. unexpected source before the closing delimiter. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "+, 2",
+            "number": "1"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 33 H 98.109375"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "x := [1, +, 2] -- Context for this expression.\nx\n"
+        ],
+        "reports": [
+          " --> document:1:10\n  |\n1 | x := [1, +, 2] -- **Context** for this expression.\n  |          ^^^^ unexpected source before the closing delimiter\n2 | x\n"
+        ],
+        "html": "<article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"0\" data-mech-end=\"53\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"x\">x</span> := [<span class=\"mech-number\">1</span>, <mark class=\"preview-source-error\" data-error=\"1\" aria-describedby=\"preview-error-1\" title=\"unexpected source before the closing delimiter\">+, 2</mark>] <span class=\"mech-comment\">-- <strong class=\"mech-strong\">Context</strong> for this expression.</span>\n<span class=\"mech-var-name\" data-mech-var-name=\"x\">x</span>\n</code></pre></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 1, column 10. unexpected source before the closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 1, column 10</span><span class=\"preview-callout-message\">unexpected source before the closing delimiter</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 112.375\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 33 H 98.109375\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path></svg></div></div></section></article>"
+      }
+    },
+    {
+      "case": "code ranges retain their anchors across rendered rich comments",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 2, column 10unexpected source before the closing delimiter",
+            "label": "Error 1. Line 2, column 10. unexpected source before the closing delimiter. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "+, 2",
+            "number": "1"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 77.1875 H 98.109375"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "-- Context for this expression.\nx := [1, +, 2]\nx\n"
+        ],
+        "reports": [
+          " --> document:2:10\n  |\n1 | -- **Context** for this expression.\n2 | x := [1, +, 2]\n  |          ^^^^ unexpected source before the closing delimiter\n3 | x\n"
+        ],
+        "html": "<article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"0\" data-mech-end=\"53\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-comment\">-- <strong class=\"mech-strong\">Context</strong> for this expression.</span>\n<span class=\"mech-var-name\" data-mech-var-name=\"x\">x</span> := [<span class=\"mech-number\">1</span>, <mark class=\"preview-source-error\" data-error=\"1\" aria-describedby=\"preview-error-1\" title=\"unexpected source before the closing delimiter\">+, 2</mark>]\n<span class=\"mech-var-name\" data-mech-var-name=\"x\">x</span>\n</code></pre></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 2, column 10. unexpected source before the closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 2, column 10</span><span class=\"preview-callout-message\">unexpected source before the closing delimiter</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 112.375\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 77.1875 H 98.109375\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path></svg></div></div></section></article>"
+      }
+    },
+    {
+      "case": "insertion point at EOF is marked and connected",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 1, column 14missing expression after operator",
+            "label": "Error 1. Line 1, column 14. missing expression after operator. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "",
+            "number": "1"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 30 H 113.765625"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "answer := 1 +"
+        ],
+        "reports": [
+          " --> document:1:14\n  |\n1 | answer := 1 +\n  |              ^ missing expression after operator\n  = expected: expression\n"
+        ],
+        "html": "<article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"0\" data-mech-end=\"13\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <span class=\"mech-number\">1</span> +<span class=\"preview-source-point\" aria-hidden=\"true\" data-error=\"1\"></span></code></pre></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 1, column 14. missing expression after operator. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 1, column 14</span><span class=\"preview-callout-message\">missing expression after operator</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 85\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 30 H 113.765625\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path></svg></div></div></section></article>"
+      }
+    },
+    {
+      "case": "recovered fence header or title metadata retains source marks",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 1, column 8expected a newline after the code-block header",
+            "label": "Error 1. Line 1, column 8. expected a newline after the code-block header. Locate in source."
+          },
+          {
+            "text": "2Line 1, column 17missing value after binding colon",
+            "label": "Error 2. Line 1, column 17. missing value after binding colon. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "",
+            "number": "1"
+          },
+          {
+            "text": "",
+            "number": "2"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 30 H 66.796875",
+          "M 339.609375 117 H 328.609375 V 30 H 137.25"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "```mech{output: }\nanswer := 1\n```\n"
+        ],
+        "reports": [
+          " --> document:1:8\n  |\n1 | ```mech{output: }\n  |        ^ expected a newline after the code-block header\n2 | answer := 1\n  = expected: Newline\n",
+          " --> document:1:17\n  |\n1 | ```mech{output: }\n  |                 ^ missing value after binding colon\n2 | answer := 1\n  = expected: expression\n"
+        ],
+        "html": "<article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"0\" data-mech-end=\"34\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><pre class=\"mech-recovered-source\" data-mech-source=\"\" title=\"code fence has no valid presentation options\"><code>```mech<span class=\"preview-source-point\" aria-hidden=\"true\" data-error=\"1\"></span>{output: <span class=\"preview-source-point\" aria-hidden=\"true\" data-error=\"2\"></span>}\nanswer := 1\n```\n</code></pre></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 1, column 8. expected a newline after the code-block header. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 1, column 8</span><span class=\"preview-callout-message\">expected a newline after the code-block header</span></button><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-2\" aria-label=\"Error 2. Line 1, column 17. missing value after binding colon. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">2</span><span class=\"preview-callout-location\">Line 1, column 17</span><span class=\"preview-callout-message\">missing value after binding colon</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 180\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 30 H 66.796875\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path><marker id=\"preview-arrow-2\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 117 H 328.609375 V 30 H 137.25\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-2)\"></path></svg></div></div></section></article>"
+      }
+    },
+    {
+      "case": "recovered fence header or title metadata retains source marks",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 4, column 18expected a closing bracket for the reference",
+            "label": "Error 1. Line 4, column 18. expected a closing bracket for the reference. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "",
+            "number": "1"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 30 H 145.0625"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "answer := [1 @ [2\n"
+        ],
+        "reports": [
+          " --> document:4:18\n  |\n3 | \n4 | answer := [1 @ [2\n  |                  ^ expected a closing bracket for the reference\n5 | \n  = expected: `]`\n  = help: Insert `]`\n    at 4:18: insert \"]\"\n"
+        ],
+        "html": "<article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"43\"><h1 class=\"mech-document-title\">Calculation</h1><div class=\"mech-source-region\" data-mech-start=\"25\" data-mech-end=\"43\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><pre class=\"mech-recovered-source\" data-mech-source=\"\" title=\"canonical document source range is unavailable\"><code>answer := [1 @ [2<span class=\"preview-source-point\" aria-hidden=\"true\" data-error=\"1\"></span>\n</code></pre></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 4, column 18. expected a closing bracket for the reference. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 4, column 18</span><span class=\"preview-callout-message\">expected a closing bracket for the reference</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 85\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 30 H 145.0625\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path></svg></div></div></header><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"44\" data-mech-end=\"57\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Next</h2></div><div class=\"mech-source-region\" data-mech-start=\"57\" data-mech-end=\"75\"><p>A later paragraph.</p></div></section></article>"
+      }
+    },
+    {
+      "case": "Unicode source offsets preserve exact marked range",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 5, column 11missing closing delimiter",
+            "label": "Error 1. Line 5, column 11. missing closing delimiter. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "[",
+            "number": "1"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 34 H 95.1953125"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "answer := [1 2\n"
+        ],
+        "reports": [
+          " --> document:5:11\n  |\n4 | ```mech\n5 | answer := [1 2\n  |           ^ missing closing delimiter\n6 | ```\n --> document:6:1\n  |\n5 | answer := [1 2\n6 | ```\n  | ^ closing delimiter expected before this boundary\n7 | \n  = expected: `]`\n  = help: Insert `]`\n    at 6:1: insert \"]\"\n"
+        ],
+        "html": "<article class=\"mech-document\"><header class=\"mech-document-header\" data-mech-start=\"0\" data-mech-end=\"29\"><h1 class=\"mech-document-title\">Café 👩‍💻</h1></header><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"29\" data-mech-end=\"56\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><figure class=\"mech-code-block\" data-mech-source=\"\"><pre><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <mark class=\"preview-source-error\" data-error=\"1\" aria-describedby=\"preview-error-1\" title=\"missing closing delimiter\">[</mark><span class=\"mech-number\">1</span> <span class=\"mech-number\">2</span>\n</code></pre></figure></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 5, column 11. missing closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 5, column 11</span><span class=\"preview-callout-message\">missing closing delimiter</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 64\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 34 H 95.1953125\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path></svg></div></div></section></article>"
+      }
+    },
+    {
+      "case": "semantic diagnostic annotates rendered code after compilation",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 1, column 11integer literal is outside its annotated interval",
+            "label": "Error 1. Line 1, column 11. integer literal is outside its annotated interval. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "10",
+            "number": "1"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 33 H 98.109375"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "answer := 10⟨u8:1..10⟩\nanswer\n"
+        ],
+        "reports": [
+          " --> document:1:11\n  |\n1 | answer := 10⟨u8:1..10⟩\n  |           ^^ integer literal is outside its annotated interval\n2 | answer\n"
+        ],
+        "html": "<article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"0\" data-mech-end=\"34\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <span class=\"mech-number\"><mark class=\"preview-source-error\" data-error=\"1\" aria-describedby=\"preview-error-1\" title=\"integer literal is outside its annotated interval\">10</mark></span>⟨u8:<span class=\"mech-number\">1</span>..<span class=\"mech-number\">10</span>⟩\n<span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span>\n</code></pre></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 1, column 11. integer literal is outside its annotated interval. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 1, column 11</span><span class=\"preview-callout-message\">integer literal is outside its annotated interval</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 85\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 33 H 98.109375\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path></svg></div></div></section></article>"
+      }
+    },
+    {
+      "case": "information diagnostic preserves clean rendered document",
+      "passed": true
+    },
+    {
+      "case": "deep unfenced recovery attaches callouts to retained source",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 1, column 14unexpected source before the closing delimiter",
+            "label": "Error 1. Line 1, column 14. unexpected source before the closing delimiter. Locate in source."
+          },
+          {
+            "text": "2Line 1, column 11missing closing delimiter",
+            "label": "Error 2. Line 1, column 11. missing closing delimiter. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "[",
+            "number": "2"
+          },
+          {
+            "text": "@ [2\n\n",
+            "number": "1"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 33 H 129.421875",
+          "M 339.609375 117 H 328.609375 V 33 H 94.1953125"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "answer := [1 @ [2\n\n"
+        ],
+        "reports": [
+          " --> document:1:14\n  |\n1 | answer := [1 @ [2\n  |              ^^^^\n2 | \n  | ^ unexpected source before the closing delimiter\n3 | 1. Next\n",
+          " --> document:1:11\n  |\n1 | answer := [1 @ [2\n  |           ^ missing closing delimiter\n2 | \n --> document:3:1\n  |\n2 | \n3 | 1. Next\n  | ^ closing delimiter expected before this boundary\n4 | ---\n  = expected: `]`\n  = help: Insert `]`\n    at 3:1: insert \"]\"\n"
+        ],
+        "html": "<article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"0\" data-mech-end=\"19\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"answer\">answer</span> := <mark class=\"preview-source-error\" data-error=\"2\" aria-describedby=\"preview-error-2\" title=\"missing closing delimiter\">[</mark><span class=\"mech-number\">1</span> <mark class=\"preview-source-error\" data-error=\"1\" aria-describedby=\"preview-error-1\" title=\"unexpected source before the closing delimiter\">@ [2\n\n</mark></code></pre></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 1, column 14. unexpected source before the closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 1, column 14</span><span class=\"preview-callout-message\">unexpected source before the closing delimiter</span></button><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-2\" aria-label=\"Error 2. Line 1, column 11. missing closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">2</span><span class=\"preview-callout-location\">Line 1, column 11</span><span class=\"preview-callout-message\">missing closing delimiter</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 159\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 33 H 129.421875\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path><marker id=\"preview-arrow-2\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 117 H 328.609375 V 33 H 94.1953125\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-2)\"></path></svg></div></div></section><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"19\" data-mech-end=\"32\"><h2 class=\"mech-subtitle\" id=\"document-preview-1\">Next</h2></div><div class=\"mech-source-region\" data-mech-start=\"32\" data-mech-end=\"50\"><p>A later paragraph.</p></div></section></article>"
+      }
+    },
+    {
+      "case": "narrow preview stacks callouts and redraws arrows",
+      "passed": true,
+      "layout": {
+        "codeBottom": 403.953125,
+        "notesTop": 433.953125,
+        "width": 1000,
+        "viewport": 1000
+      }
+    },
+    {
+      "case": "mobile document preview retains code annotations within pane",
+      "passed": true,
+      "layout": {
+        "width": 700,
+        "viewport": 700,
+        "notes": true
+      }
+    },
+    {
+      "case": "phone callouts stack with connectors routed outside the source",
+      "passed": true,
+      "layout": {
+        "width": 390,
+        "viewport": 390,
+        "notes": true
+      }
+    },
+    {
+      "case": "loading the same source restores syntax colors and annotations",
+      "passed": true,
+      "state": {
+        "state": "error",
+        "callouts": [
+          {
+            "text": "1Line 1, column 10unexpected source before the closing delimiter",
+            "label": "Error 1. Line 1, column 10. unexpected source before the closing delimiter. Locate in source."
+          },
+          {
+            "text": "2Line 2, column 10unexpected source before the closing delimiter",
+            "label": "Error 2. Line 2, column 10. unexpected source before the closing delimiter. Locate in source."
+          }
+        ],
+        "marks": [
+          {
+            "text": "+, 2",
+            "number": "1"
+          },
+          {
+            "text": "*, 4",
+            "number": "2"
+          }
+        ],
+        "arrows": [
+          "M 339.609375 22 H 324.609375 V 33 H 98.109375",
+          "M 339.609375 117 H 328.609375 V 55.09375 H 98.109375"
+        ],
+        "consoleInPreview": false,
+        "code": [
+          "x := [1, +, 2]\ny := [3, *, 4]\n"
+        ],
+        "reports": [
+          " --> document:1:10\n  |\n1 | x := [1, +, 2]\n  |          ^^^^ unexpected source before the closing delimiter\n2 | y := [3, *, 4]\n",
+          " --> document:2:10\n  |\n1 | x := [1, +, 2]\n2 | y := [3, *, 4]\n  |          ^^^^ unexpected source before the closing delimiter\n3 |\n"
+        ],
+        "html": "<article class=\"mech-document\"><section class=\"mech-section\"><div class=\"mech-source-region\" data-mech-start=\"0\" data-mech-end=\"30\"><div class=\"preview-annotations\"><div class=\"preview-annotation-content\"><pre class=\"mech-code\" data-mech-source=\"\"><code><span class=\"mech-var-name\" data-mech-var-name=\"x\">x</span> := [<span class=\"mech-number\">1</span>, <mark class=\"preview-source-error\" data-error=\"1\" aria-describedby=\"preview-error-1\" title=\"unexpected source before the closing delimiter\">+, 2</mark>]\n<span class=\"mech-var-name\" data-mech-var-name=\"y\">y</span> := [<span class=\"mech-number\">3</span>, <mark class=\"preview-source-error\" data-error=\"2\" aria-describedby=\"preview-error-2\" title=\"unexpected source before the closing delimiter\">*, 4</mark>]\n</code></pre></div><aside class=\"preview-annotation-notes\" aria-label=\"Source error annotations\"><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-1\" aria-label=\"Error 1. Line 1, column 10. unexpected source before the closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">1</span><span class=\"preview-callout-location\">Line 1, column 10</span><span class=\"preview-callout-message\">unexpected source before the closing delimiter</span></button><button type=\"button\" class=\"preview-callout preview-callout-error\" id=\"preview-error-2\" aria-label=\"Error 2. Line 2, column 10. unexpected source before the closing delimiter. Locate in source.\"><span class=\"preview-callout-number\" aria-hidden=\"true\">2</span><span class=\"preview-callout-location\">Line 2, column 10</span><span class=\"preview-callout-message\">unexpected source before the closing delimiter</span></button></aside><svg class=\"preview-connectors\" aria-hidden=\"true\" viewBox=\"0 0 566 180\"><marker id=\"preview-arrow-1\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 22 H 324.609375 V 33 H 98.109375\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-1)\"></path><marker id=\"preview-arrow-2\" viewBox=\"0 0 6 6\" refX=\"5\" refY=\"3\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M 0 0 L 6 3 L 0 6\" class=\"preview-arrowhead\"></path></marker><path d=\"M 339.609375 117 H 328.609375 V 55.09375 H 98.109375\" class=\"preview-connector preview-connector-error\" marker-end=\"url(#preview-arrow-2)\"></path></svg></div></div></section></article>"
+      }
+    },
+    {
+      "case": "console source reports remain confined to diagnostics",
+      "passed": true
+    }
+  ]
+}

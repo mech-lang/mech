@@ -1,5 +1,5 @@
 {
-  "source_commit": "f1a44a062fe3b7a02d05413adf1850bc0785df3c",
+  "source_commit": "654a5c770229ed05844cb0ed0cde15e80710b87c",
   "source_description": "Committed audit review branch source plus any explicitly hashed modifications.",
   "source_modifications": {},
   "source_modifications_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
@@ -26,8 +26,8 @@
       "bytes": 93443
     },
     "pkg/mech_wasm_bg.wasm": {
-      "sha256": "0fd98d19e77e6d82ee4596091673fbb893947ee43710af46e382a91f7ffae1bd",
-      "bytes": 208845231
+      "sha256": "adbf247cd313b08f8cf265fb3c78e01ab9eb409b632d4790dba6e5a70691eefb",
+      "bytes": 208845405
     }
   },
   "environment": {
@@ -57,5 +57,8 @@
   "rich_diagnostics": "Shared Rust source excerpts with primary and secondary labels, expected syntax and suggested fixes; canonical UTF-8 ranges on editor preview regions.",
   "document_scopes_source_commit": "f1a44a062fe3b7a02d05413adf1850bc0785df3c",
   "document_scopes_validation": "../evidence/document-scopes/validation.json",
-  "document_scopes": "Canonical root, named fence and Mika-local scopes compiled separately with the host function catalog; completed fence values and kinds rendered from retained output bindings."
+  "document_scopes": "Canonical root, named fence and Mika-local scopes compiled separately with the host function catalog; completed fence values and kinds rendered from retained output bindings.",
+  "output_channels_source_commit": "654a5c770229ed05844cb0ed0cde15e80710b87c",
+  "output_channels_validation": "../evidence/output-channels/validation.json",
+  "output_channels": "Editor document preview presents authored fence outputs and inline references. Unfenced source retains code presentation; aggregate results appear in the separate program output panel."
 }
