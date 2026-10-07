@@ -1038,6 +1038,21 @@ pub(super) fn declared_enum_names(
         .map(|declarations| declarations.into_iter().map(|(name, _)| name).collect())
 }
 
+pub(super) fn has_origin_dependent_declarations(
+    document: &DocumentSyntax,
+) -> Result<bool, SourceSemanticError> {
+    fn has_fsm(units: &[DocumentUnit]) -> bool {
+        units.iter().any(|unit| match unit {
+            DocumentUnit::FsmSpecification(_) => true,
+            DocumentUnit::Fence(_, _, units) => has_fsm(units),
+            _ => false,
+        })
+    }
+    let mut units = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
+    Ok(!document_types::enum_declarations(&units)?.is_empty() || has_fsm(&units))
+}
+
 fn declare_document_inputs(
     builder: &mut SemanticBuilder,
     units: &[DocumentUnit],
