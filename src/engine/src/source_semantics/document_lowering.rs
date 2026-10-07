@@ -1053,6 +1053,52 @@ pub(super) fn has_origin_dependent_declarations(
     Ok(!document_types::enum_declarations(&units)?.is_empty() || has_fsm(&units))
 }
 
+pub(super) fn declared_nominal_keys(
+    document: &DocumentSyntax,
+    origin: &CanonicalNominalPath,
+) -> Result<Vec<(Box<[String]>, NominalKey)>, SourceSemanticError> {
+    fn fsms(
+        units: &[DocumentUnit],
+        origin: &CanonicalNominalPath,
+        keys: &mut Vec<(Box<[String]>, NominalKey)>,
+    ) -> Result<(), SourceSemanticError> {
+        for unit in units {
+            match unit {
+                DocumentUnit::FsmSpecification(specification) => {
+                    let anchor = SourceSemanticAnchor::for_node(specification.syntax());
+                    let name = specification.name().ok_or_else(|| {
+                        internal(anchor, "FSM specification has no name".to_owned())
+                    })?;
+                    let name = node_text(name.syntax())?;
+                    let key = document_fsms::fsm_nominal_key(origin.segments(), &name).map_err(
+                        |error| internal(anchor, format!("invalid FSM nominal path: {error:?}")),
+                    )?;
+                    keys.push((vec!["fsm".to_owned(), name].into_boxed_slice(), key));
+                }
+                DocumentUnit::Fence(_, _, nested) => fsms(nested, origin, keys)?,
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+    let mut units = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
+    let mut keys = document_types::enum_declarations(&units)?
+        .into_iter()
+        .map(|(name, syntax)| {
+            let key = document_types::enum_nominal_key(origin, &name).map_err(|error| {
+                internal(
+                    SourceSemanticAnchor::for_node(&syntax),
+                    format!("invalid enum path: {error:?}"),
+                )
+            })?;
+            Ok((vec![name].into_boxed_slice(), key))
+        })
+        .collect::<Result<Vec<_>, SourceSemanticError>>()?;
+    fsms(&units, origin, &mut keys)?;
+    Ok(keys)
+}
+
 fn declare_document_inputs(
     builder: &mut SemanticBuilder,
     units: &[DocumentUnit],

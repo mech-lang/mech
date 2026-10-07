@@ -27,7 +27,8 @@
     "bindings",
     "outputs",
     "constraints",
-    "compute_regions"
+    "compute_regions",
+    "source_nominal_declarations"
   ],
   "artifact_internal_sidecars": [
     {

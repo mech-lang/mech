@@ -88,6 +88,10 @@ fn canonical_documents_emit_complete_equivalent_bytecode_artifacts() {
         }
         assert_eq!(artifact.requirements(), decoded.requirements());
         assert_eq!(artifact.compute_regions(), decoded.compute_regions());
+        assert_eq!(
+            artifact.source_nominal_declarations(),
+            decoded.source_nominal_declarations()
+        );
         assert_eq!(artifact.contracts(), decoded.contracts());
         assert_eq!(artifact.inputs(), decoded.inputs());
         assert_eq!(artifact.slots(), decoded.slots());
