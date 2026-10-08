@@ -83,7 +83,7 @@ fn served_provenance_from_js(
             Some(&owner.nominal_origin),
             owner.nominal_package_id.as_deref(),
         )
-        .map_err(|error| js_error(error.kind_message()))?;
+        .map_err(to_js_error)?;
     }
     Ok(provenance)
 }
@@ -9721,11 +9721,15 @@ mod browser_tests {
             )
         };
         let valid = SourceDocument::new_standalone_origin();
+        let reserved_owner = |owner: &str| {
+            mech_core::CanonicalNominalPath::new(["mech:standalone".to_owned(), owner.to_owned()])
+                .unwrap()
+        };
         for owner in [
-            serde_json::json!({"nominalOrigin": ["mech:standalone", "not-a-uuid"]}),
-            serde_json::json!({"nominalOrigin": ["mech:standalone", "019a0000-0000-7000-0000-000000000001"]}),
-            serde_json::json!({"nominalOrigin": ["mech:standalone", valid.segments()[1].to_uppercase()]}),
-            serde_json::json!({"nominalOrigin": valid.segments(), "nominalPackageId": "orphan-package"}),
+            serde_json::json!({"nominalOrigin": reserved_owner("not-a-uuid")}),
+            serde_json::json!({"nominalOrigin": reserved_owner("019a0000-0000-7000-0000-000000000001")}),
+            serde_json::json!({"nominalOrigin": reserved_owner(&valid.segments()[1].to_uppercase())}),
+            serde_json::json!({"nominalOrigin": valid, "nominalPackageId": "orphan-package"}),
         ] {
             let error = match restore(owner) {
                 Err(error) => error,
@@ -9740,13 +9744,13 @@ mod browser_tests {
                 "{message}"
             );
         }
-        let document = restore(serde_json::json!({"nominalOrigin": valid.segments()})).unwrap();
+        let document = restore(serde_json::json!({"nominalOrigin": valid})).unwrap();
         assert_eq!(
             document.bootstrap.document.document().nominal_origin(),
             Some(&valid)
         );
         restore(
-            serde_json::json!({"nominalOrigin": ["package"], "nominalPackageId": "package-id"}),
+            serde_json::json!({"nominalOrigin": mech_core::CanonicalNominalPath::new(["package".to_owned()]).unwrap(), "nominalPackageId": "package-id"}),
         )
         .unwrap();
     }
