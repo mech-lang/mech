@@ -56,7 +56,7 @@ cleanup() {
     rm -rf "$chrome_profile"
     if ! python3 - "$browser_dir" "$exit_status" "${compute_backend:-}" \
       "${filter_count:-}" "${continuity_edit:-}" "${terminal_submit_probe:-}" \
-      "$software_adapter" <<'PY'
+      "$software_adapter" "${server_ready_timeout_seconds:-}" <<'PY'
 from html.parser import HTMLParser
 import json
 from pathlib import Path
@@ -76,7 +76,7 @@ class DatasetParser(HTMLParser):
             })
 
 
-directory, status, backend, filters, continuity, terminal_probe, software_adapter = sys.argv[1:]
+directory, status, backend, filters, continuity, terminal_probe, software_adapter, server_timeout = sys.argv[1:]
 directory = Path(directory)
 parser = DatasetParser()
 dom = directory / "chrome.dom"
@@ -98,6 +98,7 @@ dirty = subprocess.run(
     "continuity_edit": continuity,
     "terminal_submit_probe": terminal_probe,
     "browser_software_adapter_requested": software_adapter == "true",
+    "server_ready_timeout_seconds": int(server_timeout) if server_timeout.isdecimal() else None,
     "dataset": parser.dataset,
     "artifacts": ["server.log", "chrome.stderr", "harness.stderr", "chrome.dom"],
 }, indent=2, sort_keys=True) + "\n")
@@ -178,23 +179,39 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
 PY
 )"
 
+# Like the N-body canary, the debug server compiles the source for both the
+# native workspace and the served browser catalog. CI's scalar EKF workspace
+# took 58 seconds before beginning that second compilation, so use the same
+# bounded 180-second startup budget. Browser progress and numerical assertions
+# retain their separate watchdogs and hard deadlines below.
+server_ready_timeout_seconds="${MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS:-180}"
+if [[ ! "$server_ready_timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
+  echo "MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS must be a positive integer" >&2
+  exit 1
+fi
 "$MECH_BIN" serve --address 127.0.0.1 --port "$port" "$project_dir" >"$server_log" 2>&1 &
 server_pid="$!"
 page_url="http://127.0.0.1:${port}/"
-server_ready_timeout_seconds="${MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS:-120}"
+server_started_seconds=$SECONDS
 server_ready_deadline=$((SECONDS + server_ready_timeout_seconds))
 while ((SECONDS < server_ready_deadline)); do
-  if curl --fail --silent "$page_url" >"$browser_dir/index.html.pending" 2>/dev/null; then
+  kill -0 "$server_pid" 2>/dev/null || break
+  server_ready_remaining_seconds=$((server_ready_deadline - SECONDS))
+  ((server_ready_remaining_seconds > 0)) || break
+  if curl --fail --silent --connect-timeout 1 \
+    --max-time "$server_ready_remaining_seconds" "$page_url" \
+    >"$browser_dir/index.html.pending" 2>/dev/null; then
     mv "$browser_dir/index.html.pending" "$project_dir/index.html"
     break
   fi
   sleep 0.1
 done
 if [[ ! -s "$project_dir/index.html" ]]; then
-  echo "Resident EKF server did not generate its document" >&2
+  echo "Resident EKF server did not generate its document within ${server_ready_timeout_seconds}s" >&2
   sed -n '1,240p' "$server_log" >&2 || true
   exit 1
 fi
+echo "EKF_SERVER_READY elapsed_seconds=$((SECONDS - server_started_seconds))"
 
 python3 - "$project_dir/index.html" "$expected_compute_backend" "$filter_count" \
   "$continuity_edit" <<'PY'
@@ -1346,12 +1363,17 @@ PY
 
 server_ready_deadline=$((SECONDS + server_ready_timeout_seconds))
 while ((SECONDS < server_ready_deadline)); do
-  curl --fail --silent "$page_url" >"$browser_dir/preflight.html" || true
+  kill -0 "$server_pid" 2>/dev/null || break
+  server_ready_remaining_seconds=$((server_ready_deadline - SECONDS))
+  ((server_ready_remaining_seconds > 0)) || break
+  curl --fail --silent --connect-timeout 1 \
+    --max-time "$server_ready_remaining_seconds" "$page_url" \
+    >"$browser_dir/preflight.html" || true
   grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html" && break
   sleep 0.1
 done
 if ! grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html"; then
-  echo "Resident EKF server did not load the generated test document" >&2
+  echo "Resident EKF server did not load the generated test document within ${server_ready_timeout_seconds}s" >&2
   sed -n '1,240p' "$server_log" >&2 || true
   exit 1
 fi

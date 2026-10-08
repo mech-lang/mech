@@ -179,8 +179,6 @@ pub trait ResidentReplRuntimeFactory {
 ///
 /// Every candidate is compiled and activated in a separate runtime. A failed
 /// entry therefore leaves the accepted source and live runtime unchanged.
-pub const DEFAULT_REPL_VALUE_ELEMENT_LIMIT: usize = 500;
-
 pub struct ResidentReplSession<F: ResidentReplRuntimeFactory> {
     factory: F,
     standalone_nominal_origin: mech_core::CanonicalNominalPath,
@@ -218,7 +216,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             reusable_selection_tokens: BTreeMap::new(),
             events: MechEventJournal::default(),
             quiet,
-            value_element_limit: DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
+            value_element_limit: crate::DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
         }
     }
 
@@ -239,7 +237,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     /// revision. No legacy syntax tree is created or retained.
     pub fn from_document(factory: F, document: crate::SourceDocument) -> MResult<Self> {
         let mut session = Self::new(factory);
-        let document = session.preserve_document_provenance(document);
+        let document = session.preserve_document_provenance(document)?;
         session.initial_document = Some(document.clone());
         session.replace_document(document)?;
         Ok(session)
@@ -323,7 +321,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         let document = crate::SourceDocument::from_finished_stream(stream).map_err(|error| {
             interactive_error(format!("interactive source is not final: {error:?}"))
         })?;
-        self.replace_document(self.preserve_document_provenance(document))
+        self.replace_document(self.preserve_document_provenance(document)?)
     }
 
     /// Inspect an already resident value without recompiling the active
@@ -412,11 +410,11 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 ParseConfig::default(),
             )
             .map_err(|error| interactive_error(format!("invalid interactive source: {error:?}")))
-            .map(|document| self.preserve_document_provenance(document))
+            .and_then(|document| self.preserve_document_provenance(document))
         };
         let overlay = match finalized {
             Some(document) if document.source().to_contiguous_string() == appended_source => {
-                self.preserve_document_provenance(document)
+                self.preserve_document_provenance(document)?
             }
             _ => parse(&appended_source)?,
         };
@@ -467,7 +465,12 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     fn preserve_document_provenance(
         &self,
         mut document: crate::SourceDocument,
-    ) -> crate::SourceDocument {
+    ) -> MResult<crate::SourceDocument> {
+        if document.nominal_origin().is_none() && document.nominal_package_id().is_some() {
+            return Err(interactive_error(
+                "interactive package provenance requires a nominal origin",
+            ));
+        }
         if let Some(current) = self
             .source_document
             .as_ref()
@@ -489,7 +492,11 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         if document.nominal_origin().is_none() {
             document = document.with_nominal_origin(self.standalone_nominal_origin.clone());
         }
-        document
+        crate::SourceDocument::validate_nominal_provenance(
+            document.nominal_origin(),
+            document.nominal_package_id(),
+        )?;
+        Ok(document)
     }
 
     fn replace_document_preserving(
@@ -548,7 +555,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         candidate_document: crate::SourceDocument,
         changed_state_names: Option<&std::collections::BTreeSet<String>>,
     ) -> MResult<RuntimeValueSnapshot> {
-        let candidate_document = self.preserve_document_provenance(candidate_document);
+        let candidate_document = self.preserve_document_provenance(candidate_document)?;
         let candidate_events = MechEventBuffer::default();
         let activated = self
             .factory
@@ -648,7 +655,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 ParseConfig::default(),
             )
             .map_err(|error| interactive_error(format!("invalid empty source: {error:?}")))?;
-            self.replace_document(self.preserve_document_provenance(document))?;
+            self.replace_document(self.preserve_document_provenance(document)?)?;
             return Ok(Vec::new());
         }
 
@@ -699,7 +706,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             ParseConfig::default(),
         )
         .map_err(|error| interactive_error(format!("invalid cleared source: {error:?}")))?;
-        self.replace_document(self.preserve_document_provenance(candidate))?;
+        self.replace_document(self.preserve_document_provenance(candidate)?)?;
         if clear_ans {
             self.cleared_synthetic_symbols.insert("ans".to_string());
             removed.insert("ans".to_string());
@@ -1526,6 +1533,46 @@ mod tests {
             *sources.borrow(),
             ["x := 1\n", "x := 1\ny := x + 1\n", "x := 1\n"]
         );
+    }
+
+    #[test]
+    fn malformed_interactive_provenance_is_rejected_without_replacing_the_session() {
+        let document = || {
+            crate::SourceDocument::parse_resolved(
+                "runtime:provenance",
+                Revision(0),
+                "<color> := :red | :blue\nmy-color<color> := :red\n",
+                ParseConfig::default(),
+            )
+            .unwrap()
+        };
+        let standalone = crate::SourceDocument::new_standalone_origin();
+        let malformed = [
+            document().with_nominal_package_id("orphan-package"),
+            document().with_nominal_origin(
+                mech_core::CanonicalNominalPath::new([
+                    "mech:standalone".to_owned(),
+                    "not-a-uuid".to_owned(),
+                ])
+                .unwrap(),
+            ),
+            document()
+                .with_nominal_origin(standalone)
+                .with_nominal_package_id("orphan-package"),
+        ];
+        let mut session =
+            ResidentReplSession::from_document(SourceRuntimeFactory, document()).unwrap();
+        let accepted = session.source_document().unwrap().clone();
+        let value = session.symbol("my-color").unwrap().unwrap();
+        for candidate in malformed {
+            assert!(
+                ResidentReplSession::from_document(SourceRuntimeFactory, candidate.clone())
+                    .is_err()
+            );
+            assert!(session.replace_document(candidate).is_err());
+            assert_eq!(session.source_document(), Some(&accepted));
+            assert_eq!(session.symbol("my-color").unwrap().unwrap(), value);
+        }
     }
 
     #[test]

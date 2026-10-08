@@ -1191,8 +1191,8 @@ impl<'a> ProgramCompilerView<'a> {
                     let current = dependency.source_document().ok_or_else(|| {
                         canonical_compilation_error("canonical dependency has no retained document")
                     })?;
-                    if mech_core::hash_str(&retained.source().to_contiguous_string())
-                        != mech_core::hash_str(&current.source().to_contiguous_string())
+                    if canonical_document_dependency_hash(retained)?
+                        != canonical_document_dependency_hash(current)?
                     {
                         return Err(canonical_compilation_error(format!(
                             "canonical dependency {} changed during compilation",

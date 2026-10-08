@@ -77,6 +77,13 @@ fn served_provenance_from_js(
     {
         return Err(js_error("served nominal provenance has an unknown source"));
     }
+    for owner in provenance.values() {
+        SourceDocument::validate_nominal_provenance(
+            Some(&owner.nominal_origin),
+            owner.nominal_package_id.as_deref(),
+        )
+        .map_err(to_js_error)?;
+    }
     Ok(provenance)
 }
 
@@ -9686,6 +9693,61 @@ mod browser_tests {
             );
             document.stop().unwrap();
         }
+    }
+
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    #[wasm_bindgen_test]
+    fn public_payload_fallback_rejects_malformed_standalone_provenance() {
+        let source = "<color> := :red | :blue\nmy-color<color> := :red\n";
+        let encoded = BrowserDocumentPayload::new("main.mec", source)
+            .unwrap()
+            .encode()
+            .unwrap();
+        let sources = Object::new();
+        Reflect::set(
+            &sources,
+            &JsValue::from_str("main.mec"),
+            &JsValue::from_str(source),
+        )
+        .unwrap();
+        let restore = |owner: serde_json::Value| {
+            WasmDocument::from_encoded_with_bundle(
+                &encoded,
+                "main.mec",
+                sources.clone().into(),
+                Array::new().into(),
+                js_sys::JSON::parse(&serde_json::json!({"main.mec": owner}).to_string()).unwrap(),
+            )
+        };
+        let valid = SourceDocument::new_standalone_origin();
+        for owner in [
+            serde_json::json!({"nominalOrigin": ["mech:standalone", "not-a-uuid"]}),
+            serde_json::json!({"nominalOrigin": ["mech:standalone", "019a0000-0000-7000-0000-000000000001"]}),
+            serde_json::json!({"nominalOrigin": ["mech:standalone", valid.segments()[1].to_uppercase()]}),
+            serde_json::json!({"nominalOrigin": valid.segments(), "nominalPackageId": "orphan-package"}),
+        ] {
+            let error = match restore(owner) {
+                Err(error) => error,
+                Ok(_) => panic!("invalid payload owner accepted"),
+            };
+            let message = Reflect::get(&error, &JsValue::from_str("message"))
+                .unwrap()
+                .as_string()
+                .unwrap();
+            assert!(
+                message.contains("standalone nominal provenance is invalid"),
+                "{message}"
+            );
+        }
+        let document = restore(serde_json::json!({"nominalOrigin": valid.segments()})).unwrap();
+        assert_eq!(
+            document.bootstrap.document.document().nominal_origin(),
+            Some(&valid)
+        );
+        restore(
+            serde_json::json!({"nominalOrigin": ["package"], "nominalPackageId": "package-id"}),
+        )
+        .unwrap();
     }
 
     #[cfg(all(
