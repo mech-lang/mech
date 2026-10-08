@@ -16,6 +16,9 @@ mod tests;
 #[cfg(feature = "pretty_print")]
 mod html;
 
+/// Shared element budget for bounded terminal and document value projections.
+pub const DEFAULT_REPL_VALUE_ELEMENT_LIMIT: usize = 500;
+
 /// An owned immutable canonical runtime value.
 #[derive(Clone)]
 pub struct RuntimeValueSnapshot {

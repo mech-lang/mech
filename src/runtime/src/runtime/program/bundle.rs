@@ -462,6 +462,54 @@ mod tests {
         .admit_canonical_document()
     }
 
+    #[cfg(feature = "compute")]
+    #[test]
+    fn mixed_coordinator_bundle_retains_compute_fsm_declaration_evidence() -> MResult<()> {
+        let source = "@compute := compute://worker/kernel{:write(input/x), :write(turn)}\n@compute/input/x <- 1f32\n@compute/turn <- 1\n\ncalculation @compute\n-------------------------------------------------------------------------------\n#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\nx := 1f32\nresult := x + 1f32\nresult\n";
+        let document = document(source);
+        let resolver = crate::InMemorySourceResolver::new().with_source(
+            "main.mec",
+            crate::ResolvedSource::new(
+                "main.mec",
+                "bundle:///document.mec",
+                mech_core::MechSourceCode::String(source.to_owned()),
+            )
+            .with_kind(crate::SourceKind::Mech)
+            .with_source_document(document.clone())?,
+        );
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .source_resolver(resolver)
+            .build_compiler()?;
+        let mixed = compiler.compile_canonical_mixed_root(
+            crate::SourceRequest::new("main.mec"),
+            crate::ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )?;
+        assert_eq!(
+            mixed
+                .coordinator
+                .artifact()
+                .source_nominal_declarations()
+                .len(),
+            1
+        );
+        let bundle = CanonicalProgramBundle::from_artifact_product(
+            "bundle:///document.mec",
+            &document,
+            &mixed.coordinator,
+            mixed.source_dependencies,
+        )?;
+        CanonicalProgramBundle::decode_standalone(&bundle.encode()?, Some(source))?;
+        let mut edited = bundle;
+        edited.source = edited.source.replace(":Done", ":Other");
+        rehash_source(&mut edited);
+        assert!(
+            CanonicalProgramBundle::decode_standalone(&edited.encode()?, Some(&edited.source))
+                .is_err()
+        );
+        Ok(())
+    }
+
     #[test]
     fn canonical_bundle_rejects_stale_complete_declaration_schemas() -> MResult<()> {
         for (before, after) in [
