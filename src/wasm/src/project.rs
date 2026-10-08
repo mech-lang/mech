@@ -83,7 +83,7 @@ fn served_provenance_from_js(
             Some(&owner.nominal_origin),
             owner.nominal_package_id.as_deref(),
         )
-        .map_err(to_js_error)?;
+        .map_err(|error| js_error(error.kind_message()))?;
     }
     Ok(provenance)
 }
