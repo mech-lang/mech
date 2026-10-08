@@ -23,7 +23,7 @@ use super::{
     ComputeRegionDeclaration, InitializerReference, InputDeclaration,
     IntegrityConstraintDeclaration, InteractiveSymbolBinding, NodeDeclaration, OperationReference,
     OutputDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration,
-    SlotRole,
+    SlotRole, SourceNominalDeclaration,
 };
 
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
@@ -374,6 +374,19 @@ struct WireGraph {
     revision: u32,
     requirements: Box<[WireRequirement]>,
     nodes: Box<[WireNode]>,
+    #[serde(
+        default,
+        skip_serializing_if = "<[WireSourceNominalDeclaration]>::is_empty"
+    )]
+    source_nominal_declarations: Box<[WireSourceNominalDeclaration]>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireSourceNominalDeclaration {
+    document_id: u64,
+    relative_path: Box<[String]>,
+    schema: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -553,6 +566,16 @@ pub fn encode_program_artifact_sections(
                 })
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
+            source_nominal_declarations: artifact
+                .source_nominal_declarations()
+                .iter()
+                .map(|declaration| WireSourceNominalDeclaration {
+                    document_id: declaration.document_id,
+                    relative_path: declaration.relative_path.clone(),
+                    schema: declaration.schema.get(),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
         })?,
         bindings: encode(
             &artifact
@@ -724,6 +747,18 @@ fn decode_program_artifact_sections_owned(
             actual: graph.requirements.len(),
         });
     }
+    let source_nominal_declarations = graph
+        .source_nominal_declarations
+        .into_vec()
+        .into_iter()
+        .map(|declaration| SourceNominalDeclaration {
+            document_id: declaration.document_id,
+            relative_path: declaration.relative_path,
+            schema: SchemaId::new(declaration.schema),
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    super::model::validate_source_nominal_declarations(&schemas, &source_nominal_declarations)?;
     let embedded_requirements = graph
         .requirements
         .into_vec()
@@ -930,7 +965,10 @@ fn decode_program_artifact_sections_owned(
         });
     }
     draft.compute_regions = compute_regions.into_boxed_slice();
-    draft.finalize().map_err(ArtifactBytecodeError::from)
+    draft
+        .finalize()?
+        .with_source_nominal_declarations(source_nominal_declarations)
+        .map_err(ArtifactBytecodeError::from)
 }
 
 fn validate_operation_table(
@@ -2325,6 +2363,8 @@ fn preflight_control_graph(
         Other,
         Nodes,
         Requirements,
+        SourceNominalDeclarations,
+        SourceNominalPathSegments,
         Arms,
         Blocks,
         Operations,
@@ -2337,6 +2377,8 @@ fn preflight_control_graph(
     struct Counts {
         nodes: usize,
         requirements: usize,
+        source_nominal_declarations: usize,
+        source_nominal_path_segments: usize,
         arms: usize,
         blocks: usize,
         operations: usize,
@@ -2357,6 +2399,14 @@ fn preflight_control_graph(
                 Field::Requirements => {
                     (&mut self.counts.requirements, self.limits.max_requirements)
                 }
+                Field::SourceNominalDeclarations => (
+                    &mut self.counts.source_nominal_declarations,
+                    self.limits.max_schemas,
+                ),
+                Field::SourceNominalPathSegments => (
+                    &mut self.counts.source_nominal_path_segments,
+                    self.limits.max_control_operands,
+                ),
                 Field::Arms => (&mut self.counts.arms, self.limits.max_control_arms),
                 Field::Blocks => (&mut self.counts.blocks, self.limits.max_control_blocks),
                 Field::Operations => (
@@ -2458,6 +2508,8 @@ fn preflight_control_graph(
                 let field = match key.as_str() {
                     "nodes" => Field::Nodes,
                     "requirements" => Field::Requirements,
+                    "source_nominal_declarations" => Field::SourceNominalDeclarations,
+                    "relative_path" => Field::SourceNominalPathSegments,
                     "arms" => Field::Arms,
                     "operations" | "steps" | "stages" => Field::Operations,
                     "inputs" | "parameters" | "captures" | "arguments" => Field::Operands,
@@ -2485,6 +2537,8 @@ fn preflight_control_graph(
     let mut counts = Counts {
         nodes: 0,
         requirements: 0,
+        source_nominal_declarations: 0,
+        source_nominal_path_segments: 0,
         arms: 0,
         blocks: 0,
         operations: 0,
@@ -2501,6 +2555,254 @@ fn preflight_control_graph(
     .deserialize(&mut decoder)?;
     decoder.end()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod source_nominal_declaration_tests {
+    use super::*;
+    use mech_core::{CanonicalNominalPath, EnumVariantSchema, NominalKey, NominalKind, SchemaBody};
+
+    fn fixture() -> (ProgramArtifact, SchemaId, SchemaId, SchemaId) {
+        let mut builder = SchemaTableBuilder::new();
+        let mut add = |body| {
+            builder
+                .insert(
+                    SchemaDraft {
+                        dimension_parameters: Box::new([]),
+                        body,
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap()
+        };
+        let enum_body = |name: &str| SchemaBody::Enum {
+            key: NominalKey::from_path(
+                NominalKind::Enum,
+                &CanonicalNominalPath::new(vec![name.to_owned()]).unwrap(),
+            ),
+            variants: vec![EnumVariantSchema {
+                name: "Ready".to_owned(),
+                payload: None,
+            }]
+            .into_boxed_slice(),
+        };
+        let first = add(enum_body("First"));
+        let second = add(enum_body("Second"));
+        let boolean = add(SchemaBody::Bool);
+        let build = builder.finish().unwrap();
+        let first = build.resolve(first).unwrap();
+        let second = build.resolve(second).unwrap();
+        let boolean = build.resolve(boolean).unwrap();
+        let schemas = build.into_parts().0;
+        let constants = ConstantStoreBuilder::new(&schemas)
+            .finish()
+            .unwrap()
+            .into_parts()
+            .0;
+        let artifact = ProgramArtifactDraft {
+            schemas,
+            constants,
+            contracts: OperationContractTable::empty(),
+            requirements: ApplicationRequirementTable::empty(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        (artifact, first, second, boolean)
+    }
+
+    fn declaration(document_id: u64, path: &[&str], schema: SchemaId) -> SourceNominalDeclaration {
+        SourceNominalDeclaration {
+            document_id,
+            relative_path: path.iter().map(|segment| (*segment).to_owned()).collect(),
+            schema,
+        }
+    }
+
+    #[test]
+    fn empty_source_declaration_table_preserves_existing_wire_and_revision() {
+        let (artifact, _, _, _) = fixture();
+        let original_revision = artifact.revision();
+        let original = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let sections = encode_program_artifact_sections(&artifact).unwrap();
+        assert_eq!(
+            sections.nodes,
+            br#"{"revision":13,"requirements":[],"nodes":[]}"#
+        );
+        let artifact = artifact
+            .with_source_nominal_declarations(Box::new([]))
+            .unwrap();
+        assert_eq!(artifact.revision(), original_revision);
+        assert_eq!(
+            encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            original
+        );
+        assert!(
+            decode_program_artifact_bytecode_v1(&original)
+                .unwrap()
+                .source_nominal_declarations()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn source_declarations_round_trip_without_executable_references_and_commit_identity() {
+        let (base, first, second, _) = fixture();
+        let declarations = vec![
+            declaration(9, &["nested", "Mode"], second),
+            declaration(4, &["Mode"], first),
+        ];
+        let artifact = base
+            .clone()
+            .with_source_nominal_declarations(declarations.into_boxed_slice())
+            .unwrap();
+        assert!(artifact.nodes().is_empty());
+        assert_ne!(artifact.revision(), base.revision());
+        assert_eq!(artifact.source_nominal_declarations()[0].document_id, 4);
+        let encoded = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = decode_program_artifact_bytecode_v1(&encoded).unwrap();
+        assert_eq!(
+            decoded.source_nominal_declarations(),
+            artifact.source_nominal_declarations()
+        );
+        assert_eq!(decoded.revision(), artifact.revision());
+        assert_eq!(
+            encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+            encoded
+        );
+        for changed in [
+            declaration(5, &["Mode"], first),
+            declaration(4, &["Other"], first),
+            declaration(4, &["Mode"], second),
+        ] {
+            let expected = base
+                .clone()
+                .with_source_nominal_declarations(
+                    vec![declaration(4, &["Mode"], first)].into_boxed_slice(),
+                )
+                .unwrap();
+            let changed = base
+                .clone()
+                .with_source_nominal_declarations(vec![changed].into_boxed_slice())
+                .unwrap();
+            assert_ne!(expected.revision(), changed.revision());
+        }
+        let cleared = artifact
+            .clone()
+            .with_source_nominal_declarations(Box::new([]))
+            .unwrap();
+        assert_eq!(cleared.revision(), base.revision());
+        #[cfg(any(feature = "semantic-compiler", feature = "source"))]
+        {
+            let rebuilt = artifact.clone().with_compute_regions(Box::new([])).unwrap();
+            assert_eq!(
+                rebuilt.source_nominal_declarations(),
+                artifact.source_nominal_declarations()
+            );
+            assert_eq!(rebuilt.revision(), artifact.revision());
+        }
+    }
+
+    #[test]
+    fn source_declaration_builder_rejects_invalid_paths_schema_refs_and_duplicate_keys() {
+        let (artifact, first, _, boolean) = fixture();
+        for path in [
+            &[][..],
+            &[""][..],
+            &["."][..],
+            &[".."][..],
+            &["bad\0path"][..],
+        ] {
+            assert!(
+                artifact
+                    .clone()
+                    .with_source_nominal_declarations(
+                        vec![declaration(4, path, first),].into_boxed_slice()
+                    )
+                    .is_err()
+            );
+        }
+        // Source symbol spelling is kept as one path segment, using the same
+        // canonical nominal path rules as source schema derivation.
+        assert!(
+            artifact
+                .clone()
+                .with_source_nominal_declarations(
+                    vec![declaration(4, &["slash/name\\symbol"], first),].into_boxed_slice()
+                )
+                .is_ok()
+        );
+        assert!(matches!(
+            artifact.clone().with_source_nominal_declarations(
+                vec![declaration(4, &["Mode"], SchemaId::new(u32::MAX)),].into_boxed_slice()
+            ),
+            Err(ArtifactBuildError::UnknownSchema { .. })
+        ));
+        assert!(matches!(
+            artifact.clone().with_source_nominal_declarations(
+                vec![declaration(4, &["Mode"], boolean),].into_boxed_slice()
+            ),
+            Err(ArtifactBuildError::InvalidSourceNominalDeclaration { .. })
+        ));
+        assert!(matches!(
+            artifact.with_source_nominal_declarations(
+                vec![
+                    declaration(4, &["Mode"], first),
+                    declaration(4, &["Mode"], first),
+                ]
+                .into_boxed_slice()
+            ),
+            Err(ArtifactBuildError::NonCanonicalSourceNominalDeclarationTable)
+        ));
+    }
+
+    #[test]
+    fn wire_source_declarations_reject_noncanonical_and_invalid_evidence() {
+        let (artifact, first, _, boolean) = fixture();
+        let original = encode_program_artifact_sections(&artifact).unwrap();
+        let mut graph: serde_json::Value = serde_json::from_slice(&original.nodes).unwrap();
+        for entries in [
+            serde_json::json!([
+                {"document_id":9,"relative_path":["Mode"],"schema":first.get()},
+                {"document_id":4,"relative_path":["Mode"],"schema":first.get()},
+            ]),
+            serde_json::json!([
+                {"document_id":4,"relative_path":["Mode"],"schema":first.get()},
+                {"document_id":4,"relative_path":["Mode"],"schema":first.get()},
+            ]),
+            serde_json::json!([{ "document_id":4,"relative_path":[],"schema":first.get() }]),
+            serde_json::json!([{ "document_id":4,"relative_path":["Mode"],"schema":u32::MAX }]),
+            serde_json::json!([{ "document_id":4,"relative_path":["Mode"],"schema":boolean.get() }]),
+        ] {
+            graph["source_nominal_declarations"] = entries;
+            let mut sections = original.clone();
+            sections.nodes = serde_json::to_vec(&graph).unwrap();
+            assert!(decode_program_artifact_sections(&sections).is_err());
+        }
+    }
+
+    #[test]
+    fn source_declaration_counts_and_paths_are_bounded_before_typed_allocation() {
+        let bytes = br#"{"source_nominal_declarations":[{"document_id":4,"relative_path":["nested","Mode"],"schema":0},{"document_id":9,"relative_path":["Mode"],"schema":1}]}"#;
+        let table_limit = ArtifactDecodeLimits {
+            max_schemas: 1,
+            ..ArtifactDecodeLimits::default()
+        };
+        let path_limit = ArtifactDecodeLimits {
+            max_control_operands: 2,
+            ..ArtifactDecodeLimits::default()
+        };
+        assert!(preflight_control_graph(bytes, &table_limit).is_err());
+        assert!(preflight_control_graph(bytes, &path_limit).is_err());
+        assert!(preflight_control_graph(bytes, &ArtifactDecodeLimits::default()).is_ok());
+    }
 }
 
 #[cfg(test)]

@@ -6,7 +6,8 @@ use sha2::{Digest, Sha256};
 
 use super::{
     ArtifactBuildError, ArtifactSource, BindingDeclaration, InitializerReference,
-    OperationReference, ProducerReference, ProgramArtifactDraft, SlotRole,
+    OperationReference, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotRole,
+    SourceNominalDeclaration,
 };
 
 struct CanonicalArtifactWriter {
@@ -393,6 +394,58 @@ impl CanonicalArtifactWriter {
 pub(super) fn program_revision(
     draft: &ProgramArtifactDraft,
 ) -> Result<ProgramRevision, ArtifactBuildError> {
+    revision(RevisionData {
+        schemas: &draft.schemas,
+        constants: &draft.constants,
+        contracts: &draft.contracts,
+        requirements: &draft.requirements,
+        inputs: &draft.inputs,
+        slots: &draft.slots,
+        nodes: &draft.nodes,
+        bindings: &draft.bindings,
+        outputs: &draft.outputs,
+        constraints: &draft.constraints,
+        compute_regions: &draft.compute_regions,
+        source_nominal_declarations: &[],
+    })
+}
+
+pub(super) fn program_artifact_revision(
+    artifact: &ProgramArtifact,
+    declarations: &[SourceNominalDeclaration],
+) -> Result<ProgramRevision, ArtifactBuildError> {
+    revision(RevisionData {
+        schemas: artifact.schemas(),
+        constants: artifact.constants(),
+        contracts: artifact.contracts(),
+        requirements: artifact.requirements(),
+        inputs: artifact.inputs(),
+        slots: artifact.slots(),
+        nodes: artifact.nodes(),
+        bindings: artifact.bindings(),
+        outputs: artifact.outputs(),
+        constraints: artifact.constraints(),
+        compute_regions: artifact.compute_regions(),
+        source_nominal_declarations: declarations,
+    })
+}
+
+struct RevisionData<'a> {
+    schemas: &'a mech_core::SchemaTable,
+    constants: &'a mech_core::ConstantStore,
+    contracts: &'a mech_core::OperationContractTable,
+    requirements: &'a super::ApplicationRequirementTable,
+    inputs: &'a [super::InputDeclaration],
+    slots: &'a [super::SlotDeclaration],
+    nodes: &'a [super::NodeDeclaration],
+    bindings: &'a [BindingDeclaration],
+    outputs: &'a [super::OutputDeclaration],
+    constraints: &'a [super::IntegrityConstraintDeclaration],
+    compute_regions: &'a [super::ComputeRegionDeclaration],
+    source_nominal_declarations: &'a [SourceNominalDeclaration],
+}
+
+fn revision(draft: RevisionData<'_>) -> Result<ProgramRevision, ArtifactBuildError> {
     let mut writer = CanonicalArtifactWriter::new();
     writer.u32(draft.schemas.len() as u32);
     for raw in 0..draft.schemas.len() {
@@ -414,7 +467,7 @@ pub(super) fn program_revision(
         writer.bytes(entry.hash().as_bytes());
         writer.bytes(value.schema_key().as_bytes());
         writer.bytes(&value.shape().canonical_bytes());
-        writer.bytes(&value.canonical_payload_bytes(&draft.schemas)?);
+        writer.bytes(&value.canonical_payload_bytes(draft.schemas)?);
     }
 
     writer.bytes(&draft.contracts.canonical_bytes()?);
@@ -425,7 +478,7 @@ pub(super) fn program_revision(
     }
 
     writer.u32(draft.inputs.len() as u32);
-    for input in &draft.inputs {
+    for input in draft.inputs {
         writer.u32(input.input.get());
         writer.string(&input.name);
         writer.u32(input.slot.get());
@@ -433,7 +486,7 @@ pub(super) fn program_revision(
     }
 
     writer.u32(draft.slots.len() as u32);
-    for slot in &draft.slots {
+    for slot in draft.slots {
         writer.u32(slot.slot.get());
         writer.u32(slot.schema.get());
         writer.u8(match slot.role {
@@ -484,7 +537,7 @@ pub(super) fn program_revision(
     }
 
     writer.u32(draft.nodes.len() as u32);
-    for node in &draft.nodes {
+    for node in draft.nodes {
         writer.u32(node.node.get());
         match &node.body {
             super::ExecutableNodeBody::Operation(operation) => {
@@ -543,7 +596,7 @@ pub(super) fn program_revision(
     }
 
     writer.u32(draft.bindings.len() as u32);
-    for binding in &draft.bindings {
+    for binding in draft.bindings {
         match binding {
             BindingDeclaration::Input {
                 id,
@@ -573,7 +626,7 @@ pub(super) fn program_revision(
     }
 
     writer.u32(draft.outputs.len() as u32);
-    for output in &draft.outputs {
+    for output in draft.outputs {
         writer.u32(output.output.get());
         writer.string(&output.name);
         writer.u32(output.source.get());
@@ -581,7 +634,7 @@ pub(super) fn program_revision(
     }
 
     writer.u32(draft.constraints.len() as u32);
-    for constraint in &draft.constraints {
+    for constraint in draft.constraints {
         writer.u32(constraint.constraint.get());
         writer.string(&constraint.name);
         writer.operation(&constraint.operation);
@@ -603,7 +656,7 @@ pub(super) fn program_revision(
     if interactive_output_count != 0 {
         writer.bytes(b"interactive-output-symbols-v1");
         writer.u32(interactive_output_count as u32);
-        for output in &draft.outputs {
+        for output in draft.outputs {
             if let Some(binding) = &output.interactive_binding {
                 writer.u32(output.output.get());
                 writer.string(&binding.lexical_name);
@@ -619,7 +672,7 @@ pub(super) fn program_revision(
     if !draft.compute_regions.is_empty() {
         writer.bytes(b"compute-regions-v1");
         writer.u32(draft.compute_regions.len() as u32);
-        for region in &draft.compute_regions {
+        for region in draft.compute_regions {
             writer.u32(region.id.get());
             writer.string(&region.name);
             writer.u8(match region.placement {
@@ -631,6 +684,22 @@ pub(super) fn program_revision(
             for node in &region.nodes {
                 writer.u32(node.get());
             }
+        }
+    }
+
+    // An absent source table preserves the canonical bytes and revision of
+    // existing artifacts. Declaration-bearing identity commits the typed
+    // schemas above together with their defining document and relative path.
+    if !draft.source_nominal_declarations.is_empty() {
+        writer.bytes(b"source-nominal-declarations-v1");
+        writer.u64(draft.source_nominal_declarations.len() as u64);
+        for declaration in draft.source_nominal_declarations {
+            writer.u64(declaration.document_id);
+            writer.u64(declaration.relative_path.len() as u64);
+            for segment in &declaration.relative_path {
+                writer.string(segment);
+            }
+            writer.u32(declaration.schema.get());
         }
     }
 

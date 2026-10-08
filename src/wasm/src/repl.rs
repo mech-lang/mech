@@ -109,30 +109,12 @@ impl ResidentReplRuntimeFactory for WasmReplRuntimeFactory {
     ) -> MResult<(MechRuntime, mech_runtime::RuntimeProgramLoadOutcome)> {
         match self {
             Self::Standalone => {
-                let mut runtime = self.build(events)?;
-                if source.trim().is_empty() {
-                    return Ok((
-                        runtime,
-                        mech_runtime::RuntimeProgramLoadOutcome {
-                            route: mech_runtime::RuntimeProgramRoute::None,
-                            initial_value: mech_runtime::RuntimeValueSnapshot::empty(),
-                            info: mech_runtime::RuntimeProgramExecutionInfo::default(),
-                        },
-                    ));
-                }
-                let outcome = match runtime.load_interactive_source_program(
+                let document = crate::canonical_document::CanonicalWasmDocument::retain(
+                    "runtime:interactive",
+                    mech_syntax::document::Revision(0),
                     source,
-                    mech_runtime::ResidentDurabilityPolicy::Volatile,
-                ) {
-                    Ok(outcome) => outcome,
-                    Err(error) => {
-                        if let Err(shutdown_error) = runtime.shutdown() {
-                            return Err(shutdown_error.with_source(error));
-                        }
-                        return Err(error);
-                    }
-                };
-                Ok((runtime, outcome))
+                )?;
+                self.activate_document(events, document.document())
             }
             Self::Document(bootstrap) => {
                 crate::project::activate_document_repl_runtime(bootstrap, events, source)
@@ -146,7 +128,32 @@ impl ResidentReplRuntimeFactory for WasmReplRuntimeFactory {
         document: &mech_runtime::SourceDocument,
     ) -> MResult<(MechRuntime, mech_runtime::RuntimeProgramLoadOutcome)> {
         match self {
-            Self::Standalone => self.activate(events, &document.source().to_contiguous_string()),
+            Self::Standalone => {
+                let mut runtime = self.build(events)?;
+                if document.source().to_contiguous_string().trim().is_empty() {
+                    return Ok((
+                        runtime,
+                        mech_runtime::RuntimeProgramLoadOutcome {
+                            route: mech_runtime::RuntimeProgramRoute::None,
+                            initial_value: mech_runtime::RuntimeValueSnapshot::empty(),
+                            info: mech_runtime::RuntimeProgramExecutionInfo::default(),
+                        },
+                    ));
+                }
+                let outcome = match runtime.load_interactive_document_program(
+                    document,
+                    mech_runtime::ResidentDurabilityPolicy::Volatile,
+                ) {
+                    Ok(outcome) => outcome,
+                    Err(error) => {
+                        if let Err(shutdown_error) = runtime.shutdown() {
+                            return Err(shutdown_error.with_source(error));
+                        }
+                        return Err(error);
+                    }
+                };
+                Ok((runtime, outcome))
+            }
             Self::Document(bootstrap) => {
                 crate::project::activate_document_repl_runtime_document(bootstrap, events, document)
             }
@@ -1077,6 +1084,78 @@ mod tests {
         );
         assert_eq!(repl_input_action("a", false, false, false, false), None);
         assert_eq!(repl_step_limit(), MAX_RESIDENT_STEP_COUNT);
+    }
+
+    #[cfg(all(
+        feature = "browser_project_core",
+        feature = "enum",
+        feature = "kind_define",
+        feature = "variable_define"
+    ))]
+    #[test]
+    fn browser_repl_enum_identity_survives_edits_and_isolates_sessions() {
+        let source = "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n";
+        let mut first = ResidentReplSession::new(WasmReplRuntimeFactory::Standalone);
+        let initial = first.submit(source).unwrap();
+        let origin = first.source_document().unwrap().nominal_origin().cloned();
+        assert!(origin.is_some());
+        let edited = first.submit("next<event> := :busy\nnext\n").unwrap();
+        assert_eq!(initial.schema_key(), edited.schema_key());
+        assert_eq!(
+            first.source_document().unwrap().nominal_origin(),
+            origin.as_ref()
+        );
+        let mut independent = ResidentReplSession::new(WasmReplRuntimeFactory::Standalone);
+        let other = independent.submit(source).unwrap();
+        assert_ne!(initial.schema_key(), other.schema_key());
+        first.shutdown().unwrap();
+        independent.shutdown().unwrap();
+    }
+
+    #[cfg(all(
+        feature = "browser_project_core",
+        feature = "enum",
+        feature = "kind_define",
+        feature = "variable_define"
+    ))]
+    #[test]
+    fn browser_repl_activates_retained_package_enum_identity() {
+        let origin =
+            mech_core::CanonicalNominalPath::new(["package".to_owned(), "events".to_owned()])
+                .unwrap();
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "browser:document.mec",
+            mech_syntax::document::Revision(0),
+            "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n",
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap()
+        .with_nominal_origin(origin.clone())
+        .with_nominal_package_id("package-owner");
+        let mut session =
+            ResidentReplSession::from_document(WasmReplRuntimeFactory::Standalone, document)
+                .unwrap();
+        let value = session.submit("next<event> := :busy\nnext\n").unwrap();
+        let declaration = mech_core::CanonicalNominalPath::new([
+            "package".to_owned(),
+            "events".to_owned(),
+            "event".to_owned(),
+        ])
+        .unwrap();
+        let expected = mech_core::NominalKey::from_path(mech_core::NominalKind::Enum, &declaration);
+        assert!(matches!(
+            value.value().schemas().unwrap().get(value.schema()).unwrap().body(),
+            mech_core::SchemaBody::Enum { key, .. } if *key == expected
+        ));
+        assert_eq!(
+            session.source_document().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        assert_eq!(
+            session.source_document().unwrap().nominal_package_id(),
+            Some("package-owner")
+        );
+        session.shutdown().unwrap();
     }
 
     #[cfg(feature = "browser_project_core")]
