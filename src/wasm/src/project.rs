@@ -65,12 +65,13 @@ fn served_provenance_from_js(
     value: JsValue,
     sources: &HashMap<String, String>,
 ) -> Result<HashMap<String, ServedSourceProvenance>, JsValue> {
-    let provenance = if value.is_undefined() || value.is_null() {
-        HashMap::new()
-    } else {
-        serde_wasm_bindgen::from_value(value)
-            .map_err(|error| js_error(format!("invalid served nominal provenance: {error}")))?
-    };
+    let provenance: HashMap<String, ServedSourceProvenance> =
+        if value.is_undefined() || value.is_null() {
+            HashMap::new()
+        } else {
+            serde_wasm_bindgen::from_value(value)
+                .map_err(|error| js_error(format!("invalid served nominal provenance: {error}")))?
+        };
     if provenance
         .keys()
         .any(|specifier| !sources.contains_key(specifier))
