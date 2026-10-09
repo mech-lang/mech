@@ -249,7 +249,12 @@ class WebSocket:
     def _read_exact(self, count: int) -> bytes:
         response = bytearray()
         while len(response) < count:
-            chunk = self.socket.recv(count - len(response))
+            try:
+                chunk = self.socket.recv(count - len(response))
+            except socket.timeout:
+                # Command deadlines belong to DevTools.call. Keep the reader
+                # and any partial frame alive while a renderer is busy or idle.
+                continue
             if not chunk:
                 raise BrowserFailure("DevTools websocket closed unexpectedly")
             response.extend(chunk)
@@ -496,8 +501,8 @@ class ChromeSession:
             raise BrowserFailure("browser session is not running")
         return self.devtools.call(method, params, self.session_id, timeout=timeout)
 
-    def navigate(self, url: str) -> None:
-        self.call("Page.navigate", {"url": url})
+    def navigate(self, url: str, *, timeout: float = 30) -> None:
+        self.call("Page.navigate", {"url": url}, timeout=timeout)
 
     def add_script(self, source: str) -> None:
         self.call("Page.addScriptToEvaluateOnNewDocument", {"source": source})

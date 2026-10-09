@@ -46,12 +46,7 @@ use crate::{
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure};
 
 fn canonical_frontend(document: &SourceDocument) -> CanonicalSourceFrontend {
-    document
-        .nominal_origin()
-        .cloned()
-        .map_or(CanonicalSourceFrontend, |origin| {
-            CanonicalSourceFrontend.with_nominal_origin(origin)
-        })
+    document.canonical_frontend()
 }
 
 pub(super) fn canonical_dependency_identity_hash(
@@ -87,10 +82,9 @@ pub(super) fn canonical_dependency_identity_hash(
 
 fn canonical_document_dependency_hash(document: &SourceDocument) -> MResult<u64> {
     let source = document.source().to_contiguous_string();
-    let nominal = !canonical_frontend(document)
-        .declared_enum_names(&document.document())
-        .map_err(|error| canonical_source_error(error, Some(document.source())))?
-        .is_empty();
+    let nominal = canonical_frontend(document)
+        .has_origin_dependent_declarations(&document.document())
+        .map_err(|error| canonical_source_error(error, Some(document.source())))?;
     Ok(if nominal {
         canonical_dependency_identity_hash(
             &source,
@@ -167,6 +161,7 @@ fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
         Arc::<str>::from(source),
         mech_syntax::document::ParseConfig::default(),
     )
+    .map(SourceDocument::with_standalone_nominal_origin)
     .map_err(|error| canonical_compilation_error(format!("invalid retained source: {error:?}")))
 }
 
@@ -633,6 +628,7 @@ struct CanonicalGraphCompilation<'a> {
     source_dependencies: BTreeMap<String, u64>,
     module_versions: HashMap<String, crate::ModuleVersionId>,
     nominal_owners: BTreeMap<Vec<String>, (Option<String>, mech_syntax::document::DocumentId)>,
+    enum_paths: BTreeSet<Vec<String>>,
 }
 
 impl<'a> CanonicalGraphCompilation<'a> {
@@ -644,12 +640,13 @@ impl<'a> CanonicalGraphCompilation<'a> {
             source_dependencies: BTreeMap::new(),
             module_versions: HashMap::new(),
             nominal_owners: BTreeMap::new(),
+            enum_paths: BTreeSet::new(),
         }
     }
 
     fn enum_qualifiers(&self) -> MResult<BTreeMap<mech_core::NominalKey, String>> {
-        self.nominal_owners
-            .keys()
+        self.enum_paths
+            .iter()
             .map(|path| {
                 let origin =
                     mech_core::CanonicalNominalPath::new(path.clone()).map_err(|error| {
@@ -1216,8 +1213,8 @@ impl<'a> ProgramCompilerView<'a> {
                     let current = dependency.source_document().ok_or_else(|| {
                         canonical_compilation_error("canonical dependency has no retained document")
                     })?;
-                    if mech_core::hash_str(&retained.source().to_contiguous_string())
-                        != mech_core::hash_str(&current.source().to_contiguous_string())
+                    if canonical_document_dependency_hash(retained)?
+                        != canonical_document_dependency_hash(current)?
                     {
                         return Err(canonical_compilation_error(format!(
                             "canonical dependency {} changed during compilation",
@@ -1683,15 +1680,15 @@ impl<'a> ProgramCompilerView<'a> {
         let Some(origin) = document.nominal_origin() else {
             return Ok(());
         };
-        for name in canonical_frontend(document)
-            .declared_enum_names(&document.document())
+        for (relative_path, _) in canonical_frontend(document)
+            .declared_nominal_keys(&document.document(), origin)
             .map_err(|error| canonical_compilation_error(error.to_string()))?
         {
             let path = origin
                 .segments()
                 .iter()
                 .cloned()
-                .chain(std::iter::once(name))
+                .chain(relative_path.into_vec())
                 .collect::<Vec<_>>();
             let owner = document.nominal_package_id().map(str::to_owned);
             let defining_document = document.source().document();
@@ -1707,6 +1704,19 @@ impl<'a> ProgramCompilerView<'a> {
                     .nominal_owners
                     .insert(path, (owner, defining_document));
             }
+        }
+        for name in canonical_frontend(document)
+            .declared_enum_names(&document.document())
+            .map_err(|error| canonical_compilation_error(error.to_string()))?
+        {
+            context.enum_paths.insert(
+                origin
+                    .segments()
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once(name))
+                    .collect(),
+            );
         }
         Ok(())
     }
@@ -2835,6 +2845,51 @@ fn declared_resource_send_operation<'a>(
         }
     }
     Ok(selected)
+}
+
+#[cfg(test)]
+mod nominal_provenance_tests {
+    use super::{CanonicalGraphCompilation, SourceDocument};
+    use mech_core::{CanonicalNominalPath, NominalKey, NominalKind};
+    use mech_syntax::document::{ParseConfig, Revision};
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn fsm_ownership_does_not_publish_enum_qualifiers() {
+        let origin = CanonicalNominalPath::new(["fixture".to_owned()]).unwrap();
+        let document = SourceDocument::parse_resolved(
+            "memory:qualifiers.mec",
+            Revision(0),
+            "<Drive> := :idle | :busy\n#Drive() => <f64>\n  | :Done.\n#Drive() -> :Done\n  :Done => 1.0.\n",
+            ParseConfig::default(),
+        )
+        .unwrap()
+        .with_nominal_origin(origin.clone());
+        assert!(document.is_strictly_clean());
+        let compiler = crate::RuntimeBuilder::new().build_compiler().unwrap();
+        let mut context = CanonicalGraphCompilation::new(None);
+        compiler
+            .view()
+            .register_nominal_declarations(&document, &mut context)
+            .unwrap();
+        assert_eq!(context.nominal_owners.len(), 2);
+        let enum_key = NominalKey::from_path(
+            NominalKind::Enum,
+            &CanonicalNominalPath::new(["fixture".to_owned(), "Drive".to_owned()]).unwrap(),
+        );
+        let fsm_key = NominalKey::from_path(
+            NominalKind::Enum,
+            &CanonicalNominalPath::new([
+                "fixture".to_owned(),
+                "fsm".to_owned(),
+                "Drive".to_owned(),
+            ])
+            .unwrap(),
+        );
+        let qualifiers = context.enum_qualifiers().unwrap();
+        assert_eq!(qualifiers, BTreeMap::from([(enum_key, "Drive".to_owned())]));
+        assert!(!qualifiers.contains_key(&fsm_key));
+    }
 }
 
 #[cfg(test)]

@@ -95,10 +95,12 @@ fn rendered_turns(source: &str, expected: &[&[(SourceDocumentOutputKind, &str)]]
                 *expected,
                 "{kind:?}: {source_slice:?}"
             );
-            assert_eq!(
-                value.format_html(),
+            let expected_html = if *expected == "[41]" {
+                "<table class='mech-matrix'><tbody><tr><td><span class='mech-value'>41</span></td></tr></tbody></table>".to_owned()
+            } else {
                 format!("<span class='mech-value'>{expected}</span>")
-            );
+            };
+            assert_eq!(value.format_html(), expected_html);
         }
     }
 }

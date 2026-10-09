@@ -366,7 +366,10 @@ with BrowserCompletionServer() as completion:
     ).start()
     try:
         query = urllib.parse.urlencode({"mech-canary-callback": completion.base_url})
-        browser.navigate(f"{page_url}?{query}")
+        # Cold WASM initialization can hold the renderer beyond the shared
+        # 30-second command budget. Keep this navigation bounded separately
+        # from the simulation's progress watchdog and completion deadline.
+        browser.navigate(f"{page_url}?{query}", timeout=180)
         payload = completion.wait_for(
             "nbody-finished",
             timeout=300,

@@ -979,6 +979,28 @@ class FullWorkflowContractTests(unittest.TestCase):
         engine = owners.split("[owners.mech-engine]", 1)[1].split("\n[owners.", 1)[0]
         self.assertIn('"--test", "canonical_source_semantics"', engine)
 
+    def test_contract_commands_select_the_installed_toolchain_for_child_processes(self):
+        for workflow, job, command in (
+            (CI, "changed-owner-tests", "scripts/run-owner-tests.py"),
+            (CI, "static-distribution", "scripts/check-distribution-contracts.py"),
+            (FULL, "wasm-bytecode-v1", "wasm-pack test"),
+            (FULL, "dynamic-modules", "bash scripts/test-dynamic-modules.sh"),
+        ):
+            with self.subTest(job=job):
+                block = job_block(workflow, job)
+                job_settings = block.split("    steps:\n", 1)[0]
+                self.assertRegex(
+                    job_settings,
+                    r"(?m)^      RUSTUP_TOOLCHAIN: nightly-2026-03-03$",
+                )
+                steps = job_steps(workflow, job)
+                install = next(index for index, step in enumerate(steps)
+                               if "rustup toolchain install nightly-2026-03-03" in step)
+                run = next(index for index, step in enumerate(steps)
+                           if command in step)
+                self.assertLess(install, run)
+                self.assertNotIn("RUSTUP_TOOLCHAIN", steps[run])
+
     def test_runtime_compute_contracts_execute_mixed_source_tests(self):
         cargo_language = job_block(FULL, "cargo-language")
         self.assertIn(

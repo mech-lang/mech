@@ -139,18 +139,27 @@ fn canonical_mixed_unknown_compute_reads_reject_at_the_interface() {
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
-    for (path, message) in [
+    for (path, kind, message) in [
         (
             "sample/missing",
-            "source-semantics/unknown-published-binding: document does not define requested output missing",
+            "source-semantics/unknown-published-binding",
+            "document does not define requested output missing",
         ),
-        ("unknown", "unknown compute telemetry path `unknown`"),
+        (
+            "unknown",
+            "ResidentRouteFailure",
+            "unknown compute telemetry path `unknown`",
+        ),
     ] {
         let error = compiler
             .compile_mixed_source(&document(path, "1f32"))
             .err()
             .expect("invalid interface path must fail");
-        assert!(format!("{error:?}").contains(message), "{error:?}");
+        assert_eq!(error.kind_name(), kind, "{error:?}");
+        assert!(error.kind_message().contains(message), "{error:?}");
+        if path == "sample/missing" {
+            assert!(error.program_range.is_some(), "{error:?}");
+        }
     }
 }
 

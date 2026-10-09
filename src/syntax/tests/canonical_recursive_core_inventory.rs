@@ -602,8 +602,25 @@ fn recursive_core_has_exact_parser_typed_views_and_executable_registry() {
     expected_parser_files.insert(String::from("structures"));
     expected_parser_files.insert(String::from("kinds"));
     expected_parser_files.insert(String::from("precedence"));
-    expected_parser_files.insert(String::from("required.rs"));
+    expected_parser_files.insert(String::from("required"));
     assert_eq!(actual_files, expected_parser_files);
+    let required_files = fs::read_dir(parser_directory.join("required"))
+        .expect("read required-production recovery module")
+        .map(|entry| {
+            entry
+                .expect("required recovery entry")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        required_files,
+        ["mod.rs", "document_restart.rs"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect()
+    );
     let precedence_files = fs::read_dir(parser_directory.join("precedence"))
         .expect("read retained precedence module")
         .map(|entry| {

@@ -1,12 +1,13 @@
 //! Thin inspection adapter over canonical compilation and resident publication.
 //! Numeric payloads are exported as Rust-formatted strings to preserve u128.
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
-    IntegerInterval, IntegerWidth, ReactiveInstanceId, SchemaBody, SchemaDraft, SchemaTableBuilder,
-    Value, ValueDataDraft, ValueDraft,
+    CanonicalNominalPath, IntegerInterval, IntegerWidth, ReactiveInstanceId, SchemaBody,
+    SchemaDraft, SchemaTableBuilder, Value, ValueDataDraft, ValueDraft,
 };
 use mech_engine::resident::{ActivationFacts, CapturedValueInput, ReactiveInstance, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, ProgramArtifact};
@@ -15,8 +16,8 @@ use mech_runtime::{
     SourceDocument,
 };
 use mech_syntax::document::{
-    AstNode, CodeBlockSyntax, CodeFenceScope, ParseConfig, Revision, SyntaxKind, SyntaxNode,
-    TextSnapshot, render_source_excerpt,
+    AstNode, CodeBlockSyntax, CodeFenceScope, ParseConfig, Revision, SourceError, SyntaxKind,
+    SyntaxNode, TextEdit, TextSnapshot, render_source_excerpt,
 };
 use serde_json::{Value as Json, json};
 use wasm_bindgen::prelude::*;
@@ -66,35 +67,98 @@ fn describe(value: &Value) -> Json {
     result
 }
 
-/// Parse, check, construct, activate and execute through real public interfaces.
-/// Each successful stage is reported separately; source diagnostics retain anchors.
+/// One editable standalone document inspected through canonical compilation.
+/// Reuse this owner for subsequent checks and edits of the same document.
+#[wasm_bindgen]
+pub struct WasmTypeInspector {
+    nominal_origin: CanonicalNominalPath,
+    document: RefCell<Option<SourceDocument>>,
+}
+
+#[wasm_bindgen]
+impl WasmTypeInspector {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self {
+            nominal_origin: SourceDocument::new_standalone_origin(),
+            document: RefCell::new(None),
+        }
+    }
+
+    /// Parse, check, construct, activate and execute using this document's owner.
+    /// Exact source repeats reuse the retained snapshot. Edits, including rejected
+    /// source, advance its revision; diagnostics and enum identity keep this owner.
+    pub fn inspect(&self, source: &str) -> String {
+        inspect(source, self.retain_source(source)).to_string()
+    }
+}
+
+impl WasmTypeInspector {
+    fn retain_source(&self, source: &str) -> Result<SourceDocument, SourceError> {
+        let mut retained = self.document.borrow_mut();
+        let document = match retained.as_ref() {
+            Some(document) if document.source().to_contiguous_string() == source => {
+                return Ok(document.clone());
+            }
+            Some(document) => SourceDocument::parse(
+                document
+                    .source()
+                    .apply_edits(&[TextEdit::replace(document.source().full_range(), source)])?,
+                ParseConfig::default(),
+            ),
+            None => SourceDocument::parse_resolved(
+                &format!("audit:types/{}", self.nominal_origin.segments().join("/")),
+                Revision(0),
+                source,
+                ParseConfig::default(),
+            )?,
+        }
+        .with_nominal_origin(self.nominal_origin.clone());
+        *retained = Some(document.clone());
+        Ok(document)
+    }
+}
+
+impl Default for WasmTypeInspector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Inspect one fresh standalone document. Retain a `WasmTypeInspector` when
+/// repeated calls represent edits to the same document.
 #[wasm_bindgen(js_name = inspectMechTypes)]
 pub fn inspect_mech_types(source: &str) -> String {
-    inspect(source).to_string()
+    WasmTypeInspector::new().inspect(source)
 }
-fn inspect(source: &str) -> Json {
+fn inspect(source: &str, document: Result<SourceDocument, SourceError>) -> Json {
     let mut result = json!({"source":source,"target":if cfg!(target_arch="wasm32"){"WASM-hosted resident CPU"}else{"native resident CPU"},"stages":{},"diagnostics":[]});
-    let document = match SourceDocument::parse_resolved(
-        "audit:types",
-        Revision(0),
-        source,
-        ParseConfig::default(),
-    ) {
-        Ok(value) => value,
+    let document = match document {
+        Ok(document) => document,
         Err(error) => {
+            result["stages"]["parsing"] = json!("rejected");
             result["diagnostics"] = json!([{"phase":"parsing","message":format!("{error:?}")}]);
             return result;
         }
     };
+    result["document"] = json!(document.source().document().0.to_string());
+    result["revision"] = json!(document.source().revision().0.to_string());
     result["stages"]["parsing"] = json!("completed");
     if !document.is_strictly_clean() {
         result["stages"]["semantic_checking"] = json!("blocked by strict syntax validation");
         result["diagnostics"] =
             serde_json::to_value(document.snapshot().diagnostics.as_slice()).unwrap_or(json!([]));
+        if let Some(diagnostics) = result["diagnostics"].as_array_mut() {
+            for diagnostic in diagnostics {
+                diagnostic["document"] = json!(document.source().document().0.to_string());
+                diagnostic["revision"] = json!(document.source().revision().0.to_string());
+            }
+        }
         return result;
     }
     let catalog = mech_stdlib::source_catalog();
-    let program = match CanonicalSourceFrontend
+    let program = match document
+        .canonical_frontend()
         .compile_document_with_catalog(&document.document(), Arc::clone(&catalog))
     {
         Ok(value) => value,
@@ -562,6 +626,224 @@ impl TypePublicationSession {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn inspect(source: &str) -> Json {
+        serde_json::from_str(&inspect_mech_types(source)).unwrap()
+    }
+
+    fn inspect_with(inspector: &WasmTypeInspector, source: &str) -> Json {
+        serde_json::from_str(&inspector.inspect(source)).unwrap()
+    }
+
+    fn assert_diagnostic_identity(result: &Json, revision: &str) {
+        assert_eq!(result["revision"], revision, "{result}");
+        assert!(result["document"].is_string(), "{result}");
+        let diagnostics = result["diagnostics"].as_array().unwrap();
+        assert!(!diagnostics.is_empty(), "{result}");
+        for diagnostic in diagnostics {
+            assert_eq!(diagnostic["document"], result["document"], "{result}");
+            assert_eq!(diagnostic["revision"], result["revision"], "{result}");
+        }
+        if let Some(diagnostic) = result.get("product_diagnostic") {
+            assert_eq!(diagnostic["semantic"]["document"], result["document"]);
+            assert_eq!(diagnostic["semantic"]["revision"], result["revision"]);
+        }
+    }
+
+    #[test]
+    fn retained_syntax_diagnostics_track_edits_and_repeated_source() {
+        let inspector = WasmTypeInspector::new();
+        let first = inspect_with(&inspector, "2u8 + (\n");
+        assert_eq!(
+            first["stages"]["semantic_checking"], "blocked by strict syntax validation",
+            "{first}"
+        );
+        assert_diagnostic_identity(&first, "0");
+        assert!(first["diagnostics"][0].get("primary").is_some());
+
+        let edited = inspect_with(&inspector, " 2u8 + (\n");
+        assert_eq!(edited["document"], first["document"]);
+        assert_diagnostic_identity(&edited, "1");
+        let repeated = inspect_with(&inspector, " 2u8 + (\n");
+        assert_diagnostic_identity(&repeated, "1");
+        assert_eq!(repeated["diagnostics"], edited["diagnostics"]);
+
+        let recovered = inspect_with(&inspector, "2u8\n");
+        assert_eq!(recovered["document"], first["document"]);
+        assert_eq!(recovered["revision"], "2");
+        assert_eq!(recovered["diagnostics"], json!([]), "{recovered}");
+        assert_eq!(recovered["stages"]["execution"], "completed", "{recovered}");
+        assert_eq!(inspect_with(&inspector, "2u8\n")["revision"], "2");
+    }
+
+    #[test]
+    fn retained_semantic_diagnostics_track_rejected_and_recovered_edits() {
+        let inspector = WasmTypeInspector::new();
+        let first = inspect_with(&inspector, "10⟨u8:1..10⟩\n");
+        assert_eq!(
+            first["diagnostics"][0]["code"], "source-semantics/integer-interval-violation",
+            "{first}"
+        );
+        assert_diagnostic_identity(&first, "0");
+
+        let edited = inspect_with(&inspector, "11⟨u8:1..10⟩\n");
+        assert_eq!(edited["document"], first["document"]);
+        assert_eq!(
+            edited["diagnostics"][0]["range"],
+            first["diagnostics"][0]["range"]
+        );
+        assert_diagnostic_identity(&edited, "1");
+        let repeated = inspect_with(&inspector, "11⟨u8:1..10⟩\n");
+        assert_diagnostic_identity(&repeated, "1");
+        assert_eq!(repeated["diagnostics"], edited["diagnostics"]);
+
+        let recovered = inspect_with(&inspector, "2⟨u8:1..10⟩\n");
+        assert_eq!(recovered["document"], first["document"]);
+        assert_eq!(recovered["revision"], "2");
+        assert_eq!(recovered["diagnostics"], json!([]), "{recovered}");
+        assert_eq!(recovered["stages"]["execution"], "completed", "{recovered}");
+        assert_eq!(recovered["values"][0]["scalar_text"], "2");
+        let rejected_again = inspect_with(&inspector, "10⟨u8:1..10⟩\n");
+        assert_diagnostic_identity(&rejected_again, "3");
+        assert_eq!(rejected_again["document"], first["document"]);
+    }
+
+    #[test]
+    fn exhausted_revision_does_not_replace_the_retained_source() {
+        let inspector = WasmTypeInspector::new();
+        *inspector.document.borrow_mut() = Some(
+            SourceDocument::parse_resolved(
+                "audit:exhausted-types",
+                Revision(u64::MAX),
+                "2u8\n",
+                ParseConfig::default(),
+            )
+            .unwrap()
+            .with_nominal_origin(inspector.nominal_origin.clone()),
+        );
+        let first = inspect_with(&inspector, "2u8\n");
+        assert_eq!(first["revision"], u64::MAX.to_string());
+        let rejected = inspect_with(&inspector, "3u8\n");
+        assert_eq!(rejected["stages"]["parsing"], "rejected");
+        assert!(
+            rejected["diagnostics"][0]["message"]
+                .as_str()
+                .unwrap()
+                .contains("RevisionExhausted")
+        );
+        assert!(rejected.get("revision").is_none());
+        let repeated = inspect_with(&inspector, "2u8\n");
+        assert_eq!(repeated["document"], first["document"]);
+        assert_eq!(repeated["revision"], first["revision"]);
+        assert_eq!(repeated["values"][0]["scalar_text"], "2");
+    }
+
+    #[cfg(all(feature = "enum", feature = "kind_define", feature = "variable_define"))]
+    mod standalone_enums {
+        use super::*;
+
+        const SOURCE: &str = "<color> := :red | :green | :blue\nmy-color<color> := :red\n";
+
+        #[test]
+        fn exact_enum_source_publishes_red_and_edits_keep_its_identity() {
+            let inspector = WasmTypeInspector::new();
+            let first = inspect_with(&inspector, SOURCE);
+            assert_eq!(first["revision"], "0");
+            assert_eq!(first["stages"]["execution"], "completed", "{first}");
+            assert_eq!(first["diagnostics"], json!([]), "{first}");
+            assert_eq!(
+                first["values"][0]["value"], "Enum(EnumValue { ordinal: 0, payload: None })",
+                "{first}"
+            );
+            let schema = first["values"][0]["schema"].as_str().unwrap();
+            assert!(schema.contains("name: \"red\""), "{schema}");
+            let path = CanonicalNominalPath::new(
+                inspector
+                    .nominal_origin
+                    .segments()
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once("color".to_owned()))
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap();
+            let expected = mech_core::NominalKey::from_path(mech_core::NominalKind::Enum, &path);
+            assert!(schema.contains(&format!("{expected:?}")), "{schema}");
+
+            for (revision, source) in [
+                (
+                    "1",
+                    SOURCE.replace("my-color<color> := :red", "my-color<color> := :green"),
+                ),
+                ("2", SOURCE.to_owned()),
+                ("2", SOURCE.to_owned()),
+            ] {
+                let next = inspect_with(&inspector, &source);
+                assert_eq!(next["document"], first["document"]);
+                assert_eq!(next["revision"], revision);
+                assert_eq!(next["stages"]["execution"], "completed", "{next}");
+                assert_eq!(next["values"][0]["schema"], first["values"][0]["schema"]);
+            }
+        }
+
+        #[test]
+        fn independent_inspectors_and_one_shot_calls_have_distinct_enum_owners() {
+            let first = inspect_with(&WasmTypeInspector::new(), SOURCE);
+            let independent = inspect_with(&WasmTypeInspector::new(), SOURCE);
+            let one_shot = inspect(SOURCE);
+            let next_one_shot = inspect(SOURCE);
+            for result in [&first, &independent, &one_shot, &next_one_shot] {
+                assert_eq!(result["stages"]["execution"], "completed", "{result}");
+            }
+            assert_ne!(first["document"], independent["document"]);
+            assert_ne!(one_shot["document"], next_one_shot["document"]);
+            assert_ne!(
+                first["values"][0]["schema"],
+                independent["values"][0]["schema"]
+            );
+            assert_ne!(
+                one_shot["values"][0]["schema"],
+                next_one_shot["values"][0]["schema"]
+            );
+        }
+
+        #[test]
+        fn invalid_enum_variant_is_rejected_without_changing_the_owner() {
+            let inspector = WasmTypeInspector::new();
+            let first = inspect_with(&inspector, SOURCE);
+            let rejected = inspect_with(
+                &inspector,
+                &SOURCE.replace("my-color<color> := :red", "my-color<color> := :yellow"),
+            );
+            assert_eq!(
+                rejected["stages"]["semantic_checking"], "rejected",
+                "{rejected}"
+            );
+            assert_eq!(
+                rejected["diagnostics"][0]["code"],
+                "source-semantics/unknown-enum-variant"
+            );
+            assert_diagnostic_identity(&rejected, "1");
+            assert_eq!(
+                rejected["product_diagnostic"]["semantic"]["code"],
+                rejected["diagnostics"][0]["code"]
+            );
+            assert_eq!(
+                rejected["product_diagnostic"]["semantic"]["range"],
+                rejected["diagnostics"][0]["range"]
+            );
+            assert!(rejected.get("values").is_none());
+            let restored = inspect_with(&inspector, SOURCE);
+            assert_eq!(restored["document"], first["document"]);
+            assert_eq!(restored["revision"], "2");
+            assert_eq!(restored["stages"]["execution"], "completed", "{restored}");
+            assert_eq!(
+                restored["values"][0]["schema"],
+                first["values"][0]["schema"]
+            );
+        }
+    }
+
     #[test]
     fn document_preview_keeps_unfenced_table_as_source() {
         let result = inspect_document("|x<f64> y<f64>| 1 2 | 3 4 |\n");

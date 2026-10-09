@@ -120,6 +120,21 @@ pub(super) fn enum_declarations(
         .collect())
 }
 
+pub(super) fn enum_nominal_key(
+    origin: &CanonicalNominalPath,
+    name: &str,
+) -> Result<NominalKey, mech_core::SemanticModelError> {
+    let path = CanonicalNominalPath::new(
+        origin
+            .segments()
+            .iter()
+            .cloned()
+            .chain([name.to_owned()])
+            .collect::<Vec<_>>(),
+    )?;
+    Ok(NominalKey::from_path(NominalKind::Enum, &path))
+}
+
 impl SemanticBuilder {
     pub(super) fn register_document_types(
         &mut self,
@@ -143,15 +158,7 @@ impl SemanticBuilder {
                             message: "enum declarations require the defining package and module namespace".to_owned(),
                             anchor: SourceSemanticAnchor::for_node(syntax),
                         })?;
-                        let path = CanonicalNominalPath::new(
-                            origin
-                                .segments()
-                                .iter()
-                                .cloned()
-                                .chain(std::iter::once(name.clone()))
-                                .collect::<Vec<_>>(),
-                        )
-                        .map_err(|error| {
+                        let key = enum_nominal_key(origin, &name).map_err(|error| {
                             internal(
                                 SourceSemanticAnchor::for_node(syntax),
                                 format!("invalid enum path: {error:?}"),
@@ -188,7 +195,7 @@ impl SemanticBuilder {
                             .collect::<Result<Vec<_>, SourceSemanticError>>()?;
                         Ok(SchemaDraft {
                             body: SchemaBody::Enum {
-                                key: NominalKey::from_path(NominalKind::Enum, &path),
+                                key,
                                 variants: variants.into_boxed_slice(),
                             },
                             dimension_parameters: Box::new([]),
@@ -236,6 +243,15 @@ impl SemanticBuilder {
                 continue;
             };
             let schema = self.declared_kinds[name].clone();
+            let syntax = match declaration {
+                RawTypeDeclaration::Enum { syntax, .. } => syntax,
+                _ => unreachable!(),
+            };
+            self.declaration_schemas.push(PendingNominalDeclaration {
+                document_id: SourceSemanticAnchor::for_node(syntax).document.0,
+                relative_path: vec![name.clone()].into_boxed_slice(),
+                schema: schema.clone(),
+            });
             let SchemaBody::Enum {
                 variants: schemas, ..
             } = &schema.body
